@@ -11,7 +11,8 @@ import {
     ArrowLeft, RefreshCcw, Calendar, DollarSign,
     FileText, CreditCard, ClipboardList, BookOpen, Plus,
     Pencil, Trash2, Check, XCircle, AlertCircle, CheckCircle,
-    ChevronRight, ChevronLeft, Search, Download
+    ChevronRight, ChevronLeft, Search, Download, Printer,
+    BarChart2, Clock
 } from "lucide-react";
 import { useAPStore } from "@/store/useAPStore";
 import { cn } from "@/lib/utils";
@@ -81,6 +82,8 @@ export default function AccountsPayablePage() {
     const [selectedCrdbIdx,  setSelectedCrdbIdx]  = useState(0);
     const [invoiceModal,     setInvoiceModal]     = useState<{ open: boolean; mode: "Add" | "Edit" | "Delete" } | null>(null);
     const [searchModal,      setSearchModal]      = useState(false);
+    const [summaryModal,     setSummaryModal]     = useState(false);
+    const [pendingAPModal,   setPendingAPModal]   = useState(false);
     const [pendingUnico,     setPendingUnico]     = useState<string | null>(null);
 
     useEffect(() => {
@@ -286,6 +289,21 @@ export default function AccountsPayablePage() {
                     className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 border border-gray-200 px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest text-gray-600 transition-all"
                 >
                     <RefreshCcw size={11} /> Refresh
+                </button>
+                <div className="w-px h-5 bg-gray-200" />
+                <button
+                    onClick={() => setSummaryModal(true)}
+                    className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 border border-gray-200 px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest text-gray-600 transition-all"
+                    title="Vendor Summary Report"
+                >
+                    <BarChart2 size={11} /> Summary
+                </button>
+                <button
+                    onClick={() => setPendingAPModal(true)}
+                    className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 border border-gray-200 px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest text-gray-600 transition-all"
+                    title="Pending Accounts Payable Report"
+                >
+                    <Clock size={11} /> Pending AP
                 </button>
                 <div className="ml-auto flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">
                     {selectedInvoice && (
@@ -697,6 +715,14 @@ export default function AccountsPayablePage() {
                 />
             )}
 
+            {summaryModal && (
+                <VendorSummaryModal onClose={() => setSummaryModal(false)} />
+            )}
+
+            {pendingAPModal && (
+                <PendingAPModal onClose={() => setPendingAPModal(false)} />
+            )}
+
             {invoiceModal?.open && (
                 invoiceModal.mode === "Delete" ? (
                     <DeleteDialog
@@ -738,6 +764,400 @@ export default function AccountsPayablePage() {
                     saving={pobAdd.isPending || pobEdit.isPending || pobDelete.isPending}
                 />
             )}
+        </div>
+    );
+}
+
+// ─── Shared Utilities ────────────────────────────────────────────────────────
+const COMPANY_HEADER = `
+  <div style="text-align:center;margin-bottom:16px">
+    <div style="font-size:18px;font-weight:bold">FULL POT</div>
+    <div style="font-size:11px">Phone: (954)568 4467 / . Fax:(954)568 4463 /</div>
+    <div style="font-size:11px">1516 SW 13 CT - POMPANO BEACH, FL - USA - e-mail: sales@fullpot.com</div>
+    <hr style="border:1px solid #000;margin:6px 0"/>
+    <hr style="border:1px solid #000;margin:6px 0"/>
+  </div>`;
+
+const PRINT_CSS = `
+  body{font-family:Arial,sans-serif;font-size:11px;margin:20px;color:#000}
+  table{width:100%;border-collapse:collapse;margin-top:8px}
+  th{background:#e5e7eb;border:1px solid #9ca3af;padding:4px 8px;font-weight:bold;text-align:left}
+  td{border:1px solid #d1d5db;padding:4px 8px}
+  .tr{text-align:right} .tc{text-align:center}
+  .total{font-weight:bold;background:#f9fafb}
+  .vendor-hdr{font-size:13px;font-weight:bold;margin:18px 0 4px}
+  .vendor-info{margin-bottom:8px;font-size:11px;line-height:1.6}
+  @media print{@page{margin:1.5cm}}`;
+
+function printReport(title: string, bodyHtml: string) {
+    const w = window.open('', '_blank');
+    if (!w) { alert('Please allow popups to print reports.'); return; }
+    const dateStr = new Date().toLocaleString('en-US');
+    w.document.write(`<!DOCTYPE html><html><head><title>${title}</title>
+      <style>${PRINT_CSS}</style></head><body>
+      ${COMPANY_HEADER}
+      <div style="text-align:center;font-size:14px;font-weight:bold;margin-bottom:12px">${title}</div>
+      <div style="font-size:11px;margin-bottom:12px">Date ${dateStr} &nbsp;&nbsp;&nbsp; Page 1</div>
+      ${bodyHtml}
+    </body></html>`);
+    w.document.close();
+    w.focus();
+    setTimeout(() => { w.print(); }, 600);
+}
+
+// ─── Report Filter Bar (shared) ───────────────────────────────────────────────
+function ReportFilterBar({ growers, growerUq, setGrowerUq, dateFrom, setDateFrom, dateTo, setDateTo, onRun, loading }: any) {
+    return (
+        <div className="bg-gray-50 border-b border-gray-200 px-4 py-3 flex flex-wrap items-end gap-3 shrink-0">
+            <div className="flex flex-col gap-1 flex-1 min-w-[180px]">
+                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Vendor</label>
+                <select value={growerUq} onChange={e => setGrowerUq(e.target.value)} className="fos-input">
+                    <option value="%">— All Vendors —</option>
+                    {growers.map((g: any) => (
+                        <option key={g.unico} value={g.unico}>
+                            {String(g.grower || g.vendor || "").trim()}
+                        </option>
+                    ))}
+                </select>
+            </div>
+            <div className="flex flex-col gap-1">
+                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">From</label>
+                <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="fos-input w-36" />
+            </div>
+            <div className="flex flex-col gap-1">
+                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">To</label>
+                <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="fos-input w-36" />
+            </div>
+            <button
+                onClick={onRun}
+                disabled={loading}
+                className="flex items-center gap-1.5 bg-[#FB7506] hover:bg-orange-600 disabled:opacity-50 text-white px-4 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all h-[34px]"
+            >
+                {loading ? <RefreshCcw size={12} className="animate-spin" /> : <Search size={12} />}
+                Run
+            </button>
+        </div>
+    );
+}
+
+// ─── Vendor Summary Modal ─────────────────────────────────────────────────────
+function VendorSummaryModal({ onClose }: { onClose: () => void }) {
+    const today    = todayEST();
+    const yearStart = `${currentYearEST()}-01-01`;
+
+    const [growerUq,  setGrowerUq]  = useState("%");
+    const [dateFrom,  setDateFrom]  = useState(yearStart);
+    const [dateTo,    setDateTo]    = useState(today);
+    const [rows,      setRows]      = useState<any[]>([]);
+    const [loading,   setLoading]   = useState(false);
+    const [error,     setError]     = useState<string | null>(null);
+    const [ranOnce,   setRanOnce]   = useState(false);
+
+    const { data: growers = [] } = useQuery({
+        queryKey: ["rpt-growers-balance"],
+        queryFn:  () => apFetch("/api/accounts-payable/reports/balance"),
+    });
+
+    const run = async () => {
+        setLoading(true); setError(null);
+        try {
+            const data = await apFetch(
+                `/api/accounts-payable/reports/summary?grower_uq=${growerUq}&from=${dateFrom}&to=${dateTo}`
+            );
+            setRows(Array.isArray(data) ? data : []);
+            setRanOnce(true);
+        } catch (e: any) { setError(e.message); }
+        finally { setLoading(false); }
+    };
+
+    const totalAmount  = rows.reduce((s, r) => s + parseMoney(r.amount  ?? r.total_amount), 0);
+    const totalCredits = rows.reduce((s, r) => s + parseMoney(r.credits ?? r.total_credits), 0);
+    const totalDebits  = rows.reduce((s, r) => s + parseMoney(r.debits  ?? r.total_debits), 0);
+    const totalBalance = rows.reduce((s, r) => s + parseMoney(r.balance ?? r.total_balance), 0);
+
+    const handlePrint = () => {
+        const thead = `<tr><th>Vendor</th><th>Contact</th><th>Phone</th><th>Fax</th><th>E-Mail</th>
+          <th class="tr">Amount</th><th class="tr">Credits</th><th class="tr">Debits</th><th class="tr">Balance</th></tr>`;
+        const tbody = rows.map(r => `
+          <tr>
+            <td>${String(r.grower ?? r.vendor ?? "").trim()}</td>
+            <td>${String(r.contact ?? "").trim()}</td>
+            <td>${String(r.phone_1 ?? r.phone ?? "").trim()}</td>
+            <td>${String(r.fax_1 ?? r.fax ?? "").trim()}</td>
+            <td>${String(r.email ?? "").trim()}</td>
+            <td class="tr">${parseMoney(r.amount ?? r.total_amount).toFixed(2)}</td>
+            <td class="tr">${parseMoney(r.credits ?? r.total_credits).toFixed(2)}</td>
+            <td class="tr">${parseMoney(r.debits ?? r.total_debits).toFixed(2)}</td>
+            <td class="tr">${parseMoney(r.balance ?? r.total_balance).toFixed(2)}</td>
+          </tr>`).join('');
+        const tfoot = `<tr class="total">
+          <td colspan="5" style="text-align:right;font-weight:bold">Total Payable</td>
+          <td class="tr">${totalAmount.toFixed(2)}</td>
+          <td class="tr">${totalCredits.toFixed(2)}</td>
+          <td class="tr">${totalDebits.toFixed(2)}</td>
+          <td class="tr">${totalBalance.toFixed(2)}</td>
+        </tr>`;
+        printReport("VENDORS SUMMARY", `<table><thead>${thead}</thead><tbody>${tbody}${tfoot}</tbody></table>`);
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[88vh]">
+                <div className="h-10 bg-[#374151] flex items-center justify-between px-4 shrink-0">
+                    <div className="flex items-center gap-2">
+                        <BarChart2 size={14} className="text-[#FB7506]" />
+                        <span className="font-black text-[11px] uppercase tracking-widest text-white">Vendor Summary</span>
+                    </div>
+                    <button onClick={onClose}><XCircle size={16} className="text-gray-400 hover:text-white" /></button>
+                </div>
+
+                <ReportFilterBar {...{ growers, growerUq, setGrowerUq, dateFrom, setDateFrom, dateTo, setDateTo, onRun: run, loading }} />
+
+                {error && <p className="text-xs text-red-500 px-4 py-2 font-bold">{error}</p>}
+
+                <div className="overflow-auto flex-1">
+                    {!ranOnce ? (
+                        <div className="h-40 flex flex-col items-center justify-center text-gray-300 gap-2">
+                            <BarChart2 size={32} className="opacity-30" />
+                            <p className="text-xs font-bold uppercase tracking-widest">Set filters and click Run</p>
+                        </div>
+                    ) : rows.length === 0 ? (
+                        <div className="h-40 flex items-center justify-center text-gray-400 text-xs font-bold italic">No data found for selected criteria</div>
+                    ) : (
+                        <table className="min-w-full text-xs text-left">
+                            <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
+                                <tr>
+                                    <th className="p-2 whitespace-nowrap">Vendor</th>
+                                    <th className="p-2 border-l border-gray-200">Contact</th>
+                                    <th className="p-2 border-l border-gray-200">Phone</th>
+                                    <th className="p-2 border-l border-gray-200">Fax</th>
+                                    <th className="p-2 border-l border-gray-200">E-Mail</th>
+                                    <th className="p-2 border-l border-gray-200 text-right">Amount</th>
+                                    <th className="p-2 border-l border-gray-200 text-right text-green-700">Credits</th>
+                                    <th className="p-2 border-l border-gray-200 text-right text-red-600">Debits</th>
+                                    <th className="p-2 border-l border-gray-200 text-right">Balance</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {rows.map((r, i) => (
+                                    <tr key={i} className="border-b odd:bg-white even:bg-gray-50 hover:bg-blue-50 transition-colors">
+                                        <td className="p-2 font-medium truncate max-w-[160px]">{String(r.grower ?? r.vendor ?? "").trim()}</td>
+                                        <td className="p-2 border-l border-gray-100">{String(r.contact ?? "").trim()}</td>
+                                        <td className="p-2 border-l border-gray-100 whitespace-nowrap">{String(r.phone_1 ?? r.phone ?? "").trim()}</td>
+                                        <td className="p-2 border-l border-gray-100">{String(r.fax_1 ?? r.fax ?? "").trim()}</td>
+                                        <td className="p-2 border-l border-gray-100 truncate max-w-[140px]">{String(r.email ?? "").trim()}</td>
+                                        <td className="p-2 border-l border-gray-100 text-right">{formatMoney(r.amount ?? r.total_amount)}</td>
+                                        <td className="p-2 border-l border-gray-100 text-right text-green-600">{formatMoney(r.credits ?? r.total_credits)}</td>
+                                        <td className="p-2 border-l border-gray-100 text-right text-red-500">{formatMoney(r.debits ?? r.total_debits)}</td>
+                                        <td className="p-2 border-l border-gray-100 text-right font-semibold text-orange-600">{formatMoney(r.balance ?? r.total_balance)}</td>
+                                    </tr>
+                                ))}
+                                <tr className="border-t-2 border-gray-300 bg-gray-50 font-black">
+                                    <td colSpan={5} className="p-2 text-right text-gray-700">Total Payable</td>
+                                    <td className="p-2 border-l border-gray-200 text-right">{formatMoney(totalAmount)}</td>
+                                    <td className="p-2 border-l border-gray-200 text-right text-green-600">{formatMoney(totalCredits)}</td>
+                                    <td className="p-2 border-l border-gray-200 text-right text-red-500">{formatMoney(totalDebits)}</td>
+                                    <td className="p-2 border-l border-gray-200 text-right text-orange-600">{formatMoney(totalBalance)}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    )}
+                </div>
+
+                <div className="flex justify-between items-center px-4 py-3 bg-gray-50 border-t shrink-0">
+                    <span className="text-[10px] font-bold text-gray-400">{ranOnce ? `${rows.length} vendors` : ""}</span>
+                    <div className="flex gap-2">
+                        <button onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors">Close</button>
+                        <button
+                            onClick={handlePrint}
+                            disabled={!rows.length}
+                            className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#374151] hover:bg-gray-600 disabled:opacity-40 text-white text-sm font-black uppercase tracking-wider transition-all"
+                        >
+                            <Printer size={14} /> Print
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ─── Pending AP Modal ─────────────────────────────────────────────────────────
+function PendingAPModal({ onClose }: { onClose: () => void }) {
+    const today     = todayEST();
+    const yearStart = `${currentYearEST()}-01-01`;
+
+    const [growerUq, setGrowerUq] = useState("%");
+    const [dateFrom, setDateFrom] = useState(yearStart);
+    const [dateTo,   setDateTo]   = useState(today);
+    const [rows,     setRows]     = useState<any[]>([]);
+    const [loading,  setLoading]  = useState(false);
+    const [error,    setError]    = useState<string | null>(null);
+    const [ranOnce,  setRanOnce]  = useState(false);
+
+    const { data: growers = [] } = useQuery({
+        queryKey: ["rpt-growers-balance"],
+        queryFn:  () => apFetch("/api/accounts-payable/reports/balance"),
+        staleTime: 1000 * 60 * 5,
+    });
+
+    const run = async () => {
+        setLoading(true); setError(null);
+        try {
+            const data = await apFetch(
+                `/api/accounts-payable/reports/pending?grower_uq=${growerUq}&from=${dateFrom}&to=${dateTo}`
+            );
+            setRows(Array.isArray(data) ? data : []);
+            setRanOnce(true);
+        } catch (e: any) { setError(e.message); }
+        finally { setLoading(false); }
+    };
+
+    // Group rows by vendor for display
+    const grouped = useMemo(() => {
+        const map = new Map<string, { info: any; invoices: any[] }>();
+        rows.forEach(r => {
+            const key = r.grower_uq ?? r.grower ?? r.vendor ?? String(r.unico ?? "");
+            if (!map.has(key)) map.set(key, { info: r, invoices: [] });
+            map.get(key)!.invoices.push(r);
+        });
+        return Array.from(map.values());
+    }, [rows]);
+
+    const grandTotal = rows.reduce((s, r) => s + parseMoney(r.balance ?? r.total_balance), 0);
+
+    const handlePrint = () => {
+        const sections = grouped.map(({ info, invoices }) => {
+            const vendorRows = invoices.map(inv => `
+              <tr>
+                <td>${String(inv.invoice_no ?? "").trim()}</td>
+                <td>${formatDateEST(normalizeToISODate(inv.ap_date ?? inv.date))}</td>
+                <td class="tr">${parseMoney(inv.amount).toFixed(2)}</td>
+                <td class="tr">${parseMoney(inv.credits).toFixed(2)}</td>
+                <td class="tr">${parseMoney(inv.debits).toFixed(2)}</td>
+                <td class="tr">${parseMoney(inv.balance ?? inv.total_balance).toFixed(2)}</td>
+              </tr>`).join('');
+            const vendorTotal = invoices.reduce((s, r) => s + parseMoney(r.balance ?? r.total_balance), 0);
+            return `
+              <div class="vendor-hdr">Vendor &nbsp; ${String(info.grower ?? info.vendor ?? "").trim()}</div>
+              <div class="vendor-info">
+                Phones &nbsp; ${String(info.phone_1 ?? info.phone ?? "").trim()} &nbsp;&nbsp;
+                <strong>Fax</strong> &nbsp; ${String(info.fax_1 ?? info.fax ?? "").trim()} &nbsp;&nbsp;
+                Contact &nbsp; ${String(info.contact ?? "").trim()}
+              </div>
+              <table>
+                <thead><tr><th>Invoice</th><th>Date</th><th class="tr">Amount</th><th class="tr">Credits</th><th class="tr">Debits</th><th class="tr">Balance</th></tr></thead>
+                <tbody>
+                  ${vendorRows}
+                  <tr class="total"><td colspan="5" style="text-align:right">Total ${String(info.grower ?? "").trim()}</td>
+                    <td class="tr">${vendorTotal.toFixed(2)}</td></tr>
+                </tbody>
+              </table>`;
+        }).join('<div style="margin:16px 0;border-top:1px solid #e5e7eb"></div>');
+        const footer = `<div style="margin-top:24px;text-align:right;font-size:13px;font-weight:bold">
+          Grand Total Payable &nbsp;&nbsp; ${grandTotal.toFixed(2)}</div>`;
+        printReport("PENDING ACCOUNTS PAYABLE", sections + footer);
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[88vh]">
+                <div className="h-10 bg-[#374151] flex items-center justify-between px-4 shrink-0">
+                    <div className="flex items-center gap-2">
+                        <Clock size={14} className="text-[#FB7506]" />
+                        <span className="font-black text-[11px] uppercase tracking-widest text-white">Pending Accounts Payable</span>
+                    </div>
+                    <button onClick={onClose}><XCircle size={16} className="text-gray-400 hover:text-white" /></button>
+                </div>
+
+                <ReportFilterBar {...{ growers, growerUq, setGrowerUq, dateFrom, setDateFrom, dateTo, setDateTo, onRun: run, loading }} />
+
+                {error && <p className="text-xs text-red-500 px-4 py-2 font-bold">{error}</p>}
+
+                <div className="overflow-auto flex-1 p-4 bg-gray-50">
+                    {!ranOnce ? (
+                        <div className="h-40 flex flex-col items-center justify-center text-gray-300 gap-2">
+                            <Clock size={32} className="opacity-30" />
+                            <p className="text-xs font-bold uppercase tracking-widest">Set filters and click Run</p>
+                        </div>
+                    ) : rows.length === 0 ? (
+                        <div className="h-40 flex items-center justify-center text-gray-400 text-xs font-bold italic">No pending invoices found</div>
+                    ) : (
+                        <div className="space-y-6">
+                            {grouped.map(({ info, invoices }, gi) => {
+                                const vendorTotal = invoices.reduce((s, r) => s + parseMoney(r.balance ?? r.total_balance), 0);
+                                return (
+                                    <div key={gi} className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                                        {/* Vendor header */}
+                                        <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
+                                            <div className="font-black text-sm text-gray-800">{String(info.grower ?? info.vendor ?? "").trim()}</div>
+                                            <div className="text-xs text-gray-500 flex gap-4 mt-0.5">
+                                                {(info.phone_1 ?? info.phone) && <span>📞 {String(info.phone_1 ?? info.phone ?? "").trim()}</span>}
+                                                {(info.fax_1 ?? info.fax) && <span>📠 {String(info.fax_1 ?? info.fax ?? "").trim()}</span>}
+                                                {info.contact && <span>👤 {String(info.contact ?? "").trim()}</span>}
+                                            </div>
+                                        </div>
+                                        {/* Invoices table */}
+                                        <table className="min-w-full text-xs text-left">
+                                            <thead className="bg-gray-100 border-b text-gray-700 font-bold">
+                                                <tr>
+                                                    <th className="p-2">Invoice</th>
+                                                    <th className="p-2 border-l border-gray-200">Date</th>
+                                                    <th className="p-2 border-l border-gray-200 text-right">Amount</th>
+                                                    <th className="p-2 border-l border-gray-200 text-right text-green-700">Credits</th>
+                                                    <th className="p-2 border-l border-gray-200 text-right text-red-600">Debits</th>
+                                                    <th className="p-2 border-l border-gray-200 text-right">Balance</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {invoices.map((inv, ii) => (
+                                                    <tr key={ii} className="border-b odd:bg-white even:bg-gray-50">
+                                                        <td className="p-2 font-semibold text-blue-700">{String(inv.invoice_no ?? "").trim()}</td>
+                                                        <td className="p-2 border-l border-gray-100">{formatDateEST(normalizeToISODate(inv.ap_date ?? inv.date))}</td>
+                                                        <td className="p-2 border-l border-gray-100 text-right">{formatMoney(inv.amount)}</td>
+                                                        <td className="p-2 border-l border-gray-100 text-right text-green-600">{formatMoney(inv.credits)}</td>
+                                                        <td className="p-2 border-l border-gray-100 text-right text-red-500">{formatMoney(inv.debits)}</td>
+                                                        <td className="p-2 border-l border-gray-100 text-right font-semibold text-orange-600">{formatMoney(inv.balance ?? inv.total_balance)}</td>
+                                                    </tr>
+                                                ))}
+                                                <tr className="border-t border-gray-300 bg-orange-50 font-black">
+                                                    <td colSpan={5} className="p-2 text-right text-gray-700 text-xs">
+                                                        Total {String(info.grower ?? "").trim()}
+                                                    </td>
+                                                    <td className="p-2 border-l border-gray-200 text-right text-orange-600">{formatMoney(vendorTotal)}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                );
+                            })}
+                            {/* Grand Total */}
+                            <div className="flex justify-end">
+                                <div className="bg-[#374151] text-white px-6 py-3 rounded-lg flex items-center gap-4">
+                                    <span className="text-sm font-black uppercase tracking-wider">Total Payable</span>
+                                    <span className="text-xl font-black text-[#FB7506]">{formatMoney(grandTotal)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="flex justify-between items-center px-4 py-3 bg-gray-50 border-t shrink-0">
+                    <span className="text-[10px] font-bold text-gray-400">
+                        {ranOnce ? `${grouped.length} vendors · ${rows.length} invoices` : ""}
+                    </span>
+                    <div className="flex gap-2">
+                        <button onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors">Close</button>
+                        <button
+                            onClick={handlePrint}
+                            disabled={!rows.length}
+                            className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#374151] hover:bg-gray-600 disabled:opacity-40 text-white text-sm font-black uppercase tracking-wider transition-all"
+                        >
+                            <Printer size={14} /> Print
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }
