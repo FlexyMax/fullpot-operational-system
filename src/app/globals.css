@@ -71,3 +71,28 @@ body {
 .btn-primary:hover {
   background-color: #e06905;
 }
+
+/* Shared form input style used across all FOS modules */
+.fos-input {
+  width: 100%;
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #374151;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.fos-input:focus {
+  border-color: #FB7506;
+  box-shadow: 0 0 0 2px rgba(251, 117, 6, 0.15);
+}
+
+.fos-input:read-only {
+  background-color: #f9fafb;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
