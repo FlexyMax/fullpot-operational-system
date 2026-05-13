@@ -18,7 +18,12 @@ import { cn } from "@/lib/utils";
 import { formatDateEST, formatMoney, parseMoney, todayEST, currentYearEST, dateInputToEST } from "@/lib/dates";
 
 // ─── fetch helpers ───────────────────────────────────────────────────────────
-const apFetch = (url: string) => fetch(url).then(r => r.json());
+const apFetch = async (url: string) => {
+    const r = await fetch(url);
+    const json = await r.json();
+    if (!r.ok) throw new Error(json?.error || `HTTP ${r.status}`);
+    return json;
+};
 
 // ─── Zod schemas for modals ──────────────────────────────────────────────────
 const crdbSchema = z.object({
@@ -63,16 +68,18 @@ export default function AccountsPayablePage() {
         queryFn:  () => apFetch("/api/accounts-payable/years"),
     });
 
-    const { data: dates = [], isFetching: loadingDates } = useQuery({
+    const { data: dates = [], isFetching: loadingDates, error: datesError } = useQuery({
         queryKey: ["ap-dates", selectedYear],
         queryFn:  () => apFetch(`/api/accounts-payable/dates?year=${selectedYear}`),
         enabled:  !!selectedYear,
+        retry: false,
     });
 
     const { data: invoices = [], isFetching: loadingInvoices } = useQuery({
         queryKey: ["ap-invoices", selectedDate],
         queryFn:  () => apFetch(`/api/accounts-payable/invoices?date=${selectedDate}`),
         enabled:  !!selectedDate,
+        retry: false,
     });
 
     const { data: invoice } = useQuery({
@@ -203,6 +210,12 @@ export default function AccountsPayablePage() {
                             {dates.length} records
                         </div>
                         <div className="overflow-y-auto flex-1">
+                            {datesError && (
+                                <div className="p-3 m-2 bg-red-50 border border-red-200 rounded text-[9px] font-bold text-red-600 uppercase tracking-wide">
+                                    <p className="font-black mb-1">API Error</p>
+                                    <p className="normal-case font-normal break-all">{(datesError as Error).message}</p>
+                                </div>
+                            )}
                             <table className="w-full text-[10px]">
                                 <thead className="sticky top-0 bg-white z-10">
                                     <tr className="border-b border-gray-100">
@@ -212,7 +225,7 @@ export default function AccountsPayablePage() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {dates.length === 0 ? (
+                                    {dates.length === 0 && !datesError ? (
                                         <tr><td colSpan={3} className="py-8 text-center text-gray-300 italic font-bold uppercase text-[9px]">No dates</td></tr>
                                     ) : dates.map((d: any, i: number) => {
                                         const ds = d.ap_date ? String(d.ap_date).split("T")[0] : "";
