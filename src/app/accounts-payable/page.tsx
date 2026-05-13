@@ -165,6 +165,17 @@ export default function AccountsPayablePage() {
         onSuccess: () => { qc.invalidateQueries({ queryKey: ["ap-invoices", selectedDate] }); setUnico(null); setInvoiceModal(null); },
     });
 
+    // ── Fetch full crdb record before opening Edit modal ─────────────────────
+    const handleEditCrdb = async (row: any) => {
+        try {
+            const full = await apFetch(`/api/accounts-payable/crdb?unico=${row.unico}`);
+            setCrdbModal({ open: true, mode: "Edit", type: row.type, row: { ...row, ...(full || {}) } });
+        } catch {
+            // Fallback: open with list data (reason_uq might be missing)
+            setCrdbModal({ open: true, mode: "Edit", type: row.type, row });
+        }
+    };
+
     // ── Auto-selection cascades ───────────────────────────────────────────────
     useEffect(() => {
         if (invoices.length > 0) setUnico(invoices[0].unico);
@@ -548,13 +559,25 @@ export default function AccountsPayablePage() {
                                                             <tr><td colSpan={8} className="p-8 text-center text-gray-400 italic">No credits or debits</td></tr>
                                                         ) : tabCredits.map((cr: any, i: number) => (
                                                             <tr key={i} onClick={() => setSelectedCrdbIdx(i)} className={cn(
-                                                                "border-b text-gray-600 cursor-pointer transition-colors group",
+                                                                "border-b text-gray-600 cursor-pointer transition-colors",
                                                                 i === selectedCrdbIdx ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50"
                                                             )}>
-                                                                <td className="p-2">
-                                                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                        <button onClick={() => setCrdbModal({ open: true, mode: "Edit", type: cr.type, row: cr })} className="text-blue-400 hover:text-blue-600"><Pencil size={11} /></button>
-                                                                        <button onClick={() => setCrdbModal({ open: true, mode: "Delete", type: cr.type, row: cr })} className="text-red-400 hover:text-red-600"><Trash2 size={11} /></button>
+                                                                <td className="p-2 w-14">
+                                                                    <div className="flex gap-1">
+                                                                        <button
+                                                                            onClick={e => { e.stopPropagation(); handleEditCrdb(cr); }}
+                                                                            className="p-1 rounded text-blue-500 hover:text-blue-700 hover:bg-blue-100 transition-colors"
+                                                                            title="Edit"
+                                                                        >
+                                                                            <Pencil size={12} />
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={e => { e.stopPropagation(); setCrdbModal({ open: true, mode: "Delete", type: cr.type, row: cr }); }}
+                                                                            className="p-1 rounded text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                                                            title="Delete"
+                                                                        >
+                                                                            <Trash2 size={12} />
+                                                                        </button>
                                                                     </div>
                                                                 </td>
                                                                 <td className="p-2 border-l border-gray-100">
@@ -968,11 +991,11 @@ function CreditDebitModal({ mode, type: initType, row, invoice, reasons, todayES
         resolver: zodResolver(crdbSchema),
         defaultValues: {
             type:         row?.type || initType,
-            cd_date:      row?.cd_date ? String(row.cd_date).split("T")[0] : todayEST,
+            cd_date:      row?.cd_date ? normalizeToISODate(row.cd_date) : todayEST,
             reason_uq:    row?.reason_uq || "",
-            cd_ammount:   parseMoney(row?.cd_amount) || undefined,
-            retention_no: row?.retention_no || "",
-            details:      row?.cd_details || "",
+            cd_ammount:   parseMoney(row?.cd_amount ?? row?.cd_ammount) || undefined,
+            retention_no: String(row?.retention_no || "").trim(),
+            details:      String(row?.cd_details || "").trim(),
         },
     });
 

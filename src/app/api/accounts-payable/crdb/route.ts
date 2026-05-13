@@ -1,7 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { executeQuery } from "@/lib/db";
+import { executeQuery, executeProcedure } from "@/lib/db";
 
 const txt = (v: any) => String(v || "").replace(/'/g, "''");
+
+export async function GET(req: NextRequest) {
+    const unico = req.nextUrl.searchParams.get("unico");
+    if (!unico) return NextResponse.json({ error: "unico required" }, { status: 400 });
+    try {
+        const result = await executeProcedure("SP_NC_ACCOUNTS_PAY_CRDB", { lccrdb_uq: unico });
+        return NextResponse.json(result.recordset[0] ?? null);
+    } catch (err: any) {
+        return NextResponse.json({ error: err.message }, { status: 500 });
+    }
+}
 
 export async function POST(req: NextRequest) {
     const body = await req.json();
