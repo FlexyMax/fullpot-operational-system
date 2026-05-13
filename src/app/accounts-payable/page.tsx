@@ -621,7 +621,7 @@ export default function AccountsPayablePage() {
                 ) : (
                     <InvoiceModal
                         mode={invoiceModal.mode}
-                        invoice={invoiceModal.mode === "Edit" ? selectedInvoice : null}
+                        invoice={invoiceModal.mode === "Edit" ? invoice : null}
                         growers={growers}
                         termsList={termsList}
                         selectedDate={selectedDate}
@@ -709,17 +709,17 @@ function InvoiceModal({ mode, invoice, growers, termsList, selectedDate, onClose
         resolver: zodResolver(invoiceSchema),
         defaultValues: {
             ldap_date:        invoice ? normalizeToISODate(invoice.ap_date) : (selectedDate || todayEST()),
-            lcsupplier_uq:    invoice?.supplier_uq  || invoice?.grower_uq  || "",
+            lcsupplier_uq:    invoice?.supplier_uq || "",
             lcinvoice_no:     invoice ? String(invoice.invoice_no || "").trim() : "",
-            lcterms_uq:       invoice?.terms_uq     || "",
+            lcterms_uq:       invoice?.terms_uq    || "",
             lnestimated:      parseMoney(invoice?.estimated) || undefined,
             lntaxes:          parseMoney(invoice?.taxes)     || undefined,
             lnamount:         parseMoney(invoice?.amount)    || undefined,
-            lnporder_no:      invoice?.porder_no    ?? undefined,
-            lcdescription:    invoice?.description  || invoice?.detail || "",
-            llautomatic:      invoice?.automatic === "Yes" || false,
-            llindirect:       false,
-            llautomatic_cost: false,
+            lnporder_no:      invoice?.porder_no   ?? undefined,
+            lcdescription:    String(invoice?.description || invoice?.detail || "").trim(),
+            llautomatic:      invoice?.automatic === "Yes" || invoice?.llautomatic || false,
+            llindirect:       invoice?.llindirect  || false,
+            llautomatic_cost: invoice?.llautomatic_cost || false,
         },
     });
 
@@ -754,7 +754,7 @@ function InvoiceModal({ mode, invoice, growers, termsList, selectedDate, onClose
                             <option value="">— Select vendor —</option>
                             {growers.map((g: any) => (
                                 <option key={g.unico} value={g.unico}>
-                                    {String(g.grower || g.name || g.supplier || "").trim()}
+                                    {String(g.grower || "").trim()}
                                 </option>
                             ))}
                         </select>
@@ -766,8 +766,8 @@ function InvoiceModal({ mode, invoice, growers, termsList, selectedDate, onClose
                             <select {...register("lcterms_uq")} className="fos-input">
                                 <option value="">— Select terms —</option>
                                 {termsList.map((t: any) => (
-                                    <option key={t.unico} value={t.unico}>
-                                        {String(t.terms || t.description || t.condicion || "").trim()}
+                                    <option key={t.UNICO} value={t.UNICO}>
+                                        {String(t.CONDITION || "").trim()}
                                     </option>
                                 ))}
                             </select>
