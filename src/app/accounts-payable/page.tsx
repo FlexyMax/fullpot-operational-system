@@ -805,21 +805,88 @@ function printReport(title: string, bodyHtml: string) {
     setTimeout(() => { w.print(); }, 600);
 }
 
+// ─── Vendor Combobox (incremental search for report modals) ──────────────────
+function VendorCombobox({ growers, value, onChange, allowAll = true }: {
+    growers:  any[];
+    value:    string;           // grower_uq or "%"
+    onChange: (uq: string, name: string) => void;
+    allowAll?: boolean;
+}) {
+    const [input,   setInput]   = useState("");
+    const [open,    setOpen]    = useState(false);
+    const [display, setDisplay] = useState(allowAll ? "— All Vendors —" : "");
+
+    const filtered = useMemo(() => {
+        if (!input.trim()) return growers.slice(0, 100);
+        const q = input.toLowerCase();
+        return growers.filter((g: any) =>
+            String(g.grower || "").toLowerCase().includes(q)
+        ).slice(0, 100);
+    }, [input, growers]);
+
+    const select = (g: any) => {
+        const name = String(g.grower || "").trim();
+        setDisplay(name); setInput(""); setOpen(false);
+        onChange(g.grower_uq || g.unico, name);
+    };
+    const clearAll = () => {
+        if (!allowAll) return;
+        setDisplay("— All Vendors —"); setInput(""); setOpen(false);
+        onChange("%", "");
+    };
+
+    return (
+        <div className="relative flex-1 min-w-[200px]">
+            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Vendor</label>
+            <div
+                className="fos-input flex items-center justify-between cursor-pointer gap-2"
+                onClick={() => setOpen(o => !o)}
+            >
+                <span className={cn("truncate text-xs", value === "%" ? "text-gray-400" : "text-gray-700 font-medium")}>
+                    {display}
+                </span>
+                <ChevronRight size={12} className={cn("text-gray-400 shrink-0 transition-transform", open && "rotate-90")} />
+            </div>
+            {open && (
+                <div className="absolute top-full left-0 right-0 z-50 bg-white border border-gray-200 rounded-lg shadow-xl mt-0.5 flex flex-col max-h-64">
+                    <div className="p-2 border-b border-gray-100 shrink-0">
+                        <input
+                            autoFocus
+                            type="text"
+                            value={input}
+                            onChange={e => setInput(e.target.value)}
+                            placeholder="Type to filter vendors..."
+                            className="fos-input text-xs"
+                            onClick={e => e.stopPropagation()}
+                        />
+                    </div>
+                    <div className="overflow-auto flex-1">
+                        {allowAll && (
+                            <div onMouseDown={clearAll} className="px-3 py-2 text-xs text-gray-400 italic hover:bg-blue-50 cursor-pointer border-b border-gray-50">
+                                — All Vendors —
+                            </div>
+                        )}
+                        {filtered.map((g: any) => (
+                            <div
+                                key={g.grower_uq || g.unico}
+                                onMouseDown={() => select(g)}
+                                className="px-3 py-2 text-xs text-gray-700 hover:bg-blue-50 cursor-pointer border-b border-gray-50 last:border-b-0"
+                            >
+                                {String(g.grower || "").trim()}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
 // ─── Report Filter Bar (shared) ───────────────────────────────────────────────
-function ReportFilterBar({ growers, growerUq, setGrowerUq, dateFrom, setDateFrom, dateTo, setDateTo, onRun, loading }: any) {
+function ReportFilterBar({ growers, growerUq, onVendorChange, dateFrom, setDateFrom, dateTo, setDateTo, onRun, loading, allowAll = true }: any) {
     return (
         <div className="bg-gray-50 border-b border-gray-200 px-4 py-3 flex flex-wrap items-end gap-3 shrink-0">
-            <div className="flex flex-col gap-1 flex-1 min-w-[180px]">
-                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Vendor</label>
-                <select value={growerUq} onChange={e => setGrowerUq(e.target.value)} className="fos-input">
-                    <option value="%">— All Vendors —</option>
-                    {growers.map((g: any) => (
-                        <option key={g.unico} value={g.unico}>
-                            {String(g.grower || g.vendor || "").trim()}
-                        </option>
-                    ))}
-                </select>
-            </div>
+            <VendorCombobox growers={growers} value={growerUq} onChange={onVendorChange} allowAll={allowAll} />
             <div className="flex flex-col gap-1">
                 <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">From</label>
                 <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="fos-input w-36" />
@@ -856,6 +923,7 @@ function VendorSummaryModal({ onClose }: { onClose: () => void }) {
     const { data: growers = [] } = useQuery({
         queryKey: ["rpt-growers-balance"],
         queryFn:  () => apFetch("/api/accounts-payable/reports/balance"),
+        staleTime: 1000 * 60 * 5,
     });
 
     const run = async () => {
@@ -870,33 +938,33 @@ function VendorSummaryModal({ onClose }: { onClose: () => void }) {
         finally { setLoading(false); }
     };
 
-    const totalAmount  = rows.reduce((s, r) => s + parseMoney(r.amount  ?? r.total_amount), 0);
-    const totalCredits = rows.reduce((s, r) => s + parseMoney(r.credits ?? r.total_credits), 0);
-    const totalDebits  = rows.reduce((s, r) => s + parseMoney(r.debits  ?? r.total_debits), 0);
-    const totalBalance = rows.reduce((s, r) => s + parseMoney(r.balance ?? r.total_balance), 0);
+    // Verified field names: ammount, cre_ammount, deb_ammount, total_balance, email_1
+    const totalAmount  = rows.reduce((s, r) => s + parseMoney(r.ammount), 0);
+    const totalCredits = rows.reduce((s, r) => s + parseMoney(r.cre_ammount), 0);
+    const totalDebits  = rows.reduce((s, r) => s + parseMoney(r.deb_ammount), 0);
+    const totalBalance = rows.reduce((s, r) => s + parseMoney(r.total_balance), 0);
 
     const handlePrint = () => {
         const thead = `<tr><th>Vendor</th><th>Contact</th><th>Phone</th><th>Fax</th><th>E-Mail</th>
           <th class="tr">Amount</th><th class="tr">Credits</th><th class="tr">Debits</th><th class="tr">Balance</th></tr>`;
         const tbody = rows.map(r => `
           <tr>
-            <td>${String(r.grower ?? r.vendor ?? "").trim()}</td>
+            <td>${String(r.grower ?? "").trim()}</td>
             <td>${String(r.contact ?? "").trim()}</td>
-            <td>${String(r.phone_1 ?? r.phone ?? "").trim()}</td>
-            <td>${String(r.fax_1 ?? r.fax ?? "").trim()}</td>
-            <td>${String(r.email ?? "").trim()}</td>
-            <td class="tr">${parseMoney(r.amount ?? r.total_amount).toFixed(2)}</td>
-            <td class="tr">${parseMoney(r.credits ?? r.total_credits).toFixed(2)}</td>
-            <td class="tr">${parseMoney(r.debits ?? r.total_debits).toFixed(2)}</td>
-            <td class="tr">${parseMoney(r.balance ?? r.total_balance).toFixed(2)}</td>
+            <td>${String(r.phone_1 ?? "").trim()}</td>
+            <td>${String(r.fax_1 ?? "").trim()}</td>
+            <td>${String(r.email_1 ?? "").trim()}</td>
+            <td class="tr">${parseMoney(r.ammount).toFixed(2)}</td>
+            <td class="tr">${parseMoney(r.cre_ammount).toFixed(2)}</td>
+            <td class="tr">${parseMoney(r.deb_ammount).toFixed(2)}</td>
+            <td class="tr">${parseMoney(r.total_balance).toFixed(2)}</td>
           </tr>`).join('');
         const tfoot = `<tr class="total">
           <td colspan="5" style="text-align:right;font-weight:bold">Total Payable</td>
           <td class="tr">${totalAmount.toFixed(2)}</td>
           <td class="tr">${totalCredits.toFixed(2)}</td>
           <td class="tr">${totalDebits.toFixed(2)}</td>
-          <td class="tr">${totalBalance.toFixed(2)}</td>
-        </tr>`;
+          <td class="tr">${totalBalance.toFixed(2)}</td></tr>`;
         printReport("VENDORS SUMMARY", `<table><thead>${thead}</thead><tbody>${tbody}${tfoot}</tbody></table>`);
     };
 
@@ -911,7 +979,7 @@ function VendorSummaryModal({ onClose }: { onClose: () => void }) {
                     <button onClick={onClose}><XCircle size={16} className="text-gray-400 hover:text-white" /></button>
                 </div>
 
-                <ReportFilterBar {...{ growers, growerUq, setGrowerUq, dateFrom, setDateFrom, dateTo, setDateTo, onRun: run, loading }} />
+                <ReportFilterBar {...{ growers, growerUq, onVendorChange: (uq: string) => setGrowerUq(uq), dateFrom, setDateFrom, dateTo, setDateTo, onRun: run, loading, allowAll: true }} />
 
                 {error && <p className="text-xs text-red-500 px-4 py-2 font-bold">{error}</p>}
 
@@ -922,7 +990,7 @@ function VendorSummaryModal({ onClose }: { onClose: () => void }) {
                             <p className="text-xs font-bold uppercase tracking-widest">Set filters and click Run</p>
                         </div>
                     ) : rows.length === 0 ? (
-                        <div className="h-40 flex items-center justify-center text-gray-400 text-xs font-bold italic">No data found for selected criteria</div>
+                        <div className="h-40 flex items-center justify-center text-gray-400 text-xs font-bold italic">No data for selected criteria</div>
                     ) : (
                         <table className="min-w-full text-xs text-left">
                             <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
@@ -941,15 +1009,15 @@ function VendorSummaryModal({ onClose }: { onClose: () => void }) {
                             <tbody>
                                 {rows.map((r, i) => (
                                     <tr key={i} className="border-b odd:bg-white even:bg-gray-50 hover:bg-blue-50 transition-colors">
-                                        <td className="p-2 font-medium truncate max-w-[160px]">{String(r.grower ?? r.vendor ?? "").trim()}</td>
+                                        <td className="p-2 font-medium truncate max-w-[160px]">{String(r.grower ?? "").trim()}</td>
                                         <td className="p-2 border-l border-gray-100">{String(r.contact ?? "").trim()}</td>
-                                        <td className="p-2 border-l border-gray-100 whitespace-nowrap">{String(r.phone_1 ?? r.phone ?? "").trim()}</td>
-                                        <td className="p-2 border-l border-gray-100">{String(r.fax_1 ?? r.fax ?? "").trim()}</td>
-                                        <td className="p-2 border-l border-gray-100 truncate max-w-[140px]">{String(r.email ?? "").trim()}</td>
-                                        <td className="p-2 border-l border-gray-100 text-right">{formatMoney(r.amount ?? r.total_amount)}</td>
-                                        <td className="p-2 border-l border-gray-100 text-right text-green-600">{formatMoney(r.credits ?? r.total_credits)}</td>
-                                        <td className="p-2 border-l border-gray-100 text-right text-red-500">{formatMoney(r.debits ?? r.total_debits)}</td>
-                                        <td className="p-2 border-l border-gray-100 text-right font-semibold text-orange-600">{formatMoney(r.balance ?? r.total_balance)}</td>
+                                        <td className="p-2 border-l border-gray-100 whitespace-nowrap">{String(r.phone_1 ?? "").trim()}</td>
+                                        <td className="p-2 border-l border-gray-100">{String(r.fax_1 ?? "").trim()}</td>
+                                        <td className="p-2 border-l border-gray-100 truncate max-w-[140px]">{String(r.email_1 ?? "").trim()}</td>
+                                        <td className="p-2 border-l border-gray-100 text-right">{formatMoney(r.ammount)}</td>
+                                        <td className="p-2 border-l border-gray-100 text-right text-green-600">{formatMoney(r.cre_ammount)}</td>
+                                        <td className="p-2 border-l border-gray-100 text-right text-red-500">{formatMoney(r.deb_ammount)}</td>
+                                        <td className="p-2 border-l border-gray-100 text-right font-semibold text-orange-600">{formatMoney(r.total_balance)}</td>
                                     </tr>
                                 ))}
                                 <tr className="border-t-2 border-gray-300 bg-gray-50 font-black">
@@ -967,12 +1035,9 @@ function VendorSummaryModal({ onClose }: { onClose: () => void }) {
                 <div className="flex justify-between items-center px-4 py-3 bg-gray-50 border-t shrink-0">
                     <span className="text-[10px] font-bold text-gray-400">{ranOnce ? `${rows.length} vendors` : ""}</span>
                     <div className="flex gap-2">
-                        <button onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors">Close</button>
-                        <button
-                            onClick={handlePrint}
-                            disabled={!rows.length}
-                            className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#374151] hover:bg-gray-600 disabled:opacity-40 text-white text-sm font-black uppercase tracking-wider transition-all"
-                        >
+                        <button onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-100">Close</button>
+                        <button onClick={handlePrint} disabled={!rows.length}
+                            className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#374151] hover:bg-gray-600 disabled:opacity-40 text-white text-sm font-black uppercase tracking-wider transition-all">
                             <Printer size={14} /> Print
                         </button>
                     </div>
@@ -987,13 +1052,14 @@ function PendingAPModal({ onClose }: { onClose: () => void }) {
     const today     = todayEST();
     const yearStart = `${currentYearEST()}-01-01`;
 
-    const [growerUq, setGrowerUq] = useState("%");
-    const [dateFrom, setDateFrom] = useState(yearStart);
-    const [dateTo,   setDateTo]   = useState(today);
-    const [rows,     setRows]     = useState<any[]>([]);
-    const [loading,  setLoading]  = useState(false);
-    const [error,    setError]    = useState<string | null>(null);
-    const [ranOnce,  setRanOnce]  = useState(false);
+    const [growerUq,   setGrowerUq]   = useState("");   // empty = no selection yet
+    const [growerName, setGrowerName] = useState("");
+    const [dateFrom,   setDateFrom]   = useState(yearStart);
+    const [dateTo,     setDateTo]     = useState(today);
+    const [rows,       setRows]       = useState<any[]>([]);
+    const [loading,    setLoading]    = useState(false);
+    const [error,      setError]      = useState<string | null>(null);
+    const [ranOnce,    setRanOnce]    = useState(false);
 
     const { data: growers = [] } = useQuery({
         queryKey: ["rpt-growers-balance"],
@@ -1002,6 +1068,7 @@ function PendingAPModal({ onClose }: { onClose: () => void }) {
     });
 
     const run = async () => {
+        if (!growerUq) { setError("Please select a vendor to view their pending invoices."); return; }
         setLoading(true); setError(null);
         try {
             const data = await apFetch(
@@ -1013,49 +1080,47 @@ function PendingAPModal({ onClose }: { onClose: () => void }) {
         finally { setLoading(false); }
     };
 
-    // Group rows by vendor for display
+    // Group rows by grower_uq (verified field name)
     const grouped = useMemo(() => {
         const map = new Map<string, { info: any; invoices: any[] }>();
         rows.forEach(r => {
-            const key = r.grower_uq ?? r.grower ?? r.vendor ?? String(r.unico ?? "");
+            const key = r.grower_uq || r.acc_pay_uq || String(r.grower || "");
             if (!map.has(key)) map.set(key, { info: r, invoices: [] });
             map.get(key)!.invoices.push(r);
         });
         return Array.from(map.values());
     }, [rows]);
 
-    const grandTotal = rows.reduce((s, r) => s + parseMoney(r.balance ?? r.total_balance), 0);
+    // Verified field names: ammount, cre_ammount, deb_ammount, total_balance
+    const grandTotal = rows.reduce((s, r) => s + parseMoney(r.total_balance), 0);
 
     const handlePrint = () => {
         const sections = grouped.map(({ info, invoices }) => {
             const vendorRows = invoices.map(inv => `
               <tr>
                 <td>${String(inv.invoice_no ?? "").trim()}</td>
-                <td>${formatDateEST(normalizeToISODate(inv.ap_date ?? inv.date))}</td>
-                <td class="tr">${parseMoney(inv.amount).toFixed(2)}</td>
-                <td class="tr">${parseMoney(inv.credits).toFixed(2)}</td>
-                <td class="tr">${parseMoney(inv.debits).toFixed(2)}</td>
-                <td class="tr">${parseMoney(inv.balance ?? inv.total_balance).toFixed(2)}</td>
+                <td>${formatDateEST(normalizeToISODate(inv.ap_date))}</td>
+                <td class="tr">${parseMoney(inv.ammount).toFixed(2)}</td>
+                <td class="tr">${parseMoney(inv.cre_ammount).toFixed(2)}</td>
+                <td class="tr">${parseMoney(inv.deb_ammount).toFixed(2)}</td>
+                <td class="tr">${parseMoney(inv.total_balance).toFixed(2)}</td>
               </tr>`).join('');
-            const vendorTotal = invoices.reduce((s, r) => s + parseMoney(r.balance ?? r.total_balance), 0);
+            const vendorTotal = invoices.reduce((s, r) => s + parseMoney(r.total_balance), 0);
             return `
-              <div class="vendor-hdr">Vendor &nbsp; ${String(info.grower ?? info.vendor ?? "").trim()}</div>
+              <div class="vendor-hdr">Vendor &nbsp; ${String(info.grower ?? "").trim()}</div>
               <div class="vendor-info">
-                Phones &nbsp; ${String(info.phone_1 ?? info.phone ?? "").trim()} &nbsp;&nbsp;
-                <strong>Fax</strong> &nbsp; ${String(info.fax_1 ?? info.fax ?? "").trim()} &nbsp;&nbsp;
+                Phones &nbsp; ${String(info.phone_1 ?? "").trim()} &nbsp;&nbsp;
+                <strong>Fax</strong> &nbsp; ${String(info.fax_1 ?? "").trim()} &nbsp;&nbsp;
                 Contact &nbsp; ${String(info.contact ?? "").trim()}
               </div>
               <table>
                 <thead><tr><th>Invoice</th><th>Date</th><th class="tr">Amount</th><th class="tr">Credits</th><th class="tr">Debits</th><th class="tr">Balance</th></tr></thead>
-                <tbody>
-                  ${vendorRows}
+                <tbody>${vendorRows}
                   <tr class="total"><td colspan="5" style="text-align:right">Total ${String(info.grower ?? "").trim()}</td>
                     <td class="tr">${vendorTotal.toFixed(2)}</td></tr>
-                </tbody>
-              </table>`;
+                </tbody></table>`;
         }).join('<div style="margin:16px 0;border-top:1px solid #e5e7eb"></div>');
-        const footer = `<div style="margin-top:24px;text-align:right;font-size:13px;font-weight:bold">
-          Grand Total Payable &nbsp;&nbsp; ${grandTotal.toFixed(2)}</div>`;
+        const footer = `<div style="margin-top:24px;text-align:right;font-size:13px;font-weight:bold">Grand Total Payable &nbsp;&nbsp; ${grandTotal.toFixed(2)}</div>`;
         printReport("PENDING ACCOUNTS PAYABLE", sections + footer);
     };
 
@@ -1070,34 +1135,44 @@ function PendingAPModal({ onClose }: { onClose: () => void }) {
                     <button onClick={onClose}><XCircle size={16} className="text-gray-400 hover:text-white" /></button>
                 </div>
 
-                <ReportFilterBar {...{ growers, growerUq, setGrowerUq, dateFrom, setDateFrom, dateTo, setDateTo, onRun: run, loading }} />
+                <ReportFilterBar {...{
+                    growers,
+                    growerUq,
+                    onVendorChange: (uq: string, name: string) => { setGrowerUq(uq); setGrowerName(name); setError(null); },
+                    dateFrom, setDateFrom, dateTo, setDateTo,
+                    onRun: run, loading,
+                    allowAll: false,
+                }} />
 
-                {error && <p className="text-xs text-red-500 px-4 py-2 font-bold">{error}</p>}
+                {error && (
+                    <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border-b border-amber-200 shrink-0">
+                        <AlertCircle size={14} className="text-amber-500 shrink-0" />
+                        <p className="text-xs text-amber-700 font-bold">{error}</p>
+                    </div>
+                )}
 
                 <div className="overflow-auto flex-1 p-4 bg-gray-50">
                     {!ranOnce ? (
                         <div className="h-40 flex flex-col items-center justify-center text-gray-300 gap-2">
                             <Clock size={32} className="opacity-30" />
-                            <p className="text-xs font-bold uppercase tracking-widest">Set filters and click Run</p>
+                            <p className="text-xs font-bold uppercase tracking-widest">Select a vendor and click Run</p>
                         </div>
                     ) : rows.length === 0 ? (
                         <div className="h-40 flex items-center justify-center text-gray-400 text-xs font-bold italic">No pending invoices found</div>
                     ) : (
                         <div className="space-y-6">
                             {grouped.map(({ info, invoices }, gi) => {
-                                const vendorTotal = invoices.reduce((s, r) => s + parseMoney(r.balance ?? r.total_balance), 0);
+                                const vendorTotal = invoices.reduce((s, r) => s + parseMoney(r.total_balance), 0);
                                 return (
                                     <div key={gi} className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-                                        {/* Vendor header */}
                                         <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
-                                            <div className="font-black text-sm text-gray-800">{String(info.grower ?? info.vendor ?? "").trim()}</div>
+                                            <div className="font-black text-sm text-gray-800">{String(info.grower ?? "").trim()}</div>
                                             <div className="text-xs text-gray-500 flex gap-4 mt-0.5">
-                                                {(info.phone_1 ?? info.phone) && <span>📞 {String(info.phone_1 ?? info.phone ?? "").trim()}</span>}
-                                                {(info.fax_1 ?? info.fax) && <span>📠 {String(info.fax_1 ?? info.fax ?? "").trim()}</span>}
-                                                {info.contact && <span>👤 {String(info.contact ?? "").trim()}</span>}
+                                                {info.phone_1?.trim() && <span>📞 {info.phone_1.trim()}</span>}
+                                                {info.fax_1?.trim()   && <span>📠 {info.fax_1.trim()}</span>}
+                                                {info.contact?.trim() && <span>👤 {info.contact.trim()}</span>}
                                             </div>
                                         </div>
-                                        {/* Invoices table */}
                                         <table className="min-w-full text-xs text-left">
                                             <thead className="bg-gray-100 border-b text-gray-700 font-bold">
                                                 <tr>
@@ -1113,17 +1188,15 @@ function PendingAPModal({ onClose }: { onClose: () => void }) {
                                                 {invoices.map((inv, ii) => (
                                                     <tr key={ii} className="border-b odd:bg-white even:bg-gray-50">
                                                         <td className="p-2 font-semibold text-blue-700">{String(inv.invoice_no ?? "").trim()}</td>
-                                                        <td className="p-2 border-l border-gray-100">{formatDateEST(normalizeToISODate(inv.ap_date ?? inv.date))}</td>
-                                                        <td className="p-2 border-l border-gray-100 text-right">{formatMoney(inv.amount)}</td>
-                                                        <td className="p-2 border-l border-gray-100 text-right text-green-600">{formatMoney(inv.credits)}</td>
-                                                        <td className="p-2 border-l border-gray-100 text-right text-red-500">{formatMoney(inv.debits)}</td>
-                                                        <td className="p-2 border-l border-gray-100 text-right font-semibold text-orange-600">{formatMoney(inv.balance ?? inv.total_balance)}</td>
+                                                        <td className="p-2 border-l border-gray-100">{formatDateEST(normalizeToISODate(inv.ap_date))}</td>
+                                                        <td className="p-2 border-l border-gray-100 text-right">{formatMoney(inv.ammount)}</td>
+                                                        <td className="p-2 border-l border-gray-100 text-right text-green-600">{formatMoney(inv.cre_ammount)}</td>
+                                                        <td className="p-2 border-l border-gray-100 text-right text-red-500">{formatMoney(inv.deb_ammount)}</td>
+                                                        <td className="p-2 border-l border-gray-100 text-right font-semibold text-orange-600">{formatMoney(inv.total_balance)}</td>
                                                     </tr>
                                                 ))}
                                                 <tr className="border-t border-gray-300 bg-orange-50 font-black">
-                                                    <td colSpan={5} className="p-2 text-right text-gray-700 text-xs">
-                                                        Total {String(info.grower ?? "").trim()}
-                                                    </td>
+                                                    <td colSpan={5} className="p-2 text-right text-gray-700 text-xs">Total {String(info.grower ?? "").trim()}</td>
                                                     <td className="p-2 border-l border-gray-200 text-right text-orange-600">{formatMoney(vendorTotal)}</td>
                                                 </tr>
                                             </tbody>
@@ -1131,7 +1204,6 @@ function PendingAPModal({ onClose }: { onClose: () => void }) {
                                     </div>
                                 );
                             })}
-                            {/* Grand Total */}
                             <div className="flex justify-end">
                                 <div className="bg-[#374151] text-white px-6 py-3 rounded-lg flex items-center gap-4">
                                     <span className="text-sm font-black uppercase tracking-wider">Total Payable</span>
@@ -1144,15 +1216,12 @@ function PendingAPModal({ onClose }: { onClose: () => void }) {
 
                 <div className="flex justify-between items-center px-4 py-3 bg-gray-50 border-t shrink-0">
                     <span className="text-[10px] font-bold text-gray-400">
-                        {ranOnce ? `${grouped.length} vendors · ${rows.length} invoices` : ""}
+                        {ranOnce ? `${grouped.length} vendor${grouped.length !== 1 ? 's' : ''} · ${rows.length} invoices` : ""}
                     </span>
                     <div className="flex gap-2">
-                        <button onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors">Close</button>
-                        <button
-                            onClick={handlePrint}
-                            disabled={!rows.length}
-                            className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#374151] hover:bg-gray-600 disabled:opacity-40 text-white text-sm font-black uppercase tracking-wider transition-all"
-                        >
+                        <button onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-100">Close</button>
+                        <button onClick={handlePrint} disabled={!rows.length}
+                            className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#374151] hover:bg-gray-600 disabled:opacity-40 text-white text-sm font-black uppercase tracking-wider transition-all">
                             <Printer size={14} /> Print
                         </button>
                     </div>
