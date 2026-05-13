@@ -22,7 +22,7 @@ interface MenuItem {
 function getRoute(appPage: string): string | null {
     const p = appPage.toUpperCase();
     if (p.includes('SALES') || p.includes('P.O.S') || p.includes('BILLING')) return '/sales';
-    if (p.includes('ACCOUNTS PAY') || p.includes('A/P') || p.includes('PAYABLE')) return '/accounts-payable';
+    if (p.includes('ACCOUNTS PAY') || p.includes('A/P') || p.includes('A-P') || p.includes('PAYABLE')) return '/accounts-payable';
     if (p.includes('SCAN')) return '/scan';
     return null;
 }
