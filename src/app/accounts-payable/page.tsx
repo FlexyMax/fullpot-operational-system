@@ -748,19 +748,46 @@ function APSearchModal({ growers, onClose, onLocate }: {
     onClose: () => void;
     onLocate: (result: any) => void;
 }) {
-    const [farmCode,  setFarmCode]  = useState("");   // farm short code, e.g. "CGU"
-    const [invoiceNo, setInvoiceNo] = useState("");
+    const [farmInput,   setFarmInput]   = useState("");  // text shown in input
+    const [farmSend,    setFarmSend]    = useState("");  // value sent to SP (farm code or typed text)
+    const [ddOpen,      setDdOpen]      = useState(false);
+    const [invoiceNo,   setInvoiceNo]   = useState("");
     const [results,   setResults]   = useState<any[]>([]);
     const [loading,   setLoading]   = useState(false);
     const [searched,  setSearched]  = useState(false);
     const [selected,  setSelected]  = useState<any>(null);
     const [error,     setError]     = useState<string | null>(null);
 
+    // Filtered vendors for dropdown
+    const filteredGrowers = useMemo(() => {
+        if (!farmInput.trim()) return growers.slice(0, 80);
+        const q = farmInput.toLowerCase();
+        return growers.filter((g: any) =>
+            String(g.grower || "").toLowerCase().includes(q) ||
+            String(g.farm   || "").toLowerCase().includes(q)
+        ).slice(0, 80);
+    }, [farmInput, growers]);
+
+    const handleFarmInput = (text: string) => {
+        setFarmInput(text);
+        setFarmSend(text);   // free-type also goes to SP
+        setDdOpen(true);
+    };
+
+    const handleFarmSelect = (g: any) => {
+        const name = String(g.grower || "").trim();
+        const code = String(g.farm   || "").trim();
+        setFarmInput(name);
+        setFarmSend(code);   // selected from list → send farm code
+        setDdOpen(false);
+    };
+
     const handleSearch = async () => {
+        setDdOpen(false);
         setLoading(true); setError(null); setSelected(null);
         try {
             const params = new URLSearchParams();
-            if (farmCode.trim())  params.set("farm",       farmCode.trim());
+            if (farmSend.trim())  params.set("farm",       farmSend.trim());
             if (invoiceNo.trim()) params.set("invoice_no", invoiceNo.trim());
             const data = await apFetch(`/api/accounts-payable/search?${params}`);
             setResults(Array.isArray(data) ? data : []);
@@ -774,7 +801,8 @@ function APSearchModal({ growers, onClose, onLocate }: {
     };
 
     const handleClear = () => {
-        setFarmCode(""); setInvoiceNo(""); setResults([]); setSearched(false); setSelected(null); setError(null);
+        setFarmInput(""); setFarmSend(""); setInvoiceNo(""); setResults([]);
+        setSearched(false); setSelected(null); setError(null); setDdOpen(false);
     };
 
     return (
@@ -793,21 +821,42 @@ function APSearchModal({ growers, onClose, onLocate }: {
                 {/* Search Bar */}
                 <div className="bg-gray-50 border-b border-gray-200 px-4 py-3 shrink-0">
                     <div className="flex items-end gap-3 flex-wrap">
-                        <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
-                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Vendor</label>
-                            <select
-                                value={farmCode}
-                                onChange={e => setFarmCode(e.target.value)}
+                        <div className="flex flex-col gap-1 flex-1 min-w-[220px] relative">
+                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
+                                Vendor {farmSend && farmSend !== farmInput && (
+                                    <span className="text-[#FB7506] normal-case font-normal ml-1">code: {farmSend}</span>
+                                )}
+                            </label>
+                            <input
+                                type="text"
+                                value={farmInput}
+                                onChange={e => handleFarmInput(e.target.value)}
+                                onFocus={() => setDdOpen(true)}
+                                onBlur={() => setTimeout(() => setDdOpen(false), 180)}
+                                onKeyDown={e => e.key === "Enter" && handleSearch()}
+                                placeholder="Type name or farm code..."
                                 className="fos-input"
                                 autoFocus
-                            >
-                                <option value="">— All vendors —</option>
-                                {growers.map((g: any) => (
-                                    <option key={g.unico} value={String(g.farm || "").trim()}>
-                                        {String(g.grower || "").trim()}
-                                    </option>
-                                ))}
-                            </select>
+                                autoComplete="off"
+                            />
+                            {ddOpen && filteredGrowers.length > 0 && (
+                                <div className="absolute top-full left-0 right-0 z-50 bg-white border border-gray-200 rounded-lg shadow-xl max-h-52 overflow-auto mt-0.5">
+                                    {filteredGrowers.map((g: any) => (
+                                        <div
+                                            key={g.unico}
+                                            onMouseDown={() => handleFarmSelect(g)}
+                                            className="flex items-center gap-2 px-3 py-2 text-xs hover:bg-blue-50 cursor-pointer border-b border-gray-50 last:border-b-0"
+                                        >
+                                            <span className="font-black text-gray-400 w-12 shrink-0 uppercase">
+                                                {String(g.farm || "").trim()}
+                                            </span>
+                                            <span className="text-gray-700 truncate">
+                                                {String(g.grower || "").trim()}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                         <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
                             <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Invoice No.</label>
