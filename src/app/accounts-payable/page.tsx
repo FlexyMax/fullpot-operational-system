@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { useAPStore } from "@/store/useAPStore";
 import { cn } from "@/lib/utils";
-import { formatDateEST, formatMoney, parseMoney, todayEST, currentYearEST, dateInputToEST } from "@/lib/dates";
+import { formatDateEST, formatMoney, parseMoney, todayEST, currentYearEST, dateInputToEST, normalizeToISODate } from "@/lib/dates";
 
 // ─── fetch helpers ───────────────────────────────────────────────────────────
 const apFetch = async (url: string) => {
@@ -228,11 +228,11 @@ export default function AccountsPayablePage() {
                                     {dates.length === 0 && !datesError ? (
                                         <tr><td colSpan={3} className="py-8 text-center text-gray-300 italic font-bold uppercase text-[9px]">No dates</td></tr>
                                     ) : dates.map((d: any, i: number) => {
-                                        const ds = d.ap_date ? String(d.ap_date).split("T")[0] : "";
+                                        const ds = normalizeToISODate(d.ap_date);
                                         const active = selectedDate === ds;
                                         return (
                                             <tr key={i} onClick={() => setDate(ds)} className={cn("cursor-pointer border-b border-gray-50 h-7", active ? "bg-orange-50" : "hover:bg-gray-50")}>
-                                                <td className={cn("px-2 font-bold", active ? "text-[#FB7506]" : "text-gray-700")}>{ds}</td>
+                                                <td className={cn("px-2 font-bold", active ? "text-[#FB7506]" : "text-gray-700")}>{formatDateEST(ds)}</td>
                                                 <td className="text-center text-gray-500 font-bold">{d.records || 0}</td>
                                                 <td className="text-right pr-2 font-black text-gray-700">{formatMoney(d.total_amount)}</td>
                                             </tr>

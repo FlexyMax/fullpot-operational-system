@@ -80,3 +80,33 @@ export function dateInputToEST(dateStr: string): string {
     const zoned = fromZonedTime(`${dateStr}T00:00:00`, TZ);
     return zoned.toISOString();
 }
+
+/**
+ * Normalize any date value (ISO, SQL Server varchar "Dec 31 2026 12:00AM",
+ * or JS Date) to a clean YYYY-MM-DD string safe for API calls.
+ * Avoids timezone day-shift by working with the date parts directly.
+ */
+export function normalizeToISODate(value: string | Date | null | undefined): string {
+    if (!value) return "";
+    try {
+        const raw = typeof value === "string" ? value.trim() : value.toISOString();
+
+        // Already YYYY-MM-DD or starts with one
+        if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.substring(0, 10);
+
+        // ISO with T (2026-12-31T05:00:00.000Z)
+        if (raw.includes("T")) return raw.split("T")[0];
+
+        // SQL Server varchar: "Dec 31 2026 12:00AM" or "Dec 31 2026"
+        // Strip time portion, keep only the date words
+        const datePart = raw.replace(/\s+\d{1,2}:\d{2}(:\d{2})?\s*(AM|PM)?$/i, "").trim();
+        const parsed = new Date(datePart + " 12:00:00");   // noon avoids UTC midnight shift
+        if (isNaN(parsed.getTime())) return raw;
+        const y = parsed.getFullYear();
+        const m = String(parsed.getMonth() + 1).padStart(2, "0");
+        const d = String(parsed.getDate()).padStart(2, "0");
+        return `${y}-${m}-${d}`;
+    } catch {
+        return String(value);
+    }
+}
