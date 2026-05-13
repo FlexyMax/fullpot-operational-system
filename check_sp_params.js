@@ -47,6 +47,16 @@ const SP_LIST = [
     'sp_flower_accounts_pay_pob_delete',
     'sp_flower_accounts_pay_approve_cost',
     'sp_flower_pob_search_no',
+    // ── A/P Invoice CRUD (candidates) ──
+    'sp_flower_accounts_pay_insert',
+    'sp_flower_accounts_pay_update',
+    'sp_flower_accounts_pay_delete',
+    'sp_flower_accounts_pay_add',
+    'sp_flower_accounts_pay_edit',
+    'sp_flower_accounts_pay_new',
+    'sp_flower_ap_insert',
+    'sp_flower_ap_update',
+    'sp_flower_ap_delete',
 ];
 
 async function main() {

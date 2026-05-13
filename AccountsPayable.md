@@ -89,6 +89,21 @@ sp_flower_growers_terms               @lcgrower_uq     char
 sp_flower_accounts_pay_type_list      (sin parámetros)
 sp_flower_terms                       (sin parámetros)
 sp_flower_crdb_reasons_list           (sin parámetros)
+sp_flower_accounts_pay_insert         @ldap_date         datetime
+                                      @lcsupplier_uq     varchar(8)
+                                      @lcinvoice_no      varchar(20)
+                                      @lcterms_uq        varchar(8)
+                                      @lnestimated       numeric(10,2)
+                                      @lntaxes           numeric(10,2)
+                                      @lnamount          numeric(10,2)
+                                      @lnporder_no       int
+                                      @lcdescription     varchar(250)
+                                      @llautomatic       bit
+                                      @llindirect        bit
+                                      @llautomatic_cost  bit
+sp_flower_accounts_pay_update         @lcunico           varchar(8)  ← PK
+                                      (same fields as insert)
+sp_flower_accounts_pay_delete         @lcunico           varchar(8)
 sp_flower_accounts_pay_total_pobs     @lcap_uq         varchar(8)
 sp_flower_accounts_pay_pob_insert     @lcap_uq         varchar(8)
                                       @lcpob_uq        varchar(8)

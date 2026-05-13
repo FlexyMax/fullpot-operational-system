@@ -43,6 +43,22 @@ const pobSchema = z.object({
 });
 type PobForm = z.infer<typeof pobSchema>;
 
+const invoiceSchema = z.object({
+    ldap_date:        z.string().min(1, "Date required"),
+    lcsupplier_uq:    z.string().min(1, "Vendor required"),
+    lcinvoice_no:     z.string().min(1, "Invoice # required"),
+    lcterms_uq:       z.string().optional(),
+    lnestimated:      z.number().min(0).optional(),
+    lntaxes:          z.number().min(0).optional(),
+    lnamount:         z.number().min(0, "Amount required"),
+    lnporder_no:      z.number().int().optional(),
+    lcdescription:    z.string().optional(),
+    llautomatic:      z.boolean().optional(),
+    llindirect:       z.boolean().optional(),
+    llautomatic_cost: z.boolean().optional(),
+});
+type InvoiceForm = z.infer<typeof invoiceSchema>;
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function AccountsPayablePage() {
     const { data: session, status } = useSession();
@@ -63,6 +79,7 @@ export default function AccountsPayablePage() {
     const [selectedPobIdx,   setSelectedPobIdx]   = useState(0);
     const [selectedPbkIdx,   setSelectedPbkIdx]   = useState(0);
     const [selectedCrdbIdx,  setSelectedCrdbIdx]  = useState(0);
+    const [invoiceModal,     setInvoiceModal]     = useState<{ open: boolean; mode: "Add" | "Edit" | "Delete" } | null>(null);
 
     useEffect(() => {
         if (status === "unauthenticated") router.push("/login");
@@ -99,8 +116,10 @@ export default function AccountsPayablePage() {
     const { data: tabPrebooks = [], isFetching: loadingPrebooks } = useQuery({ queryKey: ["ap-prebooks", selectedUnico], queryFn: () => apFetch(`/api/accounts-payable/prebooks?unico=${selectedUnico}`), enabled: !!selectedUnico && activeTab === "prebooks" });
     const { data: tabCredits  = [], isFetching: loadingCredits  } = useQuery({ queryKey: ["ap-credits",  selectedUnico], queryFn: () => apFetch(`/api/accounts-payable/credits?unico=${selectedUnico}`),  enabled: !!selectedUnico && activeTab === "credits"  });
 
-    const { data: reasons  = [] } = useQuery({ queryKey: ["ap-reasons"],  queryFn: () => apFetch("/api/accounts-payable/reasons")  });
-    const { data: apTypes  = [] } = useQuery({ queryKey: ["ap-types"],    queryFn: () => apFetch("/api/accounts-payable/ap-types")  });
+    const { data: reasons   = [] } = useQuery({ queryKey: ["ap-reasons"],   queryFn: () => apFetch("/api/accounts-payable/reasons")   });
+    const { data: apTypes   = [] } = useQuery({ queryKey: ["ap-types"],    queryFn: () => apFetch("/api/accounts-payable/ap-types")   });
+    const { data: growers   = [] } = useQuery({ queryKey: ["ap-growers"],  queryFn: () => apFetch("/api/accounts-payable/growers")    });
+    const { data: termsList = [] } = useQuery({ queryKey: ["ap-terms-list"], queryFn: () => apFetch("/api/accounts-payable/terms")   });
 
     // ── Mutations ────────────────────────────────────────────────────────────
     const crdbAdd = useMutation({
@@ -131,6 +150,19 @@ export default function AccountsPayablePage() {
     const pobApprove = useMutation({
         mutationFn: (ap_uq: string) => fetch("/api/accounts-payable/pob/approve", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ap_uq }) }).then(r => r.json()),
         onSuccess: () => { qc.invalidateQueries({ queryKey: ["ap-invoice", selectedUnico] }); },
+    });
+
+    const invoiceAdd = useMutation({
+        mutationFn: (body: any) => fetch("/api/accounts-payable/invoice", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()),
+        onSuccess: () => { qc.invalidateQueries({ queryKey: ["ap-invoices", selectedDate] }); setInvoiceModal(null); },
+    });
+    const invoiceEdit = useMutation({
+        mutationFn: (body: any) => fetch("/api/accounts-payable/invoice", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()),
+        onSuccess: () => { qc.invalidateQueries({ queryKey: ["ap-invoices", selectedDate] }); setInvoiceModal(null); },
+    });
+    const invoiceDelete = useMutation({
+        mutationFn: (unico: string) => fetch(`/api/accounts-payable/invoice?unico=${unico}`, { method: "DELETE" }).then(r => r.json()),
+        onSuccess: () => { qc.invalidateQueries({ queryKey: ["ap-invoices", selectedDate] }); setUnico(null); setInvoiceModal(null); },
     });
 
     // ── Auto-selection cascades ───────────────────────────────────────────────
@@ -292,14 +324,36 @@ export default function AccountsPayablePage() {
 
                     {/* Invoice List */}
                     <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden min-h-[220px] max-h-[50vh] lg:max-h-none lg:h-[42%]">
-                        <div className="h-8 bg-[#374151] flex items-center justify-between px-3 shrink-0">
+                        <div className="h-9 bg-[#374151] flex items-center justify-between px-3 shrink-0">
                             <div className="flex items-center gap-2">
                                 <FileText size={13} className="text-[#FB7506]" />
                                 <span className="font-black text-[10px] uppercase tracking-widest text-white">
                                     Invoices {selectedDate ? `— ${selectedDate}` : ""}
                                 </span>
+                                {loadingInvoices && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
                             </div>
-                            {loadingInvoices && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
+                            <div className="flex items-center gap-1.5">
+                                <button
+                                    onClick={() => setInvoiceModal({ open: true, mode: "Add" })}
+                                    className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all"
+                                >
+                                    <Plus size={10} /> Add
+                                </button>
+                                <button
+                                    onClick={() => selectedUnico && setInvoiceModal({ open: true, mode: "Edit" })}
+                                    disabled={!selectedUnico}
+                                    className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:opacity-40 text-white px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all"
+                                >
+                                    <Pencil size={10} /> Edit
+                                </button>
+                                <button
+                                    onClick={() => selectedUnico && setInvoiceModal({ open: true, mode: "Delete" })}
+                                    disabled={!selectedUnico}
+                                    className="flex items-center gap-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:opacity-40 text-white px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all"
+                                >
+                                    <Trash2 size={10} /> Delete
+                                </button>
+                            </div>
                         </div>
                         <div className="bg-[#F0F2F5] px-2 py-0.5 text-[9px] font-black text-gray-500 uppercase tracking-widest border-b border-gray-200 text-right">
                             {invoices.length} records
@@ -555,6 +609,33 @@ export default function AccountsPayablePage() {
                 />
             )}
 
+            {invoiceModal?.open && (
+                invoiceModal.mode === "Delete" ? (
+                    <DeleteDialog
+                        title="Delete Invoice"
+                        message={`Delete invoice ${String(selectedInvoice?.invoice_no || "").trim()} from ${String(selectedInvoice?.grower || "").trim()}? This cannot be undone.`}
+                        onCancel={() => setInvoiceModal(null)}
+                        onConfirm={() => invoiceDelete.mutate(selectedUnico!)}
+                        saving={invoiceDelete.isPending}
+                    />
+                ) : (
+                    <InvoiceModal
+                        mode={invoiceModal.mode}
+                        invoice={invoiceModal.mode === "Edit" ? selectedInvoice : null}
+                        growers={growers}
+                        termsList={termsList}
+                        selectedDate={selectedDate}
+                        onClose={() => setInvoiceModal(null)}
+                        onSave={(data: InvoiceForm) =>
+                            invoiceModal.mode === "Add"
+                                ? invoiceAdd.mutate(data)
+                                : invoiceEdit.mutate({ ...data, lcunico: selectedUnico })
+                        }
+                        saving={invoiceAdd.isPending || invoiceEdit.isPending}
+                    />
+                )
+            )}
+
             {pobModal?.open && selectedUnico && (
                 <POModal
                     apUq={selectedUnico}
@@ -569,6 +650,176 @@ export default function AccountsPayablePage() {
                     saving={pobAdd.isPending || pobEdit.isPending || pobDelete.isPending}
                 />
             )}
+        </div>
+    );
+}
+
+// ─── Delete Confirmation Dialog ──────────────────────────────────────────────
+function DeleteDialog({ title, message, onCancel, onConfirm, saving }: {
+    title: string;
+    message: string;
+    onCancel: () => void;
+    onConfirm: () => void;
+    saving: boolean;
+}) {
+    return (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+                <div className="p-6 flex flex-col items-center gap-4">
+                    <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                        <Trash2 size={24} className="text-red-600" />
+                    </div>
+                    <div className="text-center">
+                        <h3 className="font-black text-gray-900 text-base mb-1">{title}</h3>
+                        <p className="text-sm text-gray-500 leading-relaxed">{message}</p>
+                    </div>
+                </div>
+                <div className="flex border-t border-gray-100">
+                    <button
+                        onClick={onCancel}
+                        className="flex-1 py-3 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors border-r border-gray-100"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={onConfirm}
+                        disabled={saving}
+                        className="flex-1 py-3 text-sm font-black text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+                    >
+                        {saving ? "Deleting..." : "Delete"}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ─── Invoice Add / Edit Modal ─────────────────────────────────────────────────
+function InvoiceModal({ mode, invoice, growers, termsList, selectedDate, onClose, onSave, saving }: {
+    mode: "Add" | "Edit";
+    invoice: any;
+    growers: any[];
+    termsList: any[];
+    selectedDate: string | null;
+    onClose: () => void;
+    onSave: (data: InvoiceForm) => void;
+    saving: boolean;
+}) {
+    const { register, handleSubmit, formState: { errors } } = useForm<InvoiceForm>({
+        resolver: zodResolver(invoiceSchema),
+        defaultValues: {
+            ldap_date:        invoice ? normalizeToISODate(invoice.ap_date) : (selectedDate || todayEST()),
+            lcsupplier_uq:    invoice?.supplier_uq  || invoice?.grower_uq  || "",
+            lcinvoice_no:     invoice ? String(invoice.invoice_no || "").trim() : "",
+            lcterms_uq:       invoice?.terms_uq     || "",
+            lnestimated:      parseMoney(invoice?.estimated) || undefined,
+            lntaxes:          parseMoney(invoice?.taxes)     || undefined,
+            lnamount:         parseMoney(invoice?.amount)    || undefined,
+            lnporder_no:      invoice?.porder_no    ?? undefined,
+            lcdescription:    invoice?.description  || invoice?.detail || "",
+            llautomatic:      invoice?.automatic === "Yes" || false,
+            llindirect:       false,
+            llautomatic_cost: false,
+        },
+    });
+
+    return (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
+                {/* Header */}
+                <div className="h-10 bg-[#374151] flex items-center justify-between px-4 shrink-0">
+                    <div className="flex items-center gap-2">
+                        <FileText size={14} className="text-[#FB7506]" />
+                        <span className="font-black text-[11px] uppercase tracking-widest text-white">
+                            {mode === "Add" ? "New Invoice" : "Edit Invoice"}
+                        </span>
+                    </div>
+                    <button onClick={onClose}><XCircle size={16} className="text-gray-400 hover:text-white transition-colors" /></button>
+                </div>
+
+                <form onSubmit={handleSubmit(onSave)} className="p-5 space-y-4">
+                    {/* Row 1: Date + Invoice # */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <FormField label="AP Date" error={errors.ldap_date?.message}>
+                            <input type="date" {...register("ldap_date")} className="fos-input" />
+                        </FormField>
+                        <FormField label="Invoice #" error={errors.lcinvoice_no?.message}>
+                            <input {...register("lcinvoice_no")} placeholder="Invoice number" className="fos-input" />
+                        </FormField>
+                    </div>
+
+                    {/* Row 2: Vendor */}
+                    <FormField label="Vendor" error={errors.lcsupplier_uq?.message}>
+                        <select {...register("lcsupplier_uq")} className="fos-input">
+                            <option value="">— Select vendor —</option>
+                            {growers.map((g: any) => (
+                                <option key={g.unico} value={g.unico}>
+                                    {String(g.grower || g.name || g.supplier || "").trim()}
+                                </option>
+                            ))}
+                        </select>
+                    </FormField>
+
+                    {/* Row 3: Terms + PO No. */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <FormField label="Terms" error={null}>
+                            <select {...register("lcterms_uq")} className="fos-input">
+                                <option value="">— Select terms —</option>
+                                {termsList.map((t: any) => (
+                                    <option key={t.unico} value={t.unico}>
+                                        {String(t.terms || t.description || t.condicion || "").trim()}
+                                    </option>
+                                ))}
+                            </select>
+                        </FormField>
+                        <FormField label="PO No." error={null}>
+                            <input type="number" min="0" {...register("lnporder_no", { valueAsNumber: true })} className="fos-input" placeholder="0" />
+                        </FormField>
+                    </div>
+
+                    {/* Row 4: Estimated + Taxes + Amount */}
+                    <div className="grid grid-cols-3 gap-3">
+                        <FormField label="Estimated" error={null}>
+                            <input type="number" step="0.01" min="0" {...register("lnestimated", { valueAsNumber: true })} className="fos-input text-right" placeholder="0.00" />
+                        </FormField>
+                        <FormField label="Taxes" error={null}>
+                            <input type="number" step="0.01" min="0" {...register("lntaxes", { valueAsNumber: true })} className="fos-input text-right" placeholder="0.00" />
+                        </FormField>
+                        <FormField label="Amount" error={errors.lnamount?.message}>
+                            <input type="number" step="0.01" min="0" {...register("lnamount", { valueAsNumber: true })} className="fos-input text-right font-semibold" placeholder="0.00" />
+                        </FormField>
+                    </div>
+
+                    {/* Row 5: Description */}
+                    <FormField label="Description / Detail" error={null}>
+                        <textarea {...register("lcdescription")} rows={2} className="fos-input resize-none" placeholder="Notes or details..." />
+                    </FormField>
+
+                    {/* Row 6: Flags */}
+                    <div className="flex gap-6 pt-1">
+                        {([
+                            { name: "llautomatic"    as const, label: "Automatic" },
+                            { name: "llindirect"     as const, label: "Indirect"  },
+                            { name: "llautomatic_cost" as const, label: "Auto Cost" },
+                        ]).map(f => (
+                            <label key={f.name} className="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" {...register(f.name)} className="w-4 h-4 accent-[#FB7506] cursor-pointer" />
+                                <span className="text-xs font-bold text-gray-600">{f.label}</span>
+                            </label>
+                        ))}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
+                        <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" disabled={saving} className="px-6 py-2 rounded-lg bg-[#FB7506] hover:bg-orange-600 text-white text-sm font-black uppercase tracking-wider transition-all disabled:opacity-50 flex items-center gap-2">
+                            {saving ? <><RefreshCcw size={14} className="animate-spin" /> Saving...</> : <><Check size={14} /> {mode === "Add" ? "Create" : "Save Changes"}</>}
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     );
 }
