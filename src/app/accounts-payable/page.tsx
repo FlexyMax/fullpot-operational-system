@@ -691,6 +691,7 @@ export default function AccountsPayablePage() {
 
             {searchModal && (
                 <APSearchModal
+                    growers={growers}
                     onClose={() => setSearchModal(false)}
                     onLocate={handleLocate}
                 />
@@ -742,11 +743,12 @@ export default function AccountsPayablePage() {
 }
 
 // ─── AP Search Modal ─────────────────────────────────────────────────────────
-function APSearchModal({ onClose, onLocate }: {
+function APSearchModal({ growers, onClose, onLocate }: {
+    growers: any[];
     onClose: () => void;
     onLocate: (result: any) => void;
 }) {
-    const [farm,      setFarm]      = useState("");
+    const [farmCode,  setFarmCode]  = useState("");   // farm short code, e.g. "CGU"
     const [invoiceNo, setInvoiceNo] = useState("");
     const [results,   setResults]   = useState<any[]>([]);
     const [loading,   setLoading]   = useState(false);
@@ -758,7 +760,7 @@ function APSearchModal({ onClose, onLocate }: {
         setLoading(true); setError(null); setSelected(null);
         try {
             const params = new URLSearchParams();
-            if (farm.trim())      params.set("farm",       farm.trim());
+            if (farmCode.trim())  params.set("farm",       farmCode.trim());
             if (invoiceNo.trim()) params.set("invoice_no", invoiceNo.trim());
             const data = await apFetch(`/api/accounts-payable/search?${params}`);
             setResults(Array.isArray(data) ? data : []);
@@ -772,7 +774,7 @@ function APSearchModal({ onClose, onLocate }: {
     };
 
     const handleClear = () => {
-        setFarm(""); setInvoiceNo(""); setResults([]); setSearched(false); setSelected(null); setError(null);
+        setFarmCode(""); setInvoiceNo(""); setResults([]); setSearched(false); setSelected(null); setError(null);
     };
 
     return (
@@ -791,17 +793,21 @@ function APSearchModal({ onClose, onLocate }: {
                 {/* Search Bar */}
                 <div className="bg-gray-50 border-b border-gray-200 px-4 py-3 shrink-0">
                     <div className="flex items-end gap-3 flex-wrap">
-                        <div className="flex flex-col gap-1 flex-1 min-w-[160px]">
-                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Farm / Vendor</label>
-                            <input
-                                type="text"
-                                value={farm}
-                                onChange={e => setFarm(e.target.value)}
-                                onKeyDown={e => e.key === "Enter" && handleSearch()}
-                                placeholder="Name or partial name..."
+                        <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
+                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Vendor</label>
+                            <select
+                                value={farmCode}
+                                onChange={e => setFarmCode(e.target.value)}
                                 className="fos-input"
                                 autoFocus
-                            />
+                            >
+                                <option value="">— All vendors —</option>
+                                {growers.map((g: any) => (
+                                    <option key={g.unico} value={String(g.farm || "").trim()}>
+                                        {String(g.grower || "").trim()}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                         <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
                             <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Invoice No.</label>
