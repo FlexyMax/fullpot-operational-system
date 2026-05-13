@@ -11,7 +11,7 @@ import {
     ArrowLeft, RefreshCcw, Calendar, DollarSign,
     FileText, CreditCard, ClipboardList, BookOpen, Plus,
     Pencil, Trash2, Check, XCircle, AlertCircle, CheckCircle,
-    ChevronRight, ChevronLeft
+    ChevronRight, ChevronLeft, Search, Download
 } from "lucide-react";
 import { useAPStore } from "@/store/useAPStore";
 import { cn } from "@/lib/utils";
@@ -80,6 +80,8 @@ export default function AccountsPayablePage() {
     const [selectedPbkIdx,   setSelectedPbkIdx]   = useState(0);
     const [selectedCrdbIdx,  setSelectedCrdbIdx]  = useState(0);
     const [invoiceModal,     setInvoiceModal]     = useState<{ open: boolean; mode: "Add" | "Edit" | "Delete" } | null>(null);
+    const [searchModal,      setSearchModal]      = useState(false);
+    const [pendingUnico,     setPendingUnico]     = useState<string | null>(null);
 
     useEffect(() => {
         if (status === "unauthenticated") router.push("/login");
@@ -178,7 +180,15 @@ export default function AccountsPayablePage() {
 
     // ── Auto-selection cascades ───────────────────────────────────────────────
     useEffect(() => {
-        if (invoices.length > 0) setUnico(invoices[0].unico);
+        if (invoices.length > 0) {
+            if (pendingUnico) {
+                const found = invoices.find((inv: any) => inv.unico === pendingUnico);
+                setUnico(found ? pendingUnico : invoices[0].unico);
+                setPendingUnico(null);
+            } else {
+                setUnico(invoices[0].unico);
+            }
+        }
     }, [invoices]);
 
     useEffect(() => {
@@ -190,6 +200,38 @@ export default function AccountsPayablePage() {
 
     // ── Helpers ──────────────────────────────────────────────────────────────
     const selectedInvoice = invoices.find((inv: any) => inv.unico === selectedUnico);
+
+    const exportToCSV = () => {
+        if (!invoices.length) return;
+        const headers = ['Vendor','Invoice','Estimated','Amount','Credits','Debits','Balance','Control Date','AP Date','Phone'];
+        const rows = invoices.map((inv: any) => [
+            String(inv.grower || "").trim(),
+            String(inv.invoice_no || "").trim(),
+            parseMoney(inv.estimated).toFixed(2),
+            parseMoney(inv.amount).toFixed(2),
+            parseMoney(inv.credits).toFixed(2),
+            parseMoney(inv.debits).toFixed(2),
+            parseMoney(inv.total_balance).toFixed(2),
+            formatDateEST(normalizeToISODate(inv.control_Date ?? inv.control_date)),
+            formatDateEST(normalizeToISODate(inv.ap_date)),
+            String(inv.phone_1 || "").trim(),
+        ]);
+        const csv = [headers, ...rows]
+            .map(row => row.map((c: string) => `"${String(c).replace(/"/g, '""')}"`).join(','))
+            .join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url  = URL.createObjectURL(blob);
+        const a    = Object.assign(document.createElement('a'), { href: url, download: `AP_Invoices_${selectedDate || 'export'}.csv` });
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
+    const handleLocate = (result: any) => {
+        const date = normalizeToISODate(result.ap_date);
+        setPendingUnico(result.unico);
+        setDate(date);
+        setSearchModal(false);
+    };
 
     if (status === "loading") return null;
 
@@ -344,6 +386,21 @@ export default function AccountsPayablePage() {
                                 {loadingInvoices && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
                             </div>
                             <div className="flex items-center gap-1.5">
+                                <button
+                                    onClick={() => setSearchModal(true)}
+                                    className="flex items-center gap-1 bg-gray-600 hover:bg-gray-500 text-white px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all"
+                                >
+                                    <Search size={10} /> Search
+                                </button>
+                                <button
+                                    onClick={exportToCSV}
+                                    disabled={!invoices.length}
+                                    className="flex items-center gap-1 bg-gray-600 hover:bg-gray-500 disabled:opacity-40 text-white px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all"
+                                    title="Export to CSV"
+                                >
+                                    <Download size={10} /> CSV
+                                </button>
+                                <div className="w-px h-4 bg-white/20" />
                                 <button
                                     onClick={() => setInvoiceModal({ open: true, mode: "Add" })}
                                     className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all"
@@ -632,6 +689,13 @@ export default function AccountsPayablePage() {
                 />
             )}
 
+            {searchModal && (
+                <APSearchModal
+                    onClose={() => setSearchModal(false)}
+                    onLocate={handleLocate}
+                />
+            )}
+
             {invoiceModal?.open && (
                 invoiceModal.mode === "Delete" ? (
                     <DeleteDialog
@@ -673,6 +737,180 @@ export default function AccountsPayablePage() {
                     saving={pobAdd.isPending || pobEdit.isPending || pobDelete.isPending}
                 />
             )}
+        </div>
+    );
+}
+
+// ─── AP Search Modal ─────────────────────────────────────────────────────────
+function APSearchModal({ onClose, onLocate }: {
+    onClose: () => void;
+    onLocate: (result: any) => void;
+}) {
+    const [farm,      setFarm]      = useState("");
+    const [invoiceNo, setInvoiceNo] = useState("");
+    const [results,   setResults]   = useState<any[]>([]);
+    const [loading,   setLoading]   = useState(false);
+    const [searched,  setSearched]  = useState(false);
+    const [selected,  setSelected]  = useState<any>(null);
+    const [error,     setError]     = useState<string | null>(null);
+
+    const handleSearch = async () => {
+        setLoading(true); setError(null); setSelected(null);
+        try {
+            const params = new URLSearchParams();
+            if (farm.trim())      params.set("farm",       farm.trim());
+            if (invoiceNo.trim()) params.set("invoice_no", invoiceNo.trim());
+            const data = await apFetch(`/api/accounts-payable/search?${params}`);
+            setResults(Array.isArray(data) ? data : []);
+            setSearched(true);
+            if (Array.isArray(data) && data.length > 0) setSelected(data[0]);
+        } catch (e: any) {
+            setError(e.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleClear = () => {
+        setFarm(""); setInvoiceNo(""); setResults([]); setSearched(false); setSelected(null); setError(null);
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[85vh]">
+
+                {/* Header */}
+                <div className="h-10 bg-[#374151] flex items-center justify-between px-4 shrink-0">
+                    <div className="flex items-center gap-2">
+                        <Search size={14} className="text-[#FB7506]" />
+                        <span className="font-black text-[11px] uppercase tracking-widest text-white">AP Search</span>
+                    </div>
+                    <button onClick={onClose}><XCircle size={16} className="text-gray-400 hover:text-white transition-colors" /></button>
+                </div>
+
+                {/* Search Bar */}
+                <div className="bg-gray-50 border-b border-gray-200 px-4 py-3 shrink-0">
+                    <div className="flex items-end gap-3 flex-wrap">
+                        <div className="flex flex-col gap-1 flex-1 min-w-[160px]">
+                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Farm / Vendor</label>
+                            <input
+                                type="text"
+                                value={farm}
+                                onChange={e => setFarm(e.target.value)}
+                                onKeyDown={e => e.key === "Enter" && handleSearch()}
+                                placeholder="Name or partial name..."
+                                className="fos-input"
+                                autoFocus
+                            />
+                        </div>
+                        <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
+                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Invoice No.</label>
+                            <input
+                                type="text"
+                                value={invoiceNo}
+                                onChange={e => setInvoiceNo(e.target.value)}
+                                onKeyDown={e => e.key === "Enter" && handleSearch()}
+                                placeholder="Invoice number..."
+                                className="fos-input"
+                            />
+                        </div>
+                        <button
+                            onClick={handleSearch}
+                            disabled={loading}
+                            className="flex items-center gap-1.5 bg-[#FB7506] hover:bg-orange-600 disabled:opacity-50 text-white px-4 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all h-[34px]"
+                        >
+                            {loading ? <RefreshCcw size={12} className="animate-spin" /> : <Search size={12} />}
+                            Search
+                        </button>
+                        <button
+                            onClick={handleClear}
+                            className="flex items-center gap-1.5 bg-gray-200 hover:bg-gray-300 text-gray-600 px-4 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all h-[34px]"
+                        >
+                            <XCircle size={12} /> Clear
+                        </button>
+                    </div>
+                    {error && <p className="text-xs text-red-500 mt-2 font-bold">{error}</p>}
+                </div>
+
+                {/* Results Count */}
+                {searched && (
+                    <div className="px-4 py-1.5 bg-white border-b border-gray-100 shrink-0">
+                        <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                            {results.length} {results.length === 1 ? "result" : "results"} found
+                        </span>
+                    </div>
+                )}
+
+                {/* Results Table */}
+                <div className="overflow-auto flex-1">
+                    {!searched ? (
+                        <div className="h-40 flex flex-col items-center justify-center text-gray-300 gap-2">
+                            <Search size={32} className="opacity-30" />
+                            <p className="text-xs font-bold uppercase tracking-widest">Enter search criteria above</p>
+                        </div>
+                    ) : results.length === 0 ? (
+                        <div className="h-40 flex flex-col items-center justify-center text-gray-300 gap-2">
+                            <AlertCircle size={32} className="opacity-30" />
+                            <p className="text-xs font-bold uppercase tracking-widest">No invoices found</p>
+                        </div>
+                    ) : (
+                        <table className="min-w-full text-xs text-left">
+                            <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
+                                <tr>
+                                    {["Vendor","Invoice","Estimated","Amount","Credits","Debits","Balance","Control Date","AP Date","Phone"].map(h => (
+                                        <th key={h} className="p-2 whitespace-nowrap border-r border-gray-200 last:border-r-0">{h}</th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {results.map((inv: any, i: number) => (
+                                    <tr
+                                        key={inv.unico || i}
+                                        onClick={() => setSelected(inv)}
+                                        onDoubleClick={() => onLocate(inv)}
+                                        className={cn(
+                                            "border-b cursor-pointer transition-colors",
+                                            selected?.unico === inv.unico
+                                                ? "!bg-blue-100 ring-2 ring-inset ring-blue-300"
+                                                : "odd:bg-white even:bg-gray-50 hover:bg-blue-50"
+                                        )}
+                                    >
+                                        <td className="p-2 border-r border-gray-100 font-medium truncate max-w-[180px]">{String(inv.grower || "").trim()}</td>
+                                        <td className="p-2 border-r border-gray-100 font-semibold text-blue-700">{String(inv.invoice_no || "").trim()}</td>
+                                        <td className="p-2 border-r border-gray-100 text-right">{formatMoney(inv.estimated)}</td>
+                                        <td className="p-2 border-r border-gray-100 text-right font-semibold">{formatMoney(inv.amount)}</td>
+                                        <td className="p-2 border-r border-gray-100 text-right text-green-600">{formatMoney(inv.credits)}</td>
+                                        <td className="p-2 border-r border-gray-100 text-right text-red-500">{formatMoney(inv.debits)}</td>
+                                        <td className="p-2 border-r border-gray-100 text-right font-semibold text-orange-600">{formatMoney(inv.total_balance)}</td>
+                                        <td className="p-2 border-r border-gray-100">{formatDateEST(normalizeToISODate(inv.control_Date ?? inv.control_date))}</td>
+                                        <td className="p-2 border-r border-gray-100">{formatDateEST(normalizeToISODate(inv.ap_date))}</td>
+                                        <td className="p-2">{String(inv.phone_1 || "").trim()}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
+                </div>
+
+                {/* Footer */}
+                <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t border-gray-200 shrink-0">
+                    <p className="text-[10px] text-gray-400 font-bold">
+                        {selected ? `Selected: ${String(selected.invoice_no || "").trim()} — ${String(selected.grower || "").trim()}` : "Click a row to select, double-click to locate"}
+                    </p>
+                    <div className="flex gap-2">
+                        <button onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors">
+                            Cancel
+                        </button>
+                        <button
+                            onClick={() => selected && onLocate(selected)}
+                            disabled={!selected}
+                            className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#FB7506] hover:bg-orange-600 disabled:opacity-40 text-white text-sm font-black uppercase tracking-wider transition-all"
+                        >
+                            <ChevronRight size={14} /> Locate
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }
