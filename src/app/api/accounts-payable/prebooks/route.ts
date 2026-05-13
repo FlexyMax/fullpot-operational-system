@@ -5,10 +5,10 @@ export async function GET(req: NextRequest) {
     const unico = req.nextUrl.searchParams.get("unico");
     if (!unico) return NextResponse.json({ error: "unico required" }, { status: 400 });
     try {
-        const result = await executeProcedure("sp_flower_prebook_cost", [
-            { name: "customer", value: "%" },
-            { name: "unico",    value: unico }
-        ]);
+        const result = await executeProcedure("sp_flower_prebook_cost", {
+            customer: "%",
+            unico
+        });
         return NextResponse.json(result.recordset);
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });

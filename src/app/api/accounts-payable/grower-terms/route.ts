@@ -5,9 +5,7 @@ export async function GET(req: NextRequest) {
     const grower_uq = req.nextUrl.searchParams.get("grower_uq");
     if (!grower_uq) return NextResponse.json({ error: "grower_uq required" }, { status: 400 });
     try {
-        const result = await executeProcedure("sp_flower_growers_terms", [
-            { name: "grower_uq", value: grower_uq }
-        ]);
+        const result = await executeProcedure("sp_flower_growers_terms", { grower_uq });
         return NextResponse.json(result.recordset);
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });
