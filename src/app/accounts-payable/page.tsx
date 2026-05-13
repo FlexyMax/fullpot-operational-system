@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -8,10 +8,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
-    ArrowLeft, RefreshCcw, Search, Calendar, DollarSign,
+    ArrowLeft, RefreshCcw, Calendar, DollarSign,
     FileText, CreditCard, ClipboardList, BookOpen, Plus,
     Pencil, Trash2, Check, XCircle, AlertCircle, CheckCircle,
-    ChevronRight
+    ChevronRight, ChevronLeft
 } from "lucide-react";
 import { useAPStore } from "@/store/useAPStore";
 import { cn } from "@/lib/utils";
@@ -54,9 +54,11 @@ export default function AccountsPayablePage() {
         setYear, setDate, setUnico,
     } = useAPStore();
 
-    const [activeTab, setActiveTab] = useState<"terms" | "po" | "prebooks" | "credits">("terms");
-    const [crdbModal, setCrdbModal]  = useState<{ open: boolean; mode: "Add" | "Edit" | "Delete"; type: "C" | "D"; row?: any } | null>(null);
-    const [pobModal,  setPobModal]   = useState<{ open: boolean; row?: any } | null>(null);
+    const [activeTab, setActiveTab]   = useState<"terms" | "po" | "prebooks" | "credits">("terms");
+    const [crdbModal, setCrdbModal]   = useState<{ open: boolean; mode: "Add" | "Edit" | "Delete"; type: "C" | "D"; row?: any } | null>(null);
+    const [pobModal,  setPobModal]    = useState<{ open: boolean; row?: any } | null>(null);
+    const [calMonth,  setCalMonth]    = useState(() => new Date().getMonth() + 1);
+    const [calYear,   setCalYear]     = useState(currentYearEST);
 
     useEffect(() => {
         if (status === "unauthenticated") router.push("/login");
@@ -133,7 +135,7 @@ export default function AccountsPayablePage() {
     if (status === "loading") return null;
 
     return (
-        <div className="flex flex-col h-screen bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
+        <div className="flex flex-col min-h-screen lg:h-screen bg-[#f4f6f8] lg:overflow-hidden font-sans text-[#333]">
 
             {/* ── Header ──────────────────────────────────────────────────── */}
             <div className="h-12 bg-[#374151] flex items-center justify-between px-4 shrink-0 text-white">
@@ -165,12 +167,15 @@ export default function AccountsPayablePage() {
                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Year:</span>
                     <select
                         value={selectedYear}
-                        onChange={e => setYear(parseInt(e.target.value))}
+                        onChange={e => { const y = parseInt(e.target.value); setYear(y); setCalYear(y); }}
                         className="bg-gray-100 border border-gray-200 text-gray-700 text-[11px] font-black rounded px-2 py-1 outline-none focus:ring-1 focus:ring-[#FB7506]"
                     >
                         {years.length > 0
-                            ? years.map((y: any) => <option key={y.ap_year} value={y.ap_year}>{y.ap_year}</option>)
-                            : [currentYearEST(), currentYearEST() - 1].map(y => <option key={y} value={y}>{y}</option>)
+                            ? years.map((y: any) => {
+                                const yr = y.ap_year ?? y.year ?? y.lnyear ?? Number(Object.values(y)[0]);
+                                return <option key={yr} value={yr}>{yr}</option>;
+                              })
+                            : [currentYearEST(), currentYearEST()-1, currentYearEST()-2].map(y => <option key={y} value={y}>{y}</option>)
                         }
                     </select>
                 </div>
@@ -194,10 +199,10 @@ export default function AccountsPayablePage() {
             </div>
 
             {/* ── Main Layout ─────────────────────────────────────────────── */}
-            <div className="flex flex-1 overflow-hidden gap-2 p-2">
+            <div className="flex flex-col lg:flex-row flex-1 gap-2 p-2 overflow-y-auto lg:overflow-hidden">
 
-                {/* ── LEFT: Date Panel ────────────────────────────────────── */}
-                <div className="w-[220px] shrink-0 flex flex-col gap-2">
+                {/* ── LEFT: Date Panel (desktop only) ─────────────────────── */}
+                <div className="hidden lg:flex w-[280px] shrink-0 flex-col gap-2">
                     <div className="flex flex-col flex-1 bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
                         <div className="h-8 bg-[#374151] flex items-center justify-between px-3 shrink-0">
                             <div className="flex items-center gap-2">
@@ -247,11 +252,30 @@ export default function AccountsPayablePage() {
                     </div>
                 </div>
 
+                {/* ── CALENDAR: Mobile only ───────────────────────────────── */}
+                <div className="lg:hidden shrink-0">
+                    <APCalendar
+                        dates={dates}
+                        selectedDate={selectedDate}
+                        onSelect={setDate}
+                        calYear={calYear}
+                        calMonth={calMonth}
+                        onMonthChange={(delta: number) => {
+                            let m = calMonth + delta;
+                            let y = calYear;
+                            if (m > 12) { m = 1;  y++; }
+                            if (m < 1)  { m = 12; y--; }
+                            setCalMonth(m);
+                            setCalYear(y);
+                        }}
+                    />
+                </div>
+
                 {/* ── RIGHT: Invoices + Tabs ───────────────────────────────── */}
-                <div className="flex-1 flex flex-col gap-2 min-w-0 overflow-hidden">
+                <div className="flex-1 flex flex-col gap-2 min-w-0 lg:overflow-hidden">
 
                     {/* Invoice List */}
-                    <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden" style={{ height: "42%" }}>
+                    <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden min-h-[220px] max-h-[50vh] lg:max-h-none lg:h-[42%]">
                         <div className="h-8 bg-[#374151] flex items-center justify-between px-3 shrink-0">
                             <div className="flex items-center gap-2">
                                 <FileText size={13} className="text-[#FB7506]" />
@@ -311,7 +335,7 @@ export default function AccountsPayablePage() {
                     </div>
 
                     {/* Detail Tabs */}
-                    <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-0">
+                    <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-[300px] lg:min-h-0">
                         {/* Tab Bar */}
                         <div className="h-9 bg-[#374151] flex items-end px-2 shrink-0 gap-0.5">
                             {([
@@ -520,6 +544,94 @@ export default function AccountsPayablePage() {
                     saving={pobAdd.isPending || pobEdit.isPending || pobDelete.isPending}
                 />
             )}
+        </div>
+    );
+}
+
+// ─── Mobile Calendar Component ───────────────────────────────────────────────
+const MONTHS = ["January","February","March","April","May","June",
+                "July","August","September","October","November","December"];
+const DAYS   = ["Su","Mo","Tu","We","Th","Fr","Sa"];
+
+function APCalendar({ dates, selectedDate, onSelect, calYear, calMonth, onMonthChange }: {
+    dates: any[];
+    selectedDate: string | null;
+    onSelect: (date: string) => void;
+    calYear: number;
+    calMonth: number;
+    onMonthChange: (delta: number) => void;
+}) {
+    const dateMap = useMemo(() => {
+        const map = new Map<string, number>();
+        dates.forEach((d: any) => {
+            const ds = normalizeToISODate(d.ap_date);
+            if (ds) map.set(ds, d.records || 1);
+        });
+        return map;
+    }, [dates]);
+
+    const firstDay    = new Date(calYear, calMonth - 1, 1).getDay();
+    const daysInMonth = new Date(calYear, calMonth, 0).getDate();
+    const today       = todayEST();
+
+    return (
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+            <div className="h-10 bg-[#374151] flex items-center justify-between px-4 shrink-0">
+                <button onClick={() => onMonthChange(-1)} className="text-white hover:text-orange-400 p-1 rounded transition-colors">
+                    <ChevronLeft size={16} />
+                </button>
+                <span className="font-bold text-sm text-white">{MONTHS[calMonth - 1]} {calYear}</span>
+                <button onClick={() => onMonthChange(1)} className="text-white hover:text-orange-400 p-1 rounded transition-colors">
+                    <ChevronRight size={16} />
+                </button>
+            </div>
+            <div className="p-3">
+                <div className="grid grid-cols-7 mb-1">
+                    {DAYS.map(d => (
+                        <div key={d} className="text-center text-[11px] font-bold text-gray-400 py-1">{d}</div>
+                    ))}
+                </div>
+                <div className="grid grid-cols-7 gap-0.5">
+                    {Array.from({ length: firstDay }, (_, i) => <div key={`e${i}`} />)}
+                    {Array.from({ length: daysInMonth }, (_, i) => {
+                        const day     = i + 1;
+                        const dateStr = `${calYear}-${String(calMonth).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+                        const count   = dateMap.get(dateStr);
+                        const hasData = count !== undefined;
+                        const isSelected = selectedDate === dateStr;
+                        const isToday    = dateStr === today;
+                        return (
+                            <div
+                                key={day}
+                                onClick={() => hasData && onSelect(dateStr)}
+                                className={cn(
+                                    "flex flex-col items-center justify-start p-1 rounded min-h-[44px] transition-colors",
+                                    hasData ? "cursor-pointer" : "cursor-default",
+                                    isSelected ? "bg-blue-500" : hasData ? "bg-green-50 hover:bg-green-100" : "",
+                                    isToday && !isSelected ? "ring-2 ring-inset ring-blue-400" : ""
+                                )}
+                            >
+                                <span className={cn(
+                                    "text-xs leading-none mb-0.5",
+                                    isSelected ? "text-white font-bold" :
+                                    isToday    ? "text-blue-600 font-bold" :
+                                    hasData    ? "text-gray-700 font-semibold" : "text-gray-300"
+                                )}>
+                                    {day}
+                                </span>
+                                {hasData && (
+                                    <div className={cn(
+                                        "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold",
+                                        isSelected ? "bg-white text-blue-600" : "bg-green-500 text-white"
+                                    )}>
+                                        {count}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
         </div>
     );
 }
