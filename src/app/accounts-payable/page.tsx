@@ -211,30 +211,33 @@ export default function AccountsPayablePage() {
                         </div>
                         <div className="overflow-y-auto flex-1">
                             {datesError && (
-                                <div className="p-3 m-2 bg-red-50 border border-red-200 rounded text-[9px] font-bold text-red-600 uppercase tracking-wide">
-                                    <p className="font-black mb-1">API Error</p>
-                                    <p className="normal-case font-normal break-all">{(datesError as Error).message}</p>
+                                <div className="p-3 m-2 bg-red-50 border border-red-200 rounded text-xs text-red-600">
+                                    <p className="font-bold mb-1">API Error</p>
+                                    <p className="break-all font-normal">{(datesError as Error).message}</p>
                                 </div>
                             )}
-                            <table className="w-full text-[10px]">
-                                <thead className="sticky top-0 bg-white z-10">
-                                    <tr className="border-b border-gray-100">
-                                        <th className="text-left px-2 py-1.5 font-black text-gray-400 uppercase tracking-tight">Date</th>
-                                        <th className="text-center font-black text-gray-400 uppercase tracking-tight">Inv</th>
-                                        <th className="text-right pr-2 font-black text-gray-400 uppercase tracking-tight">Amt</th>
+                            <table className="min-w-full text-xs text-left">
+                                <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
+                                    <tr>
+                                        <th className="p-2">Date</th>
+                                        <th className="p-2 text-center border-l border-gray-200">Inv</th>
+                                        <th className="p-2 text-right border-l border-gray-200">Amount</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {dates.length === 0 && !datesError ? (
-                                        <tr><td colSpan={3} className="py-8 text-center text-gray-300 italic font-bold uppercase text-[9px]">No dates</td></tr>
+                                        <tr><td colSpan={3} className="p-8 text-center text-gray-400 italic">No dates</td></tr>
                                     ) : dates.map((d: any, i: number) => {
                                         const ds = normalizeToISODate(d.ap_date);
                                         const active = selectedDate === ds;
                                         return (
-                                            <tr key={i} onClick={() => setDate(ds)} className={cn("cursor-pointer border-b border-gray-50 h-7", active ? "bg-orange-50" : "hover:bg-gray-50")}>
-                                                <td className={cn("px-2 font-bold", active ? "text-[#FB7506]" : "text-gray-700")}>{formatDateEST(ds)}</td>
-                                                <td className="text-center text-gray-500 font-bold">{d.records || 0}</td>
-                                                <td className="text-right pr-2 font-black text-gray-700">{formatMoney(d.total_amount)}</td>
+                                            <tr key={i} onClick={() => setDate(ds)} className={cn(
+                                                "border-b cursor-pointer transition-colors",
+                                                active ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50"
+                                            )}>
+                                                <td className="p-2 font-medium">{formatDateEST(ds)}</td>
+                                                <td className="p-2 text-center border-l border-gray-100">{d.records || 0}</td>
+                                                <td className="p-2 text-right border-l border-gray-100 font-semibold">{formatMoney(d.total_amount)}</td>
                                             </tr>
                                         );
                                     })}
@@ -262,40 +265,43 @@ export default function AccountsPayablePage() {
                             {invoices.length} records
                         </div>
                         <div className="overflow-auto flex-1">
-                            <table className="w-full text-[10px] whitespace-nowrap">
-                                <thead className="sticky top-0 bg-white z-10">
-                                    <tr className="border-b border-gray-100">
-                                        <th className="px-2 py-1.5 text-left font-black text-gray-400 uppercase tracking-tight">Vendor</th>
-                                        <th className="px-2 font-black text-gray-400 uppercase tracking-tight">Invoice</th>
-                                        <th className="px-2 text-right font-black text-gray-400 uppercase tracking-tight">Estimated</th>
-                                        <th className="px-2 text-right font-black text-gray-400 uppercase tracking-tight">Amount</th>
-                                        <th className="px-2 text-right font-black text-gray-400 uppercase tracking-tight">Credits</th>
-                                        <th className="px-2 text-right font-black text-gray-400 uppercase tracking-tight">Debits</th>
-                                        <th className="px-2 text-right font-black text-gray-400 uppercase tracking-tight">Balance</th>
-                                        <th className="px-2 font-black text-gray-400 uppercase tracking-tight">Control</th>
-                                        <th className="px-2 font-black text-gray-400 uppercase tracking-tight">AP Date</th>
-                                        <th className="px-2 font-black text-gray-400 uppercase tracking-tight">Phone</th>
+                            <table className="min-w-full text-xs text-left">
+                                <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
+                                    <tr>
+                                        <th className="p-2 whitespace-nowrap">Vendor</th>
+                                        <th className="p-2 whitespace-nowrap border-l border-gray-200">Invoice</th>
+                                        <th className="p-2 whitespace-nowrap text-right border-l border-gray-200">Estimated</th>
+                                        <th className="p-2 whitespace-nowrap text-right border-l border-gray-200">Amount</th>
+                                        <th className="p-2 whitespace-nowrap text-right border-l border-gray-200 text-green-700">Credits</th>
+                                        <th className="p-2 whitespace-nowrap text-right border-l border-gray-200 text-red-600">Debits</th>
+                                        <th className="p-2 whitespace-nowrap text-right border-l border-gray-200">Balance</th>
+                                        <th className="p-2 whitespace-nowrap border-l border-gray-200">Control</th>
+                                        <th className="p-2 whitespace-nowrap border-l border-gray-200">AP Date</th>
+                                        <th className="p-2 whitespace-nowrap border-l border-gray-200">Phone</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {!selectedDate ? (
-                                        <tr><td colSpan={10} className="py-10 text-center text-gray-300 italic font-bold uppercase text-[9px]">Select a date to view invoices</td></tr>
+                                        <tr><td colSpan={10} className="p-10 text-center text-gray-400 italic">Select a date to view invoices</td></tr>
                                     ) : invoices.length === 0 ? (
-                                        <tr><td colSpan={10} className="py-10 text-center text-gray-300 italic font-bold uppercase text-[9px]">No invoices for this date</td></tr>
+                                        <tr><td colSpan={10} className="p-10 text-center text-gray-400 italic">No invoices for this date</td></tr>
                                     ) : invoices.map((inv: any, i: number) => {
                                         const active = selectedUnico === inv.unico;
                                         return (
-                                            <tr key={inv.unico || i} onClick={() => setUnico(inv.unico)} className={cn("cursor-pointer border-b border-gray-50 h-7 transition-colors", active ? "bg-orange-50 font-black" : "hover:bg-gray-50")}>
-                                                <td className={cn("px-2 font-bold truncate max-w-[160px] uppercase", active ? "text-[#FB7506]" : "text-gray-800")}>{inv.grower}</td>
-                                                <td className="px-2 font-black text-blue-700">{inv.invoice_no}</td>
-                                                <td className="px-2 text-right text-gray-600">{formatMoney(inv.estimated)}</td>
-                                                <td className="px-2 text-right font-black text-gray-900">{formatMoney(inv.amount)}</td>
-                                                <td className="px-2 text-right text-green-600">{formatMoney(inv.credits)}</td>
-                                                <td className="px-2 text-right text-red-500">{formatMoney(inv.debits)}</td>
-                                                <td className="px-2 text-right font-black text-[#FB7506]">{formatMoney(inv.total_balance)}</td>
-                                                <td className="px-2 text-gray-500">{formatDateEST(inv.control_date)}</td>
-                                                <td className="px-2 text-gray-500">{formatDateEST(inv.ap_date)}</td>
-                                                <td className="px-2 text-gray-400">{inv.phone_1}</td>
+                                            <tr key={inv.unico || i} onClick={() => setUnico(inv.unico)} className={cn(
+                                                "border-b text-gray-600 cursor-pointer transition-colors",
+                                                active ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50"
+                                            )}>
+                                                <td className="p-2 font-medium truncate max-w-[180px]">{inv.grower}</td>
+                                                <td className="p-2 border-l border-gray-100 font-semibold text-blue-700">{inv.invoice_no}</td>
+                                                <td className="p-2 border-l border-gray-100 text-right">{formatMoney(inv.estimated)}</td>
+                                                <td className="p-2 border-l border-gray-100 text-right font-semibold">{formatMoney(inv.amount)}</td>
+                                                <td className="p-2 border-l border-gray-100 text-right text-green-600">{formatMoney(inv.credits)}</td>
+                                                <td className="p-2 border-l border-gray-100 text-right text-red-500">{formatMoney(inv.debits)}</td>
+                                                <td className="p-2 border-l border-gray-100 text-right font-semibold text-orange-600">{formatMoney(inv.total_balance)}</td>
+                                                <td className="p-2 border-l border-gray-100">{formatDateEST(inv.control_date)}</td>
+                                                <td className="p-2 border-l border-gray-100">{formatDateEST(inv.ap_date)}</td>
+                                                <td className="p-2 border-l border-gray-100 text-gray-400">{inv.phone_1}</td>
                                             </tr>
                                         );
                                     })}
@@ -422,43 +428,43 @@ export default function AccountsPayablePage() {
                                                 </div>
                                             </div>
                                             <div className="overflow-auto flex-1">
-                                                <table className="w-full text-[10px] whitespace-nowrap">
-                                                    <thead className="sticky top-0 bg-white z-10">
-                                                        <tr className="border-b border-gray-100">
-                                                            <th className="px-2 py-1.5 text-left font-black text-gray-400 uppercase tracking-tight w-8" />
-                                                            <th className="px-2 text-left font-black text-gray-400 uppercase tracking-tight">Type</th>
-                                                            <th className="px-2 font-black text-gray-400 uppercase tracking-tight">Date</th>
-                                                            <th className="px-2 font-black text-gray-400 uppercase tracking-tight">Reason</th>
-                                                            <th className="px-2 text-right font-black text-gray-400 uppercase tracking-tight">Amount</th>
-                                                            <th className="px-2 font-black text-gray-400 uppercase tracking-tight">Doc. No</th>
-                                                            <th className="px-2 font-black text-gray-400 uppercase tracking-tight">Auto No</th>
-                                                            <th className="px-2 font-black text-gray-400 uppercase tracking-tight">Comments</th>
+                                                <table className="min-w-full text-xs text-left">
+                                                    <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
+                                                        <tr>
+                                                            <th className="p-2 w-8" />
+                                                            <th className="p-2 border-l border-gray-200">Type</th>
+                                                            <th className="p-2 border-l border-gray-200">Date</th>
+                                                            <th className="p-2 border-l border-gray-200">Reason</th>
+                                                            <th className="p-2 border-l border-gray-200 text-right">Amount</th>
+                                                            <th className="p-2 border-l border-gray-200">Doc. No</th>
+                                                            <th className="p-2 border-l border-gray-200">Auto No</th>
+                                                            <th className="p-2 border-l border-gray-200">Comments</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
                                                         {loadingCredits ? (
-                                                            <tr><td colSpan={8} className="py-8 text-center text-gray-300 font-bold">Loading...</td></tr>
+                                                            <tr><td colSpan={8} className="p-8 text-center text-gray-400">Loading...</td></tr>
                                                         ) : tabCredits.length === 0 ? (
-                                                            <tr><td colSpan={8} className="py-8 text-center text-gray-300 italic font-bold uppercase text-[9px]">No credits or debits</td></tr>
+                                                            <tr><td colSpan={8} className="p-8 text-center text-gray-400 italic">No credits or debits</td></tr>
                                                         ) : tabCredits.map((cr: any, i: number) => (
-                                                            <tr key={i} className="border-b border-gray-50 h-7 hover:bg-gray-50 group">
-                                                                <td className="px-2">
+                                                            <tr key={i} className="border-b text-gray-600 odd:bg-white even:bg-gray-50 hover:bg-blue-50 transition-colors group">
+                                                                <td className="p-2">
                                                                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                        <button onClick={() => setCrdbModal({ open: true, mode: "Edit", type: cr.type, row: cr })} className="text-blue-400 hover:text-blue-600"><Pencil size={10} /></button>
-                                                                        <button onClick={() => setCrdbModal({ open: true, mode: "Delete", type: cr.type, row: cr })} className="text-red-400 hover:text-red-600"><Trash2 size={10} /></button>
+                                                                        <button onClick={() => setCrdbModal({ open: true, mode: "Edit", type: cr.type, row: cr })} className="text-blue-400 hover:text-blue-600"><Pencil size={11} /></button>
+                                                                        <button onClick={() => setCrdbModal({ open: true, mode: "Delete", type: cr.type, row: cr })} className="text-red-400 hover:text-red-600"><Trash2 size={11} /></button>
                                                                     </div>
                                                                 </td>
-                                                                <td className="px-2">
-                                                                    <span className={cn("px-1.5 py-0.5 rounded text-[8px] font-black uppercase", cr.type === "C" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600")}>
+                                                                <td className="p-2 border-l border-gray-100">
+                                                                    <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-semibold", cr.type === "C" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600")}>
                                                                         {cr.type === "C" ? "Credit" : "Debit"}
                                                                     </span>
                                                                 </td>
-                                                                <td className="px-2 text-gray-600">{formatDateEST(cr.cd_date)}</td>
-                                                                <td className="px-2 text-gray-700 font-bold truncate max-w-[140px]">{cr.reason}</td>
-                                                                <td className={cn("px-2 text-right font-black", cr.type === "C" ? "text-green-600" : "text-red-500")}>{formatMoney(cr.cd_amount)}</td>
-                                                                <td className="px-2 text-gray-500">{cr.retention_no}</td>
-                                                                <td className="px-2 text-gray-400">{cr.cd_no}</td>
-                                                                <td className="px-2 text-gray-500 truncate max-w-[180px]">{cr.cd_details}</td>
+                                                                <td className="p-2 border-l border-gray-100">{formatDateEST(cr.cd_date)}</td>
+                                                                <td className="p-2 border-l border-gray-100 font-medium truncate max-w-[150px]">{cr.reason}</td>
+                                                                <td className={cn("p-2 border-l border-gray-100 text-right font-semibold", cr.type === "C" ? "text-green-600" : "text-red-500")}>{formatMoney(cr.cd_amount)}</td>
+                                                                <td className="p-2 border-l border-gray-100">{cr.retention_no}</td>
+                                                                <td className="p-2 border-l border-gray-100 text-gray-400">{cr.cd_no}</td>
+                                                                <td className="p-2 border-l border-gray-100 truncate max-w-[200px]">{cr.cd_details}</td>
                                                             </tr>
                                                         ))}
                                                     </tbody>
@@ -527,11 +533,11 @@ function TabTable({ rows, columns, loading, empty }: {
 }) {
     return (
         <div className="overflow-auto h-full">
-            <table className="w-full text-[10px] whitespace-nowrap">
-                <thead className="sticky top-0 bg-white z-10">
-                    <tr className="border-b border-gray-100">
+            <table className="min-w-full text-xs text-left">
+                <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
+                    <tr>
                         {columns.map(c => (
-                            <th key={c.key} className={cn("px-2 py-1.5 font-black text-gray-400 uppercase tracking-tight text-left", c.className)}>
+                            <th key={c.key} className={cn("p-2 whitespace-nowrap", c.className)}>
                                 {c.label}
                             </th>
                         ))}
@@ -539,13 +545,13 @@ function TabTable({ rows, columns, loading, empty }: {
                 </thead>
                 <tbody>
                     {loading ? (
-                        <tr><td colSpan={columns.length} className="py-8 text-center text-gray-300 font-bold">Loading...</td></tr>
+                        <tr><td colSpan={columns.length} className="p-8 text-center text-gray-400">Loading...</td></tr>
                     ) : rows.length === 0 ? (
-                        <tr><td colSpan={columns.length} className="py-8 text-center text-gray-300 italic font-bold uppercase text-[9px]">{empty}</td></tr>
+                        <tr><td colSpan={columns.length} className="p-8 text-center text-gray-400 italic">{empty}</td></tr>
                     ) : rows.map((row, i) => (
-                        <tr key={i} className="border-b border-gray-50 h-7 hover:bg-gray-50">
-                            {columns.map(c => (
-                                <td key={c.key} className={cn("px-2 text-gray-700", c.className)}>
+                        <tr key={i} className="border-b text-gray-600 odd:bg-white even:bg-gray-50 hover:bg-blue-50 transition-colors">
+                            {columns.map((c, ci) => (
+                                <td key={c.key} className={cn("p-2 whitespace-nowrap", ci < columns.length - 1 && "border-r border-gray-100", c.className)}>
                                     {c.render ? c.render(row[c.key], row) : row[c.key] ?? ""}
                                 </td>
                             ))}
@@ -711,25 +717,28 @@ function POModal({ apUq, invoice, pobs, apTypes, onClose, onAdd, onEdit, onDelet
 
                 {/* PO Grid */}
                 <div className="max-h-40 overflow-auto border-b border-gray-100">
-                    <table className="w-full text-[10px] whitespace-nowrap">
-                        <thead className="sticky top-0 bg-white">
-                            <tr className="border-b border-gray-100">
+                    <table className="min-w-full text-xs text-left">
+                        <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
+                            <tr>
                                 {["Acc. Type", "AP Date", "Amount", "PO", "PO Date", "Cost"].map(h => (
-                                    <th key={h} className="px-3 py-1.5 text-left font-black text-gray-400 uppercase tracking-tight">{h}</th>
+                                    <th key={h} className="p-2 whitespace-nowrap border-r border-gray-200 last:border-r-0">{h}</th>
                                 ))}
                             </tr>
                         </thead>
                         <tbody>
                             {pobs.length === 0 ? (
-                                <tr><td colSpan={6} className="py-6 text-center text-gray-300 italic text-[9px] font-bold uppercase">No PO records</td></tr>
+                                <tr><td colSpan={6} className="p-6 text-center text-gray-400 italic">No PO records</td></tr>
                             ) : pobs.map((p: any, i: number) => (
-                                <tr key={i} onClick={() => setSelectedPob(p)} className={cn("cursor-pointer border-b border-gray-50 h-7", selectedPob?.unico === p.unico ? "bg-orange-50" : "hover:bg-gray-50")}>
-                                    <td className="px-3 text-gray-700">{p.ap_type}</td>
-                                    <td className="px-3 text-gray-600">{formatDateEST(p.ap_date)}</td>
-                                    <td className="px-3 text-right">{formatMoney(p.ammount)}</td>
-                                    <td className="px-3 font-bold text-blue-700">{p.porder_no}</td>
-                                    <td className="px-3 text-gray-600">{formatDateEST(p.po_date)}</td>
-                                    <td className="px-3 text-right font-black text-[#FB7506]">{formatMoney(p.cost)}</td>
+                                <tr key={i} onClick={() => setSelectedPob(p)} className={cn(
+                                    "border-b text-gray-600 cursor-pointer transition-colors",
+                                    selectedPob?.unico === p.unico ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50"
+                                )}>
+                                    <td className="p-2 border-r border-gray-100">{p.ap_type}</td>
+                                    <td className="p-2 border-r border-gray-100">{formatDateEST(p.ap_date)}</td>
+                                    <td className="p-2 border-r border-gray-100 text-right">{formatMoney(p.ammount)}</td>
+                                    <td className="p-2 border-r border-gray-100 font-semibold text-blue-700">{p.porder_no}</td>
+                                    <td className="p-2 border-r border-gray-100">{formatDateEST(p.po_date)}</td>
+                                    <td className="p-2 text-right font-semibold text-orange-600">{formatMoney(p.cost)}</td>
                                 </tr>
                             ))}
                         </tbody>
