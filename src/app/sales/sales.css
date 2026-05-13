@@ -1,0 +1,122 @@
+/* Estilos industriales clonados de FullPot-Internal-System */
+:root {
+    --pos-orange: #FB7506;
+    --pos-gold: #FECD60;
+    --pos-gray-light: #7F7F7F;
+    --pos-gray-medium: #4F4F4F;
+    --pos-gray-dark: #333030;
+    --pos-white: #FFFFFF;
+    --pos-black: #000000;
+
+    --pos-border-color: rgba(0, 0, 0, 0.05);
+    --pos-header-bg: #ffffff;
+    --pos-header-text: #6b7280;
+    --pos-row-hover: rgba(59, 130, 246, 0.05);
+    --pos-row-selected: rgba(251, 117, 6, 0.1);
+    --pos-row-alt-bg: rgba(0, 0, 0, 0.02);
+
+    /* Modal & Header Colors */
+    --pos-modal-header-bg: #374151;
+    --pos-modal-header-text: #ffffff;
+    --pos-btn-primary: #16a34a;
+    --pos-btn-primary-hover: #15803d;
+}
+
+.pos-grid-container {
+    display: flex;
+    flex-direction: column;
+    border-radius: 0.375rem;
+    background-color: white;
+    border: 1px solid black;
+    overflow: hidden;
+}
+
+.pos-grid-header {
+    background-color: var(--pos-modal-header-bg);
+    color: white;
+    height: 2.5rem;
+    /* h-10 */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
+}
+
+.pos-table-container {
+    flex: 1;
+    overflow: auto;
+    background-color: white;
+}
+
+.pos-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: inherit;
+    border: 1px solid var(--pos-border-color);
+    background-color: white;
+}
+
+.pos-table thead th {
+    background-color: var(--pos-header-bg);
+    color: var(--pos-header-text);
+    border: 1px solid var(--pos-border-color);
+    border-bottom: 2px solid #e5e7eb;
+    padding: 6px 8px;
+    font-weight: 900;
+    text-transform: uppercase;
+    font-size: 10px;
+    text-align: left;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.pos-table tbody td {
+    border: none;
+    border-bottom: 1px solid var(--pos-border-color);
+    padding: 4px 8px;
+    font-size: 11px;
+    color: #374151;
+}
+
+.pos-table tbody tr {
+    height: 32px;
+}
+
+.pos-table tbody tr:hover {
+    background-color: var(--pos-row-hover);
+}
+
+.pos-table tbody tr:nth-child(even) {
+    background-color: var(--pos-row-alt-bg);
+}
+
+.pos-table tbody tr.selected {
+    background-color: var(--pos-row-selected) !important;
+}
+
+/* Modals */
+.pos-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.pos-modal-content {
+    background-color: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 28rem;
+    /* max-w-md */
+    overflow: hidden;
+}
