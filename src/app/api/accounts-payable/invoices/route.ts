@@ -6,7 +6,7 @@ export async function GET(req: NextRequest) {
     if (!date) return NextResponse.json({ error: "date required" }, { status: 400 });
     try {
         const result = await executeProcedure("sp_flower_accounts_pay_years_dates_list", {
-            lddate: date
+            ldap_Date: date
         });
         return NextResponse.json(result.recordset);
     } catch (err: any) {
