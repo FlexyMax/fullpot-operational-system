@@ -54,11 +54,15 @@ export default function AccountsPayablePage() {
         setYear, setDate, setUnico,
     } = useAPStore();
 
-    const [activeTab, setActiveTab]   = useState<"terms" | "po" | "prebooks" | "credits">("terms");
-    const [crdbModal, setCrdbModal]   = useState<{ open: boolean; mode: "Add" | "Edit" | "Delete"; type: "C" | "D"; row?: any } | null>(null);
-    const [pobModal,  setPobModal]    = useState<{ open: boolean; row?: any } | null>(null);
-    const [calMonth,  setCalMonth]    = useState(() => new Date().getMonth() + 1);
-    const [calYear,   setCalYear]     = useState(currentYearEST);
+    const [activeTab,        setActiveTab]        = useState<"terms" | "po" | "prebooks" | "credits">("terms");
+    const [crdbModal,        setCrdbModal]        = useState<{ open: boolean; mode: "Add" | "Edit" | "Delete"; type: "C" | "D"; row?: any } | null>(null);
+    const [pobModal,         setPobModal]         = useState<{ open: boolean; row?: any } | null>(null);
+    const [calMonth,         setCalMonth]         = useState(() => new Date().getMonth() + 1);
+    const [calYear,          setCalYear]          = useState(currentYearEST);
+    const [selectedTermIdx,  setSelectedTermIdx]  = useState(0);
+    const [selectedPobIdx,   setSelectedPobIdx]   = useState(0);
+    const [selectedPbkIdx,   setSelectedPbkIdx]   = useState(0);
+    const [selectedCrdbIdx,  setSelectedCrdbIdx]  = useState(0);
 
     useEffect(() => {
         if (status === "unauthenticated") router.push("/login");
@@ -128,6 +132,18 @@ export default function AccountsPayablePage() {
         mutationFn: (ap_uq: string) => fetch("/api/accounts-payable/pob/approve", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ap_uq }) }).then(r => r.json()),
         onSuccess: () => { qc.invalidateQueries({ queryKey: ["ap-invoice", selectedUnico] }); },
     });
+
+    // ── Auto-selection cascades ───────────────────────────────────────────────
+    useEffect(() => {
+        if (invoices.length > 0) setUnico(invoices[0].unico);
+    }, [invoices]);
+
+    useEffect(() => {
+        setSelectedTermIdx(0);
+        setSelectedPobIdx(0);
+        setSelectedPbkIdx(0);
+        setSelectedCrdbIdx(0);
+    }, [selectedUnico]);
 
     // ── Helpers ──────────────────────────────────────────────────────────────
     const selectedInvoice = invoices.find((inv: any) => inv.unico === selectedUnico);
@@ -316,16 +332,16 @@ export default function AccountsPayablePage() {
                                                 "border-b text-gray-600 cursor-pointer transition-colors",
                                                 active ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50"
                                             )}>
-                                                <td className="p-2 font-medium truncate max-w-[180px]">{inv.grower}</td>
-                                                <td className="p-2 border-l border-gray-100 font-semibold text-blue-700">{inv.invoice_no}</td>
+                                                <td className="p-2 font-medium truncate max-w-[180px]">{String(inv.grower || "").trim()}</td>
+                                                <td className="p-2 border-l border-gray-100 font-semibold text-blue-700">{String(inv.invoice_no || "").trim()}</td>
                                                 <td className="p-2 border-l border-gray-100 text-right">{formatMoney(inv.estimated)}</td>
                                                 <td className="p-2 border-l border-gray-100 text-right font-semibold">{formatMoney(inv.amount)}</td>
                                                 <td className="p-2 border-l border-gray-100 text-right text-green-600">{formatMoney(inv.credits)}</td>
                                                 <td className="p-2 border-l border-gray-100 text-right text-red-500">{formatMoney(inv.debits)}</td>
                                                 <td className="p-2 border-l border-gray-100 text-right font-semibold text-orange-600">{formatMoney(inv.total_balance)}</td>
-                                                <td className="p-2 border-l border-gray-100">{formatDateEST(inv.control_date)}</td>
-                                                <td className="p-2 border-l border-gray-100">{formatDateEST(inv.ap_date)}</td>
-                                                <td className="p-2 border-l border-gray-100 text-gray-400">{inv.phone_1}</td>
+                                                <td className="p-2 border-l border-gray-100">{formatDateEST(normalizeToISODate(inv.control_Date ?? inv.control_date))}</td>
+                                                <td className="p-2 border-l border-gray-100">{formatDateEST(normalizeToISODate(inv.ap_date))}</td>
+                                                <td className="p-2 border-l border-gray-100 text-gray-400">{String(inv.phone_1 || "").trim()}</td>
                                             </tr>
                                         );
                                     })}
@@ -375,6 +391,8 @@ export default function AccountsPayablePage() {
                                             loading={loadingTerms}
                                             rows={tabTerms}
                                             empty="No payment terms found"
+                                            selectedIdx={selectedTermIdx}
+                                            onSelectIdx={setSelectedTermIdx}
                                             columns={[
                                                 { key: "date_due",    label: "Date",     render: (v: any) => formatDateEST(v) },
                                                 { key: "days",        label: "Days",     className: "text-center" },
@@ -404,6 +422,8 @@ export default function AccountsPayablePage() {
                                                 loading={loadingPobs}
                                                 rows={tabPobs}
                                                 empty="No PO records"
+                                                selectedIdx={selectedPobIdx}
+                                                onSelectIdx={setSelectedPobIdx}
                                                 columns={[
                                                     { key: "ap_type",   label: "Acc. Type" },
                                                     { key: "ap_date",   label: "AP Date",  render: (v: any) => formatDateEST(v) },
@@ -422,6 +442,8 @@ export default function AccountsPayablePage() {
                                             loading={loadingPrebooks}
                                             rows={tabPrebooks}
                                             empty="No prebook records"
+                                            selectedIdx={selectedPbkIdx}
+                                            onSelectIdx={setSelectedPbkIdx}
                                             columns={[
                                                 { key: "grower",       label: "Vendor" },
                                                 { key: "ap_type",      label: "Type" },
@@ -471,7 +493,10 @@ export default function AccountsPayablePage() {
                                                         ) : tabCredits.length === 0 ? (
                                                             <tr><td colSpan={8} className="p-8 text-center text-gray-400 italic">No credits or debits</td></tr>
                                                         ) : tabCredits.map((cr: any, i: number) => (
-                                                            <tr key={i} className="border-b text-gray-600 odd:bg-white even:bg-gray-50 hover:bg-blue-50 transition-colors group">
+                                                            <tr key={i} onClick={() => setSelectedCrdbIdx(i)} className={cn(
+                                                                "border-b text-gray-600 cursor-pointer transition-colors group",
+                                                                i === selectedCrdbIdx ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50"
+                                                            )}>
                                                                 <td className="p-2">
                                                                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                                         <button onClick={() => setCrdbModal({ open: true, mode: "Edit", type: cr.type, row: cr })} className="text-blue-400 hover:text-blue-600"><Pencil size={11} /></button>
@@ -637,11 +662,13 @@ function APCalendar({ dates, selectedDate, onSelect, calYear, calMonth, onMonthC
 }
 
 // ─── Reusable Table Component ─────────────────────────────────────────────────
-function TabTable({ rows, columns, loading, empty }: {
+function TabTable({ rows, columns, loading, empty, selectedIdx = 0, onSelectIdx }: {
     rows: any[];
     columns: { key: string; label: string; className?: string; render?: (v: any, row: any) => any }[];
     loading: boolean;
     empty: string;
+    selectedIdx?: number;
+    onSelectIdx?: (i: number) => void;
 }) {
     return (
         <div className="overflow-auto h-full">
@@ -661,7 +688,16 @@ function TabTable({ rows, columns, loading, empty }: {
                     ) : rows.length === 0 ? (
                         <tr><td colSpan={columns.length} className="p-8 text-center text-gray-400 italic">{empty}</td></tr>
                     ) : rows.map((row, i) => (
-                        <tr key={i} className="border-b text-gray-600 odd:bg-white even:bg-gray-50 hover:bg-blue-50 transition-colors">
+                        <tr
+                            key={i}
+                            onClick={() => onSelectIdx?.(i)}
+                            className={cn(
+                                "border-b text-gray-600 cursor-pointer transition-colors",
+                                i === selectedIdx
+                                    ? "!bg-blue-100 ring-2 ring-inset ring-blue-300"
+                                    : "odd:bg-white even:bg-gray-50 hover:bg-blue-50"
+                            )}
+                        >
                             {columns.map((c, ci) => (
                                 <td key={c.key} className={cn("p-2 whitespace-nowrap", ci < columns.length - 1 && "border-r border-gray-100", c.className)}>
                                     {c.render ? c.render(row[c.key], row) : row[c.key] ?? ""}
