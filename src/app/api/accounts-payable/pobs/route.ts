@@ -5,7 +5,7 @@ export async function GET(req: NextRequest) {
     const unico = req.nextUrl.searchParams.get("unico");
     if (!unico) return NextResponse.json({ error: "unico required" }, { status: 400 });
     try {
-        const result = await executeProcedure("sp_flower_accounts_pay_pobs", { unico });
+        const result = await executeProcedure("sp_flower_accounts_pay_pobs", { lcap_uq: unico });
         return NextResponse.json(result.recordset);
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });

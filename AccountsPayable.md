@@ -69,7 +69,40 @@ const [selectedCrdbUq, setSelectedCrdbUq]  = useState(null)   // lccrdb_uq
 
 ## 3. ENDPOINTS NODE.JS
 
-Crea `api/routes/accountsPayable.js` con estos endpoints. Todos llaman Stored Procedures en SQL Server con `mssql` (el mismo patrón que ya usas en el proyecto).
+Rutas implementadas en `src/app/api/accounts-payable/`. Parámetros verificados
+contra SQL Server con `check_sp_params.js` el 2026-05-13.
+
+```
+SP                                    PARÁMETROS REALES (verificados)
+─────────────────────────────────────────────────────────────────────
+sp_flower_accounts_pay_years          (sin parámetros)
+sp_flower_accounts_pay_years_dates    @lnyear          int
+sp_flower_accounts_pay_years_dates_list @ldap_Date     datetime
+sp_flower_accounts_pay_up             @lcinvoice_uq    varchar(8)
+sp_flower_accounts_pay_details        @lcinvoice_uq    varchar(8)
+sp_flower_accounts_pay_pobs           @lcap_uq         varchar(8)
+sp_flower_prebook_cost                @lcpbook_uq      varchar(8)
+                                      @lcaccount_uq    varchar(8)
+sp_flower_accounts_pay_credits_debits @lcapayable_uq   varchar(8)
+sp_flower_growers_list                @llall           bit
+sp_flower_growers_terms               @lcgrower_uq     char
+sp_flower_accounts_pay_type_list      (sin parámetros)
+sp_flower_terms                       (sin parámetros)
+sp_flower_crdb_reasons_list           (sin parámetros)
+sp_flower_accounts_pay_total_pobs     @lcap_uq         varchar(8)
+sp_flower_accounts_pay_pob_insert     @lcap_uq         varchar(8)
+                                      @lcpob_uq        varchar(8)
+                                      @lncost          numeric(10,2)
+                                      @lcaptype_uq     varchar(8)
+sp_flower_accounts_pay_pob_update     @lcunico         varchar(8)
+                                      @lcpob_uq        varchar(8)
+                                      @lncost          numeric(10,2)
+                                      @lcaptype_uq     varchar(8)
+sp_flower_accounts_pay_pob_delete     @lcunico         varchar(8)
+sp_flower_accounts_pay_approve_cost   @lcunico         varchar(8)
+                                      @llapproved      bit
+sp_flower_pob_search_no               @lnporder_no     int
+```
 
 ```js
 // Años disponibles
@@ -77,39 +110,39 @@ GET /api/accounts-payable/years
 → EXEC sp_flower_accounts_pay_years
 
 // Fechas del año seleccionado
-GET /api/accounts-payable/dates?year=2024
-→ EXEC sp_flower_accounts_pay_years_dates @lnyear=2024
+GET /api/accounts-payable/dates?year=2026
+→ EXEC sp_flower_accounts_pay_years_dates @lnyear=2026
 
-// Facturas de una fecha
-GET /api/accounts-payable/invoices?date=2024-03-15
-→ EXEC sp_flower_accounts_pay_years_dates_list @lddate='2024-03-15'
+// Facturas de una fecha (NOTA: parámetro es @ldap_Date, no @lddate)
+GET /api/accounts-payable/invoices?date=2026-05-13
+→ EXEC sp_flower_accounts_pay_years_dates_list @ldap_Date='2026-05-13'
 
 // Factura activa (header)
-GET /api/accounts-payable/invoice/:unico
-→ EXEC sp_flower_accounts_pay_up @unico='XXXXXXXX'
+GET /api/accounts-payable/invoice?unico=XXXXXXXX
+→ EXEC sp_flower_accounts_pay_up @lcinvoice_uq='XXXXXXXX'
 
 // Tab Terms: tramos de pago
-GET /api/accounts-payable/details/:unico
-→ EXEC sp_flower_accounts_pay_details @unico='XXXXXXXX'
+GET /api/accounts-payable/details?unico=XXXXXXXX
+→ EXEC sp_flower_accounts_pay_details @lcinvoice_uq='XXXXXXXX'
 
 // Tab PO: purchase orders
-GET /api/accounts-payable/pobs/:unico
-→ EXEC sp_flower_accounts_pay_pobs @unico='XXXXXXXX'
+GET /api/accounts-payable/pobs?unico=XXXXXXXX
+→ EXEC sp_flower_accounts_pay_pobs @lcap_uq='XXXXXXXX'
 
-// Tab Prebooks
-GET /api/accounts-payable/prebooks/:unico
-→ EXEC sp_flower_prebook_cost @customer='%', @unico='XXXXXXXX'
+// Tab Prebooks (NOTA: parámetros distintos al doc original de VFP)
+GET /api/accounts-payable/prebooks?unico=XXXXXXXX
+→ EXEC sp_flower_prebook_cost @lcpbook_uq='%', @lcaccount_uq='XXXXXXXX'
 
 // Tab Credits & Debits
-GET /api/accounts-payable/credits/:unico
-→ EXEC sp_flower_accounts_pay_credits_debits @unico='XXXXXXXX'
+GET /api/accounts-payable/credits?unico=XXXXXXXX
+→ EXEC sp_flower_accounts_pay_credits_debits @lcapayable_uq='XXXXXXXX'
 
 // Combos / Lookups
 GET /api/accounts-payable/growers
-→ EXEC sp_flower_growers_list @tipo=0
+→ EXEC sp_flower_growers_list @llall=1
 
-GET /api/accounts-payable/grower-terms/:grower_uq
-→ EXEC sp_flower_growers_terms @grower_uq='XXXXXXXX'
+GET /api/accounts-payable/grower-terms?grower_uq=XXXXXXXX
+→ EXEC sp_flower_growers_terms @lcgrower_uq='XXXXXXXX'
 
 GET /api/accounts-payable/ap-types
 → EXEC sp_flower_accounts_pay_type_list
@@ -121,34 +154,29 @@ GET /api/accounts-payable/reasons
 → EXEC sp_flower_crdb_reasons_list
 
 // --- MODAL POB ---
-GET  /api/accounts-payable/pob/total/:ap_uq
-→ EXEC sp_flower_accounts_pay_total_pobs @ap_uq='XXXXXXXX'
+GET  /api/accounts-payable/pob?ap_uq=XXXXXXXX
+→ EXEC sp_flower_accounts_pay_total_pobs @lcap_uq='XXXXXXXX'
 
 POST /api/accounts-payable/pob
-→ EXEC sp_flower_accounts_pay_pob_insert @ap_uq, @pob_uq, @cost, @ap_type_uq
+→ EXEC sp_flower_accounts_pay_pob_insert @lcap_uq, @lcpob_uq, @lncost, @lcaptype_uq
 
-PUT  /api/accounts-payable/pob/:unico
-→ EXEC sp_flower_accounts_pay_pob_update @unico, @pob_uq, @cost, @ap_type_uq
+PUT  /api/accounts-payable/pob
+→ EXEC sp_flower_accounts_pay_pob_update @lcunico, @lcpob_uq, @lncost, @lcaptype_uq
 
-DELETE /api/accounts-payable/pob/:unico
-→ EXEC sp_flower_accounts_pay_pob_delete @unico
+DELETE /api/accounts-payable/pob?unico=XXXXXXXX
+→ EXEC sp_flower_accounts_pay_pob_delete @lcunico
 
-POST /api/accounts-payable/pob/approve/:ap_uq
-→ EXEC sp_flower_accounts_pay_approve_cost @ap_uq, @flag=1
+POST /api/accounts-payable/pob/approve
+→ EXEC sp_flower_accounts_pay_approve_cost @lcunico, @llapproved=1
 
-GET  /api/accounts-payable/pob/search/:po_no
-→ EXEC sp_flower_pob_search_no @po_no
+GET  /api/accounts-payable/pob/search?po_no=12345
+→ EXEC sp_flower_pob_search_no @lnporder_no=12345  (int, no varchar)
 
 // --- MODAL CREDIT/DEBIT ---
 POST /api/accounts-payable/crdb
-body: { acc_pay_uq, type, cd_date, reason_uq, cd_ammount, retention_no, details }
-→ INSERT into flower_accounts_pay_crdb (llamar SP si existe, si no INSERT directo)
-
-PUT  /api/accounts-payable/crdb/:unico
-→ UPDATE flower_accounts_pay_crdb
-
-DELETE /api/accounts-payable/crdb/:unico
-→ DELETE flower_accounts_pay_crdb
+PUT  /api/accounts-payable/crdb
+DELETE /api/accounts-payable/crdb?unico=XXXXXXXX
+→ INSERT/UPDATE/DELETE directo en flower_accounts_pay_crdb
 ```
 
 ---

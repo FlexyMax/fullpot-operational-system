@@ -6,8 +6,8 @@ export async function GET(req: NextRequest) {
     if (!unico) return NextResponse.json({ error: "unico required" }, { status: 400 });
     try {
         const result = await executeProcedure("sp_flower_prebook_cost", {
-            customer: "%",
-            unico
+            lcpbook_uq:   "%",
+            lcaccount_uq: unico
         });
         return NextResponse.json(result.recordset);
     } catch (err: any) {
