@@ -329,7 +329,6 @@ export default function CustomersSetupPage() {
                     </div>
                 </div>
                 <span className="text-gray-400 text-[10px] font-bold">User: <span className="text-white">{session?.user?.name}</span></span>
-                <AuditLogModal recordId={selCust?.unico} disabled={!selCust?.unico} />
             </div>
 
             {/* Search toolbar */}
@@ -360,6 +359,8 @@ export default function CustomersSetupPage() {
                     className="flex items-center gap-1 bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white px-2.5 py-1 rounded text-[10px] font-black uppercase transition-all">
                     <Trash2 size={10} /> Delete
                 </button>
+                <div className="w-px h-5 bg-gray-200 mx-1" />
+                <AuditLogModal recordId={selCust?.unico} disabled={!selCust?.unico} />
                 {formError && <span className="text-amber-600 text-[10px] font-bold flex items-center gap-1 ml-2"><AlertCircle size={11} />{formError}</span>}
                 <span className="ml-auto text-[10px] text-gray-400 font-bold">
                     {custList.length}{totalRecords > 0 ? ` / ${totalRecords}` : ""} customers
@@ -457,6 +458,8 @@ export default function CustomersSetupPage() {
                                             className="flex items-center gap-1 bg-gray-600 hover:bg-gray-500 disabled:opacity-40 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase">
                                             <Copy size={9} /> Copy Bill
                                         </button>
+                                        <div className="w-px h-4 bg-white/20 mx-0.5" />
+                                        <AuditLogModal recordId={selShipto?.unico} disabled={!selShipto?.unico} />
                                     </div>
                                 </div>
                                 <div className="overflow-auto flex-1">
@@ -516,6 +519,8 @@ export default function CustomersSetupPage() {
                                             className="flex items-center gap-1 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase">
                                             <Star size={9} /> Default
                                         </button>
+                                        <div className="w-px h-4 bg-white/20 mx-0.5" />
+                                        <AuditLogModal recordId={selCarrier?.unico} disabled={!selCarrier?.unico} />
                                     </div>
                                 </div>
                                 <div className="overflow-auto flex-1">
@@ -601,6 +606,8 @@ export default function CustomersSetupPage() {
                                     <button onClick={() => { setWebUserForm({...EMPTY_WEBUSER}); setFormError(null); setWebUserModal({ mode:"add" }); }} disabled={!selCust} className="flex items-center gap-1 bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase"><Plus size={9} /> Add</button>
                                     <button onClick={() => { if(!selWebUser) return; setWebUserForm({fname:t(selWebUser.fname),lname:t(selWebUser.lname),username:t(selWebUser.username),password:t(selWebUser.password),active:!!selWebUser.active,makeinvoice:!!selWebUser.makeinvoice,makeprebook:!!selWebUser.makeprebook,makecredit:!!selWebUser.makecredit,viewaccount:!!selWebUser.viewaccount,viewproducts:!!selWebUser.viewproducts,viewhistory:!!selWebUser.viewhistory,email:t(selWebUser.email),phone:t(selWebUser.phone)}); setFormError(null); setWebUserModal({ mode:"edit" }); }} disabled={!selWebUser} className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase"><Pencil size={9} /> Edit</button>
                                     <button onClick={() => { if(selWebUser) { setFormError(null); setWebUserModal({ mode:"delete" }); } }} disabled={!selWebUser} className="flex items-center gap-1 bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase"><Trash2 size={9} /> Delete</button>
+                                    <div className="w-px h-4 bg-white/20 mx-0.5" />
+                                    <AuditLogModal recordId={selWebUser?.unico} disabled={!selWebUser?.unico} />
                                 </div>
                             </div>
                             <div className="overflow-auto flex-1">
@@ -641,7 +648,11 @@ export default function CustomersSetupPage() {
                         <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 flex flex-col min-h-0">
                             <div className="h-9 bg-[#374151] flex items-center justify-between px-3 shrink-0">
                                 <div className="flex items-center gap-2"><MessageSquare size={13} className="text-[#FB7506]" /><span className="font-black text-[10px] uppercase tracking-widest text-white">Messages & Comments</span></div>
-                                <button onClick={() => { setMsgForm({ comments:"", deadline:"", user_to:"" }); setFormError(null); setMsgModal(true); }} disabled={!selCust} className="flex items-center gap-1 bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase"><Plus size={9} /> Add</button>
+                                <div className="flex items-center gap-1.5">
+                                    <button onClick={() => { setMsgForm({ comments:"", deadline:"", user_to:"" }); setFormError(null); setMsgModal(true); }} disabled={!selCust} className="flex items-center gap-1 bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase"><Plus size={9} /> Add</button>
+                                    <div className="w-px h-4 bg-white/20 mx-0.5" />
+                                    <AuditLogModal recordId={selMessage?.unico} disabled={!selMessage?.unico} />
+                                </div>
                             </div>
                             <div className="overflow-auto flex-1">
                                 {(messages as any[]).length === 0 ? <div className="h-32 flex items-center justify-center text-gray-400 text-xs italic">{loadingMsgs ? "Loading..." : "No messages"}</div> : (
@@ -650,15 +661,19 @@ export default function CustomersSetupPage() {
                                             <tr>{["Message","Date","Deadline","Taken By","To"].map(h => <th key={h} className="p-2 border-r border-gray-200 last:border-r-0">{h}</th>)}</tr>
                                         </thead>
                                         <tbody>
-                                            {(messages as any[]).map((m: any, i: number) => (
-                                                <tr key={m.unico||i} className="border-b odd:bg-white even:bg-gray-50">
-                                                    <td className="p-2 border-r border-gray-100 truncate max-w-[300px]">{t(m.grid_message)}</td>
-                                                    <td className="p-2 border-r border-gray-100 whitespace-nowrap">{formatDateEST(normalizeToISODate(m.add_date))}</td>
-                                                    <td className="p-2 border-r border-gray-100 whitespace-nowrap">{formatDateEST(normalizeToISODate(m.deadline))}</td>
-                                                    <td className="p-2 border-r border-gray-100">{t(m.taken_by)}</td>
-                                                    <td className="p-2">{t(m.user_destination)}</td>
-                                                </tr>
-                                            ))}
+                                            {(messages as any[]).map((m: any, i: number) => {
+                                                const isSel = selMessage?.unico === m.unico;
+                                                return (
+                                                    <tr key={m.unico||i} onClick={() => setSelMessage(m)}
+                                                        className={cn("border-b cursor-pointer transition-colors", isSel ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50")}>
+                                                        <td className="p-2 border-r border-gray-100 truncate max-w-[300px]">{t(m.grid_message)}</td>
+                                                        <td className="p-2 border-r border-gray-100 whitespace-nowrap">{formatDateEST(normalizeToISODate(m.add_date))}</td>
+                                                        <td className="p-2 border-r border-gray-100 whitespace-nowrap">{formatDateEST(normalizeToISODate(m.deadline))}</td>
+                                                        <td className="p-2 border-r border-gray-100">{t(m.taken_by)}</td>
+                                                        <td className="p-2">{t(m.user_destination)}</td>
+                                                    </tr>
+                                                );
+                                            })}
                                         </tbody>
                                     </table>
                                 )}
