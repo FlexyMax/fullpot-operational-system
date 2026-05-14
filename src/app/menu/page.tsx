@@ -25,6 +25,7 @@ function getRoute(appPage: string): string | null {
     if (p.includes('ACCOUNTS PAY') || p.includes('A/P') || p.includes('A-P') || p.includes('PAYABLE')) return '/accounts-payable';
     if (p.includes('USER SETUP') || p.includes('USERS DEF') || p.includes('USER DEF')) return '/system/users';
     if (p.includes('MODULE') || p.includes('SCREEN SETUP') || p.includes('MODULO') || p.includes('PANTALLA') || p.includes('SISTEMA MODULOS') || p.includes('SISTEMA PANTALLAS')) return '/system/modules';
+    if (p.includes('CUSTOMER') || p.includes('CLIENTES') || p.includes('CUSTOMERS SETUP')) return '/masters/customers';
     if (p.includes('USUARIO') || p.includes('USER ACCESS') || p.includes('ACCESO') || p.includes('ACCESS DEF')) return '/system/access';
     if (p.includes('SCAN')) return '/scan';
     return null;
