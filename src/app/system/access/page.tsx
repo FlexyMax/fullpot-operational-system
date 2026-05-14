@@ -208,35 +208,6 @@ export default function SystemAccessPage() {
                 </div>
             </div>
 
-            {/* Toolbar — only visible in edit mode for Save/Cancel */}
-            {editMode && (
-                <div className="h-10 bg-white border-b border-gray-200 flex items-center px-4 gap-2 shrink-0 shadow-sm">
-                    <button
-                        onClick={handleSave}
-                        disabled={saving}
-                        className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-3 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all"
-                    >
-                        {saving ? <RefreshCcw size={11} className="animate-spin" /> : <Save size={11} />}
-                        {saving ? "Saving..." : "Save"}
-                    </button>
-                    <button
-                        onClick={handleCancel}
-                        className="flex items-center gap-1.5 bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all"
-                    >
-                        <X size={11} /> Cancel
-                    </button>
-                    {editError && (
-                        <div className="flex items-center gap-1.5 text-amber-600 text-[10px] font-bold ml-2">
-                            <AlertCircle size={12} /> {editError}
-                        </div>
-                    )}
-                    {saveMsg && (
-                        <div className="flex items-center gap-1.5 text-green-600 text-[10px] font-bold ml-2">
-                            <Check size={12} /> {saveMsg}
-                        </div>
-                    )}
-                </div>
-            )}
 
             {/* Main layout */}
             <div className="flex flex-col lg:flex-row flex-1 gap-2 p-2 overflow-y-auto lg:overflow-hidden">
@@ -304,7 +275,8 @@ export default function SystemAccessPage() {
 
                     {/* User Card */}
                     <div className="bg-white rounded-lg border border-gray-200 shadow-sm shrink-0">
-                        <div className="h-8 bg-[#374151] flex items-center justify-between px-3">
+                        <div className="h-9 bg-[#374151] flex items-center justify-between px-3">
+                            {/* Left: title + status badge */}
                             <div className="flex items-center gap-2">
                                 <UserCheck size={13} className="text-[#FB7506]" />
                                 <span className="font-black text-[10px] uppercase tracking-widest text-white">User Information</span>
@@ -316,27 +288,46 @@ export default function SystemAccessPage() {
                                         {selectedUser.activo ? "Active" : "Inactive"}
                                     </span>
                                 )}
-                                {editError && !editMode && (
-                                    <span className="flex items-center gap-1 text-amber-400 text-[9px] font-bold ml-2">
+                                {editError && (
+                                    <span className="flex items-center gap-1 text-amber-400 text-[9px] font-bold ml-1">
                                         <AlertCircle size={11} />{editError}
                                     </span>
                                 )}
+                                {saveMsg && (
+                                    <span className="flex items-center gap-1 text-green-400 text-[9px] font-bold ml-1">
+                                        <Check size={11} />{saveMsg}
+                                    </span>
+                                )}
                             </div>
-                            {/* Edit button lives here */}
-                            {!editMode && (
-                                <button
-                                    onClick={handleEdit}
-                                    disabled={!selectedUnico}
-                                    className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white px-2.5 py-1 rounded text-[9px] font-black uppercase tracking-wider transition-all"
-                                >
-                                    <Pencil size={10} /> Edit
-                                </button>
-                            )}
-                            {saveMsg && (
-                                <span className="flex items-center gap-1 text-green-400 text-[9px] font-bold">
-                                    <Check size={11} />{saveMsg}
-                                </span>
-                            )}
+                            {/* Right: Edit -or- Save + Cancel */}
+                            <div className="flex items-center gap-1.5">
+                                {!editMode ? (
+                                    <button
+                                        onClick={handleEdit}
+                                        disabled={!selectedUnico}
+                                        className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white px-2.5 py-1 rounded text-[9px] font-black uppercase tracking-wider transition-all"
+                                    >
+                                        <Pencil size={10} /> Edit
+                                    </button>
+                                ) : (
+                                    <>
+                                        <button
+                                            onClick={handleSave}
+                                            disabled={saving}
+                                            className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-2.5 py-1 rounded text-[9px] font-black uppercase tracking-wider transition-all"
+                                        >
+                                            {saving ? <RefreshCcw size={10} className="animate-spin" /> : <Save size={10} />}
+                                            {saving ? "Saving..." : "Save"}
+                                        </button>
+                                        <button
+                                            onClick={handleCancel}
+                                            className="flex items-center gap-1.5 bg-gray-500 hover:bg-gray-600 text-white px-2.5 py-1 rounded text-[9px] font-black uppercase tracking-wider transition-all"
+                                        >
+                                            <X size={10} /> Cancel
+                                        </button>
+                                    </>
+                                )}
+                            </div>
                         </div>
                         {!selectedUser ? (
                             <div className="p-4 text-xs text-gray-400 italic text-center">Select a user from the list</div>
