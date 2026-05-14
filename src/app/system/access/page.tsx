@@ -209,7 +209,6 @@ export default function SystemAccessPage() {
                 <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest">
                     <span className="text-gray-400">User: <span className="text-white">{session?.user?.name}</span></span>
                     <span className="text-green-500 font-black">● Online</span>
-                    <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} />
                 </div>
             </div>
 
@@ -285,6 +284,7 @@ export default function SystemAccessPage() {
                             <div className="flex items-center gap-2">
                                 <UserCheck size={13} className="text-[#FB7506]" />
                                 <span className="font-black text-[10px] uppercase tracking-widest text-white">User Information</span>
+                                <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} />
                                 {selectedUser && (
                                     <span className={cn(
                                         "text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded",
@@ -406,6 +406,7 @@ export default function SystemAccessPage() {
                             <div className="flex items-center gap-2">
                                 <Shield size={13} className="text-[#FB7506]" />
                                 <span className="font-black text-[10px] uppercase tracking-widest text-white">Screen Permissions</span>
+                                <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} />
                                 {loadingPerms && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
                             </div>
                             {!editMode && selectedUnico && (

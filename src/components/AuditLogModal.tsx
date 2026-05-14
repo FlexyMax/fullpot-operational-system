@@ -93,7 +93,7 @@ export function AuditLogModal({ recordId, disabled, size = "sm" }: Props) {
                                     </thead>
                                     <tbody>
                                         {rows.map((r: any, i: number) => (
-                                            <tr key={i} className="border-b odd:bg-white even:bg-gray-50 hover:bg-blue-50 transition-colors">
+                                            <tr key={i} className="border-b odd:bg-white even:bg-gray-50 hover:bg-blue-50 transition-colors text-gray-700">
                                                 <td className="p-2 border-r border-gray-100">
                                                     <span className={cn(
                                                         "px-1.5 py-0.5 rounded text-[9px] font-black uppercase",

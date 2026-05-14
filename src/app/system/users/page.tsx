@@ -267,7 +267,6 @@ export default function UsersDefinitionPage() {
                 <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest">
                     <span className="text-gray-400">User: <span className="text-white">{session?.user?.name}</span></span>
                     <span className="text-green-500 font-black">● Online</span>
-                    <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} />
                 </div>
             </div>
 
@@ -330,6 +329,7 @@ export default function UsersDefinitionPage() {
                                 <span className="font-black text-[10px] uppercase tracking-widest text-white">
                                     {mode === "add" ? "New User" : "User Information"}
                                 </span>
+                                <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} />
                                 {mode === "view" && form.unico && (
                                     <span className={cn(
                                         "text-[8px] font-black uppercase px-2 py-0.5 rounded",
@@ -484,6 +484,7 @@ export default function UsersDefinitionPage() {
                             <div className="flex items-center gap-2">
                                 <Calendar size={13} className="text-[#FB7506]" />
                                 <span className="font-black text-[10px] uppercase tracking-widest text-white">User Activity Log</span>
+                                <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} />
                                 {loadingLog && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
                             </div>
                             {/* Date filters — view mode only */}

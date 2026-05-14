@@ -248,7 +248,6 @@ export default function ModuleScreenSetupPage() {
                     </div>
                 </div>
                 <span className="text-gray-400 text-[10px] font-bold">User: <span className="text-white">{session?.user?.name}</span></span>
-                    <AuditLogModal recordId={selModUnico} disabled={!selModUnico} />
             </div>
 
             {/* Main two-panel layout */}
@@ -304,6 +303,7 @@ export default function ModuleScreenSetupPage() {
                                 <span className="font-black text-[10px] uppercase tracking-widest text-white shrink-0">
                                     {modMode === "add" ? "New Module" : "Module Details"}
                                 </span>
+                                <AuditLogModal recordId={selModUnico} disabled={!selModUnico} />
                                 {modError && <span className="flex items-center gap-1 text-amber-400 text-[9px] font-bold ml-2 truncate"><AlertCircle size={11} />{modError}</span>}
                                 {modMsg   && <span className="flex items-center gap-1 text-green-400 text-[9px] font-bold ml-2 truncate"><Check size={11} />{modMsg}</span>}
                                 {importMsg && <span className="text-blue-400 text-[9px] font-bold ml-2 truncate">{importMsg}</span>}
@@ -406,6 +406,7 @@ export default function ModuleScreenSetupPage() {
                                 <span className="font-black text-[10px] uppercase tracking-widest text-white">
                                     Screens {selMod ? `— ${t(selMod.nombre)}` : ""}
                                 </span>
+                                <AuditLogModal recordId={selScrUnico} disabled={!selScrUnico} />
                                 {loadingScr && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
                                 {screenError && <span className="flex items-center gap-1 text-amber-400 text-[9px] font-bold ml-2"><AlertCircle size={11} />{screenError}</span>}
                             </div>

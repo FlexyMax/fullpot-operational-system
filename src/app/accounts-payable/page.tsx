@@ -265,7 +265,6 @@ export default function AccountsPayablePage() {
                         <span className="text-gray-400">Status:</span>
                         <span className="text-green-500 font-black">Online</span>
                     </div>
-                    <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} />
                 </div>
             </div>
 
@@ -405,6 +404,7 @@ export default function AccountsPayablePage() {
                                 <span className="font-black text-[10px] uppercase tracking-widest text-white">
                                     Invoices {selectedDate ? `— ${selectedDate}` : ""}
                                 </span>
+                                <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} />
                                 {loadingInvoices && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
                             </div>
                             <div className="flex items-center gap-1.5">
@@ -607,7 +607,10 @@ export default function AccountsPayablePage() {
                                     {activeTab === "credits" && (
                                         <div className="flex flex-col h-full">
                                             <div className="flex items-center justify-between px-3 py-1.5 bg-white border-b border-gray-200 shrink-0">
-                                                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{tabCredits.length} records</span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{tabCredits.length} records</span>
+                                                    <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} size="sm" />
+                                                </div>
                                                 <div className="flex gap-2">
                                                     <button onClick={() => setCrdbModal({ open: true, mode: "Add", type: "C" })} className="flex items-center gap-1 bg-green-50 hover:bg-green-100 border border-green-200 text-green-700 px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest transition-all">
                                                         <Plus size={9} /> Credit
