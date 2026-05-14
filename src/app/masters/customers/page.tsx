@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -30,6 +30,15 @@ export default function CustomersSetupPage() {
     const router = useRouter();
     const qc = useQueryClient();
 
+    // ── Customer list state (infinite scroll) ────────────────────────────────
+    const [custList,       setCustList]       = useState<any[]>([]);
+    const [custPage,       setCustPage]       = useState(1);
+    const [hasMoreCusts,   setHasMoreCusts]   = useState(true);
+    const [loadingList,    setLoadingList]    = useState(false);
+    const [loadingMore,    setLoadingMore]    = useState(false);
+    const [totalRecords,   setTotalRecords]   = useState(0);
+    const custGridRef = useRef<HTMLDivElement>(null);
+
     const [search,         setSearch]         = useState("");
     const [selCust,        setSelCust]        = useState<any>(null);
     const [selShipto,      setSelShipto]      = useState<any>(null);
@@ -56,12 +65,44 @@ export default function CustomersSetupPage() {
 
     useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
 
+    // ── Customer list fetch (supports infinite scroll) ────────────────────────
+    const fetchCustomers = useCallback(async (page: number, q: string, append: boolean) => {
+        if (page === 1) setLoadingList(true); else setLoadingMore(true);
+        try {
+            const param = q.trim() ? q.trim() : "%";
+            const data  = await apiFetch(`/api/masters/customers?search=${encodeURIComponent(param)}&page=${page}`);
+            const rows  = data.customers ?? [];
+            if (append) {
+                setCustList(prev => [...prev, ...rows]);
+            } else {
+                setCustList(rows);
+                if (rows.length > 0) selectCustomer(rows[0]);
+                else setSelCust(null);
+            }
+            setCustPage(page);
+            setHasMoreCusts(data.hasMore ?? false);
+            setTotalRecords(data.totalRecords ?? 0);
+        } catch { /* silent */ }
+        finally { setLoadingList(false); setLoadingMore(false); }
+    }, []);
+
+    // Reset & reload when search changes
+    useEffect(() => {
+        setCustList([]); setCustPage(1); setHasMoreCusts(true);
+        fetchCustomers(1, search, false);
+    }, [search, fetchCustomers]);
+
+    const refetchList = () => { setCustList([]); fetchCustomers(1, search, false); };
+
+    // Infinite scroll handler
+    const handleCustScroll = (e: React.UIEvent<HTMLDivElement>) => {
+        const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+        if (scrollHeight - scrollTop <= clientHeight + 80 && !loadingMore && hasMoreCusts) {
+            fetchCustomers(custPage + 1, search, true);
+        }
+    };
+
     // ── Queries ───────────────────────────────────────────────────────────────
-    const { data: custList = [], isFetching: loadingList, refetch: refetchList } = useQuery({
-        queryKey: ["cust-list", search],
-        queryFn:  () => apiFetch(`/api/masters/customers?search=${encodeURIComponent(search || "%")}`),
-        staleTime: 30000,
-    });
 
     const { data: shiptos = [], isFetching: loadingShiptos, refetch: refetchShiptos } = useQuery({
         queryKey: ["cust-shiptos", selCust?.unico],
@@ -100,15 +141,14 @@ export default function CustomersSetupPage() {
         staleTime: 1000 * 60 * 10,
     });
 
-    // Auto-select first
-    useEffect(() => { if ((custList as any[]).length > 0 && !selCust) selectCustomer((custList as any[])[0]); }, [custList]);
+    // Note: auto-select first is handled inside fetchCustomers on page=1 load
 
     const selectCustomer = (c: any) => { setSelCust(c); setSelShipto(null); setSelCarrier(null); setSelWebUser(null); setFormError(null); };
 
     // ── Export CSV ────────────────────────────────────────────────────────────
     const exportCSV = () => {
         const headers = ["Code","Customer","Active","Hold","Salesman","Address","City","State","Country","Phone","Fax","Email","Contact","Group","Since","Terms"];
-        const rows = (custList as any[]).map((c: any) => [t(c.old_code),t(c.customer),c.active?"Yes":"No",c.credithold?"Yes":"No",t(c.salesman_name),t(c.address1),t(c.city),t(c.state),t(c.country),t(c.phone_1),t(c.fax_1),t(c.email),t(c.contact),t(c.groupname),t(c.custsince),t(c.terms)]);
+        const rows = custList.map((c: any) => [t(c.old_code),t(c.customer),(c.active==="Yes"||c.active===true)?"Yes":"No",(c.credithold==="Yes"||c.credithold===true)?"Yes":"No",t(c.salesman_name),t(c.address1),t(c.city),t(c.state),t(c.country),t(c.phone_1),t(c.fax_1),t(c.email),t(c.contact),t(c.groupname),t(c.custsince),t(c.terms)]);
         const csv = [headers,...rows].map(r=>r.map((v:any)=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
         const a = Object.assign(document.createElement("a"),{href:URL.createObjectURL(new Blob([csv],{type:"text/csv"})),download:`customers-${todayEST()}.csv`});
         document.body.appendChild(a);a.click();document.body.removeChild(a);
@@ -298,12 +338,15 @@ export default function CustomersSetupPage() {
                     <Trash2 size={10} /> Delete
                 </button>
                 {formError && <span className="text-amber-600 text-[10px] font-bold flex items-center gap-1 ml-2"><AlertCircle size={11} />{formError}</span>}
-                <span className="ml-auto text-[10px] text-gray-400 font-bold">{(custList as any[]).length} customers</span>
+                <span className="ml-auto text-[10px] text-gray-400 font-bold">
+                    {custList.length}{totalRecords > 0 ? ` / ${totalRecords}` : ""} customers
+                    {loadingMore && <span className="ml-2 text-[#FB7506]">Loading...</span>}
+                </span>
             </div>
 
             {/* Customer Grid */}
             <div className="bg-white border-b border-gray-200 shadow-sm shrink-0" style={{ height: "170px" }}>
-                <div className="overflow-auto h-full">
+                <div className="overflow-auto h-full" onScroll={handleCustScroll}>
                     <table className="min-w-full text-xs text-left">
                         <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
                             <tr>
@@ -313,15 +356,15 @@ export default function CustomersSetupPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {(custList as any[]).map((c: any) => {
+                            {custList.map((c: any) => {
                                 const isSel = selCust?.unico === c.unico;
                                 return (
                                     <tr key={c.unico} onClick={() => selectCustomer(c)}
                                         className={cn("border-b cursor-pointer transition-colors", isSel ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50")}>
                                         <td className="p-1.5 border-r border-gray-100 font-mono text-[10px]">{t(c.old_code)}</td>
                                         <td className="p-1.5 border-r border-gray-100 font-semibold truncate max-w-[180px]">{t(c.customer)}</td>
-                                        <td className="p-1.5 border-r border-gray-100 text-center">{c.active ? <Check size={10} className="text-green-500 mx-auto" /> : <X size={10} className="text-gray-300 mx-auto" />}</td>
-                                        <td className="p-1.5 border-r border-gray-100 text-center">{c.credithold ? <span className="text-red-500 font-black text-[9px]">HOLD</span> : "—"}</td>
+                                        <td className="p-1.5 border-r border-gray-100 text-center">{(c.active==="Yes"||c.active===true) ? <Check size={10} className="text-green-500 mx-auto" /> : <X size={10} className="text-gray-300 mx-auto" />}</td>
+                                        <td className="p-1.5 border-r border-gray-100 text-center">{(c.credithold==="Yes"||c.credithold===true) ? <span className="text-red-500 font-black text-[9px]">HOLD</span> : "—"}</td>
                                         <td className="p-1.5 border-r border-gray-100 truncate max-w-[120px] text-gray-500">{t(c.salesman_name)}</td>
                                         <td className="p-1.5 border-r border-gray-100 truncate max-w-[140px]">{t(c.address1)}</td>
                                         <td className="p-1.5 border-r border-gray-100">{t(c.city)}</td>
