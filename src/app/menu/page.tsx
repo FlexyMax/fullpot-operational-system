@@ -23,6 +23,7 @@ function getRoute(appPage: string): string | null {
     const p = appPage.toUpperCase();
     if (p.includes('SALES') || p.includes('P.O.S') || p.includes('BILLING')) return '/sales';
     if (p.includes('ACCOUNTS PAY') || p.includes('A/P') || p.includes('A-P') || p.includes('PAYABLE')) return '/accounts-payable';
+    if (p.includes('USUARIO') || p.includes('USER SETUP') || p.includes('ACCESO') || p.includes('ACCESS DEF')) return '/system/access';
     if (p.includes('SCAN')) return '/scan';
     return null;
 }
@@ -42,6 +43,7 @@ function getIcon(appPage: string) {
     if (n.includes('SCAN') || n.includes('QR')) return ScanLine;
     if (n.includes('GROWER') || n.includes('VENDOR') || n.includes('SUPPLIER') || n.includes('FARM')) return Building2;
     if (n.includes('PAYMENT') || n.includes('CASH')) return DollarSign;
+    if (n.includes('USUARIO') || n.includes('USER') || n.includes('ACCESS') || n.includes('ACCESO')) return Users;
     return Grid3x3;
 }
 
