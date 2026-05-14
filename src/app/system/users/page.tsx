@@ -9,6 +9,8 @@ import {
     RefreshCcw, Users, Camera, Check, AlertCircle,
     Calendar, Filter, ChevronRight, UserCircle2, XCircle
 } from "lucide-react";
+import { useAuditLog } from "@/lib/audit";
+import { AuditLogModal } from "@/components/AuditLogModal";
 import { cn } from "@/lib/utils";
 import { todayEST, formatDateEST, normalizeToISODate } from "@/lib/dates";
 
@@ -42,6 +44,7 @@ export default function UsersDefinitionPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
     const qc     = useQueryClient();
+    const { logAction } = useAuditLog("users-definition", "usuarios");
 
     const [selectedUnico,  setSelectedUnico]  = useState<string | null>(null);
     const [mode,           setMode]           = useState<Mode>("view");
@@ -161,6 +164,7 @@ export default function UsersDefinitionPage() {
                 const data = await res.json();
                 if (!data.success) throw new Error(data.error || "Create failed");
                 unico = data.unico;
+                logAction("Insert", unico!);
             } else {
                 const res  = await fetch(`/api/system/users/${unico}`, {
                     method: "PUT", headers: { "Content-Type": "application/json" },
@@ -179,6 +183,7 @@ export default function UsersDefinitionPage() {
 
             await qc.invalidateQueries({ queryKey: ["sys-users-list"] });
             setSelectedUnico(unico);
+            if (mode === "edit") logAction("Edit", unico!);
             setSaveMsg(mode === "add" ? "User created." : "User updated.");
             setTimeout(() => setSaveMsg(null), 3000);
             setMode("view");
@@ -199,6 +204,7 @@ export default function UsersDefinitionPage() {
             const data = await res.json();
             if (!data.success) throw new Error(data.error);
             await qc.invalidateQueries({ queryKey: ["sys-users-list"] });
+            logAction("Delete", selectedUnico!);
             setSelectedUnico(null);
             setForm(EMPTY_FORM);
             setDeleteDialog(false);
@@ -261,6 +267,7 @@ export default function UsersDefinitionPage() {
                 <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest">
                     <span className="text-gray-400">User: <span className="text-white">{session?.user?.name}</span></span>
                     <span className="text-green-500 font-black">● Online</span>
+                    <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} />
                 </div>
             </div>
 

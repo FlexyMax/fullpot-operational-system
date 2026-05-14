@@ -9,6 +9,8 @@ import {
     Download, Users, Truck, FileText, MessageSquare, Check,
     AlertCircle, Copy, Star, XCircle, ChevronRight
 } from "lucide-react";
+import { useAuditLog } from "@/lib/audit";
+import { AuditLogModal } from "@/components/AuditLogModal";
 import { cn } from "@/lib/utils";
 import { todayEST, formatDateEST, formatMoney, parseMoney, normalizeToISODate } from "@/lib/dates";
 
@@ -29,6 +31,7 @@ export default function CustomersSetupPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
     const qc = useQueryClient();
+    const { logAction } = useAuditLog("customers-setup", "flower_customers");
 
     // ── Customer list state (infinite scroll) ────────────────────────────────
     const [custList,       setCustList]       = useState<any[]>([]);
@@ -201,6 +204,7 @@ export default function CustomersSetupPage() {
                 const res  = await fetch(`/api/masters/customers/${unico}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(custForm) });
                 const data = await res.json(); if (!data.success) throw new Error(data.error);
             }
+            logAction(custModal?.mode === "add" ? "Insert" : "Edit", unico!);
             await qc.invalidateQueries({ queryKey: ["cust-list"] });
             setCustModal(null);
         } catch (e: any) { setFormError(e.message); }
@@ -212,6 +216,7 @@ export default function CustomersSetupPage() {
         try {
             const res  = await fetch(`/api/masters/customers/${selCust.unico}`, { method:"DELETE" });
             const data = await res.json(); if (!data.success) throw new Error(data.error);
+            logAction("Delete", selCust.unico);
             setSelCust(null);
             await qc.invalidateQueries({ queryKey: ["cust-list"] });
             setCustModal(null);
@@ -324,6 +329,7 @@ export default function CustomersSetupPage() {
                     </div>
                 </div>
                 <span className="text-gray-400 text-[10px] font-bold">User: <span className="text-white">{session?.user?.name}</span></span>
+                <AuditLogModal recordId={selCust?.unico} disabled={!selCust?.unico} />
             </div>
 
             {/* Search toolbar */}

@@ -9,6 +9,8 @@ import {
     Download, Upload, LayoutGrid, Monitor, FileText,
     Check, AlertCircle, ChevronRight, Search, XCircle
 } from "lucide-react";
+import { useAuditLog } from "@/lib/audit";
+import { AuditLogModal } from "@/components/AuditLogModal";
 import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -29,6 +31,7 @@ export default function ModuleScreenSetupPage() {
     const { data: session, status } = useSession();
     const router  = useRouter();
     const qc      = useQueryClient();
+    const { logAction } = useAuditLog("module-screen-setup", "modulo");
     const importRef = useRef<HTMLInputElement>(null);
 
     const [selModUnico,    setSelModUnico]    = useState<string | null>(null);
@@ -98,6 +101,7 @@ export default function ModuleScreenSetupPage() {
                 const res  = await fetch(`/api/system/modules/${unico}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(modForm) });
                 const data = await res.json(); if (!data.success) throw new Error(data.error);
             }
+            logAction(modMode === "add" ? "Insert" : "Edit", unico!);
             await qc.invalidateQueries({ queryKey: ["sys-mods"] });
             setSelModUnico(unico); setModMode("view");
             setModMsg(modMode === "add" ? "Module created." : "Module updated.");
@@ -112,6 +116,7 @@ export default function ModuleScreenSetupPage() {
         try {
             const res  = await fetch(`/api/system/modules/${selModUnico}`, { method: "DELETE" });
             const data = await res.json(); if (!data.success) throw new Error(data.error);
+            logAction("Delete", selModUnico!);
             await qc.invalidateQueries({ queryKey: ["sys-mods"] });
             setSelModUnico(null); setModForm(EMPTY_MOD); setDeleteModDlg(false);
         } catch (e: any) { setModError(e.message); setDeleteModDlg(false); }
@@ -243,6 +248,7 @@ export default function ModuleScreenSetupPage() {
                     </div>
                 </div>
                 <span className="text-gray-400 text-[10px] font-bold">User: <span className="text-white">{session?.user?.name}</span></span>
+                    <AuditLogModal recordId={selModUnico} disabled={!selModUnico} />
             </div>
 
             {/* Main two-panel layout */}

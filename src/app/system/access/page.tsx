@@ -9,6 +9,8 @@ import {
     Users, Shield, Copy, Save, AlertCircle, CheckSquare, Square,
     Building2, LayoutGrid, UserCheck, ChevronRight
 } from "lucide-react";
+import { useAuditLog } from "@/lib/audit";
+import { AuditLogModal } from "@/components/AuditLogModal";
 import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -32,6 +34,7 @@ export default function SystemAccessPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
     const qc = useQueryClient();
+    const { logAction } = useAuditLog("access-definition", "usuarios_accesos");
 
     const [selectedUnico,  setSelectedUnico]  = useState<string | null>(null);
     const [searchTerm,     setSearchTerm]     = useState("");
@@ -142,6 +145,7 @@ export default function SystemAccessPage() {
             });
             const data = await res.json();
             if (data.success) {
+                logAction("Edit", selectedUnico!);
                 setSaveMsg(`Saved ${data.updated} records.`);
                 setTimeout(() => setSaveMsg(null), 3000);
                 setEditMode(false);
@@ -205,6 +209,7 @@ export default function SystemAccessPage() {
                 <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest">
                     <span className="text-gray-400">User: <span className="text-white">{session?.user?.name}</span></span>
                     <span className="text-green-500 font-black">● Online</span>
+                    <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} />
                 </div>
             </div>
 

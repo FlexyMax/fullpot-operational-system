@@ -14,6 +14,8 @@ import {
     ChevronRight, ChevronLeft, Search, Download, Printer,
     BarChart2, Clock
 } from "lucide-react";
+import { useAuditLog } from "@/lib/audit";
+import { AuditLogModal } from "@/components/AuditLogModal";
 import { useAPStore } from "@/store/useAPStore";
 import { cn } from "@/lib/utils";
 import { formatDateEST, formatMoney, parseMoney, todayEST, currentYearEST, dateInputToEST, normalizeToISODate } from "@/lib/dates";
@@ -65,6 +67,7 @@ export default function AccountsPayablePage() {
     const { data: session, status } = useSession();
     const router = useRouter();
     const qc = useQueryClient();
+    const { logAction } = useAuditLog("accounts-payable", "flower_accounts_pay");
 
     const {
         selectedYear, selectedDate, selectedUnico,
@@ -159,15 +162,15 @@ export default function AccountsPayablePage() {
 
     const invoiceAdd = useMutation({
         mutationFn: (body: any) => fetch("/api/accounts-payable/invoice", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()),
-        onSuccess: () => { qc.invalidateQueries({ queryKey: ["ap-invoices", selectedDate] }); setInvoiceModal(null); },
+        onSuccess: (data) => { logAction("Insert", data?.unico || selectedUnico || ""); qc.invalidateQueries({ queryKey: ["ap-invoices", selectedDate] }); setInvoiceModal(null); },
     });
     const invoiceEdit = useMutation({
         mutationFn: (body: any) => fetch("/api/accounts-payable/invoice", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()),
-        onSuccess: () => { qc.invalidateQueries({ queryKey: ["ap-invoices", selectedDate] }); setInvoiceModal(null); },
+        onSuccess: () => { logAction("Edit", selectedUnico || ""); qc.invalidateQueries({ queryKey: ["ap-invoices", selectedDate] }); setInvoiceModal(null); },
     });
     const invoiceDelete = useMutation({
         mutationFn: (unico: string) => fetch(`/api/accounts-payable/invoice?unico=${unico}`, { method: "DELETE" }).then(r => r.json()),
-        onSuccess: () => { qc.invalidateQueries({ queryKey: ["ap-invoices", selectedDate] }); setUnico(null); setInvoiceModal(null); },
+        onSuccess: (_d, unico) => { logAction("Delete", unico); qc.invalidateQueries({ queryKey: ["ap-invoices", selectedDate] }); setUnico(null); setInvoiceModal(null); },
     });
 
     // ── Fetch full crdb record before opening Edit modal ─────────────────────
@@ -262,6 +265,7 @@ export default function AccountsPayablePage() {
                         <span className="text-gray-400">Status:</span>
                         <span className="text-green-500 font-black">Online</span>
                     </div>
+                    <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} />
                 </div>
             </div>
 
