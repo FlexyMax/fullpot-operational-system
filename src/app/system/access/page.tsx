@@ -35,8 +35,9 @@ export default function SystemAccessPage() {
 
     const [selectedUnico,  setSelectedUnico]  = useState<string | null>(null);
     const [searchTerm,     setSearchTerm]     = useState("");
-    const [editMode,       setEditMode]       = useState(false);
-    const [filterCompany,  setFilterCompany]  = useState("");
+    const [editMode,         setEditMode]         = useState(false);
+    const [mobileUsersOpen,  setMobileUsersOpen]  = useState(false);
+    const [filterCompany,    setFilterCompany]    = useState("");
     const [filterModule,   setFilterModule]   = useState("");
     const [localPerms,     setLocalPerms]     = useState<any[]>([]);
     const [copyModal,      setCopyModal]      = useState<{ mode: "from" | "to" } | null>(null);
@@ -207,69 +208,35 @@ export default function SystemAccessPage() {
                 </div>
             </div>
 
-            {/* Toolbar */}
-            <div className="h-10 bg-white border-b border-gray-200 flex items-center px-4 gap-2 shrink-0 shadow-sm">
-                {!editMode ? (
-                    <>
-                        <button
-                            onClick={handleEdit}
-                            disabled={!selectedUnico}
-                            className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white px-3 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all"
-                        >
-                            <Pencil size={11} /> Edit
-                        </button>
-                        <button
-                            onClick={() => alert("Add is not available on this screen.")}
-                            className="flex items-center gap-1.5 bg-gray-200 text-gray-400 cursor-not-allowed px-3 py-1 rounded text-[10px] font-black uppercase tracking-wider"
-                        >
-                            Add
-                        </button>
-                        <button
-                            onClick={() => alert("Delete is not available on this screen.")}
-                            className="flex items-center gap-1.5 bg-gray-200 text-gray-400 cursor-not-allowed px-3 py-1 rounded text-[10px] font-black uppercase tracking-wider"
-                        >
-                            Delete
-                        </button>
-                    </>
-                ) : (
-                    <>
-                        <button
-                            onClick={handleSave}
-                            disabled={saving}
-                            className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-3 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all"
-                        >
-                            {saving ? <RefreshCcw size={11} className="animate-spin" /> : <Save size={11} />}
-                            {saving ? "Saving..." : "Save"}
-                        </button>
-                        <button
-                            onClick={handleCancel}
-                            className="flex items-center gap-1.5 bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all"
-                        >
-                            <X size={11} /> Cancel
-                        </button>
-                    </>
-                )}
-
-                {editError && (
-                    <div className="flex items-center gap-1.5 text-amber-600 text-[10px] font-bold ml-2">
-                        <AlertCircle size={12} /> {editError}
-                    </div>
-                )}
-                {saveMsg && (
-                    <div className="flex items-center gap-1.5 text-green-600 text-[10px] font-bold ml-2">
-                        <Check size={12} /> {saveMsg}
-                    </div>
-                )}
-
-                <div className="ml-auto flex items-center gap-2 text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                    {selectedUser && (
-                        <span>
-                            {String(selectedUser.nombres || "").trim()} {String(selectedUser.apellidos || "").trim()}
-                            <span className="ml-2 text-[#FB7506]">{String(selectedUser.nivel || "").trim()}</span>
-                        </span>
+            {/* Toolbar — only visible in edit mode for Save/Cancel */}
+            {editMode && (
+                <div className="h-10 bg-white border-b border-gray-200 flex items-center px-4 gap-2 shrink-0 shadow-sm">
+                    <button
+                        onClick={handleSave}
+                        disabled={saving}
+                        className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-3 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all"
+                    >
+                        {saving ? <RefreshCcw size={11} className="animate-spin" /> : <Save size={11} />}
+                        {saving ? "Saving..." : "Save"}
+                    </button>
+                    <button
+                        onClick={handleCancel}
+                        className="flex items-center gap-1.5 bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all"
+                    >
+                        <X size={11} /> Cancel
+                    </button>
+                    {editError && (
+                        <div className="flex items-center gap-1.5 text-amber-600 text-[10px] font-bold ml-2">
+                            <AlertCircle size={12} /> {editError}
+                        </div>
+                    )}
+                    {saveMsg && (
+                        <div className="flex items-center gap-1.5 text-green-600 text-[10px] font-bold ml-2">
+                            <Check size={12} /> {saveMsg}
+                        </div>
                     )}
                 </div>
-            </div>
+            )}
 
             {/* Main layout */}
             <div className="flex flex-col lg:flex-row flex-1 gap-2 p-2 overflow-y-auto lg:overflow-hidden">
@@ -337,15 +304,37 @@ export default function SystemAccessPage() {
 
                     {/* User Card */}
                     <div className="bg-white rounded-lg border border-gray-200 shadow-sm shrink-0">
-                        <div className="h-8 bg-[#374151] flex items-center px-3">
-                            <UserCheck size={13} className="text-[#FB7506] mr-2" />
-                            <span className="font-black text-[10px] uppercase tracking-widest text-white">User Information</span>
-                            {selectedUser && (
-                                <span className={cn(
-                                    "ml-3 text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded",
-                                    selectedUser.activo ? "bg-green-500 text-white" : "bg-red-500 text-white"
-                                )}>
-                                    {selectedUser.activo ? "Active" : "Inactive"}
+                        <div className="h-8 bg-[#374151] flex items-center justify-between px-3">
+                            <div className="flex items-center gap-2">
+                                <UserCheck size={13} className="text-[#FB7506]" />
+                                <span className="font-black text-[10px] uppercase tracking-widest text-white">User Information</span>
+                                {selectedUser && (
+                                    <span className={cn(
+                                        "text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded",
+                                        selectedUser.activo ? "bg-green-500 text-white" : "bg-red-500 text-white"
+                                    )}>
+                                        {selectedUser.activo ? "Active" : "Inactive"}
+                                    </span>
+                                )}
+                                {editError && !editMode && (
+                                    <span className="flex items-center gap-1 text-amber-400 text-[9px] font-bold ml-2">
+                                        <AlertCircle size={11} />{editError}
+                                    </span>
+                                )}
+                            </div>
+                            {/* Edit button lives here */}
+                            {!editMode && (
+                                <button
+                                    onClick={handleEdit}
+                                    disabled={!selectedUnico}
+                                    className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white px-2.5 py-1 rounded text-[9px] font-black uppercase tracking-wider transition-all"
+                                >
+                                    <Pencil size={10} /> Edit
+                                </button>
+                            )}
+                            {saveMsg && (
+                                <span className="flex items-center gap-1 text-green-400 text-[9px] font-bold">
+                                    <Check size={11} />{saveMsg}
                                 </span>
                             )}
                         </div>
@@ -546,6 +535,67 @@ export default function SystemAccessPage() {
                 </div>
             </div>
 
+            {/* Mobile floating button — opens user list */}
+            <button
+                onClick={() => setMobileUsersOpen(true)}
+                className="lg:hidden fixed bottom-6 right-6 z-40 w-12 h-12 bg-[#FB7506] hover:bg-orange-600 text-white rounded-full shadow-xl flex items-center justify-center transition-all active:scale-95"
+                title="Select User"
+            >
+                <Users size={20} />
+            </button>
+
+            {/* Mobile user list modal */}
+            {mobileUsersOpen && (
+                <div className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex flex-col">
+                    <div className="bg-white flex flex-col h-full max-h-[80vh] mt-auto rounded-t-2xl overflow-hidden">
+                        <div className="h-12 bg-[#374151] flex items-center justify-between px-4 shrink-0 rounded-t-2xl">
+                            <div className="flex items-center gap-2">
+                                <Users size={16} className="text-[#FB7506]" />
+                                <span className="font-black text-sm uppercase tracking-widest text-white">Select User</span>
+                            </div>
+                            <button onClick={() => setMobileUsersOpen(false)}>
+                                <XCircle size={20} className="text-gray-400 hover:text-white" />
+                            </button>
+                        </div>
+                        <div className="p-3 border-b border-gray-100 shrink-0">
+                            <div className="relative">
+                                <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <input
+                                    type="text"
+                                    value={searchTerm}
+                                    onChange={e => setSearchTerm(e.target.value)}
+                                    placeholder="Search users..."
+                                    className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-[#FB7506]"
+                                    autoFocus
+                                />
+                            </div>
+                        </div>
+                        <div className="overflow-y-auto flex-1">
+                            {(filteredUsers as any[]).map((u: any) => {
+                                const isSelected = selectedUnico === u.unico;
+                                return (
+                                    <div
+                                        key={u.unico}
+                                        onClick={() => { handleSelectUser(u.unico); setMobileUsersOpen(false); }}
+                                        className={cn(
+                                            "px-4 py-3 border-b border-gray-50 flex items-center gap-3 cursor-pointer transition-colors",
+                                            isSelected ? "bg-blue-50" : "hover:bg-gray-50"
+                                        )}
+                                    >
+                                        <div className={cn("w-2 h-2 rounded-full shrink-0", u.activo ? "bg-green-400" : "bg-gray-300")} />
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-sm font-semibold text-gray-800 truncate">{String(u.full_name || "").trim()}</p>
+                                            <p className="text-xs text-gray-400">{String(u.usuario || "").trim()} · {String(u.nivel || "").trim()}</p>
+                                        </div>
+                                        {isSelected && <Check size={16} className="text-blue-500 shrink-0" />}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Footer */}
             <div className="h-8 bg-gray-100 border-t px-4 flex items-center justify-between text-[10px] font-bold text-gray-500 uppercase tracking-tight shrink-0">
                 <div className="flex items-center gap-4">
@@ -622,8 +672,8 @@ function CopyAccessModal({ mode, currentUser, allUsers, onClose, onCopied }: {
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
-                <div className="h-10 bg-[#374151] flex items-center justify-between px-4 shrink-0">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+                <div className="h-10 bg-[#374151] rounded-t-xl flex items-center justify-between px-4 shrink-0">
                     <div className="flex items-center gap-2">
                         <Copy size={14} className="text-[#FB7506]" />
                         <span className="font-black text-[11px] uppercase tracking-widest text-white">
@@ -656,7 +706,7 @@ function CopyAccessModal({ mode, currentUser, allUsers, onClose, onCopied }: {
                             <ChevronRight size={12} className={cn("text-gray-400 shrink-0 transition-transform", ddOpen && "rotate-90")} />
                         </div>
                         {ddOpen && (
-                            <div className="absolute top-full left-0 right-0 z-50 bg-white border border-gray-200 rounded-lg shadow-xl mt-0.5 flex flex-col max-h-56">
+                            <div className="absolute top-full left-0 right-0 z-[200] bg-white border border-gray-200 rounded-lg shadow-2xl mt-0.5 flex flex-col max-h-56">
                                 <div className="p-2 border-b border-gray-100 shrink-0">
                                     <input
                                         autoFocus
@@ -694,7 +744,7 @@ function CopyAccessModal({ mode, currentUser, allUsers, onClose, onCopied }: {
                     {error  && <p className="text-xs text-red-500 font-bold flex items-center gap-1"><AlertCircle size={12} />{error}</p>}
                     {result && <p className="text-xs text-green-600 font-bold flex items-center gap-1"><Check size={12} />{result}</p>}
 
-                    <div className="flex justify-end gap-3 pt-2">
+                    <div className="flex justify-end gap-3 pt-2 pb-1">
                         <button onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50">Cancel</button>
                         <button
                             onClick={handleConfirm}
