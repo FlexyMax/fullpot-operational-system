@@ -72,6 +72,12 @@ export default function ModuleScreenSetupPage() {
         if ((modules as any[]).length > 0 && !selModUnico) selectModule((modules as any[])[0]);
     }, [modules]);
 
+    // Auto-select first screen when screens load for selected module
+    useEffect(() => {
+        if ((screens as any[]).length > 0) setSelScrUnico((screens as any[])[0].unico);
+        else setSelScrUnico(null);
+    }, [screens]);
+
     // ── Module CRUD ───────────────────────────────────────────────────────────
     const validateMod = () => {
         if (!modForm.nombre.trim()) return "Module name is required.";

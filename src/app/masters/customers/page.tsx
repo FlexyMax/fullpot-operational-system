@@ -141,7 +141,24 @@ export default function CustomersSetupPage() {
         staleTime: 1000 * 60 * 10,
     });
 
-    // Note: auto-select first is handled inside fetchCustomers on page=1 load
+    // ── Cascade auto-selection: customer → shipto → carrier ──────────────────
+    // Auto-select first ship-to when shiptos load for selected customer
+    useEffect(() => {
+        if ((shiptos as any[]).length > 0) setSelShipto((shiptos as any[])[0]);
+        else setSelShipto(null);
+    }, [shiptos]);
+
+    // Auto-select first carrier when carriers load
+    useEffect(() => {
+        if ((carriers as any[]).length > 0) setSelCarrier((carriers as any[])[0]);
+        else setSelCarrier(null);
+    }, [carriers]);
+
+    // Auto-select first web user when tab opens
+    useEffect(() => {
+        if ((webUsers as any[]).length > 0) setSelWebUser((webUsers as any[])[0]);
+        else setSelWebUser(null);
+    }, [webUsers]);
 
     const selectCustomer = (c: any) => { setSelCust(c); setSelShipto(null); setSelCarrier(null); setSelWebUser(null); setFormError(null); };
 
