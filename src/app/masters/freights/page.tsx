@@ -12,6 +12,8 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuditLog } from "@/lib/audit";
 import { AuditLogModal } from "@/components/AuditLogModal";
+import { EntityListModal } from "@/components/EntityListModal";
+import { EntityFormModal } from "@/components/EntityFormModal";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const t       = (v: any) => String(v ?? "").trim();
@@ -158,9 +160,24 @@ export default function FreightsSetupPage() {
     const [haModal,  setHaModal]  = useState<{ mode:"add"|"edit"|"delete" } | null>(null);
     const [atModal,  setAtModal]  = useState<{ mode:"add"|"edit"|"delete" } | null>(null);
     const [seSetup,  setSeSetup]  = useState(false);
-    const [ciSetup,  setCiSetup]  = useState(false);
-    const [alSetup,  setAlSetup]  = useState(false);
     const [copyModal, setCopyModal] = useState(false);
+
+    // Cities / Airlines list + form state
+    const [ciSetup, setCiSetup] = useState(false);
+    const [ciFormOpen, setCiFormOpen] = useState(false);
+    const [ciFormMode, setCiFormMode] = useState<"add"|"edit">("add");
+    const [ciSel, setCiSel] = useState<any>(null);
+    const [ciForm, setCiForm] = useState<any>(EMPTY_CI);
+    const [ciError, setCiError] = useState<string|null>(null);
+    const [ciSaving, setCiSaving] = useState(false);
+
+    const [alSetup, setAlSetup] = useState(false);
+    const [alFormOpen, setAlFormOpen] = useState(false);
+    const [alFormMode, setAlFormMode] = useState<"add"|"edit">("add");
+    const [alSel, setAlSel] = useState<any>(null);
+    const [alForm, setAlForm] = useState<any>(EMPTY_AL);
+    const [alError, setAlError] = useState<string|null>(null);
+    const [alSaving, setAlSaving] = useState(false);
 
     // Form state
     const [whForm, setWhForm] = useState<any>(EMPTY_WH);
@@ -318,6 +335,78 @@ export default function FreightsSetupPage() {
             logAction("Edit", selFr.unico, "Update AWB Freight Rates");
         } catch (e: any) { setError(e.message); }
         finally { setSaving(false); }
+    };
+
+    // ── Cities CRUD ─────────────────────────────────────────────────────────────
+    const loadCities = useCallback(async () => {
+        try {
+            const d = await ff("/api/freights/cities?search=%");
+            return d;
+        } catch { return []; }
+    }, []);
+
+    const saveCity = async () => {
+        if (!ciForm.city.trim()) { setCiError("City is required."); return; }
+        setCiSaving(true); setCiError(null);
+        try {
+            if (ciFormMode === "add") {
+                const res = await fetch("/api/freights/cities", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(ciForm) });
+                const d = await res.json(); if (!d.success) throw new Error(d.error);
+            } else {
+                const res = await fetch(`/api/freights/cities/${ciSel.unico}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(ciForm) });
+                const d = await res.json(); if (!d.success) throw new Error(d.error);
+            }
+            setCiFormOpen(false); setCiSel(null); setCiForm(EMPTY_CI);
+            await qc.invalidateQueries({ queryKey: ["fr-look"] });
+        } catch (e: any) { setCiError(e.message); }
+        finally { setCiSaving(false); }
+    };
+
+    const deleteCity = async (row: any) => {
+        if (!confirm(`Delete city "${t(row.city)}"?`)) return;
+        setCiSaving(true);
+        try {
+            await fetch(`/api/freights/cities/${row.unico}`, { method:"DELETE" });
+            setCiSel(null);
+            await qc.invalidateQueries({ queryKey: ["fr-look"] });
+        } catch (e: any) { setCiError(e.message); }
+        finally { setCiSaving(false); }
+    };
+
+    // ── Airlines CRUD ───────────────────────────────────────────────────────────
+    const loadAirlines = useCallback(async () => {
+        try {
+            const d = await ff("/api/freights/airlines?search=%");
+            return d;
+        } catch { return []; }
+    }, []);
+
+    const saveAirline = async () => {
+        if (!alForm.airline.trim()) { setAlError("Airline is required."); return; }
+        setAlSaving(true); setAlError(null);
+        try {
+            if (alFormMode === "add") {
+                const res = await fetch("/api/freights/airlines", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(alForm) });
+                const d = await res.json(); if (!d.success) throw new Error(d.error);
+            } else {
+                const res = await fetch(`/api/freights/airlines/${alSel.unico}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(alForm) });
+                const d = await res.json(); if (!d.success) throw new Error(d.error);
+            }
+            setAlFormOpen(false); setAlSel(null); setAlForm(EMPTY_AL);
+            await qc.invalidateQueries({ queryKey: ["fr-look"] });
+        } catch (e: any) { setAlError(e.message); }
+        finally { setAlSaving(false); }
+    };
+
+    const deleteAirline = async (row: any) => {
+        if (!confirm(`Delete airline "${t(row.airline)}"?`)) return;
+        setAlSaving(true);
+        try {
+            await fetch(`/api/freights/airlines/${row.unico}`, { method:"DELETE" });
+            setAlSel(null);
+            await qc.invalidateQueries({ queryKey: ["fr-look"] });
+        } catch (e: any) { setAlError(e.message); }
+        finally { setAlSaving(false); }
     };
 
     if (status === "loading") return null;
@@ -601,10 +690,58 @@ export default function FreightsSetupPage() {
             {seSetup && <SetupModal title="Seasons Setup" onClose={()=>{setSeSetup(false); qc.invalidateQueries({queryKey:["fr-look"]});}} listUrl="/api/freights/seasons" detailUrl="/api/freights/seasons" emptyForm={EMPTY_SE} cols={[{key:"season",label:"Season"},{key:"startdate2",label:"From"},{key:"enddate2",label:"To"},{key:"active",label:"Active",render:(v:any)=>v==="Yes"||v===true?"✓":"—"}]} formFields={[{k:"season",l:"Season Name *"},{k:"sh_season",l:"Short Code"},{k:"startdate",l:"Start Date",type:"date"},{k:"enddate",l:"End Date",type:"date"},{k:"activedate",l:"Active Date",type:"date"},{k:"desacdate",l:"Deact. Date",type:"date"},{k:"increment",l:"Increment",type:"number"}]} checkFields={[{k:"publicate",l:"Publish"},{k:"bypercent",l:"By Percent"}]} />}
 
             {/* ── Cities Setup Modal ─────────────────────────────────────── */}
-            {ciSetup && <SetupModal title="Cities Setup" onClose={()=>{setCiSetup(false); qc.invalidateQueries({queryKey:["fr-look"]});}} listUrl="/api/freights/cities" detailUrl="/api/freights/cities" emptyForm={EMPTY_CI} cols={[{key:"city",label:"City"}]} formFields={[{k:"city",l:"City *"},{k:"country_iso",l:"Country ISO"},{k:"buyer_email",l:"Buyer Email"}]} checkFields={[]} />}
+            {/* ── Cities List + Form ─────────────────────────────────────── */}
+            <EntityListModal
+                open={ciSetup}
+                title="Cities"
+                searchPlaceholder="Search cities..."
+                listUrl="/api/freights/cities"
+                renderItem={(r) => ({ primary: r.city, secondary: r.country_iso })}
+                onClose={() => { setCiSetup(false); setCiSel(null); }}
+                onSelect={(r) => setCiSel(r)}
+                onAdd={() => { setCiForm({...EMPTY_CI}); setCiFormMode("add"); setCiError(null); setCiFormOpen(true); }}
+                onEdit={(r) => { setCiForm({ city: t(r.city), country_iso: t(r.country_iso), buyer_email: t(r.buyer_email) }); setCiFormMode("edit"); setCiError(null); setCiFormOpen(true); }}
+                onDelete={deleteCity}
+            />
+            <EntityFormModal
+                open={ciFormOpen}
+                title={ciFormMode === "add" ? "New City" : "Edit City"}
+                subtitle={ciFormMode === "edit" && ciSel ? ciSel.city : undefined}
+                form={ciForm}
+                fields={[{k:"city",l:"City *"},{k:"country_iso",l:"Country ISO"},{k:"buyer_email",l:"Buyer Email"}]}
+                onChange={(k, v) => setCiForm((p: any) => ({...p, [k]: v}))}
+                onSave={saveCity}
+                onClose={() => { setCiFormOpen(false); setCiError(null); }}
+                saving={ciSaving}
+                error={ciError}
+            />
 
             {/* ── Airlines Setup Modal ───────────────────────────────────── */}
-            {alSetup && <SetupModal title="Airlines Setup" onClose={()=>{setAlSetup(false); qc.invalidateQueries({queryKey:["fr-look"]});}} listUrl="/api/freights/airlines" detailUrl="/api/freights/airlines" emptyForm={EMPTY_AL} cols={[{key:"airline",label:"Airline"},{key:"cod_linea",label:"Code"}]} formFields={[{k:"cod_linea",l:"Code"},{k:"airline",l:"Airline *"},{k:"address",l:"Address"},{k:"city",l:"City"},{k:"country",l:"Country"},{k:"phone",l:"Phone"},{k:"fax",l:"Fax"},{k:"email",l:"Email"},{k:"contact",l:"Contact"}]} checkFields={[]} />}
+            {/* ── Airlines List + Form ───────────────────────────────────── */}
+            <EntityListModal
+                open={alSetup}
+                title="Airlines"
+                searchPlaceholder="Search airlines..."
+                listUrl="/api/freights/airlines"
+                renderItem={(r) => ({ primary: r.airline, secondary: r.cod_linea })}
+                onClose={() => { setAlSetup(false); setAlSel(null); }}
+                onSelect={(r) => setAlSel(r)}
+                onAdd={() => { setAlForm({...EMPTY_AL}); setAlFormMode("add"); setAlError(null); setAlFormOpen(true); }}
+                onEdit={(r) => { setAlForm({ cod_linea: t(r.cod_linea), airline: t(r.airline), address: t(r.address), city: t(r.city), country: t(r.country), phone: t(r.phone), fax: t(r.fax), email: t(r.email), contact: t(r.contact) }); setAlFormMode("edit"); setAlError(null); setAlFormOpen(true); }}
+                onDelete={deleteAirline}
+            />
+            <EntityFormModal
+                open={alFormOpen}
+                title={alFormMode === "add" ? "New Airline" : "Edit Airline"}
+                subtitle={alFormMode === "edit" && alSel ? alSel.airline : undefined}
+                form={alForm}
+                fields={[{k:"cod_linea",l:"Code"},{k:"airline",l:"Airline *"},{k:"address",l:"Address"},{k:"city",l:"City"},{k:"country",l:"Country"},{k:"phone",l:"Phone"},{k:"fax",l:"Fax"},{k:"email",l:"Email"},{k:"contact",l:"Contact"}]}
+                onChange={(k, v) => setAlForm((p: any) => ({...p, [k]: v}))}
+                onSave={saveAirline}
+                onClose={() => { setAlFormOpen(false); setAlError(null); }}
+                saving={alSaving}
+                error={alError}
+            />
 
             {/* Floating action buttons */}
             <div className="fixed bottom-4 right-4 flex flex-col gap-2 z-50">
