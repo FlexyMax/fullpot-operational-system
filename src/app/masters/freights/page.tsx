@@ -57,6 +57,36 @@ function GBtn({ onClick, disabled, color, icon: Icon, label }: any) {
     );
 }
 
+function GridMenu({ items, disabled: globalDisabled }: {
+    items: { label: string; icon: any; color: string; onClick: () => void; disabled?: boolean }[];
+    disabled?: boolean;
+}) {
+    const [open, setOpen] = useState(false);
+    return (
+        <div className="relative" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setOpen(o => !o)}
+                className="flex items-center gap-1 bg-[#FB7506] hover:bg-orange-600 text-white px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wide transition-all">
+                <span className="text-[10px] leading-none">≡</span> Menu
+            </button>
+            {open && (
+                <div className="absolute right-0 top-full mt-0.5 w-40 bg-white border border-gray-200 rounded-lg shadow-xl z-50 overflow-hidden"
+                    onMouseLeave={() => setOpen(false)}>
+                    {items.map((item, i) => {
+                        const colors: Record<string,string> = { green:"text-green-700 hover:bg-green-50", blue:"text-blue-700 hover:bg-blue-50", red:"text-red-600 hover:bg-red-50", gray:"text-gray-600 hover:bg-gray-50", amber:"text-amber-600 hover:bg-amber-50" };
+                        return (
+                            <button key={i} onClick={() => { item.onClick(); setOpen(false); }}
+                                disabled={!!item.disabled || !!globalDisabled}
+                                className={cn("w-full flex items-center gap-2 px-3 py-2 text-[11px] font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-colors", colors[item.color]||colors.gray)}>
+                                <item.icon size={12} /> {item.label}
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+}
+
 function MiniTable({ cols, rows, selUnico, onSelect, onDblClick, empty }: any) {
     return (
         <div className="overflow-auto flex-1">
@@ -310,9 +340,11 @@ export default function FreightsSetupPage() {
                     {/* Physical Warehouses */}
                     <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden">
                         <GridHeader icon={Building2} title="Physical Warehouses" loading={loadingWh} recordId={selWh?.unico}>
-                            <GBtn onClick={() => { setWhForm({...EMPTY_WH}); setError(null); setWhModal({mode:"add"}); }} color="green" icon={Plus} label="Add" />
-                            <GBtn onClick={() => { if(!selWh) return; setWhForm({ wp_name:t(selWh.wp_name), cargo:!!selWh.cargo, send_xml:!!selWh.send_xml, charge:!!selWh.charge, address:t(selWh.address), city:t(selWh.city), state:t(selWh.state), zipcode:t(selWh.zipcode), country:t(selWh.country), phone:t(selWh.phone), fax:t(selWh.fax), email:t(selWh.email), grower_uq:t(selWh.grower_uq), handling_kg:selWh.handling_kg||0, send_to_whouse:!!selWh.send_to_whouse }); setError(null); setWhModal({mode:"edit"}); }} disabled={!selWh} color="blue" icon={Pencil} label="Edit" />
-                            <GBtn onClick={() => { if(selWh){setError(null);setWhModal({mode:"delete"});} }} disabled={!selWh} color="red" icon={Trash2} label="Del" />
+                            <GridMenu items={[
+                                { label:"Add Warehouse", icon:Plus,   color:"green", onClick:() => { setWhForm({...EMPTY_WH}); setError(null); setWhModal({mode:"add"}); } },
+                                { label:"Edit Selected",  icon:Pencil, color:"blue",  onClick:() => { if(!selWh) return; setWhForm({ wp_name:t(selWh.wp_name), cargo:!!selWh.cargo, send_xml:!!selWh.send_xml, charge:!!selWh.charge, address:t(selWh.address), city:t(selWh.city), state:t(selWh.state), zipcode:t(selWh.zipcode), country:t(selWh.country), phone:t(selWh.phone), fax:t(selWh.fax), email:t(selWh.email), grower_uq:t(selWh.grower_uq), handling_kg:selWh.handling_kg||0, send_to_whouse:!!selWh.send_to_whouse }); setError(null); setWhModal({mode:"edit"}); }, disabled:!selWh },
+                                { label:"Delete Selected",icon:Trash2, color:"red",   onClick:() => { if(selWh){setError(null);setWhModal({mode:"delete"});} }, disabled:!selWh },
+                            ]} />
                         </GridHeader>
                         <MiniTable
                             cols={[{ key:"wp_name", label:"Warehouse" }]}
@@ -350,11 +382,13 @@ export default function FreightsSetupPage() {
                     {/* Freights */}
                     <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden">
                         <GridHeader icon={Cloud} title={`Freights${selWh ? ` — ${t(selWh.wp_name)}` : ""}`} loading={loadingFr} recordId={selFr?.unico}>
-                            <GBtn onClick={() => { if(!selWh){setError("Select a warehouse first.");return;} setFrForm({...EMPTY_FR}); setError(null); setFrModal({mode:"add"}); }} disabled={!selWh} color="green" icon={Plus} label="Add" />
-                            <GBtn onClick={async () => { if(!selFr) return; try { const d = await ff(`/api/freights/rates/${selFr.unico}`); setFrForm({ wphysical_uq: d.wphysical_uq||selWh?.unico, season_uq: d.season_uq||"", city_uq: d.city_uq||"", freight: d.freight||0, freight_kg: d.freight_kg||0 }); setError(null); setFrModal({mode:"edit"}); } catch(e:any){setError(e.message);} }} disabled={!selFr} color="blue" icon={Pencil} label="Edit" />
-                            <GBtn onClick={() => { if(selFr){setError(null);setFrModal({mode:"delete"});} }} disabled={!selFr} color="red" icon={Trash2} label="Del" />
-                            <GBtn onClick={() => { if(!selWh){setError("Select a warehouse first.");return;} if(!confirm("Copy freights from another season?")) return; setCopyModal(true); }} disabled={!selWh} color="gray" icon={Copy} label="Copy" />
-                            <GBtn onClick={updateAwbs} disabled={!selFr} color="amber" icon={Zap} label="AWBs" />
+                            <GridMenu items={[
+                                { label:"Add Rate",      icon:Plus,   color:"green", onClick:() => { if(!selWh){setError("Select a warehouse first.");return;} setFrForm({...EMPTY_FR}); setError(null); setFrModal({mode:"add"}); }, disabled:!selWh },
+                                { label:"Edit Selected", icon:Pencil, color:"blue",  onClick:async() => { if(!selFr) return; try { const d = await ff(`/api/freights/rates/${selFr.unico}`); setFrForm({ wphysical_uq: d.wphysical_uq||selWh?.unico, season_uq: d.season_uq||"", city_uq: d.city_uq||"", freight: d.freight||0, freight_kg: d.freight_kg||0 }); setError(null); setFrModal({mode:"edit"}); } catch(e:any){setError(e.message);} }, disabled:!selFr },
+                                { label:"Delete Selected",icon:Trash2, color:"red",  onClick:() => { if(selFr){setError(null);setFrModal({mode:"delete"});} }, disabled:!selFr },
+                                { label:"Copy From...",  icon:Copy,   color:"gray",  onClick:() => { if(!selWh){setError("Select a warehouse first.");return;} if(!confirm("Copy freights from another season?")) return; setCopyModal(true); }, disabled:!selWh },
+                                { label:"Update AWBs",   icon:Zap,    color:"amber", onClick:updateAwbs, disabled:!selFr },
+                            ]} />
                         </GridHeader>
                         <MiniTable
                             cols={[
@@ -373,9 +407,11 @@ export default function FreightsSetupPage() {
                     {/* Handling */}
                     <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden">
                         <GridHeader icon={Building2} title="Handling" loading={loadingHa} recordId={selHa?.unico}>
-                            <GBtn onClick={() => { if(!selWh){setError("Select a warehouse first.");return;} setHaForm({...EMPTY_HA}); setError(null); setHaModal({mode:"add"}); }} disabled={!selWh} color="green" icon={Plus} label="Add" />
-                            <GBtn onClick={async () => { if(!selHa) return; try { const d = await ff(`/api/freights/handling/${selHa.unico}`); setHaForm({ wphysical_uq: d.wphysical_uq||selWh?.unico, season_uq: d.season_uq||"", handling: d.handling||0 }); setError(null); setHaModal({mode:"edit"}); } catch(e:any){setError(e.message);} }} disabled={!selHa} color="blue" icon={Pencil} label="Edit" />
-                            <GBtn onClick={() => { if(selHa){setError(null);setHaModal({mode:"delete"});} }} disabled={!selHa} color="red" icon={Trash2} label="Del" />
+                            <GridMenu items={[
+                                { label:"Add Rate",      icon:Plus,   color:"green", onClick:() => { if(!selWh){setError("Select a warehouse first.");return;} setHaForm({...EMPTY_HA}); setError(null); setHaModal({mode:"add"}); }, disabled:!selWh },
+                                { label:"Edit Selected", icon:Pencil, color:"blue",  onClick:async() => { if(!selHa) return; try { const d = await ff(`/api/freights/handling/${selHa.unico}`); setHaForm({ wphysical_uq: d.wphysical_uq||selWh?.unico, season_uq: d.season_uq||"", handling: d.handling||0 }); setError(null); setHaModal({mode:"edit"}); } catch(e:any){setError(e.message);} }, disabled:!selHa },
+                                { label:"Delete Selected",icon:Trash2, color:"red", onClick:() => { if(selHa){setError(null);setHaModal({mode:"delete"});} }, disabled:!selHa },
+                            ]} />
                         </GridHeader>
                         <MiniTable
                             cols={[
@@ -392,9 +428,11 @@ export default function FreightsSetupPage() {
                     {/* ATPDA */}
                     <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden">
                         <GridHeader icon={MapPin} title="ATPDA" loading={loadingAt} recordId={selAt?.unico}>
-                            <GBtn onClick={() => { if(!selWh){setError("Select a warehouse first.");return;} setAtForm({...EMPTY_AT}); setError(null); setAtModal({mode:"add"}); }} disabled={!selWh} color="green" icon={Plus} label="Add" />
-                            <GBtn onClick={async () => { if(!selAt) return; try { const d = await ff(`/api/freights/atpda/${selAt.unico}`); setAtForm({ wphysical_uq: d.wphysical_uq||selWh?.unico, season_uq: d.season_uq||"", city_uq: d.city_uq||"", tariff: d.tariff||0 }); setError(null); setAtModal({mode:"edit"}); } catch(e:any){setError(e.message);} }} disabled={!selAt} color="blue" icon={Pencil} label="Edit" />
-                            <GBtn onClick={() => { if(selAt){setError(null);setAtModal({mode:"delete"});} }} disabled={!selAt} color="red" icon={Trash2} label="Del" />
+                            <GridMenu items={[
+                                { label:"Add Tariff",    icon:Plus,   color:"green", onClick:() => { if(!selWh){setError("Select a warehouse first.");return;} setAtForm({...EMPTY_AT}); setError(null); setAtModal({mode:"add"}); }, disabled:!selWh },
+                                { label:"Edit Selected", icon:Pencil, color:"blue",  onClick:async() => { if(!selAt) return; try { const d = await ff(`/api/freights/atpda/${selAt.unico}`); setAtForm({ wphysical_uq: d.wphysical_uq||selWh?.unico, season_uq: d.season_uq||"", city_uq: d.city_uq||"", tariff: d.tariff||0 }); setError(null); setAtModal({mode:"edit"}); } catch(e:any){setError(e.message);} }, disabled:!selAt },
+                                { label:"Delete Selected",icon:Trash2, color:"red", onClick:() => { if(selAt){setError(null);setAtModal({mode:"delete"});} }, disabled:!selAt },
+                            ]} />
                         </GridHeader>
                         <MiniTable
                             cols={[
@@ -615,6 +653,16 @@ function SetupModal({ title, onClose, listUrl, detailUrl, emptyForm, cols, formF
 
     useEffect(() => { load("%"); }, []);
 
+    // Auto-populate form when a row is selected (for readonly view)
+    useEffect(() => {
+        if (selRow && mode === "view") {
+            const f: any = {};
+            formFields.forEach((ff2: any) => { f[ff2.k] = t2(selRow[ff2.k]); });
+            checkFields.forEach((cf: any)  => { f[cf.k]  = !!selRow[cf.k];   });
+            setForm(f);
+        }
+    }, [selRow]);
+
     const openAdd = () => {
         setForm({...emptyForm}); setMode("add"); setError(null); setMenuOpen(false);
     };
@@ -650,7 +698,7 @@ function SetupModal({ title, onClose, listUrl, detailUrl, emptyForm, cols, formF
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
             onClick={() => setMenuOpen(false)}>
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[88vh] flex flex-col"
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[70vh] flex flex-col"
                 onClick={e => e.stopPropagation()}>
 
                 {/* Header */}
@@ -718,36 +766,45 @@ function SetupModal({ title, onClose, listUrl, detailUrl, emptyForm, cols, formF
                         </div>
                     </div>
 
-                    {/* Right: form or placeholder */}
+                    {/* Right: detail / form */}
                     <div className="flex-1 flex flex-col overflow-hidden">
-                        {mode === "view" ? (
+                        {!selRow && mode === "view" ? (
                             <div className="flex-1 flex flex-col items-center justify-center text-gray-300 gap-2">
                                 <span className="text-4xl">≡</span>
                                 <p className="text-xs font-bold uppercase tracking-widest">Select a record or use Menu</p>
                             </div>
                         ) : (
                             <>
-                                <div className="flex-1 overflow-auto p-4">
-                                    <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3 pb-2 border-b border-gray-100">
-                                        {mode === "add" ? "New Record" : `Editing: ${t2(selRow?.[cols[0]?.key])}`}
-                                    </p>
+                                <div className="overflow-auto p-4">
+                                    {mode !== "view" && (
+                                        <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3 pb-2 border-b border-gray-100">
+                                            {mode === "add" ? "New Record" : `Editing: ${t2(selRow?.[cols[0]?.key])}`}
+                                        </p>
+                                    )}
+                                    {mode === "view" && selRow && (
+                                        <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3 pb-2 border-b border-gray-100">
+                                            {t2(selRow[cols[0]?.key])}
+                                        </p>
+                                    )}
                                     {error && <p className="text-xs text-red-500 font-bold mb-3">{error}</p>}
                                     <div className="grid grid-cols-2 gap-3 text-xs">
                                         {formFields.map((f: any) => (
                                             <div key={f.k} className="flex flex-col gap-0.5">
                                                 <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{f.l}</label>
                                                 <input type={f.type||"text"} value={form[f.k]||""}
-                                                    onChange={e => setForm((p: any) => ({...p, [f.k]: e.target.value}))}
-                                                    className="fos-input text-xs py-1.5" />
+                                                    readOnly={mode === "view"}
+                                                    onChange={e => mode !== "view" && setForm((p: any) => ({...p, [f.k]: e.target.value}))}
+                                                    className={cn("fos-input text-xs py-1.5", mode === "view" && "bg-gray-50 text-gray-600 cursor-default")} />
                                             </div>
                                         ))}
                                     </div>
                                     {checkFields.length > 0 && (
                                         <div className="flex flex-wrap gap-4 pt-3 mt-1 border-t border-gray-100">
                                             {checkFields.map((c: any) => (
-                                                <label key={c.k} className="flex items-center gap-2 cursor-pointer">
+                                                <label key={c.k} className={cn("flex items-center gap-2", mode !== "view" && "cursor-pointer")}>
                                                     <input type="checkbox" checked={!!form[c.k]}
-                                                        onChange={e => setForm((p: any) => ({...p, [c.k]: e.target.checked}))}
+                                                        disabled={mode === "view"}
+                                                        onChange={e => mode !== "view" && setForm((p: any) => ({...p, [c.k]: e.target.checked}))}
                                                         className="w-4 h-4 accent-[#FB7506]" />
                                                     <span className="text-xs font-semibold text-gray-600">{c.l}</span>
                                                 </label>
@@ -755,17 +812,19 @@ function SetupModal({ title, onClose, listUrl, detailUrl, emptyForm, cols, formF
                                         </div>
                                     )}
                                 </div>
-                                <div className="shrink-0 border-t border-gray-100 bg-gray-50 px-4 py-3 flex gap-2 justify-end">
-                                    <button onClick={() => { setMode("view"); setError(null); }}
-                                        className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-100">
-                                        Cancel
-                                    </button>
-                                    <button onClick={save} disabled={saving}
-                                        className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#FB7506] hover:bg-orange-600 disabled:opacity-50 text-white text-sm font-black uppercase tracking-wider">
-                                        {saving ? <RefreshCcw size={14} className="animate-spin" /> : <Save size={14} />}
-                                        {saving ? "Saving..." : mode === "add" ? "Create" : "Save"}
-                                    </button>
-                                </div>
+                                {mode !== "view" && (
+                                    <div className="shrink-0 border-t border-gray-100 bg-gray-50 px-4 py-3 flex gap-2 justify-end">
+                                        <button onClick={() => { setMode("view"); setError(null); }}
+                                            className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-100">
+                                            Cancel
+                                        </button>
+                                        <button onClick={save} disabled={saving}
+                                            className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#FB7506] hover:bg-orange-600 disabled:opacity-50 text-white text-sm font-black uppercase tracking-wider">
+                                            {saving ? <RefreshCcw size={14} className="animate-spin" /> : <Save size={14} />}
+                                            {saving ? "Saving..." : mode === "add" ? "Create" : "Save"}
+                                        </button>
+                                    </div>
+                                )}
                             </>
                         )}
                     </div>
