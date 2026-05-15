@@ -65,22 +65,27 @@ function GridMenu({ items, disabled: globalDisabled }: {
     return (
         <div className="relative" onClick={e => e.stopPropagation()}>
             <button onClick={() => setOpen(o => !o)}
-                className="flex items-center gap-1 bg-[#FB7506] hover:bg-orange-600 text-white px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wide transition-all">
-                <span className="text-[10px] leading-none">≡</span> Menu
+                className="flex items-center justify-center w-7 h-6 bg-[#FB7506] hover:bg-orange-600 text-white rounded transition-all active:scale-95"
+                title="Menu">
+                <svg width="13" height="10" viewBox="0 0 13 10" fill="none">
+                    <rect y="0"   width="13" height="2" rx="1" fill="white"/>
+                    <rect y="4"   width="13" height="2" rx="1" fill="white"/>
+                    <rect y="8"   width="13" height="2" rx="1" fill="white"/>
+                </svg>
             </button>
             {open && (
-                <div className="absolute right-0 top-full mt-0.5 w-40 bg-white border border-gray-200 rounded-lg shadow-xl z-50 overflow-hidden"
+                <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-100 rounded-xl shadow-2xl z-50 overflow-hidden py-1"
                     onMouseLeave={() => setOpen(false)}>
-                    {items.map((item, i) => {
-                        const colors: Record<string,string> = { green:"text-green-700 hover:bg-green-50", blue:"text-blue-700 hover:bg-blue-50", red:"text-red-600 hover:bg-red-50", gray:"text-gray-600 hover:bg-gray-50", amber:"text-amber-600 hover:bg-amber-50" };
-                        return (
-                            <button key={i} onClick={() => { item.onClick(); setOpen(false); }}
-                                disabled={!!item.disabled || !!globalDisabled}
-                                className={cn("w-full flex items-center gap-2 px-3 py-2 text-[11px] font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-colors", colors[item.color]||colors.gray)}>
-                                <item.icon size={12} /> {item.label}
-                            </button>
-                        );
-                    })}
+                    {items.map((item, i) => (
+                        <button key={i} onClick={() => { item.onClick(); setOpen(false); }}
+                            disabled={!!item.disabled || !!globalDisabled}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                            <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
+                                <item.icon size={11} className="text-[#FB7506]" />
+                            </div>
+                            <span className="text-xs font-bold text-gray-700">{item.label}</span>
+                        </button>
+                    ))}
                 </div>
             )}
         </div>
@@ -628,6 +633,50 @@ function SimpleModal({ title, onSave, onClose, saving, error, isDelete=false, de
     );
 }
 
+// ─── MENU dropdown (matches orange hamburger style from design) ───────────────
+function MenuDropdown({ onAdd, onEdit, onDel, canEdit, canDel, menuOpen, setMenuOpen, saving }: any) {
+    return (
+        <div className="relative shrink-0">
+            <button
+                onClick={() => setMenuOpen((o: boolean) => !o)}
+                className="flex items-center justify-center w-10 h-10 bg-[#FB7506] hover:bg-orange-600 text-white rounded-lg shadow-sm transition-all active:scale-95"
+                title="Menu"
+            >
+                <svg width="18" height="14" viewBox="0 0 18 14" fill="none">
+                    <rect y="0" width="18" height="2.5" rx="1.25" fill="white"/>
+                    <rect y="5.75" width="18" height="2.5" rx="1.25" fill="white"/>
+                    <rect y="11.5" width="18" height="2.5" rx="1.25" fill="white"/>
+                </svg>
+            </button>
+            {menuOpen && (
+                <div className="absolute right-0 top-full mt-1.5 w-56 bg-white border border-gray-100 rounded-xl shadow-2xl z-50 overflow-hidden py-1">
+                    <button onClick={onAdd}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors">
+                        <div className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
+                            <Plus size={14} className="text-[#FB7506]" />
+                        </div>
+                        <span className="text-sm font-bold text-gray-700">Add Record</span>
+                    </button>
+                    <button onClick={onEdit} disabled={!canEdit}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                        <div className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
+                            <Pencil size={14} className="text-[#FB7506]" />
+                        </div>
+                        <span className="text-sm font-bold text-gray-700">Edit Selected</span>
+                    </button>
+                    <button onClick={onDel} disabled={!canDel || saving}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                        <div className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
+                            <Trash2 size={14} className="text-[#FB7506]" />
+                        </div>
+                        <span className="text-sm font-bold text-gray-700">Delete Selected</span>
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+}
+
 // ─── Generic Setup Modal — list + form + MENU button ─────────────────────────
 function SetupModal({ title, onClose, listUrl, detailUrl, emptyForm, cols, formFields, checkFields }: any) {
     const t2 = (v: any) => String(v ?? "").trim();
@@ -701,66 +750,49 @@ function SetupModal({ title, onClose, listUrl, detailUrl, emptyForm, cols, formF
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[70vh] flex flex-col"
                 onClick={e => e.stopPropagation()}>
 
-                {/* Header */}
+                {/* Dark header — title + close only */}
                 <div className="h-10 bg-[#374151] rounded-t-xl flex items-center justify-between px-4 shrink-0">
                     <div className="flex items-center gap-2">
                         <span className="font-black text-[11px] uppercase tracking-widest text-white">{title}</span>
                         {loading && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
                     </div>
-                    <div className="flex items-center gap-2">
-                        {/* MENU button */}
-                        <div className="relative">
-                            <button onClick={() => setMenuOpen(o => !o)}
-                                className="flex items-center gap-1.5 bg-[#FB7506] hover:bg-orange-600 text-white px-3 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all">
-                                <span className="text-base leading-none">≡</span> Menu
-                            </button>
-                            {menuOpen && (
-                                <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-xl z-50 overflow-hidden">
-                                    <button onClick={openAdd}
-                                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors">
-                                        <Plus size={14} className="text-green-600" /> Add Record
-                                    </button>
-                                    <button onClick={openEdit} disabled={!selRow}
-                                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-                                        <Pencil size={14} className="text-blue-600" /> Edit Selected
-                                    </button>
-                                    <button onClick={del} disabled={!selRow || saving}
-                                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-                                        <Trash2 size={14} className="text-red-500" /> Delete Selected
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                        <button onClick={onClose}><XCircle size={16} className="text-gray-400 hover:text-white" /></button>
-                    </div>
+                    <button onClick={onClose}><XCircle size={16} className="text-gray-400 hover:text-white" /></button>
                 </div>
 
                 <div className="flex flex-1 overflow-hidden">
-                    {/* Left: list */}
-                    <div className="w-64 border-r border-gray-100 flex flex-col shrink-0">
-                        <div className="p-2 border-b border-gray-100 shrink-0">
-                            <div className="relative">
-                                <Search size={11} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+                    {/* Left: list — wider + taller items */}
+                    <div className="w-80 border-r border-gray-100 flex flex-col shrink-0">
+                        <div className="px-3 border-b border-gray-100 shrink-0" style={{ height: "44px", display:"flex", alignItems:"center" }}>
+                            <div className="relative flex-1">
+                                <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                 <input type="text" value={search}
                                     onChange={e => { setSearch(e.target.value); load(e.target.value); }}
                                     placeholder="Search..."
-                                    className="w-full pl-7 pr-2 py-1.5 text-xs border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-[#FB7506]" />
+                                    className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-[#FB7506]" />
                             </div>
                         </div>
-                        <div className="overflow-auto flex-1 divide-y divide-gray-50">
+                        <div className="overflow-auto flex-1">
                             {rows.map((r: any, i: number) => (
                                 <div key={r.unico||i}
                                     onClick={() => { setSelRow(r); if (mode !== "view") setMode("view"); }}
                                     onDoubleClick={() => { setSelRow(r); openEdit(); }}
-                                    className={cn("px-3 py-2 cursor-pointer transition-colors text-xs",
+                                    style={{ minHeight: "44px" }}
+                                    className={cn(
+                                        "flex items-center px-4 border-b border-gray-50 cursor-pointer transition-colors",
                                         selRow?.unico===r.unico
-                                            ? "bg-blue-50 border-l-2 border-blue-500 text-blue-800 font-semibold"
-                                            : "hover:bg-gray-50 text-gray-700 border-l-2 border-transparent")}>
-                                    {cols.map((c: any, ci: number) => (
-                                        <span key={c.key} className={cn("mr-2", ci > 0 && "text-gray-400")}>
-                                            {c.render ? c.render(r[c.key], r) : t2(r[c.key])}
+                                            ? "bg-blue-50 border-l-[3px] border-l-blue-500"
+                                            : "hover:bg-gray-50 border-l-[3px] border-l-transparent"
+                                    )}>
+                                    <div className="flex items-baseline gap-2 min-w-0">
+                                        <span className={cn("text-sm font-semibold truncate", selRow?.unico===r.unico ? "text-blue-800" : "text-gray-800")}>
+                                            {t2(r[cols[0].key])}
                                         </span>
-                                    ))}
+                                        {cols.slice(1).map((c: any) => (
+                                            <span key={c.key} className="text-xs text-gray-400 shrink-0">
+                                                {c.render ? c.render(r[c.key], r) : t2(r[c.key])}
+                                            </span>
+                                        ))}
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -769,23 +801,27 @@ function SetupModal({ title, onClose, listUrl, detailUrl, emptyForm, cols, formF
                     {/* Right: detail / form */}
                     <div className="flex-1 flex flex-col overflow-hidden">
                         {!selRow && mode === "view" ? (
-                            <div className="flex-1 flex flex-col items-center justify-center text-gray-300 gap-2">
-                                <span className="text-4xl">≡</span>
-                                <p className="text-xs font-bold uppercase tracking-widest">Select a record or use Menu</p>
-                            </div>
+                            <>
+                                {/* Empty state subheader still shows MENU */}
+                                <div className="flex items-center justify-between px-4 border-b border-gray-100 shrink-0" style={{ height:"44px" }}>
+                                    <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">Select a record</span>
+                                    <MenuDropdown onAdd={openAdd} onEdit={openEdit} onDel={del} canEdit={false} canDel={false} menuOpen={menuOpen} setMenuOpen={setMenuOpen} saving={saving} />
+                                </div>
+                                <div className="flex-1 flex flex-col items-center justify-center text-gray-300 gap-2">
+                                    <span className="text-4xl">≡</span>
+                                    <p className="text-xs font-bold uppercase tracking-widest">Use Menu to add a record</p>
+                                </div>
+                            </>
                         ) : (
                             <>
+                                {/* White subheader with record name + MENU */}
+                                <div className="flex items-center justify-between px-4 border-b border-gray-100 shrink-0" style={{ height:"44px" }}>
+                                    <span className="text-sm font-black text-gray-800">
+                                        {mode === "add" ? "New Record" : mode === "edit" ? `Editing: ${t2(selRow?.[cols[0]?.key])}` : t2(selRow?.[cols[0]?.key])}
+                                    </span>
+                                    <MenuDropdown onAdd={openAdd} onEdit={openEdit} onDel={del} canEdit={!!selRow} canDel={!!selRow && !saving} menuOpen={menuOpen} setMenuOpen={setMenuOpen} saving={saving} />
+                                </div>
                                 <div className="overflow-auto p-4">
-                                    {mode !== "view" && (
-                                        <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3 pb-2 border-b border-gray-100">
-                                            {mode === "add" ? "New Record" : `Editing: ${t2(selRow?.[cols[0]?.key])}`}
-                                        </p>
-                                    )}
-                                    {mode === "view" && selRow && (
-                                        <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3 pb-2 border-b border-gray-100">
-                                            {t2(selRow[cols[0]?.key])}
-                                        </p>
-                                    )}
                                     {error && <p className="text-xs text-red-500 font-bold mb-3">{error}</p>}
                                     <div className="grid grid-cols-2 gap-3 text-xs">
                                         {formFields.map((f: any) => (
