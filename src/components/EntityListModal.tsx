@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Search, Plus, Pencil, Trash2 } from "lucide-react";
+import { X, Search, Plus, Pencil, Trash2, RefreshCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AuditLogModal } from "./AuditLogModal";
 
 interface EntityListModalProps {
   open: boolean;
   title: string;
+  icon?: React.ComponentType<{ size?: number; className?: string }>;
   searchPlaceholder?: string;
   listUrl: string;
   renderItem: (item: any) => { primary: string; secondary?: string };
@@ -20,6 +22,7 @@ interface EntityListModalProps {
 export function EntityListModal({
   open,
   title,
+  icon: Icon,
   searchPlaceholder = "Search...",
   listUrl,
   renderItem,
@@ -59,15 +62,20 @@ export function EntityListModal({
 
   return (
     <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
       {/* Header */}
-      <div className="h-10 bg-[#374151] flex items-center justify-between px-4 shrink-0 border-b border-black/10">
+      <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 shrink-0 border-b border-black/10">
         <div className="flex items-center gap-2 min-w-0">
+          {Icon && <Icon size={16} className="text-[#FB7506] shrink-0" />}
           <span className="fos-grid-header-text truncate">{title}</span>
         </div>
-        <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
-          <X size={18} />
-        </button>
+        <div className="flex items-center gap-1">
+          {loading && <RefreshCcw size={14} className="text-gray-400 animate-spin" />}
+          <AuditLogModal recordId={selected?.unico} disabled={!selected} />
+          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors">
+            <X size={16} />
+          </button>
+        </div>
       </div>
 
       {/* Search */}

@@ -426,7 +426,7 @@ export default function FreightsSetupPage() {
                     </div>
                 </div>
                 <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                    <span className="text-gray-400 text-[10px] sm:text-xs font-bold hidden md:inline">User: <span className="text-white">{session?.user?.name}</span></span>
+                    <span className="text-gray-400 text-[10px] sm:text-xs font-bold">User: <span className="text-white">{session?.user?.name}</span></span>
                 </div>
             </div>
 
@@ -694,6 +694,7 @@ export default function FreightsSetupPage() {
             <EntityListModal
                 open={ciSetup}
                 title="Cities"
+                icon={MapPin}
                 searchPlaceholder="Search cities..."
                 listUrl="/api/freights/cities"
                 renderItem={(r) => ({ primary: r.city, secondary: r.country_iso })}
@@ -706,6 +707,8 @@ export default function FreightsSetupPage() {
             <EntityFormModal
                 open={ciFormOpen}
                 title={ciFormMode === "add" ? "New City" : "Edit City"}
+                icon={MapPin}
+                recordId={ciSel?.unico}
                 subtitle={ciFormMode === "edit" && ciSel ? ciSel.city : undefined}
                 form={ciForm}
                 fields={[{k:"city",l:"City *"},{k:"country_iso",l:"Country ISO"},{k:"buyer_email",l:"Buyer Email"}]}
@@ -721,6 +724,7 @@ export default function FreightsSetupPage() {
             <EntityListModal
                 open={alSetup}
                 title="Airlines"
+                icon={Cloud}
                 searchPlaceholder="Search airlines..."
                 listUrl="/api/freights/airlines"
                 renderItem={(r) => ({ primary: r.airline, secondary: r.cod_linea })}
@@ -733,6 +737,8 @@ export default function FreightsSetupPage() {
             <EntityFormModal
                 open={alFormOpen}
                 title={alFormMode === "add" ? "New Airline" : "Edit Airline"}
+                icon={Cloud}
+                recordId={alSel?.unico}
                 subtitle={alFormMode === "edit" && alSel ? alSel.airline : undefined}
                 form={alForm}
                 fields={[{k:"cod_linea",l:"Code"},{k:"airline",l:"Airline *"},{k:"address",l:"Address"},{k:"city",l:"City"},{k:"country",l:"Country"},{k:"phone",l:"Phone"},{k:"fax",l:"Fax"},{k:"email",l:"Email"},{k:"contact",l:"Contact"}]}

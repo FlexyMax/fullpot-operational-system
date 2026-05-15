@@ -2,6 +2,7 @@
 
 import { X, Save, RefreshCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AuditLogModal } from "./AuditLogModal";
 
 interface FormField {
   k: string;
@@ -17,6 +18,8 @@ interface CheckField {
 interface EntityFormModalProps {
   open: boolean;
   title: string;
+  icon?: React.ComponentType<{ size?: number; className?: string }>;
+  recordId?: string | null;
   subtitle?: string;
   form: Record<string, any>;
   fields: FormField[];
@@ -31,6 +34,8 @@ interface EntityFormModalProps {
 export function EntityFormModal({
   open,
   title,
+  icon: Icon,
+  recordId,
   subtitle,
   form,
   fields,
@@ -47,14 +52,20 @@ export function EntityFormModal({
     <div className="fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
       {/* Header */}
-      <div className="h-10 bg-[#374151] flex items-center justify-between px-4 shrink-0 border-b border-black/10">
+      <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 shrink-0 border-b border-black/10">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="fos-grid-header-text truncate block">{title}</span>
-          {subtitle && <span className="text-[10px] text-gray-400 font-bold truncate block">{subtitle}</span>}
+          {Icon && <Icon size={16} className="text-[#FB7506] shrink-0" />}
+          <div className="min-w-0">
+            <span className="fos-grid-header-text truncate block">{title}</span>
+            {subtitle && <span className="text-[10px] text-gray-400 font-bold truncate block">{subtitle}</span>}
+          </div>
         </div>
-        <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
-          <X size={18} />
-        </button>
+        <div className="flex items-center gap-1">
+          <AuditLogModal recordId={recordId} disabled={!recordId} />
+          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors">
+            <X size={16} />
+          </button>
+        </div>
       </div>
 
       {/* Form */}
