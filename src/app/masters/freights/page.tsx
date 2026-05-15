@@ -7,7 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     ArrowLeft, Plus, Pencil, Trash2, Save, X, RefreshCcw,
     Copy, Zap, Building2, Cloud, MapPin, Check, AlertCircle,
-    XCircle, Search
+    XCircle, Search, ChevronLeft
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuditLog } from "@/lib/audit";
@@ -590,7 +590,7 @@ function SimpleModal({ title, onSave, onClose, saving, error, isDelete=false, de
     );
 }
 
-// ─── Generic Setup Modal (Seasons / Cities / Airlines) ────────────────────────
+// ─── Generic Setup Modal — Card layout (Seasons / Cities / Airlines) ──────────
 function SetupModal({ title, onClose, listUrl, detailUrl, emptyForm, cols, formFields, checkFields }: any) {
     const t2 = (v: any) => String(v ?? "").trim();
     const [rows,    setRows]    = useState<any[]>([]);
@@ -604,12 +604,23 @@ function SetupModal({ title, onClose, listUrl, detailUrl, emptyForm, cols, formF
 
     const load = useCallback(async (q: string) => {
         setLoading(true);
-        try { const d = await ff(`${listUrl}?search=${encodeURIComponent(q||"%")}`); setRows(d); if (d.length>0) setSelRow(d[0]); }
-        catch { /* ignore */ }
+        try {
+            const d = await ff(`${listUrl}?search=${encodeURIComponent(q||"%")}`);
+            setRows(d);
+            if (d.length > 0) setSelRow(d[0]);
+        } catch { /* ignore */ }
         finally { setLoading(false); }
     }, [listUrl]);
 
     useEffect(() => { load("%"); }, []);
+
+    const openEdit = () => {
+        if (!selRow) return;
+        const f: any = {};
+        formFields.forEach((ff2: any) => { f[ff2.k] = t2(selRow[ff2.k]); });
+        checkFields.forEach((cf: any)  => { f[cf.k]  = !!selRow[cf.k];    });
+        setForm(f); setMode("edit"); setError(null);
+    };
 
     const save = async () => {
         setSaving(true); setError(null);
@@ -632,71 +643,154 @@ function SetupModal({ title, onClose, listUrl, detailUrl, emptyForm, cols, formF
         finally { setSaving(false); }
     };
 
+    const primaryKey = cols[0]?.key;
+    const badgeKey   = cols[1]?.key;    // second col shown as badge on card
+
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[88vh] flex flex-col">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[88vh] flex flex-col relative">
+
+                {/* Header */}
                 <div className="h-10 bg-[#374151] rounded-t-xl flex items-center justify-between px-4 shrink-0">
-                    <span className="font-black text-[11px] uppercase tracking-widest text-white">{title}</span>
+                    <div className="flex items-center gap-2">
+                        {mode !== "view" && (
+                            <button onClick={() => { setMode("view"); setError(null); }}
+                                className="text-gray-400 hover:text-white mr-1 transition-colors">
+                                <ArrowLeft size={14} />
+                            </button>
+                        )}
+                        <span className="font-black text-[11px] uppercase tracking-widest text-white">
+                            {mode === "add" ? `New — ${title}` : mode === "edit" ? `Edit — ${t2(selRow?.[primaryKey])}` : title}
+                        </span>
+                        {loading && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
+                    </div>
                     <button onClick={onClose}><XCircle size={16} className="text-gray-400 hover:text-white" /></button>
                 </div>
-                <div className="flex flex-1 overflow-hidden gap-0">
-                    {/* Left: list */}
-                    <div className="w-56 border-r border-gray-200 flex flex-col shrink-0">
-                        <div className="p-2 border-b border-gray-100 flex items-center gap-1.5 shrink-0">
-                            <div className="relative flex-1">
-                                <Search size={11} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
-                                <input type="text" value={search} onChange={e=>{setSearch(e.target.value);load(e.target.value);}} placeholder="Search..." className="w-full pl-7 pr-2 py-1 text-xs border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506]" />
-                            </div>
-                        </div>
-                        <div className="overflow-auto flex-1 text-xs">
-                            {rows.map((r: any, i: number) => (
-                                <div key={r.unico||i} onClick={() => { setSelRow(r); setMode("view"); }}
-                                    className={cn("px-3 py-2 border-b cursor-pointer transition-colors", selRow?.unico===r.unico ? "!bg-blue-100" : "hover:bg-blue-50")}>
-                                    {cols.map((c: any) => <span key={c.key} className="mr-2">{c.render?c.render(r[c.key],r):t2(r[c.key])}</span>)}
-                                </div>
-                            ))}
-                        </div>
-                        <div className="flex gap-1 p-2 border-t border-gray-100 shrink-0">
-                            <button onClick={()=>{setForm({...emptyForm});setMode("add");setError(null);}} className="flex-1 bg-green-600 hover:bg-green-700 text-white py-1 rounded text-[9px] font-black uppercase"><Plus size={9} className="inline" /> Add</button>
-                            <button onClick={()=>{if(selRow){const f:any={};formFields.forEach((ff2:any)=>{f[ff2.k]=t2(selRow[ff2.k]);});checkFields.forEach((cf:any)=>{f[cf.k]=!!selRow[cf.k];});setForm(f);setMode("edit");setError(null);}}} disabled={!selRow} className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white py-1 rounded text-[9px] font-black uppercase"><Pencil size={9} className="inline" /> Edit</button>
-                            <button onClick={del} disabled={!selRow} className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white py-1 rounded text-[9px] font-black uppercase"><Trash2 size={9} className="inline" /> Del</button>
+
+                {/* ── VIEW MODE: search + card grid ── */}
+                {mode === "view" && (<>
+                    {/* Search bar */}
+                    <div className="p-3 border-b border-gray-100 shrink-0">
+                        <div className="relative">
+                            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                            <input type="text" value={search}
+                                onChange={e => { setSearch(e.target.value); load(e.target.value); }}
+                                placeholder="Search..."
+                                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-[#FB7506] transition-all" />
                         </div>
                     </div>
-                    {/* Right: form */}
-                    <div className="flex-1 p-4 overflow-auto">
-                        {mode === "view" ? (
-                            <div className="h-full flex items-center justify-center text-gray-300 text-xs font-bold uppercase">Select a record or click Add</div>
+
+                    {/* Cards grid */}
+                    <div className="overflow-auto flex-1 p-3">
+                        {rows.length === 0 ? (
+                            <div className="h-40 flex items-center justify-center text-gray-300 text-sm font-bold uppercase">
+                                {loading ? "Loading..." : "No records"}
+                            </div>
                         ) : (
-                            <div className="space-y-3 text-xs">
-                                {error && <p className="text-xs text-red-500 font-bold">{error}</p>}
-                                <div className="grid grid-cols-2 gap-3">
-                                    {formFields.map((f: any) => (
-                                        <div key={f.k} className="flex flex-col gap-0.5">
-                                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{f.l}</label>
-                                            <input type={f.type||"text"} value={form[f.k]||""} onChange={e=>setForm((p:any)=>({...p,[f.k]:e.target.value}))} className="fos-input text-xs py-1" />
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
+                                {rows.map((r: any, i: number) => {
+                                    const isSel = selRow?.unico === r.unico;
+                                    return (
+                                        <div key={r.unico||i}
+                                            onClick={() => setSelRow(r)}
+                                            onDoubleClick={() => { setSelRow(r); openEdit(); }}
+                                            className={cn(
+                                                "flex flex-col gap-1 p-3 rounded-xl border-2 cursor-pointer transition-all duration-150 select-none",
+                                                isSel
+                                                    ? "border-blue-500 bg-blue-50 shadow-md shadow-blue-100 ring-2 ring-blue-200"
+                                                    : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
+                                            )}>
+                                            {/* Primary: first col */}
+                                            <p className={cn("text-sm font-bold leading-tight truncate", isSel ? "text-blue-800" : "text-gray-800")}>
+                                                {t2(r[primaryKey])}
+                                            </p>
+                                            {/* Secondary cols */}
+                                            {cols.slice(1).map((c: any) => (
+                                                <p key={c.key} className={cn("text-[10px] leading-tight", isSel ? "text-blue-600" : "text-gray-400")}>
+                                                    {c.render ? c.render(r[c.key], r) : t2(r[c.key])}
+                                                </p>
+                                            ))}
                                         </div>
-                                    ))}
-                                </div>
-                                {checkFields.length > 0 && (
-                                    <div className="flex flex-wrap gap-3 pt-1">
-                                        {checkFields.map((c: any) => (
-                                            <label key={c.k} className="flex items-center gap-1.5 cursor-pointer">
-                                                <input type="checkbox" checked={!!form[c.k]} onChange={e=>setForm((p:any)=>({...p,[c.k]:e.target.checked}))} className="w-3.5 h-3.5 accent-[#FB7506]" />
-                                                <span className="text-[10px] font-semibold">{c.l}</span>
-                                            </label>
-                                        ))}
-                                    </div>
-                                )}
-                                <div className="flex gap-2 pt-2">
-                                    <button onClick={save} disabled={saving} className="flex items-center gap-1.5 bg-[#FB7506] hover:bg-orange-600 disabled:opacity-50 text-white px-4 py-2 rounded text-xs font-black uppercase">
-                                        {saving ? <RefreshCcw size={12} className="animate-spin" /> : <Save size={12} />}{saving?"...":"Save"}
-                                    </button>
-                                    <button onClick={()=>{setMode("view");setError(null);}} className="px-4 py-2 rounded border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50">Cancel</button>
-                                </div>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
-                </div>
+
+                    {/* Bottom action bar — slides up when card selected */}
+                    <div className={cn(
+                        "shrink-0 border-t border-gray-200 bg-gray-50 px-4 flex items-center justify-between transition-all duration-200",
+                        selRow ? "py-3 opacity-100" : "py-0 opacity-0 pointer-events-none h-0 overflow-hidden"
+                    )}>
+                        <div className="flex flex-col min-w-0">
+                            <span className="text-xs font-black text-gray-700 truncate">{t2(selRow?.[primaryKey])}</span>
+                            {badgeKey && <span className="text-[10px] text-gray-400">{t2(selRow?.[badgeKey])}</span>}
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button onClick={openEdit}
+                                className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all">
+                                <Pencil size={12} /> Edit
+                            </button>
+                            <button onClick={del} disabled={saving}
+                                className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all">
+                                <Trash2 size={12} /> Delete
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Floating Add button */}
+                    <button
+                        onClick={() => { setForm({...emptyForm}); setMode("add"); setError(null); }}
+                        className="absolute bottom-16 right-4 w-11 h-11 bg-[#FB7506] hover:bg-orange-600 text-white rounded-full shadow-lg shadow-orange-200 flex items-center justify-center transition-all active:scale-95"
+                        title="Add new record"
+                    >
+                        <Plus size={20} />
+                    </button>
+                </>)}
+
+                {/* ── ADD / EDIT MODE: form ── */}
+                {mode !== "view" && (
+                    <div className="flex-1 overflow-auto p-4">
+                        {error && <p className="text-xs text-red-500 font-bold mb-3 flex items-center gap-1"><AlertCircle size={12} />{error}</p>}
+                        <div className="grid grid-cols-2 gap-3 text-xs">
+                            {formFields.map((f: any) => (
+                                <div key={f.k} className="flex flex-col gap-0.5">
+                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{f.l}</label>
+                                    <input type={f.type||"text"} value={form[f.k]||""}
+                                        onChange={e => setForm((p: any) => ({...p, [f.k]: e.target.value}))}
+                                        className="fos-input text-xs py-1.5" />
+                                </div>
+                            ))}
+                        </div>
+                        {checkFields.length > 0 && (
+                            <div className="flex flex-wrap gap-4 pt-3 mt-1 border-t border-gray-100">
+                                {checkFields.map((c: any) => (
+                                    <label key={c.k} className="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" checked={!!form[c.k]}
+                                            onChange={e => setForm((p: any) => ({...p, [c.k]: e.target.checked}))}
+                                            className="w-4 h-4 accent-[#FB7506]" />
+                                        <span className="text-xs font-semibold text-gray-600">{c.l}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Form footer */}
+                {mode !== "view" && (
+                    <div className="shrink-0 border-t border-gray-200 bg-gray-50 px-4 py-3 flex items-center justify-end gap-2 rounded-b-xl">
+                        <button onClick={() => { setMode("view"); setError(null); }}
+                            className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-100">
+                            Cancel
+                        </button>
+                        <button onClick={save} disabled={saving}
+                            className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#FB7506] hover:bg-orange-600 disabled:opacity-50 text-white text-sm font-black uppercase tracking-wider transition-all">
+                            {saving ? <RefreshCcw size={14} className="animate-spin" /> : <Save size={14} />}
+                            {saving ? "Saving..." : mode === "add" ? "Create" : "Save Changes"}
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );
