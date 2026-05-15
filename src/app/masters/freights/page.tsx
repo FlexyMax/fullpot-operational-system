@@ -32,7 +32,7 @@ function GridHeader({ icon: Icon, title, loading, children, recordId }: any) {
         <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 border-b border-black/10 shrink-0">
             <div className="flex items-center gap-1.5">
                 <Icon size={12} className="text-[#FB7506]" />
-                <span className="font-black text-[9px] uppercase tracking-widest text-white">{title}</span>
+                <span className="fos-grid-header-text">{title}</span>
                 <AuditLogModal recordId={recordId} disabled={!recordId} />
                 {loading && <RefreshCcw size={9} className="text-gray-400 animate-spin" />}
             </div>
@@ -104,11 +104,11 @@ function GridMenu({ items, disabled: globalDisabled }: {
 function MiniTable({ cols, rows, selUnico, onSelect, onDblClick, empty }: any) {
     return (
         <div className="overflow-auto flex-1">
-            <table className="min-w-full text-[10px] text-left">
-                <thead className="bg-gray-50 border-b border-gray-100 text-gray-500 font-bold sticky top-0 z-10">
+            <table className="min-w-full text-left">
+                <thead className="bg-gray-50 border-b border-gray-100 text-gray-500 fos-grid-thead sticky top-0 z-10">
                     <tr>{cols.map((c: any) => <th key={c.key} className={cn("p-1.5 whitespace-nowrap border-r border-gray-100 last:border-r-0", c.className)}>{c.label}</th>)}</tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-gray-50 fos-grid-tbody">
                     {rows.length === 0 ? (
                         <tr><td colSpan={cols.length} className="p-4 text-center text-gray-300 italic text-xs">{empty}</td></tr>
                     ) : rows.map((r: any, i: number) => {

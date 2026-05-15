@@ -72,6 +72,25 @@ body {
   background-color: #e06905;
 }
 
+/* ─── Grid / Table font standards (matches POS model) ─── */
+@utility fos-grid-header-text {
+  font-size: 13px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
+  color: white;
+}
+
+@utility fos-grid-thead {
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+@utility fos-grid-tbody {
+  font-size: 11px;
+}
+
 /* Shared form input style used across all FOS modules */
 .fos-input {
   width: 100%;
