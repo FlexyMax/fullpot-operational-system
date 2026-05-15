@@ -29,7 +29,7 @@ const EMPTY_AL   = { cod_linea:"", airline:"", address:"", city:"", country:"", 
 // ─── Shared mini-components ───────────────────────────────────────────────────
 function GridHeader({ icon: Icon, title, loading, children, recordId }: any) {
     return (
-        <div className="h-10 bg-[#374151] flex items-center justify-between px-3 border-b border-black/10 shrink-0">
+        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 border-b border-black/10 shrink-0">
             <div className="flex items-center gap-1.5">
                 <Icon size={12} className="text-[#FB7506]" />
                 <span className="font-black text-[9px] uppercase tracking-widest text-white">{title}</span>
