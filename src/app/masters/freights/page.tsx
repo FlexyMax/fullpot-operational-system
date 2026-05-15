@@ -159,8 +159,14 @@ export default function FreightsSetupPage() {
     const [frModal,  setFrModal]  = useState<{ mode:"add"|"edit"|"delete" } | null>(null);
     const [haModal,  setHaModal]  = useState<{ mode:"add"|"edit"|"delete" } | null>(null);
     const [atModal,  setAtModal]  = useState<{ mode:"add"|"edit"|"delete" } | null>(null);
-    const [seSetup,  setSeSetup]  = useState(false);
     const [copyModal, setCopyModal] = useState(false);
+
+    // Seasons form state
+    const [seFormOpen, setSeFormOpen] = useState(false);
+    const [seFormMode, setSeFormMode] = useState<"add"|"edit">("add");
+    const [seForm, setSeForm] = useState<any>(EMPTY_SE);
+    const [seError, setSeError] = useState<string|null>(null);
+    const [seSaving, setSeSaving] = useState(false);
 
     // Cities / Airlines list + form state
     const [ciSetup, setCiSetup] = useState(false);
@@ -409,6 +415,35 @@ export default function FreightsSetupPage() {
         finally { setAlSaving(false); }
     };
 
+    // ── Seasons CRUD ────────────────────────────────────────────────────────────
+    const saveSeason = async () => {
+        if (!seForm.season.trim()) { setSeError("Season Name is required."); return; }
+        setSeSaving(true); setSeError(null);
+        try {
+            if (seFormMode === "add") {
+                const res = await fetch("/api/freights/seasons", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(seForm) });
+                const d = await res.json(); if (!d.success) throw new Error(d.error);
+            } else if (selSe) {
+                const res = await fetch(`/api/freights/seasons/${selSe.unico}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(seForm) });
+                const d = await res.json(); if (!d.success) throw new Error(d.error);
+            }
+            setSeFormOpen(false); setSeForm(EMPTY_SE);
+            await qc.invalidateQueries({ queryKey: ["fr-look"] });
+        } catch (e: any) { setSeError(e.message); }
+        finally { setSeSaving(false); }
+    };
+
+    const deleteSeason = async () => {
+        if (!selSe || !confirm(`Delete season "${t(selSe.season)}"?`)) return;
+        setSeSaving(true);
+        try {
+            await fetch(`/api/freights/seasons/${selSe.unico}`, { method:"DELETE" });
+            setSelSe(null);
+            await qc.invalidateQueries({ queryKey: ["fr-look"] });
+        } catch (e: any) { setSeError(e.message); }
+        finally { setSeSaving(false); }
+    };
+
     if (status === "loading") return null;
 
     return (
@@ -467,7 +502,9 @@ export default function FreightsSetupPage() {
                     <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden">
                         <GridHeader icon={Zap} title="Seasons" recordId={selSe?.unico}>
                             <GridMenu items={[
-                                { label:"Manage Seasons", icon:Zap, color:"amber", onClick:() => setSeSetup(true) },
+                                { label:"Add Season", icon:Plus, color:"green", onClick:() => { setSeForm({...EMPTY_SE}); setSeFormMode("add"); setSeError(null); setSeFormOpen(true); } },
+                                { label:"Edit Selected", icon:Pencil, color:"blue", onClick:() => { if(!selSe) return; setSeForm({ season:t(selSe.season), sh_season:t(selSe.sh_season), startdate:t(selSe.startdate), enddate:t(selSe.enddate), activedate:t(selSe.activedate), desacdate:t(selSe.desacdate), publicate:!!selSe.publicate, increment:selSe.increment||0, bypercent:!!selSe.bypercent }); setSeFormMode("edit"); setSeError(null); setSeFormOpen(true); }, disabled:!selSe },
+                                { label:"Delete Selected", icon:Trash2, color:"red", onClick:() => deleteSeason(), disabled:!selSe },
                             ]} />
                         </GridHeader>
                         <MiniTable
@@ -686,8 +723,22 @@ export default function FreightsSetupPage() {
                 </SimpleModal>
             )}
 
-            {/* ── Seasons Setup Modal ────────────────────────────────────── */}
-            {seSetup && <SetupModal title="Seasons Setup" onClose={()=>{setSeSetup(false); qc.invalidateQueries({queryKey:["fr-look"]});}} listUrl="/api/freights/seasons" detailUrl="/api/freights/seasons" emptyForm={EMPTY_SE} cols={[{key:"season",label:"Season"},{key:"startdate2",label:"From"},{key:"enddate2",label:"To"},{key:"active",label:"Active",render:(v:any)=>v==="Yes"||v===true?"✓":"—"}]} formFields={[{k:"season",l:"Season Name *"},{k:"sh_season",l:"Short Code"},{k:"startdate",l:"Start Date",type:"date"},{k:"enddate",l:"End Date",type:"date"},{k:"activedate",l:"Active Date",type:"date"},{k:"desacdate",l:"Deact. Date",type:"date"},{k:"increment",l:"Increment",type:"number"}]} checkFields={[{k:"publicate",l:"Publish"},{k:"bypercent",l:"By Percent"}]} />}
+            {/* ── Seasons Form Modal ─────────────────────────────────────── */}
+            <EntityFormModal
+                open={seFormOpen}
+                title={seFormMode === "add" ? "New Season" : "Edit Season"}
+                icon={Zap}
+                recordId={seFormMode === "edit" && selSe?.unico ? selSe.unico : null}
+                subtitle={seFormMode === "edit" && selSe ? selSe.season : undefined}
+                form={seForm}
+                fields={[{k:"season",l:"Season Name *"},{k:"sh_season",l:"Short Code"},{k:"startdate",l:"Start Date",type:"date"},{k:"enddate",l:"End Date",type:"date"},{k:"activedate",l:"Active Date",type:"date"},{k:"desacdate",l:"Deact. Date",type:"date"},{k:"increment",l:"Increment",type:"number"}]}
+                checkFields={[{k:"publicate",l:"Publish"},{k:"bypercent",l:"By Percent"}]}
+                onChange={(k, v) => setSeForm((p: any) => ({...p, [k]: v}))}
+                onSave={saveSeason}
+                onClose={() => { setSeFormOpen(false); setSeError(null); }}
+                saving={seSaving}
+                error={seError}
+            />
 
             {/* ── Cities Setup Modal ─────────────────────────────────────── */}
             {/* ── Cities List + Form ─────────────────────────────────────── */}
