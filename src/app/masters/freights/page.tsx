@@ -7,7 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     ArrowLeft, Plus, Pencil, Trash2, Save, X, RefreshCcw,
     Copy, Zap, Building2, Cloud, MapPin, Check, AlertCircle,
-    XCircle, Search, ChevronLeft
+    XCircle, Search, ChevronLeft, Menu
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuditLog } from "@/lib/audit";
@@ -74,13 +74,9 @@ function GridMenu({ items, disabled: globalDisabled }: {
     return (
         <div className="relative" onClick={e => e.stopPropagation()}>
             <button onClick={() => setOpen(o => !o)}
-                className="flex items-center justify-center w-12 h-7 bg-[#FB7506] hover:bg-orange-600 text-white rounded transition-all active:scale-95"
+                className="h-8 bg-[#FB7506] hover:bg-orange-600 text-white w-20 flex items-center justify-center transition-colors border-none cursor-pointer shadow-inner rounded"
                 title="Menu">
-                <svg width="18" height="12" viewBox="0 0 18 12" fill="none">
-                    <rect y="0" width="18" height="2" rx="1" fill="white"/>
-                    <rect y="5" width="18" height="2" rx="1" fill="white"/>
-                    <rect y="10" width="18" height="2" rx="1" fill="white"/>
-                </svg>
+                <Menu size={20} />
             </button>
             {open && (
                 <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-gray-200 rounded-lg shadow-2xl z-50 overflow-hidden"
