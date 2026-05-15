@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowLeft, Search, Plus, Pencil, Trash2 } from "lucide-react";
+import { X, Search, Plus, Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface EntityListModalProps {
@@ -58,23 +58,16 @@ export function EntityListModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col bg-[#f4f6f8]">
+    <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
       {/* Header */}
-      <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 border-b border-black/10">
+      <div className="h-10 bg-[#374151] flex items-center justify-between px-4 shrink-0 border-b border-black/10">
         <div className="flex items-center gap-2 min-w-0">
-          <button
-            onClick={onClose}
-            className="text-white hover:bg-white/10 p-1 rounded transition-colors shrink-0"
-          >
-            <ArrowLeft size={18} />
-          </button>
           <span className="fos-grid-header-text truncate">{title}</span>
         </div>
-        <div className="flex items-center gap-1">
-          {loading && (
-            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-          )}
-        </div>
+        <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+          <X size={18} />
+        </button>
       </div>
 
       {/* Search */}
@@ -169,10 +162,11 @@ export function EntityListModal({
       {/* Floating add button */}
       <button
         onClick={onAdd}
-        className="fixed bottom-20 right-4 w-12 h-12 bg-[#FB7506] hover:bg-orange-600 text-white rounded-full shadow-lg flex items-center justify-center transition-all active:scale-95 z-[70]"
+        className="absolute bottom-4 right-4 w-12 h-12 bg-[#FB7506] hover:bg-orange-600 text-white rounded-full shadow-lg flex items-center justify-center transition-all active:scale-95 z-[70]"
       >
         <Plus size={22} />
       </button>
+    </div>
     </div>
   );
 }
