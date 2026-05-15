@@ -27,16 +27,22 @@ const EMPTY_CI   = { country_iso:"", city:"", buyer_email:"" };
 const EMPTY_AL   = { cod_linea:"", airline:"", address:"", city:"", country:"", phone:"", fax:"", email:"", contact:"" };
 
 // ─── Shared mini-components ───────────────────────────────────────────────────
-function GridHeader({ icon: Icon, title, loading, children, recordId }: any) {
+function GridHeader({ icon: Icon, title, loading, children, recordId, onRefresh }: any) {
     return (
         <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 border-b border-black/10 shrink-0">
-            <div className="flex items-center gap-1.5">
-                <Icon size={12} className="text-[#FB7506]" />
+            <div className="flex items-center gap-2">
+                <Icon size={16} className="text-[#FB7506]" />
                 <span className="fos-grid-header-text">{title}</span>
                 <AuditLogModal recordId={recordId} disabled={!recordId} />
-                {loading && <RefreshCcw size={9} className="text-gray-400 animate-spin" />}
             </div>
-            <div className="flex items-center gap-1">{children}</div>
+            <div className="flex items-center gap-1">
+                {onRefresh && (
+                    <button onClick={onRefresh} disabled={loading} className="w-7 h-7 flex items-center justify-center text-white hover:bg-white/10 rounded transition-all disabled:opacity-40" title="Refresh">
+                        {loading ? <RefreshCcw size={16} className="text-gray-400 animate-spin" /> : <RefreshCcw size={16} />}
+                    </button>
+                )}
+                {children}
+            </div>
         </div>
     );
 }
@@ -330,10 +336,9 @@ export default function FreightsSetupPage() {
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button onClick={() => setCiSetup(true)} className="flex items-center gap-1 bg-gray-600 hover:bg-gray-500 text-white px-2.5 py-1 rounded text-[9px] font-black uppercase tracking-wider transition-all"><MapPin size={10} /> Cities</button>
-                    <button onClick={() => setAlSetup(true)} className="flex items-center gap-1 bg-gray-600 hover:bg-gray-500 text-white px-2.5 py-1 rounded text-[9px] font-black uppercase tracking-wider transition-all"><Cloud size={10} /> Airlines</button>
-                    <button onClick={() => setSeSetup(true)} className="flex items-center gap-1 bg-[#FB7506] hover:bg-orange-600 text-white px-2.5 py-1 rounded text-[9px] font-black uppercase tracking-wider transition-all"><Zap size={10} /> Seasons</button>
-                    <span className="text-gray-400 text-[10px] font-bold">User: <span className="text-white">{session?.user?.name}</span></span>
+                    <button onClick={() => setCiSetup(true)} className="flex items-center gap-1.5 bg-gray-600 hover:bg-gray-500 text-white px-4 h-9 rounded text-xs font-black uppercase tracking-wider transition-all"><MapPin size={14} /> Cities</button>
+                    <button onClick={() => setAlSetup(true)} className="flex items-center gap-1.5 bg-gray-600 hover:bg-gray-500 text-white px-4 h-9 rounded text-xs font-black uppercase tracking-wider transition-all"><Cloud size={14} /> Airlines</button>
+                    <span className="text-gray-400 text-xs font-bold">User: <span className="text-white">{session?.user?.name}</span></span>
                 </div>
             </div>
 
@@ -353,7 +358,7 @@ export default function FreightsSetupPage() {
 
                     {/* Physical Warehouses */}
                     <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden">
-                        <GridHeader icon={Building2} title="Physical Warehouses" loading={loadingWh} recordId={selWh?.unico}>
+                        <GridHeader icon={Building2} title="Physical Warehouses" loading={loadingWh} recordId={selWh?.unico} onRefresh={() => qc.invalidateQueries({ queryKey: ["fr-wh"] })}>
                             <GridMenu items={[
                                 { label:"Add Warehouse", icon:Plus,   color:"green", onClick:() => { setWhForm({...EMPTY_WH}); setError(null); setWhModal({mode:"add"}); } },
                                 { label:"Edit Selected",  icon:Pencil, color:"blue",  onClick:() => { if(!selWh) return; setWhForm({ wp_name:t(selWh.wp_name), cargo:!!selWh.cargo, send_xml:!!selWh.send_xml, charge:!!selWh.charge, address:t(selWh.address), city:t(selWh.city), state:t(selWh.state), zipcode:t(selWh.zipcode), country:t(selWh.country), phone:t(selWh.phone), fax:t(selWh.fax), email:t(selWh.email), grower_uq:t(selWh.grower_uq), handling_kg:selWh.handling_kg||0, send_to_whouse:!!selWh.send_to_whouse }); setError(null); setWhModal({mode:"edit"}); }, disabled:!selWh },
@@ -372,7 +377,9 @@ export default function FreightsSetupPage() {
                     {/* Seasons (reference grid) */}
                     <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden">
                         <GridHeader icon={Zap} title="Seasons" recordId={selSe?.unico}>
-                            <GBtn onClick={() => setSeSetup(true)} color="amber" icon={Zap} label="Manage" />
+                            <GridMenu items={[
+                                { label:"Manage Seasons", icon:Zap, color:"amber", onClick:() => setSeSetup(true) },
+                            ]} />
                         </GridHeader>
                         <MiniTable
                             cols={[
@@ -395,7 +402,7 @@ export default function FreightsSetupPage() {
 
                     {/* Freights */}
                     <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden">
-                        <GridHeader icon={Cloud} title={`Freights${selWh ? ` — ${t(selWh.wp_name)}` : ""}`} loading={loadingFr} recordId={selFr?.unico}>
+                        <GridHeader icon={Cloud} title={`Freights${selWh ? ` — ${t(selWh.wp_name)}` : ""}`} loading={loadingFr} recordId={selFr?.unico} onRefresh={() => refetchFr()}>
                             <GridMenu items={[
                                 { label:"Add Rate",      icon:Plus,   color:"green", onClick:() => { if(!selWh){setError("Select a warehouse first.");return;} setFrForm({...EMPTY_FR}); setError(null); setFrModal({mode:"add"}); }, disabled:!selWh },
                                 { label:"Edit Selected", icon:Pencil, color:"blue",  onClick:async() => { if(!selFr) return; try { const d = await ff(`/api/freights/rates/${selFr.unico}`); setFrForm({ wphysical_uq: d.wphysical_uq||selWh?.unico, season_uq: d.season_uq||"", city_uq: d.city_uq||"", freight: d.freight||0, freight_kg: d.freight_kg||0 }); setError(null); setFrModal({mode:"edit"}); } catch(e:any){setError(e.message);} }, disabled:!selFr },
@@ -420,7 +427,7 @@ export default function FreightsSetupPage() {
 
                     {/* Handling */}
                     <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden">
-                        <GridHeader icon={Building2} title="Handling" loading={loadingHa} recordId={selHa?.unico}>
+                        <GridHeader icon={Building2} title="Handling" loading={loadingHa} recordId={selHa?.unico} onRefresh={() => refetchHa()}>
                             <GridMenu items={[
                                 { label:"Add Rate",      icon:Plus,   color:"green", onClick:() => { if(!selWh){setError("Select a warehouse first.");return;} setHaForm({...EMPTY_HA}); setError(null); setHaModal({mode:"add"}); }, disabled:!selWh },
                                 { label:"Edit Selected", icon:Pencil, color:"blue",  onClick:async() => { if(!selHa) return; try { const d = await ff(`/api/freights/handling/${selHa.unico}`); setHaForm({ wphysical_uq: d.wphysical_uq||selWh?.unico, season_uq: d.season_uq||"", handling: d.handling||0 }); setError(null); setHaModal({mode:"edit"}); } catch(e:any){setError(e.message);} }, disabled:!selHa },
@@ -441,7 +448,7 @@ export default function FreightsSetupPage() {
 
                     {/* ATPDA */}
                     <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden">
-                        <GridHeader icon={MapPin} title="ATPDA" loading={loadingAt} recordId={selAt?.unico}>
+                        <GridHeader icon={MapPin} title="ATPDA" loading={loadingAt} recordId={selAt?.unico} onRefresh={() => refetchAt()}>
                             <GridMenu items={[
                                 { label:"Add Tariff",    icon:Plus,   color:"green", onClick:() => { if(!selWh){setError("Select a warehouse first.");return;} setAtForm({...EMPTY_AT}); setError(null); setAtModal({mode:"add"}); }, disabled:!selWh },
                                 { label:"Edit Selected", icon:Pencil, color:"blue",  onClick:async() => { if(!selAt) return; try { const d = await ff(`/api/freights/atpda/${selAt.unico}`); setAtForm({ wphysical_uq: d.wphysical_uq||selWh?.unico, season_uq: d.season_uq||"", city_uq: d.city_uq||"", tariff: d.tariff||0 }); setError(null); setAtModal({mode:"edit"}); } catch(e:any){setError(e.message);} }, disabled:!selAt },

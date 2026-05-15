@@ -13,6 +13,7 @@ interface Props {
 }
 
 export function AuditLogModal({ recordId, disabled, size = "sm" }: Props) {
+    const iconSize = size === "sm" ? 16 : 18;
     const [open,    setOpen]    = useState(false);
     const [rows,    setRows]    = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -41,15 +42,14 @@ export function AuditLogModal({ recordId, disabled, size = "sm" }: Props) {
                 disabled={!!disabled}
                 title="View audit history"
                 className={cn(
-                    "flex items-center gap-1 rounded transition-all font-black uppercase tracking-wider",
+                    "flex items-center justify-center rounded transition-all",
                     size === "sm"
-                        ? "bg-gray-600 hover:bg-gray-500 text-white px-2 py-0.5 text-[9px]"
+                        ? "w-7 h-7 bg-gray-600/80 hover:bg-gray-500 text-white"
                         : "p-1.5 text-gray-300 hover:text-white hover:bg-white/10",
                     disabled && "opacity-40 cursor-not-allowed"
                 )}
             >
-                <RotateCcw size={size === "sm" ? 9 : 14} />
-                {size === "sm" && "Log"}
+                <RotateCcw size={iconSize} />
             </button>
 
             {/* ── Modal ──────────────────────────────────────────────── */}
