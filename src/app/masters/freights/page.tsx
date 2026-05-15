@@ -57,6 +57,15 @@ function GBtn({ onClick, disabled, color, icon: Icon, label }: any) {
     );
 }
 
+// Icon color classes per type
+const ITEM_COLORS: Record<string, { icon: string; text: string }> = {
+    green: { icon: "text-green-600",  text: "text-green-700"  },
+    blue:  { icon: "text-blue-500",   text: "text-gray-800"   },
+    red:   { icon: "text-red-500",    text: "text-gray-800"   },
+    gray:  { icon: "text-gray-500",   text: "text-gray-800"   },
+    amber: { icon: "text-amber-500",  text: "text-gray-800"   },
+};
+
 function GridMenu({ items, disabled: globalDisabled }: {
     items: { label: string; icon: any; color: string; onClick: () => void; disabled?: boolean }[];
     disabled?: boolean;
@@ -68,24 +77,28 @@ function GridMenu({ items, disabled: globalDisabled }: {
                 className="flex items-center justify-center w-7 h-6 bg-[#FB7506] hover:bg-orange-600 text-white rounded transition-all active:scale-95"
                 title="Menu">
                 <svg width="13" height="10" viewBox="0 0 13 10" fill="none">
-                    <rect y="0"   width="13" height="2" rx="1" fill="white"/>
-                    <rect y="4"   width="13" height="2" rx="1" fill="white"/>
-                    <rect y="8"   width="13" height="2" rx="1" fill="white"/>
+                    <rect y="0" width="13" height="2" rx="1" fill="white"/>
+                    <rect y="4" width="13" height="2" rx="1" fill="white"/>
+                    <rect y="8" width="13" height="2" rx="1" fill="white"/>
                 </svg>
             </button>
             {open && (
-                <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-100 rounded-xl shadow-2xl z-50 overflow-hidden py-1"
+                <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-gray-200 rounded-lg shadow-2xl z-50 overflow-hidden"
                     onMouseLeave={() => setOpen(false)}>
-                    {items.map((item, i) => (
-                        <button key={i} onClick={() => { item.onClick(); setOpen(false); }}
-                            disabled={!!item.disabled || !!globalDisabled}
-                            className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-                            <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
-                                <item.icon size={11} className="text-[#FB7506]" />
-                            </div>
-                            <span className="text-xs font-bold text-gray-700">{item.label}</span>
-                        </button>
-                    ))}
+                    {items.map((item, i) => {
+                        const c = ITEM_COLORS[item.color] || ITEM_COLORS.gray;
+                        return (
+                            <button key={i} onClick={() => { item.onClick(); setOpen(false); }}
+                                disabled={!!item.disabled || !!globalDisabled}
+                                className={cn(
+                                    "w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors",
+                                    i < items.length - 1 && "border-b border-gray-100"
+                                )}>
+                                <item.icon size={18} className={c.icon} />
+                                <span className={cn("text-sm font-bold", c.text)}>{item.label}</span>
+                            </button>
+                        );
+                    })}
                 </div>
             )}
         </div>
@@ -633,8 +646,13 @@ function SimpleModal({ title, onSave, onClose, saving, error, isDelete=false, de
     );
 }
 
-// ─── MENU dropdown (matches orange hamburger style from design) ───────────────
+// ─── MENU dropdown (Appsmith style: outline icons + bold text + separators) ───
 function MenuDropdown({ onAdd, onEdit, onDel, canEdit, canDel, menuOpen, setMenuOpen, saving }: any) {
+    const items = [
+        { label: "Add Record",      icon: Plus,   onClick: onAdd,  enabled: true,              color: "text-green-600",  text: "text-green-700" },
+        { label: "Edit Selected",   icon: Pencil, onClick: onEdit, enabled: !!canEdit,          color: "text-[#FB7506]",  text: "text-gray-800"  },
+        { label: "Delete Selected", icon: Trash2, onClick: onDel,  enabled: !!canDel && !saving, color: "text-red-500",   text: "text-gray-800"  },
+    ];
     return (
         <div className="relative shrink-0">
             <button
@@ -643,34 +661,24 @@ function MenuDropdown({ onAdd, onEdit, onDel, canEdit, canDel, menuOpen, setMenu
                 title="Menu"
             >
                 <svg width="18" height="14" viewBox="0 0 18 14" fill="none">
-                    <rect y="0" width="18" height="2.5" rx="1.25" fill="white"/>
+                    <rect y="0"    width="18" height="2.5" rx="1.25" fill="white"/>
                     <rect y="5.75" width="18" height="2.5" rx="1.25" fill="white"/>
                     <rect y="11.5" width="18" height="2.5" rx="1.25" fill="white"/>
                 </svg>
             </button>
             {menuOpen && (
-                <div className="absolute right-0 top-full mt-1.5 w-56 bg-white border border-gray-100 rounded-xl shadow-2xl z-50 overflow-hidden py-1">
-                    <button onClick={onAdd}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors">
-                        <div className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
-                            <Plus size={14} className="text-[#FB7506]" />
-                        </div>
-                        <span className="text-sm font-bold text-gray-700">Add Record</span>
-                    </button>
-                    <button onClick={onEdit} disabled={!canEdit}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-                        <div className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
-                            <Pencil size={14} className="text-[#FB7506]" />
-                        </div>
-                        <span className="text-sm font-bold text-gray-700">Edit Selected</span>
-                    </button>
-                    <button onClick={onDel} disabled={!canDel || saving}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-                        <div className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
-                            <Trash2 size={14} className="text-[#FB7506]" />
-                        </div>
-                        <span className="text-sm font-bold text-gray-700">Delete Selected</span>
-                    </button>
+                <div className="absolute right-0 top-full mt-1.5 w-56 bg-white border border-gray-200 rounded-lg shadow-2xl z-50 overflow-hidden">
+                    {items.map((item, i) => (
+                        <button key={i} onClick={() => { item.onClick(); setMenuOpen(false); }}
+                            disabled={!item.enabled}
+                            className={cn(
+                                "w-full flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors",
+                                i < items.length - 1 && "border-b border-gray-100"
+                            )}>
+                            <item.icon size={20} className={item.color} />
+                            <span className={cn("text-sm font-bold", item.text)}>{item.label}</span>
+                        </button>
+                    ))}
                 </div>
             )}
         </div>
