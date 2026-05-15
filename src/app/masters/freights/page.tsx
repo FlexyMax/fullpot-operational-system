@@ -43,6 +43,7 @@ function GridHeader({ icon: Icon, title, loading, children, recordId, onRefresh 
                 )}
                 {children}
             </div>
+
         </div>
     );
 }
@@ -109,7 +110,7 @@ function GridMenu({ items, disabled: globalDisabled }: {
 
 function MiniTable({ cols, rows, selUnico, onSelect, onDblClick, empty }: any) {
     return (
-        <div className="overflow-auto flex-1">
+        <div className="overflow-auto flex-1 max-h-[250px] lg:max-h-none">
             <table className="min-w-full text-left">
                 <thead className="bg-gray-50 border-b border-gray-100 text-gray-500 fos-grid-thead sticky top-0 z-10">
                     <tr>{cols.map((c: any) => <th key={c.key} className={cn("p-1.5 whitespace-nowrap border-r border-gray-100 last:border-r-0", c.className)}>{c.label}</th>)}</tr>
@@ -336,8 +337,6 @@ export default function FreightsSetupPage() {
                     </div>
                 </div>
                 <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                    <button onClick={() => setCiSetup(true)} className="flex items-center gap-1.5 bg-gray-600 hover:bg-gray-500 text-white px-2 sm:px-4 h-8 sm:h-9 rounded text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all"><MapPin size={12} className="sm:hidden" /><MapPin size={14} className="hidden sm:inline" /><span className="hidden sm:inline">Cities</span></button>
-                    <button onClick={() => setAlSetup(true)} className="flex items-center gap-1.5 bg-gray-600 hover:bg-gray-500 text-white px-2 sm:px-4 h-8 sm:h-9 rounded text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all"><Cloud size={12} className="sm:hidden" /><Cloud size={14} className="hidden sm:inline" /><span className="hidden sm:inline">Airlines</span></button>
                     <span className="text-gray-400 text-[10px] sm:text-xs font-bold hidden md:inline">User: <span className="text-white">{session?.user?.name}</span></span>
                 </div>
             </div>
@@ -606,6 +605,12 @@ export default function FreightsSetupPage() {
 
             {/* ── Airlines Setup Modal ───────────────────────────────────── */}
             {alSetup && <SetupModal title="Airlines Setup" onClose={()=>{setAlSetup(false); qc.invalidateQueries({queryKey:["fr-look"]});}} listUrl="/api/freights/airlines" detailUrl="/api/freights/airlines" emptyForm={EMPTY_AL} cols={[{key:"airline",label:"Airline"},{key:"cod_linea",label:"Code"}]} formFields={[{k:"cod_linea",l:"Code"},{k:"airline",l:"Airline *"},{k:"address",l:"Address"},{k:"city",l:"City"},{k:"country",l:"Country"},{k:"phone",l:"Phone"},{k:"fax",l:"Fax"},{k:"email",l:"Email"},{k:"contact",l:"Contact"}]} checkFields={[]} />}
+
+            {/* Floating action buttons */}
+            <div className="fixed bottom-4 right-4 flex flex-col gap-2 z-50">
+                <button onClick={() => setCiSetup(true)} className="flex items-center gap-2 bg-gray-600 hover:bg-gray-500 text-white px-4 py-2.5 rounded-full shadow-lg text-xs font-black uppercase tracking-wider transition-all"><MapPin size={14} /> Cities</button>
+                <button onClick={() => setAlSetup(true)} className="flex items-center gap-2 bg-gray-600 hover:bg-gray-500 text-white px-4 py-2.5 rounded-full shadow-lg text-xs font-black uppercase tracking-wider transition-all"><Cloud size={14} /> Airlines</button>
+            </div>
         </div>
     );
 }
@@ -647,6 +652,7 @@ function SimpleModal({ title, onSave, onClose, saving, error, isDelete=false, de
                     </button>
                 </div>
             </div>
+
         </div>
     );
 }
@@ -686,8 +692,8 @@ function MenuDropdown({ onAdd, onEdit, onDel, canEdit, canDel, menuOpen, setMenu
                     ))}
                 </div>
             )}
-        </div>
-    );
+    </div>
+);
 }
 
 // ─── Generic Setup Modal — list + form + MENU button ─────────────────────────
@@ -879,6 +885,7 @@ function SetupModal({ title, onClose, listUrl, detailUrl, emptyForm, cols, formF
                     </div>
                 </div>
             </div>
+
         </div>
     );
 }
