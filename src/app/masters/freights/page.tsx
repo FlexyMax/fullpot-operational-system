@@ -74,12 +74,12 @@ function GridMenu({ items, disabled: globalDisabled }: {
     return (
         <div className="relative" onClick={e => e.stopPropagation()}>
             <button onClick={() => setOpen(o => !o)}
-                className="flex items-center justify-center w-7 h-6 bg-[#FB7506] hover:bg-orange-600 text-white rounded transition-all active:scale-95"
+                className="flex items-center justify-center w-12 h-7 bg-[#FB7506] hover:bg-orange-600 text-white rounded transition-all active:scale-95"
                 title="Menu">
-                <svg width="13" height="10" viewBox="0 0 13 10" fill="none">
-                    <rect y="0" width="13" height="2" rx="1" fill="white"/>
-                    <rect y="4" width="13" height="2" rx="1" fill="white"/>
-                    <rect y="8" width="13" height="2" rx="1" fill="white"/>
+                <svg width="18" height="12" viewBox="0 0 18 12" fill="none">
+                    <rect y="0" width="18" height="2" rx="1" fill="white"/>
+                    <rect y="5" width="18" height="2" rx="1" fill="white"/>
+                    <rect y="10" width="18" height="2" rx="1" fill="white"/>
                 </svg>
             </button>
             {open && (
