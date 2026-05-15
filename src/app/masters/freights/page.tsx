@@ -29,7 +29,7 @@ const EMPTY_AL   = { cod_linea:"", airline:"", address:"", city:"", country:"", 
 // ─── Shared mini-components ───────────────────────────────────────────────────
 function GridHeader({ icon: Icon, title, loading, children, recordId }: any) {
     return (
-        <div className="h-8 bg-[#374151] flex items-center justify-between px-2 shrink-0">
+        <div className="h-10 bg-[#374151] flex items-center justify-between px-2 shrink-0">
             <div className="flex items-center gap-1.5">
                 <Icon size={12} className="text-[#FB7506]" />
                 <span className="font-black text-[9px] uppercase tracking-widest text-white">{title}</span>
@@ -74,7 +74,7 @@ function GridMenu({ items, disabled: globalDisabled }: {
     return (
         <div className="relative" onClick={e => e.stopPropagation()}>
             <button onClick={() => setOpen(o => !o)}
-                className="h-8 bg-[#FB7506] hover:bg-orange-600 text-white w-20 flex items-center justify-center transition-colors border-none cursor-pointer shadow-inner rounded"
+                className="h-10 bg-[#FB7506] hover:bg-orange-600 text-white w-24 flex items-center justify-center transition-colors border-none cursor-pointer shadow-inner rounded"
                 title="Menu">
                 <Menu size={20} />
             </button>
