@@ -605,7 +605,7 @@ export default function FreightsSetupPage() {
 
             {/* ── Warehouse Modal ────────────────────────────────────────── */}
             {whModal && (
-                <SimpleModal title={`${whModal.mode === "add" ? "Add" : whModal.mode === "edit" ? "Edit" : "Delete"} Warehouse`}
+                <SimpleModal title={`${whModal.mode === "add" ? "Add" : whModal.mode === "edit" ? "Edit" : "Delete"} Warehouse`} icon={Building2}
                     onSave={saveWh} onClose={() => { setWhModal(null); setError(null); }} saving={saving} error={error}
                     isDelete={whModal.mode === "delete"} deleteMsg={`Delete warehouse "${t(selWh?.wp_name)}"?`}>
                     {whModal.mode !== "delete" && (
@@ -642,7 +642,7 @@ export default function FreightsSetupPage() {
 
             {/* ── Freight Modal ──────────────────────────────────────────── */}
             {frModal && (
-                <SimpleModal title={`${frModal.mode === "add" ? "Add" : frModal.mode === "edit" ? "Edit" : "Delete"} Freight Rate`}
+                <SimpleModal title={`${frModal.mode === "add" ? "Add" : frModal.mode === "edit" ? "Edit" : "Delete"} Freight Rate`} icon={Zap}
                     onSave={saveFr} onClose={() => { setFrModal(null); setError(null); }} saving={saving} error={error}
                     isDelete={frModal.mode === "delete"} deleteMsg="Delete this freight rate?">
                     {frModal.mode !== "delete" && (
@@ -666,7 +666,7 @@ export default function FreightsSetupPage() {
 
             {/* ── Handling Modal ─────────────────────────────────────────── */}
             {haModal && (
-                <SimpleModal title={`${haModal.mode === "add" ? "Add" : haModal.mode === "edit" ? "Edit" : "Delete"} Handling Rate`}
+                <SimpleModal title={`${haModal.mode === "add" ? "Add" : haModal.mode === "edit" ? "Edit" : "Delete"} Handling Rate`} icon={Cloud}
                     onSave={saveHa} onClose={() => { setHaModal(null); setError(null); }} saving={saving} error={error}
                     isDelete={haModal.mode === "delete"} deleteMsg="Delete this handling rate?">
                     {haModal.mode !== "delete" && (
@@ -684,7 +684,7 @@ export default function FreightsSetupPage() {
 
             {/* ── ATPDA Modal ────────────────────────────────────────────── */}
             {atModal && (
-                <SimpleModal title={`${atModal.mode === "add" ? "Add" : atModal.mode === "edit" ? "Edit" : "Delete"} ATPDA Tariff`}
+                <SimpleModal title={`${atModal.mode === "add" ? "Add" : atModal.mode === "edit" ? "Edit" : "Delete"} ATPDA Tariff`} icon={MapPin}
                     onSave={saveAt} onClose={() => { setAtModal(null); setError(null); }} saving={saving} error={error}
                     isDelete={atModal.mode === "delete"} deleteMsg="Delete this ATPDA tariff?">
                     {atModal.mode !== "delete" && (
@@ -707,15 +707,15 @@ export default function FreightsSetupPage() {
 
             {/* ── Copy Freights Modal ────────────────────────────────────── */}
             {copyModal && (
-                <SimpleModal title="Copy Freights — Select Source Season" onSave={doCopy} onClose={()=>{setCopyModal(false);setError(null);setCopySourceSeason("");setCopyTargetSeason("");}} saving={saving} error={error}>
+                <SimpleModal title="Copy Freights — Select Source Season" icon={Copy} onSave={doCopy} onClose={()=>{setCopyModal(false);setError(null);setCopySourceSeason("");setCopyTargetSeason("");}} saving={saving} error={error}>
                     <div className="grid grid-cols-2 gap-3 text-xs">
-                        <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Source Season *</label>
-                            <select value={copySourceSeason} onChange={e=>setCopySourceSeason(e.target.value)} className="fos-input text-xs py-1">
+                        <div className="flex flex-col gap-0.5"><label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Source Season *</label>
+                            <select value={copySourceSeason} onChange={e=>setCopySourceSeason(e.target.value)} className="fos-input h-10 text-xs">
                                 <option value="">— From —</option>
                                 {seasons.map((s:any)=><option key={s.unico} value={s.unico}>{t(s.season)}</option>)}
                             </select></div>
-                        <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Target Season *</label>
-                            <select value={copyTargetSeason} onChange={e=>setCopyTargetSeason(e.target.value)} className="fos-input text-xs py-1">
+                        <div className="flex flex-col gap-0.5"><label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Target Season *</label>
+                            <select value={copyTargetSeason} onChange={e=>setCopyTargetSeason(e.target.value)} className="fos-input h-10 text-xs">
                                 <option value="">— To —</option>
                                 {seasons.map((s:any)=><option key={s.unico} value={s.unico}>{t(s.season)}</option>)}
                             </select></div>
@@ -813,19 +813,22 @@ export default function FreightsSetupPage() {
 function FField({ label, value, onChange, type="text", span2=false }: any) {
     return (
         <div className={cn("flex flex-col gap-0.5", span2 && "col-span-2")}>
-            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{label}</label>
-            <input type={type} value={value||""} onChange={e=>onChange(e.target.value)} className="fos-input text-xs py-1" />
+            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">{label}</label>
+            <input type={type} value={value||""} onChange={e=>onChange(e.target.value)} className="fos-input h-10 text-xs" />
         </div>
     );
 }
 
-function SimpleModal({ title, onSave, onClose, saving, error, isDelete=false, deleteMsg="", children }: any) {
+function SimpleModal({ title, icon: Icon, onSave, onClose, saving, error, isDelete=false, deleteMsg="", children }: any) {
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg">
-                <div className="h-10 bg-[#374151] rounded-t-xl flex items-center justify-between px-4">
-                    <span className="font-black text-[11px] uppercase tracking-widest text-white">{title}</span>
-                    <button onClick={onClose}><XCircle size={16} className="text-gray-400 hover:text-white" /></button>
+                <div className="h-10 bg-[#374151] flex items-center justify-between px-4 border-b border-black/10">
+                    <div className="flex items-center gap-2">
+                        {Icon && <Icon size={16} className="text-[#FB7506]" />}
+                        <span className="fos-grid-header-text">{title}</span>
+                    </div>
+                    <button onClick={onClose}><X size={16} className="text-gray-400 hover:text-white" /></button>
                 </div>
                 <div className="p-4">
                     {isDelete ? (

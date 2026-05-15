@@ -2,7 +2,6 @@
 
 import { X, Save, RefreshCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { AuditLogModal } from "./AuditLogModal";
 
 interface FormField {
   k: string;
@@ -60,12 +59,9 @@ export function EntityFormModal({
             {subtitle && <span className="text-[10px] text-gray-400 font-bold truncate block">{subtitle}</span>}
           </div>
         </div>
-        <div className="flex items-center gap-1">
-          <AuditLogModal recordId={recordId} disabled={!recordId} />
-          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors">
-            <X size={16} />
-          </button>
-        </div>
+        <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors">
+          <X size={16} />
+        </button>
       </div>
 
       {/* Form */}

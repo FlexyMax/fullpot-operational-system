@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { X, Search, Plus, Pencil, Trash2, RefreshCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { AuditLogModal } from "./AuditLogModal";
 
 interface EntityListModalProps {
   open: boolean;
@@ -71,7 +70,6 @@ export function EntityListModal({
         </div>
         <div className="flex items-center gap-1">
           {loading && <RefreshCcw size={14} className="text-gray-400 animate-spin" />}
-          <AuditLogModal recordId={selected?.unico} disabled={!selected} />
           <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors">
             <X size={16} />
           </button>
