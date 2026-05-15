@@ -622,7 +622,7 @@ export default function FreightsSetupPage() {
                             <FField label="Handling KG" value={String(whForm.handling_kg)} type="number" onChange={(v:string)=>setWhForm((p:any)=>({...p,handling_kg:parseFloat(v)||0}))} />
                             <div className="flex flex-col gap-0.5">
                                 <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Grower</label>
-                                <select value={whForm.grower_uq} onChange={e=>setWhForm((p:any)=>({...p,grower_uq:e.target.value}))} className="fos-input text-xs py-1">
+                                <select value={whForm.grower_uq} onChange={e=>setWhForm((p:any)=>({...p,grower_uq:e.target.value}))} className="fos-input h-10 text-sm">
                                     <option value="">— None —</option>
                                     {growers.map((g:any) => <option key={g.unico} value={g.unico}>{t(g.grower)}</option>)}
                                 </select>
@@ -648,12 +648,12 @@ export default function FreightsSetupPage() {
                     {frModal.mode !== "delete" && (
                         <div className="grid grid-cols-2 gap-3 text-xs">
                             <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Season *</label>
-                                <select value={frForm.season_uq} onChange={e=>setFrForm((p:any)=>({...p,season_uq:e.target.value}))} className="fos-input text-xs py-1">
+                                <select value={frForm.season_uq} onChange={e=>setFrForm((p:any)=>({...p,season_uq:e.target.value}))} className="fos-input h-10 text-sm">
                                     <option value="">— Select —</option>
                                     {seasons.map((s:any)=><option key={s.unico} value={s.unico}>{t(s.season)}</option>)}
                                 </select></div>
                             <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">City *</label>
-                                <select value={frForm.city_uq} onChange={e=>setFrForm((p:any)=>({...p,city_uq:e.target.value}))} className="fos-input text-xs py-1">
+                                <select value={frForm.city_uq} onChange={e=>setFrForm((p:any)=>({...p,city_uq:e.target.value}))} className="fos-input h-10 text-sm">
                                     <option value="">— Select —</option>
                                     {cities.map((c:any)=><option key={c.unico} value={c.unico}>{t(c.city)}</option>)}
                                 </select></div>
@@ -672,7 +672,7 @@ export default function FreightsSetupPage() {
                     {haModal.mode !== "delete" && (
                         <div className="grid grid-cols-2 gap-3 text-xs">
                             <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Season *</label>
-                                <select value={haForm.season_uq} onChange={e=>setHaForm((p:any)=>({...p,season_uq:e.target.value}))} className="fos-input text-xs py-1">
+                                <select value={haForm.season_uq} onChange={e=>setHaForm((p:any)=>({...p,season_uq:e.target.value}))} className="fos-input h-10 text-sm">
                                     <option value="">— Select —</option>
                                     {seasons.map((s:any)=><option key={s.unico} value={s.unico}>{t(s.season)}</option>)}
                                 </select></div>
@@ -690,12 +690,12 @@ export default function FreightsSetupPage() {
                     {atModal.mode !== "delete" && (
                         <div className="grid grid-cols-2 gap-3 text-xs">
                             <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Season *</label>
-                                <select value={atForm.season_uq} onChange={e=>setAtForm((p:any)=>({...p,season_uq:e.target.value}))} className="fos-input text-xs py-1">
+                                <select value={atForm.season_uq} onChange={e=>setAtForm((p:any)=>({...p,season_uq:e.target.value}))} className="fos-input h-10 text-sm">
                                     <option value="">— Select —</option>
                                     {seasons.map((s:any)=><option key={s.unico} value={s.unico}>{t(s.season)}</option>)}
                                 </select></div>
                             <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">City *</label>
-                                <select value={atForm.city_uq} onChange={e=>setAtForm((p:any)=>({...p,city_uq:e.target.value}))} className="fos-input text-xs py-1">
+                                <select value={atForm.city_uq} onChange={e=>setAtForm((p:any)=>({...p,city_uq:e.target.value}))} className="fos-input h-10 text-sm">
                                     <option value="">— Select —</option>
                                     {cities.map((c:any)=><option key={c.unico} value={c.unico}>{t(c.city)}</option>)}
                                 </select></div>
@@ -710,12 +710,12 @@ export default function FreightsSetupPage() {
                 <SimpleModal title="Copy Freights — Select Source Season" icon={Copy} onSave={doCopy} onClose={()=>{setCopyModal(false);setError(null);setCopySourceSeason("");setCopyTargetSeason("");}} saving={saving} error={error}>
                     <div className="grid grid-cols-2 gap-3 text-xs">
                         <div className="flex flex-col gap-0.5"><label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Source Season *</label>
-                            <select value={copySourceSeason} onChange={e=>setCopySourceSeason(e.target.value)} className="fos-input h-10 text-xs">
+                            <select value={copySourceSeason} onChange={e=>setCopySourceSeason(e.target.value)} className="fos-input h-10 text-sm">
                                 <option value="">— From —</option>
                                 {seasons.map((s:any)=><option key={s.unico} value={s.unico}>{t(s.season)}</option>)}
                             </select></div>
                         <div className="flex flex-col gap-0.5"><label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Target Season *</label>
-                            <select value={copyTargetSeason} onChange={e=>setCopyTargetSeason(e.target.value)} className="fos-input h-10 text-xs">
+                            <select value={copyTargetSeason} onChange={e=>setCopyTargetSeason(e.target.value)} className="fos-input h-10 text-sm">
                                 <option value="">— To —</option>
                                 {seasons.map((s:any)=><option key={s.unico} value={s.unico}>{t(s.season)}</option>)}
                             </select></div>
@@ -814,7 +814,7 @@ function FField({ label, value, onChange, type="text", span2=false }: any) {
     return (
         <div className={cn("flex flex-col gap-0.5", span2 && "col-span-2")}>
             <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">{label}</label>
-            <input type={type} value={value||""} onChange={e=>onChange(e.target.value)} className="fos-input h-10 text-xs" />
+            <input type={type} value={value||""} onChange={e=>onChange(e.target.value)} className="fos-input h-10 text-sm" />
         </div>
     );
 }

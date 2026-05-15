@@ -117,7 +117,7 @@ export function EntityFormModal({
         <button
           onClick={onSave}
           disabled={saving}
-          className="w-full h-12 bg-[#374151] hover:bg-gray-700 disabled:opacity-50 text-white rounded-lg text-sm font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2"
+          className="w-full h-12 bg-[#FB7506] hover:bg-orange-600 disabled:opacity-50 text-white rounded-lg text-sm font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2"
         >
           {saving ? <RefreshCcw size={16} className="animate-spin" /> : <Save size={16} />}
           {saving ? "Saving..." : "Save"}
