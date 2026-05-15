@@ -351,7 +351,7 @@ export default function FreightsSetupPage() {
                     <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden">
                         <GridHeader icon={Cloud} title={`Freights${selWh ? ` — ${t(selWh.wp_name)}` : ""}`} loading={loadingFr} recordId={selFr?.unico}>
                             <GBtn onClick={() => { if(!selWh){setError("Select a warehouse first.");return;} setFrForm({...EMPTY_FR}); setError(null); setFrModal({mode:"add"}); }} disabled={!selWh} color="green" icon={Plus} label="Add" />
-                            <GBtn onClick={() => { if(!selFr) return; setFrForm({ wphysical_uq:t(selFr.wphysical_uq||selWh?.unico), season_uq:t(selFr.season_uq), city_uq:t(selFr.city_uq), freight:selFr.freight||0, freight_kg:selFr.freight_kg||0 }); setError(null); setFrModal({mode:"edit"}); }} disabled={!selFr} color="blue" icon={Pencil} label="Edit" />
+                            <GBtn onClick={async () => { if(!selFr) return; try { const d = await ff(`/api/freights/rates/${selFr.unico}`); setFrForm({ wphysical_uq: d.wphysical_uq||selWh?.unico, season_uq: d.season_uq||"", city_uq: d.city_uq||"", freight: d.freight||0, freight_kg: d.freight_kg||0 }); setError(null); setFrModal({mode:"edit"}); } catch(e:any){setError(e.message);} }} disabled={!selFr} color="blue" icon={Pencil} label="Edit" />
                             <GBtn onClick={() => { if(selFr){setError(null);setFrModal({mode:"delete"});} }} disabled={!selFr} color="red" icon={Trash2} label="Del" />
                             <GBtn onClick={() => { if(!selWh){setError("Select a warehouse first.");return;} if(!confirm("Copy freights from another season?")) return; setCopyModal(true); }} disabled={!selWh} color="gray" icon={Copy} label="Copy" />
                             <GBtn onClick={updateAwbs} disabled={!selFr} color="amber" icon={Zap} label="AWBs" />
@@ -374,7 +374,7 @@ export default function FreightsSetupPage() {
                     <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden">
                         <GridHeader icon={Building2} title="Handling" loading={loadingHa} recordId={selHa?.unico}>
                             <GBtn onClick={() => { if(!selWh){setError("Select a warehouse first.");return;} setHaForm({...EMPTY_HA}); setError(null); setHaModal({mode:"add"}); }} disabled={!selWh} color="green" icon={Plus} label="Add" />
-                            <GBtn onClick={() => { if(!selHa) return; setHaForm({ wphysical_uq:t(selHa.wphysical_uq||selWh?.unico), season_uq:t(selHa.season_uq), handling:selHa.handling||0 }); setError(null); setHaModal({mode:"edit"}); }} disabled={!selHa} color="blue" icon={Pencil} label="Edit" />
+                            <GBtn onClick={async () => { if(!selHa) return; try { const d = await ff(`/api/freights/handling/${selHa.unico}`); setHaForm({ wphysical_uq: d.wphysical_uq||selWh?.unico, season_uq: d.season_uq||"", handling: d.handling||0 }); setError(null); setHaModal({mode:"edit"}); } catch(e:any){setError(e.message);} }} disabled={!selHa} color="blue" icon={Pencil} label="Edit" />
                             <GBtn onClick={() => { if(selHa){setError(null);setHaModal({mode:"delete"});} }} disabled={!selHa} color="red" icon={Trash2} label="Del" />
                         </GridHeader>
                         <MiniTable
@@ -393,7 +393,7 @@ export default function FreightsSetupPage() {
                     <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden">
                         <GridHeader icon={MapPin} title="ATPDA" loading={loadingAt} recordId={selAt?.unico}>
                             <GBtn onClick={() => { if(!selWh){setError("Select a warehouse first.");return;} setAtForm({...EMPTY_AT}); setError(null); setAtModal({mode:"add"}); }} disabled={!selWh} color="green" icon={Plus} label="Add" />
-                            <GBtn onClick={() => { if(!selAt) return; setAtForm({ wphysical_uq:t(selAt.wphysical_uq||selWh?.unico), season_uq:t(selAt.season_uq), city_uq:t(selAt.city_uq), tariff:selAt.tariff||0 }); setError(null); setAtModal({mode:"edit"}); }} disabled={!selAt} color="blue" icon={Pencil} label="Edit" />
+                            <GBtn onClick={async () => { if(!selAt) return; try { const d = await ff(`/api/freights/atpda/${selAt.unico}`); setAtForm({ wphysical_uq: d.wphysical_uq||selWh?.unico, season_uq: d.season_uq||"", city_uq: d.city_uq||"", tariff: d.tariff||0 }); setError(null); setAtModal({mode:"edit"}); } catch(e:any){setError(e.message);} }} disabled={!selAt} color="blue" icon={Pencil} label="Edit" />
                             <GBtn onClick={() => { if(selAt){setError(null);setAtModal({mode:"delete"});} }} disabled={!selAt} color="red" icon={Trash2} label="Del" />
                         </GridHeader>
                         <MiniTable

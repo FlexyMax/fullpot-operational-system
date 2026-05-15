@@ -1,5 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { executeProcedure } from "@/lib/db";
+import { executeProcedure, executeQuery } from "@/lib/db";
+
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ unico: string }> }) {
+    const { unico } = await params;
+    const txt = (v: any) => String(v ?? "").replace(/'/g, "''");
+    try {
+        const r = await executeQuery(
+            `SELECT unico, wphysical_uq, season_uq, handling
+             FROM flower_warehouses_physical_handling WHERE unico='${txt(unico)}'`);
+        return NextResponse.json(r.recordset[0] ?? null);
+    } catch (err: any) {
+        return NextResponse.json({ error: err.message }, { status: 500 });
+    }
+}
 
 const txt = (v: any) => String(v ?? "").replace(/'/g, "''");
 const num = (v: any) => { const n = parseFloat(String(v||0)); return isNaN(n) ? 0 : n; };
