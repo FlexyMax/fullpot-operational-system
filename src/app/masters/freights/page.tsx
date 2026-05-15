@@ -325,20 +325,20 @@ export default function FreightsSetupPage() {
         <div className="flex flex-col h-screen bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
 
             {/* Header */}
-            <div className="h-12 bg-[#374151] flex items-center justify-between px-4 shrink-0 text-white">
-                <div className="flex items-center gap-4">
-                    <button onClick={() => router.push("/menu")} className="hover:bg-white/10 p-1.5 rounded transition-colors"><ArrowLeft size={18} /></button>
-                    <div className="flex items-center gap-2">
-                        <span className="font-black text-xs uppercase tracking-widest text-[#FB7506]">FOS</span>
-                        <div className="w-px h-4 bg-white/20 mx-2" />
-                        <Building2 size={14} className="text-[#FB7506]" />
-                        <span className="font-bold text-xs uppercase tracking-tight">Freights & Handling Setup</span>
+            <div className="h-12 bg-[#374151] flex items-center justify-between px-3 sm:px-4 shrink-0 text-white">
+                <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+                    <button onClick={() => router.push("/menu")} className="hover:bg-white/10 p-1.5 rounded transition-colors shrink-0"><ArrowLeft size={18} /></button>
+                    <div className="flex items-center gap-2 min-w-0">
+                        <span className="font-black text-xs uppercase tracking-widest text-[#FB7506] shrink-0">FOS</span>
+                        <div className="w-px h-4 bg-white/20 mx-1 sm:mx-2 shrink-0" />
+                        <Building2 size={14} className="text-[#FB7506] shrink-0" />
+                        <span className="font-bold text-xs uppercase tracking-tight truncate hidden sm:inline">Freights & Handling Setup</span>
                     </div>
                 </div>
-                <div className="flex items-center gap-3">
-                    <button onClick={() => setCiSetup(true)} className="flex items-center gap-1.5 bg-gray-600 hover:bg-gray-500 text-white px-4 h-9 rounded text-xs font-black uppercase tracking-wider transition-all"><MapPin size={14} /> Cities</button>
-                    <button onClick={() => setAlSetup(true)} className="flex items-center gap-1.5 bg-gray-600 hover:bg-gray-500 text-white px-4 h-9 rounded text-xs font-black uppercase tracking-wider transition-all"><Cloud size={14} /> Airlines</button>
-                    <span className="text-gray-400 text-xs font-bold">User: <span className="text-white">{session?.user?.name}</span></span>
+                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                    <button onClick={() => setCiSetup(true)} className="flex items-center gap-1.5 bg-gray-600 hover:bg-gray-500 text-white px-2 sm:px-4 h-8 sm:h-9 rounded text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all"><MapPin size={12} className="sm:hidden" /><MapPin size={14} className="hidden sm:inline" /><span className="hidden sm:inline">Cities</span></button>
+                    <button onClick={() => setAlSetup(true)} className="flex items-center gap-1.5 bg-gray-600 hover:bg-gray-500 text-white px-2 sm:px-4 h-8 sm:h-9 rounded text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all"><Cloud size={12} className="sm:hidden" /><Cloud size={14} className="hidden sm:inline" /><span className="hidden sm:inline">Airlines</span></button>
+                    <span className="text-gray-400 text-[10px] sm:text-xs font-bold hidden md:inline">User: <span className="text-white">{session?.user?.name}</span></span>
                 </div>
             </div>
 
@@ -350,11 +350,12 @@ export default function FreightsSetupPage() {
                 </div>
             )}
 
-            {/* Main 2-row grid layout */}
-            <div className="flex-1 p-2 pr-3 grid grid-rows-2 gap-2 overflow-hidden">
+            {/* Main layout — responsive: stacked on mobile, 2-row grid on lg+ */}
+            <div className="flex-1 p-2 pr-3 overflow-y-auto lg:overflow-hidden">
+                <div className="flex flex-col lg:grid lg:grid-rows-2 gap-2 lg:h-full">
 
-                {/* Row 1: Warehouses + Seasons */}
-                <div className="grid gap-2 overflow-hidden" style={{ gridTemplateColumns: "43fr 57fr" }}>
+                    {/* Row 1: Warehouses + Seasons */}
+                    <div className="flex flex-col lg:grid gap-2 min-h-[200px] lg:min-h-0" style={{ gridTemplateColumns: "43fr 57fr" }}>
 
                     {/* Physical Warehouses */}
                     <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden">
@@ -397,8 +398,8 @@ export default function FreightsSetupPage() {
                     </div>
                 </div>
 
-                {/* Row 2: Freights + Handling + ATPDA */}
-                <div className="grid gap-2 overflow-hidden" style={{ gridTemplateColumns: "43fr 28fr 29fr" }}>
+                    {/* Row 2: Freights + Handling + ATPDA */}
+                    <div className="flex flex-col lg:grid gap-2 min-h-[200px] lg:min-h-0" style={{ gridTemplateColumns: "43fr 28fr 29fr" }}>
 
                     {/* Freights */}
                     <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden">
@@ -469,10 +470,11 @@ export default function FreightsSetupPage() {
                     </div>
                 </div>
             </div>
+        </div>
 
-            {/* Footer */}
-            <div className="h-8 bg-gray-100 border-t px-4 flex items-center justify-between text-[10px] font-bold text-gray-500 uppercase tracking-tight shrink-0">
-                <div className="flex gap-4"><span>Server: Production</span><span className="text-gray-300">|</span><span>Database: FullPot</span></div>
+        {/* Footer */}
+            <div className="h-8 bg-gray-100 border-t px-3 sm:px-4 flex items-center justify-between text-[10px] font-bold text-gray-500 uppercase tracking-tight shrink-0">
+                <div className="flex gap-2 sm:gap-4"><span>Server: Production</span><span className="text-gray-300 hidden sm:inline">|</span><span className="hidden sm:inline">Database: FullPot</span></div>
                 <span className="text-[#FB7506]">FOS Masters V.2.0.1</span>
             </div>
 
