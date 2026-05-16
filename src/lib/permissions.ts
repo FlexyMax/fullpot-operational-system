@@ -46,6 +46,7 @@ export const SCREEN_PANTA: Record<string, string> = {
     "customers-setup":      "HWCM1581",  // CUSTOMERS DEFINITION
     "carriers-definition":  "XD6Z7048",  // APP Carriers Center
     "freights-setup":       "XD6Z7048",  // APP Carriers Center (shared, closest match)
+    "items-setup":          "52961702",  // fallback — register dedicated pantalla record
 
     // ── System Management ──────────────────────────────────────────────────
     "module-screen-setup":  "52961702",  // MODULES SETUP

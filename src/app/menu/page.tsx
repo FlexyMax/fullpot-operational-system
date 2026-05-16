@@ -28,6 +28,7 @@ function getRoute(appPage: string): string | null {
     if (p.includes('CUSTOMER') || p.includes('CLIENTES') || p.includes('CUSTOMERS SETUP')) return '/masters/customers';
     if (p.includes('FREIGHT') || p.includes('HANDLING SETUP') || p.includes('FLETE')) return '/masters/freights';
     if (p.includes('CARRIER') || p.includes('AEROLINEA') || p.includes('CARRIERS DEF')) return '/masters/carriers';
+    if (p.includes('ITEM') || p.includes('PRODUCT') || p.includes('VARIETY') || p.includes('VARIEDAD') || p.includes('ITEM SETUP') || p.includes('PRODUCTO')) return '/masters/items';
     if (p.includes('USUARIO') || p.includes('USER ACCESS') || p.includes('ACCESO') || p.includes('ACCESS DEF')) return '/system/access';
     if (p.includes('COMPAN') || p.includes('EMPRESA') || p.includes('COMPANY SETUP')) return '/system/companies';
     if (p.includes('SCAN')) return '/scan';
@@ -40,7 +41,7 @@ function getIcon(appPage: string) {
     if (n.includes('P.O.S') || n.includes('POS') || n.includes('TERMINAL')) return Store;
     if (n.includes('PAYABLE') || n.includes('A/P')) return Receipt;
     if (n.includes('RECEIVABLE') || n.includes('A/R')) return Landmark;
-    if (n.includes('INVENTORY') || n.includes('STOCK')) return Package;
+    if (n.includes('INVENTORY') || n.includes('STOCK') || n.includes('ITEM') || n.includes('PRODUCT') || n.includes('VARIETY')) return Package;
     if (n.includes('CUSTOMER') || n.includes('CLIENT')) return Users;
     if (n.includes('REPORT') || n.includes('ANALYTIC')) return BarChart2;
     if (n.includes('PURCHASE') || n.includes('PREBOOK')) return ClipboardList;
