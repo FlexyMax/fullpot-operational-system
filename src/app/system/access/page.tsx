@@ -219,26 +219,26 @@ export default function SystemAccessPage() {
                 {/* ── Left: User List ──────────────────────────────────────── */}
                 <div className="hidden lg:flex w-[260px] shrink-0 flex-col gap-2">
                     <div className="flex flex-col flex-1 bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-                        <div className="h-8 bg-[#374151] flex items-center justify-between px-3 shrink-0">
+                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 border-b border-black/10 shrink-0 rounded-t-lg">
                             <div className="flex items-center gap-2">
-                                <Users size={13} className="text-[#FB7506]" />
-                                <span className="font-black text-[10px] uppercase tracking-widest text-white">Users</span>
+                                <Users size={16} className="text-[#FB7506]" />
+                                <span className="fos-grid-header-text">Users</span>
                             </div>
-                            {loadingUsers && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
+                            {loadingUsers && <RefreshCcw size={16} className="text-gray-400 animate-spin" />}
                         </div>
                         <div className="p-2 border-b border-gray-100 shrink-0">
                             <div className="relative">
-                                <Search size={11} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
                                 <input
                                     type="text"
                                     value={searchTerm}
                                     onChange={e => setSearchTerm(e.target.value)}
                                     placeholder="Search users..."
-                                    className="w-full pl-7 pr-2 py-1 text-xs border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506]"
+                                    className="w-full pl-7 pr-2 h-9 text-sm border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506]"
                                 />
                             </div>
                         </div>
-                        <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-2 py-0.5 bg-gray-50 border-b text-right">
+                        <div className="text-[10px] font-black text-gray-400 uppercase tracking-wider px-2 py-0.5 bg-gray-50 border-b text-right">
                             {filteredUsers.length} users
                         </div>
                         <div className="overflow-y-auto flex-1">
@@ -279,56 +279,56 @@ export default function SystemAccessPage() {
 
                     {/* User Card */}
                     <div className="bg-white rounded-lg border border-gray-200 shadow-sm shrink-0">
-                        <div className="h-9 bg-[#374151] flex items-center justify-between px-3">
+                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 border-b border-black/10 rounded-t-lg">
                             {/* Left: title + status badge */}
                             <div className="flex items-center gap-2">
-                                <UserCheck size={13} className="text-[#FB7506]" />
-                                <span className="font-black text-[10px] uppercase tracking-widest text-white">User Information</span>
+                                <UserCheck size={16} className="text-[#FB7506]" />
+                                <span className="fos-grid-header-text">User Information</span>
                                 <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} />
                                 {selectedUser && (
                                     <span className={cn(
-                                        "text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded",
+                                        "text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded",
                                         selectedUser.activo ? "bg-green-500 text-white" : "bg-red-500 text-white"
                                     )}>
                                         {selectedUser.activo ? "Active" : "Inactive"}
                                     </span>
                                 )}
                                 {editError && (
-                                    <span className="flex items-center gap-1 text-amber-400 text-[9px] font-bold ml-1">
-                                        <AlertCircle size={11} />{editError}
+                                    <span className="flex items-center gap-1 text-amber-400 text-[10px] font-bold ml-1">
+                                        <AlertCircle size={12} />{editError}
                                     </span>
                                 )}
                                 {saveMsg && (
-                                    <span className="flex items-center gap-1 text-green-400 text-[9px] font-bold ml-1">
-                                        <Check size={11} />{saveMsg}
+                                    <span className="flex items-center gap-1 text-green-400 text-[10px] font-bold ml-1">
+                                        <Check size={12} />{saveMsg}
                                     </span>
                                 )}
                             </div>
                             {/* Right: Edit -or- Save + Cancel */}
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1.5 pr-2">
                                 {!editMode ? (
                                     <button
                                         onClick={handleEdit}
                                         disabled={!selectedUnico}
-                                        className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white px-2.5 py-1 rounded text-[9px] font-black uppercase tracking-wider transition-all"
+                                        className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all"
                                     >
-                                        <Pencil size={10} /> Edit
+                                        <Pencil size={14} /> Edit
                                     </button>
                                 ) : (
                                     <>
                                         <button
                                             onClick={handleSave}
                                             disabled={saving}
-                                            className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-2.5 py-1 rounded text-[9px] font-black uppercase tracking-wider transition-all"
+                                            className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all"
                                         >
-                                            {saving ? <RefreshCcw size={10} className="animate-spin" /> : <Save size={10} />}
+                                            {saving ? <RefreshCcw size={14} className="animate-spin" /> : <Save size={14} />}
                                             {saving ? "Saving..." : "Save"}
                                         </button>
                                         <button
                                             onClick={handleCancel}
-                                            className="flex items-center gap-1.5 bg-gray-500 hover:bg-gray-600 text-white px-2.5 py-1 rounded text-[9px] font-black uppercase tracking-wider transition-all"
+                                            className="flex items-center gap-1.5 bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all"
                                         >
-                                            <X size={10} /> Cancel
+                                            <X size={14} /> Cancel
                                         </button>
                                     </>
                                 )}
@@ -347,7 +347,7 @@ export default function SystemAccessPage() {
                                     { label: "Password",   value: "••••••••" },
                                 ].map(f => (
                                     <div key={f.label} className="flex flex-col gap-0.5">
-                                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{f.label}</span>
+                                        <span className="text-[11px] font-black text-gray-500 uppercase tracking-wider">{f.label}</span>
                                         <span className="font-semibold text-gray-700 truncate">{f.value || "—"}</span>
                                     </div>
                                 ))}
@@ -358,11 +358,11 @@ export default function SystemAccessPage() {
                     {/* Filter Bar */}
                     <div className="bg-white rounded-lg border border-gray-200 shadow-sm shrink-0 px-3 py-2 flex items-center gap-3 flex-wrap">
                         <div className="flex items-center gap-2">
-                            <Building2 size={13} className="text-gray-400" />
+                            <Building2 size={16} className="text-gray-400" />
                             <select
                                 value={filterCompany}
                                 onChange={e => setFilterCompany(e.target.value)}
-                                className="fos-input w-44 text-xs"
+                                className="fos-input w-44 h-10 text-sm"
                             >
                                 <option value="">— All Companies —</option>
                                 {(companies as any[]).map((c: any) => (
@@ -373,11 +373,11 @@ export default function SystemAccessPage() {
                             </select>
                         </div>
                         <div className="flex items-center gap-2">
-                            <LayoutGrid size={13} className="text-gray-400" />
+                            <LayoutGrid size={16} className="text-gray-400" />
                             <select
                                 value={filterModule}
                                 onChange={e => setFilterModule(e.target.value)}
-                                className="fos-input w-44 text-xs"
+                                className="fos-input w-44 h-10 text-sm"
                             >
                                 <option value="">— All Modules —</option>
                                 {(modules as any[]).map((m: any) => (
@@ -402,26 +402,26 @@ export default function SystemAccessPage() {
 
                     {/* Permissions Grid */}
                     <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-[300px] lg:min-h-0">
-                        <div className="h-8 bg-[#374151] flex items-center justify-between px-3 shrink-0">
+                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 border-b border-black/10 shrink-0 rounded-t-lg">
                             <div className="flex items-center gap-2">
-                                <Shield size={13} className="text-[#FB7506]" />
-                                <span className="font-black text-[10px] uppercase tracking-widest text-white">Screen Permissions</span>
+                                <Shield size={16} className="text-[#FB7506]" />
+                                <span className="fos-grid-header-text">Screen Permissions</span>
                                 <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} />
-                                {loadingPerms && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
+                                {loadingPerms && <RefreshCcw size={16} className="text-gray-400 animate-spin" />}
                             </div>
                             {!editMode && selectedUnico && (
-                                <div className="flex gap-2">
+                                <div className="flex gap-2 pr-2">
                                     <button
                                         onClick={() => setCopyModal({ mode: "from" })}
-                                        className="flex items-center gap-1 bg-gray-600 hover:bg-gray-500 text-white px-2.5 py-1 rounded text-[9px] font-black uppercase tracking-wider transition-all"
+                                        className="flex items-center gap-1.5 bg-gray-600 hover:bg-gray-500 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all"
                                     >
-                                        <Copy size={9} /> Copy From
+                                        <Copy size={14} /> Copy From
                                     </button>
                                     <button
                                         onClick={() => setCopyModal({ mode: "to" })}
-                                        className="flex items-center gap-1 bg-gray-600 hover:bg-gray-500 text-white px-2.5 py-1 rounded text-[9px] font-black uppercase tracking-wider transition-all"
+                                        className="flex items-center gap-1.5 bg-gray-600 hover:bg-gray-500 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all"
                                     >
-                                        <Copy size={9} /> Copy To
+                                        <Copy size={14} /> Copy To
                                     </button>
                                 </div>
                             )}
@@ -430,7 +430,7 @@ export default function SystemAccessPage() {
                         {/* Check/Uncheck column buttons — edit mode only */}
                         {editMode && (
                             <div className="bg-blue-50 border-b border-blue-100 px-2 py-1.5 flex items-center gap-1 shrink-0 flex-wrap">
-                                <span className="text-[9px] font-black text-blue-500 uppercase tracking-widest mr-2">Toggle column:</span>
+                                <span className="text-[10px] font-black text-blue-500 uppercase tracking-wider mr-2">Toggle column:</span>
                                 {PERM_FIELDS.map(field => {
                                     const allChecked = colAllChecked(field);
                                     const disabled   = isVisitor && (field === "crear" || field === "editar" || field === "borrar");
@@ -440,13 +440,13 @@ export default function SystemAccessPage() {
                                             onClick={() => !disabled && checkColumn(field, !allChecked)}
                                             disabled={disabled}
                                             className={cn(
-                                                "flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider transition-all",
+                                                "flex items-center gap-1 px-2 py-0.5 rounded text-xs font-black uppercase tracking-wider transition-all",
                                                 disabled ? "bg-gray-100 text-gray-300 cursor-not-allowed" :
                                                 allChecked ? "bg-blue-500 text-white hover:bg-blue-600" :
                                                 "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
                                             )}
                                         >
-                                            {allChecked ? <CheckSquare size={9} /> : <Square size={9} />}
+                                            {allChecked ? <CheckSquare size={12} /> : <Square size={12} />}
                                             {PERM_LABELS[field]}
                                         </button>
                                     );
@@ -543,26 +543,27 @@ export default function SystemAccessPage() {
 
             {/* Mobile user list modal */}
             {mobileUsersOpen && (
-                <div className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex flex-col">
-                    <div className="bg-white flex flex-col h-full max-h-[80vh] mt-auto rounded-t-2xl overflow-hidden">
-                        <div className="h-12 bg-[#374151] flex items-center justify-between px-4 shrink-0 rounded-t-2xl">
+                <div className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden">
+                        <div className="h-10 bg-[#374151] flex items-center justify-between px-4 border-b border-black/10 shrink-0">
                             <div className="flex items-center gap-2">
                                 <Users size={16} className="text-[#FB7506]" />
-                                <span className="font-black text-sm uppercase tracking-widest text-white">Select User</span>
+                                <span className="fos-grid-header-text">Select User</span>
                             </div>
-                            <button onClick={() => setMobileUsersOpen(false)}>
-                                <XCircle size={20} className="text-gray-400 hover:text-white" />
+                            <button onClick={() => setMobileUsersOpen(false)}
+                                className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors">
+                                <X size={16} />
                             </button>
                         </div>
                         <div className="p-3 border-b border-gray-100 shrink-0">
                             <div className="relative">
-                                <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                 <input
                                     type="text"
                                     value={searchTerm}
                                     onChange={e => setSearchTerm(e.target.value)}
                                     placeholder="Search users..."
-                                    className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-[#FB7506]"
+                                    className="w-full pl-9 pr-3 h-10 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-[#FB7506]"
                                     autoFocus
                                 />
                             </div>
@@ -670,34 +671,36 @@ function CopyAccessModal({ mode, currentUser, allUsers, onClose, onCopied }: {
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
-                <div className="h-10 bg-[#374151] rounded-t-xl flex items-center justify-between px-4 shrink-0">
+                <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 border-b border-black/10 shrink-0">
                     <div className="flex items-center gap-2">
-                        <Copy size={14} className="text-[#FB7506]" />
-                        <span className="font-black text-[11px] uppercase tracking-widest text-white">
+                        <Copy size={16} className="text-[#FB7506]" />
+                        <span className="fos-grid-header-text">
                             {mode === "from" ? "Copy Access From" : "Copy Access To"}
                         </span>
                     </div>
-                    <button onClick={onClose}><XCircle size={16} className="text-gray-400 hover:text-white" /></button>
+                    <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors">
+                        <X size={16} />
+                    </button>
                 </div>
 
                 <div className="p-5 space-y-4">
                     {/* Current user */}
                     <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                        <p className="text-[9px] font-black text-green-600 uppercase tracking-widest mb-1">Current User</p>
+                        <p className="text-[11px] font-black text-green-600 uppercase tracking-wider mb-1">Current User</p>
                         <p className="font-black text-sm text-gray-800">{currentName}</p>
-                        <p className="text-[10px] text-gray-500">{String(currentUser.usuario || "").trim()}</p>
+                        <p className="text-xs text-gray-500">{String(currentUser.usuario || "").trim()}</p>
                     </div>
 
                     {/* Target user combobox */}
                     <div className="flex flex-col gap-1 relative">
-                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
+                        <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">
                             {mode === "from" ? "Copy From (Source)" : "Copy To (Target)"}
                         </label>
                         <div
                             className="fos-input flex items-center justify-between cursor-pointer gap-2"
                             onClick={() => setDdOpen(o => !o)}
                         >
-                            <span className={cn("truncate text-xs", !display ? "text-gray-400" : "text-gray-700 font-medium")}>
+                            <span className={cn("truncate text-sm", !display ? "text-gray-400" : "text-gray-700 font-medium")}>
                                 {display || "— Select user —"}
                             </span>
                             <ChevronRight size={12} className={cn("text-gray-400 shrink-0 transition-transform", ddOpen && "rotate-90")} />
@@ -711,7 +714,7 @@ function CopyAccessModal({ mode, currentUser, allUsers, onClose, onCopied }: {
                                         value={search}
                                         onChange={e => setSearch(e.target.value)}
                                         placeholder="Type to filter..."
-                                        className="fos-input text-xs"
+                                        className="fos-input h-10 text-sm"
                                         onClick={e => e.stopPropagation()}
                                     />
                                 </div>
@@ -724,12 +727,12 @@ function CopyAccessModal({ mode, currentUser, allUsers, onClose, onCopied }: {
                                                 setDisplay(String(u.full_name || "").trim());
                                                 setSearch(""); setDdOpen(false); setError(null);
                                             }}
-                                            className="px-3 py-2 text-xs hover:bg-blue-50 cursor-pointer border-b border-gray-50 last:border-b-0 flex items-center gap-2"
+                                            className="px-3 py-2 text-sm hover:bg-blue-50 cursor-pointer border-b border-gray-50 last:border-b-0 flex items-center gap-2"
                                         >
                                             <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", u.activo ? "bg-green-400" : "bg-gray-300")} />
                                             <div>
                                                 <p className="font-semibold text-gray-800">{String(u.full_name || "").trim()}</p>
-                                                <p className="text-[9px] text-gray-400">{String(u.usuario || "").trim()}</p>
+                                                <p className="text-xs text-gray-400">{String(u.usuario || "").trim()}</p>
                                             </div>
                                         </div>
                                     ))}
