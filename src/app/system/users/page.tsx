@@ -10,6 +10,7 @@ import {
     Calendar, Filter, ChevronRight, UserCircle2, XCircle, Menu
 } from "lucide-react";
 import { useAuditLog } from "@/lib/audit";
+import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { AuditLogModal } from "@/components/AuditLogModal";
 import { cn } from "@/lib/utils";
 import { todayEST, formatDateEST, normalizeToISODate } from "@/lib/dates";
@@ -88,6 +89,7 @@ export default function UsersDefinitionPage() {
     const router = useRouter();
     const qc     = useQueryClient();
     const { logAction } = useAuditLog("users-definition", "usuarios");
+    const perms = usePagePermissions("users-definition");
 
     const [selectedUnico,  setSelectedUnico]  = useState<string | null>(null);
     const [mode,           setMode]           = useState<Mode>("view");
@@ -397,9 +399,9 @@ export default function UsersDefinitionPage() {
                                 {mode === "view" ? (
                                     <GridMenu
                                         items={[
-                                            { label: "Add Record", icon: Plus, color: "green", onClick: handleAdd },
-                                            { label: "Edit Selected", icon: Pencil, color: "orange", onClick: handleEdit, disabled: !selectedUnico },
-                                            { label: "Delete Selected", icon: Trash2, color: "red", onClick: () => { if (selectedUnico) setDeleteDialog(true); }, disabled: !selectedUnico },
+                                            { label: "Add Record", icon: Plus, color: "green", onClick: handleAdd, disabled: !perms.canCreate },
+                                            { label: "Edit Selected", icon: Pencil, color: "orange", onClick: handleEdit, disabled: !selectedUnico || !perms.canEdit },
+                                            { label: "Delete Selected", icon: Trash2, color: "red", onClick: () => { if (selectedUnico) setDeleteDialog(true); }, disabled: !selectedUnico || !perms.canDelete },
                                         ]}
                                     />
                                 ) : (

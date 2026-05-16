@@ -144,8 +144,9 @@ export default function CarriersDefinitionPage() {
     const loadCarrier = async (idx: number) => {
         if (!list[idx]) return;
         setCurrentIdx(idx);
+        const item = list[idx];
         try {
-            const d = await sF(`/api/masters/carriers/${list[idx].unico}`);
+            const d = await sF(`/api/masters/carriers/${item.unico}`);
             if (d) setForm({
                 unico:             t(d.unico),
                 active:            Boolean(d.active),
@@ -179,7 +180,10 @@ export default function CarriersDefinitionPage() {
                 internal_delivery: Boolean(d.internal_delivery),
             });
             setFormError(null); setTabEnabled(false);
-        } catch {}
+        } catch (err) {
+            console.error("loadCarrier error:", err);
+            setFormError("Failed to load carrier data.");
+        }
     };
 
     // Navigation
@@ -565,7 +569,7 @@ export default function CarriersDefinitionPage() {
                             {filteredList.length === 0 ? (
                                 <div className="p-6 text-center text-gray-400 text-sm">No carriers found</div>
                             ) : filteredList.map((c: any, i: number) => (
-                                <button key={c.unico} onClick={() => { const realIdx = list.findIndex((x: any) => x.unico === c.unico); setCurrentIdx(realIdx >= 0 ? realIdx : 0); setMobileOpen(false); }}
+                                <button key={c.unico} onClick={() => { const realIdx = list.findIndex((x: any) => x.unico === c.unico); loadCarrier(realIdx >= 0 ? realIdx : 0); setMobileOpen(false); }}
                                     className={cn("w-full flex items-center gap-2 px-4 py-3 text-left transition-colors border-b border-gray-50 last:border-b-0",
                                         list[currentIdx]?.unico === c.unico ? "bg-orange-50 text-[#FB7506] font-bold" : "text-gray-700 hover:bg-gray-50")}>
                                     <span className="text-[10px] text-gray-400 font-mono w-8 shrink-0">{c.carriercode}</span>

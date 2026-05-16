@@ -10,6 +10,7 @@ import {
     Check, AlertCircle, ChevronRight, Search, XCircle, Menu
 } from "lucide-react";
 import { useAuditLog } from "@/lib/audit";
+import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { AuditLogModal } from "@/components/AuditLogModal";
 import { cn } from "@/lib/utils";
 
@@ -75,6 +76,7 @@ export default function ModuleScreenSetupPage() {
     const router  = useRouter();
     const qc      = useQueryClient();
     const { logAction } = useAuditLog("module-screen-setup", "modulo");
+    const perms = usePagePermissions("module-screen-setup");
     const importRef = useRef<HTMLInputElement>(null);
 
     const [selModUnico,    setSelModUnico]    = useState<string | null>(null);
@@ -372,9 +374,9 @@ export default function ModuleScreenSetupPage() {
                             <div className="flex items-center gap-1.5 shrink-0">
                                 <GridMenu
                                     items={[
-                                        { label: "Add Module", icon: Plus, color: "green", onClick: () => { setModForm({...EMPTY_MOD}); setModError(null); setModFormModal({mode:"add"}); } },
-                                        { label: "Edit Module", icon: Pencil, color: "orange", onClick: () => { if (selModUnico) { setModForm(prev => ({...prev})); setModError(null); setModFormModal({mode:"edit"}); } }, disabled: !selModUnico },
-                                        { label: "Delete Module", icon: Trash2, color: "red", onClick: () => { if (selModUnico) setDeleteModDlg(true); }, disabled: !selModUnico },
+                                        { label: "Add Module", icon: Plus, color: "green", onClick: () => { setModForm({...EMPTY_MOD}); setModError(null); setModFormModal({mode:"add"}); }, disabled: !perms.canCreate },
+                                        { label: "Edit Module", icon: Pencil, color: "orange", onClick: () => { if (selModUnico) { setModForm(prev => ({...prev})); setModError(null); setModFormModal({mode:"edit"}); } }, disabled: !selModUnico || !perms.canEdit },
+                                        { label: "Delete Module", icon: Trash2, color: "red", onClick: () => { if (selModUnico) setDeleteModDlg(true); }, disabled: !selModUnico || !perms.canDelete },
                                         { label: "Export All", icon: Download, color: "gray", onClick: exportAll },
                                         { label: "Export Module", icon: Download, color: "gray", onClick: exportModule, disabled: !selModUnico },
                                         { label: "Import JSON", icon: Upload, color: "gray", onClick: () => importRef.current?.click() },
@@ -439,9 +441,9 @@ export default function ModuleScreenSetupPage() {
                             <div className="flex items-center gap-1.5">
                                 <GridMenu
                                     items={[
-                                        { label: "Add Screen", icon: Plus, color: "green", onClick: handleAddScreen, disabled: !selModUnico || isEditing },
-                                        { label: "Edit Screen", icon: Pencil, color: "orange", onClick: handleEditScreen, disabled: !selScrUnico || isEditing },
-                                        { label: "Remove Screen", icon: Trash2, color: "red", onClick: handleRemoveScreen, disabled: !selScrUnico || isEditing },
+                                        { label: "Add Screen", icon: Plus, color: "green", onClick: handleAddScreen, disabled: !selModUnico || isEditing || !perms.canCreate },
+                                        { label: "Edit Screen", icon: Pencil, color: "orange", onClick: handleEditScreen, disabled: !selScrUnico || isEditing || !perms.canEdit },
+                                        { label: "Remove Screen", icon: Trash2, color: "red", onClick: handleRemoveScreen, disabled: !selScrUnico || isEditing || !perms.canDelete },
                                     ]}
                                 />
                             </div>

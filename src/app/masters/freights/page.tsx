@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuditLog } from "@/lib/audit";
+import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { AuditLogModal } from "@/components/AuditLogModal";
 import { EntityListModal } from "@/components/EntityListModal";
 import { EntityFormModal } from "@/components/EntityFormModal";
@@ -146,6 +147,7 @@ export default function FreightsSetupPage() {
     const router = useRouter();
     const qc     = useQueryClient();
     const { logAction } = useAuditLog("freights-setup", "flower_warehouses_physical");
+    const perms = usePagePermissions("freights-setup");
 
     // Selection state
     const [selWh,  setSelWh]  = useState<any>(null);
@@ -484,9 +486,9 @@ export default function FreightsSetupPage() {
                     <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden">
                         <GridHeader icon={Building2} title="Physical Warehouses" loading={loadingWh} recordId={selWh?.unico} onRefresh={() => qc.invalidateQueries({ queryKey: ["fr-wh"] })}>
                             <GridMenu items={[
-                                { label:"Add Warehouse", icon:Plus,   color:"green", onClick:() => { setWhForm({...EMPTY_WH}); setError(null); setWhModal({mode:"add"}); } },
-                                { label:"Edit Selected",  icon:Pencil, color:"blue",  onClick:() => { if(!selWh) return; setWhForm({ wp_name:t(selWh.wp_name), cargo:!!selWh.cargo, send_xml:!!selWh.send_xml, charge:!!selWh.charge, address:t(selWh.address), city:t(selWh.city), state:t(selWh.state), zipcode:t(selWh.zipcode), country:t(selWh.country), phone:t(selWh.phone), fax:t(selWh.fax), email:t(selWh.email), grower_uq:t(selWh.grower_uq), handling_kg:selWh.handling_kg||0, send_to_whouse:!!selWh.send_to_whouse }); setError(null); setWhModal({mode:"edit"}); }, disabled:!selWh },
-                                { label:"Delete Selected",icon:Trash2, color:"red",   onClick:() => { if(selWh){setError(null);setWhModal({mode:"delete"});} }, disabled:!selWh },
+                                { label:"Add Warehouse", icon:Plus,   color:"green", onClick:() => { setWhForm({...EMPTY_WH}); setError(null); setWhModal({mode:"add"}); }, disabled:!perms.canCreate },
+                                { label:"Edit Selected",  icon:Pencil, color:"blue",  onClick:() => { if(!selWh) return; setWhForm({ wp_name:t(selWh.wp_name), cargo:!!selWh.cargo, send_xml:!!selWh.send_xml, charge:!!selWh.charge, address:t(selWh.address), city:t(selWh.city), state:t(selWh.state), zipcode:t(selWh.zipcode), country:t(selWh.country), phone:t(selWh.phone), fax:t(selWh.fax), email:t(selWh.email), grower_uq:t(selWh.grower_uq), handling_kg:selWh.handling_kg||0, send_to_whouse:!!selWh.send_to_whouse }); setError(null); setWhModal({mode:"edit"}); }, disabled:!selWh || !perms.canEdit },
+                                { label:"Delete Selected",icon:Trash2, color:"red",   onClick:() => { if(selWh){setError(null);setWhModal({mode:"delete"});} }, disabled:!selWh || !perms.canDelete },
                             ]} />
                         </GridHeader>
                         <MiniTable
@@ -502,9 +504,9 @@ export default function FreightsSetupPage() {
                     <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden">
                         <GridHeader icon={Zap} title="Seasons" recordId={selSe?.unico}>
                             <GridMenu items={[
-                                { label:"Add Season", icon:Plus, color:"green", onClick:() => { setSeForm({...EMPTY_SE}); setSeFormMode("add"); setSeError(null); setSeFormOpen(true); } },
-                                { label:"Edit Selected", icon:Pencil, color:"blue", onClick:() => { if(!selSe) return; setSeForm({ season:t(selSe.season), sh_season:t(selSe.sh_season), startdate:t(selSe.startdate), enddate:t(selSe.enddate), activedate:t(selSe.activedate), desacdate:t(selSe.desacdate), publicate:!!selSe.publicate, increment:selSe.increment||0, bypercent:!!selSe.bypercent }); setSeFormMode("edit"); setSeError(null); setSeFormOpen(true); }, disabled:!selSe },
-                                { label:"Delete Selected", icon:Trash2, color:"red", onClick:() => deleteSeason(), disabled:!selSe },
+                                { label:"Add Season", icon:Plus, color:"green", onClick:() => { setSeForm({...EMPTY_SE}); setSeFormMode("add"); setSeError(null); setSeFormOpen(true); }, disabled:!perms.canCreate },
+                                { label:"Edit Selected", icon:Pencil, color:"blue", onClick:() => { if(!selSe) return; setSeForm({ season:t(selSe.season), sh_season:t(selSe.sh_season), startdate:t(selSe.startdate), enddate:t(selSe.enddate), activedate:t(selSe.activedate), desacdate:t(selSe.desacdate), publicate:!!selSe.publicate, increment:selSe.increment||0, bypercent:!!selSe.bypercent }); setSeFormMode("edit"); setSeError(null); setSeFormOpen(true); }, disabled:!selSe || !perms.canEdit },
+                                { label:"Delete Selected", icon:Trash2, color:"red", onClick:() => deleteSeason(), disabled:!selSe || !perms.canDelete },
                             ]} />
                         </GridHeader>
                         <MiniTable
@@ -530,9 +532,9 @@ export default function FreightsSetupPage() {
                     <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden">
                         <GridHeader icon={Cloud} title={`Freights${selWh ? ` — ${t(selWh.wp_name)}` : ""}`} loading={loadingFr} recordId={selFr?.unico} onRefresh={() => refetchFr()}>
                             <GridMenu items={[
-                                { label:"Add Rate",      icon:Plus,   color:"green", onClick:() => { if(!selWh){setError("Select a warehouse first.");return;} setFrForm({...EMPTY_FR}); setError(null); setFrModal({mode:"add"}); }, disabled:!selWh },
-                                { label:"Edit Selected", icon:Pencil, color:"blue",  onClick:async() => { if(!selFr) return; try { const d = await ff(`/api/freights/rates/${selFr.unico}`); setFrForm({ wphysical_uq: d.wphysical_uq||selWh?.unico, season_uq: d.season_uq||"", city_uq: d.city_uq||"", freight: d.freight||0, freight_kg: d.freight_kg||0 }); setError(null); setFrModal({mode:"edit"}); } catch(e:any){setError(e.message);} }, disabled:!selFr },
-                                { label:"Delete Selected",icon:Trash2, color:"red",  onClick:() => { if(selFr){setError(null);setFrModal({mode:"delete"});} }, disabled:!selFr },
+                                { label:"Add Rate",      icon:Plus,   color:"green", onClick:() => { if(!selWh){setError("Select a warehouse first.");return;} setFrForm({...EMPTY_FR}); setError(null); setFrModal({mode:"add"}); }, disabled:!selWh || !perms.canCreate },
+                                { label:"Edit Selected", icon:Pencil, color:"blue",  onClick:async() => { if(!selFr) return; try { const d = await ff(`/api/freights/rates/${selFr.unico}`); setFrForm({ wphysical_uq: d.wphysical_uq||selWh?.unico, season_uq: d.season_uq||"", city_uq: d.city_uq||"", freight: d.freight||0, freight_kg: d.freight_kg||0 }); setError(null); setFrModal({mode:"edit"}); } catch(e:any){setError(e.message);} }, disabled:!selFr || !perms.canEdit },
+                                { label:"Delete Selected",icon:Trash2, color:"red",  onClick:() => { if(selFr){setError(null);setFrModal({mode:"delete"});} }, disabled:!selFr || !perms.canDelete },
                                 { label:"Copy From...",  icon:Copy,   color:"gray",  onClick:() => { if(!selWh){setError("Select a warehouse first.");return;} if(!confirm("Copy freights from another season?")) return; setCopyModal(true); }, disabled:!selWh },
                                 { label:"Update AWBs",   icon:Zap,    color:"amber", onClick:updateAwbs, disabled:!selFr },
                             ]} />
@@ -555,9 +557,9 @@ export default function FreightsSetupPage() {
                     <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden">
                         <GridHeader icon={Building2} title="Handling" loading={loadingHa} recordId={selHa?.unico} onRefresh={() => refetchHa()}>
                             <GridMenu items={[
-                                { label:"Add Rate",      icon:Plus,   color:"green", onClick:() => { if(!selWh){setError("Select a warehouse first.");return;} setHaForm({...EMPTY_HA}); setError(null); setHaModal({mode:"add"}); }, disabled:!selWh },
-                                { label:"Edit Selected", icon:Pencil, color:"blue",  onClick:async() => { if(!selHa) return; try { const d = await ff(`/api/freights/handling/${selHa.unico}`); setHaForm({ wphysical_uq: d.wphysical_uq||selWh?.unico, season_uq: d.season_uq||"", handling: d.handling||0 }); setError(null); setHaModal({mode:"edit"}); } catch(e:any){setError(e.message);} }, disabled:!selHa },
-                                { label:"Delete Selected",icon:Trash2, color:"red", onClick:() => { if(selHa){setError(null);setHaModal({mode:"delete"});} }, disabled:!selHa },
+                                { label:"Add Rate",      icon:Plus,   color:"green", onClick:() => { if(!selWh){setError("Select a warehouse first.");return;} setHaForm({...EMPTY_HA}); setError(null); setHaModal({mode:"add"}); }, disabled:!selWh || !perms.canCreate },
+                                { label:"Edit Selected", icon:Pencil, color:"blue",  onClick:async() => { if(!selHa) return; try { const d = await ff(`/api/freights/handling/${selHa.unico}`); setHaForm({ wphysical_uq: d.wphysical_uq||selWh?.unico, season_uq: d.season_uq||"", handling: d.handling||0 }); setError(null); setHaModal({mode:"edit"}); } catch(e:any){setError(e.message);} }, disabled:!selHa || !perms.canEdit },
+                                { label:"Delete Selected",icon:Trash2, color:"red", onClick:() => { if(selHa){setError(null);setHaModal({mode:"delete"});} }, disabled:!selHa || !perms.canDelete },
                             ]} />
                         </GridHeader>
                         <MiniTable

@@ -10,6 +10,7 @@ import {
     Building2, LayoutGrid, UserCheck, ChevronRight
 } from "lucide-react";
 import { useAuditLog } from "@/lib/audit";
+import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { AuditLogModal } from "@/components/AuditLogModal";
 import { cn } from "@/lib/utils";
 
@@ -35,6 +36,7 @@ export default function SystemAccessPage() {
     const router = useRouter();
     const qc = useQueryClient();
     const { logAction } = useAuditLog("access-definition", "usuarios_accesos");
+    const perms = usePagePermissions("access-definition");
 
     const [selectedUnico,  setSelectedUnico]  = useState<string | null>(null);
     const [searchTerm,     setSearchTerm]     = useState("");
@@ -309,7 +311,7 @@ export default function SystemAccessPage() {
                                 {!editMode ? (
                                     <button
                                         onClick={handleEdit}
-                                        disabled={!selectedUnico}
+                                        disabled={!selectedUnico || !perms.canEdit}
                                         className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all"
                                     >
                                         <Pencil size={14} /> Edit
@@ -318,7 +320,7 @@ export default function SystemAccessPage() {
                                     <>
                                         <button
                                             onClick={handleSave}
-                                            disabled={saving}
+                                            disabled={saving || !perms.canEdit}
                                             className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all"
                                         >
                                             {saving ? <RefreshCcw size={14} className="animate-spin" /> : <Save size={14} />}
