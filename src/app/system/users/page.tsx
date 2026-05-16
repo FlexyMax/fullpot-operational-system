@@ -366,7 +366,7 @@ export default function UsersDefinitionPage() {
                     {/* User Form Card */}
                     <div className="bg-white rounded-lg border border-gray-200 shadow-sm shrink-0">
                         {/* Form header bar */}
-                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 border-b border-black/10">
+                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 border-b border-black/10">
                             <div className="flex items-center gap-2">
                                 <Users size={16} className="text-[#FB7506]" />
                                 <span className="fos-grid-header-text">
@@ -516,7 +516,7 @@ export default function UsersDefinitionPage() {
 
                     {/* Activity Log */}
                     <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-[200px] lg:min-h-0">
-                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 border-b border-black/10 shrink-0">
+                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 border-b border-black/10 shrink-0">
                             <div className="flex items-center gap-2">
                                 <Calendar size={16} className="text-[#FB7506]" />
                                 <span className="fos-grid-header-text">User Activity Log</span>
