@@ -464,7 +464,7 @@ export default function CarriersDefinitionPage() {
                     </div>
 
                     {/* ── Bottom Tabs ──────────────────────────────────────── */}
-                    <div className="flex-1 flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden min-h-0 max-h-[300px] lg:max-h-none">
+                    <div className="flex-1 flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden min-h-0 h-[260px] lg:h-auto">
                         <div className="h-10 bg-[#374151] flex items-end px-2 gap-0.5 shrink-0">
                             {(["invoices","customers"] as const).map(tab => (
                                 <button key={tab} onClick={() => { setActiveTab(tab); setTabEnabled(true); }}
@@ -565,9 +565,9 @@ export default function CarriersDefinitionPage() {
                             {filteredList.length === 0 ? (
                                 <div className="p-6 text-center text-gray-400 text-sm">No carriers found</div>
                             ) : filteredList.map((c: any, i: number) => (
-                                <button key={c.unico} onClick={() => { setCurrentIdx(i); setMobileOpen(false); }}
+                                <button key={c.unico} onClick={() => { const realIdx = list.findIndex((x: any) => x.unico === c.unico); setCurrentIdx(realIdx >= 0 ? realIdx : 0); setMobileOpen(false); }}
                                     className={cn("w-full flex items-center gap-2 px-4 py-3 text-left transition-colors border-b border-gray-50 last:border-b-0",
-                                        i === currentIdx ? "bg-orange-50 text-[#FB7506] font-bold" : "text-gray-700 hover:bg-gray-50")}>
+                                        list[currentIdx]?.unico === c.unico ? "bg-orange-50 text-[#FB7506] font-bold" : "text-gray-700 hover:bg-gray-50")}>
                                     <span className="text-[10px] text-gray-400 font-mono w-8 shrink-0">{c.carriercode}</span>
                                     <span className="text-sm truncate flex-1">{t(c.carrier)}</span>
                                     {c.isairline && <span className="text-[10px] text-blue-400 font-bold shrink-0">✈</span>}
