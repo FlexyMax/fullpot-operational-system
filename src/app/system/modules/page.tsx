@@ -7,7 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     ArrowLeft, Plus, Pencil, Trash2, Save, X, RefreshCcw,
     Download, Upload, LayoutGrid, Monitor, FileText,
-    Check, AlertCircle, ChevronRight, Search, XCircle
+    Check, AlertCircle, ChevronRight, Search, XCircle, Menu
 } from "lucide-react";
 import { useAuditLog } from "@/lib/audit";
 import { AuditLogModal } from "@/components/AuditLogModal";
@@ -25,6 +25,49 @@ type ReportForm = { unico: string; panta_uq: string; nombre: string; titulo: str
 const EMPTY_MOD:    ModForm    = { unico: "", nombre: "", clase: "", orden: "0", image: "", descripcion: "", dsn: "", active: true, web: true };
 const EMPTY_SCREEN: ScreenForm = { unico: "", modulo_uq: "", nombre: "", orden: "0", run_pantalla: "", executable: "", image: "", path: "", menu: true, web_form: "", descripcion: "" };
 const EMPTY_REPORT: ReportForm = { unico: "", panta_uq: "", nombre: "", titulo: "", path: "", descripcion: "", fecha_desde: false, fecha_hasta: false, numero_desde: false, numero_hasta: false, actual: true, comprimido: false, detallado: false, exportar: false };
+
+// ─── GridMenu (Appsmith style) ────────────────────────────────────────────────
+function GridMenu({ items, disabled: globalDisabled }: {
+    items: { label: string; icon: any; color: string; onClick: () => void; disabled?: boolean }[];
+    disabled?: boolean;
+}) {
+    const [open, setOpen] = useState(false);
+    const ITEM_COLORS: Record<string, { icon: string; text: string }> = {
+        green:  { icon: "text-green-600",  text: "text-green-700" },
+        orange: { icon: "text-[#FB7506]", text: "text-gray-800" },
+        red:    { icon: "text-red-500",    text: "text-gray-800" },
+        blue:   { icon: "text-blue-600",   text: "text-gray-800" },
+        gray:   { icon: "text-gray-500",   text: "text-gray-700" },
+    };
+    return (
+        <div className="relative" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setOpen(o => !o)}
+                className="h-10 bg-[#FB7506] hover:bg-orange-600 text-white w-24 flex items-center justify-center transition-colors border-none cursor-pointer shadow-inner rounded-tr-lg"
+                title="Menu">
+                <Menu size={20} />
+            </button>
+            {open && (
+                <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-gray-200 rounded-lg shadow-2xl z-50 overflow-hidden"
+                    onMouseLeave={() => setOpen(false)}>
+                    {items.map((item, i) => {
+                        const c = ITEM_COLORS[item.color] || ITEM_COLORS.gray;
+                        return (
+                            <button key={i} onClick={() => { item.onClick(); setOpen(false); }}
+                                disabled={!!item.disabled || !!globalDisabled}
+                                className={cn(
+                                    "w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors",
+                                    i < items.length - 1 && "border-b border-gray-100"
+                                )}>
+                                <item.icon size={18} className={c.icon} />
+                                <span className={cn("text-sm font-bold", c.text)}>{item.label}</span>
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+}
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ModuleScreenSetupPage() {
@@ -54,6 +97,7 @@ export default function ModuleScreenSetupPage() {
     const [deleteRptDlg,   setDeleteRptDlg]   = useState(false);
     const [modSearch,      setModSearch]      = useState("");
     const [importMsg,      setImportMsg]      = useState<string | null>(null);
+    const [mobileModOpen,  setMobileModOpen]  = useState(false);
 
     useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
 
@@ -231,6 +275,25 @@ export default function ModuleScreenSetupPage() {
     const isEditing = modMode !== "view";
     const selMod    = (modules as any[]).find((m: any) => m.unico === selModUnico);
 
+    const handleAddScreen = () => {
+        if (!selModUnico || isEditing) return;
+        setScreenForm({...EMPTY_SCREEN, modulo_uq: selModUnico});
+        setScreenError(null);
+        setScreenModal({ mode: "add" });
+    };
+    const handleEditScreen = () => {
+        if (!selScrUnico || isEditing) return;
+        const s = (screens as any[]).find((x: any) => x.unico === selScrUnico);
+        if (s) {
+            setScreenForm({ unico: t(s.unico), modulo_uq: t(s.modulo_uq), nombre: t(s.nombre), orden: String(s.orden??0), run_pantalla: t(s.run_pantalla), executable: t(s.executable), image: t(s.image), path: t(s.path), menu: Boolean(s.menu), web_form: t(s.web_form), descripcion: t(s.descripcion) });
+            setScreenError(null);
+            setScreenModal({ mode: "edit" });
+        }
+    };
+    const handleRemoveScreen = () => {
+        if (selScrUnico) setDeleteScrDlg(true);
+    };
+
     if (status === "loading") return null;
 
     return (
@@ -251,22 +314,22 @@ export default function ModuleScreenSetupPage() {
             </div>
 
             {/* Main two-panel layout */}
-            <div className="flex flex-1 overflow-hidden gap-2 p-2">
+            <div className="flex flex-col lg:flex-row flex-1 gap-2 p-2 overflow-y-auto lg:overflow-hidden">
 
                 {/* ── LEFT: Module List ─────────────────────────────────────── */}
-                <div className="w-[240px] shrink-0 flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-                    <div className="h-8 bg-[#374151] flex items-center justify-between px-3 shrink-0">
+                <div className="hidden lg:flex w-[240px] shrink-0 flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                    <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 border-b border-black/10 shrink-0 rounded-t-lg">
                         <div className="flex items-center gap-2">
-                            <LayoutGrid size={13} className="text-[#FB7506]" />
-                            <span className="font-black text-[10px] uppercase tracking-widest text-white">Modules</span>
+                            <LayoutGrid size={16} className="text-[#FB7506]" />
+                            <span className="fos-grid-header-text">Modules</span>
                         </div>
-                        {loadingMods && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
+                        {loadingMods && <RefreshCcw size={16} className="text-gray-400 animate-spin" />}
                     </div>
                     <div className="p-2 border-b border-gray-100 shrink-0">
                         <div className="relative">
-                            <Search size={11} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+                            <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
                             <input type="text" value={modSearch} onChange={e => setModSearch(e.target.value)}
-                                placeholder="Filter modules..." className="w-full pl-7 pr-2 py-1 text-xs border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506]" />
+                                placeholder="Filter modules..." className="w-full pl-7 pr-2 h-9 text-sm border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506]" />
                         </div>
                     </div>
                     <div className="overflow-y-auto flex-1">
@@ -293,51 +356,41 @@ export default function ModuleScreenSetupPage() {
                 </div>
 
                 {/* ── RIGHT: Form + Screens ─────────────────────────────────── */}
-                <div className="flex-1 flex flex-col gap-2 min-w-0 overflow-hidden">
+                <div className="flex-1 flex flex-col gap-2 min-w-0 lg:overflow-hidden">
 
                     {/* Module Form */}
                     <div className="bg-white rounded-lg border border-gray-200 shadow-sm shrink-0">
-                        <div className="h-9 bg-[#374151] flex items-center justify-between px-3 rounded-t-lg">
+                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 border-b border-black/10 rounded-t-lg">
                             <div className="flex items-center gap-2 min-w-0">
-                                <LayoutGrid size={13} className="text-[#FB7506] shrink-0" />
-                                <span className="font-black text-[10px] uppercase tracking-widest text-white shrink-0">
+                                <LayoutGrid size={16} className="text-[#FB7506] shrink-0" />
+                                <span className="fos-grid-header-text shrink-0">
                                     {modMode === "add" ? "New Module" : "Module Details"}
                                 </span>
                                 <AuditLogModal recordId={selModUnico} disabled={!selModUnico} />
-                                {modError && <span className="flex items-center gap-1 text-amber-400 text-[9px] font-bold ml-2 truncate"><AlertCircle size={11} />{modError}</span>}
-                                {modMsg   && <span className="flex items-center gap-1 text-green-400 text-[9px] font-bold ml-2 truncate"><Check size={11} />{modMsg}</span>}
-                                {importMsg && <span className="text-blue-400 text-[9px] font-bold ml-2 truncate">{importMsg}</span>}
+                                {modError && <span className="flex items-center gap-1 text-amber-400 text-[10px] font-bold ml-2 truncate"><AlertCircle size={12} />{modError}</span>}
+                                {modMsg   && <span className="flex items-center gap-1 text-green-400 text-[10px] font-bold ml-2 truncate"><Check size={12} />{modMsg}</span>}
+                                {importMsg && <span className="text-blue-400 text-[10px] font-bold ml-2 truncate">{importMsg}</span>}
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
-                                {modMode === "view" ? (<>
-                                    <button onClick={() => { setModForm(EMPTY_MOD); setModMode("add"); setModError(null); }}
-                                        className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider transition-all">
-                                        <Plus size={9} /> Add
-                                    </button>
-                                    <button onClick={() => { if (selModUnico) setModMode("edit"); }} disabled={!selModUnico}
-                                        className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider transition-all">
-                                        <Pencil size={9} /> Edit
-                                    </button>
-                                    <button onClick={() => { if (selModUnico) setDeleteModDlg(true); }} disabled={!selModUnico}
-                                        className="flex items-center gap-1 bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider transition-all">
-                                        <Trash2 size={9} /> Delete
-                                    </button>
-                                    <div className="w-px h-4 bg-white/20" />
-                                    <button onClick={exportAll} title="Export All"
-                                        className="p-1 bg-gray-600 hover:bg-gray-500 text-white rounded transition-all"><Download size={11} /></button>
-                                    <button onClick={exportModule} disabled={!selModUnico} title="Export this module"
-                                        className="p-1 bg-gray-600 hover:bg-gray-500 disabled:opacity-40 text-white rounded transition-all"><Download size={11} /></button>
-                                    <button onClick={() => importRef.current?.click()} title="Import JSON"
-                                        className="p-1 bg-gray-600 hover:bg-gray-500 text-white rounded transition-all"><Upload size={11} /></button>
-                                    <input ref={importRef} type="file" accept=".json" className="hidden" onChange={handleImportFile} />
-                                </>) : (<>
+                                {modMode === "view" ? (
+                                    <GridMenu
+                                        items={[
+                                            { label: "Add Module", icon: Plus, color: "green", onClick: () => { setModForm(EMPTY_MOD); setModMode("add"); setModError(null); } },
+                                            { label: "Edit Module", icon: Pencil, color: "orange", onClick: () => { if (selModUnico) setModMode("edit"); }, disabled: !selModUnico },
+                                            { label: "Delete Module", icon: Trash2, color: "red", onClick: () => { if (selModUnico) setDeleteModDlg(true); }, disabled: !selModUnico },
+                                            { label: "Export All", icon: Download, color: "gray", onClick: exportAll },
+                                            { label: "Export Module", icon: Download, color: "gray", onClick: exportModule, disabled: !selModUnico },
+                                            { label: "Import JSON", icon: Upload, color: "gray", onClick: () => importRef.current?.click() },
+                                        ]}
+                                    />
+                                ) : (<>
                                     <button onClick={saveMod} disabled={saving}
-                                        className="flex items-center gap-1 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider transition-all">
-                                        {saving ? <RefreshCcw size={9} className="animate-spin" /> : <Save size={9} />}{saving ? "..." : "Save"}
+                                        className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all">
+                                        {saving ? <RefreshCcw size={14} className="animate-spin" /> : <Save size={14} />}{saving ? "Saving..." : "Save"}
                                     </button>
                                     <button onClick={() => { setModMode("view"); setModError(null); if (selModUnico && selMod) selectModule(selMod); }}
-                                        className="flex items-center gap-1 bg-gray-500 hover:bg-gray-600 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider transition-all">
-                                        <X size={9} /> Cancel
+                                        className="flex items-center gap-1.5 bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all">
+                                        <X size={14} /> Cancel
                                     </button>
                                 </>)}
                             </div>
@@ -351,22 +404,22 @@ export default function ModuleScreenSetupPage() {
                                 { label: "DSN",     key: "dsn",    readonly: false },
                             ].map(f => (
                                 <div key={f.key} className="flex flex-col gap-0.5">
-                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{f.label}</label>
+                                    <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">{f.label}</label>
                                     <input type={f.type||"text"} value={(modForm as any)[f.key]||""} readOnly={!isEditing || f.readonly}
                                         onChange={e => setModForm(prev => ({...prev, [f.key]: e.target.value}))}
-                                        className={cn("fos-input text-xs py-1", (!isEditing || f.readonly) && "bg-gray-50 text-gray-500")} />
+                                        className={cn("fos-input h-10 text-sm", (!isEditing || f.readonly) && "bg-gray-50 text-gray-500")} />
                                 </div>
                             ))}
 
                             <div className="flex flex-col gap-0.5">
-                                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Class</label>
+                                <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Class</label>
                                 {isEditing ? (
-                                    <select value={modForm.clase} onChange={e => setModForm(p => ({...p, clase: e.target.value}))} className="fos-input text-xs py-1">
+                                    <select value={modForm.clase} onChange={e => setModForm(p => ({...p, clase: e.target.value}))} className="fos-input h-10 text-sm">
                                         <option value="">—</option>
                                         {CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
                                     </select>
                                 ) : (
-                                    <input readOnly value={modForm.clase} className="fos-input text-xs py-1 bg-gray-50 text-gray-500" />
+                                    <input readOnly value={modForm.clase} className="fos-input h-10 text-sm bg-gray-50 text-gray-500" />
                                 )}
                             </div>
 
@@ -376,55 +429,48 @@ export default function ModuleScreenSetupPage() {
                                         <input type="checkbox" checked={Boolean((modForm as any)[k])}
                                             disabled={!isEditing || (k === "active" && modMode === "add")}
                                             onChange={e => setModForm(p => ({...p, [k]: e.target.checked}))}
-                                            className="w-3.5 h-3.5 accent-[#FB7506]" />
-                                        <span className="text-[10px] font-semibold text-gray-600 uppercase">{k}</span>
+                                            className="w-4 h-4 accent-[#FB7506]" />
+                                        <span className="text-xs font-semibold text-gray-600 uppercase">{k}</span>
                                     </label>
                                 ))}
                             </div>
 
                             <div className="flex flex-col gap-0.5 col-span-2 sm:col-span-4 lg:col-span-2">
-                                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Module Name</label>
+                                <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Module Name</label>
                                 <input value={modForm.nombre} readOnly={!isEditing}
                                     onChange={e => setModForm(p => ({...p, nombre: e.target.value}))}
-                                    className={cn("fos-input text-xs py-1", !isEditing && "bg-gray-50 text-gray-500")} />
+                                    className={cn("fos-input h-10 text-sm", !isEditing && "bg-gray-50 text-gray-500")} />
                             </div>
 
                             <div className="flex flex-col gap-0.5 col-span-2 sm:col-span-4 lg:col-span-4">
-                                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Description</label>
+                                <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Description</label>
                                 <input value={modForm.descripcion} readOnly={!isEditing}
                                     onChange={e => setModForm(p => ({...p, descripcion: e.target.value}))}
-                                    className={cn("fos-input text-xs py-1", !isEditing && "bg-gray-50 text-gray-500")} />
+                                    className={cn("fos-input h-10 text-sm", !isEditing && "bg-gray-50 text-gray-500")} />
                             </div>
                         </div>
                     </div>
 
                     {/* Screens Grid */}
                     <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-0">
-                        <div className="h-9 bg-[#374151] flex items-center justify-between px-3 shrink-0">
+                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 border-b border-black/10 shrink-0 rounded-t-lg">
                             <div className="flex items-center gap-2">
-                                <Monitor size={13} className="text-[#FB7506]" />
-                                <span className="font-black text-[10px] uppercase tracking-widest text-white">
+                                <Monitor size={16} className="text-[#FB7506]" />
+                                <span className="fos-grid-header-text">
                                     Screens {selMod ? `— ${t(selMod.nombre)}` : ""}
                                 </span>
                                 <AuditLogModal recordId={selScrUnico} disabled={!selScrUnico} />
-                                {loadingScr && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
-                                {screenError && <span className="flex items-center gap-1 text-amber-400 text-[9px] font-bold ml-2"><AlertCircle size={11} />{screenError}</span>}
+                                {loadingScr && <RefreshCcw size={16} className="text-gray-400 animate-spin" />}
+                                {screenError && <span className="flex items-center gap-1 text-amber-400 text-[10px] font-bold ml-2"><AlertCircle size={12} />{screenError}</span>}
                             </div>
                             <div className="flex items-center gap-1.5">
-                                <button onClick={() => { if (!selModUnico || isEditing) return; setScreenForm({...EMPTY_SCREEN, modulo_uq: selModUnico}); setScreenError(null); setScreenModal({ mode: "add" }); }}
-                                    disabled={!selModUnico || isEditing}
-                                    className="flex items-center gap-1 bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider transition-all">
-                                    <Plus size={9} /> Add
-                                </button>
-                                <button onClick={() => { if (!selScrUnico || isEditing) return; const s = (screens as any[]).find(x => x.unico===selScrUnico); if(s) { setScreenForm({ unico: t(s.unico), modulo_uq: t(s.modulo_uq), nombre: t(s.nombre), orden: String(s.orden??0), run_pantalla: t(s.run_pantalla), executable: t(s.executable), image: t(s.image), path: t(s.path), menu: Boolean(s.menu), web_form: t(s.web_form), descripcion: t(s.descripcion) }); setScreenError(null); setScreenModal({ mode: "edit" }); } }}
-                                    disabled={!selScrUnico || isEditing}
-                                    className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider transition-all">
-                                    <Pencil size={9} /> Edit
-                                </button>
-                                <button onClick={() => { if (selScrUnico) setDeleteScrDlg(true); }} disabled={!selScrUnico || isEditing}
-                                    className="flex items-center gap-1 bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider transition-all">
-                                    <Trash2 size={9} /> Remove
-                                </button>
+                                <GridMenu
+                                    items={[
+                                        { label: "Add Screen", icon: Plus, color: "green", onClick: handleAddScreen, disabled: !selModUnico || isEditing },
+                                        { label: "Edit Screen", icon: Pencil, color: "orange", onClick: handleEditScreen, disabled: !selScrUnico || isEditing },
+                                        { label: "Remove Screen", icon: Trash2, color: "red", onClick: handleRemoveScreen, disabled: !selScrUnico || isEditing },
+                                    ]}
+                                />
                             </div>
                         </div>
                         <div className="overflow-auto flex-1">
@@ -433,9 +479,9 @@ export default function ModuleScreenSetupPage() {
                             ) : (screens as any[]).length === 0 ? (
                                 <div className="h-32 flex items-center justify-center text-gray-400 text-xs italic">{loadingScr ? "Loading..." : "No screens in this module"}</div>
                             ) : (
-                                <table className="min-w-full text-xs text-left">
-                                    <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
-                                        <tr>
+                                <table className="min-w-full text-left">
+                                    <thead className="bg-gray-100 border-b text-gray-700 sticky top-0 z-10">
+                                        <tr className="fos-grid-thead">
                                             <th className="p-2">Title</th>
                                             <th className="p-2 border-l border-gray-200">Route</th>
                                             <th className="p-2 border-l border-gray-200">Component</th>
@@ -445,7 +491,7 @@ export default function ModuleScreenSetupPage() {
                                             <th className="p-2 border-l border-gray-200 text-center">Menu</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
+                                    <tbody className="fos-grid-tbody">
                                         {(screens as any[]).map((s: any) => {
                                             const isSel = selScrUnico === s.unico;
                                             return (
@@ -477,6 +523,57 @@ export default function ModuleScreenSetupPage() {
                 <div className="flex gap-4"><span>Server: Production</span><span className="text-gray-300">|</span><span>Database: Sistema</span></div>
                 <span className="text-[#FB7506]">FOS System Management V.2.0.1</span>
             </div>
+
+            {/* Mobile floating button */}
+            <button onClick={() => setMobileModOpen(true)}
+                className="lg:hidden fixed bottom-6 right-6 z-40 w-12 h-12 bg-[#FB7506] hover:bg-orange-600 text-white rounded-full shadow-xl flex items-center justify-center transition-all active:scale-95"
+                title="Select Module">
+                <LayoutGrid size={20} />
+            </button>
+
+            {/* Mobile module list modal */}
+            {mobileModOpen && (
+                <div className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden">
+                        <div className="h-10 bg-[#374151] flex items-center justify-between px-4 border-b border-black/10 shrink-0">
+                            <div className="flex items-center gap-2">
+                                <LayoutGrid size={16} className="text-[#FB7506]" />
+                                <span className="fos-grid-header-text">Select Module</span>
+                            </div>
+                            <button onClick={() => setMobileModOpen(false)}
+                                className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors">
+                                <X size={16} />
+                            </button>
+                        </div>
+                        <div className="p-3 border-b border-gray-100 shrink-0">
+                            <div className="relative">
+                                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <input type="text" value={modSearch} onChange={e => setModSearch(e.target.value)}
+                                    placeholder="Filter modules..."
+                                    className="w-full pl-9 pr-3 h-10 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-[#FB7506]" />
+                            </div>
+                        </div>
+                        <div className="overflow-y-auto flex-1">
+                            {filteredMods.map((m: any) => {
+                                const isSelected = selModUnico === m.unico;
+                                return (
+                                    <div key={m.unico} onClick={() => { selectModule(m); setMobileModOpen(false); }}
+                                        className={cn("px-4 py-3 border-b border-gray-50 flex items-center gap-3 cursor-pointer transition-colors",
+                                            isSelected ? "bg-blue-50" : "hover:bg-gray-50"
+                                        )}>
+                                        <div className={cn("w-2 h-2 rounded-full shrink-0", m.active ? "bg-green-400" : "bg-gray-300")} />
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-sm font-semibold text-gray-800 truncate">{t(m.nombre)}</p>
+                                            <p className="text-xs text-gray-400">{t(m.clase)}</p>
+                                        </div>
+                                        {isSelected && <Check size={16} className="text-blue-500 shrink-0" />}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* ── Screen Modal ────────────────────────────────────────────── */}
             {screenModal && (
@@ -515,77 +612,79 @@ function ScreenFormModal({ mode, form, setForm, error, saving, modName, reports,
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-                <div className="h-10 bg-[#374151] rounded-t-xl flex items-center justify-between px-4 shrink-0">
+                <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 border-b border-black/10 shrink-0">
                     <div className="flex items-center gap-2">
-                        <Monitor size={14} className="text-[#FB7506]" />
-                        <span className="font-black text-[11px] uppercase tracking-widest text-white">{mode === "add" ? "Add Screen" : "Edit Screen"}</span>
-                        {error && <span className="text-amber-400 text-[9px] font-bold ml-2 truncate">{error}</span>}
+                        <Monitor size={16} className="text-[#FB7506]" />
+                        <span className="fos-grid-header-text">{mode === "add" ? "Add Screen" : "Edit Screen"}</span>
+                        {error && <span className="text-amber-400 text-[10px] font-bold ml-2 truncate">{error}</span>}
                     </div>
-                    <button onClick={onClose}><XCircle size={16} className="text-gray-400 hover:text-white" /></button>
+                    <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors">
+                        <X size={16} />
+                    </button>
                 </div>
 
                 <div className="overflow-y-auto flex-1 p-4 space-y-3">
                     <div className="grid grid-cols-2 gap-3 text-xs">
                         {mode === "edit" && (
                             <div className="flex flex-col gap-0.5">
-                                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Code</label>
-                                <input readOnly value={form.unico} className="fos-input bg-gray-50 text-gray-500" />
+                                <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Code</label>
+                                <input readOnly value={form.unico} className="fos-input h-10 text-sm bg-gray-50 text-gray-500" />
                             </div>
                         )}
                         <div className="flex flex-col gap-0.5">
-                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Module</label>
-                            <input readOnly value={modName} className="fos-input bg-gray-50 text-gray-500" />
+                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Module</label>
+                            <input readOnly value={modName} className="fos-input h-10 text-sm bg-gray-50 text-gray-500" />
                         </div>
                         <div className="flex flex-col gap-0.5">
-                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Title *</label>
-                            <input value={form.nombre} onChange={e => setForm((p: any) => ({...p, nombre: e.target.value}))} className="fos-input" placeholder="Screen / menu title" />
+                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Title *</label>
+                            <input value={form.nombre} onChange={e => setForm((p: any) => ({...p, nombre: e.target.value}))} className="fos-input h-10 text-sm" placeholder="Screen / menu title" />
                         </div>
                         <div className="flex flex-col gap-0.5">
-                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Order</label>
-                            <input type="number" value={form.orden} onChange={e => setForm((p: any) => ({...p, orden: e.target.value}))} className="fos-input" />
+                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Order</label>
+                            <input type="number" value={form.orden} onChange={e => setForm((p: any) => ({...p, orden: e.target.value}))} className="fos-input h-10 text-sm" />
                         </div>
                         <div className="flex flex-col gap-0.5 col-span-2">
-                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Route (Web) {hasWebForm && <span className="text-blue-500 normal-case font-normal ml-1">← web form detected, VFP fields optional</span>}</label>
-                            <input value={form.web_form} onChange={e => setForm((p: any) => ({...p, web_form: e.target.value}))} className="fos-input" placeholder="/system/users  or  customercare/page.aspx" />
+                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Route (Web) {hasWebForm && <span className="text-blue-500 normal-case font-normal ml-1">← web form detected, VFP fields optional</span>}</label>
+                            <input value={form.web_form} onChange={e => setForm((p: any) => ({...p, web_form: e.target.value}))} className="fos-input h-10 text-sm" placeholder="/system/users  or  customercare/page.aspx" />
                         </div>
                         <div className="flex flex-col gap-0.5">
-                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Component / Screen {!hasWebForm && "*"}</label>
-                            <input value={form.run_pantalla} onChange={e => setForm((p: any) => ({...p, run_pantalla: e.target.value}))} className="fos-input" placeholder="VFP: Form.scx  |  React: ComponentName" />
+                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Component / Screen {!hasWebForm && "*"}</label>
+                            <input value={form.run_pantalla} onChange={e => setForm((p: any) => ({...p, run_pantalla: e.target.value}))} className="fos-input h-10 text-sm" placeholder="VFP: Form.scx  |  React: ComponentName" />
                         </div>
                         <div className="flex flex-col gap-0.5">
-                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Program / Module folder {!hasWebForm && "*"}</label>
-                            <input value={form.executable} onChange={e => setForm((p: any) => ({...p, executable: e.target.value}))} className="fos-input" placeholder="VFP: Program.exe  |  React: FolderName" />
+                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Program / Module folder {!hasWebForm && "*"}</label>
+                            <input value={form.executable} onChange={e => setForm((p: any) => ({...p, executable: e.target.value}))} className="fos-input h-10 text-sm" placeholder="VFP: Program.exe  |  React: FolderName" />
                         </div>
                         <div className="flex flex-col gap-0.5">
-                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Icon {!hasWebForm && "*"}</label>
-                            <input value={form.image} onChange={e => setForm((p: any) => ({...p, image: e.target.value}))} className="fos-input" placeholder="icon-name.png" />
+                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Icon {!hasWebForm && "*"}</label>
+                            <input value={form.image} onChange={e => setForm((p: any) => ({...p, image: e.target.value}))} className="fos-input h-10 text-sm" placeholder="icon-name.png" />
                         </div>
                         <div className="flex flex-col gap-0.5">
-                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Path</label>
-                            <input value={form.path} onChange={e => setForm((p: any) => ({...p, path: e.target.value}))} className="fos-input" />
+                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Path</label>
+                            <input value={form.path} onChange={e => setForm((p: any) => ({...p, path: e.target.value}))} className="fos-input h-10 text-sm" />
                         </div>
                         <div className="flex flex-col gap-0.5 col-span-2">
-                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Description</label>
-                            <input value={form.descripcion} onChange={e => setForm((p: any) => ({...p, descripcion: e.target.value}))} className="fos-input" />
+                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Description</label>
+                            <input value={form.descripcion} onChange={e => setForm((p: any) => ({...p, descripcion: e.target.value}))} className="fos-input h-10 text-sm" />
                         </div>
                         <div className="flex items-center gap-2 pt-1">
                             <input type="checkbox" checked={form.menu} onChange={e => setForm((p: any) => ({...p, menu: e.target.checked}))} className="w-4 h-4 accent-[#FB7506]" id="scr-menu" />
-                            <label htmlFor="scr-menu" className="text-xs font-semibold cursor-pointer">Show in menu</label>
+                            <label htmlFor="scr-menu" className="text-sm font-semibold cursor-pointer">Show in menu</label>
                         </div>
                     </div>
 
                     {/* Reports sub-grid */}
                     {mode === "edit" && (
                         <div className="border border-gray-200 rounded-lg overflow-hidden">
-                            <div className="h-8 bg-[#374151] flex items-center justify-between px-3">
+                            <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 border-b border-black/10">
                                 <div className="flex items-center gap-2">
-                                    <FileText size={12} className="text-[#FB7506]" />
-                                    <span className="font-black text-[9px] uppercase tracking-widest text-white">Reports ({reports.length})</span>
+                                    <FileText size={16} className="text-[#FB7506]" />
+                                    <span className="fos-grid-header-text">Reports ({reports.length})</span>
                                 </div>
                                 <div className="flex gap-1.5">
-                                    <button onClick={onAddReport} className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider"><Plus size={9} /> Add</button>
-                                    <button onClick={() => { const r = reports.find((x: any) => x.unico===selRpt); if(r) onEditReport(r); }} disabled={!selRpt} className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider"><Pencil size={9} /> Edit</button>
-                                    <button onClick={() => { const r = reports.find((x: any) => x.unico===selRpt); if(r) onDeleteReport(r); }} disabled={!selRpt} className="flex items-center gap-1 bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider"><Trash2 size={9} /> Delete</button>
+                                    <button onClick={onAddReport} className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all"><Plus size={14} /> Add</button>
+                                    <button onClick={() => { const r = reports.find((x: any) => x.unico===selRpt); if(r) onEditReport(r); }} disabled={!selRpt} className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all"><Pencil size={14} /> Edit</button>
+                                    <button onClick={() => { const r = reports.find((x: any) => x.unico===selRpt); if(r) onDeleteReport(r); }} disabled={!selRpt} className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all"><Trash2 size={14} /> Delete</button>
                                 </div>
                             </div>
                             <div className="max-h-40 overflow-auto">
@@ -640,32 +739,34 @@ function ReportFormModal({ mode, form, setForm, error, saving, onSave, onClose }
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
-                <div className="h-10 bg-[#374151] rounded-t-xl flex items-center justify-between px-4">
+                <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 border-b border-black/10 shrink-0">
                     <div className="flex items-center gap-2">
-                        <FileText size={14} className="text-[#FB7506]" />
-                        <span className="font-black text-[11px] uppercase tracking-widest text-white">{mode === "add" ? "Add Report" : "Edit Report"}</span>
-                        {error && <span className="text-amber-400 text-[9px] font-bold ml-2">{error}</span>}
+                        <FileText size={16} className="text-[#FB7506]" />
+                        <span className="fos-grid-header-text">{mode === "add" ? "Add Report" : "Edit Report"}</span>
+                        {error && <span className="text-amber-400 text-[10px] font-bold ml-2">{error}</span>}
                     </div>
-                    <button onClick={onClose}><XCircle size={16} className="text-gray-400 hover:text-white" /></button>
+                    <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors">
+                        <X size={16} />
+                    </button>
                 </div>
                 <div className="p-4 space-y-3 text-xs">
                     {mode === "edit" && (
                         <div className="flex flex-col gap-0.5">
-                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Code</label>
-                            <input readOnly value={form.unico} className="fos-input bg-gray-50 text-gray-500" />
+                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Code</label>
+                            <input readOnly value={form.unico} className="fos-input h-10 text-sm bg-gray-50 text-gray-500" />
                         </div>
                     )}
                     {[{ key: "nombre", label: "Name *" }, { key: "titulo", label: "Title" }, { key: "path", label: "Path" }, { key: "descripcion", label: "Description" }].map(f => (
                         <div key={f.key} className="flex flex-col gap-0.5">
-                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{f.label}</label>
-                            <input value={form[f.key]||""} onChange={e => setForm((p: any) => ({...p, [f.key]: e.target.value}))} className="fos-input" />
+                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">{f.label}</label>
+                            <input value={form[f.key]||""} onChange={e => setForm((p: any) => ({...p, [f.key]: e.target.value}))} className="fos-input h-10 text-sm" />
                         </div>
                     ))}
                     <div className="grid grid-cols-4 gap-2 pt-1">
                         {BOOL_FIELDS.map(f => (
                             <label key={f.key} className="flex items-center gap-1.5 cursor-pointer">
-                                <input type="checkbox" checked={Boolean(form[f.key])} onChange={e => setForm((p: any) => ({...p, [f.key]: e.target.checked}))} className="w-3.5 h-3.5 accent-[#FB7506]" />
-                                <span className="text-[10px] font-semibold text-gray-600">{f.label}</span>
+                                <input type="checkbox" checked={Boolean(form[f.key])} onChange={e => setForm((p: any) => ({...p, [f.key]: e.target.checked}))} className="w-4 h-4 accent-[#FB7506]" />
+                                <span className="text-xs font-semibold text-gray-600">{f.label}</span>
                             </label>
                         ))}
                     </div>
