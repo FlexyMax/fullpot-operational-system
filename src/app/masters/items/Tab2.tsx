@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     Plus, Pencil, Trash2, Save, X, RefreshCcw, Search, Check, XCircle,
@@ -793,6 +793,8 @@ export default function Tab2() {
     const [selProduct,   setSelProduct]   = useState<any>(null);
     const [searchText,   setSearchText]   = useState("");
     const [debSearch,    setDebSearch]    = useState("");
+    const [page,         setPage]         = useState(1);
+    const PAGE_SIZE = 50;
     const [productModal, setProductModal] = useState<{mode:"add"|"edit"|"copy"|"delete"}|null>(null);
     const [productForm,  setProductForm]  = useState<any>({...EMPTY_PROD2});
     const [saving,       setSaving]       = useState(false);
@@ -806,25 +808,31 @@ export default function Tab2() {
     const [showStock,    setShowStock]    = useState(false);
     const [showPrebook,  setShowPrebook]  = useState<"recipe"|"upc"|"sales"|null>(null);
 
-    useEffect(() => { const timer = setTimeout(()=>setDebSearch(searchText), 300); return ()=>clearTimeout(timer); }, [searchText]);
+    // Debounce search + reset to page 1
+    useEffect(() => {
+        const timer = setTimeout(() => { setDebSearch(searchText); setPage(1); }, 400);
+        return () => clearTimeout(timer);
+    }, [searchText]);
 
-    const { data: allProducts = [], isFetching: loadingP, refetch: refetchAll } = useQuery({
-        queryKey: ["items-tab2-all"],
-        queryFn:  () => sF("/api/masters/items/products/all"),
+    const { data: pageData, isFetching: loadingP, refetch: refetchAll } = useQuery({
+        queryKey: ["items-tab2", page, debSearch],
+        queryFn:  () => sF(`/api/masters/items/products/all?page=${page}&pageSize=${PAGE_SIZE}&search=${encodeURIComponent(debSearch)}`),
         staleTime: 30000,
+        placeholderData: (prev: any) => prev,
     });
     const { data: lookups } = useQuery({ queryKey:["items-look"], queryFn:()=>sF("/api/masters/items/lookups"), staleTime:600000 });
 
-    // Client-side search filter
-    const products = useMemo(() => {
-        if (!debSearch.trim()) return allProducts as any[];
-        const q = debSearch.toLowerCase();
-        return (allProducts as any[]).filter((p:any) => t(p.description).toLowerCase().includes(q) || t(p.old_code).toLowerCase().includes(q) || t(p.upc).toLowerCase().includes(q));
-    }, [allProducts, debSearch]);
+    const products     = (pageData as any)?.records  ?? [] as any[];
+    const totalRecords = (pageData as any)?.total    ?? 0;
+    const totalPages   = Math.max(1, Math.ceil(totalRecords / PAGE_SIZE));
 
-    // Auto-select first
-    useEffect(() => { if ((products).length > 0 && !selProduct) setSelProduct(products[0]); }, [products]);
-    useEffect(() => { if (selProduct && products.length > 0 && !products.find((p:any)=>p.unico===selProduct?.unico)) setSelProduct(products[0]); }, [products]);
+    // Auto-select first on page change
+    useEffect(() => {
+        if (products.length > 0) {
+            const stillHere = products.find((p: any) => p.unico === selProduct?.unico);
+            if (!stillHere) setSelProduct(products[0]);
+        }
+    }, [products]);
 
     const doCrud = async (endpoint: string, method: string, body: any, onSuccess: (data: any) => void) => {
         setSaving(true); setFormError(null);
@@ -853,7 +861,10 @@ export default function Tab2() {
         if (mode!=="add" && !selProduct) { setFormError(NO_PROD); return; }
         if ((mode==="add"||mode==="copy") && !perms.canCreate) { setFormError(PERMISSION_MSGS.create); return; }
         if (mode==="edit" && !perms.canEdit) { setFormError(PERMISSION_MSGS.edit); return; }
-        const f = mode==="add" ? {...EMPTY_PROD2} : { ...selProduct, class_filter:"", subclass_filter:"" };
+        // sp_NC_products_general_list returns class_uq/subclass_uq — use them to pre-fill cascade in Edit/Copy
+        const f = mode==="add"
+            ? {...EMPTY_PROD2}
+            : { ...selProduct, class_filter: selProduct.class_uq ?? "", subclass_filter: selProduct.subclass_uq ?? "" };
         setProductForm(f); setFormError(null); setProductModal({mode});
     };
 
@@ -952,19 +963,29 @@ export default function Tab2() {
                 </div>
             </div>
 
-            {/* Search + error */}
+            {/* Search + pagination + error */}
             <div className="px-2 py-1 border-b border-gray-200 bg-white flex items-center gap-2 shrink-0">
                 <div className="relative flex-1 max-w-xs">
                     <Search size={11} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400"/>
-                    <input value={searchText} onChange={e=>setSearchText(e.target.value)} placeholder="Search products (description, EDI, UPC)..."
+                    <input value={searchText} onChange={e=>setSearchText(e.target.value)} placeholder="Search products (description, EDI code, class)..."
                         className="w-full pl-7 pr-2 py-1 text-[10px] border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506]"/>
                 </div>
                 {loadingP && <RefreshCcw size={11} className="text-gray-400 animate-spin"/>}
-                <span className="text-[9px] text-gray-400">{products.length} products</span>
+                {/* Pagination controls */}
+                <div className="flex items-center gap-1 ml-1 shrink-0">
+                    <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page<=1||loadingP}
+                        className="w-5 h-5 flex items-center justify-center rounded border border-gray-200 text-gray-500 hover:bg-gray-100 disabled:opacity-40 text-[10px]">‹</button>
+                    <span className="text-[9px] text-gray-500 whitespace-nowrap">
+                        {page} / {totalPages}
+                    </span>
+                    <button onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page>=totalPages||loadingP}
+                        className="w-5 h-5 flex items-center justify-center rounded border border-gray-200 text-gray-500 hover:bg-gray-100 disabled:opacity-40 text-[10px]">›</button>
+                </div>
+                <span className="text-[9px] text-gray-400 shrink-0">{totalRecords.toLocaleString()} products</span>
                 {formError && (
-                    <span className="flex items-center gap-1 text-amber-600 text-[9px] font-bold ml-2">
-                        {formError}
-                        <button onClick={()=>setFormError(null)} className="ml-1 text-gray-400 hover:text-gray-600"><X size={10}/></button>
+                    <span className="flex items-center gap-1 text-amber-600 text-[9px] font-bold ml-1 min-w-0">
+                        <span className="truncate max-w-[300px]">{formError}</span>
+                        <button onClick={()=>setFormError(null)} className="ml-1 text-gray-400 hover:text-gray-600 shrink-0"><X size={10}/></button>
                     </span>
                 )}
             </div>
@@ -998,7 +1019,7 @@ export default function Tab2() {
                             return (
                                 <tr key={p.unico} onClick={()=>setSelProduct(p)} onDoubleClick={()=>openModal("edit")}
                                     className={cn("cursor-pointer transition-colors", isSel ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50/80")}>
-                                    <td className={cn("px-2 py-1 border-r border-gray-50 font-medium truncate max-w-[200px] sticky left-0", isSel ? "bg-blue-50" : "bg-white")}>{t(p.description)}</td>
+                                    <td className={cn("px-2 py-1 border-r border-gray-50 font-medium truncate max-w-[200px] sticky left-0", isSel ? "bg-blue-50" : "bg-white")} title={t(p.description_uq||p.description)}>{t(p.description)}</td>
                                     <td className="px-2 py-1 border-r border-gray-50 text-center">{p.stem_pack ? <Check size={9} className="text-green-500 mx-auto"/> : "—"}</td>
                                     <td className="px-2 py-1 border-r border-gray-50 text-right">{t(p.up_x_case)}</td>
                                     <td className="px-2 py-1 border-r border-gray-50 text-right">{t(p.up_x_pack)}</td>
