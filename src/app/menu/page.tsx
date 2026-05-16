@@ -28,6 +28,7 @@ function getRoute(appPage: string): string | null {
     if (p.includes('CUSTOMER') || p.includes('CLIENTES') || p.includes('CUSTOMERS SETUP')) return '/masters/customers';
     if (p.includes('FREIGHT') || p.includes('HANDLING SETUP') || p.includes('FLETE')) return '/masters/freights';
     if (p.includes('USUARIO') || p.includes('USER ACCESS') || p.includes('ACCESO') || p.includes('ACCESS DEF')) return '/system/access';
+    if (p.includes('COMPAN') || p.includes('EMPRESA') || p.includes('COMPANY SETUP')) return '/system/companies';
     if (p.includes('SCAN')) return '/scan';
     return null;
 }
