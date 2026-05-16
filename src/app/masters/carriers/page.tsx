@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuditLog } from "@/lib/audit";
+import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { AuditLogModal } from "@/components/AuditLogModal";
 import { formatMoney, parseMoney, normalizeToISODate, formatDateEST } from "@/lib/dates";
 
@@ -85,6 +86,7 @@ export default function CarriersDefinitionPage() {
     const router = useRouter();
     const qc     = useQueryClient();
     const { logAction } = useAuditLog("carriers-definition", "flower_carriers");
+    const perms = usePagePermissions("carriers-definition");
 
     const [mode,        setMode]        = useState<Mode>("view");
     const [currentIdx,  setCurrentIdx]  = useState(0);
@@ -345,9 +347,9 @@ export default function CarriersDefinitionPage() {
                                     </div>
                                 )}
                                 <GridMenu items={[
-                                    { label:"Add Carrier",      icon:Plus,     color:"green", onClick:() => { setForm({...EMPTY}); setFormError(null); setMode("add"); } },
-                                    { label:"Edit Carrier",     icon:Pencil,   color:"blue",  onClick:() => { if (list[currentIdx]) setMode("edit"); }, disabled:!selUnico||isEditing },
-                                    { label:"Delete Carrier",   icon:Trash2,   color:"red",   onClick:handleDelete, disabled:!selUnico||isEditing },
+                                    { label:"Add Carrier",      icon:Plus,     color:"green", onClick:() => { setForm({...EMPTY}); setFormError(null); setMode("add"); }, disabled:!perms.canCreate },
+                                    { label:"Edit Carrier",     icon:Pencil,   color:"blue",  onClick:() => { if (list[currentIdx]) setMode("edit"); }, disabled:!selUnico||isEditing||!perms.canEdit },
+                                    { label:"Delete Carrier",   icon:Trash2,   color:"red",   onClick:handleDelete, disabled:!selUnico||isEditing||!perms.canDelete },
                                     { label:"Other Settings",   icon:Settings, color:"amber", onClick:() => { if(!selUnico){setFormError("Carrier is empty.");return;} setOtherForm({internal_delivery:Boolean(form.internal_delivery)}); setOthersModal(true); }, disabled:isEditing||!selUnico },
                                 ]} />
                             </div>

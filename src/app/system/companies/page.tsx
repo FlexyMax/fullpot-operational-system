@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuditLog } from "@/lib/audit";
+import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { AuditLogModal } from "@/components/AuditLogModal";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -72,6 +73,7 @@ export default function CompaniesDefinitionPage() {
     const router = useRouter();
     const qc     = useQueryClient();
     const { logAction } = useAuditLog("companies-definition", "empresas");
+    const perms = usePagePermissions("companies-definition");
     const fileRef = useRef<HTMLInputElement>(null);
 
     const [mode,        setMode]       = useState<Mode>("view");
@@ -269,8 +271,8 @@ export default function CompaniesDefinitionPage() {
                             )}
                             {/* MENU button */}
                             <GridMenu items={[
-                                { label: "Add Company",   icon: Plus,   color: "green", onClick: () => { setForm({...EMPTY}); setLogoPreview(null); setLogoFile(null); setMode("add"); setFormError(null); } },
-                                { label: "Edit Company",  icon: Pencil, color: "blue",  onClick: () => { if (list[currentIdx]) setMode("edit"); }, disabled: !selectedUnico || isEditing },
+                                { label: "Add Company",   icon: Plus,   color: "green", onClick: () => { setForm({...EMPTY}); setLogoPreview(null); setLogoFile(null); setMode("add"); setFormError(null); }, disabled: !perms.canCreate },
+                                { label: "Edit Company",  icon: Pencil, color: "blue",  onClick: () => { if (list[currentIdx]) setMode("edit"); }, disabled: !selectedUnico || isEditing || !perms.canEdit },
                                 { label: "Delete",        icon: Trash2, color: "gray",  onClick: () => setFormError("Instruction isn't enabled. / Instrucción no disponible."), disabled: true },
                             ]} />
                         </div>

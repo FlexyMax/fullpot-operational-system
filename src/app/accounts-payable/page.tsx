@@ -15,6 +15,7 @@ import {
     BarChart2, Clock
 } from "lucide-react";
 import { useAuditLog } from "@/lib/audit";
+import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { AuditLogModal } from "@/components/AuditLogModal";
 import { useAPStore } from "@/store/useAPStore";
 import { cn } from "@/lib/utils";
@@ -68,6 +69,7 @@ export default function AccountsPayablePage() {
     const router = useRouter();
     const qc = useQueryClient();
     const { logAction } = useAuditLog("accounts-payable", "flower_accounts_pay");
+    const perms = usePagePermissions("accounts-payable");
 
     const {
         selectedYear, selectedDate, selectedUnico,
@@ -416,7 +418,7 @@ export default function AccountsPayablePage() {
                                 </button>
                                 <button
                                     onClick={exportToCSV}
-                                    disabled={!invoices.length}
+                                    disabled={!invoices.length || !perms.canReport}
                                     className="flex items-center gap-1 bg-gray-600 hover:bg-gray-500 disabled:opacity-40 text-white px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all"
                                     title="Export to CSV"
                                 >
@@ -425,20 +427,21 @@ export default function AccountsPayablePage() {
                                 <div className="w-px h-4 bg-white/20" />
                                 <button
                                     onClick={() => setInvoiceModal({ open: true, mode: "Add" })}
-                                    className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all"
+                                    disabled={!perms.canCreate}
+                                    className="flex items-center gap-1 bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all"
                                 >
                                     <Plus size={10} /> Add
                                 </button>
                                 <button
                                     onClick={() => selectedUnico && setInvoiceModal({ open: true, mode: "Edit" })}
-                                    disabled={!selectedUnico}
+                                    disabled={!selectedUnico || !perms.canEdit}
                                     className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:opacity-40 text-white px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all"
                                 >
                                     <Pencil size={10} /> Edit
                                 </button>
                                 <button
                                     onClick={() => selectedUnico && setInvoiceModal({ open: true, mode: "Delete" })}
-                                    disabled={!selectedUnico}
+                                    disabled={!selectedUnico || !perms.canDelete}
                                     className="flex items-center gap-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:opacity-40 text-white px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all"
                                 >
                                     <Trash2 size={10} /> Delete

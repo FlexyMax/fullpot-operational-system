@@ -578,9 +578,9 @@ export default function FreightsSetupPage() {
                     <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden">
                         <GridHeader icon={MapPin} title="ATPDA" loading={loadingAt} recordId={selAt?.unico} onRefresh={() => refetchAt()}>
                             <GridMenu items={[
-                                { label:"Add Tariff",    icon:Plus,   color:"green", onClick:() => { if(!selWh){setError("Select a warehouse first.");return;} setAtForm({...EMPTY_AT}); setError(null); setAtModal({mode:"add"}); }, disabled:!selWh },
-                                { label:"Edit Selected", icon:Pencil, color:"blue",  onClick:async() => { if(!selAt) return; try { const d = await ff(`/api/freights/atpda/${selAt.unico}`); setAtForm({ wphysical_uq: d.wphysical_uq||selWh?.unico, season_uq: d.season_uq||"", city_uq: d.city_uq||"", tariff: d.tariff||0 }); setError(null); setAtModal({mode:"edit"}); } catch(e:any){setError(e.message);} }, disabled:!selAt },
-                                { label:"Delete Selected",icon:Trash2, color:"red", onClick:() => { if(selAt){setError(null);setAtModal({mode:"delete"});} }, disabled:!selAt },
+                                { label:"Add Tariff",    icon:Plus,   color:"green", onClick:() => { if(!selWh){setError("Select a warehouse first.");return;} setAtForm({...EMPTY_AT}); setError(null); setAtModal({mode:"add"}); }, disabled:!selWh || !perms.canCreate },
+                                { label:"Edit Selected", icon:Pencil, color:"blue",  onClick:async() => { if(!selAt) return; try { const d = await ff(`/api/freights/atpda/${selAt.unico}`); setAtForm({ wphysical_uq: d.wphysical_uq||selWh?.unico, season_uq: d.season_uq||"", city_uq: d.city_uq||"", tariff: d.tariff||0 }); setError(null); setAtModal({mode:"edit"}); } catch(e:any){setError(e.message);} }, disabled:!selAt || !perms.canEdit },
+                                { label:"Delete Selected",icon:Trash2, color:"red", onClick:() => { if(selAt){setError(null);setAtModal({mode:"delete"});} }, disabled:!selAt || !perms.canDelete },
                             ]} />
                         </GridHeader>
                         <MiniTable

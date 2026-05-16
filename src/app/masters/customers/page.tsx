@@ -10,6 +10,7 @@ import {
     AlertCircle, Copy, Star, XCircle, ChevronRight
 } from "lucide-react";
 import { useAuditLog } from "@/lib/audit";
+import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { AuditLogModal } from "@/components/AuditLogModal";
 import { cn } from "@/lib/utils";
 import { todayEST, formatDateEST, formatMoney, parseMoney, normalizeToISODate } from "@/lib/dates";
@@ -32,6 +33,7 @@ export default function CustomersSetupPage() {
     const router = useRouter();
     const qc = useQueryClient();
     const { logAction } = useAuditLog("customers-setup", "flower_customers");
+    const perms = usePagePermissions("customers-setup");
 
     // ── Customer list state (infinite scroll) ────────────────────────────────
     const [custList,       setCustList]       = useState<any[]>([]);
@@ -342,20 +344,21 @@ export default function CustomersSetupPage() {
                 <button onClick={() => refetchList()} className="flex items-center gap-1 bg-gray-100 hover:bg-gray-200 border border-gray-200 px-2.5 py-1 rounded text-[10px] font-black uppercase transition-all">
                     <RefreshCcw size={10} className={loadingList ? "animate-spin" : ""} /> Refresh
                 </button>
-                <button onClick={exportCSV} className="flex items-center gap-1 bg-gray-100 hover:bg-gray-200 border border-gray-200 px-2.5 py-1 rounded text-[10px] font-black uppercase transition-all">
+                <button onClick={exportCSV} disabled={!perms.canReport} className="flex items-center gap-1 bg-gray-100 hover:bg-gray-200 border border-gray-200 px-2.5 py-1 rounded text-[10px] font-black uppercase transition-all disabled:opacity-40">
                     <Download size={10} /> CSV
                 </button>
                 <div className="w-px h-5 bg-gray-200" />
                 <button onClick={() => { setCustForm({...EMPTY_CUST}); setFormError(null); setCustModalTab("general"); setCustModal({ mode:"add" }); }}
-                    className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-2.5 py-1 rounded text-[10px] font-black uppercase transition-all">
+                    disabled={!perms.canCreate}
+                    className="flex items-center gap-1 bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white px-2.5 py-1 rounded text-[10px] font-black uppercase transition-all">
                     <Plus size={10} /> Add
                 </button>
                 <button onClick={() => { if (!selCust) return; const c = selCust; setCustForm({ old_code:c.old_code||"", edi_code:t(c.edi_code), fobmiami:!!c.fobmiami, inventory_from_invoice:!!c.inventory_from_invoice, dex:!!c.dex, auto_charge:!!c.auto_charge, credithold:!!c.credithold, internal_customer:!!c.internal_customer, active:!!c.active, customer:t(c.customer), dba:t(c.dba), contact:t(c.contact), purchaser:t(c.purchaser), address1:t(c.address1), address2:t(c.address2), city:t(c.city), state:t(c.state), zip:t(c.zip), country:t(c.country), phone_1:t(c.phone_1), phone_2:t(c.phone_2), fax_1:t(c.fax_1), fax_2:t(c.fax_2), email:t(c.email), terms_uq:t(c.terms_uq||c.terms), calls:t(c.calls)||"NNNNNN", subregion_uq:t(c.subregion_uq), salesman_uq:t(c.salesman_uq), group_uq:t(c.group_uq), rc_uq:t(c.rc_uq), pickremark:t(c.pickremark), julian_from:t(c.julian_from), reasonhold:t(c.reasonhold), credit_limit:c.credit_limit||0, insurance_for:c.insurance_for||0, price_margin:c.price_margin||0, dry_discount:c.dry_discount||0, sales_web_uq:t(c.sales_web_uq), custsince:c.custsince?normalizeToISODate(c.custsince):"", ap_contact:t(c.ap_contact), ap_email:t(c.ap_email), ap_msn:t(c.ap_msn), ap_phone:t(c.ap_phone), ap_fax:t(c.ap_fax), website:t(c.website), statement_print:!!c.statement_print, inspection:!!c.inspection, gpm:c.gpm||0, availability_by:t(c.availability_by)||"NONE", availability_to:t(c.availability_to), invoice_by:t(c.invoice_by)||"EMAIL", extension:c.extension||0, commission_days:c.commission_days||0, resale_tax:c.resale_tax||0, ccard_name:t(c.ccard_name), ccard_on_file:t(c.ccard_on_file), ccard_expiration_month:t(c.ccard_expiration_month), ccard_expiration_year:t(c.ccard_expiration_year), tax_id:t(c.tax_id), international:!!c.international, collection:!!c.collection, check_price_override:!!c.check_price_override }); setFormError(null); setCustModalTab("general"); setCustModal({ mode:"edit" }); }}
-                    disabled={!selCust}
+                    disabled={!selCust || !perms.canEdit}
                     className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white px-2.5 py-1 rounded text-[10px] font-black uppercase transition-all">
                     <Pencil size={10} /> Edit
                 </button>
-                <button onClick={() => { if (selCust) { setFormError(null); setCustModal({ mode:"delete" }); } }} disabled={!selCust}
+                <button onClick={() => { if (selCust) { setFormError(null); setCustModal({ mode:"delete" }); } }} disabled={!selCust || !perms.canDelete}
                     className="flex items-center gap-1 bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white px-2.5 py-1 rounded text-[10px] font-black uppercase transition-all">
                     <Trash2 size={10} /> Delete
                 </button>
@@ -442,15 +445,15 @@ export default function CustomersSetupPage() {
                                         {loadingShiptos && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
                                     </div>
                                     <div className="flex items-center gap-1.5">
-                                        <button onClick={() => { setShiptoForm({...EMPTY_SHIPTO}); setFormError(null); setShiptoModal({ mode:"add" }); }} disabled={!selCust}
+                                        <button onClick={() => { setShiptoForm({...EMPTY_SHIPTO}); setFormError(null); setShiptoModal({ mode:"add" }); }} disabled={!selCust || !perms.canCreate}
                                             className="flex items-center gap-1 bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase">
                                             <Plus size={9} /> Add
                                         </button>
-                                        <button onClick={() => { if(!selShipto) return; setShiptoForm({...selShipto, dc_uq:t(selShipto.dc_uq), route_uq:t(selShipto.route_uq)}); setFormError(null); setShiptoModal({ mode:"edit" }); }} disabled={!selShipto}
+                                        <button onClick={() => { if(!selShipto) return; setShiptoForm({...selShipto, dc_uq:t(selShipto.dc_uq), route_uq:t(selShipto.route_uq)}); setFormError(null); setShiptoModal({ mode:"edit" }); }} disabled={!selShipto || !perms.canEdit}
                                             className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase">
                                             <Pencil size={9} /> Edit
                                         </button>
-                                        <button onClick={() => { if(selShipto) { setFormError(null); setShiptoModal({ mode:"delete" }); } }} disabled={!selShipto}
+                                        <button onClick={() => { if(selShipto) { setFormError(null); setShiptoModal({ mode:"delete" }); } }} disabled={!selShipto || !perms.canDelete}
                                             className="flex items-center gap-1 bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase">
                                             <Trash2 size={9} /> Delete
                                         </button>
@@ -503,15 +506,15 @@ export default function CustomersSetupPage() {
                                         <span className="font-black text-[10px] uppercase tracking-widest text-white">Carriers by Ship-to</span>
                                     </div>
                                     <div className="flex items-center gap-1.5">
-                                        <button onClick={() => { setCarrierForm({...EMPTY_CARRIER}); setFormError(null); setCarrierModal({ mode:"add" }); }} disabled={!selCust}
+                                        <button onClick={() => { setCarrierForm({...EMPTY_CARRIER}); setFormError(null); setCarrierModal({ mode:"add" }); }} disabled={!selCust || !perms.canCreate}
                                             className="flex items-center gap-1 bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase">
                                             <Plus size={9} /> Add
                                         </button>
-                                        <button onClick={() => { if(!selCarrier) return; setCarrierForm({carrier_uq:t(selCarrier.carrier_uq), account:t(selCarrier.account), zone:t(selCarrier.zone), mon:!!selCarrier.mon, tue:!!selCarrier.tue, wed:!!selCarrier.wed, thu:!!selCarrier.thu, fri:!!selCarrier.fri, sat:!!selCarrier.sat, sun:!!selCarrier.sun}); setFormError(null); setCarrierModal({ mode:"edit" }); }} disabled={!selCarrier}
+                                        <button onClick={() => { if(!selCarrier) return; setCarrierForm({carrier_uq:t(selCarrier.carrier_uq), account:t(selCarrier.account), zone:t(selCarrier.zone), mon:!!selCarrier.mon, tue:!!selCarrier.tue, wed:!!selCarrier.wed, thu:!!selCarrier.thu, fri:!!selCarrier.fri, sat:!!selCarrier.sat, sun:!!selCarrier.sun}); setFormError(null); setCarrierModal({ mode:"edit" }); }} disabled={!selCarrier || !perms.canEdit}
                                             className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase">
                                             <Pencil size={9} /> Edit
                                         </button>
-                                        <button onClick={() => { if(selCarrier) { setFormError(null); setCarrierModal({ mode:"delete" }); } }} disabled={!selCarrier}
+                                        <button onClick={() => { if(selCarrier) { setFormError(null); setCarrierModal({ mode:"delete" }); } }} disabled={!selCarrier || !perms.canDelete}
                                             className="flex items-center gap-1 bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase">
                                             <Trash2 size={9} /> Delete
                                         </button>
@@ -603,9 +606,9 @@ export default function CustomersSetupPage() {
                             <div className="h-9 bg-[#374151] flex items-center justify-between px-3 shrink-0">
                                 <div className="flex items-center gap-2"><Users size={13} className="text-[#FB7506]" /><span className="font-black text-[10px] uppercase tracking-widest text-white">Web Users / Portal</span></div>
                                 <div className="flex items-center gap-1.5">
-                                    <button onClick={() => { setWebUserForm({...EMPTY_WEBUSER}); setFormError(null); setWebUserModal({ mode:"add" }); }} disabled={!selCust} className="flex items-center gap-1 bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase"><Plus size={9} /> Add</button>
-                                    <button onClick={() => { if(!selWebUser) return; setWebUserForm({fname:t(selWebUser.fname),lname:t(selWebUser.lname),username:t(selWebUser.username),password:t(selWebUser.password),active:!!selWebUser.active,makeinvoice:!!selWebUser.makeinvoice,makeprebook:!!selWebUser.makeprebook,makecredit:!!selWebUser.makecredit,viewaccount:!!selWebUser.viewaccount,viewproducts:!!selWebUser.viewproducts,viewhistory:!!selWebUser.viewhistory,email:t(selWebUser.email),phone:t(selWebUser.phone)}); setFormError(null); setWebUserModal({ mode:"edit" }); }} disabled={!selWebUser} className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase"><Pencil size={9} /> Edit</button>
-                                    <button onClick={() => { if(selWebUser) { setFormError(null); setWebUserModal({ mode:"delete" }); } }} disabled={!selWebUser} className="flex items-center gap-1 bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase"><Trash2 size={9} /> Delete</button>
+                                    <button onClick={() => { setWebUserForm({...EMPTY_WEBUSER}); setFormError(null); setWebUserModal({ mode:"add" }); }} disabled={!selCust || !perms.canCreate} className="flex items-center gap-1 bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase"><Plus size={9} /> Add</button>
+                                    <button onClick={() => { if(!selWebUser) return; setWebUserForm({fname:t(selWebUser.fname),lname:t(selWebUser.lname),username:t(selWebUser.username),password:t(selWebUser.password),active:!!selWebUser.active,makeinvoice:!!selWebUser.makeinvoice,makeprebook:!!selWebUser.makeprebook,makecredit:!!selWebUser.makecredit,viewaccount:!!selWebUser.viewaccount,viewproducts:!!selWebUser.viewproducts,viewhistory:!!selWebUser.viewhistory,email:t(selWebUser.email),phone:t(selWebUser.phone)}); setFormError(null); setWebUserModal({ mode:"edit" }); }} disabled={!selWebUser || !perms.canEdit} className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase"><Pencil size={9} /> Edit</button>
+                                    <button onClick={() => { if(selWebUser) { setFormError(null); setWebUserModal({ mode:"delete" }); } }} disabled={!selWebUser || !perms.canDelete} className="flex items-center gap-1 bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase"><Trash2 size={9} /> Delete</button>
                                     <div className="w-px h-4 bg-white/20 mx-0.5" />
                                     <AuditLogModal recordId={selWebUser?.unico} disabled={!selWebUser?.unico} />
                                 </div>
@@ -649,7 +652,7 @@ export default function CustomersSetupPage() {
                             <div className="h-9 bg-[#374151] flex items-center justify-between px-3 shrink-0">
                                 <div className="flex items-center gap-2"><MessageSquare size={13} className="text-[#FB7506]" /><span className="font-black text-[10px] uppercase tracking-widest text-white">Messages & Comments</span></div>
                                 <div className="flex items-center gap-1.5">
-                                    <button onClick={() => { setMsgForm({ comments:"", deadline:"", user_to:"" }); setFormError(null); setMsgModal(true); }} disabled={!selCust} className="flex items-center gap-1 bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase"><Plus size={9} /> Add</button>
+                                    <button onClick={() => { setMsgForm({ comments:"", deadline:"", user_to:"" }); setFormError(null); setMsgModal(true); }} disabled={!selCust || !perms.canCreate} className="flex items-center gap-1 bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase"><Plus size={9} /> Add</button>
                                     <div className="w-px h-4 bg-white/20 mx-0.5" />
                                     <AuditLogModal recordId={selMessage?.unico} disabled={!selMessage?.unico} />
                                 </div>
