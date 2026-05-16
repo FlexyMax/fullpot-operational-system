@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# temporary / diagnostic files
+*.py
+eslint_output*
+test-*.js
+tmp_*.js
+check_*.js
+rewrite*.py
