@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { useAuditLog } from "@/lib/audit";
 import { AuditLogModal } from "@/components/AuditLogModal";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
+import Tab2 from "./Tab2";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const t  = (v: any) => String(v ?? "").trim();
@@ -344,6 +345,8 @@ export default function ItemsSetupPage() {
     const { logAction }  = useAuditLog("items-setup", "flower_products");
     const perms          = usePagePermissions("items-setup");
 
+    const [activeTab, setActiveTab] = useState<1|2|3>(1);
+
     // ── Selection state (cascading) ───────────────────────────────────────────
     const [selClass,   setSelClass]   = useState<any>(null);
     const [selSubclass,setSelSubclass]= useState<any>(null);
@@ -519,6 +522,16 @@ export default function ItemsSetupPage() {
                     <button onClick={() => router.push("/menu")} className="hover:bg-white/10 p-1 rounded"><ArrowLeft size={15} /></button>
                     <Package size={13} className="text-[#FB7506]" />
                     <span className="font-black text-xs uppercase tracking-widest">Items Setup</span>
+                    {/* Top-level tab bar */}
+                    <div className="flex items-end gap-0 ml-4">
+                        {([1,2,3] as const).map(tab => (
+                            <button key={tab} onClick={()=>setActiveTab(tab)}
+                                className={cn("px-3 h-7 text-[8px] font-black uppercase tracking-wider rounded-t transition-all",
+                                    activeTab===tab ? "bg-[#f4f6f8] text-[#FB7506]" : "text-gray-400 hover:text-white hover:bg-white/10")}>
+                                {tab===1 ? "Tab 1 — Hierarchy" : tab===2 ? "Tab 2 — All Products" : "Tab 3 — Prebooks"}
+                            </button>
+                        ))}
+                    </div>
                 </div>
                 <div className="flex items-center gap-3">
                     {formError && <span className="flex items-center gap-1 text-amber-400 text-[9px] font-bold"><AlertCircle size={11}/>{formError}<button onClick={()=>setFormError(null)}><X size={10}/></button></span>}
@@ -526,8 +539,18 @@ export default function ItemsSetupPage() {
                 </div>
             </div>
 
-            {/* 2-row grid layout */}
-            <div className="flex-1 p-1.5 grid gap-1.5 overflow-hidden" style={{ gridTemplateRows:"45% 55%" }}>
+            {/* Tab 2 — All Products */}
+            {activeTab === 2 && <Tab2 />}
+
+            {/* Tab 3 — Placeholder */}
+            {activeTab === 3 && (
+                <div className="flex-1 flex items-center justify-center text-gray-400 text-sm italic">
+                    Tab 3 — Prebooks — Coming soon
+                </div>
+            )}
+
+            {/* Tab 1 — 2-row grid layout */}
+            <div className={cn("flex-1 p-1.5 grid gap-1.5 overflow-hidden", activeTab !== 1 && "hidden")} style={{ gridTemplateRows:"45% 55%" }}>
 
                 {/* Row 1: Classes + Sub-tabs */}
                 <div className="grid gap-1.5 overflow-hidden" style={{ gridTemplateColumns:"40% 60%" }}>
