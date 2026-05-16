@@ -55,7 +55,7 @@ function GridMenu({ items, disabled: globalDisabled }: {
     return (
         <div className="relative" onClick={e => e.stopPropagation()}>
             <button onClick={() => setOpen(o => !o)}
-                className="h-10 bg-[#FB7506] hover:bg-orange-600 text-white w-24 flex items-center justify-center transition-colors border-none cursor-pointer shadow-inner"
+                className="h-10 bg-[#FB7506] hover:bg-orange-600 text-white w-24 flex items-center justify-center transition-colors border-none cursor-pointer shadow-inner rounded-tr-lg"
                 title="Menu">
                 <Menu size={20} />
             </button>
