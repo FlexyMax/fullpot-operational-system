@@ -327,6 +327,7 @@ export default function FreightsSetupPage() {
             const res = await fetch("/api/freights/rates/copy", { method:"POST", headers:{"Content-Type":"application/json"},
                 body:JSON.stringify({ wphysical_uq: selWh?.unico, season_uq_from: copySourceSeason, season_uq_to: copyTargetSeason }) });
             const d = await res.json(); if (!d.success) throw new Error(d.error);
+            logAction("Insert", selWh?.unico || "", "Copy Freight Rates");
             await refetchFr(); setCopyModal(false); setCopySourceSeason(""); setCopyTargetSeason("");
         } catch (e: any) { setError(e.message); }
         finally { setSaving(false); }
@@ -360,9 +361,11 @@ export default function FreightsSetupPage() {
             if (ciFormMode === "add") {
                 const res = await fetch("/api/freights/cities", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(ciForm) });
                 const d = await res.json(); if (!d.success) throw new Error(d.error);
+                logAction("Insert", d.unico || "city", "City");
             } else {
                 const res = await fetch(`/api/freights/cities/${ciSel.unico}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(ciForm) });
                 const d = await res.json(); if (!d.success) throw new Error(d.error);
+                logAction("Edit", ciSel.unico, "City");
             }
             setCiFormOpen(false); setCiSel(null); setCiForm(EMPTY_CI);
             await qc.invalidateQueries({ queryKey: ["fr-look"] });
@@ -375,6 +378,7 @@ export default function FreightsSetupPage() {
         setCiSaving(true);
         try {
             await fetch(`/api/freights/cities/${row.unico}`, { method:"DELETE" });
+            logAction("Delete", row.unico, "City");
             setCiSel(null);
             await qc.invalidateQueries({ queryKey: ["fr-look"] });
         } catch (e: any) { setCiError(e.message); }
@@ -396,9 +400,11 @@ export default function FreightsSetupPage() {
             if (alFormMode === "add") {
                 const res = await fetch("/api/freights/airlines", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(alForm) });
                 const d = await res.json(); if (!d.success) throw new Error(d.error);
+                logAction("Insert", d.unico || "airline", "Airline");
             } else {
                 const res = await fetch(`/api/freights/airlines/${alSel.unico}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(alForm) });
                 const d = await res.json(); if (!d.success) throw new Error(d.error);
+                logAction("Edit", alSel.unico, "Airline");
             }
             setAlFormOpen(false); setAlSel(null); setAlForm(EMPTY_AL);
             await qc.invalidateQueries({ queryKey: ["fr-look"] });
@@ -411,6 +417,7 @@ export default function FreightsSetupPage() {
         setAlSaving(true);
         try {
             await fetch(`/api/freights/airlines/${row.unico}`, { method:"DELETE" });
+            logAction("Delete", row.unico, "Airline");
             setAlSel(null);
             await qc.invalidateQueries({ queryKey: ["fr-look"] });
         } catch (e: any) { setAlError(e.message); }
@@ -425,9 +432,11 @@ export default function FreightsSetupPage() {
             if (seFormMode === "add") {
                 const res = await fetch("/api/freights/seasons", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(seForm) });
                 const d = await res.json(); if (!d.success) throw new Error(d.error);
+                logAction("Insert", d.unico || "season", "Season");
             } else if (selSe) {
                 const res = await fetch(`/api/freights/seasons/${selSe.unico}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(seForm) });
                 const d = await res.json(); if (!d.success) throw new Error(d.error);
+                logAction("Edit", selSe.unico, "Season");
             }
             setSeFormOpen(false); setSeForm(EMPTY_SE);
             await qc.invalidateQueries({ queryKey: ["fr-look"] });
@@ -440,6 +449,7 @@ export default function FreightsSetupPage() {
         setSeSaving(true);
         try {
             await fetch(`/api/freights/seasons/${selSe.unico}`, { method:"DELETE" });
+            logAction("Delete", selSe.unico, "Season");
             setSelSe(null);
             await qc.invalidateQueries({ queryKey: ["fr-look"] });
         } catch (e: any) { setSeError(e.message); }

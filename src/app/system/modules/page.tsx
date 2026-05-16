@@ -187,9 +187,11 @@ export default function ModuleScreenSetupPage() {
             if (screenModal?.mode === "add") {
                 const res  = await fetch("/api/system/screens", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
                 const data = await res.json(); if (!data.success) throw new Error(data.error);
+                logAction("Insert", data.unico || selModUnico!, "Screen");
             } else {
                 const res  = await fetch(`/api/system/screens/${screenForm.unico}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
                 const data = await res.json(); if (!data.success) throw new Error(data.error);
+                logAction("Edit", screenForm.unico, "Screen");
             }
             await refetchScr(); setScreenModal(null);
         } catch (e: any) { setScreenError(e.message); }
@@ -202,6 +204,7 @@ export default function ModuleScreenSetupPage() {
         try {
             const res  = await fetch(`/api/system/screens/${selScrUnico}`, { method: "DELETE" });
             const data = await res.json(); if (!data.success) throw new Error(data.error);
+            logAction("Delete", selScrUnico!, "Screen");
             await refetchScr(); setSelScrUnico(null); setDeleteScrDlg(false);
         } catch (e: any) { setScreenError(e.message); setDeleteScrDlg(false); }
         finally { setSavingScreen(false); }
@@ -216,9 +219,11 @@ export default function ModuleScreenSetupPage() {
             if (reportModal?.mode === "add") {
                 const res  = await fetch("/api/system/reports", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
                 const data = await res.json(); if (!data.success) throw new Error(data.error);
+                logAction("Insert", data.unico || selScrUnico!, "Report");
             } else {
                 const res  = await fetch(`/api/system/reports/${reportForm.unico}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
                 const data = await res.json(); if (!data.success) throw new Error(data.error);
+                logAction("Edit", reportForm.unico, "Report");
             }
             await refetchRpt(); setReportModal(null);
         } catch (e: any) { setReportError(e.message); }
@@ -230,6 +235,7 @@ export default function ModuleScreenSetupPage() {
         try {
             const res  = await fetch(`/api/system/reports/${reportForm.unico}`, { method: "DELETE" });
             const data = await res.json(); if (!data.success) throw new Error(data.error);
+            logAction("Delete", reportForm.unico, "Report");
             await refetchRpt(); setDeleteRptDlg(false); setReportModal(null);
         } catch (e: any) { setReportError(e.message); setDeleteRptDlg(false); }
         finally { setSavingReport(false); }
@@ -261,6 +267,7 @@ export default function ModuleScreenSetupPage() {
         const data = await res.json();
         if (data.success) {
             const { modules: m, screens: s, reports: r } = data.imported;
+            logAction("Insert", selModUnico || "import", "JSON Import");
             setImportMsg(`Applied changes: ${m} modules, ${s} screens, ${r} reports`);
             setTimeout(() => setImportMsg(null), 5000);
             await qc.invalidateQueries({ queryKey: ["sys-mods"] });

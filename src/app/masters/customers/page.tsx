@@ -233,12 +233,15 @@ export default function CustomersSetupPage() {
             if (shiptoModal?.mode === "add") {
                 const res  = await fetch("/api/masters/customers/shipto", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({...shiptoForm, cust_uq: selCust.unico}) });
                 const data = await res.json(); if (!data.success) throw new Error(data.error);
+                logAction("Insert", data.unico || selCust.unico, "ShipTo");
             } else if (shiptoModal?.mode === "edit") {
                 const res  = await fetch(`/api/masters/customers/shipto/${selShipto.unico}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(shiptoForm) });
                 const data = await res.json(); if (!data.success) throw new Error(data.error);
+                logAction("Edit", selShipto.unico, "ShipTo");
             } else {
                 const res  = await fetch(`/api/masters/customers/shipto/${selShipto.unico}`, { method:"DELETE" });
                 const data = await res.json(); if (!data.success) throw new Error(data.error);
+                logAction("Delete", selShipto.unico, "ShipTo");
                 setSelShipto(null);
             }
             await refetchShiptos(); setShiptoModal(null);
@@ -253,12 +256,15 @@ export default function CustomersSetupPage() {
             if (carrierModal?.mode === "add") {
                 const res  = await fetch("/api/masters/customers/carrier", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({...carrierForm, customer_uq: selCust.unico, shipto_uq: selShipto?.unico||""}) });
                 const data = await res.json(); if (!data.success) throw new Error(data.error);
+                logAction("Insert", data.unico || selCust.unico, "Carrier");
             } else if (carrierModal?.mode === "edit") {
                 const res  = await fetch(`/api/masters/customers/carrier/${selCarrier.unico}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({...carrierForm, shipto_uq: selShipto?.unico||""}) });
                 const data = await res.json(); if (!data.success) throw new Error(data.error);
+                logAction("Edit", selCarrier.unico, "Carrier");
             } else {
                 const res  = await fetch(`/api/masters/customers/carrier/${selCarrier.unico}`, { method:"DELETE" });
                 const data = await res.json(); if (!data.success) throw new Error(data.error);
+                logAction("Delete", selCarrier.unico, "Carrier");
                 setSelCarrier(null);
             }
             await refetchCarriers(); setCarrierModal(null);
@@ -270,6 +276,7 @@ export default function CustomersSetupPage() {
         if (!selCarrier) return;
         try {
             await fetch(`/api/masters/customers/carrier/${selCarrier.unico}/default`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ customer_uq: selCust.unico }) });
+            logAction("Edit", selCarrier.unico, "Default Carrier");
             await refetchCarriers();
         } catch {}
     };
@@ -281,12 +288,15 @@ export default function CustomersSetupPage() {
             if (webUserModal?.mode === "add") {
                 const res  = await fetch("/api/masters/customers/web-user", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({...webUserForm, customer_uq: selCust.unico}) });
                 const data = await res.json(); if (!data.success) throw new Error(data.error);
+                logAction("Insert", data.unico || selCust.unico, "WebUser");
             } else if (webUserModal?.mode === "edit") {
                 const res  = await fetch(`/api/masters/customers/web-user/${selWebUser.unico}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(webUserForm) });
                 const data = await res.json(); if (!data.success) throw new Error(data.error);
+                logAction("Edit", selWebUser.unico, "WebUser");
             } else {
                 const res  = await fetch(`/api/masters/customers/web-user/${selWebUser.unico}`, { method:"DELETE" });
                 const data = await res.json(); if (!data.success) throw new Error(data.error);
+                logAction("Delete", selWebUser.unico, "WebUser");
                 setSelWebUser(null);
             }
             await refetchWebUsers(); setWebUserModal(null);
@@ -301,6 +311,7 @@ export default function CustomersSetupPage() {
         try {
             const res  = await fetch(`/api/masters/customers/${selCust.unico}/messages`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(msgForm) });
             const data = await res.json(); if (!data.success) throw new Error(data.error);
+            logAction("Insert", data.unico || selCust.unico, "Message");
             await refetchMsgs(); setMsgModal(false); setMsgForm({ comments:"", deadline:"", user_to:"" });
         } catch (e: any) { setFormError(e.message); }
         finally { setSaving(false); }
@@ -310,6 +321,7 @@ export default function CustomersSetupPage() {
         try {
             const res  = await fetch(`/api/masters/customers/${selCust.unico}/shipto-copy`, { method:"POST" });
             const data = await res.json(); if (!data.success) throw new Error(data.error);
+            logAction("Insert", selCust.unico, "Copy Bill To ShipTo");
             await refetchShiptos();
         } catch (e: any) { setFormError(e.message); }
     };

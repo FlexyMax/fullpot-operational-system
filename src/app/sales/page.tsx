@@ -37,11 +37,13 @@ import {
 } from "lucide-react";
 import { usePOSStore } from "@/store/usePOSStore";
 import { cn } from "@/lib/utils";
+import { useAuditLog } from "@/lib/audit";
 import "./sales.css";
 
 export default function SalesPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
+    const { logAction } = useAuditLog("sales", "flower_invoice");
     const {
         cart,
         activeInvoice,
@@ -350,6 +352,7 @@ export default function SalesPage() {
             });
             const data = await res.json();
             if (data.success) {
+                logAction("Insert", data.invoice.unico, "Open Invoice");
                 setActiveInvoice({
                     id: data.invoice.unico,
                     customerName: customer.name,

@@ -134,32 +134,32 @@ export default function AccountsPayablePage() {
     // ── Mutations ────────────────────────────────────────────────────────────
     const crdbAdd = useMutation({
         mutationFn: (body: any) => fetch("/api/accounts-payable/crdb", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()),
-        onSuccess: () => { qc.invalidateQueries({ queryKey: ["ap-credits", selectedUnico] }); setCrdbModal(null); },
+        onSuccess: (d) => { logAction("Insert", d?.unico || selectedUnico || "", "Credit/Debit"); qc.invalidateQueries({ queryKey: ["ap-credits", selectedUnico] }); setCrdbModal(null); },
     });
     const crdbEdit = useMutation({
         mutationFn: (body: any) => fetch("/api/accounts-payable/crdb", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()),
-        onSuccess: () => { qc.invalidateQueries({ queryKey: ["ap-credits", selectedUnico] }); setCrdbModal(null); },
+        onSuccess: (_d, vars: any) => { logAction("Edit", vars?.unico || selectedUnico || "", "Credit/Debit"); qc.invalidateQueries({ queryKey: ["ap-credits", selectedUnico] }); setCrdbModal(null); },
     });
     const crdbDelete = useMutation({
         mutationFn: (unico: string) => fetch(`/api/accounts-payable/crdb?unico=${unico}`, { method: "DELETE" }).then(r => r.json()),
-        onSuccess: () => { qc.invalidateQueries({ queryKey: ["ap-credits", selectedUnico] }); setCrdbModal(null); },
+        onSuccess: (_d, unico) => { logAction("Delete", unico, "Credit/Debit"); qc.invalidateQueries({ queryKey: ["ap-credits", selectedUnico] }); setCrdbModal(null); },
     });
 
     const pobAdd = useMutation({
         mutationFn: (body: any) => fetch("/api/accounts-payable/pob", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()),
-        onSuccess: () => { qc.invalidateQueries({ queryKey: ["ap-pobs", selectedUnico] }); },
+        onSuccess: (d) => { logAction("Insert", d?.unico || selectedUnico || "", "PO"); qc.invalidateQueries({ queryKey: ["ap-pobs", selectedUnico] }); },
     });
     const pobEdit = useMutation({
         mutationFn: (body: any) => fetch("/api/accounts-payable/pob", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()),
-        onSuccess: () => { qc.invalidateQueries({ queryKey: ["ap-pobs", selectedUnico] }); },
+        onSuccess: (_d, vars: any) => { logAction("Edit", vars?.unico || selectedUnico || "", "PO"); qc.invalidateQueries({ queryKey: ["ap-pobs", selectedUnico] }); },
     });
     const pobDelete = useMutation({
         mutationFn: (unico: string) => fetch(`/api/accounts-payable/pob?unico=${unico}`, { method: "DELETE" }).then(r => r.json()),
-        onSuccess: () => { qc.invalidateQueries({ queryKey: ["ap-pobs", selectedUnico] }); },
+        onSuccess: (_d, unico) => { logAction("Delete", unico, "PO"); qc.invalidateQueries({ queryKey: ["ap-pobs", selectedUnico] }); },
     });
     const pobApprove = useMutation({
         mutationFn: (ap_uq: string) => fetch("/api/accounts-payable/pob/approve", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ap_uq }) }).then(r => r.json()),
-        onSuccess: () => { qc.invalidateQueries({ queryKey: ["ap-invoice", selectedUnico] }); },
+        onSuccess: (_d, ap_uq) => { logAction("Edit", ap_uq, "Approve PO Cost"); qc.invalidateQueries({ queryKey: ["ap-invoice", selectedUnico] }); },
     });
 
     const invoiceAdd = useMutation({
