@@ -608,7 +608,7 @@ function ModuleFormModal({ mode, form, setForm, onSave, onClose, saving, error }
                     </button>
                 </div>
                 <div className="overflow-y-auto flex-1 p-4">
-                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 text-xs">
+                    <div className="grid grid-cols-2 gap-3 text-xs">
                         {[
                             { label: "Code",    key: "unico",  readonly: mode === "edit" },
                             { label: "Order",   key: "orden",  readonly: false, type: "number" },
@@ -640,13 +640,13 @@ function ModuleFormModal({ mode, form, setForm, onSave, onClose, saving, error }
                                 </label>
                             ))}
                         </div>
-                        <div className="flex flex-col gap-0.5 col-span-2 sm:col-span-4 lg:col-span-2">
+                        <div className="flex flex-col gap-0.5 col-span-2">
                             <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Module Name</label>
                             <input value={form.nombre}
                                 onChange={e => setForm((p: any) => ({...p, nombre: e.target.value}))}
                                 className="fos-input h-10 text-sm" />
                         </div>
-                        <div className="flex flex-col gap-0.5 col-span-2 sm:col-span-4 lg:col-span-4">
+                        <div className="flex flex-col gap-0.5 col-span-2">
                             <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Description</label>
                             <input value={form.descripcion}
                                 onChange={e => setForm((p: any) => ({...p, descripcion: e.target.value}))}
