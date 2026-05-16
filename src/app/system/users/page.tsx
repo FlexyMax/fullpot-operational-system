@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
     ArrowLeft, Search, Plus, Trash2, Pencil, Save, X,
     RefreshCcw, Users, Camera, Check, AlertCircle,
-    Calendar, Filter, ChevronRight, UserCircle2, XCircle
+    Calendar, Filter, ChevronRight, UserCircle2, XCircle, Menu
 } from "lucide-react";
 import { useAuditLog } from "@/lib/audit";
 import { AuditLogModal } from "@/components/AuditLogModal";
@@ -38,6 +38,49 @@ const generateUsername = (nombres: string, apellidos: string) => {
     const last  = apellidos.trim().replace(/\s/g, "").substring(0, 9).toLowerCase();
     return first + last;
 };
+
+// ─── GridMenu (Appsmith style) ────────────────────────────────────────────────
+function GridMenu({ items, disabled: globalDisabled }: {
+    items: { label: string; icon: any; color: string; onClick: () => void; disabled?: boolean }[];
+    disabled?: boolean;
+}) {
+    const [open, setOpen] = useState(false);
+    const ITEM_COLORS: Record<string, { icon: string; text: string }> = {
+        green:  { icon: "text-green-600",  text: "text-green-700" },
+        orange: { icon: "text-[#FB7506]", text: "text-gray-800" },
+        red:    { icon: "text-red-500",    text: "text-gray-800" },
+        blue:   { icon: "text-blue-600",   text: "text-gray-800" },
+        gray:   { icon: "text-gray-500",   text: "text-gray-700" },
+    };
+    return (
+        <div className="relative" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setOpen(o => !o)}
+                className="h-10 bg-[#FB7506] hover:bg-orange-600 text-white w-24 flex items-center justify-center transition-colors border-none cursor-pointer shadow-inner"
+                title="Menu">
+                <Menu size={20} />
+            </button>
+            {open && (
+                <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-gray-200 rounded-lg shadow-2xl z-50 overflow-hidden"
+                    onMouseLeave={() => setOpen(false)}>
+                    {items.map((item, i) => {
+                        const c = ITEM_COLORS[item.color] || ITEM_COLORS.gray;
+                        return (
+                            <button key={i} onClick={() => { item.onClick(); setOpen(false); }}
+                                disabled={!!item.disabled || !!globalDisabled}
+                                className={cn(
+                                    "w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors",
+                                    i < items.length - 1 && "border-b border-gray-100"
+                                )}>
+                                <item.icon size={18} className={c.icon} />
+                                <span className={cn("text-sm font-bold", c.text)}>{item.label}</span>
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+}
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function UsersDefinitionPage() {
@@ -276,21 +319,21 @@ export default function UsersDefinitionPage() {
                 {/* ── Left: User List (desktop) ────────────────────────────── */}
                 <div className="hidden lg:flex w-[240px] shrink-0 flex-col gap-2">
                     <div className="flex flex-col flex-1 bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-                        <div className="h-8 bg-[#374151] flex items-center justify-between px-3 shrink-0">
+                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 border-b border-black/10 shrink-0">
                             <div className="flex items-center gap-2">
-                                <Users size={13} className="text-[#FB7506]" />
-                                <span className="font-black text-[10px] uppercase tracking-widest text-white">Users</span>
+                                <Users size={16} className="text-[#FB7506]" />
+                                <span className="fos-grid-header-text">Users</span>
                             </div>
-                            {loadingUsers && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
+                            {loadingUsers && <RefreshCcw size={16} className="text-gray-400 animate-spin" />}
                         </div>
                         <div className="p-2 border-b border-gray-100 shrink-0">
                             <div className="relative">
-                                <Search size={11} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
                                 <input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-                                    placeholder="Search users..." className="w-full pl-7 pr-2 py-1 text-xs border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506]" />
+                                    placeholder="Search users..." className="w-full pl-7 pr-2 h-9 text-sm border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506]" />
                             </div>
                         </div>
-                        <div className="text-[9px] font-black text-gray-400 uppercase px-2 py-0.5 bg-gray-50 border-b text-right">
+                        <div className="text-[10px] font-black text-gray-400 uppercase tracking-wider px-2 py-0.5 bg-gray-50 border-b text-right">
                             {filteredUsers.length} users
                         </div>
                         <div className="overflow-y-auto flex-1">
@@ -323,59 +366,52 @@ export default function UsersDefinitionPage() {
                     {/* User Form Card */}
                     <div className="bg-white rounded-lg border border-gray-200 shadow-sm shrink-0">
                         {/* Form header bar */}
-                        <div className="h-9 bg-[#374151] flex items-center justify-between px-3 rounded-t-lg">
+                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 border-b border-black/10">
                             <div className="flex items-center gap-2">
-                                <Users size={13} className="text-[#FB7506]" />
-                                <span className="font-black text-[10px] uppercase tracking-widest text-white">
+                                <Users size={16} className="text-[#FB7506]" />
+                                <span className="fos-grid-header-text">
                                     {mode === "add" ? "New User" : "User Information"}
                                 </span>
                                 <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} />
                                 {mode === "view" && form.unico && (
                                     <span className={cn(
-                                        "text-[8px] font-black uppercase px-2 py-0.5 rounded",
+                                        "text-[10px] font-black uppercase px-2 py-0.5 rounded",
                                         form.activo ? "bg-green-500 text-white" : "bg-red-500 text-white"
                                     )}>
                                         {form.activo ? "Active" : "Inactive"}
                                     </span>
                                 )}
                                 {formError && (
-                                    <span className="flex items-center gap-1 text-amber-400 text-[9px] font-bold ml-1">
-                                        <AlertCircle size={11} />{formError}
+                                    <span className="flex items-center gap-1 text-amber-400 text-[10px] font-bold ml-1">
+                                        <AlertCircle size={12} />{formError}
                                     </span>
                                 )}
                                 {saveMsg && (
-                                    <span className="flex items-center gap-1 text-green-400 text-[9px] font-bold ml-1">
-                                        <Check size={11} />{saveMsg}
+                                    <span className="flex items-center gap-1 text-green-400 text-[10px] font-bold ml-1">
+                                        <Check size={12} />{saveMsg}
                                     </span>
                                 )}
                             </div>
                             {/* Action buttons */}
                             <div className="flex items-center gap-1.5">
                                 {mode === "view" ? (
-                                    <>
-                                        <button onClick={handleAdd}
-                                            className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-2.5 py-1 rounded text-[9px] font-black uppercase tracking-wider transition-all">
-                                            <Plus size={10} /> Add
-                                        </button>
-                                        <button onClick={handleEdit} disabled={!selectedUnico}
-                                            className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white px-2.5 py-1 rounded text-[9px] font-black uppercase tracking-wider transition-all">
-                                            <Pencil size={10} /> Edit
-                                        </button>
-                                        <button onClick={() => { if (selectedUnico) setDeleteDialog(true); }} disabled={!selectedUnico}
-                                            className="flex items-center gap-1 bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white px-2.5 py-1 rounded text-[9px] font-black uppercase tracking-wider transition-all">
-                                            <Trash2 size={10} /> Delete
-                                        </button>
-                                    </>
+                                    <GridMenu
+                                        items={[
+                                            { label: "Add Record", icon: Plus, color: "green", onClick: handleAdd },
+                                            { label: "Edit Selected", icon: Pencil, color: "orange", onClick: handleEdit, disabled: !selectedUnico },
+                                            { label: "Delete Selected", icon: Trash2, color: "red", onClick: () => { if (selectedUnico) setDeleteDialog(true); }, disabled: !selectedUnico },
+                                        ]}
+                                    />
                                 ) : (
                                     <>
                                         <button onClick={handleSave} disabled={saving}
-                                            className="flex items-center gap-1 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-2.5 py-1 rounded text-[9px] font-black uppercase tracking-wider transition-all">
-                                            {saving ? <RefreshCcw size={10} className="animate-spin" /> : <Save size={10} />}
+                                            className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all">
+                                            {saving ? <RefreshCcw size={14} className="animate-spin" /> : <Save size={14} />}
                                             {saving ? "Saving..." : "Save"}
                                         </button>
                                         <button onClick={handleCancel}
-                                            className="flex items-center gap-1 bg-gray-500 hover:bg-gray-600 text-white px-2.5 py-1 rounded text-[9px] font-black uppercase tracking-wider transition-all">
-                                            <X size={10} /> Cancel
+                                            className="flex items-center gap-1.5 bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all">
+                                            <X size={14} /> Cancel
                                         </button>
                                     </>
                                 )}
@@ -397,8 +433,8 @@ export default function UsersDefinitionPage() {
                                 {isEditing && (
                                     <>
                                         <button onClick={() => fileRef.current?.click()}
-                                            className="flex items-center gap-1 bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded text-[8px] font-black uppercase tracking-wide w-full justify-center transition-all">
-                                            <Camera size={9} /> Photo
+                                            className="flex items-center gap-1.5 bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wide w-full justify-center transition-all">
+                                            <Camera size={14} /> Photo
                                         </button>
                                         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
                                     </>
@@ -421,7 +457,7 @@ export default function UsersDefinitionPage() {
                                     { label: "Image",      key: "image",    readonly: false },
                                 ].map(f => (
                                     <div key={f.key} className="flex flex-col gap-0.5">
-                                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{f.label}</label>
+                                        <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">{f.label}</label>
                                         <input
                                             type={f.type || "text"}
                                             value={(form as any)[f.key] || ""}
@@ -440,7 +476,7 @@ export default function UsersDefinitionPage() {
                                                 });
                                             }}
                                             className={cn(
-                                                "fos-input text-xs py-1",
+                                                "fos-input h-10 text-sm",
                                                 (!isEditing || f.readonly) && "bg-gray-50 text-gray-500 cursor-default"
                                             )}
                                         />
@@ -449,21 +485,21 @@ export default function UsersDefinitionPage() {
 
                                 {/* Level + Active */}
                                 <div className="flex flex-col gap-0.5">
-                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Level</label>
+                                    <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Level</label>
                                     {isEditing ? (
                                         <select value={form.nivel}
                                             onChange={e => setForm(prev => ({ ...prev, nivel: e.target.value }))}
-                                            className="fos-input text-xs py-1">
+                                            className="fos-input h-10 text-sm">
                                             <option value="">— Select —</option>
                                             {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
                                         </select>
                                     ) : (
-                                        <input readOnly value={form.nivel} className="fos-input text-xs py-1 bg-gray-50 text-gray-500" />
+                                        <input readOnly value={form.nivel} className="fos-input h-10 text-sm bg-gray-50 text-gray-500" />
                                     )}
                                 </div>
 
                                 <div className="flex flex-col gap-0.5 justify-center">
-                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Active</label>
+                                    <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Active</label>
                                     <label className="flex items-center gap-2 cursor-pointer">
                                         <input type="checkbox" checked={Boolean(form.activo)}
                                             disabled={!isEditing || mode === "add"}
@@ -480,30 +516,30 @@ export default function UsersDefinitionPage() {
 
                     {/* Activity Log */}
                     <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-[200px] lg:min-h-0">
-                        <div className="h-9 bg-[#374151] flex items-center justify-between px-3 shrink-0">
+                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 border-b border-black/10 shrink-0">
                             <div className="flex items-center gap-2">
-                                <Calendar size={13} className="text-[#FB7506]" />
-                                <span className="font-black text-[10px] uppercase tracking-widest text-white">User Activity Log</span>
+                                <Calendar size={16} className="text-[#FB7506]" />
+                                <span className="fos-grid-header-text">User Activity Log</span>
                                 <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} />
-                                {loadingLog && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
+                                {loadingLog && <RefreshCcw size={16} className="text-gray-400 animate-spin" />}
                             </div>
                             {/* Date filters — view mode only */}
                             {mode === "view" && (
                                 <div className="flex items-center gap-2">
                                     <input type="date" value={logFrom} onChange={e => setLogFrom(e.target.value)}
-                                        className="bg-gray-700 text-white text-[9px] border-none outline-none rounded px-1.5 py-0.5 w-28" />
-                                    <span className="text-gray-500 text-[9px]">→</span>
+                                        className="bg-gray-700 text-white text-xs border-none outline-none rounded px-2 h-8 w-32" />
+                                    <span className="text-gray-500 text-xs">→</span>
                                     <input type="date" value={logTo} onChange={e => setLogTo(e.target.value)}
-                                        className="bg-gray-700 text-white text-[9px] border-none outline-none rounded px-1.5 py-0.5 w-28" />
+                                        className="bg-gray-700 text-white text-xs border-none outline-none rounded px-2 h-8 w-32" />
                                     <button onClick={() => { setLogEnabled(true); refetchLog(); }}
-                                        className="flex items-center gap-1 bg-[#FB7506] hover:bg-orange-600 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider transition-all">
-                                        <Filter size={9} /> Filter
+                                        className="flex items-center gap-1.5 bg-[#FB7506] hover:bg-orange-600 text-white px-3 h-8 rounded text-xs font-black uppercase tracking-wider transition-all">
+                                        <Filter size={14} /> Filter
                                     </button>
                                 </div>
                             )}
                         </div>
 
-                        <div className="overflow-auto flex-1">
+                        <div className="overflow-auto max-h-[400px]">
                             {!logEnabled ? (
                                 <div className="h-32 flex flex-col items-center justify-center text-gray-300 gap-2">
                                     <Calendar size={28} className="opacity-20" />
@@ -548,7 +584,7 @@ export default function UsersDefinitionPage() {
                                 </table>
                             )}
                         </div>
-                        <div className="px-3 py-1.5 bg-gray-50 border-t text-[9px] font-bold text-gray-400 uppercase tracking-widest text-right">
+                        <div className="px-3 py-1.5 bg-gray-50 border-t text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">
                             {logEnabled ? `${(logData as any[]).length} records` : ""}
                         </div>
                     </div>
@@ -573,18 +609,24 @@ export default function UsersDefinitionPage() {
 
             {/* Mobile user list */}
             {mobileOpen && (
-                <div className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex flex-col">
-                    <div className="bg-white flex flex-col max-h-[80vh] mt-auto rounded-t-2xl overflow-hidden">
-                        <div className="h-12 bg-[#374151] flex items-center justify-between px-4 shrink-0 rounded-t-2xl">
-                            <span className="font-black text-sm uppercase tracking-widest text-white">Select User</span>
-                            <button onClick={() => setMobileOpen(false)}><XCircle size={20} className="text-gray-400 hover:text-white" /></button>
+                <div className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden">
+                        <div className="h-10 bg-[#374151] flex items-center justify-between px-4 border-b border-black/10 shrink-0">
+                            <div className="flex items-center gap-2">
+                                <Users size={16} className="text-[#FB7506]" />
+                                <span className="fos-grid-header-text">Select User</span>
+                            </div>
+                            <button onClick={() => setMobileOpen(false)}
+                                className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors">
+                                <X size={16} />
+                            </button>
                         </div>
                         <div className="p-3 border-b shrink-0">
                             <div className="relative">
-                                <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                 <input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
                                     placeholder="Search..." autoFocus
-                                    className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-[#FB7506]" />
+                                    className="w-full pl-9 pr-3 h-10 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-[#FB7506]" />
                             </div>
                         </div>
                         <div className="overflow-y-auto flex-1">
