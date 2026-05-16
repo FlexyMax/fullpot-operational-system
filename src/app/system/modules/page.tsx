@@ -79,7 +79,7 @@ export default function ModuleScreenSetupPage() {
 
     const [selModUnico,    setSelModUnico]    = useState<string | null>(null);
     const [selScrUnico,    setSelScrUnico]    = useState<string | null>(null);
-    const [modMode,        setModMode]        = useState<"view"|"add"|"edit">("view");
+    const [modFormModal,   setModFormModal]   = useState<{mode:"add"|"edit"}|null>(null);
     const [modForm,        setModForm]        = useState<ModForm>(EMPTY_MOD);
     const [modError,       setModError]       = useState<string | null>(null);
     const [modMsg,         setModMsg]         = useState<string | null>(null);
@@ -108,7 +108,7 @@ export default function ModuleScreenSetupPage() {
 
     // ── Module selection ──────────────────────────────────────────────────────
     const selectModule = (m: any) => {
-        if (modMode !== "view") return;
+        if (modFormModal) return;
         setSelModUnico(m.unico);
         setSelScrUnico(null);
         setModForm({ unico: t(m.unico), nombre: t(m.nombre), clase: t(m.clase), orden: String(m.orden ?? 0), image: t(m.image), descripcion: t(m.descripcion), dsn: t(m.dsn), active: Boolean(m.active), web: Boolean(m.web) });
@@ -138,17 +138,17 @@ export default function ModuleScreenSetupPage() {
         setSaving(true); setModError(null);
         try {
             let unico = selModUnico;
-            if (modMode === "add") {
+            if (modFormModal?.mode === "add") {
                 const res  = await fetch("/api/system/modules", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(modForm) });
                 const data = await res.json(); if (!data.success) throw new Error(data.error); unico = data.unico;
             } else {
                 const res  = await fetch(`/api/system/modules/${unico}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(modForm) });
                 const data = await res.json(); if (!data.success) throw new Error(data.error);
             }
-            logAction(modMode === "add" ? "Insert" : "Edit", unico!);
+            logAction(modFormModal?.mode === "add" ? "Insert" : "Edit", unico!);
             await qc.invalidateQueries({ queryKey: ["sys-mods"] });
-            setSelModUnico(unico); setModMode("view");
-            setModMsg(modMode === "add" ? "Module created." : "Module updated.");
+            setSelModUnico(unico); setModFormModal(null);
+            setModMsg(modFormModal?.mode === "add" ? "Module created." : "Module updated.");
             setTimeout(() => setModMsg(null), 3000);
         } catch (e: any) { setModError(e.message); }
         finally { setSaving(false); }
@@ -272,7 +272,7 @@ export default function ModuleScreenSetupPage() {
         return (modules as any[]).filter((m: any) => t(m.nombre).toLowerCase().includes(q) || t(m.clase).toLowerCase().includes(q));
     }, [modules, modSearch]);
 
-    const isEditing = modMode !== "view";
+    const isEditing = modFormModal !== null;
     const selMod    = (modules as any[]).find((m: any) => m.unico === selModUnico);
 
     const handleAddScreen = () => {
@@ -363,36 +363,23 @@ export default function ModuleScreenSetupPage() {
                         <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 border-b border-black/10 rounded-t-lg">
                             <div className="flex items-center gap-2 min-w-0">
                                 <LayoutGrid size={16} className="text-[#FB7506] shrink-0" />
-                                <span className="fos-grid-header-text shrink-0">
-                                    {modMode === "add" ? "New Module" : "Module Details"}
-                                </span>
+                                <span className="fos-grid-header-text shrink-0">Module Details</span>
                                 <AuditLogModal recordId={selModUnico} disabled={!selModUnico} />
                                 {modError && <span className="flex items-center gap-1 text-amber-400 text-[10px] font-bold ml-2 truncate"><AlertCircle size={12} />{modError}</span>}
                                 {modMsg   && <span className="flex items-center gap-1 text-green-400 text-[10px] font-bold ml-2 truncate"><Check size={12} />{modMsg}</span>}
                                 {importMsg && <span className="text-blue-400 text-[10px] font-bold ml-2 truncate">{importMsg}</span>}
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
-                                {modMode === "view" ? (
-                                    <GridMenu
-                                        items={[
-                                            { label: "Add Module", icon: Plus, color: "green", onClick: () => { setModForm(EMPTY_MOD); setModMode("add"); setModError(null); } },
-                                            { label: "Edit Module", icon: Pencil, color: "orange", onClick: () => { if (selModUnico) setModMode("edit"); }, disabled: !selModUnico },
-                                            { label: "Delete Module", icon: Trash2, color: "red", onClick: () => { if (selModUnico) setDeleteModDlg(true); }, disabled: !selModUnico },
-                                            { label: "Export All", icon: Download, color: "gray", onClick: exportAll },
-                                            { label: "Export Module", icon: Download, color: "gray", onClick: exportModule, disabled: !selModUnico },
-                                            { label: "Import JSON", icon: Upload, color: "gray", onClick: () => importRef.current?.click() },
-                                        ]}
-                                    />
-                                ) : (<>
-                                    <button onClick={saveMod} disabled={saving}
-                                        className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all">
-                                        {saving ? <RefreshCcw size={14} className="animate-spin" /> : <Save size={14} />}{saving ? "Saving..." : "Save"}
-                                    </button>
-                                    <button onClick={() => { setModMode("view"); setModError(null); if (selModUnico && selMod) selectModule(selMod); }}
-                                        className="flex items-center gap-1.5 bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all">
-                                        <X size={14} /> Cancel
-                                    </button>
-                                </>)}
+                                <GridMenu
+                                    items={[
+                                        { label: "Add Module", icon: Plus, color: "green", onClick: () => { setModForm({...EMPTY_MOD}); setModError(null); setModFormModal({mode:"add"}); } },
+                                        { label: "Edit Module", icon: Pencil, color: "orange", onClick: () => { if (selModUnico) { setModForm(prev => ({...prev})); setModError(null); setModFormModal({mode:"edit"}); } }, disabled: !selModUnico },
+                                        { label: "Delete Module", icon: Trash2, color: "red", onClick: () => { if (selModUnico) setDeleteModDlg(true); }, disabled: !selModUnico },
+                                        { label: "Export All", icon: Download, color: "gray", onClick: exportAll },
+                                        { label: "Export Module", icon: Download, color: "gray", onClick: exportModule, disabled: !selModUnico },
+                                        { label: "Import JSON", icon: Upload, color: "gray", onClick: () => importRef.current?.click() },
+                                    ]}
+                                />
                             </div>
                         </div>
 
@@ -405,30 +392,20 @@ export default function ModuleScreenSetupPage() {
                             ].map(f => (
                                 <div key={f.key} className="flex flex-col gap-0.5">
                                     <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">{f.label}</label>
-                                    <input type={f.type||"text"} value={(modForm as any)[f.key]||""} readOnly={!isEditing || f.readonly}
-                                        onChange={e => setModForm(prev => ({...prev, [f.key]: e.target.value}))}
-                                        className={cn("fos-input h-10 text-sm", (!isEditing || f.readonly) && "bg-gray-50 text-gray-500")} />
+                                    <input type={f.type||"text"} value={(modForm as any)[f.key]||""} readOnly
+                                        className={cn("fos-input h-10 text-sm", "bg-gray-50 text-gray-500")} />
                                 </div>
                             ))}
 
                             <div className="flex flex-col gap-0.5">
                                 <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Class</label>
-                                {isEditing ? (
-                                    <select value={modForm.clase} onChange={e => setModForm(p => ({...p, clase: e.target.value}))} className="fos-input h-10 text-sm">
-                                        <option value="">—</option>
-                                        {CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
-                                    </select>
-                                ) : (
-                                    <input readOnly value={modForm.clase} className="fos-input h-10 text-sm bg-gray-50 text-gray-500" />
-                                )}
+                                <input readOnly value={modForm.clase} className="fos-input h-10 text-sm bg-gray-50 text-gray-500" />
                             </div>
 
                             <div className="flex items-center gap-4 pt-3">
                                 {["active","web"].map(k => (
-                                    <label key={k} className="flex items-center gap-1.5 cursor-pointer">
-                                        <input type="checkbox" checked={Boolean((modForm as any)[k])}
-                                            disabled={!isEditing || (k === "active" && modMode === "add")}
-                                            onChange={e => setModForm(p => ({...p, [k]: e.target.checked}))}
+                                    <label key={k} className="flex items-center gap-1.5">
+                                        <input type="checkbox" checked={Boolean((modForm as any)[k])} disabled
                                             className="w-4 h-4 accent-[#FB7506]" />
                                         <span className="text-xs font-semibold text-gray-600 uppercase">{k}</span>
                                     </label>
@@ -437,16 +414,12 @@ export default function ModuleScreenSetupPage() {
 
                             <div className="flex flex-col gap-0.5 col-span-2 sm:col-span-4 lg:col-span-2">
                                 <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Module Name</label>
-                                <input value={modForm.nombre} readOnly={!isEditing}
-                                    onChange={e => setModForm(p => ({...p, nombre: e.target.value}))}
-                                    className={cn("fos-input h-10 text-sm", !isEditing && "bg-gray-50 text-gray-500")} />
+                                <input value={modForm.nombre} readOnly className="fos-input h-10 text-sm bg-gray-50 text-gray-500" />
                             </div>
 
                             <div className="flex flex-col gap-0.5 col-span-2 sm:col-span-4 lg:col-span-4">
                                 <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Description</label>
-                                <input value={modForm.descripcion} readOnly={!isEditing}
-                                    onChange={e => setModForm(p => ({...p, descripcion: e.target.value}))}
-                                    className={cn("fos-input h-10 text-sm", !isEditing && "bg-gray-50 text-gray-500")} />
+                                <input value={modForm.descripcion} readOnly className="fos-input h-10 text-sm bg-gray-50 text-gray-500" />
                             </div>
                         </div>
                     </div>
@@ -575,6 +548,19 @@ export default function ModuleScreenSetupPage() {
                 </div>
             )}
 
+            {/* ── Module Form Modal ─────────────────────────────────────── */}
+            {modFormModal && (
+                <ModuleFormModal
+                    mode={modFormModal.mode}
+                    form={modForm}
+                    setForm={setModForm}
+                    onSave={saveMod}
+                    onClose={() => { setModFormModal(null); setModError(null); if (selModUnico && selMod) selectModule(selMod); else setModForm(EMPTY_MOD); }}
+                    saving={saving}
+                    error={modError}
+                />
+            )}
+
             {/* ── Screen Modal ────────────────────────────────────────────── */}
             {screenModal && (
                 <ScreenFormModal
@@ -605,13 +591,88 @@ export default function ModuleScreenSetupPage() {
     );
 }
 
+// ─── Module Form Modal ────────────────────────────────────────────────────────
+function ModuleFormModal({ mode, form, setForm, onSave, onClose, saving, error }: any) {
+    if (!mode) return null;
+    return (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+                <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 border-b border-black/10 shrink-0">
+                    <div className="flex items-center gap-2">
+                        <LayoutGrid size={16} className="text-[#FB7506]" />
+                        <span className="fos-grid-header-text">{mode === "add" ? "New Module" : "Edit Module"}</span>
+                        {error && <span className="text-amber-400 text-[10px] font-bold ml-2 truncate">{error}</span>}
+                    </div>
+                    <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors">
+                        <X size={16} />
+                    </button>
+                </div>
+                <div className="overflow-y-auto flex-1 p-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 text-xs">
+                        {[
+                            { label: "Code",    key: "unico",  readonly: mode === "edit" },
+                            { label: "Order",   key: "orden",  readonly: false, type: "number" },
+                            { label: "Icon",    key: "image",  readonly: false },
+                            { label: "DSN",     key: "dsn",    readonly: false },
+                        ].map(f => (
+                            <div key={f.key} className="flex flex-col gap-0.5">
+                                <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">{f.label}</label>
+                                <input type={f.type||"text"} value={(form as any)[f.key]||""} readOnly={f.readonly}
+                                    onChange={e => setForm((prev: any) => ({...prev, [f.key]: e.target.value}))}
+                                    className={cn("fos-input h-10 text-sm", f.readonly && "bg-gray-50 text-gray-500")} />
+                            </div>
+                        ))}
+                        <div className="flex flex-col gap-0.5">
+                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Class</label>
+                            <select value={form.clase} onChange={e => setForm((p: any) => ({...p, clase: e.target.value}))} className="fos-input h-10 text-sm">
+                                <option value="">—</option>
+                                {CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
+                            </select>
+                        </div>
+                        <div className="flex items-center gap-4 pt-3">
+                            {["active","web"].map(k => (
+                                <label key={k} className="flex items-center gap-1.5 cursor-pointer">
+                                    <input type="checkbox" checked={Boolean((form as any)[k])}
+                                        disabled={k === "active" && mode === "add"}
+                                        onChange={e => setForm((p: any) => ({...p, [k]: e.target.checked}))}
+                                        className="w-4 h-4 accent-[#FB7506]" />
+                                    <span className="text-xs font-semibold text-gray-600 uppercase">{k}</span>
+                                </label>
+                            ))}
+                        </div>
+                        <div className="flex flex-col gap-0.5 col-span-2 sm:col-span-4 lg:col-span-2">
+                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Module Name</label>
+                            <input value={form.nombre}
+                                onChange={e => setForm((p: any) => ({...p, nombre: e.target.value}))}
+                                className="fos-input h-10 text-sm" />
+                        </div>
+                        <div className="flex flex-col gap-0.5 col-span-2 sm:col-span-4 lg:col-span-4">
+                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Description</label>
+                            <input value={form.descripcion}
+                                onChange={e => setForm((p: any) => ({...p, descripcion: e.target.value}))}
+                                className="fos-input h-10 text-sm" />
+                        </div>
+                    </div>
+                </div>
+                <div className="shrink-0 p-4 bg-white border-t border-gray-100">
+                    <button onClick={onSave} disabled={saving}
+                        className="w-full h-12 bg-[#FB7506] hover:bg-orange-600 disabled:opacity-50 text-white rounded-lg text-sm font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2">
+                        {saving ? <RefreshCcw size={16} className="animate-spin" /> : <Save size={16} />}
+                        {saving ? "Saving..." : "Save"}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 // ─── Screen Form Modal ────────────────────────────────────────────────────────
 function ScreenFormModal({ mode, form, setForm, error, saving, modName, reports, loadingRpt, onSave, onClose, onAddReport, onEditReport, onDeleteReport }: any) {
     const [selRpt, setSelRpt] = useState<string | null>(null);
     const hasWebForm = form.web_form.trim();
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
                 <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 border-b border-black/10 shrink-0">
                     <div className="flex items-center gap-2">
                         <Monitor size={16} className="text-[#FB7506]" />
@@ -681,11 +742,13 @@ function ScreenFormModal({ mode, form, setForm, error, saving, modName, reports,
                                     <FileText size={16} className="text-[#FB7506]" />
                                     <span className="fos-grid-header-text">Reports ({reports.length})</span>
                                 </div>
-                                <div className="flex gap-1.5">
-                                    <button onClick={onAddReport} className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all"><Plus size={14} /> Add</button>
-                                    <button onClick={() => { const r = reports.find((x: any) => x.unico===selRpt); if(r) onEditReport(r); }} disabled={!selRpt} className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all"><Pencil size={14} /> Edit</button>
-                                    <button onClick={() => { const r = reports.find((x: any) => x.unico===selRpt); if(r) onDeleteReport(r); }} disabled={!selRpt} className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all"><Trash2 size={14} /> Delete</button>
-                                </div>
+                                <GridMenu
+                                    items={[
+                                        { label: "Add Report", icon: Plus, color: "green", onClick: onAddReport },
+                                        { label: "Edit Report", icon: Pencil, color: "orange", onClick: () => { const r = reports.find((x: any) => x.unico===selRpt); if(r) onEditReport(r); }, disabled: !selRpt },
+                                        { label: "Delete Report", icon: Trash2, color: "red", onClick: () => { const r = reports.find((x: any) => x.unico===selRpt); if(r) onDeleteReport(r); }, disabled: !selRpt },
+                                    ]}
+                                />
                             </div>
                             <div className="max-h-40 overflow-auto">
                                 {reports.length === 0 ? (
@@ -716,7 +779,7 @@ function ScreenFormModal({ mode, form, setForm, error, saving, modName, reports,
                     )}
                 </div>
 
-                <div className="flex justify-end gap-3 px-4 py-3 bg-gray-50 border-t shrink-0 rounded-b-xl">
+                <div className="flex justify-end gap-3 px-4 py-3 bg-gray-50 border-t shrink-0">
                     <button onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-100">Cancel</button>
                     <button onClick={onSave} disabled={saving}
                         className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#FB7506] hover:bg-orange-600 disabled:opacity-40 text-white text-sm font-black uppercase tracking-wider transition-all">
@@ -738,7 +801,7 @@ function ReportFormModal({ mode, form, setForm, error, saving, onSave, onClose }
     ];
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
                 <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 border-b border-black/10 shrink-0">
                     <div className="flex items-center gap-2">
                         <FileText size={16} className="text-[#FB7506]" />
@@ -771,7 +834,7 @@ function ReportFormModal({ mode, form, setForm, error, saving, onSave, onClose }
                         ))}
                     </div>
                 </div>
-                <div className="flex justify-end gap-3 px-4 py-3 bg-gray-50 border-t rounded-b-xl">
+                <div className="flex justify-end gap-3 px-4 py-3 bg-gray-50 border-t shrink-0">
                     <button onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-100">Cancel</button>
                     <button onClick={onSave} disabled={saving}
                         className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#FB7506] hover:bg-orange-600 disabled:opacity-40 text-white text-sm font-black uppercase tracking-wider transition-all">
