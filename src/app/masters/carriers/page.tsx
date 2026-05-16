@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     ArrowLeft, Save, X, RefreshCcw, Truck, Plus, Pencil, Trash2,
     ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight,
-    Mail, Check, AlertCircle, XCircle, Settings, Menu
+    Mail, Check, AlertCircle, XCircle, Settings, Menu, Search
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuditLog } from "@/lib/audit";
@@ -68,11 +68,11 @@ function GridMenu({ items }: { items: { label:string; icon:any; color:string; on
 function F({ label, value, onChange, readOnly, type="text", span2=false, children }: any) {
     return (
         <div className={cn("flex flex-col gap-0.5", span2 && "col-span-2")}>
-            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{label}</label>
+            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">{label}</label>
             <div className="flex items-center gap-1">
                 <input type={type} value={value||""} readOnly={!!readOnly}
                     onChange={e => onChange?.(e.target.value)}
-                    className={cn("fos-input text-xs py-1 flex-1", readOnly && "bg-gray-50 text-gray-600 cursor-default")} />
+                    className={cn("fos-input h-10 text-sm flex-1", readOnly && "bg-gray-50 text-gray-600 cursor-default")} />
                 {children}
             </div>
         </div>
@@ -96,6 +96,8 @@ export default function CarriersDefinitionPage() {
     const [othersModal, setOthersModal] = useState(false);
     const [otherForm,   setOtherForm]   = useState({ internal_delivery: false });
     const [tabEnabled,  setTabEnabled]  = useState(false);
+    const [carrSearch,  setCarrSearch]  = useState("");
+    const [mobileOpen,  setMobileOpen]  = useState(false);
 
     useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
 
@@ -132,8 +134,14 @@ export default function CarriersDefinitionPage() {
         if ((carriers as any[]).length > 0) loadCarrier(0);
     }, [carriers]);
 
+    const list = carriers as any[];
+    const filteredList = useMemo(() => {
+        if (!carrSearch.trim()) return list;
+        const q = carrSearch.toLowerCase();
+        return list.filter((c: any) => t(c.carrier).toLowerCase().includes(q));
+    }, [list, carrSearch]);
+
     const loadCarrier = async (idx: number) => {
-        const list = carriers as any[];
         if (!list[idx]) return;
         setCurrentIdx(idx);
         try {
@@ -175,7 +183,6 @@ export default function CarriersDefinitionPage() {
     };
 
     // Navigation
-    const list = carriers as any[];
     const goFirst = () => loadCarrier(0);
     const goPrev  = () => loadCarrier(Math.max(0, currentIdx - 1));
     const goNext  = () => loadCarrier(Math.min(list.length - 1, currentIdx + 1));
@@ -254,20 +261,29 @@ export default function CarriersDefinitionPage() {
             </div>
 
             {/* Main layout */}
-            <div className="flex flex-1 overflow-hidden gap-2 p-2">
+            <div className="flex flex-col lg:flex-row flex-1 gap-2 p-2 overflow-y-auto lg:overflow-hidden">
 
                 {/* ── Left: Carrier List ──────────────────────────────────── */}
-                <div className="w-52 shrink-0 flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-                    <div className="h-8 bg-[#374151] flex items-center px-3 shrink-0 gap-2">
-                        <Truck size={12} className="text-[#FB7506]" />
-                        <span className="font-black text-[10px] uppercase tracking-widest text-white">Carriers</span>
-                        {loadingList && <RefreshCcw size={10} className="text-gray-400 animate-spin ml-auto" />}
+                <div className="hidden lg:flex w-[240px] shrink-0 flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                    <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 border-b border-black/10 shrink-0 rounded-t-lg">
+                        <div className="flex items-center gap-2">
+                            <Truck size={16} className="text-[#FB7506]" />
+                            <span className="fos-grid-header-text">Carriers</span>
+                        </div>
+                        {loadingList && <RefreshCcw size={16} className="text-gray-400 animate-spin" />}
+                    </div>
+                    <div className="p-2 border-b border-gray-100 shrink-0">
+                        <div className="relative">
+                            <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+                            <input type="text" value={carrSearch} onChange={e => setCarrSearch(e.target.value)}
+                                placeholder="Search carriers..." className="w-full pl-7 pr-2 h-9 text-sm border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506]" />
+                        </div>
                     </div>
                     <div className="overflow-y-auto flex-1 divide-y divide-gray-50">
-                        {list.map((c: any, i: number) => (
-                            <div key={c.unico} onClick={() => { if (!isEditing) loadCarrier(i); }}
+                        {filteredList.map((c: any, i: number) => (
+                            <div key={c.unico} onClick={() => { if (!isEditing) { loadCarrier(list.indexOf(c)); } }}
                                 className={cn("flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors text-xs",
-                                    i === currentIdx ? "bg-blue-50 border-l-[3px] border-l-blue-500 font-semibold text-blue-800" : "hover:bg-gray-50 border-l-[3px] border-l-transparent text-gray-700",
+                                    list.indexOf(c) === currentIdx ? "bg-blue-50 border-l-[3px] border-l-blue-500 font-semibold text-blue-800" : "hover:bg-gray-50 border-l-[3px] border-l-transparent text-gray-700",
                                     isEditing && "cursor-not-allowed opacity-60")}>
                                 <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", c.active ? "bg-green-400" : "bg-gray-300")} />
                                 <span className="truncate">{t(c.carrier)}</span>
@@ -278,20 +294,20 @@ export default function CarriersDefinitionPage() {
                 </div>
 
                 {/* ── Right: Form + Tabs ────────────────────────────────────── */}
-                <div className="flex-1 flex flex-col min-w-0 gap-2 overflow-hidden">
+                <div className="flex-1 flex flex-col min-w-0 gap-2 lg:overflow-hidden">
 
                     {/* Form card */}
                     <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden shrink-0">
                         {/* Form header */}
-                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 rounded-t-lg">
+                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 border-b border-black/10 rounded-t-lg">
                             <div className="flex items-center gap-2 min-w-0">
-                                <Truck size={14} className="text-[#FB7506]" />
-                                <span className="font-black text-[11px] uppercase tracking-widest text-white truncate">
+                                <Truck size={16} className="text-[#FB7506]" />
+                                <span className="fos-grid-header-text truncate">
                                     {mode === "add" ? "New Carrier" : t(form.carrier) || "Carrier Details"}
                                 </span>
                                 <AuditLogModal recordId={selUnico} disabled={!selUnico} />
-                                {formError && <span className="flex items-center gap-1 text-amber-400 text-[9px] font-bold ml-1 truncate"><AlertCircle size={10} />{formError}</span>}
-                                {saveMsg   && <span className="flex items-center gap-1 text-green-400 text-[9px] font-bold ml-1"><Check size={10} />{saveMsg}</span>}
+                                {formError && <span className="flex items-center gap-1 text-amber-400 text-[10px] font-bold ml-1 truncate"><AlertCircle size={12} />{formError}</span>}
+                                {saveMsg   && <span className="flex items-center gap-1 text-green-400 text-[10px] font-bold ml-1"><Check size={12} />{saveMsg}</span>}
                             </div>
                             <div className="flex items-center">
                                 {/* Navigation (view only) */}
@@ -313,14 +329,14 @@ export default function CarriersDefinitionPage() {
                                 )}
                                 {/* Save/Cancel (edit mode) */}
                                 {isEditing && (
-                                    <div className="flex items-center gap-1 px-2 border-r border-white/20">
+                                    <div className="flex items-center gap-1.5 px-2 border-r border-white/20">
                                         <button onClick={handleSave} disabled={saving}
-                                            className="flex items-center gap-1 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-3 py-1 rounded text-[9px] font-black uppercase">
-                                            {saving ? <RefreshCcw size={10} className="animate-spin" /> : <Save size={10} />}{saving ? "..." : "Save"}
+                                            className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all">
+                                            {saving ? <RefreshCcw size={14} className="animate-spin" /> : <Save size={14} />}{saving ? "Saving..." : "Save"}
                                         </button>
                                         <button onClick={() => { if (list[currentIdx]) loadCarrier(currentIdx); else setForm(EMPTY); setMode("view"); setFormError(null); }}
-                                            className="flex items-center gap-1 bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-[9px] font-black uppercase">
-                                            <X size={10} /> Cancel
+                                            className="flex items-center gap-1.5 bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all">
+                                            <X size={14} /> Cancel
                                         </button>
                                     </div>
                                 )}
@@ -352,15 +368,15 @@ export default function CarriersDefinitionPage() {
 
                                 {/* Email with mailto icon */}
                                 <div className="flex flex-col gap-0.5 col-span-2">
-                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">E-mail</label>
+                                    <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">E-mail</label>
                                     <div className="flex items-center gap-1">
                                         <input type="email" value={form.email||""} readOnly={!isEditing}
                                             onChange={e=>setForm((p:any)=>({...p,email:e.target.value}))}
-                                            className={cn("fos-input text-xs py-1 flex-1", !isEditing&&"bg-gray-50 text-gray-600")} />
+                                            className={cn("fos-input h-10 text-sm flex-1", !isEditing&&"bg-gray-50 text-gray-600")} />
                                         {!isEditing && form.email && (
                                             <button onClick={()=>window.open('mailto:'+form.email)} title="Send email"
                                                 className="text-[#FB7506] hover:text-orange-600 transition-colors">
-                                                <Mail size={14} />
+                                                <Mail size={16} />
                                             </button>
                                         )}
                                     </div>
@@ -370,19 +386,19 @@ export default function CarriersDefinitionPage() {
 
                                 {/* Cut Off (time) */}
                                 <div className="flex flex-col gap-0.5">
-                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Cut Off</label>
+                                    <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Cut Off</label>
                                     <input type="time" value={form.cut_off||""} disabled={!isEditing}
                                         onChange={e=>setForm((p:any)=>({...p,cut_off:e.target.value}))}
-                                        className={cn("fos-input text-xs py-1", !isEditing&&"bg-gray-50 text-gray-600")} />
+                                        className={cn("fos-input h-10 text-sm", !isEditing&&"bg-gray-50 text-gray-600")} />
                                 </div>
 
                                 {/* Charge combo */}
                                 <div className="flex flex-col gap-0.5 col-span-2">
-                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Charge</label>
+                                    <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Charge</label>
                                     <div className="flex items-center gap-1">
                                         <select value={form.product_uq||""} disabled={!isEditing}
                                             onChange={e=>setForm((p:any)=>({...p,product_uq:e.target.value}))}
-                                            className={cn("fos-input text-xs py-1 flex-1", !isEditing&&"bg-gray-50 text-gray-400")}>
+                                            className={cn("fos-input h-10 text-sm flex-1", !isEditing&&"bg-gray-50 text-gray-400")}>
                                             <option value="">— None —</option>
                                             {(products as any[]).map((p:any) => (
                                                 <option key={p.unico} value={p.unico}>{t(p.description)}</option>
@@ -391,7 +407,7 @@ export default function CarriersDefinitionPage() {
                                         {isEditing && (
                                             <button onClick={()=>setForm((p:any)=>({...p,product_uq:""}))} title="Clear"
                                                 className="text-gray-400 hover:text-red-500 transition-colors">
-                                                <XCircle size={14} />
+                                                <XCircle size={16} />
                                             </button>
                                         )}
                                     </div>
@@ -401,13 +417,13 @@ export default function CarriersDefinitionPage() {
 
                                 {/* TWF Code + disabled button */}
                                 <div className="flex flex-col gap-0.5">
-                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">T.W.F. Code</label>
+                                    <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">T.W.F. Code</label>
                                     <div className="flex gap-1">
                                         <input value={form.twf_id||""} readOnly={!isEditing}
                                             onChange={e=>setForm((p:any)=>({...p,twf_id:e.target.value}))}
-                                            className={cn("fos-input text-xs py-1 flex-1", !isEditing&&"bg-gray-50 text-gray-600")} />
+                                            className={cn("fos-input h-10 text-sm flex-1", !isEditing&&"bg-gray-50 text-gray-600")} />
                                         <button disabled title="TWF integration not available in web version"
-                                            className="px-2 py-1 bg-gray-100 border border-gray-200 rounded text-[9px] text-gray-400 cursor-not-allowed">TWF</button>
+                                            className="px-2 h-10 bg-gray-100 border border-gray-200 rounded text-xs text-gray-400 cursor-not-allowed">TWF</button>
                                     </div>
                                 </div>
 
@@ -420,27 +436,27 @@ export default function CarriersDefinitionPage() {
                                         <label className="flex items-center gap-1.5 cursor-pointer">
                                             <input type="checkbox" checked={Boolean(form.active)} disabled={mode !== "edit"}
                                                 onChange={e=>setForm((p:any)=>({...p,active:e.target.checked}))}
-                                                className="w-3.5 h-3.5 accent-[#FB7506]" />
-                                            <span className="text-xs font-semibold text-gray-600">Active</span>
+                                                className="w-4 h-4 accent-[#FB7506]" />
+                                            <span className="text-sm font-semibold text-gray-600">Active</span>
                                         </label>
                                     )}
                                     <label className="flex items-center gap-1.5 cursor-pointer">
                                         <input type="checkbox" checked={Boolean(form.isairline)} disabled={!isEditing}
                                             onChange={e=>setForm((p:any)=>({...p,isairline:e.target.checked}))}
-                                            className="w-3.5 h-3.5 accent-[#FB7506]" />
-                                        <span className="text-xs font-semibold text-gray-600">Airline ✈</span>
+                                            className="w-4 h-4 accent-[#FB7506]" />
+                                        <span className="text-sm font-semibold text-gray-600">Airline ✈</span>
                                     </label>
                                     <label className="flex items-center gap-1.5">
                                         <input type="checkbox" checked={Boolean(form.chk_account)} disabled={!isEditing}
                                             onChange={e=>setForm((p:any)=>({...p,chk_account:e.target.checked}))}
-                                            className="w-3.5 h-3.5 accent-[#FB7506]" />
-                                        <span className="text-xs font-semibold text-gray-600">Chk Account</span>
+                                            className="w-4 h-4 accent-[#FB7506]" />
+                                        <span className="text-sm font-semibold text-gray-600">Chk Account</span>
                                     </label>
                                     <label className="flex items-center gap-1.5">
                                         <input type="checkbox" checked={Boolean(form.chk_zone)} disabled={!isEditing}
                                             onChange={e=>setForm((p:any)=>({...p,chk_zone:e.target.checked}))}
-                                            className="w-3.5 h-3.5 accent-[#FB7506]" />
-                                        <span className="text-xs font-semibold text-gray-600">Chk Zone</span>
+                                            className="w-4 h-4 accent-[#FB7506]" />
+                                        <span className="text-sm font-semibold text-gray-600">Chk Zone</span>
                                     </label>
                                 </div>
                             </div>
@@ -449,57 +465,57 @@ export default function CarriersDefinitionPage() {
 
                     {/* ── Bottom Tabs ──────────────────────────────────────── */}
                     <div className="flex-1 flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden min-h-0">
-                        <div className="h-9 bg-[#374151] flex items-end px-2 gap-0.5 shrink-0">
+                        <div className="h-10 bg-[#374151] flex items-end px-2 gap-0.5 shrink-0">
                             {(["invoices","customers"] as const).map(tab => (
                                 <button key={tab} onClick={() => { setActiveTab(tab); setTabEnabled(true); }}
-                                    className={cn("flex items-center gap-1.5 px-4 h-7 text-[10px] font-black uppercase tracking-wider rounded-t transition-all",
+                                    className={cn("flex items-center gap-1.5 px-4 h-8 text-[10px] font-black uppercase tracking-wider rounded-t transition-all",
                                         activeTab===tab ? "bg-[#f4f6f8] text-[#FB7506]" : "text-gray-400 hover:text-white hover:bg-white/10")}>
                                     {tab === "invoices" ? "Invoices" : "Customers"}
                                 </button>
                             ))}
-                            {(loadingInv || loadingCust) && <RefreshCcw size={10} className="text-gray-400 animate-spin ml-2 self-center" />}
+                            {(loadingInv || loadingCust) && <RefreshCcw size={12} className="text-gray-400 animate-spin ml-2 self-center" />}
                         </div>
 
                         <div className="overflow-auto flex-1">
                             {!tabEnabled ? (
                                 <div className="h-full flex items-center justify-center text-gray-300 text-xs font-bold uppercase">Click a tab to load data</div>
                             ) : activeTab === "invoices" ? (
-                                <table className="min-w-full text-xs text-left">
-                                    <thead className="bg-gray-50 border-b border-gray-100 text-gray-500 font-bold sticky top-0 z-10">
-                                        <tr>{["Customer","Invoice","Date","Amount","Credits","Debits"].map(h => <th key={h} className="p-2 whitespace-nowrap border-r border-gray-100 last:border-r-0">{h}</th>)}</tr>
+                                <table className="min-w-full text-left">
+                                    <thead className="bg-gray-50 border-b border-gray-100 sticky top-0 z-10">
+                                        <tr>{["Customer","Invoice","Date","Amount","Credits","Debits"].map(h => <th key={h} className="p-2 whitespace-nowrap border-r border-gray-100 last:border-r-0 fos-grid-thead text-gray-500">{h}</th>)}</tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-50">
                                         {(invoices as any[]).length === 0 ? (
-                                            <tr><td colSpan={6} className="p-6 text-center text-gray-300 italic">No invoices</td></tr>
+                                            <tr><td colSpan={6} className="p-6 text-center text-gray-300 italic fos-grid-tbody">No invoices</td></tr>
                                         ) : (invoices as any[]).map((r:any,i:number) => (
                                             <tr key={i} className="hover:bg-gray-50/80">
-                                                <td className="p-2 border-r border-gray-50 font-medium truncate max-w-[160px]">{t(r.customer)}</td>
-                                                <td className="p-2 border-r border-gray-50 font-mono">{t(r.invoice_no)}</td>
-                                                <td className="p-2 border-r border-gray-50 whitespace-nowrap">{formatDateEST(normalizeToISODate(r.invoice_date))}</td>
-                                                <td className="p-2 border-r border-gray-50 text-right">{formatMoney(r.total_invoice)}</td>
-                                                <td className="p-2 border-r border-gray-50 text-right text-green-600">{formatMoney(r.total_credits)}</td>
-                                                <td className="p-2 text-right text-red-500">{formatMoney(r.total_debits)}</td>
+                                                <td className="p-2 border-r border-gray-50 truncate max-w-[160px] fos-grid-tbody">{t(r.customer)}</td>
+                                                <td className="p-2 border-r border-gray-50 font-mono fos-grid-tbody">{t(r.invoice_no)}</td>
+                                                <td className="p-2 border-r border-gray-50 whitespace-nowrap fos-grid-tbody">{formatDateEST(normalizeToISODate(r.invoice_date))}</td>
+                                                <td className="p-2 border-r border-gray-50 text-right fos-grid-tbody">{formatMoney(r.total_invoice)}</td>
+                                                <td className="p-2 border-r border-gray-50 text-right text-green-600 fos-grid-tbody">{formatMoney(r.total_credits)}</td>
+                                                <td className="p-2 text-right text-red-500 fos-grid-tbody">{formatMoney(r.total_debits)}</td>
                                             </tr>
                                         ))}
                                     </tbody>
                                 </table>
                             ) : (
-                                <table className="min-w-full text-xs text-left">
-                                    <thead className="bg-gray-50 border-b border-gray-100 text-gray-500 font-bold sticky top-0 z-10">
-                                        <tr>{["Customer","Shipto","Address","City","State","Zip","Account"].map(h => <th key={h} className="p-2 whitespace-nowrap border-r border-gray-100 last:border-r-0">{h}</th>)}</tr>
+                                <table className="min-w-full text-left">
+                                    <thead className="bg-gray-50 border-b border-gray-100 sticky top-0 z-10">
+                                        <tr>{["Customer","Shipto","Address","City","State","Zip","Account"].map(h => <th key={h} className="p-2 whitespace-nowrap border-r border-gray-100 last:border-r-0 fos-grid-thead text-gray-500">{h}</th>)}</tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-50">
                                         {(customers as any[]).length === 0 ? (
-                                            <tr><td colSpan={7} className="p-6 text-center text-gray-300 italic">No customers</td></tr>
+                                            <tr><td colSpan={7} className="p-6 text-center text-gray-300 italic fos-grid-tbody">No customers</td></tr>
                                         ) : (customers as any[]).map((r:any,i:number) => (
                                             <tr key={i} className="hover:bg-gray-50/80">
-                                                <td className="p-2 border-r border-gray-50 font-medium truncate max-w-[140px]">{t(r.customer)}</td>
-                                                <td className="p-2 border-r border-gray-50 truncate max-w-[120px]">{t(r.name)}</td>
-                                                <td className="p-2 border-r border-gray-50 truncate max-w-[140px]">{t(r.address1)}</td>
-                                                <td className="p-2 border-r border-gray-50">{t(r.city)}</td>
-                                                <td className="p-2 border-r border-gray-50">{t(r.state)}</td>
-                                                <td className="p-2 border-r border-gray-50">{t(r.zip)}</td>
-                                                <td className="p-2">{t(r.account)}</td>
+                                                <td className="p-2 border-r border-gray-50 truncate max-w-[140px] fos-grid-tbody">{t(r.customer)}</td>
+                                                <td className="p-2 border-r border-gray-50 truncate max-w-[120px] fos-grid-tbody">{t(r.name)}</td>
+                                                <td className="p-2 border-r border-gray-50 truncate max-w-[140px] fos-grid-tbody">{t(r.address1)}</td>
+                                                <td className="p-2 border-r border-gray-50 fos-grid-tbody">{t(r.city)}</td>
+                                                <td className="p-2 border-r border-gray-50 fos-grid-tbody">{t(r.state)}</td>
+                                                <td className="p-2 border-r border-gray-50 fos-grid-tbody">{t(r.zip)}</td>
+                                                <td className="p-2 fos-grid-tbody">{t(r.account)}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -510,22 +526,70 @@ export default function CarriersDefinitionPage() {
                 </div>
             </div>
 
+            {/* Mobile floating carrier button */}
+            <button onClick={() => setMobileOpen(true)}
+                className="lg:hidden fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-[#FB7506] hover:bg-orange-600 text-white shadow-lg flex items-center justify-center transition-all hover:scale-105">
+                <Truck size={24} />
+            </button>
+
             {/* Footer */}
             <div className="h-8 bg-gray-100 border-t px-4 flex items-center justify-between text-[10px] font-bold text-gray-500 uppercase tracking-tight shrink-0">
                 <div className="flex gap-4"><span>Server: Production</span><span className="text-gray-300">|</span><span>Database: FullPot</span></div>
                 <span className="text-[#FB7506]">FOS Masters V.2.0.1</span>
             </div>
 
+            {/* ── Mobile Carrier List Modal ───────────────────────────── */}
+            {mobileOpen && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                    onClick={() => setMobileOpen(false)}>
+                    <div className="bg-white rounded-lg shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden"
+                        onClick={e => e.stopPropagation()}>
+                        <div className="h-10 bg-[#374151] flex items-center justify-between px-3 rounded-t-lg">
+                            <div className="flex items-center gap-2">
+                                <Truck size={16} className="text-[#FB7506]" />
+                                <span className="fos-grid-header-text">Select Carrier</span>
+                            </div>
+                            <button onClick={() => setMobileOpen(false)} className="text-gray-400 hover:text-white transition-colors">
+                                <X size={16} />
+                            </button>
+                        </div>
+                        <div className="p-3 border-b">
+                            <div className="relative">
+                                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <input type="text" placeholder="Search..." value={carrSearch}
+                                    onChange={e => setCarrSearch(e.target.value)}
+                                    className="fos-input h-10 text-sm pl-9 pr-3 w-full" />
+                            </div>
+                        </div>
+                        <div className="overflow-y-auto flex-1">
+                            {filteredList.length === 0 ? (
+                                <div className="p-6 text-center text-gray-400 text-sm">No carriers found</div>
+                            ) : filteredList.map((c: any, i: number) => (
+                                <button key={c.unico} onClick={() => { setCurrentIdx(i); setMobileOpen(false); }}
+                                    className={cn("w-full flex items-center gap-2 px-4 py-3 text-left transition-colors border-b border-gray-50 last:border-b-0",
+                                        i === currentIdx ? "bg-orange-50 text-[#FB7506] font-bold" : "text-gray-700 hover:bg-gray-50")}>
+                                    <span className="text-[10px] text-gray-400 font-mono w-8 shrink-0">{c.carriercode}</span>
+                                    <span className="text-sm truncate flex-1">{t(c.carrier)}</span>
+                                    {c.isairline && <span className="text-[10px] text-blue-400 font-bold shrink-0">✈</span>}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* ── Other Settings Modal ──────────────────────────────────── */}
             {othersModal && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden">
-                        <div className="h-10 bg-[#374151] rounded-t-xl flex items-center justify-between px-4">
+                    <div className="bg-white rounded-lg shadow-2xl w-full max-w-sm overflow-hidden">
+                        <div className="h-10 bg-[#374151] flex items-center justify-between px-3 rounded-t-lg">
                             <div className="flex items-center gap-2">
-                                <Settings size={14} className="text-[#FB7506]" />
-                                <span className="font-black text-[11px] uppercase tracking-widest text-white">Other Settings</span>
+                                <Settings size={16} className="text-[#FB7506]" />
+                                <span className="fos-grid-header-text">Other Settings</span>
                             </div>
-                            <button onClick={() => setOthersModal(false)}><XCircle size={16} className="text-gray-400 hover:text-white" /></button>
+                            <button onClick={() => setOthersModal(false)} className="text-gray-400 hover:text-white transition-colors">
+                                <X size={16} />
+                            </button>
                         </div>
                         <div className="p-5">
                             <label className="flex items-center gap-3 cursor-pointer">
@@ -538,7 +602,7 @@ export default function CarriersDefinitionPage() {
                                 </div>
                             </label>
                         </div>
-                        <div className="flex justify-end gap-3 px-4 py-3 bg-gray-50 border-t rounded-b-xl">
+                        <div className="flex justify-end gap-3 px-4 py-3 bg-gray-50 border-t">
                             <button onClick={() => setOthersModal(false)} className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-100">Cancel</button>
                             <button onClick={handleOthersSave} disabled={saving}
                                 className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#FB7506] hover:bg-orange-600 disabled:opacity-50 text-white text-sm font-black uppercase tracking-wider transition-all">
