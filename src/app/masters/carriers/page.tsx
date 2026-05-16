@@ -464,7 +464,7 @@ export default function CarriersDefinitionPage() {
                     </div>
 
                     {/* ── Bottom Tabs ──────────────────────────────────────── */}
-                    <div className="flex-1 flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden min-h-0">
+                    <div className="flex-1 flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden min-h-0 max-h-[300px] lg:max-h-none">
                         <div className="h-10 bg-[#374151] flex items-end px-2 gap-0.5 shrink-0">
                             {(["invoices","customers"] as const).map(tab => (
                                 <button key={tab} onClick={() => { setActiveTab(tab); setTabEnabled(true); }}
