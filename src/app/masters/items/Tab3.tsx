@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import {
     Plus, Pencil, Trash2, Save, X, RefreshCcw, Search, Check, XCircle,
     Layers, Box, ClipboardList, Calendar, ChevronDown, Menu
@@ -14,6 +14,23 @@ const t  = (v: any) => String(v ?? "").trim();
 const n2 = (v: any) => parseFloat(v ?? 0).toFixed(2);
 const sF = async (url: string) => { const r = await fetch(url); const j = await r.json(); if (!r.ok) throw new Error(j?.error || `HTTP ${r.status}`); return j; };
 const NO_COMP = "There isn't a selected component. / No hay componente seleccionado.";
+const PAGE_SIZE = 50;
+const nextPage  = (last: any) => (last.page ?? 1) * (last.pageSize ?? PAGE_SIZE) < (last.total ?? 0) ? (last.page ?? 1) + 1 : undefined;
+const getPages  = (data: any) => data?.pages?.flatMap((p: any) => p.records ?? p) ?? [];
+const getTotal  = (data: any) => data?.pages?.[0]?.total ?? 0;
+
+function useSentinel(onVisible: () => void, enabled: boolean) {
+    const ref = useRef<HTMLDivElement>(null);
+    const cb  = useCallback(() => { if (enabled) onVisible(); }, [onVisible, enabled]);
+    useEffect(() => {
+        const el = ref.current;
+        if (!el) return;
+        const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) cb(); }, { threshold: 0.1 });
+        obs.observe(el);
+        return () => obs.disconnect();
+    }, [cb]);
+    return ref;
+}
 
 // ─── Toolbar button ───────────────────────────────────────────────────────────
 function Btn({ icon:Icon, label, color="gray", onClick, disabled=false }: any) {
@@ -27,7 +44,7 @@ function Btn({ icon:Icon, label, color="gray", onClick, disabled=false }: any) {
 }
 
 // ─── Simple mini-grid ─────────────────────────────────────────────────────────
-function MiniGrid({ cols, rows, selUnico, onSelect, loading, empty }: any) {
+function MiniGrid({ cols, rows, selUnico, onSelect, loading, empty, sentinel }: any) {
     return (
         <div className="overflow-auto flex-1">
             <table className="min-w-full text-[10px] text-left">
@@ -53,6 +70,7 @@ function MiniGrid({ cols, rows, selUnico, onSelect, loading, empty }: any) {
                                 );
                             })
                     }
+                    {sentinel && <tr><td colSpan={cols.length} className="p-0">{sentinel}</td></tr>}
                 </tbody>
             </table>
         </div>
@@ -430,11 +448,11 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety, varieties
 
     useEffect(() => { const t = setTimeout(()=>setDebSearch(compSearch), 300); return ()=>clearTimeout(t); }, [compSearch]);
 
-    const { data: components = [], isFetching: loadComp, refetch: refetchComp } = useQuery({
-        queryKey: ["tab3-comp", debSearch],
-        queryFn:  () => sF(`/api/masters/items/components?search=${encodeURIComponent(debSearch||"%")}`),
-        staleTime: 30000,
-    });
+    const { data: compPages, isFetching: loadComp, fetchNextPage: fetchMoreComp, hasNextPage: hasMoreComp, isFetchingNextPage: fetchingMoreComp, refetch: refetchComp } =
+        useInfiniteQuery({ queryKey:["tab3-comp", debSearch], queryFn:({pageParam})=>sF(`/api/masters/items/components?search=${encodeURIComponent(debSearch||"%")}&page=${pageParam}&pageSize=${PAGE_SIZE}`), initialPageParam:1, getNextPageParam: nextPage, staleTime:30000 });
+    const components = getPages(compPages);
+    const compTotal  = getTotal(compPages);
+    const compSentinel = useSentinel(() => fetchMoreComp(), !!(hasMoreComp && !fetchingMoreComp));
 
     const doCrud = async (endpoint: string, method: string, body: any, onSuccess: (d: any)=>void) => {
         setSaving(true); setFormError(null);
@@ -573,7 +591,8 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety, varieties
                     <div className="h-7 bg-[#374151] flex items-center px-2 gap-2 shrink-0">
                         <Search size={11} className="text-[#FB7506]"/>
                         <span className="font-black text-[9px] uppercase tracking-widest text-white">Components / Search</span>
-                        {loadComp && <RefreshCcw size={8} className="text-gray-400 animate-spin"/>}
+                        {(loadComp||fetchingMoreComp) && <RefreshCcw size={8} className="text-gray-400 animate-spin"/>}
+                        {compTotal > 0 && <span className="text-gray-400 text-[8px] ml-1">{components.length}/{compTotal}</span>}
                     </div>
                     <div className="p-1.5 border-b border-gray-100 shrink-0">
                         <div className="relative">
@@ -598,8 +617,9 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety, varieties
                         rows={components}
                         selUnico={selComponent?.unico}
                         onSelect={setSelComponent}
-                        loading={loadComp}
+                        loading={loadComp && components.length === 0}
                         empty={debSearch ? "No results" : "Type to search components"}
+                        sentinel={<div ref={compSentinel} className="h-1"/>}
                     />
                 </div>
             </div>

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { useQuery, useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import {
     Plus, Pencil, Trash2, Save, X, RefreshCcw, Search, Check, XCircle,
     Copy, Layers, Box, Shuffle, BookOpen, Users, Calendar, BarChart2,
@@ -15,6 +15,26 @@ const t  = (v: any) => String(v ?? "").trim();
 const n2 = (v: any) => parseFloat(v ?? 0).toFixed(2);
 const sF = async (url: string) => { const r = await fetch(url); const j = await r.json(); if (!r.ok) throw new Error(j?.error || `HTTP ${r.status}`); return j; };
 const NO_PROD = "There isn't a selected product. / No hay producto seleccionado.";
+const PAGE_SIZE = 50;
+
+// ─── Infinite scroll helper ───────────────────────────────────────────────────
+function useSentinel(onVisible: () => void, enabled: boolean) {
+    const ref = useRef<HTMLDivElement & HTMLTableRowElement>(null);
+    const cb  = useCallback(() => { if (enabled) onVisible(); }, [onVisible, enabled]);
+    useEffect(() => {
+        const el = ref.current;
+        if (!el) return;
+        const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) cb(); }, { threshold: 0.1 });
+        obs.observe(el);
+        return () => obs.disconnect();
+    }, [cb]);
+    return ref;
+}
+
+// Helper to parse paginated response and flatten pages
+const getPages = (data: any) => data?.pages?.flatMap((p: any) => p.records ?? p) ?? [];
+const getTotal = (data: any) => data?.pages?.[0]?.total ?? 0;
+const nextPage  = (last: any) => (last.page ?? 1) * (last.pageSize ?? PAGE_SIZE) < (last.total ?? 0) ? (last.page ?? 1) + 1 : undefined;
 
 // ─── Mini helpers ─────────────────────────────────────────────────────────────
 function GridMenu({ items }: { items: { label:string; icon:any; color:string; onClick:()=>void; disabled?:boolean; separator?:boolean }[] }) {
@@ -52,7 +72,7 @@ function Btn({ icon:Icon, label, color="gray", onClick, disabled=false, sm=false
 // ─── DualListModal (shared by Alternatives and Season Recipes) ────────────────
 function DualListModal({ title, productDesc, productUq, availUrl, assignedUrl, onAdd, onRemove, onClose }: {
     title: string; productDesc: string; productUq: string;
-    availUrl: (search: string) => string;
+    availUrl: (search: string, page: number) => string;
     assignedUrl: string;
     onAdd: (item: any) => Promise<void>;
     onRemove: (item: any) => Promise<void>;
@@ -60,12 +80,17 @@ function DualListModal({ title, productDesc, productUq, availUrl, assignedUrl, o
 }) {
     const [leftSel,  setLeftSel]  = useState<any>(null);
     const [rightSel, setRightSel] = useState<any>(null);
-    const [search,   setSearch]   = useState("%");
+    const [search,   setSearch]   = useState("");
     const [working,  setWorking]  = useState(false);
     const [err,      setErr]      = useState<string|null>(null);
 
-    const { data: available = [], isFetching: loadL, refetch: refL } = useQuery({ queryKey:["dual-avail", productUq, search], queryFn:()=>sF(availUrl(search)), staleTime:0 });
-    const { data: assigned  = [], isFetching: loadR, refetch: refR } = useQuery({ queryKey:["dual-asgn",  productUq],         queryFn:()=>sF(assignedUrl),          staleTime:0 });
+    const { data: availPages, isFetching: loadL, fetchNextPage: fetchMoreAvail, hasNextPage: hasMoreAvail, isFetchingNextPage: fetchingMoreAvail, refetch: refL } =
+        useInfiniteQuery({ queryKey:["dual-avail", productUq, search], queryFn:({pageParam})=>sF(availUrl(search||"%", pageParam as number)), initialPageParam:1, getNextPageParam: nextPage, staleTime:0 });
+    const { data: assigned = [], isFetching: loadR, refetch: refR } =
+        useQuery({ queryKey:["dual-asgn", productUq], queryFn:()=>sF(assignedUrl), staleTime:0 });
+
+    const available = getPages(availPages);
+    const availSentinel = useSentinel(() => fetchMoreAvail(), !!(hasMoreAvail && !fetchingMoreAvail));
 
     const doAdd = async () => {
         if (!leftSel) return;
@@ -98,25 +123,28 @@ function DualListModal({ title, productDesc, productUq, availUrl, assignedUrl, o
                     <span className="text-xs text-gray-500">{productDesc}</span>
                 </div>
                 <div className="flex gap-2 p-3 flex-1 min-h-[360px]">
-                    {/* Left: Available */}
+                    {/* Left: Available — infinite scroll */}
                     <div className="flex-1 flex flex-col gap-1.5">
                         <div className="flex items-center gap-1 h-5">
-                            <span className="text-[9px] font-black uppercase tracking-widest text-gray-500">Available</span>
-                            {loadL && <RefreshCcw size={8} className="text-gray-400 animate-spin"/>}
+                            <span className="text-[9px] font-black uppercase tracking-widest text-gray-500">
+                                Available {getTotal(availPages) > 0 && `(${available.length}/${getTotal(availPages)})`}
+                            </span>
+                            {(loadL||fetchingMoreAvail) && <RefreshCcw size={8} className="text-gray-400 animate-spin"/>}
                         </div>
                         <div className="relative">
                             <Search size={9} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400"/>
-                            <input value={search==="%" ? "" : search} onChange={e=>setSearch(e.target.value||"%")} placeholder="Filter..."
+                            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Filter..."
                                 className="w-full pl-5 pr-2 py-0.5 text-[10px] border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506]"/>
                         </div>
                         <div className="flex-1 border border-gray-200 rounded overflow-auto">
-                            {(available as any[]).map((r:any) => (
+                            {available.map((r:any) => (
                                 <div key={r.unico} onClick={()=>setLeftSel(r)}
                                     className={cn("px-2 py-1 text-xs cursor-pointer border-b border-gray-50 last:border-0 hover:bg-gray-50", leftSel?.unico===r.unico && "bg-blue-50 font-bold")}>
                                     {t(r.description)}
                                 </div>
                             ))}
-                            {!loadL && (available as any[]).length===0 && <div className="p-2 text-center text-[10px] text-gray-300 italic">No items</div>}
+                            <div ref={availSentinel} className="h-1"/>
+                            {!loadL && available.length===0 && <div className="p-2 text-center text-[10px] text-gray-300 italic">No items</div>}
                         </div>
                     </div>
                     {/* Center: buttons */}
@@ -336,20 +364,34 @@ function BuyersQuotasModal({ productUq, productDesc, onClose }: { productUq: str
 
 // ─── POPricesModal ────────────────────────────────────────────────────────────
 function POPricesModal({ onClose }: { onClose: () => void }) {
-    const [cityUq,    setCityUq]    = useState("");
-    const [seasonUq,  setSeasonUq]  = useState("");
-    const [leftSel,   setLeftSel]   = useState<any>(null);
-    const [leftSearch, setLeftSearch] = useState("%");
-    const [saving,    setSaving]    = useState(false);
-    const [err,       setErr]       = useState<string|null>(null);
-    const [editPrice, setEditPrice] = useState<Record<string,string>>({});
+    const [cityUq,      setCityUq]      = useState("");
+    const [cityLabel,   setCityLabel]   = useState("");
+    const [citySearch,  setCitySearch]  = useState("");
+    const [cityOpen,    setCityOpen]    = useState(false);
+    const [seasonUq,    setSeasonUq]    = useState("");
+    const [leftSel,     setLeftSel]     = useState<any>(null);
+    const [leftSearch,  setLeftSearch]  = useState("");
+    const [saving,      setSaving]      = useState(false);
+    const [err,         setErr]         = useState<string|null>(null);
+    const [editPrice,   setEditPrice]   = useState<Record<string,string>>({});
 
-    const { data: customers = [] } = useQuery({ queryKey:["po-cust"],    queryFn:()=>sF("/api/masters/items/lookups/customers"), staleTime:60000 });
-    const { data: seasons   = [] } = useQuery({ queryKey:["po-seasons"], queryFn:()=>sF("/api/masters/items/lookups/seasons"),   staleTime:60000 });
-    const { data: available = [], isFetching: loadL, refetch: refL } = useQuery({ queryKey:["po-avail", cityUq, seasonUq, leftSearch], queryFn:()=>sF(`/api/masters/items/po-prices/available?city_uq=${cityUq}&season_uq=${seasonUq}&search=${leftSearch}`), enabled: !!(cityUq && seasonUq), staleTime:0 });
-    const { data: assigned  = [], isFetching: loadR, refetch: refR } = useQuery({ queryKey:["po-asgn",  cityUq, seasonUq], queryFn:()=>sF(`/api/masters/items/po-prices/assigned?city_uq=${cityUq}&season_uq=${seasonUq}`), enabled: !!(cityUq && seasonUq), staleTime:0 });
+    // City: incremental combobox with infinite scroll
+    const { data: custPages, isFetching: loadCust, fetchNextPage: fetchMoreCust, hasNextPage: hasMoreCust, isFetchingNextPage: fetchingMoreCust } =
+        useInfiniteQuery({ queryKey:["po-cust", citySearch], queryFn:({pageParam})=>sF(`/api/masters/items/lookups/customers?search=${encodeURIComponent(citySearch)}&page=${pageParam}&pageSize=${PAGE_SIZE}`), initialPageParam:1, getNextPageParam: nextPage, staleTime:30000, enabled: cityOpen || !!citySearch });
+    const custList = getPages(custPages);
+    const custSentinel = useSentinel(() => fetchMoreCust(), !!(hasMoreCust && !fetchingMoreCust));
 
-    // Pre-populate edit prices from assigned list
+    const { data: seasons = [] } = useQuery({ queryKey:["po-seasons"], queryFn:()=>sF("/api/masters/items/lookups/seasons"), staleTime:60000 });
+
+    // Available products: infinite scroll
+    const { data: availPages, isFetching: loadL, fetchNextPage: fetchMoreAvail, hasNextPage: hasMoreAvail, isFetchingNextPage: fetchingMoreAvail, refetch: refL } =
+        useInfiniteQuery({ queryKey:["po-avail", cityUq, seasonUq, leftSearch], queryFn:({pageParam})=>sF(`/api/masters/items/po-prices/available?city_uq=${cityUq}&season_uq=${seasonUq}&search=${encodeURIComponent(leftSearch||"%")}&page=${pageParam}&pageSize=${PAGE_SIZE}`), initialPageParam:1, getNextPageParam: nextPage, staleTime:0, enabled: !!(cityUq && seasonUq) });
+    const available = getPages(availPages);
+    const availSentinel = useSentinel(() => fetchMoreAvail(), !!(hasMoreAvail && !fetchingMoreAvail));
+
+    const { data: assigned = [], isFetching: loadR, refetch: refR } =
+        useQuery({ queryKey:["po-asgn", cityUq, seasonUq], queryFn:()=>sF(`/api/masters/items/po-prices/assigned?city_uq=${cityUq}&season_uq=${seasonUq}`), enabled: !!(cityUq && seasonUq), staleTime:0 });
+
     useEffect(() => {
         const m: Record<string,string> = {};
         (assigned as any[]).forEach((r:any) => { m[r.unico] = n2(r.unit_price ?? r.seasonprice); });
@@ -367,13 +409,9 @@ function POPricesModal({ onClose }: { onClose: () => void }) {
         } catch(e:any){ setErr(e.message); }
         finally { setSaving(false); }
     };
-
     const updatePrice = async (unico: string, price: string) => {
-        try {
-            await fetch(`/api/masters/items/po-prices/${unico}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ price: parseFloat(price)||0 }) });
-        } catch {}
+        try { await fetch(`/api/masters/items/po-prices/${unico}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ price: parseFloat(price)||0 }) }); } catch {}
     };
-
     const removeProduct = async (unico: string) => {
         try {
             const res = await fetch(`/api/masters/items/po-prices/${unico}`, { method:"DELETE" });
@@ -396,12 +434,28 @@ function POPricesModal({ onClose }: { onClose: () => void }) {
                 </div>
                 {/* Filters */}
                 <div className="p-2 border-b flex gap-2 items-end shrink-0">
-                    <div className="flex flex-col gap-0.5">
+                    {/* City — incremental combobox */}
+                    <div className="flex flex-col gap-0.5 relative w-56">
                         <label className="text-[8px] font-black text-gray-400 uppercase">City / Customer</label>
-                        <select value={cityUq} onChange={e=>setCityUq(e.target.value)} className="fos-input text-[10px] py-0.5 w-48">
-                            <option value="">— Select —</option>
-                            {(customers as any[]).map((c:any)=><option key={c.unico} value={c.unico}>{t(c.customer||c.name)}</option>)}
-                        </select>
+                        <div className="relative">
+                            <input value={citySearch} onChange={e=>{setCitySearch(e.target.value);setCityOpen(true);}}
+                                onFocus={()=>setCityOpen(true)} onBlur={()=>setTimeout(()=>setCityOpen(false),150)}
+                                placeholder={cityLabel||"Search customer..."}
+                                className="fos-input text-[10px] py-0.5 w-full pr-6"/>
+                            {loadCust && <RefreshCcw size={8} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 animate-spin"/>}
+                        </div>
+                        {cityOpen && (
+                            <div className="absolute top-full left-0 w-full bg-white border border-gray-200 rounded shadow-lg z-30 max-h-48 overflow-auto text-[10px]">
+                                {custList.map((c:any)=>(
+                                    <div key={c.unico} onMouseDown={()=>{setCityUq(c.unico);setCityLabel(t(c.CUST_CODE));setCitySearch("");setCityOpen(false);}}
+                                        className={cn("px-2 py-1 cursor-pointer hover:bg-blue-50 border-b border-gray-50", cityUq===c.unico&&"bg-blue-50 font-bold")}>
+                                        {t(c.CUST_CODE)}
+                                    </div>
+                                ))}
+                                <div ref={custSentinel} className="h-1"/>
+                                {!loadCust && custList.length===0 && <div className="p-2 text-center text-gray-300 italic">No results</div>}
+                            </div>
+                        )}
                     </div>
                     <div className="flex flex-col gap-0.5">
                         <label className="text-[8px] font-black text-gray-400 uppercase">Season</label>
@@ -413,15 +467,17 @@ function POPricesModal({ onClose }: { onClose: () => void }) {
                 </div>
                 {/* Dual list */}
                 <div className="flex gap-2 p-3 flex-1 overflow-hidden min-h-[300px]">
-                    {/* Available */}
+                    {/* Available — infinite scroll */}
                     <div className="flex-1 flex flex-col gap-1">
                         <div className="flex items-center gap-1 h-5">
-                            <span className="text-[9px] font-black text-gray-500 uppercase">Available</span>
-                            {loadL && <RefreshCcw size={8} className="text-gray-400 animate-spin"/>}
+                            <span className="text-[9px] font-black text-gray-500 uppercase">
+                                Available {getTotal(availPages)>0 && `(${available.length}/${getTotal(availPages)})`}
+                            </span>
+                            {(loadL||fetchingMoreAvail) && <RefreshCcw size={8} className="text-gray-400 animate-spin"/>}
                         </div>
                         <div className="relative">
                             <Search size={9} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400"/>
-                            <input value={leftSearch==="%" ? "" : leftSearch} onChange={e=>setLeftSearch(e.target.value||"%")} placeholder="Search..."
+                            <input value={leftSearch} onChange={e=>setLeftSearch(e.target.value)} placeholder="Search..."
                                 className="w-full pl-5 pr-2 py-0.5 text-[10px] border border-gray-200 rounded outline-none"/>
                         </div>
                         <div className="flex-1 border border-gray-200 rounded overflow-auto text-[10px]">
@@ -429,12 +485,13 @@ function POPricesModal({ onClose }: { onClose: () => void }) {
                                 <th className="px-2 py-0.5 text-left font-bold text-gray-500 border-b">Description</th>
                                 <th className="px-2 py-0.5 text-right font-bold text-gray-500 border-b w-16">Price</th>
                             </tr></thead><tbody>
-                            {(available as any[]).map((r:any) => (
+                            {available.map((r:any) => (
                                 <tr key={r.unico} onClick={()=>setLeftSel(r)} className={cn("cursor-pointer border-b border-gray-50 hover:bg-gray-50", leftSel?.unico===r.unico && "bg-blue-50 font-bold")}>
                                     <td className="px-2 py-0.5">{t(r.description)}</td>
                                     <td className="px-2 py-0.5 text-right">{n2(r.unit_price)}</td>
                                 </tr>
                             ))}
+                            <tr ref={availSentinel}><td colSpan={2} className="h-1"/></tr>
                             {!loadL && !(cityUq && seasonUq) && <tr><td colSpan={2} className="p-2 text-center text-gray-300 italic">Select city and season</td></tr>}
                             </tbody></table>
                         </div>
@@ -485,21 +542,27 @@ function POPricesModal({ onClose }: { onClose: () => void }) {
 
 // ─── UpdateStockModal ─────────────────────────────────────────────────────────
 function UpdateStockModal({ onClose, logAction }: { onClose: () => void; logAction: (a:any,u:any,e?:any)=>void }) {
-    const [search,    setSearch]    = useState("%");
-    const [debSearch, setDebSearch] = useState("%");
+    const [search,    setSearch]    = useState("");
+    const [debSearch, setDebSearch] = useState("");
     const [pricesMode, setPricesMode] = useState(false);
     const [editVals,   setEditVals]   = useState<Record<string, any>>({});
     const [saving,     setSaving]     = useState<string|null>(null);
 
-    useEffect(() => { const t = setTimeout(()=>setDebSearch(search),300); return()=>clearTimeout(t); }, [search]);
+    useEffect(() => { const timer = setTimeout(()=>setDebSearch(search),300); return()=>clearTimeout(timer); }, [search]);
 
-    const { data: rows = [], isFetching: loading, refetch } = useQuery({ queryKey:["upd-stk", debSearch], queryFn:()=>sF(`/api/masters/items/products/update-stock?search=${encodeURIComponent(debSearch)}`), staleTime:0 });
+    const { data: stockPages, isFetching: loading, fetchNextPage: fetchMoreStock, hasNextPage: hasMoreStock, isFetchingNextPage: fetchingMoreStock } =
+        useInfiniteQuery({ queryKey:["upd-stk", debSearch], queryFn:({pageParam})=>sF(`/api/masters/items/products/update-stock?search=${encodeURIComponent(debSearch||"%")}&page=${pageParam}&pageSize=${PAGE_SIZE}`), initialPageParam:1, getNextPageParam: nextPage, staleTime:0 });
+    const rows = getPages(stockPages);
+    const stockSentinel = useSentinel(() => fetchMoreStock(), !!(hasMoreStock && !fetchingMoreStock));
 
     useEffect(() => {
         const m: Record<string,any> = {};
-        (rows as any[]).forEach((r:any) => { m[r.unico] = { minimo:r.stock??r.minimo??0, maximo:r.maximum_stock??r.maximo??0, upc:t(r.upc), proyection_upc:t(r.proyection_upc), sales_price:r.sales_price??0 }; });
-        setEditVals(m);
-    }, [rows]);
+        rows.forEach((r:any) => {
+            if (!editVals[r.unico]) // don't overwrite user edits
+                m[r.unico] = { minimo:r.stock??r.minimo??0, maximo:r.maximum_stock??r.maximo??0, upc:t(r.upc), proyection_upc:t(r.proyection_upc), sales_price:r.sales_price??0 };
+        });
+        if (Object.keys(m).length > 0) setEditVals(p => ({...p, ...m}));
+    }, [stockPages]);
 
     const saveRow = async (unico: string) => {
         setSaving(unico);
@@ -529,7 +592,7 @@ function UpdateStockModal({ onClose, logAction }: { onClose: () => void; logActi
                 <div className="p-2 border-b flex items-center gap-2 shrink-0">
                     <div className="relative flex-1">
                         <Search size={9} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400"/>
-                        <input value={search==="%" ? "" : search} onChange={e=>setSearch(e.target.value||"%")} placeholder="Search products..."
+                        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search products..."
                             className="w-full pl-6 pr-2 py-1 text-[10px] border border-gray-200 rounded outline-none"/>
                     </div>
                     <button onClick={()=>setPricesMode(p=>!p)} className={cn("text-[9px] font-black uppercase px-2 py-1 rounded border transition-colors", pricesMode ? "bg-[#FB7506] text-white border-[#FB7506]" : "border-gray-300 text-gray-600 hover:bg-gray-50")}>
@@ -569,7 +632,10 @@ function UpdateStockModal({ onClose, logAction }: { onClose: () => void; logActi
                                     </tr>
                                 );
                             })}
-                            {!loading && (rows as any[]).length===0 && <tr><td colSpan={7} className="p-4 text-center text-gray-300 italic">No products found</td></tr>}
+                            <tr ref={stockSentinel}><td colSpan={7} className="h-1 py-0">
+                                {fetchingMoreStock && <div className="text-center py-1 text-[9px] text-gray-400"><RefreshCcw size={9} className="inline animate-spin mr-1"/>Loading more...</div>}
+                            </td></tr>
+                            {!loading && rows.length===0 && <tr><td colSpan={7} className="p-4 text-center text-gray-300 italic">No products found</td></tr>}
                         </tbody>
                     </table>
                 </div>
@@ -793,8 +859,6 @@ export default function Tab2() {
     const [selProduct,   setSelProduct]   = useState<any>(null);
     const [searchText,   setSearchText]   = useState("");
     const [debSearch,    setDebSearch]    = useState("");
-    const [page,         setPage]         = useState(1);
-    const PAGE_SIZE = 50;
     const [productModal, setProductModal] = useState<{mode:"add"|"edit"|"copy"|"delete"}|null>(null);
     const [productForm,  setProductForm]  = useState<any>({...EMPTY_PROD2});
     const [saving,       setSaving]       = useState(false);
@@ -808,23 +872,19 @@ export default function Tab2() {
     const [showStock,    setShowStock]    = useState(false);
     const [showPrebook,  setShowPrebook]  = useState<"recipe"|"upc"|"sales"|null>(null);
 
-    // Debounce search + reset to page 1
+    // Debounce search
     useEffect(() => {
-        const timer = setTimeout(() => { setDebSearch(searchText); setPage(1); }, 400);
+        const timer = setTimeout(() => setDebSearch(searchText), 400);
         return () => clearTimeout(timer);
     }, [searchText]);
 
-    const { data: pageData, isFetching: loadingP, refetch: refetchAll } = useQuery({
-        queryKey: ["items-tab2", page, debSearch],
-        queryFn:  () => sF(`/api/masters/items/products/all?page=${page}&pageSize=${PAGE_SIZE}&search=${encodeURIComponent(debSearch)}`),
-        staleTime: 30000,
-        placeholderData: (prev: any) => prev,
-    });
+    const { data: prodPages, isFetching: loadingP, fetchNextPage: fetchMoreProds, hasNextPage: hasMoreProds, isFetchingNextPage: fetchingMoreProds, refetch: refetchAll } =
+        useInfiniteQuery({ queryKey:["items-tab2", debSearch], queryFn:({pageParam})=>sF(`/api/masters/items/products/all?page=${pageParam}&pageSize=${PAGE_SIZE}&search=${encodeURIComponent(debSearch)}`), initialPageParam:1, getNextPageParam: nextPage, staleTime:30000 });
     const { data: lookups } = useQuery({ queryKey:["items-look"], queryFn:()=>sF("/api/masters/items/lookups"), staleTime:600000 });
 
-    const products     = (pageData as any)?.records  ?? [] as any[];
-    const totalRecords = (pageData as any)?.total    ?? 0;
-    const totalPages   = Math.max(1, Math.ceil(totalRecords / PAGE_SIZE));
+    const products     = getPages(prodPages);
+    const totalRecords = getTotal(prodPages);
+    const prodSentinel = useSentinel(() => fetchMoreProds(), !!(hasMoreProds && !fetchingMoreProds));
 
     // Auto-select first on page change
     useEffect(() => {
@@ -963,25 +1023,15 @@ export default function Tab2() {
                 </div>
             </div>
 
-            {/* Search + pagination + error */}
+            {/* Search + error */}
             <div className="px-2 py-1 border-b border-gray-200 bg-white flex items-center gap-2 shrink-0">
                 <div className="relative flex-1 max-w-xs">
                     <Search size={11} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400"/>
                     <input value={searchText} onChange={e=>setSearchText(e.target.value)} placeholder="Search products (description, EDI code, class)..."
                         className="w-full pl-7 pr-2 py-1 text-[10px] border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506]"/>
                 </div>
-                {loadingP && <RefreshCcw size={11} className="text-gray-400 animate-spin"/>}
-                {/* Pagination controls */}
-                <div className="flex items-center gap-1 ml-1 shrink-0">
-                    <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page<=1||loadingP}
-                        className="w-5 h-5 flex items-center justify-center rounded border border-gray-200 text-gray-500 hover:bg-gray-100 disabled:opacity-40 text-[10px]">‹</button>
-                    <span className="text-[9px] text-gray-500 whitespace-nowrap">
-                        {page} / {totalPages}
-                    </span>
-                    <button onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page>=totalPages||loadingP}
-                        className="w-5 h-5 flex items-center justify-center rounded border border-gray-200 text-gray-500 hover:bg-gray-100 disabled:opacity-40 text-[10px]">›</button>
-                </div>
-                <span className="text-[9px] text-gray-400 shrink-0">{totalRecords.toLocaleString()} products</span>
+                {(loadingP||fetchingMoreProds) && <RefreshCcw size={11} className="text-gray-400 animate-spin"/>}
+                <span className="text-[9px] text-gray-400 shrink-0">{products.length.toLocaleString()} / {totalRecords.toLocaleString()} products</span>
                 {formError && (
                     <span className="flex items-center gap-1 text-amber-600 text-[9px] font-bold ml-1 min-w-0">
                         <span className="truncate max-w-[300px]">{formError}</span>
@@ -1038,6 +1088,11 @@ export default function Tab2() {
                                 </tr>
                             );
                         })}
+                        <tr ref={prodSentinel}>
+                            <td colSpan={16} className="h-1 py-0">
+                                {fetchingMoreProds && <div className="text-center py-1.5 text-[9px] text-gray-400"><RefreshCcw size={9} className="inline animate-spin mr-1"/>Loading more...</div>}
+                            </td>
+                        </tr>
                         {!loadingP && products.length === 0 && (
                             <tr><td colSpan={16} className="p-4 text-center text-gray-300 italic">No products found</td></tr>
                         )}
@@ -1073,7 +1128,7 @@ export default function Tab2() {
 
             {showAlt && selProduct && (
                 <DualListModal title="Alternative Products" productDesc={t(selProduct.description)} productUq={selProduct.unico}
-                    availUrl={(s)=>`/api/masters/items/products/alternatives/available?product_uq=${selProduct.unico}&search=${encodeURIComponent(s)}`}
+                    availUrl={(s,p)=>`/api/masters/items/products/alternatives/available?product_uq=${selProduct.unico}&search=${encodeURIComponent(s)}&page=${p}&pageSize=${PAGE_SIZE}`}
                     assignedUrl={`/api/masters/items/products/${selProduct.unico}/alternatives`}
                     onAdd={async (item)=>{ const r=await fetch("/api/masters/items/products/alternative",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({product_uq:selProduct.unico,alt_product_uq:item.unico})}); const d=await r.json(); if(!d.success) throw new Error(d.error); logAction("Edit",selProduct.unico,"Add Alternative"); }}
                     onRemove={async (item)=>{ const r=await fetch(`/api/masters/items/products/alternative/${item.unico}`,{method:"DELETE"}); const d=await r.json(); if(!d.success) throw new Error(d.error); logAction("Edit",selProduct.unico,"Remove Alternative"); }}
@@ -1082,7 +1137,7 @@ export default function Tab2() {
 
             {showRecipe && selProduct && (
                 <DualListModal title="Season Recipes" productDesc={t(selProduct.description)} productUq={selProduct.unico}
-                    availUrl={(s)=>`/api/masters/items/products/recipes/available?product_uq=${selProduct.unico}&search=${encodeURIComponent(s)}`}
+                    availUrl={(s,p)=>`/api/masters/items/products/recipes/available?product_uq=${selProduct.unico}&search=${encodeURIComponent(s)}&page=${p}&pageSize=${PAGE_SIZE}`}
                     assignedUrl={`/api/masters/items/products/${selProduct.unico}/recipes`}
                     onAdd={async (item)=>{ const r=await fetch("/api/masters/items/products/recipe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({product_uq:selProduct.unico,recipe_uq:item.unico})}); const d=await r.json(); if(!d.success) throw new Error(d.error); logAction("Edit",selProduct.unico,"Add Recipe"); }}
                     onRemove={async (item)=>{ const r=await fetch(`/api/masters/items/products/recipe/${item.unico}`,{method:"DELETE"}); const d=await r.json(); if(!d.success) throw new Error(d.error); logAction("Edit",selProduct.unico,"Remove Recipe"); }}
