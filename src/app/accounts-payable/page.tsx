@@ -10,9 +10,9 @@ import { z } from "zod";
 import {
     ArrowLeft, RefreshCcw, Calendar, DollarSign,
     FileText, CreditCard, ClipboardList, BookOpen, Plus,
-    Pencil, Trash2, Check, XCircle, AlertCircle, CheckCircle,
+    Pencil, Trash2, Check, XCircle, X, AlertCircle, CheckCircle,
     ChevronRight, ChevronLeft, Search, Download, Printer,
-    BarChart2, Clock
+    BarChart2, Clock, Menu
 } from "lucide-react";
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
@@ -90,6 +90,8 @@ export default function AccountsPayablePage() {
     const [summaryModal,     setSummaryModal]     = useState(false);
     const [pendingAPModal,   setPendingAPModal]   = useState(false);
     const [pendingUnico,     setPendingUnico]     = useState<string | null>(null);
+    const [mobileInvOpen,    setMobileInvOpen]    = useState(false);
+    const [invSearch,        setInvSearch]        = useState("");
 
     useEffect(() => {
         if (status === "unauthenticated") router.push("/login");
