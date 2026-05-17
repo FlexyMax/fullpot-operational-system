@@ -554,14 +554,14 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                                                 <div key={sub.unico}>
                                                     {/* Subclass row */}
                                                     <div className={cn("h-10 flex items-center gap-2 px-4 cursor-pointer select-none transition-colors",
-                                                        isExpSc ? "bg-gray-700" : "hover:bg-gray-200",
+                                                        isExpSc ? "bg-gray-500" : "hover:bg-gray-200",
                                                         isSel && !isExpSc && "bg-blue-50")}
                                                         onClick={()=>toggleSubclass(sub)}>
                                                         <ChevronRight size={12} className={cn("transition-transform shrink-0", isExpSc ? "text-[#FB7506] rotate-90" : "text-gray-400")}/>
                                                         {isLoadSc ? <RefreshCcw size={11} className="text-[#FB7506] animate-spin shrink-0"/> : <Layers size={11} className={isExpSc?"text-[#FB7506] shrink-0":"text-gray-400 shrink-0"}/>}
                                                         <div className="flex-1 min-w-0 flex items-baseline gap-2">
                                                             <span className={cn("font-semibold text-xs truncate", isExpSc?"text-white":"text-gray-700")}>{t(sub.subclase)}</span>
-                                                            <span className={cn("text-[10px] shrink-0", isExpSc?"text-gray-300":"text-gray-400")}>{t(sub.sub_sh)}</span>
+                                                            <span className={cn("text-[10px] shrink-0", isExpSc?"text-gray-100":"text-gray-400")}>{t(sub.sub_sh)}</span>
                                                         </div>
                                                         {isExpSc && varieties.length > 0 && <span className="text-[10px] text-gray-300 bg-black/20 px-2 py-0.5 rounded-full shrink-0">{varieties.length} var</span>}
                                                         <div className="flex gap-1 shrink-0" onClick={e=>e.stopPropagation()}>
@@ -650,7 +650,7 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
             <div className="order-first md:order-last flex flex-col gap-1.5 overflow-hidden h-[55vh] md:h-auto md:w-[42%] md:flex-none">
 
                 {/* Mobile: Grades + Colors side by side (top row). Desktop: stacked */}
-                <div className="flex flex-row md:flex-col gap-1.5 flex-[2] min-h-0 overflow-hidden">
+                <div className="flex flex-row md:flex-col gap-1.5 flex-[1.2] min-h-0 overflow-hidden">
 
                 {/* Grades */}
                 <RightCard icon={Layers} title="Grades" loading={loadingGr} recordId={selGrade?.unico}
