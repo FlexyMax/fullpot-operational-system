@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import {
     Plus, Pencil, Trash2, Save, X, RefreshCcw, Search, Check, XCircle,
     Layers, Box, ClipboardList, Calendar, ChevronDown, Menu
@@ -419,16 +419,24 @@ function PreBookDateModal({ title, productDesc, showDeletePrior, showChangeCase,
 
 // ─── Tab 3 Props ──────────────────────────────────────────────────────────────
 interface Tab3Props {
-    selSubclass:  any;
-    selVariety:   any;
+    selSubclass:   any;
+    selVariety:    any;
     setSelVariety: (v: any) => void;
-    varieties:    any[];
-    loadingVr:    boolean;
-    refetchVr:    () => void;
 }
 
 // ─── Tab 3 Main ───────────────────────────────────────────────────────────────
-export default function Tab3({ selSubclass, selVariety, setSelVariety, varieties, loadingVr, refetchVr }: Tab3Props) {
+export default function Tab3({ selSubclass, selVariety, setSelVariety }: Tab3Props) {
+    // Fetch varieties for the left panel based on selSubclass
+    const { data: varieties = [], isFetching: loadingVr, refetch: refetchVr } = useQuery({
+        queryKey: ["tab3-vr", selSubclass?.unico],
+        queryFn:  () => sF(`/api/masters/items/varieties?subclass_uq=${selSubclass.unico}&search=%`),
+        enabled:  !!selSubclass?.unico,
+        staleTime: 30000,
+    });
+    useEffect(() => {
+        if ((varieties as any[]).length > 0 && !selVariety) setSelVariety((varieties as any[])[0]);
+        else if (!(varieties as any[]).length) setSelVariety(null);
+    }, [varieties]);
     const { logAction } = useAuditLog("items-setup", "flower_varieties");
     const perms         = usePagePermissions("items-setup");
 
