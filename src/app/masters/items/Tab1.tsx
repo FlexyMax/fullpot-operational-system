@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     ChevronRight, Plus, Pencil, Trash2, Save, X, RefreshCcw,
-    Check, XCircle, Search, Tag, Layers, Box, Palette, MoreVertical, Menu
+    Check, XCircle, Search, Tag, Layers, Box, Palette, Package, Menu
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AuditLogModal } from "@/components/AuditLogModal";
@@ -130,8 +130,10 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
     // ── Tree state ────────────────────────────────────────────────────────────
     const [expandedCl,  setExpandedCl]  = useState<Set<string>>(new Set());
     const [expandedSc,  setExpandedSc]  = useState<Set<string>>(new Set());
+    const [expandedVr,  setExpandedVr]  = useState<Set<string>>(new Set());
     const [subclaMap,   setSubclaMap]   = useState<Record<string, any[]>>({});
     const [vrMap,       setVrMap]       = useState<Record<string, any[]>>({});
+    const [productsMap, setProductsMap] = useState<Record<string, any[]>>({});
     const [loadingNode, setLoadingNode] = useState<Set<string>>(new Set());
     const [classSearch, setClassSearch] = useState("");
 
@@ -139,7 +141,7 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
     const { data: classes = [], isFetching: loadingCl, refetch: refetchCl } =
         useQuery({ queryKey:["t1-cl", classSearch], queryFn:()=>sF(`/api/masters/items/classes?search=${encodeURIComponent(classSearch||"%")}`), staleTime:30000 });
     const { data: grades  = [], isFetching: loadingGr, refetch: refetchGr } =
-        useQuery({ queryKey:["t1-gr"], queryFn:()=>sF("/api/masters/items/grades?search=%"), staleTime:60000 });
+        useQuery({ queryKey:["t1-gr"], queryFn:()=>sF("/api/masters/items/grades"), staleTime:60000 });
     const { data: colors  = [], isFetching: loadingCo, refetch: refetchCo } =
         useQuery({ queryKey:["t1-co"], queryFn:()=>sF("/api/masters/items/colors"), staleTime:60000 });
     const { data: cases   = [], isFetching: loadingCs, refetch: refetchCs } =
@@ -154,15 +156,11 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
     // ── Tree: expand class ─────────────────────────────────────────────────────
     const toggleClass = useCallback(async (cls: any) => {
         const unico = cls.unico;
-        setExpandedCl(prev => {
-            const s = new Set(prev);
-            if (s.has(unico)) { s.delete(unico); return s; }
-            s.add(unico); return s;
-        });
+        setExpandedCl(prev => { const s = new Set(prev); s.has(unico) ? s.delete(unico) : s.add(unico); return s; });
         if (!subclaMap[unico]) {
             setLoadingNode(p => new Set([...p, unico]));
             try {
-                const data = await sF(`/api/masters/items/subclasses?class_uq=${unico}&search=%`);
+                const data = await sF(`/api/masters/items/subclasses?class_uq=${encodeURIComponent(unico)}`);
                 setSubclaMap(p => ({...p, [unico]: data}));
             } finally { setLoadingNode(p => { const s = new Set(p); s.delete(unico); return s; }); }
         }
@@ -171,21 +169,38 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
     // ── Tree: expand subclass ──────────────────────────────────────────────────
     const toggleSubclass = useCallback(async (sub: any) => {
         const unico = sub.unico;
-        setExpandedSc(prev => {
-            const s = new Set(prev);
-            if (s.has(unico)) { s.delete(unico); setSelSubclass(null); setSelVariety(null); return s; }
-            s.add(unico); return s;
-        });
-        setSelSubclass(sub);
-        setSelVariety(null);
-        if (!vrMap[unico]) {
+        const willExpand = !expandedSc.has(unico);
+        setExpandedSc(prev => { const s = new Set(prev); s.has(unico) ? s.delete(unico) : s.add(unico); return s; });
+        if (willExpand) {
+            setSelSubclass(sub);
+            setSelVariety(null);
+        } else {
+            setSelSubclass(null);
+            setSelVariety(null);
+        }
+        if (willExpand && !vrMap[unico]) {
             setLoadingNode(p => new Set([...p, unico]));
             try {
-                const data = await sF(`/api/masters/items/varieties?subclass_uq=${unico}&search=%`);
+                const data = await sF(`/api/masters/items/varieties?subclass_uq=${encodeURIComponent(unico)}`);
                 setVrMap(p => ({...p, [unico]: data}));
             } finally { setLoadingNode(p => { const s = new Set(p); s.delete(unico); return s; }); }
         }
-    }, [vrMap, setSelSubclass, setSelVariety]);
+    }, [vrMap, expandedSc, setSelSubclass, setSelVariety]);
+
+    // ── Tree: expand variety → products ────────────────────────────────────────
+    const toggleVariety = useCallback(async (vr: any) => {
+        const unico = vr.unico;
+        const willExpand = !expandedVr.has(unico);
+        setExpandedVr(prev => { const s = new Set(prev); s.has(unico) ? s.delete(unico) : s.add(unico); return s; });
+        setSelVariety(vr);
+        if (willExpand && !productsMap[unico]) {
+            setLoadingNode(p => new Set([...p, unico]));
+            try {
+                const data = await sF(`/api/masters/items/products?variety_uq=${encodeURIComponent(unico)}`);
+                setProductsMap(p => ({...p, [unico]: data}));
+            } finally { setLoadingNode(p => { const s = new Set(p); s.delete(unico); return s; }); }
+        }
+    }, [productsMap, expandedVr, setSelVariety]);
 
     // ── CRUD save ─────────────────────────────────────────────────────────────
     const doSave = async () => {
@@ -347,26 +362,49 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                                                     </div>
                                                     {/* Varieties */}
                                                     {isExpSc && (
-                                                        <div className="bg-white divide-y divide-gray-100 border-t border-gray-600/20">
-                                                            {varieties.length === 0 && !isLoadSc && (
+                                                        <div className="bg-white border-t border-gray-600/20">
+                                                            {isLoadSc && <div className="px-12 py-2 flex items-center gap-2 text-xs text-gray-400"><RefreshCcw size={10} className="animate-spin"/>Loading varieties...</div>}
+                                                            {!isLoadSc && varieties.length === 0 && (
                                                                 <div className="px-12 py-2 text-xs text-gray-400 italic">No varieties</div>
                                                             )}
                                                             {varieties.map((vr: any) => {
-                                                                const isSelVr = selVariety?.unico === vr.unico;
+                                                                const isSelVr  = selVariety?.unico === vr.unico;
+                                                                const isExpVr  = expandedVr.has(vr.unico);
+                                                                const isLoadVr = loadingNode.has(vr.unico);
+                                                                const products: any[] = productsMap[vr.unico] || [];
                                                                 return (
-                                                                    <div key={vr.unico}
-                                                                        className={cn("h-9 flex items-center gap-2.5 px-8 cursor-pointer hover:bg-blue-50 transition-colors select-none",
-                                                                            isSelVr && "bg-blue-50 ring-1 ring-inset ring-blue-200")}
-                                                                        onClick={()=>setSelVariety(vr)}>
-                                                                        <div className="w-2 h-2 rounded-full bg-gray-300 shrink-0"/>
-                                                                        <span className={cn("text-xs font-medium flex-1 truncate", isSelVr?"text-blue-700":"text-gray-700")}>{t(vr.variety)}</span>
-                                                                        <span className="text-[10px] text-gray-400 shrink-0">{t(vr.color)}</span>
-                                                                        {vr.active && <Check size={10} className="text-green-500 shrink-0"/>}
-                                                                        <AuditLogModal recordId={vr.unico} disabled={!vr.unico}/>
-                                                                        <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100" onClick={e=>e.stopPropagation()}>
-                                                                            <button onClick={()=>openModal("variety","edit",{...vr,subcla_uq:sub.unico})} className="p-0.5 rounded hover:bg-gray-200 text-gray-400 hover:text-blue-500"><Pencil size={10}/></button>
-                                                                            <button onClick={()=>openModal("variety","delete",{...vr,subcla_uq:sub.unico,subclaUnico:sub.unico})} className="p-0.5 rounded hover:bg-gray-200 text-gray-400 hover:text-red-500"><Trash2 size={10}/></button>
+                                                                    <div key={vr.unico} className="border-b border-gray-100 last:border-b-0">
+                                                                        {/* Variety row */}
+                                                                        <div className={cn("h-9 flex items-center gap-2 px-8 cursor-pointer transition-colors select-none",
+                                                                            isSelVr ? "bg-blue-50" : "hover:bg-gray-50")}
+                                                                            onClick={()=>toggleVariety(vr)}>
+                                                                            <ChevronRight size={11} className={cn("transition-transform shrink-0", isExpVr?"text-[#FB7506] rotate-90":"text-gray-300")}/>
+                                                                            {isLoadVr ? <RefreshCcw size={10} className="text-[#FB7506] animate-spin shrink-0"/> : <div className="w-1.5 h-1.5 rounded-full bg-gray-400 shrink-0"/>}
+                                                                            <span className={cn("text-xs font-medium flex-1 truncate", isSelVr?"text-blue-700":"text-gray-700")}>{t(vr.variety)}</span>
+                                                                            <span className="text-[10px] text-gray-400 shrink-0">{t(vr.color)}</span>
+                                                                            {isExpVr && products.length > 0 && <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 rounded-full shrink-0">{products.length}</span>}
+                                                                            {vr.active ? <Check size={10} className="text-green-500 shrink-0"/> : <span className="text-[10px] text-gray-300 shrink-0">off</span>}
+                                                                            <AuditLogModal recordId={vr.unico} disabled={!vr.unico}/>
+                                                                            <div className="flex gap-0.5 shrink-0" onClick={e=>e.stopPropagation()}>
+                                                                                <button onClick={()=>openModal("variety","edit",{...vr,subcla_uq:sub.unico})} className="p-1 rounded hover:bg-gray-200 text-gray-300 hover:text-blue-500"><Pencil size={10}/></button>
+                                                                                <button onClick={()=>openModal("variety","delete",{...vr,subcla_uq:sub.unico,subclaUnico:sub.unico})} className="p-1 rounded hover:bg-gray-200 text-gray-300 hover:text-red-500"><Trash2 size={10}/></button>
+                                                                            </div>
                                                                         </div>
+                                                                        {/* Products */}
+                                                                        {isExpVr && (
+                                                                            <div className="bg-gray-50 divide-y divide-gray-100 border-t border-gray-200">
+                                                                                {isLoadVr && <div className="px-14 py-1.5 flex items-center gap-2 text-[10px] text-gray-400"><RefreshCcw size={9} className="animate-spin"/>Loading products...</div>}
+                                                                                {!isLoadVr && products.length === 0 && <div className="px-14 py-1.5 text-[10px] text-gray-400 italic">No products</div>}
+                                                                                {products.map((p: any) => (
+                                                                                    <div key={p.unico} className="h-8 flex items-center gap-2 px-14">
+                                                                                        <Package size={10} className="text-gray-300 shrink-0"/>
+                                                                                        <span className="text-[11px] text-gray-600 flex-1 truncate font-medium">{t(p.description)}</span>
+                                                                                        <span className="text-[10px] text-gray-400 shrink-0">{t(p.case_sh)}</span>
+                                                                                        {p.active ? <Check size={9} className="text-green-400 shrink-0"/> : <span className="text-[9px] text-gray-300">off</span>}
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        )}
                                                                     </div>
                                                                 );
                                                             })}
