@@ -15,9 +15,7 @@ export async function GET(req: NextRequest) {
             lnRowsOfPage:  pageSize,
         });
         const records = r.recordset;
-        // After SP is updated it will include QueryTotalRecords.
-        // Until then fall back to returning all records as page 1.
-        const total = records[0]?.QueryTotalRecords ?? records.length;
+        const total   = records[0]?.QueryTotalRecords ?? 0;
         return NextResponse.json({ records, total, page, pageSize });
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });
