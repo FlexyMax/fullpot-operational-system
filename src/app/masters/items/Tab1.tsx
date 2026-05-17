@@ -343,6 +343,11 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
         useQuery({ queryKey:["t1-cs"], queryFn:()=>sF("/api/masters/items/cases"), staleTime:60000 });
 
     // ── Modal state ───────────────────────────────────────────────────────────
+    // ── Right-panel selection state ───────────────────────────────────────────
+    const [selGrade, setSelGrade] = useState<any>(null);
+    const [selColor, setSelColor] = useState<any>(null);
+    const [selCase,  setSelCase]  = useState<any>(null);
+
     const [modal,         setModal]         = useState<{type:"class"|"subclass"|"grade"|"color"|"case"|"variety"|"product"; mode:"add"|"edit"|"delete"; target?: any}|null>(null);
     const [form,          setForm]          = useState<any>({});
     const [saving,        setSaving]        = useState(false);
@@ -482,9 +487,9 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
         : classes as any[];
 
     return (
-        <div className="flex gap-1.5 flex-1 p-1.5 overflow-hidden">
-            {/* ── Left: Hierarchy Tree ────────────────────────────────────────── */}
-            <div className="flex flex-col overflow-hidden bg-white rounded-lg border border-gray-200 shadow-sm" style={{width:"58%"}}>
+        <div className="flex flex-col md:flex-row gap-1.5 flex-1 p-1.5 overflow-hidden">
+            {/* ── Left: Hierarchy Tree — below cards on mobile, left on desktop ─ */}
+            <div className="order-last md:order-first flex flex-col overflow-hidden bg-white rounded-lg border border-gray-200 shadow-sm flex-1 min-h-0 md:w-[58%] md:flex-none">
                 {/* Tree header */}
                 <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0">
                     <div className="flex items-center gap-2">
@@ -514,7 +519,7 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                         return (
                             <div key={cls.unico} className="rounded-lg overflow-hidden border border-black/10">
                                 {/* Class row */}
-                                <div className={cn("h-12 bg-[#374151] flex items-center gap-2.5 px-3 cursor-pointer hover:bg-[#2d3748] transition-colors select-none",
+                                <div className={cn("h-12 bg-[#2c3e50] flex items-center gap-2.5 px-3 cursor-pointer hover:bg-[#253545] transition-colors select-none",
                                     isExpCl && "rounded-b-none")}
                                     onClick={()=>toggleClass(cls)}>
                                     <ChevronRight size={14} className={cn("text-[#FB7506] transition-transform shrink-0", isExpCl && "rotate-90")}/>
@@ -641,13 +646,15 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                 </div>
             </div>
 
-            {/* ── Right: Grades + Colors + Cases ──────────────────────────────── */}
-            <div className="flex flex-col gap-1.5 overflow-hidden" style={{width:"42%"}}>
+            {/* ── Right: Grades + Colors + Cases — top on mobile, right on desktop ─ */}
+            <div className="order-first md:order-last flex flex-col gap-1.5 overflow-hidden h-[40vh] md:h-auto md:w-[42%] md:flex-none">
 
                 {/* Grades */}
-                <RightCard icon={Layers} title="Grades" loading={loadingGr} recordId={undefined}
+                <RightCard icon={Layers} title="Grades" loading={loadingGr} recordId={selGrade?.unico}
                     menuItems={[
-                        { label:"Add Grade",   icon:Plus,   color:"green", onClick:()=>openModal("grade","add",undefined,{...EMPTY_GRADE}) },
+                        { label:"Add Grade",    icon:Plus,   color:"green", onClick:()=>{ setSelGrade(null); openModal("grade","add",undefined,{...EMPTY_GRADE}); } },
+                        { label:"Edit Grade",   icon:Pencil, color:"blue",  onClick:()=>{ if(selGrade) openModal("grade","edit",selGrade); }, disabled:!selGrade },
+                        { label:"Delete Grade", icon:Trash2, color:"red",   onClick:()=>{ if(selGrade) openModal("grade","delete",selGrade); }, disabled:!selGrade },
                     ]}>
                     <table className="min-w-full text-left">
                         <thead className="bg-gray-100 border-b border-gray-200 text-gray-700 sticky top-0 z-10">
@@ -659,23 +666,29 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100 fos-grid-tbody">
-                            {(grades as any[]).map((g:any) => (
-                                <tr key={g.unico} className="hover:bg-gray-50 cursor-pointer group">
-                                    <td className="p-2 font-medium border-r border-gray-100">{t(g.grado)}</td>
-                                    <td className="p-2 text-gray-500 border-r border-gray-100">{t(g.grade_sh)}</td>
-                                    <td className="p-2 text-center border-r border-gray-100">{g.display?<Check size={11} className="text-green-500 mx-auto"/>:"—"}</td>
-                                    <td className="p-2 text-center">{g.fnational?<Check size={11} className="text-blue-400 mx-auto"/>:"—"}</td>
-                                </tr>
-                            ))}
+                            {(grades as any[]).map((g:any) => {
+                                const isSel = selGrade?.unico === g.unico;
+                                return (
+                                    <tr key={g.unico} onClick={()=>setSelGrade(isSel ? null : g)}
+                                        className={cn("cursor-pointer transition-colors", isSel ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50")}>
+                                        <td className="p-2 font-medium border-r border-gray-100">{t(g.grado)}</td>
+                                        <td className="p-2 text-gray-500 border-r border-gray-100">{t(g.grade_sh)}</td>
+                                        <td className="p-2 text-center border-r border-gray-100">{g.display?<Check size={11} className="text-green-500 mx-auto"/>:"—"}</td>
+                                        <td className="p-2 text-center">{g.fnational?<Check size={11} className="text-blue-400 mx-auto"/>:"—"}</td>
+                                    </tr>
+                                );
+                            })}
                             {!loadingGr && (grades as any[]).length===0 && <tr><td colSpan={4} className="p-4 text-center text-gray-300 italic text-xs">No grades</td></tr>}
                         </tbody>
                     </table>
                 </RightCard>
 
                 {/* Colors */}
-                <RightCard icon={Palette} title="Colors" loading={loadingCo} recordId={undefined}
+                <RightCard icon={Palette} title="Colors" loading={loadingCo} recordId={selColor?.unico}
                     menuItems={[
-                        { label:"Add Color", icon:Plus, color:"green", onClick:()=>openModal("color","add",undefined,{...EMPTY_COLOR}) },
+                        { label:"Add Color",    icon:Plus,   color:"green", onClick:()=>{ setSelColor(null); openModal("color","add",undefined,{...EMPTY_COLOR}); } },
+                        { label:"Edit Color",   icon:Pencil, color:"blue",  onClick:()=>{ if(selColor) openModal("color","edit",selColor); }, disabled:!selColor },
+                        { label:"Delete Color", icon:Trash2, color:"red",   onClick:()=>{ if(selColor) openModal("color","delete",selColor); }, disabled:!selColor },
                     ]}>
                     <table className="min-w-full text-left">
                         <thead className="bg-gray-100 border-b border-gray-200 text-gray-700 sticky top-0 z-10">
@@ -687,23 +700,29 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100 fos-grid-tbody">
-                            {(colors as any[]).map((c:any) => (
-                                <tr key={c.unico} className="hover:bg-gray-50 cursor-pointer">
-                                    <td className="p-2 font-medium border-r border-gray-100">{t(c.color)}</td>
-                                    <td className="p-2 text-gray-500 border-r border-gray-100">{t(c.color_sh)}</td>
-                                    <td className="p-2 text-center border-r border-gray-100">{c.display?<Check size={11} className="text-green-500 mx-auto"/>:"—"}</td>
-                                    <td className="p-2 text-center">{c.mix?<Check size={11} className="text-blue-400 mx-auto"/>:"—"}</td>
-                                </tr>
-                            ))}
+                            {(colors as any[]).map((c:any) => {
+                                const isSel = selColor?.unico === c.unico;
+                                return (
+                                    <tr key={c.unico} onClick={()=>setSelColor(isSel ? null : c)}
+                                        className={cn("cursor-pointer transition-colors", isSel ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50")}>
+                                        <td className="p-2 font-medium border-r border-gray-100">{t(c.color)}</td>
+                                        <td className="p-2 text-gray-500 border-r border-gray-100">{t(c.color_sh)}</td>
+                                        <td className="p-2 text-center border-r border-gray-100">{c.display?<Check size={11} className="text-green-500 mx-auto"/>:"—"}</td>
+                                        <td className="p-2 text-center">{c.mix?<Check size={11} className="text-blue-400 mx-auto"/>:"—"}</td>
+                                    </tr>
+                                );
+                            })}
                             {!loadingCo && (colors as any[]).length===0 && <tr><td colSpan={4} className="p-4 text-center text-gray-300 italic text-xs">No colors</td></tr>}
                         </tbody>
                     </table>
                 </RightCard>
 
                 {/* Cases */}
-                <RightCard icon={Box} title="Cases" loading={loadingCs} recordId={undefined}
+                <RightCard icon={Box} title="Cases" loading={loadingCs} recordId={selCase?.unico}
                     menuItems={[
-                        { label:"Add Case", icon:Plus, color:"green", onClick:()=>openModal("case","add",undefined,{...EMPTY_CASE}) },
+                        { label:"Add Case",    icon:Plus,   color:"green", onClick:()=>{ setSelCase(null); openModal("case","add",undefined,{...EMPTY_CASE}); } },
+                        { label:"Edit Case",   icon:Pencil, color:"blue",  onClick:()=>{ if(selCase) openModal("case","edit",selCase); }, disabled:!selCase },
+                        { label:"Delete Case", icon:Trash2, color:"red",   onClick:()=>{ if(selCase) openModal("case","delete",selCase); }, disabled:!selCase },
                     ]}>
                     <table className="min-w-full text-left">
                         <thead className="bg-gray-100 border-b border-gray-200 text-gray-700 sticky top-0 z-10">
@@ -715,14 +734,18 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100 fos-grid-tbody">
-                            {(cases as any[]).map((c:any) => (
-                                <tr key={c.unico} className="hover:bg-gray-50 cursor-pointer">
-                                    <td className="p-2 font-medium border-r border-gray-100">{t(c.case_name)}</td>
-                                    <td className="p-2 text-gray-500 border-r border-gray-100">{t(c.case_sh)}</td>
-                                    <td className="p-2 text-right border-r border-gray-100">{parseFloat(c.factor||0).toFixed(2)}</td>
-                                    <td className="p-2 text-center">{c.display?<Check size={11} className="text-green-500 mx-auto"/>:"—"}</td>
-                                </tr>
-                            ))}
+                            {(cases as any[]).map((c:any) => {
+                                const isSel = selCase?.unico === c.unico;
+                                return (
+                                    <tr key={c.unico} onClick={()=>setSelCase(isSel ? null : c)}
+                                        className={cn("cursor-pointer transition-colors", isSel ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50")}>
+                                        <td className="p-2 font-medium border-r border-gray-100">{t(c.case_name)}</td>
+                                        <td className="p-2 text-gray-500 border-r border-gray-100">{t(c.case_sh)}</td>
+                                        <td className="p-2 text-right border-r border-gray-100">{parseFloat(c.factor||0).toFixed(2)}</td>
+                                        <td className="p-2 text-center">{c.display?<Check size={11} className="text-green-500 mx-auto"/>:"—"}</td>
+                                    </tr>
+                                );
+                            })}
                             {!loadingCs && (cases as any[]).length===0 && <tr><td colSpan={4} className="p-4 text-center text-gray-300 italic text-xs">No cases</td></tr>}
                         </tbody>
                     </table>
