@@ -44,28 +44,29 @@ const EMPTY_PRODUCT  = {
 function GridMenu({ items }: { items: { label:string; icon:any; color:string; onClick:()=>void; disabled?:boolean }[] }) {
     const [open, setOpen] = useState(false);
     const C: Record<string,{icon:string;text:string}> = {
-        green:  {icon:"text-green-600", text:"text-green-700"},
-        blue:   {icon:"text-blue-500",  text:"text-gray-800"},
-        red:    {icon:"text-red-500",   text:"text-gray-800"},
-        gray:   {icon:"text-gray-400",  text:"text-gray-400"},
-        amber:  {icon:"text-amber-500", text:"text-gray-800"},
+        green:  {icon:"text-green-600",  text:"text-green-700"},
+        blue:   {icon:"text-blue-500",   text:"text-gray-800"},
+        red:    {icon:"text-red-500",    text:"text-gray-800"},
+        gray:   {icon:"text-gray-500",   text:"text-gray-700"},
+        amber:  {icon:"text-amber-500",  text:"text-gray-800"},
+        purple: {icon:"text-purple-500", text:"text-gray-800"},
     };
     return (
         <div className="relative" onClick={e => e.stopPropagation()}>
             <button onClick={() => setOpen(o => !o)}
-                className="h-7 bg-[#FB7506] hover:bg-orange-600 text-white w-16 flex items-center justify-center transition-colors rounded text-[8px]" title="Menu">
-                <Menu size={14} />
+                className="h-10 bg-[#FB7506] hover:bg-orange-600 text-white w-24 flex items-center justify-center transition-colors rounded-tr-lg cursor-pointer" title="Menu">
+                <Menu size={20} />
             </button>
             {open && (
-                <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-2xl z-50 overflow-hidden"
+                <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-gray-200 rounded-lg shadow-2xl z-50 overflow-hidden"
                     onMouseLeave={() => setOpen(false)}>
                     {items.map((item, i) => {
                         const c = C[item.color] || C.gray;
                         return (
                             <button key={i} onClick={() => { item.onClick(); setOpen(false); }}
                                 disabled={!!item.disabled}
-                                className={cn("w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors", i < items.length-1 && "border-b border-gray-100")}>
-                                <item.icon size={16} className={c.icon} />
+                                className={cn("w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors", i < items.length-1 && "border-b border-gray-100")}>
+                                <item.icon size={18} className={c.icon} />
                                 <span className={cn("text-sm font-bold", c.text)}>{item.label}</span>
                             </button>
                         );
@@ -80,22 +81,22 @@ function GridMenu({ items }: { items: { label:string; icon:any; color:string; on
 function MiniTable({ cols, rows, selUnico, onSelect, loading, empty }: any) {
     return (
         <div className="overflow-auto flex-1">
-            <table className="min-w-full text-[10px] text-left">
-                <thead className="bg-gray-50 border-b border-gray-100 text-gray-500 font-bold sticky top-0 z-10">
-                    <tr>{cols.map((c: any) => <th key={c.key} className={cn("p-1.5 whitespace-nowrap border-r border-gray-100 last:border-r-0", c.className)}>{c.label}</th>)}</tr>
+            <table className="min-w-full text-left">
+                <thead className="bg-gray-100 border-b border-gray-200 text-gray-700 sticky top-0 z-10">
+                    <tr className="fos-grid-thead">{cols.map((c: any) => <th key={c.key} className={cn("p-2 whitespace-nowrap border-r border-gray-200 last:border-r-0", c.className)}>{c.label}</th>)}</tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-gray-100 fos-grid-tbody">
                     {loading ? (
-                        <tr><td colSpan={cols.length} className="p-4 text-center text-gray-300 italic">Loading...</td></tr>
+                        <tr><td colSpan={cols.length} className="p-4 text-center text-gray-300 italic text-xs">Loading...</td></tr>
                     ) : rows.length === 0 ? (
-                        <tr><td colSpan={cols.length} className="p-4 text-center text-gray-300 italic">{empty}</td></tr>
+                        <tr><td colSpan={cols.length} className="p-4 text-center text-gray-300 italic text-xs">{empty}</td></tr>
                     ) : rows.map((r: any, i: number) => {
                         const isSel = selUnico && selUnico === r.unico;
                         return (
                             <tr key={r.unico||i} onClick={() => onSelect?.(r)}
                                 className={cn("cursor-pointer transition-colors", isSel ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50/80")}>
                                 {cols.map((c: any) => (
-                                    <td key={c.key} className={cn("p-1.5 border-r border-gray-50 last:border-r-0", c.className)}>
+                                    <td key={c.key} className={cn("p-2 border-r border-gray-100 last:border-r-0", c.className)}>
                                         {c.render ? c.render(r[c.key], r) : t(r[c.key])}
                                     </td>
                                 ))}
@@ -111,14 +112,14 @@ function MiniTable({ cols, rows, selUnico, onSelect, loading, empty }: any) {
 // ─── Panel header ──────────────────────────────────────────────────────────────
 function PanelHeader({ icon: Icon, title, loading, recordId, children }: any) {
     return (
-        <div className="h-7 bg-[#374151] flex items-center justify-between pl-2 pr-1 shrink-0">
-            <div className="flex items-center gap-1.5">
-                <Icon size={11} className="text-[#FB7506]" />
-                <span className="font-black text-[9px] uppercase tracking-widest text-white">{title}</span>
+        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0">
+            <div className="flex items-center gap-2">
+                <Icon size={15} className="text-[#FB7506]" />
+                <span className="fos-grid-header-text">{title}</span>
                 <AuditLogModal recordId={recordId} disabled={!recordId} />
-                {loading && <RefreshCcw size={8} className="text-gray-400 animate-spin" />}
+                {loading && <RefreshCcw size={11} className="text-gray-400 animate-spin" />}
             </div>
-            <div className="flex items-center gap-1">{children}</div>
+            <div className="flex items-center">{children}</div>
         </div>
     );
 }
@@ -602,7 +603,7 @@ export default function ItemsSetupPage() {
                                 {id:"cases",   label:"Cases"},
                             ] as const).map(tab => (
                                 <button key={tab.id} onClick={() => setActiveSubTab(tab.id)}
-                                    className={cn("px-3 h-5 text-[8px] font-black uppercase tracking-wider rounded-t transition-all",
+                                    className={cn("px-3 h-7 text-[10px] font-black uppercase tracking-wider rounded-t transition-all",
                                         activeSubTab===tab.id ? "bg-[#f4f6f8] text-[#FB7506]" : "text-gray-400 hover:text-white hover:bg-white/10")}>
                                     {tab.label}
                                 </button>
@@ -612,7 +613,7 @@ export default function ItemsSetupPage() {
                         {/* Subclass tab */}
                         {activeSubTab === "subclass" && (
                             <>
-                                <div className="h-6 bg-gray-700/50 flex items-center justify-between px-2 shrink-0">
+                                <div className="h-8 bg-gray-700/50 flex items-center justify-between px-2 shrink-0">
                                     <div className="flex items-center gap-1">
                                         <AuditLogModal recordId={selSubclass?.unico} disabled={!selSubclass?.unico} />
                                         {loadingSc && <RefreshCcw size={8} className="text-gray-400 animate-spin" />}
@@ -638,7 +639,7 @@ export default function ItemsSetupPage() {
                         {/* Grades tab */}
                         {activeSubTab === "grades" && (
                             <>
-                                <div className="h-6 bg-gray-700/50 flex items-center justify-end px-2 shrink-0">
+                                <div className="h-8 bg-gray-700/50 flex items-center justify-end px-2 shrink-0">
                                     <GridMenu items={[
                                         { label:"Add Grade",   icon:Plus,   color:"green", onClick:()=>{ setGradeForm({...EMPTY_GRADE});setFormError(null);setGradeModal({mode:"add"}); } },
                                         { label:"Edit Grade",  icon:Pencil, color:"blue",  onClick:()=>{ setFormError("Select a grade to edit."); }, disabled:true },
@@ -659,7 +660,7 @@ export default function ItemsSetupPage() {
                         {/* Colors tab */}
                         {activeSubTab === "colors" && (
                             <>
-                                <div className="h-6 bg-gray-700/50 flex items-center justify-between px-2 shrink-0">
+                                <div className="h-8 bg-gray-700/50 flex items-center justify-between px-2 shrink-0">
                                     <span className="text-[8px] text-gray-400 font-bold">{filteredColors.length} colors</span>
                                     <GridMenu items={[
                                         { label:"Add Color",   icon:Plus,   color:"green", onClick:()=>{ setColorForm({...EMPTY_COLOR});setFormError(null);setColorModal({mode:"add"}); } },
@@ -681,7 +682,7 @@ export default function ItemsSetupPage() {
                         {/* Cases tab */}
                         {activeSubTab === "cases" && (
                             <>
-                                <div className="h-6 bg-gray-700/50 flex items-center justify-end px-2 shrink-0">
+                                <div className="h-8 bg-gray-700/50 flex items-center justify-end px-2 shrink-0">
                                     <GridMenu items={[
                                         { label:"Add Case",   icon:Plus,   color:"green", onClick:()=>{ setCaseForm({...EMPTY_CASE});setFormError(null);setCaseModal({mode:"add"}); } },
                                         { label:"Edit Case",  icon:Pencil, color:"blue",  onClick:()=>{ setFormError("Select a case to edit."); }, disabled:true },

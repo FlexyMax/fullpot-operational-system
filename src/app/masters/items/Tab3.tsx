@@ -33,12 +33,13 @@ function useSentinel(onVisible: () => void, enabled: boolean) {
 }
 
 // ─── Toolbar button ───────────────────────────────────────────────────────────
-function Btn({ icon:Icon, label, color="gray", onClick, disabled=false }: any) {
+function Btn({ icon:Icon, label, color="gray", onClick, disabled=false, sm=false }: any) {
     const cls: Record<string,string> = { green:"bg-green-600 hover:bg-green-700", blue:"bg-blue-600 hover:bg-blue-700", red:"bg-red-600 hover:bg-red-700", gray:"bg-gray-600 hover:bg-gray-700", amber:"bg-amber-500 hover:bg-amber-600", purple:"bg-purple-600 hover:bg-purple-700" };
     return (
         <button onClick={onClick} disabled={disabled}
-            className={cn("flex items-center gap-1 px-2.5 py-1 text-[9px] text-white font-black uppercase tracking-wide rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0", cls[color]||cls.gray)}>
-            {Icon && <Icon size={11}/>}{label}
+            className={cn("flex items-center gap-1.5 text-white font-black uppercase tracking-wide rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0",
+                sm ? "px-2.5 py-1 text-[10px]" : "px-3 py-1.5 text-xs", cls[color]||cls.gray)}>
+            {Icon && <Icon size={sm?11:13}/>}{label}
         </button>
     );
 }
@@ -47,22 +48,22 @@ function Btn({ icon:Icon, label, color="gray", onClick, disabled=false }: any) {
 function MiniGrid({ cols, rows, selUnico, onSelect, loading, empty, sentinel }: any) {
     return (
         <div className="overflow-auto flex-1">
-            <table className="min-w-full text-[10px] text-left">
-                <thead className="bg-gray-50 border-b border-gray-100 text-gray-500 font-bold sticky top-0 z-10">
-                    <tr>{cols.map((c: any) => <th key={c.key} className={cn("p-1.5 whitespace-nowrap border-r border-gray-100 last:border-r-0", c.className)}>{c.label}</th>)}</tr>
+            <table className="min-w-full text-left">
+                <thead className="bg-gray-100 border-b border-gray-200 text-gray-700 sticky top-0 z-10">
+                    <tr className="fos-grid-thead">{cols.map((c: any) => <th key={c.key} className={cn("p-2 whitespace-nowrap border-r border-gray-200 last:border-r-0", c.className)}>{c.label}</th>)}</tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-gray-100 fos-grid-tbody">
                     {loading
-                        ? <tr><td colSpan={cols.length} className="p-4 text-center text-gray-300 italic">Loading...</td></tr>
+                        ? <tr><td colSpan={cols.length} className="p-4 text-center text-gray-300 italic text-xs">Loading...</td></tr>
                         : rows.length === 0
-                            ? <tr><td colSpan={cols.length} className="p-4 text-center text-gray-300 italic">{empty}</td></tr>
+                            ? <tr><td colSpan={cols.length} className="p-4 text-center text-gray-300 italic text-xs">{empty}</td></tr>
                             : rows.map((r: any, i: number) => {
                                 const isSel = selUnico && selUnico === r.unico;
                                 return (
                                     <tr key={r.unico||i} onClick={() => onSelect?.(r)}
                                         className={cn("cursor-pointer transition-colors", isSel ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50/80")}>
                                         {cols.map((c: any) => (
-                                            <td key={c.key} className={cn("p-1.5 border-r border-gray-50 last:border-r-0", c.className)}>
+                                            <td key={c.key} className={cn("p-2 border-r border-gray-100 last:border-r-0", c.className)}>
                                                 {c.render ? c.render(r[c.key], r) : t(r[c.key])}
                                             </td>
                                         ))}
@@ -563,12 +564,12 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety, varieties
             <div className="flex-1 flex gap-1.5 p-1.5 overflow-hidden">
                 {/* Left: Varieties by Subclass */}
                 <div className="w-2/5 bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden">
-                    <div className="h-7 bg-[#374151] flex items-center px-2 shrink-0">
-                        <Layers size={11} className="text-[#FB7506] mr-1.5"/>
-                        <span className="font-black text-[9px] uppercase tracking-widest text-white">
+                    <div className="h-10 bg-[#374151] flex items-center px-3 shrink-0">
+                        <Layers size={15} className="text-[#FB7506] mr-2"/>
+                        <span className="fos-grid-header-text">
                             Varieties {selSubclass ? `— ${t(selSubclass.subclase)}` : ""}
                         </span>
-                        {loadingVr && <RefreshCcw size={8} className="text-gray-400 animate-spin ml-1"/>}
+                        {loadingVr && <RefreshCcw size={11} className="text-gray-400 animate-spin ml-2"/>}
                     </div>
                     <MiniGrid
                         cols={[
@@ -588,11 +589,11 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety, varieties
 
                 {/* Right: Components search */}
                 <div className="flex-1 bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden">
-                    <div className="h-7 bg-[#374151] flex items-center px-2 gap-2 shrink-0">
-                        <Search size={11} className="text-[#FB7506]"/>
-                        <span className="font-black text-[9px] uppercase tracking-widest text-white">Components / Search</span>
-                        {(loadComp||fetchingMoreComp) && <RefreshCcw size={8} className="text-gray-400 animate-spin"/>}
-                        {compTotal > 0 && <span className="text-gray-400 text-[8px] ml-1">{components.length}/{compTotal}</span>}
+                    <div className="h-10 bg-[#374151] flex items-center px-3 gap-2 shrink-0">
+                        <Search size={15} className="text-[#FB7506]"/>
+                        <span className="fos-grid-header-text">Components / Search</span>
+                        {(loadComp||fetchingMoreComp) && <RefreshCcw size={11} className="text-gray-400 animate-spin"/>}
+                        {compTotal > 0 && <span className="text-gray-400 text-[10px] ml-1">{components.length}/{compTotal}</span>}
                     </div>
                     <div className="p-1.5 border-b border-gray-100 shrink-0">
                         <div className="relative">

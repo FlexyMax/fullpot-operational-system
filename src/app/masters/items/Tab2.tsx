@@ -39,18 +39,18 @@ const nextPage  = (last: any) => (last.page ?? 1) * (last.pageSize ?? PAGE_SIZE)
 // ─── Mini helpers ─────────────────────────────────────────────────────────────
 function GridMenu({ items }: { items: { label:string; icon:any; color:string; onClick:()=>void; disabled?:boolean; separator?:boolean }[] }) {
     const [open, setOpen] = useState(false);
-    const C: Record<string,{icon:string;text:string}> = { green:{icon:"text-green-600",text:"text-green-700"}, blue:{icon:"text-blue-500",text:"text-gray-800"}, red:{icon:"text-red-500",text:"text-gray-800"}, gray:{icon:"text-gray-400",text:"text-gray-400"}, amber:{icon:"text-amber-500",text:"text-gray-800"}, purple:{icon:"text-purple-500",text:"text-gray-800"} };
+    const C: Record<string,{icon:string;text:string}> = { green:{icon:"text-green-600",text:"text-green-700"}, blue:{icon:"text-blue-500",text:"text-gray-800"}, red:{icon:"text-red-500",text:"text-gray-800"}, gray:{icon:"text-gray-500",text:"text-gray-700"}, amber:{icon:"text-amber-500",text:"text-gray-800"}, purple:{icon:"text-purple-500",text:"text-gray-800"} };
     return (
         <div className="relative" onClick={e=>e.stopPropagation()}>
-            <button onClick={()=>setOpen(o=>!o)} className="h-7 bg-[#FB7506] hover:bg-orange-600 text-white w-16 flex items-center justify-center transition-colors rounded text-[8px]"><Menu size={14}/></button>
+            <button onClick={()=>setOpen(o=>!o)} className="h-10 bg-[#FB7506] hover:bg-orange-600 text-white w-24 flex items-center justify-center transition-colors rounded-tr-lg cursor-pointer"><Menu size={20}/></button>
             {open && <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-gray-200 rounded-lg shadow-2xl z-50" onMouseLeave={()=>setOpen(false)}>
                 {items.map((item,i) => {
                     const c = C[item.color]||C.gray;
                     return item.separator
                         ? <div key={i} className="border-t border-gray-200 my-0.5"/>
                         : <button key={i} onClick={()=>{item.onClick();setOpen(false);}} disabled={!!item.disabled}
-                            className={cn("w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors border-b border-gray-50 last:border-0")}>
-                            <item.icon size={16} className={c.icon}/><span className={cn("text-sm font-bold",c.text)}>{item.label}</span>
+                            className={cn("w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors border-b border-gray-100 last:border-0")}>
+                            <item.icon size={18} className={c.icon}/><span className={cn("text-sm font-bold",c.text)}>{item.label}</span>
                           </button>;
                 })}
             </div>}
@@ -62,9 +62,9 @@ function Btn({ icon:Icon, label, color="gray", onClick, disabled=false, sm=false
     const cls: Record<string,string> = { green:"bg-green-600 hover:bg-green-700", blue:"bg-blue-600 hover:bg-blue-700", red:"bg-red-600 hover:bg-red-700", gray:"bg-gray-600 hover:bg-gray-700", amber:"bg-amber-500 hover:bg-amber-600", purple:"bg-purple-600 hover:bg-purple-700" };
     return (
         <button onClick={onClick} disabled={disabled}
-            className={cn("flex items-center gap-1 text-white font-black uppercase tracking-wide disabled:opacity-40 disabled:cursor-not-allowed rounded transition-colors shrink-0",
-                sm ? "px-2 py-0.5 text-[8px]" : "px-2.5 py-1 text-[9px]", cls[color]||cls.gray)}>
-            {Icon && <Icon size={sm?9:11}/>}{label}
+            className={cn("flex items-center gap-1.5 text-white font-black uppercase tracking-wide disabled:opacity-40 disabled:cursor-not-allowed rounded transition-colors shrink-0",
+                sm ? "px-2.5 py-1 text-[10px]" : "px-3 py-1.5 text-xs", cls[color]||cls.gray)}>
+            {Icon && <Icon size={sm?11:13}/>}{label}
         </button>
     );
 }
@@ -1049,49 +1049,49 @@ export default function Tab2() {
 
             {/* Products Grid */}
             <div className="flex-1 overflow-auto">
-                <table className="min-w-full text-[10px] text-left">
-                    <thead className="bg-gray-50 border-b border-gray-200 text-gray-500 font-bold sticky top-0 z-10">
-                        <tr>
-                            <th className="px-2 py-1 whitespace-nowrap border-r border-gray-100 sticky left-0 bg-gray-50 min-w-[200px]">Description</th>
-                            <th className="px-2 py-1 whitespace-nowrap border-r border-gray-100 text-center w-14">PriceStem</th>
-                            <th className="px-2 py-1 whitespace-nowrap border-r border-gray-100 text-right w-14">Packs</th>
-                            <th className="px-2 py-1 whitespace-nowrap border-r border-gray-100 text-right w-16">Units/Pack</th>
-                            <th className="px-2 py-1 whitespace-nowrap border-r border-gray-100 text-right w-16">UnitsSale</th>
-                            <th className="px-2 py-1 whitespace-nowrap border-r border-gray-100 w-16">Case</th>
-                            <th className="px-2 py-1 whitespace-nowrap border-r border-gray-100 w-20">BoxCode</th>
-                            <th className="px-2 py-1 whitespace-nowrap border-r border-gray-100 w-20">EDICode</th>
-                            <th className="px-2 py-1 whitespace-nowrap border-r border-gray-100 w-28">UPC</th>
-                            <th className="px-2 py-1 whitespace-nowrap border-r border-gray-100 text-right w-16">Retail</th>
-                            <th className="px-2 py-1 whitespace-nowrap border-r border-gray-100 text-right w-16">Weight</th>
-                            <th className="px-2 py-1 whitespace-nowrap border-r border-gray-100 text-right w-16">Rotation</th>
-                            <th className="px-2 py-1 whitespace-nowrap border-r border-gray-100 text-center w-12">Web</th>
-                            <th className="px-2 py-1 whitespace-nowrap border-r border-gray-100 text-center w-12">Active</th>
-                            <th className="px-2 py-1 whitespace-nowrap border-r border-gray-100 text-center w-12">Inven.</th>
-                            <th className="px-2 py-1 whitespace-nowrap w-28">Customer</th>
+                <table className="min-w-full text-left">
+                    <thead className="bg-gray-100 border-b border-gray-200 text-gray-700 sticky top-0 z-10">
+                        <tr className="fos-grid-thead">
+                            <th className="px-3 py-2 whitespace-nowrap border-r border-gray-200 sticky left-0 bg-gray-100 min-w-[220px]">Description</th>
+                            <th className="px-3 py-2 whitespace-nowrap border-r border-gray-200 text-center w-16">PriceStem</th>
+                            <th className="px-3 py-2 whitespace-nowrap border-r border-gray-200 text-right w-16">Packs</th>
+                            <th className="px-3 py-2 whitespace-nowrap border-r border-gray-200 text-right w-18">Units/Pack</th>
+                            <th className="px-3 py-2 whitespace-nowrap border-r border-gray-200 text-right w-18">UnitsSale</th>
+                            <th className="px-3 py-2 whitespace-nowrap border-r border-gray-200 w-18">Case</th>
+                            <th className="px-3 py-2 whitespace-nowrap border-r border-gray-200 w-24">BoxCode</th>
+                            <th className="px-3 py-2 whitespace-nowrap border-r border-gray-200 w-24">EDICode</th>
+                            <th className="px-3 py-2 whitespace-nowrap border-r border-gray-200 w-32">UPC</th>
+                            <th className="px-3 py-2 whitespace-nowrap border-r border-gray-200 text-right w-18">Retail</th>
+                            <th className="px-3 py-2 whitespace-nowrap border-r border-gray-200 text-right w-18">Weight</th>
+                            <th className="px-3 py-2 whitespace-nowrap border-r border-gray-200 text-right w-18">Rotation</th>
+                            <th className="px-3 py-2 whitespace-nowrap border-r border-gray-200 text-center w-14">Web</th>
+                            <th className="px-3 py-2 whitespace-nowrap border-r border-gray-200 text-center w-14">Active</th>
+                            <th className="px-3 py-2 whitespace-nowrap border-r border-gray-200 text-center w-14">Inven.</th>
+                            <th className="px-3 py-2 whitespace-nowrap w-32">Customer</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50">
+                    <tbody className="divide-y divide-gray-100 fos-grid-tbody">
                         {products.map((p:any) => {
                             const isSel = selProduct?.unico === p.unico;
                             return (
                                 <tr key={p.unico} onClick={()=>setSelProduct(p)} onDoubleClick={()=>openModal("edit")}
                                     className={cn("cursor-pointer transition-colors", isSel ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50/80")}>
-                                    <td className={cn("px-2 py-1 border-r border-gray-50 font-medium truncate max-w-[200px] sticky left-0", isSel ? "bg-blue-50" : "bg-white")} title={t(p.description_uq||p.description)}>{t(p.description)}</td>
-                                    <td className="px-2 py-1 border-r border-gray-50 text-center">{p.stem_pack ? <Check size={9} className="text-green-500 mx-auto"/> : "—"}</td>
-                                    <td className="px-2 py-1 border-r border-gray-50 text-right">{t(p.up_x_case)}</td>
-                                    <td className="px-2 py-1 border-r border-gray-50 text-right">{t(p.up_x_pack)}</td>
-                                    <td className="px-2 py-1 border-r border-gray-50 text-right">{t(p.total_units)}</td>
-                                    <td className="px-2 py-1 border-r border-gray-50 text-gray-500">{t(p.case_sh)}</td>
-                                    <td className="px-2 py-1 border-r border-gray-50 text-gray-400 text-[9px]">{t(p.boxcode)}</td>
-                                    <td className="px-2 py-1 border-r border-gray-50 text-gray-400 text-[9px]">{t(p.old_code)}</td>
-                                    <td className="px-2 py-1 border-r border-gray-50 text-gray-400 text-[9px]">{t(p.upc)}</td>
-                                    <td className="px-2 py-1 border-r border-gray-50 text-right">{n2(p.retail_price)}</td>
-                                    <td className="px-2 py-1 border-r border-gray-50 text-right">{n2(p.weight)}</td>
-                                    <td className="px-2 py-1 border-r border-gray-50 text-right">{t(p.rotation)}</td>
-                                    <td className="px-2 py-1 border-r border-gray-50 text-center">{p.web    ? <Check size={9} className="text-green-500 mx-auto"/> : "—"}</td>
-                                    <td className="px-2 py-1 border-r border-gray-50 text-center">{p.active ? <Check size={9} className="text-green-500 mx-auto"/> : "—"}</td>
-                                    <td className="px-2 py-1 border-r border-gray-50 text-center">{p.inv_track ? <Check size={9} className="text-blue-400 mx-auto"/> : "—"}</td>
-                                    <td className="px-2 py-1 text-gray-400 text-[9px] truncate max-w-[112px]">{t(p.customer)}</td>
+                                    <td className={cn("px-3 py-2 border-r border-gray-100 font-medium truncate max-w-[220px] sticky left-0", isSel ? "bg-blue-50" : "bg-white")} title={t(p.description_uq||p.description)}>{t(p.description)}</td>
+                                    <td className="px-3 py-2 border-r border-gray-100 text-center">{p.stem_pack ? <Check size={11} className="text-green-500 mx-auto"/> : "—"}</td>
+                                    <td className="px-3 py-2 border-r border-gray-100 text-right">{t(p.up_x_case)}</td>
+                                    <td className="px-3 py-2 border-r border-gray-100 text-right">{t(p.up_x_pack)}</td>
+                                    <td className="px-3 py-2 border-r border-gray-100 text-right">{t(p.total_units)}</td>
+                                    <td className="px-3 py-2 border-r border-gray-100 text-gray-500">{t(p.case_sh)}</td>
+                                    <td className="px-3 py-2 border-r border-gray-100 text-gray-400">{t(p.boxcode)}</td>
+                                    <td className="px-3 py-2 border-r border-gray-100 text-gray-400">{t(p.old_code)}</td>
+                                    <td className="px-3 py-2 border-r border-gray-100 text-gray-400">{t(p.upc)}</td>
+                                    <td className="px-3 py-2 border-r border-gray-100 text-right">{n2(p.retail_price)}</td>
+                                    <td className="px-3 py-2 border-r border-gray-100 text-right">{n2(p.weight)}</td>
+                                    <td className="px-3 py-2 border-r border-gray-100 text-right">{t(p.rotation)}</td>
+                                    <td className="px-3 py-2 border-r border-gray-100 text-center">{p.web    ? <Check size={11} className="text-green-500 mx-auto"/> : "—"}</td>
+                                    <td className="px-3 py-2 border-r border-gray-100 text-center">{p.active ? <Check size={11} className="text-green-500 mx-auto"/> : "—"}</td>
+                                    <td className="px-3 py-2 border-r border-gray-100 text-center">{p.inv_track ? <Check size={11} className="text-blue-400 mx-auto"/> : "—"}</td>
+                                    <td className="px-3 py-2 text-gray-400 truncate max-w-[128px]">{t(p.customer)}</td>
                                 </tr>
                             );
                         })}
