@@ -519,7 +519,7 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                         return (
                             <div key={cls.unico} className="rounded-lg overflow-hidden border border-black/10">
                                 {/* Class row */}
-                                <div className={cn("h-12 bg-[#2c3e50] flex items-center gap-2.5 px-3 cursor-pointer hover:bg-[#253545] transition-colors select-none",
+                                <div className={cn("h-12 bg-[#3f5f7a] flex items-center gap-2.5 px-3 cursor-pointer hover:bg-[#375469] transition-colors select-none",
                                     isExpCl && "rounded-b-none")}
                                     onClick={()=>toggleClass(cls)}>
                                     <ChevronRight size={14} className={cn("text-[#FB7506] transition-transform shrink-0", isExpCl && "rotate-90")}/>
@@ -647,7 +647,10 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
             </div>
 
             {/* ── Right: Grades + Colors + Cases — top on mobile, right on desktop ─ */}
-            <div className="order-first md:order-last flex flex-col gap-1.5 overflow-hidden h-[40vh] md:h-auto md:w-[42%] md:flex-none">
+            <div className="order-first md:order-last flex flex-col gap-1.5 overflow-hidden h-[55vh] md:h-auto md:w-[42%] md:flex-none">
+
+                {/* Mobile: Grades + Colors side by side (top row). Desktop: stacked */}
+                <div className="flex flex-row md:flex-col gap-1.5 flex-[2] min-h-0 overflow-hidden">
 
                 {/* Grades */}
                 <RightCard icon={Layers} title="Grades" loading={loadingGr} recordId={selGrade?.unico}
@@ -717,7 +720,9 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                     </table>
                 </RightCard>
 
-                {/* Cases */}
+                </div>{/* end Grades+Colors row */}
+
+                {/* Cases — below Grades/Colors on mobile, 3rd in stack on desktop */}
                 <RightCard icon={Box} title="Cases" loading={loadingCs} recordId={selCase?.unico}
                     menuItems={[
                         { label:"Add Case",    icon:Plus,   color:"green", onClick:()=>{ setSelCase(null); openModal("case","add",undefined,{...EMPTY_CASE}); } },
