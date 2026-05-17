@@ -84,13 +84,15 @@ function DualListModal({ title, productDesc, productUq, availUrl, assignedUrl, o
     const [working,  setWorking]  = useState(false);
     const [err,      setErr]      = useState<string|null>(null);
 
+    const canSearch = search.length >= 2;
+
     const { data: availPages, isFetching: loadL, fetchNextPage: fetchMoreAvail, hasNextPage: hasMoreAvail, isFetchingNextPage: fetchingMoreAvail, refetch: refL } =
-        useInfiniteQuery({ queryKey:["dual-avail", productUq, search], queryFn:({pageParam})=>sF(availUrl(search||"%", pageParam as number)), initialPageParam:1, getNextPageParam: nextPage, staleTime:0 });
+        useInfiniteQuery({ queryKey:["dual-avail", productUq, search], queryFn:({pageParam})=>sF(availUrl(search, pageParam as number)), initialPageParam:1, getNextPageParam: nextPage, staleTime:0, enabled: canSearch });
     const { data: assigned = [], isFetching: loadR, refetch: refR } =
         useQuery({ queryKey:["dual-asgn", productUq], queryFn:()=>sF(assignedUrl), staleTime:0 });
 
     const available = getPages(availPages);
-    const availSentinel = useSentinel(() => fetchMoreAvail(), !!(hasMoreAvail && !fetchingMoreAvail));
+    const availSentinel = useSentinel(() => fetchMoreAvail(), !!(hasMoreAvail && !fetchingMoreAvail && canSearch));
 
     const doAdd = async () => {
         if (!leftSel) return;
@@ -109,7 +111,7 @@ function DualListModal({ title, productDesc, productUq, availUrl, assignedUrl, o
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[82vh]">
                 <div className="h-9 bg-[#374151] rounded-t-xl flex items-center justify-between px-4 shrink-0">
                     <div className="flex items-center gap-2">
                         <Shuffle size={13} className="text-[#FB7506]"/>
@@ -122,18 +124,19 @@ function DualListModal({ title, productDesc, productUq, availUrl, assignedUrl, o
                     <span className="text-xs font-bold text-gray-600">Product: </span>
                     <span className="text-xs text-gray-500">{productDesc}</span>
                 </div>
-                <div className="flex gap-2 p-3 flex-1 min-h-[360px]">
+                <div className="flex gap-2 p-3 flex-1 overflow-hidden" style={{minHeight:0}}>
                     {/* Left: Available — infinite scroll */}
-                    <div className="flex-1 flex flex-col gap-1.5">
+                    <div className="flex-1 flex flex-col gap-1.5 min-h-0">
                         <div className="flex items-center gap-1 h-5">
                             <span className="text-[9px] font-black uppercase tracking-widest text-gray-500">
-                                Available {getTotal(availPages) > 0 && `(${available.length}/${getTotal(availPages)})`}
+                                Available {canSearch && getTotal(availPages) > 0 && `(${available.length}/${getTotal(availPages)})`}
                             </span>
                             {(loadL||fetchingMoreAvail) && <RefreshCcw size={8} className="text-gray-400 animate-spin"/>}
                         </div>
                         <div className="relative">
                             <Search size={9} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400"/>
-                            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Filter..."
+                            <input value={search} onChange={e=>setSearch(e.target.value)}
+                                placeholder="Type 2+ chars to search..."
                                 className="w-full pl-5 pr-2 py-0.5 text-[10px] border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506]"/>
                         </div>
                         <div className="flex-1 border border-gray-200 rounded overflow-auto">
@@ -144,7 +147,8 @@ function DualListModal({ title, productDesc, productUq, availUrl, assignedUrl, o
                                 </div>
                             ))}
                             <div ref={availSentinel} className="h-1"/>
-                            {!loadL && available.length===0 && <div className="p-2 text-center text-[10px] text-gray-300 italic">No items</div>}
+                            {!canSearch && <div className="p-3 text-center text-[10px] text-gray-300 italic">Type at least 2 characters to search</div>}
+                            {canSearch && !loadL && available.length===0 && <div className="p-2 text-center text-[10px] text-gray-300 italic">No items</div>}
                         </div>
                     </div>
                     {/* Center: buttons */}
@@ -159,7 +163,7 @@ function DualListModal({ title, productDesc, productUq, availUrl, assignedUrl, o
                         </button>
                     </div>
                     {/* Right: Assigned */}
-                    <div className="flex-1 flex flex-col gap-1.5">
+<div className="flex-1 flex flex-col gap-1.5 min-h-0">
                         <div className="flex items-center gap-1 h-5">
                             <span className="text-[9px] font-black uppercase tracking-widest text-gray-500">Assigned</span>
                             {loadR && <RefreshCcw size={8} className="text-gray-400 animate-spin"/>}
@@ -383,9 +387,10 @@ function POPricesModal({ onClose }: { onClose: () => void }) {
 
     const { data: seasons = [] } = useQuery({ queryKey:["po-seasons"], queryFn:()=>sF("/api/masters/items/lookups/seasons"), staleTime:60000 });
 
-    // Available products: infinite scroll
+    // Available products: infinite scroll — require city+season AND min 2 chars OR explicit empty (load first page when user clears)
+    const canSearchPO = !!(cityUq && seasonUq) && leftSearch.length >= 2;
     const { data: availPages, isFetching: loadL, fetchNextPage: fetchMoreAvail, hasNextPage: hasMoreAvail, isFetchingNextPage: fetchingMoreAvail, refetch: refL } =
-        useInfiniteQuery({ queryKey:["po-avail", cityUq, seasonUq, leftSearch], queryFn:({pageParam})=>sF(`/api/masters/items/po-prices/available?city_uq=${cityUq}&season_uq=${seasonUq}&search=${encodeURIComponent(leftSearch||"%")}&page=${pageParam}&pageSize=${PAGE_SIZE}`), initialPageParam:1, getNextPageParam: nextPage, staleTime:0, enabled: !!(cityUq && seasonUq) });
+        useInfiniteQuery({ queryKey:["po-avail", cityUq, seasonUq, leftSearch], queryFn:({pageParam})=>sF(`/api/masters/items/po-prices/available?city_uq=${cityUq}&season_uq=${seasonUq}&search=${encodeURIComponent(leftSearch||"%")}&page=${pageParam}&pageSize=${PAGE_SIZE}`), initialPageParam:1, getNextPageParam: nextPage, staleTime:0, enabled: canSearchPO });
     const available = getPages(availPages);
     const availSentinel = useSentinel(() => fetchMoreAvail(), !!(hasMoreAvail && !fetchingMoreAvail));
 
@@ -492,7 +497,9 @@ function POPricesModal({ onClose }: { onClose: () => void }) {
                                 </tr>
                             ))}
                             <tr ref={availSentinel}><td colSpan={2} className="h-1"/></tr>
-                            {!loadL && !(cityUq && seasonUq) && <tr><td colSpan={2} className="p-2 text-center text-gray-300 italic">Select city and season</td></tr>}
+                            {!(cityUq && seasonUq) && <tr><td colSpan={2} className="p-2 text-center text-gray-300 italic">Select city and season</td></tr>}
+                            {(cityUq && seasonUq) && !canSearchPO && <tr><td colSpan={2} className="p-3 text-center text-gray-300 italic">Type 2+ chars to search</td></tr>}
+                            {canSearchPO && !loadL && available.length===0 && <tr><td colSpan={2} className="p-2 text-center text-gray-300 italic">No products found</td></tr>}
                             </tbody></table>
                         </div>
                     </div>
