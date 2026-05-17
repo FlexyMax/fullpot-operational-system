@@ -114,6 +114,201 @@ const EMPTY_COLOR    = { color:"", color_sh:"", display:true, mix:false };
 const EMPTY_CASE     = { case_name:"", case_sh:"", display:true, factor:1, case_high:0, case_long:0, case_wide:0, weight:0, cubic_feet:0, cases_pallet:0, boxtype:"", charges:0 };
 const EMPTY_VARIETY  = { variety:"", variety_sh:"", color_uq:"", display:true, changecolor:false, active:true };
 
+// ─── Full Product Edit Modal ──────────────────────────────────────────────────
+function ProductEditModal({ unico, vrUnico, onSaved, onClose }: { unico:string; vrUnico:string; onSaved:()=>void; onClose:()=>void }) {
+    const [form,    setForm]    = useState<any>(null);
+    const [saving,  setSaving]  = useState(false);
+    const [error,   setError]   = useState<string|null>(null);
+    const [noteTab, setNoteTab] = useState("remarks");
+
+    const { data: product, isLoading: loadProd } = useQuery({ queryKey:["t1-pe", unico], queryFn:()=>sF(`/api/masters/items/products/${unico}`), staleTime:0 });
+    const { data: lookups } = useQuery({ queryKey:["items-look"], queryFn:()=>sF("/api/masters/items/lookups"), staleTime:600000 });
+
+    useEffect(() => {
+        if (!product) return;
+        setForm({
+            ...product,
+            // Map DB column names → form field names expected by PUT route
+            old_description:  product.old_descri       || "",
+            auto_description: !!product.new_descri,
+            country_of_origin: product.Country_of_Origin || "",
+            hardgoods_cost:   product.Hardgoods_cost_per_unit || 0,
+            labor_cost:       product.Labor_cost_per_unit || 0,
+            shopify_name:     product.Shopify_name     || "",
+            shopify_color:    product.Shopify_color    || "",
+            shopify_size:     product.Shopify_size     || "",
+            shopify_subtype:  product.Shopify_subtype  || "",
+            shopify_variety:  product.Shopify_variety  || "",
+        });
+    }, [product]);
+
+    const totalUnits = form ? (form.stem_pack ? (form.up_x_case||0) : (form.up_x_pack||0)*(form.up_x_case||0)) : 0;
+
+    const save = async () => {
+        if (!form) return;
+        setSaving(true); setError(null);
+        try {
+            const res = await fetch(`/api/masters/items/products/${unico}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(form) });
+            const d = await res.json();
+            if (!d.success) throw new Error(d.error || d.message);
+            onSaved();
+            onClose();
+        } catch(e:any){ setError(e.message); }
+        finally { setSaving(false); }
+    };
+
+    const F = (key:string) => form?.[key];
+    const S = (key:string, val:any) => setForm((p:any) => ({...p,[key]:val}));
+
+    if (loadProd || !form) return (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 sm:p-4">
+            <div className="bg-white rounded-t-xl sm:rounded-xl shadow-2xl w-full sm:max-w-2xl flex items-center justify-center h-32">
+                <RefreshCcw size={20} className="animate-spin text-[#FB7506]"/>
+            </div>
+        </div>
+    );
+
+    return (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 sm:p-4">
+            <div className="bg-white rounded-t-xl sm:rounded-xl shadow-2xl w-full sm:max-w-2xl flex flex-col h-[85vh] sm:h-[80vh]">
+                {/* Header */}
+                <div className="h-10 bg-[#374151] rounded-t-xl flex items-center justify-between px-4 shrink-0">
+                    <div className="flex items-center gap-2">
+                        <Package size={15} className="text-[#FB7506]"/>
+                        <span className="fos-grid-header-text truncate max-w-xs">{t(product?.description)}</span>
+                        {error && <span className="text-amber-400 text-[10px] font-bold ml-2 truncate">{error}</span>}
+                    </div>
+                    <button onClick={onClose}><XCircle size={16} className="text-gray-400 hover:text-white"/></button>
+                </div>
+
+                {/* Form */}
+                <div className="overflow-y-auto flex-1 p-4 space-y-3 text-xs">
+                    {/* Type / Grade / Case */}
+                    <div className="grid grid-cols-3 gap-2">
+                        {[
+                            {label:"Type",  key:"type_uq",  dis:"dis_type",  items:lookups?.types||[],  vK:"unico", lK:"type"},
+                            {label:"Grade", key:"grade_uq", dis:"dis_grade", items:lookups?.grades||[], vK:"unico", lK:"grado"},
+                            {label:"Case",  key:"case_uq",  dis:"dis_case",  items:lookups?.cases||[],  vK:"unico", lK:"case_name"},
+                        ].map(f=>(
+                            <div key={f.key} className="flex flex-col gap-0.5">
+                                <div className="flex items-center gap-1.5">
+                                    <label className="text-[9px] font-black text-gray-400 uppercase">{f.label}</label>
+                                    <label className="flex items-center gap-0.5 cursor-pointer">
+                                        <input type="checkbox" checked={!!F(f.dis)} onChange={e=>S(f.dis,e.target.checked)} className="w-3 h-3 accent-[#FB7506]"/>
+                                        <span className="text-[8px] text-gray-400">Show</span>
+                                    </label>
+                                </div>
+                                <select value={F(f.key)||""} onChange={e=>S(f.key,e.target.value)} className="fos-input py-1">
+                                    <option value="">— None —</option>
+                                    {f.items.map((it:any)=><option key={it[f.vK]} value={it[f.vK]}>{t(it[f.lK])}</option>)}
+                                </select>
+                            </div>
+                        ))}
+                    </div>
+                    {/* Color */}
+                    <div className="grid grid-cols-3 gap-2">
+                        <div className="flex flex-col gap-0.5">
+                            <div className="flex items-center gap-1.5">
+                                <label className="text-[9px] font-black text-gray-400 uppercase">Color</label>
+                                <label className="flex items-center gap-0.5 cursor-pointer">
+                                    <input type="checkbox" checked={!!F("dis_color")} onChange={e=>S("dis_color",e.target.checked)} className="w-3 h-3 accent-[#FB7506]"/>
+                                    <span className="text-[8px] text-gray-400">Show</span>
+                                </label>
+                            </div>
+                            <select value={F("color_uq")||""} onChange={e=>S("color_uq",e.target.value)} className="fos-input py-1">
+                                <option value="">— None —</option>
+                                {(lookups?.colors||[]).map((c:any)=><option key={c.unico} value={c.unico}>{t(c.color)}</option>)}
+                            </select>
+                        </div>
+                    </div>
+                    {/* Quantities */}
+                    <div className="border-t border-gray-100 pt-2 grid grid-cols-4 gap-2">
+                        <div className="flex flex-col gap-0.5">
+                            <label className="text-[9px] font-black text-gray-400 uppercase">Units/Pack</label>
+                            <input type="number" value={F("up_x_pack")||0} onChange={e=>S("up_x_pack",parseInt(e.target.value)||0)} className="fos-input py-1"/>
+                        </div>
+                        <div className="flex flex-col gap-0.5">
+                            <label className="text-[9px] font-black text-gray-400 uppercase">Pack Unit</label>
+                            <select value={F("pack_unit")||""} onChange={e=>S("pack_unit",e.target.value)} className="fos-input py-1">
+                                <option value="">—</option>
+                                {(lookups?.units||[]).map((u:any)=><option key={u.unico} value={u.unico}>{t(u.unit)}</option>)}
+                            </select>
+                        </div>
+                        <div className="flex flex-col gap-0.5">
+                            <label className="text-[9px] font-black text-gray-400 uppercase">Packs/Case</label>
+                            <input type="number" value={F("up_x_case")||0} onChange={e=>S("up_x_case",parseInt(e.target.value)||0)} className="fos-input py-1"/>
+                        </div>
+                        <div className="flex flex-col gap-0.5">
+                            <label className="text-[9px] font-black text-gray-400 uppercase">Total Units</label>
+                            <input readOnly value={totalUnits} className="fos-input py-1 bg-gray-50 text-gray-500 font-bold"/>
+                        </div>
+                    </div>
+                    {/* Prices */}
+                    <div className="grid grid-cols-4 gap-2">
+                        {[{l:"Sales Price",k:"sales_price",s:0.01},{l:"Min. Pur. Price",k:"min_pur_price",s:0.01},{l:"Retail Price",k:"retail_price",s:0.01},{l:"Weight KG",k:"weight",s:0.01},{l:"Rotation",k:"rotation",s:1}].map(f=>(
+                            <div key={f.k} className="flex flex-col gap-0.5">
+                                <label className="text-[9px] font-black text-gray-400 uppercase">{f.l}</label>
+                                <input type="number" step={f.s} value={F(f.k)||0} onChange={e=>S(f.k,parseFloat(e.target.value)||0)} className="fos-input py-1"/>
+                            </div>
+                        ))}
+                    </div>
+                    {/* Identifiers */}
+                    <div className="grid grid-cols-3 gap-2 border-t border-gray-100 pt-2">
+                        {[{k:"old_code",l:"EDI Code"},{k:"boxcode",l:"Box Code"},{k:"boxcode2",l:"Item Number"},{k:"upc",l:"UPC"},{k:"upc_text",l:"UPC Text"},{k:"country_of_origin",l:"Country of Origin"}].map(f=>(
+                            <div key={f.k} className="flex flex-col gap-0.5">
+                                <label className="text-[9px] font-black text-gray-400 uppercase">{f.l}</label>
+                                <input value={F(f.k)||""} onChange={e=>S(f.k,e.target.value)} className="fos-input py-1"/>
+                            </div>
+                        ))}
+                    </div>
+                    {/* Old description */}
+                    <div className="flex flex-col gap-0.5">
+                        <label className="text-[9px] font-black text-gray-400 uppercase">Old Description</label>
+                        <input value={F("old_description")||""} onChange={e=>S("old_description",e.target.value)} className="fos-input py-1"/>
+                    </div>
+                    {/* Checkboxes */}
+                    <div className="flex flex-wrap gap-4 border-t border-gray-100 pt-2">
+                        {[{k:"stem_pack",l:"Price by Stem"},{k:"inv_track",l:"Inventory"},{k:"auto_description",l:"Auto Description"},{k:"web",l:"Web Publish"},{k:"active",l:"Active"},{k:"mix_class",l:"Mix Class"},{k:"mix_subclass",l:"Mix Subclass"},{k:"mix_color",l:"Mix Color"},{k:"mix_grade",l:"Mix Grade"}].map(f=>(
+                            <label key={f.k} className="flex items-center gap-1.5 cursor-pointer">
+                                <input type="checkbox" checked={!!F(f.k)} onChange={e=>S(f.k,e.target.checked)} className="w-3.5 h-3.5 accent-[#FB7506]"/>
+                                <span className="text-xs font-semibold text-gray-600">{f.l}</span>
+                            </label>
+                        ))}
+                    </div>
+                    {/* Notes */}
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                        <div className="flex border-b border-gray-200 bg-gray-50">
+                            {[{id:"remarks",l:"Instructions"},{id:"color_breakdown",l:"Colors"},{id:"upc_notes",l:"UPC Notes"},{id:"additional_notes",l:"Additional"}].map(tab=>(
+                                <button key={tab.id} onClick={()=>setNoteTab(tab.id)} className={cn("flex-1 py-1.5 text-[9px] font-black uppercase tracking-wide transition-colors", noteTab===tab.id?"bg-white text-[#FB7506] border-b-2 border-[#FB7506]":"text-gray-400 hover:text-gray-600")}>{tab.l}</button>
+                            ))}
+                        </div>
+                        <textarea value={F(noteTab)||""} rows={2} onChange={e=>S(noteTab,e.target.value)} className="w-full p-2 text-xs outline-none resize-none"/>
+                    </div>
+                    {/* Shopify */}
+                    <div className="grid grid-cols-3 gap-2 border-t border-gray-100 pt-2">
+                        <div className="col-span-3"><label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Shopify</label></div>
+                        {[{k:"shopify_name",l:"Name"},{k:"shopify_color",l:"Color"},{k:"shopify_size",l:"Size"},{k:"shopify_subtype",l:"Subtype"},{k:"shopify_variety",l:"Variety"}].map(f=>(
+                            <div key={f.k} className="flex flex-col gap-0.5">
+                                <label className="text-[9px] font-black text-gray-400 uppercase">{f.l}</label>
+                                <input value={F(f.k)||""} onChange={e=>S(f.k,e.target.value)} className="fos-input py-1"/>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="flex justify-end gap-2 px-4 py-3 bg-gray-50 border-t rounded-b-xl shrink-0">
+                    <button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Cancel</button>
+                    <button onClick={save} disabled={saving} className="flex items-center gap-2 px-4 py-2 rounded bg-[#FB7506] hover:bg-orange-600 text-white text-sm font-black disabled:opacity-50">
+                        {saving?<RefreshCcw size={13} className="animate-spin"/>:<Save size={13}/>}
+                        {saving?"Saving...":"Save Product"}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 // ─── Tab1 Props ───────────────────────────────────────────────────────────────
 interface Tab1Props {
     selSubclass:    any;
@@ -148,10 +343,11 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
         useQuery({ queryKey:["t1-cs"], queryFn:()=>sF("/api/masters/items/cases"), staleTime:60000 });
 
     // ── Modal state ───────────────────────────────────────────────────────────
-    const [modal,   setModal]   = useState<{type:"class"|"subclass"|"grade"|"color"|"case"|"variety"|"product"; mode:"add"|"edit"|"delete"; target?: any}|null>(null);
-    const [form,    setForm]    = useState<any>({});
-    const [saving,  setSaving]  = useState(false);
-    const [mError,  setMError]  = useState<string|null>(null);
+    const [modal,         setModal]         = useState<{type:"class"|"subclass"|"grade"|"color"|"case"|"variety"|"product"; mode:"add"|"edit"|"delete"; target?: any}|null>(null);
+    const [form,          setForm]          = useState<any>({});
+    const [saving,        setSaving]        = useState(false);
+    const [mError,        setMError]        = useState<string|null>(null);
+    const [prodEditModal, setProdEditModal] = useState<{unico:string; vrUnico:string}|null>(null);
 
     // ── Tree: expand class ─────────────────────────────────────────────────────
     const toggleClass = useCallback(async (cls: any) => {
@@ -412,7 +608,7 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                                                                                         {p.active && <Check size={9} className="text-green-400 shrink-0"/>}
                                                                                         {/* Product CRUD */}
                                                                                         <div className="flex gap-0.5 shrink-0 opacity-0 group-hover/prod:opacity-100 transition-opacity" onClick={e=>e.stopPropagation()}>
-                                                                                            <button title="Edit product" onClick={()=>openModal("product","edit",{...p,vrUnico:vr.unico})} className="p-1 rounded hover:bg-blue-100 text-gray-300 hover:text-blue-600"><Pencil size={10}/></button>
+                                                                                            <button title="Edit product" onClick={()=>setProdEditModal({unico:p.unico,vrUnico:vr.unico})} className="p-1 rounded hover:bg-blue-100 text-gray-300 hover:text-blue-600"><Pencil size={10}/></button>
                                                                                             <button title="Delete product" onClick={()=>openModal("product","delete",{...p,vrUnico:vr.unico})} className="p-1 rounded hover:bg-red-50 text-gray-300 hover:text-red-500"><Trash2 size={10}/></button>
                                                                                         </div>
                                                                                     </div>
@@ -545,6 +741,17 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                     onDelete={doSave}
                     onClose={()=>{setModal(null);setMError(null);}}
                     saving={saving} error={mError}/>
+            )}
+
+            {prodEditModal && (
+                <ProductEditModal
+                    unico={prodEditModal.unico}
+                    vrUnico={prodEditModal.vrUnico}
+                    onSaved={()=>{
+                        const d = sF(`/api/masters/items/products?variety_uq=${encodeURIComponent(prodEditModal.vrUnico)}`);
+                        d.then(data => setProductsMap(p=>({...p,[prodEditModal.vrUnico]:data}))).catch(()=>{});
+                    }}
+                    onClose={()=>setProdEditModal(null)}/>
             )}
         </div>
     );
