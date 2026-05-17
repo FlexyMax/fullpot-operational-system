@@ -14,6 +14,7 @@ import { useAuditLog } from "@/lib/audit";
 import { AuditLogModal } from "@/components/AuditLogModal";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import Tab2 from "./Tab2";
+import Tab3 from "./Tab3";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const t  = (v: any) => String(v ?? "").trim();
@@ -528,7 +529,7 @@ export default function ItemsSetupPage() {
                             <button key={tab} onClick={()=>setActiveTab(tab)}
                                 className={cn("px-3 h-7 text-[8px] font-black uppercase tracking-wider rounded-t transition-all",
                                     activeTab===tab ? "bg-[#f4f6f8] text-[#FB7506]" : "text-gray-400 hover:text-white hover:bg-white/10")}>
-                                {tab===1 ? "Tab 1 — Hierarchy" : tab===2 ? "Tab 2 — All Products" : "Tab 3 — Prebooks"}
+                                {tab===1 ? "Tab 1 — Hierarchy" : tab===2 ? "Tab 2 — All Products" : "Tab 3 — Varieties / Components"}
                             </button>
                         ))}
                     </div>
@@ -542,11 +543,16 @@ export default function ItemsSetupPage() {
             {/* Tab 2 — All Products */}
             {activeTab === 2 && <Tab2 />}
 
-            {/* Tab 3 — Placeholder */}
+            {/* Tab 3 — Varieties / Components */}
             {activeTab === 3 && (
-                <div className="flex-1 flex items-center justify-center text-gray-400 text-sm italic">
-                    Tab 3 — Prebooks — Coming soon
-                </div>
+                <Tab3
+                    selSubclass={selSubclass}
+                    selVariety={selVariety}
+                    setSelVariety={setSelVariety}
+                    varieties={varieties as any[]}
+                    loadingVr={loadingVr}
+                    refetchVr={refetchVr}
+                />
             )}
 
             {/* Tab 1 — 2-row grid layout */}
