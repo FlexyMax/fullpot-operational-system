@@ -127,8 +127,8 @@ function PanelHeader({ icon: Icon, title, loading, recordId, children }: any) {
 function CrudModal({ title, icon: Icon, form, setForm, fields, onSave, onDelete, onClose, saving, error, mode }: any) {
     const isDelete = mode === "delete";
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 sm:p-4">
+            <div className="bg-white rounded-t-xl sm:rounded-xl shadow-2xl w-full sm:max-w-md max-h-[85vh] overflow-y-auto">
                 <div className="h-9 bg-[#374151] rounded-t-xl flex items-center justify-between px-4">
                     <div className="flex items-center gap-2">
                         <Icon size={13} className="text-[#FB7506]" />
@@ -186,8 +186,8 @@ function ProductsModal({ mode, form, setForm, lookups, varietyName, onSave, onCl
     const totalUnits = form.stem_pack ? (form.up_x_case || 0) : (form.up_x_pack || 0) * (form.up_x_case || 0);
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 sm:p-4">
+            <div className="bg-white rounded-t-xl sm:rounded-xl shadow-2xl w-full sm:max-w-2xl flex flex-col h-[85vh] sm:h-[80vh]">
                 <div className="h-9 bg-[#374151] rounded-t-xl flex items-center justify-between px-4 shrink-0">
                     <div className="flex items-center gap-2">
                         <Package size={13} className="text-[#FB7506]" />

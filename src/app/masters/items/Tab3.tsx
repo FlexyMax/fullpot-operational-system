@@ -88,8 +88,8 @@ function VarietyDefinitionModal({ mode, form, setForm, onSave, onDelete, onClose
     const { data: colors     = [] } = useQuery({ queryKey:["items-co"], queryFn:()=>sF("/api/masters/items/colors"), staleTime:60000 });
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 sm:p-4">
+            <div className="bg-white rounded-t-xl sm:rounded-xl shadow-2xl w-full sm:max-w-lg flex flex-col h-[85vh] sm:h-[80vh]">
                 <div className="h-9 bg-[#374151] rounded-t-xl flex items-center justify-between px-4 shrink-0">
                     <div className="flex items-center gap-2">
                         <Layers size={13} className="text-[#FB7506]"/>
@@ -202,8 +202,8 @@ function SubclassBOGOModal({ subclaUq, onClose, onSaved }: { subclaUq: string; o
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-72">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 sm:p-4">
+            <div className="bg-white rounded-t-xl sm:rounded-xl shadow-2xl w-full sm:w-72 max-h-[85vh]">
                 <div className="h-9 bg-[#374151] rounded-t-xl flex items-center justify-between px-4">
                     <span className="font-black text-[10px] uppercase tracking-widest text-white">SubClass BOGO Setup</span>
                     <button onClick={onClose}><XCircle size={15} className="text-gray-400 hover:text-white"/></button>
@@ -300,8 +300,8 @@ function WarehouseBOGOModal({ initialSalesmanUq, onClose, logAction }: { initial
     const emptyLbl = (l: boolean, msg: string) => !l && <div className="p-2 text-center text-[10px] text-gray-300 italic">{msg}</div>;
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 sm:p-4">
+            <div className="bg-white rounded-t-xl sm:rounded-xl shadow-2xl w-full sm:max-w-3xl flex flex-col h-[85vh] sm:h-[80vh]">
                 <div className="h-9 bg-[#374151] rounded-t-xl flex items-center justify-between px-4 shrink-0">
                     <span className="font-black text-[10px] uppercase tracking-widest text-white">BOGO Warehouse Selection</span>
                     {err && <span className="text-amber-300 text-[9px] font-bold ml-3 truncate">{err}</span>}
@@ -391,8 +391,8 @@ function PreBookDateModal({ title, productDesc, showDeletePrior, showChangeCase,
         onConfirm({ date_from: dateFrom, date_to: dateTo, delete_prior: delPrior, change_case: chgCase });
     };
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-80">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 sm:p-4">
+            <div className="bg-white rounded-t-xl sm:rounded-xl shadow-2xl w-full sm:w-80 max-h-[85vh]">
                 <div className="h-9 bg-[#374151] rounded-t-xl flex items-center justify-between px-4">
                     <div className="flex items-center gap-2"><Calendar size={13} className="text-[#FB7506]"/><span className="font-black text-[10px] uppercase text-white">{title}</span></div>
                     <button onClick={onClose}><XCircle size={15} className="text-gray-400 hover:text-white"/></button>
