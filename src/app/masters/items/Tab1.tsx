@@ -77,8 +77,8 @@ function RightCard({ icon: Icon, title, loading, recordId, menuItems, children }
         red:{icon:"text-red-500",text:"text-gray-800"}, gray:{icon:"text-gray-500",text:"text-gray-700"},
     };
     return (
-        <div className="flex flex-col overflow-hidden flex-1 min-h-0">
-            <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0">
+        <div className="flex flex-col overflow-hidden flex-1 min-h-0 rounded-lg border border-gray-200 shadow-sm bg-white">
+            <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
                 <div className="flex items-center gap-2">
                     <Icon size={15} className="text-[#FB7506]"/>
                     <span className="fos-grid-header-text">{title}</span>
@@ -148,7 +148,7 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
         useQuery({ queryKey:["t1-cs"], queryFn:()=>sF("/api/masters/items/cases"), staleTime:60000 });
 
     // ── Modal state ───────────────────────────────────────────────────────────
-    const [modal,   setModal]   = useState<{type:"class"|"subclass"|"grade"|"color"|"case"|"variety"; mode:"add"|"edit"|"delete"; target?: any}|null>(null);
+    const [modal,   setModal]   = useState<{type:"class"|"subclass"|"grade"|"color"|"case"|"variety"|"product"; mode:"add"|"edit"|"delete"; target?: any}|null>(null);
     const [form,    setForm]    = useState<any>({});
     const [saving,  setSaving]  = useState(false);
     const [mError,  setMError]  = useState<string|null>(null);
@@ -221,6 +221,10 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                 if (mode === "add")    { url = "/api/masters/items/varieties"; body = {...form, subcla_uq: target?.subclaUnico}; }
                 else if (mode === "edit") { url = `/api/masters/items/varieties/${target.unico}`; method = "PUT"; body = {...form, subcla_uq: target.subcla_uq}; }
                 else { url = `/api/masters/items/varieties/${target.unico}`; method = "DELETE"; body = {}; }
+            } else if (type === "product") {
+                if (mode === "add")    { setMError("Use Tab 2 — All Products to add new items."); setSaving(false); return; }
+                if (mode === "edit")   { url = `/api/masters/items/products/${target.unico}`; method = "PUT"; }
+                else                  { url = `/api/masters/items/products/${target.unico}`; method = "DELETE"; body = {}; }
             } else if (type === "grade") {
                 if (mode === "add")    { url = "/api/masters/items/grades"; }
                 else if (mode === "edit") { url = `/api/masters/items/grades/${target.unico}`; method = "PUT"; }
@@ -243,6 +247,10 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
             if (type === "class")    { refetchCl(); if (mode==="delete") { setSubclaMap(p=>{const m={...p}; delete m[target.unico]; return m;}); } }
             if (type === "subclass") { const clUnico = target?.classUnico; if (clUnico) setSubclaMap(p=>({...p,[clUnico]:(p[clUnico]||[]).filter((s:any)=>s.unico!==target?.unico)})); setVrMap(p=>{const m={...p}; delete m[target?.unico]; return m;}); }
             if (type === "variety")  { const scUnico = target?.subclaUnico||target?.subcla_uq; if (scUnico) { const data2 = await sF(`/api/masters/items/varieties?subclass_uq=${scUnico}&search=%`); setVrMap(p=>({...p,[scUnico]:data2})); } }
+            if (type === "product") {
+                const vrUnico = target?.vrUnico || target?.variety_uq;
+                if (vrUnico) { const d2 = await sF(`/api/masters/items/products?variety_uq=${encodeURIComponent(vrUnico)}`); setProductsMap(p=>({...p,[vrUnico]:d2})); }
+            }
             if (type === "grade")   refetchGr();
             if (type === "color")   refetchCo();
             if (type === "case")    refetchCs();
@@ -268,8 +276,9 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
         grade:    [{key:"grado",label:"Grade Name *"},{key:"grade_sh",label:"Code (4)"},{type:"checkbox",key:"display",label:"Show"},{type:"checkbox",key:"fnational",label:"National"}],
         color:    [{key:"color",label:"Color Name *"},{key:"color_sh",label:"Code (4)"},{type:"checkbox",key:"display",label:"Show"},{type:"checkbox",key:"mix",label:"Mix"}],
         case:     [{key:"case_name",label:"Case Name *",span2:true},{key:"case_sh",label:"Code"},{key:"factor",label:"Factor",type:"number"},{key:"weight",label:"Weight KG",type:"number"},{type:"checkbox",key:"display",label:"Show"}],
+        product:  [{key:"description",label:"Description",span2:true,readOnly:true},{key:"old_code",label:"EDI Code"},{key:"upc",label:"UPC"},{key:"boxcode",label:"Box Code"},{key:"rotation",label:"Rotation",type:"number"},{type:"checkbox",key:"active",label:"Active"}],
     };
-    const ICONS: Record<string,any>  = { class:Tag, subclass:Tag, variety:Layers, grade:Layers, color:Palette, case:Box };
+    const ICONS: Record<string,any>  = { class:Tag, subclass:Tag, variety:Layers, grade:Layers, color:Palette, case:Box, product:Package };
 
     // Filtered classes
     const filteredClasses = classSearch.trim()
@@ -329,9 +338,9 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                                         <button onClick={()=>openModal("subclass","add",{classUnico:cls.unico},{...EMPTY_SUBCLASS})} className="p-1 rounded hover:bg-white/10 text-gray-400 hover:text-green-400"><Plus size={12}/></button>
                                     </div>
                                 </div>
-                                {/* Subclasses */}
+                                {/* Subclasses — indented with left border */}
                                 {isExpCl && (
-                                    <div className="bg-gray-50 border-t border-gray-700/20 divide-y divide-gray-200">
+                                    <div className="bg-gray-50 border-t border-gray-700/20 pl-3 pr-0 divide-y divide-gray-200">
                                         {subclasses.length === 0 && !isLoadCl && (
                                             <div className="px-8 py-2 text-xs text-gray-400 italic">No subclasses</div>
                                         )}
@@ -360,9 +369,9 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                                                             <button onClick={()=>openModal("variety","add",{subclaUnico:sub.unico},{...EMPTY_VARIETY})} className={cn("p-1 rounded hover:bg-white/10", isExpSc?"text-gray-300":"text-green-500")}><Plus size={11}/></button>
                                                         </div>
                                                     </div>
-                                                    {/* Varieties */}
+                                                    {/* Varieties — indented with orange left border */}
                                                     {isExpSc && (
-                                                        <div className="bg-white border-t border-gray-600/20">
+                                                        <div className="bg-white border-t border-gray-600/20 pl-3 border-l-2 border-l-[#FB7506]/30 ml-2">
                                                             {isLoadSc && <div className="px-12 py-2 flex items-center gap-2 text-xs text-gray-400"><RefreshCcw size={10} className="animate-spin"/>Loading varieties...</div>}
                                                             {!isLoadSc && varieties.length === 0 && (
                                                                 <div className="px-12 py-2 text-xs text-gray-400 italic">No varieties</div>
@@ -375,34 +384,46 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                                                                 return (
                                                                     <div key={vr.unico} className="border-b border-gray-100 last:border-b-0">
                                                                         {/* Variety row */}
-                                                                        <div className={cn("h-9 flex items-center gap-2 px-8 cursor-pointer transition-colors select-none",
+                                                                        <div className={cn("h-9 flex items-center gap-2 px-3 cursor-pointer transition-colors select-none",
                                                                             isSelVr ? "bg-blue-50" : "hover:bg-gray-50")}
                                                                             onClick={()=>toggleVariety(vr)}>
                                                                             <ChevronRight size={11} className={cn("transition-transform shrink-0", isExpVr?"text-[#FB7506] rotate-90":"text-gray-300")}/>
                                                                             {isLoadVr ? <RefreshCcw size={10} className="text-[#FB7506] animate-spin shrink-0"/> : <div className="w-1.5 h-1.5 rounded-full bg-gray-400 shrink-0"/>}
                                                                             <span className={cn("text-xs font-medium flex-1 truncate", isSelVr?"text-blue-700":"text-gray-700")}>{t(vr.variety)}</span>
                                                                             <span className="text-[10px] text-gray-400 shrink-0">{t(vr.color)}</span>
-                                                                            {isExpVr && products.length > 0 && <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 rounded-full shrink-0">{products.length}</span>}
-                                                                            {vr.active ? <Check size={10} className="text-green-500 shrink-0"/> : <span className="text-[10px] text-gray-300 shrink-0">off</span>}
+                                                                            {isExpVr && products.length > 0 && <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 rounded-full shrink-0">{products.length} items</span>}
+                                                                            {vr.active && <Check size={10} className="text-green-500 shrink-0"/>}
                                                                             <AuditLogModal recordId={vr.unico} disabled={!vr.unico}/>
                                                                             <div className="flex gap-0.5 shrink-0" onClick={e=>e.stopPropagation()}>
-                                                                                <button onClick={()=>openModal("variety","edit",{...vr,subcla_uq:sub.unico})} className="p-1 rounded hover:bg-gray-200 text-gray-300 hover:text-blue-500"><Pencil size={10}/></button>
-                                                                                <button onClick={()=>openModal("variety","delete",{...vr,subcla_uq:sub.unico,subclaUnico:sub.unico})} className="p-1 rounded hover:bg-gray-200 text-gray-300 hover:text-red-500"><Trash2 size={10}/></button>
+                                                                                <button title="Edit variety" onClick={()=>openModal("variety","edit",{...vr,subcla_uq:sub.unico})} className="p-1 rounded hover:bg-gray-200 text-gray-300 hover:text-blue-500"><Pencil size={10}/></button>
+                                                                                <button title="Delete variety" onClick={()=>openModal("variety","delete",{...vr,subcla_uq:sub.unico,subclaUnico:sub.unico})} className="p-1 rounded hover:bg-gray-200 text-gray-300 hover:text-red-500"><Trash2 size={10}/></button>
                                                                             </div>
                                                                         </div>
-                                                                        {/* Products */}
+                                                                        {/* Products — indented with gray left border */}
                                                                         {isExpVr && (
-                                                                            <div className="bg-gray-50 divide-y divide-gray-100 border-t border-gray-200">
-                                                                                {isLoadVr && <div className="px-14 py-1.5 flex items-center gap-2 text-[10px] text-gray-400"><RefreshCcw size={9} className="animate-spin"/>Loading products...</div>}
-                                                                                {!isLoadVr && products.length === 0 && <div className="px-14 py-1.5 text-[10px] text-gray-400 italic">No products</div>}
+                                                                            <div className="bg-gray-50/80 border-t border-gray-200 pl-3 border-l-2 border-l-gray-200 ml-2">
+                                                                                {isLoadVr && <div className="px-4 py-1.5 flex items-center gap-2 text-[10px] text-gray-400"><RefreshCcw size={9} className="animate-spin"/>Loading...</div>}
+                                                                                {!isLoadVr && products.length === 0 && <div className="px-4 py-1.5 text-[10px] text-gray-400 italic">No products</div>}
                                                                                 {products.map((p: any) => (
-                                                                                    <div key={p.unico} className="h-8 flex items-center gap-2 px-14">
+                                                                                    <div key={p.unico} className={cn("h-8 flex items-center gap-2 px-3 hover:bg-gray-100 cursor-default group/prod", !p.active && "opacity-50")}>
                                                                                         <Package size={10} className="text-gray-300 shrink-0"/>
                                                                                         <span className="text-[11px] text-gray-600 flex-1 truncate font-medium">{t(p.description)}</span>
                                                                                         <span className="text-[10px] text-gray-400 shrink-0">{t(p.case_sh)}</span>
-                                                                                        {p.active ? <Check size={9} className="text-green-400 shrink-0"/> : <span className="text-[9px] text-gray-300">off</span>}
+                                                                                        {p.active && <Check size={9} className="text-green-400 shrink-0"/>}
+                                                                                        {/* Product CRUD */}
+                                                                                        <div className="flex gap-0.5 shrink-0 opacity-0 group-hover/prod:opacity-100 transition-opacity" onClick={e=>e.stopPropagation()}>
+                                                                                            <button title="Edit product" onClick={()=>openModal("product","edit",{...p,vrUnico:vr.unico})} className="p-1 rounded hover:bg-blue-100 text-gray-300 hover:text-blue-600"><Pencil size={10}/></button>
+                                                                                            <button title="Delete product" onClick={()=>openModal("product","delete",{...p,vrUnico:vr.unico})} className="p-1 rounded hover:bg-red-50 text-gray-300 hover:text-red-500"><Trash2 size={10}/></button>
+                                                                                        </div>
                                                                                     </div>
                                                                                 ))}
+                                                                                {/* Add product to this variety */}
+                                                                                {!isLoadVr && <div className="px-3 py-1 border-t border-gray-100">
+                                                                                    <button onClick={()=>openModal("product","add",{vrUnico:vr.unico})} disabled={!perms.canCreate}
+                                                                                        className="flex items-center gap-1.5 text-[10px] text-gray-400 hover:text-[#FB7506] disabled:opacity-40 transition-colors">
+                                                                                        <Plus size={10}/> Add product to {t(vr.variety)}
+                                                                                    </button>
+                                                                                </div>}
                                                                             </div>
                                                                         )}
                                                                     </div>
