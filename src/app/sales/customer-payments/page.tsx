@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -8,7 +8,7 @@ import {
     ArrowLeft, RefreshCcw, Search, Check, XCircle, Save, X, Trash2,
     Plus, Pencil, AlertCircle, Users, FileText, CreditCard, Menu,
     ChevronRight, Printer, Mail, BarChart2, DollarSign, CheckCircle,
-    Bell
+    Bell, Banknote, Calendar, RotateCcw
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuditLog } from "@/lib/audit";
@@ -458,6 +458,178 @@ function ApproveCreditModal({ requests, onClose, onAction }: any) {
     );
 }
 
+// ─── CashBackModal ────────────────────────────────────────────────────────────
+function CashBackModal({ payment, customerName, onClose, onSaved }: any) {
+    const [form,   setForm]   = useState({ in_date: today(), in_ammount: 0, details: "" });
+    const [saving, setSaving] = useState(false);
+    const [error,  setError]  = useState<string|null>(null);
+    const maxAmount = parseFloat(payment?.in_balance ?? 0);
+
+    const save = async () => {
+        if (!form.in_ammount) { setError("Income amount is empty."); return; }
+        if (form.in_ammount > maxAmount) { setError("Income amount is greather to balance."); return; }
+        setSaving(true); setError(null);
+        try {
+            const res = await fetch("/api/customer-payments/cashback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ income_uq: payment.unico, ...form }) });
+            const d = await res.json();
+            if (!d.success) throw new Error(d.error);
+            onSaved(d.unico);
+            onClose();
+        } catch(e: any) { setError(e.message); }
+        finally { setSaving(false); }
+    };
+
+    return (
+        <Modal title={`Customer Cash Back — ${customerName}`} icon={RotateCcw} onClose={onClose} size="sm" error={error}
+            footer={<><button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Cancel</button><button onClick={save} disabled={saving} className="flex items-center gap-2 px-4 py-2 rounded bg-[#FB7506] text-white text-sm font-black disabled:opacity-50">{saving?<RefreshCcw size={13} className="animate-spin"/>:<Save size={13}/>}{saving?"Saving...":"Create"}</button></>}>
+            <div className="space-y-3 text-xs">
+                <div className="bg-gray-50 rounded p-2 grid grid-cols-2 gap-2">
+                    <div><span className="text-[9px] font-black text-gray-400 uppercase">Source Income: </span><span className="font-bold">{t(payment?.dato||payment?.unico)}</span></div>
+                    <div><span className="text-[9px] font-black text-gray-400 uppercase">Income Balance: </span><span className="font-bold text-blue-700">{fmt(maxAmount)}</span></div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-0.5">
+                        <label className="text-[9px] font-black text-gray-400 uppercase">Date *</label>
+                        <input type="date" value={form.in_date} onChange={e=>setForm(p=>({...p,in_date:e.target.value}))} className="fos-input py-1.5"/>
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                        <label className="text-[9px] font-black text-gray-400 uppercase">Amount * (max {fmt(maxAmount)})</label>
+                        <input type="number" step="0.01" max={maxAmount} value={form.in_ammount} onChange={e=>setForm(p=>({...p,in_ammount:parseFloat(e.target.value)||0}))} className="fos-input py-1.5"/>
+                    </div>
+                </div>
+                <div className="flex flex-col gap-0.5">
+                    <label className="text-[9px] font-black text-gray-400 uppercase">Details</label>
+                    <textarea value={form.details} onChange={e=>setForm(p=>({...p,details:e.target.value}))} rows={2} className="fos-input py-1 resize-none"/>
+                </div>
+            </div>
+        </Modal>
+    );
+}
+
+// ─── CrDbModal ────────────────────────────────────────────────────────────────
+function CrDbModal({ mode, crdb, invoice, customerName, accRecUq, onClose, onSaved }: any) {
+    const isDelete = mode === "delete";
+    const isAdd    = mode === "add";
+    const showType = isAdd && parseFloat(invoice?.balance ?? 0) > 0;
+    const defaultType = isAdd ? (parseFloat(invoice?.balance ?? 0) > 0 ? "C" : "D") : (crdb?.type ?? "C");
+
+    const [form,   setForm]   = useState<any>(isAdd
+        ? { type: defaultType, cd_date: today(), reason_uq: "", cd_ammount: 0, details: "", all_invoices: false, acc_rec_uq: accRecUq ?? "" }
+        : { ...crdb, type: crdb?.type ?? "C", cd_date: crdb?.cd_date?.split("T")[0] ?? today(), cd_ammount: crdb?.cd_ammount ?? 0 });
+    const [saving, setSaving] = useState(false);
+    const [error,  setError]  = useState<string|null>(null);
+
+    const { data: reasons = [] } = useQuery({ queryKey: ["cp-crdb-reasons"], queryFn: () => cpFetch("/api/customer-payments/lookups/crdb-reasons"), staleTime: 60000 });
+
+    const save = async () => {
+        setSaving(true); setError(null);
+        try {
+            let res, d;
+            if (isAdd) {
+                res = await fetch("/api/customer-payments/crdb", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+            } else if (isDelete) {
+                res = await fetch(`/api/customer-payments/crdb/${crdb.unico}`, { method: "DELETE" });
+            } else {
+                res = await fetch(`/api/customer-payments/crdb/${crdb.unico}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+            }
+            d = await res.json();
+            if (!d.success) throw new Error(d.error);
+            onSaved(d.unico ?? crdb?.unico ?? "");
+            onClose();
+        } catch(e: any) { setError(e.message); }
+        finally { setSaving(false); }
+    };
+
+    return (
+        <Modal title={`${isAdd?"Insert":isDelete?"Delete":"Edit"} Credit/Debit — ${customerName}`} icon={Banknote} onClose={onClose} size="sm" error={error}
+            footer={<><button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Cancel</button>
+                <button onClick={save} disabled={saving} className={cn("flex items-center gap-2 px-4 py-2 rounded text-white text-sm font-black disabled:opacity-50", isDelete?"bg-red-600 hover:bg-red-700":"bg-[#FB7506] hover:bg-orange-600")}>
+                    {saving?<RefreshCcw size={13} className="animate-spin"/>:isDelete?<Trash2 size={13}/>:<Save size={13}/>}{saving?"...":isDelete?"Delete":isAdd?"Create":"Save"}
+                </button></>}>
+            {isDelete ? (
+                <div className="text-center space-y-3 py-2">
+                    <Trash2 size={32} className="text-red-400 mx-auto"/>
+                    <p className="text-sm text-gray-600">Delete CR/DB <strong>{crdb?.identity_column}</strong>?</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                    {/* Type — only editable in Add with balance>0 */}
+                    <div className="flex flex-col gap-0.5">
+                        <label className="text-[9px] font-black text-gray-400 uppercase">Type *</label>
+                        <select value={form.type} onChange={e=>setForm((p:any)=>({...p,type:e.target.value}))} disabled={!showType} className={cn("fos-input py-1", !showType&&"bg-gray-50 text-gray-500")}>
+                            <option value="C">C — Credit</option>
+                            <option value="D">D — Debit</option>
+                        </select>
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                        <label className="text-[9px] font-black text-gray-400 uppercase">Date *</label>
+                        <input type="date" value={form.cd_date} onChange={e=>setForm((p:any)=>({...p,cd_date:e.target.value}))} className="fos-input py-1"/>
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                        <label className="text-[9px] font-black text-gray-400 uppercase">Reason *</label>
+                        <select value={form.reason_uq} onChange={e=>setForm((p:any)=>({...p,reason_uq:e.target.value}))} className="fos-input py-1">
+                            <option value="">— Select —</option>
+                            {(reasons as any[]).map((r:any)=><option key={r.unico} value={r.unico}>{t(r.reason)}</option>)}
+                        </select>
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                        <label className="text-[9px] font-black text-gray-400 uppercase">Amount *</label>
+                        <input type="number" step="0.01" value={form.cd_ammount} onChange={e=>setForm((p:any)=>({...p,cd_ammount:parseFloat(e.target.value)||0}))} className="fos-input py-1"/>
+                    </div>
+                    <div className="col-span-2 flex flex-col gap-0.5">
+                        <label className="text-[9px] font-black text-gray-400 uppercase">Details</label>
+                        <textarea value={form.details||""} onChange={e=>setForm((p:any)=>({...p,details:e.target.value}))} rows={2} className="fos-input py-1 resize-none"/>
+                    </div>
+                    {isAdd && (
+                        <label className="col-span-2 flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" checked={!!form.all_invoices} onChange={e=>setForm((p:any)=>({...p,all_invoices:e.target.checked}))} className="w-4 h-4 accent-[#FB7506]"/>
+                            <span className="text-xs font-semibold text-gray-600">Apply to All Invoices</span>
+                        </label>
+                    )}
+                    {!isAdd && crdb && (
+                        <div className="col-span-2 bg-gray-50 rounded p-2">
+                            <span className="text-[9px] font-black text-gray-400 uppercase">No. </span>
+                            <span className="font-bold">{crdb.identity_column}</span>
+                        </div>
+                    )}
+                </div>
+            )}
+        </Modal>
+    );
+}
+
+// ─── CrDbReportModal ──────────────────────────────────────────────────────────
+function CrDbReportModal({ invoiceUq, onClose }: any) {
+    const [option,  setOption]  = useState(1);
+    const [loading, setLoading] = useState(false);
+
+    const run = async () => {
+        setLoading(true);
+        try {
+            const res = await fetch("/api/customer-payments/reports/crdb", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ report_option: option, invoice_uq: invoiceUq }) });
+            const d = await res.json();
+            if (!d.success) throw new Error(d.error);
+            alert(`Report generated: ${d.records?.length ?? 0} record(s). Print functionality coming soon.`);
+            onClose();
+        } catch(e: any) { alert((e as any).message); }
+        finally { setLoading(false); }
+    };
+
+    return (
+        <Modal title="Print Material — Cr/Db Report" icon={Printer} onClose={onClose} size="sm"
+            footer={<><button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Cancel</button><button onClick={run} disabled={loading} className="flex items-center gap-2 px-4 py-2 rounded bg-[#FB7506] text-white text-sm font-black disabled:opacity-50">{loading?<RefreshCcw size={13} className="animate-spin"/>:<Printer size={13}/>}{loading?"Running...":"Print"}</button></>}>
+            <div className="space-y-3 text-xs">
+                {[{v:1,l:"Credit by Products"},{v:2,l:"Direct Credit to A/R"}].map(opt=>(
+                    <label key={opt.v} className="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" checked={option===opt.v} onChange={()=>setOption(opt.v)} className="accent-[#FB7506]"/>
+                        <span className="font-semibold text-gray-700">{opt.l}</span>
+                    </label>
+                ))}
+            </div>
+        </Modal>
+    );
+}
+
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 export default function CustomerPaymentsPage() {
     const { data: session, status } = useSession();
@@ -486,6 +658,14 @@ export default function CustomerPaymentsPage() {
     const [creditModal,      setCreditModal]       = useState(false);
     const [creditCount,      setCreditCount]       = useState(0);
     const [creditRequests,   setCreditRequests]    = useState<any[]>([]);
+    // ── Tab 3 state ───────────────────────────────────────────────────────────
+    const [selPayment,       setSelPayment]        = useState<any>(null);
+    const [cashbackModal,    setCashbackModal]     = useState(false);
+    // ── Tab 4 state ───────────────────────────────────────────────────────────
+    const [selCrDb,          setSelCrDb]           = useState<any>(null);
+    const [selCrDbDate,      setSelCrDbDate]       = useState<string|null>(null);
+    const [crdbModal,        setCrdbModal]         = useState<{mode:"add"|"edit"|"delete"}|null>(null);
+    const [crdbReportModal,  setCrdbReportModal]   = useState(false);
 
     useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
 
@@ -513,6 +693,45 @@ export default function CustomerPaymentsPage() {
         enabled:  !!selCustomer?.unico,
         staleTime: 0,
     });
+
+    // ── Tab 3 & 4 queries ─────────────────────────────────────────────────────
+    const { data: paymentsHistory = [], isFetching: loadingPay, refetch: refetchPay } = useQuery({
+        queryKey: ["cp-pay-hist", selCustomer?.unico],
+        queryFn:  () => cpFetch(`/api/customer-payments/payment-history/${selCustomer.unico}`),
+        enabled:  !!selCustomer?.unico && activeTab === "payments",
+        staleTime: 0,
+    });
+    const { data: payInvoices = [], isFetching: loadingPayInv } = useQuery({
+        queryKey: ["cp-pay-inv", selPayment?.unico],
+        queryFn:  () => cpFetch(`/api/customer-payments/payment-invoices/${selPayment.unico}`),
+        enabled:  !!selPayment?.unico,
+        staleTime: 0,
+    });
+    const { data: crdbDates = [], isFetching: loadingCrdbDates, refetch: refetchCrdbDates } = useQuery({
+        queryKey: ["cp-crdb-dates", selCustomer?.unico],
+        queryFn:  () => cpFetch(`/api/customer-payments/crdb-dates/${selCustomer.unico}`),
+        enabled:  !!selCustomer?.unico && activeTab === "crdb",
+        staleTime: 0,
+    });
+    const { data: crdbHistory = [], isFetching: loadingCrdb, refetch: refetchCrdb } = useQuery({
+        queryKey: ["cp-crdb-hist", selCustomer?.unico, selCrDbDate],
+        queryFn:  () => cpFetch(`/api/customer-payments/crdb-history/${selCustomer.unico}?date=${selCrDbDate}`),
+        enabled:  !!selCustomer?.unico && !!selCrDbDate && activeTab === "crdb",
+        staleTime: 0,
+    });
+
+    // Auto-select first crdb date
+    useEffect(() => {
+        if ((crdbDates as any[]).length > 0 && !selCrDbDate) {
+            const first = (crdbDates as any[])[0];
+            setSelCrDbDate(first.cddate ?? first.cd_date ?? null);
+        }
+    }, [crdbDates]);
+
+    // Auto-select first payment
+    useEffect(() => {
+        if ((paymentsHistory as any[]).length > 0 && !selPayment) setSelPayment((paymentsHistory as any[])[0]);
+    }, [paymentsHistory]);
 
     // Auto-select first invoice
     useEffect(() => {
@@ -716,7 +935,7 @@ export default function CustomerPaymentsPage() {
                         <Btn icon={BarChart2}     label="Reports"      color="gray"   onClick={()=>setPendingRptModal(true)} disabled={!selCustomer||!perms.canReport}/>
                         <div className="w-px h-5 bg-gray-300"/>
                         <Btn icon={Plus}          label="New Payment"  color="green"  onClick={()=>{ if(!perms.canCreate){setError(PERMISSION_MSGS.create);return;} setNewPayModal({mode:"add"}); }} disabled={!selCustomer||!perms.canCreate}/>
-                        <Btn icon={CreditCard}    label="Insert Cr/Db" color="blue"   onClick={()=>setError("Credits/Debits — Tab 4 (Part 2)")} disabled={!selCustomer||!perms.canCreate}/>
+                        <Btn icon={CreditCard}    label="Insert Cr/Db" color="blue"   onClick={()=>{ if(!perms.canCreate){setError(PERMISSION_MSGS.create);return;} if(!selInvoice){setError("Select an invoice first.");return;} setCrdbModal({mode:"add"}); }} disabled={!selCustomer||!selInvoice||!perms.canCreate}/>
                         <div className="w-px h-5 bg-gray-300"/>
                         {/* Balance filter */}
                         <div className="flex items-center gap-2 text-xs font-bold">
@@ -867,10 +1086,190 @@ export default function CustomerPaymentsPage() {
                 </div>
             )}
 
-            {/* ── TABS 3-6: STUBS (Part 2 & 3) ─────────────────────────────── */}
-            {(activeTab === "payments" || activeTab === "crdb" || activeTab === "statement" || activeTab === "corporate") && (
+            {/* ── TAB 3: CUSTOMER PAYMENTS ──────────────────────────────────── */}
+            {activeTab === "payments" && (
+                <div className="flex flex-col flex-1 overflow-hidden p-1.5 gap-1.5">
+                    {/* Toolbar */}
+                    <div className="bg-gray-100 border border-gray-200 rounded-lg px-2 py-1.5 flex flex-wrap gap-1 shrink-0">
+                        <Btn icon={Plus}       label="Add"          color="green"  onClick={()=>{ if(!perms.canCreate){setError(PERMISSION_MSGS.create);return;} setNewPayModal({mode:"add"}); }} disabled={!selCustomer||!perms.canCreate}/>
+                        <Btn icon={Pencil}     label="Edit"         color="blue"   onClick={()=>{ if(!selPayment){setError("Payment empty.");return;} setNewPayModal({mode:"edit",income:selPayment}); }} disabled={!selPayment}/>
+                        <Btn icon={Trash2}     label="Delete"       color="red"    onClick={()=>{ if(!selPayment){setError("Payment empty.");return;} setNewPayModal({mode:"delete",income:selPayment}); }} disabled={!selPayment}/>
+                        <div className="w-px h-5 bg-gray-300"/>
+                        <Btn icon={RotateCcw}  label="Void Payment" color="amber"  onClick={async()=>{
+                            if(!selPayment){setError("Payment empty.");return;}
+                            if(!perms.canEdit){setError(PERMISSION_MSGS.edit);return;}
+                            if(!confirm("Do you want to VOID this payment?"))return;
+                            try{const r=await fetch(`/api/customer-payments/payment/${selPayment.unico}/void`,{method:"PUT"});const d=await r.json();if(!d.success)throw new Error(d.error);logAction("Edit",selPayment.unico,"Void");setSelPayment(null);refetchPay();refetchInv();refetchIncomes();}catch(e:any){setError((e as any).message);}
+                        }} disabled={!selPayment||!perms.canEdit}/>
+                        <Btn icon={Printer}    label="Print"        color="gray"   onClick={async()=>{ if(!selPayment){setError("Payment empty.");return;} const d=await cpFetch(`/api/customer-payments/payment/${selPayment.unico}/report`); setError(`Report: ${d.records?.length??0} record(s) — print coming soon.`); }} disabled={!selPayment||!perms.canReport}/>
+                        <Btn icon={RotateCcw}  label="Cash Back"    color="purple" onClick={()=>{ if(!selPayment){setError("Payment empty.");return;} setCashbackModal(true); }} disabled={!selPayment||!perms.canCreate}/>
+                    </div>
+                    {/* Payments grid */}
+                    <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden" style={{flex:"1 1 55%",minHeight:0}}>
+                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
+                            <div className="flex items-center gap-2">
+                                <DollarSign size={15} className="text-[#FB7506]"/>
+                                <span className="fos-grid-header-text">Customer Payments {selCustomer?`— ${t(selCustomer.customer)}`:""}</span>
+                                {loadingPay && <RefreshCcw size={11} className="text-gray-400 animate-spin"/>}
+                            </div>
+                            <AuditLogModal recordId={selPayment?.unico} disabled={!selPayment}/>
+                        </div>
+                        <div className="overflow-auto flex-1">
+                            <table className="min-w-full text-left">
+                                <thead className="bg-gray-100 border-b border-gray-200 text-gray-700 sticky top-0 z-10">
+                                    <tr className="fos-grid-thead">{["Date","Amount","Applied","Unapplied","Deposit","Check/Doc","Card","Approval","Void"].map(h=><th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>)}</tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100 fos-grid-tbody">
+                                    {(paymentsHistory as any[]).map((p:any)=>{
+                                        const isSel=selPayment?.unico===p.unico;
+                                        return <tr key={p.unico} onClick={()=>setSelPayment(p)} className={cn("cursor-pointer transition-colors",isSel?"!bg-blue-50 ring-1 ring-inset ring-blue-200":"hover:bg-gray-50",p.void&&"opacity-45")}>
+                                            <td className="p-2 border-r border-gray-100">{fmtDate(p.in_date)}</td>
+                                            <td className="p-2 border-r border-gray-100 text-right font-bold">{fmt(p.in_ammount)}</td>
+                                            <td className="p-2 border-r border-gray-100 text-right text-blue-700">{fmt(p.in_total)}</td>
+                                            <td className="p-2 border-r border-gray-100 text-right text-orange-600">{fmt(p.in_balance)}</td>
+                                            <td className="p-2 border-r border-gray-100 text-right">{fmt(p.deposit)}</td>
+                                            <td className="p-2 border-r border-gray-100">{t(p.bank_doc)}</td>
+                                            <td className="p-2 border-r border-gray-100">{t(p.card)}</td>
+                                            <td className="p-2 border-r border-gray-100">{t(p.approval)}</td>
+                                            <td className="p-2 text-center">{p.void?<Check size={11} className="text-red-400 mx-auto"/>:"—"}</td>
+                                        </tr>;
+                                    })}
+                                    {!loadingPay && !selCustomer && <tr><td colSpan={9} className="p-8 text-center text-gray-400 italic text-xs">Select a customer in Tab 1</td></tr>}
+                                    {!loadingPay && selCustomer && (paymentsHistory as any[]).length===0 && <tr><td colSpan={9} className="p-8 text-center text-gray-400 italic text-xs">No payments found</td></tr>}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {/* Payment invoices sub-grid */}
+                    <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden" style={{flex:"1 1 45%",minHeight:0}}>
+                        <div className="h-10 bg-[#374151] flex items-center pl-3 shrink-0 rounded-t-lg">
+                            <FileText size={15} className="text-[#FB7506] mr-2"/>
+                            <span className="fos-grid-header-text">Applied Invoices {selPayment?`— ${fmtDate(selPayment.in_date)}`:""}</span>
+                            {loadingPayInv && <RefreshCcw size={11} className="text-gray-400 animate-spin ml-2"/>}
+                        </div>
+                        <div className="overflow-auto flex-1">
+                            <table className="min-w-full text-left">
+                                <thead className="bg-gray-100 border-b border-gray-200 fos-grid-thead text-gray-700 sticky top-0 z-10">
+                                    <tr>{["Invoice","Date","Due-Date","Amount","Credits","Debits","Payment","T.Payments"].map(h=><th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>)}</tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100 fos-grid-tbody">
+                                    {(payInvoices as any[]).map((p:any,i:number)=>(
+                                        <tr key={i} className="hover:bg-gray-50">
+                                            <td className="p-2 border-r border-gray-100 font-bold text-blue-700">{p.invoice_no}</td>
+                                            <td className="p-2 border-r border-gray-100">{fmtDate(p.ar_date)}</td>
+                                            <td className="p-2 border-r border-gray-100">{fmtDate(p.date_due)}</td>
+                                            <td className="p-2 border-r border-gray-100 text-right">{fmt(p.ammount)}</td>
+                                            <td className="p-2 border-r border-gray-100 text-right text-green-600">{fmt(p.credits)}</td>
+                                            <td className="p-2 border-r border-gray-100 text-right text-red-500">{fmt(p.debits)}</td>
+                                            <td className="p-2 border-r border-gray-100 text-right text-blue-700 font-bold">{fmt(p.payment)}</td>
+                                            <td className="p-2 text-right">{fmt(p.payments)}</td>
+                                        </tr>
+                                    ))}
+                                    {!loadingPayInv && !selPayment && <tr><td colSpan={8} className="p-4 text-center text-gray-300 italic text-xs">Select a payment</td></tr>}
+                                    {!loadingPayInv && selPayment && (payInvoices as any[]).length===0 && <tr><td colSpan={8} className="p-4 text-center text-gray-300 italic text-xs">No invoices applied</td></tr>}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── TAB 4: CREDITS / DEBITS ───────────────────────────────────── */}
+            {activeTab === "crdb" && (
+                <div className="flex flex-col flex-1 overflow-hidden p-1.5 gap-1.5">
+                    {/* Toolbar */}
+                    <div className="bg-gray-100 border border-gray-200 rounded-lg px-2 py-1.5 flex flex-wrap gap-1 shrink-0">
+                        <Btn icon={RefreshCcw} label="Refresh"      color="gray"   onClick={()=>{ setSelCrDbDate(null); setSelCrDb(null); refetchCrdbDates(); }}/>
+                        <Btn icon={Pencil}     label="Edit Cr/Db"   color="blue"   onClick={()=>{
+                            if(!selCustomer){setError("Customer empty.");return;}
+                            if(!selCrDb){setError("Document empty.");return;}
+                            if(selCrDb.automatic){setError("Automatic Document. You can't edit/delete.");return;}
+                            setCrdbModal({mode:"edit"});
+                        }} disabled={!selCrDb||!perms.canEdit}/>
+                        <Btn icon={Trash2}     label="Delete Cr/Db" color="red"    onClick={()=>{
+                            if(!selCustomer){setError("Customer empty.");return;}
+                            if(!selCrDb){setError("Document empty.");return;}
+                            if(selCrDb.automatic){setError("Automatic Document. You can't edit/delete.");return;}
+                            setCrdbModal({mode:"delete"});
+                        }} disabled={!selCrDb||!perms.canDelete}/>
+                        <Btn icon={Printer}    label="Print Material" color="gray" onClick={()=>{
+                            if(!selCrDb){setError("Select a CR/DB record first.");return;}
+                            if(!perms.canReport){setError(PERMISSION_MSGS.report);return;}
+                            setCrdbReportModal(true);
+                        }} disabled={!selCrDb||!perms.canReport}/>
+                    </div>
+                    {/* Two-column layout */}
+                    <div className="flex gap-1.5 flex-1 overflow-hidden min-h-0">
+                        {/* Left: Date picker */}
+                        <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden w-32 shrink-0">
+                            <div className="h-10 bg-[#374151] flex items-center pl-2 shrink-0 rounded-t-lg">
+                                <Calendar size={14} className="text-[#FB7506] mr-1.5"/>
+                                <span className="fos-grid-header-text text-[10px]">Dates</span>
+                                {loadingCrdbDates && <RefreshCcw size={9} className="text-gray-400 animate-spin ml-1"/>}
+                            </div>
+                            <div className="overflow-auto flex-1">
+                                <table className="min-w-full text-left">
+                                    <thead className="bg-gray-100 border-b border-gray-200 fos-grid-thead text-gray-700 sticky top-0">
+                                        <tr><th className="p-2 border-r border-gray-200">Date</th><th className="p-2 text-right">#</th></tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100 fos-grid-tbody">
+                                        {(crdbDates as any[]).map((d:any)=>{
+                                            const dKey = d.cddate ?? d.cd_date;
+                                            const isSel = selCrDbDate === dKey;
+                                            return <tr key={dKey} onClick={()=>{setSelCrDbDate(dKey);setSelCrDb(null);}} className={cn("cursor-pointer transition-colors",isSel?"!bg-blue-50 ring-1 ring-inset ring-blue-200":"hover:bg-gray-50")}>
+                                                <td className="p-2 border-r border-gray-100 text-[10px]">{fmtDate(d.cd_date||d.cddate)}</td>
+                                                <td className="p-2 text-right text-[10px]">{d.records}</td>
+                                            </tr>;
+                                        })}
+                                        {!loadingCrdbDates && !selCustomer && <tr><td colSpan={2} className="p-2 text-center text-gray-300 italic text-[9px]">Select customer</td></tr>}
+                                        {!loadingCrdbDates && selCustomer && (crdbDates as any[]).length===0 && <tr><td colSpan={2} className="p-2 text-center text-gray-300 italic text-[9px]">No dates</td></tr>}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        {/* Right: CR/DB History */}
+                        <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-0">
+                            <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
+                                <div className="flex items-center gap-2">
+                                    <Banknote size={15} className="text-[#FB7506]"/>
+                                    <span className="fos-grid-header-text">Cr/Db History {selCrDbDate?`— ${fmtDate(selCrDbDate)}`:""}</span>
+                                    {loadingCrdb && <RefreshCcw size={11} className="text-gray-400 animate-spin"/>}
+                                </div>
+                                <AuditLogModal recordId={selCrDb?.unico} disabled={!selCrDb}/>
+                            </div>
+                            <div className="overflow-auto flex-1">
+                                <table className="min-w-full text-left">
+                                    <thead className="bg-gray-100 border-b border-gray-200 fos-grid-thead text-gray-700 sticky top-0 z-10">
+                                        <tr>{["Type","Invoice","Debits","Credits","OverCredits","Auto","Reason","Details"].map(h=><th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>)}</tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100 fos-grid-tbody">
+                                        {(crdbHistory as any[]).map((c:any)=>{
+                                            const isSel=selCrDb?.unico===c.unico;
+                                            return <tr key={c.unico} onClick={()=>setSelCrDb(c)} className={cn("cursor-pointer transition-colors",isSel?"!bg-blue-50 ring-1 ring-inset ring-blue-200":"hover:bg-gray-50")}>
+                                                <td className="p-2 border-r border-gray-100"><span className={cn("font-black text-[10px]",c.type==="C"?"text-green-600":"text-red-500")}>{c.type}</span></td>
+                                                <td className="p-2 border-r border-gray-100 font-bold text-blue-700">{c.invoice_no}</td>
+                                                <td className="p-2 border-r border-gray-100 text-right text-red-500">{c.type==="D"?fmt(c.cd_ammount):"—"}</td>
+                                                <td className="p-2 border-r border-gray-100 text-right text-green-600">{c.type==="C"?fmt(c.cd_ammount):"—"}</td>
+                                                <td className="p-2 border-r border-gray-100 text-right">{fmt(c.overcredits)}</td>
+                                                <td className="p-2 border-r border-gray-100 text-center">{c.automatic?<Check size={11} className="text-blue-400 mx-auto"/>:"—"}</td>
+                                                <td className="p-2 border-r border-gray-100">{t(c.reason)}</td>
+                                                <td className="p-2">{t(c.details)}</td>
+                                            </tr>;
+                                        })}
+                                        {!loadingCrdb && !selCrDbDate && <tr><td colSpan={8} className="p-8 text-center text-gray-400 italic text-xs">Select a date on the left</td></tr>}
+                                        {!loadingCrdb && selCrDbDate && (crdbHistory as any[]).length===0 && <tr><td colSpan={8} className="p-8 text-center text-gray-400 italic text-xs">No records for this date</td></tr>}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── TABS 5-6: STUBS (Part 3) ──────────────────────────────────── */}
+            {(activeTab === "statement" || activeTab === "corporate") && (
                 <div className="flex-1 flex items-center justify-center text-gray-400 text-sm italic">
-                    {activeTab === "payments" ? "Customer Payments (Tab 3)" : activeTab === "crdb" ? "Credits / Debits (Tab 4)" : activeTab === "statement" ? "Statement (Tab 5)" : "Corporate Payments (Tab 6)"} — Coming in Part {activeTab === "corporate" ? "3" : "2"}
+                    {activeTab === "statement" ? "Statement (Tab 5)" : "Corporate Payments (Tab 6)"} — Coming in Part 3
                 </div>
             )}
 
@@ -904,6 +1303,26 @@ export default function CustomerPaymentsPage() {
             {creditModal && creditRequests.length > 0 && (
                 <ApproveCreditModal requests={creditRequests} onClose={()=>setCreditModal(false)}
                     onAction={()=>{ logAction("Insert","","CREDIT ACTION"); setCreditModal(false); }}/>
+            )}
+            {/* ── Part 2 modals ─────────────────────────────────────────────── */}
+            {cashbackModal && selPayment && selCustomer && (
+                <CashBackModal payment={selPayment} customerName={t(selCustomer.customer)}
+                    onClose={()=>setCashbackModal(false)}
+                    onSaved={(unico:string)=>{ logAction("Insert",unico,"CashBack"); refetchPay(); refetchIncomes(); refetchCust(); }}/>
+            )}
+            {crdbModal && selCustomer && (
+                <CrDbModal mode={crdbModal.mode} crdb={selCrDb} invoice={selInvoice}
+                    customerName={t(selCustomer.customer)} accRecUq={selInvoice?.unico}
+                    onClose={()=>setCrdbModal(null)}
+                    onSaved={(unico:string)=>{
+                        const action = crdbModal.mode==="add"?"Insert":crdbModal.mode==="edit"?"Edit":"Delete";
+                        if(action!=="Delete") logAction(action as any, unico);
+                        refetchCrdb(); refetchCrdbDates(); refetchInv(); refetchCust();
+                        setCrdbModal(null);
+                    }}/>
+            )}
+            {crdbReportModal && selCrDb && (
+                <CrDbReportModal invoiceUq={selCrDb.invoice_uq ?? selCrDb.unico} onClose={()=>setCrdbReportModal(false)}/>
             )}
         </div>
     );
