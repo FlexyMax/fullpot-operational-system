@@ -519,29 +519,29 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                         return (
                             <div key={cls.unico} className="rounded-lg overflow-hidden border border-black/10">
                                 {/* Class row */}
-                                <div className={cn("h-12 bg-[#3f5f7a] flex items-center gap-2.5 px-3 cursor-pointer hover:bg-[#375469] transition-colors select-none",
+                                <div className={cn("h-12 bg-gray-100 flex items-center gap-2.5 px-3 cursor-pointer hover:bg-gray-200 transition-colors select-none border-b border-gray-200",
                                     isExpCl && "rounded-b-none")}
                                     onClick={()=>toggleClass(cls)}>
                                     <ChevronRight size={14} className={cn("text-[#FB7506] transition-transform shrink-0", isExpCl && "rotate-90")}/>
                                     {isLoadCl ? <RefreshCcw size={13} className="text-[#FB7506] animate-spin shrink-0"/> : <Tag size={13} className="text-[#FB7506] shrink-0"/>}
                                     <div className="flex-1 min-w-0 flex items-baseline gap-2">
-                                        <span className="text-white font-bold text-sm truncate">{t(cls.clase)}</span>
-                                        <span className="text-gray-400 text-[10px] shrink-0">{t(cls.class_sh)}</span>
+                                        <span className="text-gray-800 font-bold text-sm truncate">{t(cls.clase)}</span>
+                                        <span className="text-gray-500 text-[10px] shrink-0">{t(cls.class_sh)}</span>
                                     </div>
                                     {isExpCl && subclasses.length > 0 && (
-                                        <span className="text-[10px] text-gray-400 bg-black/20 px-2 py-0.5 rounded-full shrink-0">{subclasses.length} sub</span>
+                                        <span className="text-[10px] text-gray-600 bg-gray-200 px-2 py-0.5 rounded-full shrink-0 border border-gray-300">{subclasses.length} sub</span>
                                     )}
-                                    {cls.display && <Check size={11} className="text-green-400 shrink-0"/>}
+                                    {cls.display && <Check size={11} className="text-green-500 shrink-0"/>}
                                     {/* Class actions */}
                                     <div className="flex gap-1 shrink-0" onClick={e=>e.stopPropagation()}>
-                                        <button onClick={()=>openModal("class","edit",cls)} className="p-1 rounded hover:bg-white/10 text-gray-400 hover:text-white"><Pencil size={12}/></button>
-                                        <button onClick={()=>openModal("class","delete",cls)} className="p-1 rounded hover:bg-white/10 text-gray-400 hover:text-red-400"><Trash2 size={12}/></button>
-                                        <button onClick={()=>openModal("subclass","add",{classUnico:cls.unico},{...EMPTY_SUBCLASS})} className="p-1 rounded hover:bg-white/10 text-gray-400 hover:text-green-400"><Plus size={12}/></button>
+                                        <button onClick={()=>openModal("class","edit",cls)} className="p-1 rounded hover:bg-gray-300 text-gray-400 hover:text-gray-700"><Pencil size={12}/></button>
+                                        <button onClick={()=>openModal("class","delete",cls)} className="p-1 rounded hover:bg-gray-300 text-gray-400 hover:text-red-500"><Trash2 size={12}/></button>
+                                        <button onClick={()=>openModal("subclass","add",{classUnico:cls.unico},{...EMPTY_SUBCLASS})} className="p-1 rounded hover:bg-gray-300 text-gray-400 hover:text-green-600"><Plus size={12}/></button>
                                     </div>
                                 </div>
                                 {/* Subclasses — indented with left border */}
                                 {isExpCl && (
-                                    <div className="bg-gray-50 border-t border-gray-700/20 pl-3 pr-0 divide-y divide-gray-200">
+                                    <div className="bg-white border-t border-gray-200 pl-3 pr-0 divide-y divide-gray-200">
                                         {subclasses.length === 0 && !isLoadCl && (
                                             <div className="px-8 py-2 text-xs text-gray-400 italic">No subclasses</div>
                                         )}
@@ -553,21 +553,20 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                                             return (
                                                 <div key={sub.unico}>
                                                     {/* Subclass row */}
-                                                    <div className={cn("h-10 flex items-center gap-2 px-4 cursor-pointer select-none transition-colors",
-                                                        isExpSc ? "bg-gray-500" : "hover:bg-gray-200",
-                                                        isSel && !isExpSc && "bg-blue-50")}
+                                                    <div className={cn("h-10 bg-white flex items-center gap-2 px-4 cursor-pointer select-none transition-colors hover:bg-gray-50 border-b border-gray-100",
+                                                        isSel && "bg-blue-50 ring-1 ring-inset ring-blue-100")}
                                                         onClick={()=>toggleSubclass(sub)}>
                                                         <ChevronRight size={12} className={cn("transition-transform shrink-0", isExpSc ? "text-[#FB7506] rotate-90" : "text-gray-400")}/>
-                                                        {isLoadSc ? <RefreshCcw size={11} className="text-[#FB7506] animate-spin shrink-0"/> : <Layers size={11} className={isExpSc?"text-[#FB7506] shrink-0":"text-gray-400 shrink-0"}/>}
+                                                        {isLoadSc ? <RefreshCcw size={11} className="text-[#FB7506] animate-spin shrink-0"/> : <Layers size={11} className="text-gray-400 shrink-0"/>}
                                                         <div className="flex-1 min-w-0 flex items-baseline gap-2">
-                                                            <span className={cn("font-semibold text-xs truncate", isExpSc?"text-white":"text-gray-700")}>{t(sub.subclase)}</span>
-                                                            <span className={cn("text-[10px] shrink-0", isExpSc?"text-gray-100":"text-gray-400")}>{t(sub.sub_sh)}</span>
+                                                            <span className="font-semibold text-xs truncate text-gray-700">{t(sub.subclase)}</span>
+                                                            <span className="text-[10px] shrink-0 text-gray-400">{t(sub.sub_sh)}</span>
                                                         </div>
-                                                        {isExpSc && varieties.length > 0 && <span className="text-[10px] text-gray-300 bg-black/20 px-2 py-0.5 rounded-full shrink-0">{varieties.length} var</span>}
+                                                        {isExpSc && varieties.length > 0 && <span className="text-[10px] text-gray-500 bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-full shrink-0">{varieties.length} var</span>}
                                                         <div className="flex gap-1 shrink-0" onClick={e=>e.stopPropagation()}>
-                                                            <button onClick={()=>openModal("subclass","edit",{...sub,classUnico:cls.unico})} className={cn("p-1 rounded hover:bg-white/10", isExpSc?"text-gray-300":"text-gray-400")}><Pencil size={11}/></button>
-                                                            <button onClick={()=>openModal("subclass","delete",{...sub,classUnico:cls.unico})} className={cn("p-1 rounded hover:bg-white/10", isExpSc?"text-gray-300":"text-red-400")}><Trash2 size={11}/></button>
-                                                            <button onClick={()=>openModal("variety","add",{subclaUnico:sub.unico},{...EMPTY_VARIETY})} className={cn("p-1 rounded hover:bg-white/10", isExpSc?"text-gray-300":"text-green-500")}><Plus size={11}/></button>
+                                                            <button onClick={()=>openModal("subclass","edit",{...sub,classUnico:cls.unico})} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700"><Pencil size={11}/></button>
+                                                            <button onClick={()=>openModal("subclass","delete",{...sub,classUnico:cls.unico})} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-red-500"><Trash2 size={11}/></button>
+                                                            <button onClick={()=>openModal("variety","add",{subclaUnico:sub.unico},{...EMPTY_VARIETY})} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-green-600"><Plus size={11}/></button>
                                                         </div>
                                                     </div>
                                                     {/* Varieties — indented with orange left border */}
@@ -585,14 +584,14 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                                                                 return (
                                                                     <div key={vr.unico} className="border-b border-gray-100 last:border-b-0">
                                                                         {/* Variety row */}
-                                                                        <div className={cn("h-9 flex items-center gap-2 px-3 cursor-pointer transition-colors select-none",
-                                                                            isSelVr ? "bg-blue-50" : "hover:bg-gray-50")}
+                                                                        <div className={cn("h-9 bg-gray-50 flex items-center gap-2 px-3 cursor-pointer transition-colors select-none hover:bg-gray-100",
+                                                                            isSelVr && "bg-blue-50 ring-1 ring-inset ring-blue-100")}
                                                                             onClick={()=>toggleVariety(vr)}>
                                                                             <ChevronRight size={11} className={cn("transition-transform shrink-0", isExpVr?"text-[#FB7506] rotate-90":"text-gray-300")}/>
                                                                             {isLoadVr ? <RefreshCcw size={10} className="text-[#FB7506] animate-spin shrink-0"/> : <div className="w-1.5 h-1.5 rounded-full bg-gray-400 shrink-0"/>}
                                                                             <span className={cn("text-xs font-medium flex-1 truncate", isSelVr?"text-blue-700":"text-gray-700")}>{t(vr.variety)}</span>
                                                                             <span className="text-[10px] text-gray-400 shrink-0">{t(vr.color)}</span>
-                                                                            {isExpVr && products.length > 0 && <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 rounded-full shrink-0">{products.length} items</span>}
+                                                                            {isExpVr && products.length > 0 && <span className="text-[10px] text-gray-500 bg-white border border-gray-200 px-1.5 rounded-full shrink-0">{products.length} items</span>}
                                                                             {vr.active && <Check size={10} className="text-green-500 shrink-0"/>}
                                                                             <AuditLogModal recordId={vr.unico} disabled={!vr.unico}/>
                                                                             <div className="flex gap-0.5 shrink-0" onClick={e=>e.stopPropagation()}>
@@ -602,11 +601,11 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                                                                         </div>
                                                                         {/* Products — indented with gray left border */}
                                                                         {isExpVr && (
-                                                                            <div className="bg-gray-50/80 border-t border-gray-200 pl-3 border-l-2 border-l-gray-200 ml-2">
+                                                                            <div className="bg-white border-t border-gray-200 pl-3 border-l-2 border-l-gray-200 ml-2">
                                                                                 {isLoadVr && <div className="px-4 py-1.5 flex items-center gap-2 text-[10px] text-gray-400"><RefreshCcw size={9} className="animate-spin"/>Loading...</div>}
                                                                                 {!isLoadVr && products.length === 0 && <div className="px-4 py-1.5 text-[10px] text-gray-400 italic">No products</div>}
                                                                                 {products.map((p: any) => (
-                                                                                    <div key={p.unico} className={cn("h-8 flex items-center gap-2 px-3 hover:bg-gray-100 cursor-default group/prod", !p.active && "opacity-50")}>
+                                                                                    <div key={p.unico} className={cn("h-8 bg-white flex items-center gap-2 px-3 hover:bg-gray-50 cursor-default group/prod border-b border-gray-50 last:border-0", !p.active && "opacity-50")}>
                                                                                         <Package size={10} className="text-gray-300 shrink-0"/>
                                                                                         <span className="text-[11px] text-gray-600 flex-1 truncate font-medium">{t(p.description)}</span>
                                                                                         <span className="text-[10px] text-gray-400 shrink-0">{t(p.case_sh)}</span>
