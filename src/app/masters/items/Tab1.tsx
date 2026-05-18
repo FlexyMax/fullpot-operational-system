@@ -519,24 +519,24 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                         return (
                             <div key={cls.unico} className="rounded-lg overflow-hidden border border-black/10">
                                 {/* Class row */}
-                                <div className={cn("h-12 bg-gray-100 flex items-center gap-2.5 px-3 cursor-pointer hover:bg-gray-200 transition-colors select-none border-b border-gray-200",
+                                <div className={cn("h-14 bg-gray-100 flex items-center gap-2.5 px-3 cursor-pointer hover:bg-gray-200 transition-colors select-none border-b border-gray-200",
                                     isExpCl && "rounded-b-none")}
                                     onClick={()=>toggleClass(cls)}>
-                                    <ChevronRight size={14} className={cn("text-[#FB7506] transition-transform shrink-0", isExpCl && "rotate-90")}/>
-                                    {isLoadCl ? <RefreshCcw size={13} className="text-[#FB7506] animate-spin shrink-0"/> : <Tag size={13} className="text-[#FB7506] shrink-0"/>}
+                                    <ChevronRight size={16} className={cn("text-[#FB7506] transition-transform shrink-0", isExpCl && "rotate-90")}/>
+                                    {isLoadCl ? <RefreshCcw size={15} className="text-[#FB7506] animate-spin shrink-0"/> : <Tag size={15} className="text-[#FB7506] shrink-0"/>}
                                     <div className="flex-1 min-w-0 flex items-baseline gap-2">
-                                        <span className="text-gray-800 font-bold text-sm truncate">{t(cls.clase)}</span>
-                                        <span className="text-gray-500 text-[10px] shrink-0">{t(cls.class_sh)}</span>
+                                        <span className="text-gray-800 font-bold text-base truncate">{t(cls.clase)}</span>
+                                        <span className="text-gray-500 text-xs shrink-0">{t(cls.class_sh)}</span>
                                     </div>
                                     {isExpCl && subclasses.length > 0 && (
-                                        <span className="text-[10px] text-gray-600 bg-gray-200 px-2 py-0.5 rounded-full shrink-0 border border-gray-300">{subclasses.length} sub</span>
+                                        <span className="text-[11px] text-gray-600 bg-gray-200 px-2.5 py-1 rounded-full shrink-0 border border-gray-300">{subclasses.length} sub</span>
                                     )}
-                                    {cls.display && <Check size={12} strokeWidth={3} className="text-green-600 shrink-0"/>}
+                                    {cls.display && <Check size={14} strokeWidth={3} className="text-green-600 shrink-0"/>}
                                     {/* Class actions */}
                                     <div className="flex gap-1 shrink-0" onClick={e=>e.stopPropagation()}>
-                                        <button onClick={()=>openModal("class","edit",cls)} className="p-1 rounded hover:bg-gray-300 text-gray-500 hover:text-gray-900"><Pencil size={13}/></button>
-                                        <button onClick={()=>openModal("class","delete",cls)} className="p-1 rounded hover:bg-gray-300 text-gray-500 hover:text-red-600"><Trash2 size={13}/></button>
-                                        <button onClick={()=>openModal("subclass","add",{classUnico:cls.unico},{...EMPTY_SUBCLASS})} className="p-1 rounded hover:bg-gray-300 text-gray-500 hover:text-green-700"><Plus size={13}/></button>
+                                        <button onClick={()=>openModal("class","edit",cls)} className="p-1.5 rounded hover:bg-gray-300 text-gray-500 hover:text-gray-900"><Pencil size={14}/></button>
+                                        <button onClick={()=>openModal("class","delete",cls)} className="p-1.5 rounded hover:bg-gray-300 text-gray-500 hover:text-red-600"><Trash2 size={14}/></button>
+                                        <button onClick={()=>openModal("subclass","add",{classUnico:cls.unico},{...EMPTY_SUBCLASS})} className="p-1.5 rounded hover:bg-gray-300 text-gray-500 hover:text-green-700"><Plus size={14}/></button>
                                     </div>
                                 </div>
                                 {/* Subclasses — indented with left border */}
@@ -553,20 +553,20 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                                             return (
                                                 <div key={sub.unico}>
                                                     {/* Subclass row */}
-                                                    <div className={cn("h-10 bg-white flex items-center gap-2 px-4 cursor-pointer select-none transition-colors hover:bg-gray-50 border-b border-gray-100",
+                                                    <div className={cn("h-12 bg-white flex items-center gap-2 px-4 cursor-pointer select-none transition-colors hover:bg-gray-50 border-b border-gray-100",
                                                         isSel && "bg-blue-50 ring-1 ring-inset ring-blue-100")}
                                                         onClick={()=>toggleSubclass(sub)}>
-                                                        <ChevronRight size={12} className={cn("transition-transform shrink-0", isExpSc ? "text-[#FB7506] rotate-90" : "text-gray-400")}/>
-                                                        {isLoadSc ? <RefreshCcw size={11} className="text-[#FB7506] animate-spin shrink-0"/> : <Layers size={11} className="text-gray-400 shrink-0"/>}
+                                                        <ChevronRight size={14} className={cn("transition-transform shrink-0", isExpSc ? "text-[#FB7506] rotate-90" : "text-gray-400")}/>
+                                                        {isLoadSc ? <RefreshCcw size={13} className="text-[#FB7506] animate-spin shrink-0"/> : <Layers size={13} className="text-gray-400 shrink-0"/>}
                                                         <div className="flex-1 min-w-0 flex items-baseline gap-2">
-                                                            <span className="font-semibold text-xs truncate text-gray-700">{t(sub.subclase)}</span>
-                                                            <span className="text-[10px] shrink-0 text-gray-400">{t(sub.sub_sh)}</span>
+                                                            <span className="font-semibold text-sm truncate text-gray-700">{t(sub.subclase)}</span>
+                                                            <span className="text-xs shrink-0 text-gray-400">{t(sub.sub_sh)}</span>
                                                         </div>
-                                                        {isExpSc && varieties.length > 0 && <span className="text-[10px] text-gray-500 bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-full shrink-0">{varieties.length} var</span>}
+                                                        {isExpSc && varieties.length > 0 && <span className="text-[11px] text-gray-500 bg-gray-100 border border-gray-200 px-2.5 py-1 rounded-full shrink-0">{varieties.length} var</span>}
                                                         <div className="flex gap-1 shrink-0" onClick={e=>e.stopPropagation()}>
-                                                            <button onClick={()=>openModal("subclass","edit",{...sub,classUnico:cls.unico})} className="p-1 rounded hover:bg-gray-200 text-gray-500 hover:text-gray-900"><Pencil size={12}/></button>
-                                                            <button onClick={()=>openModal("subclass","delete",{...sub,classUnico:cls.unico})} className="p-1 rounded hover:bg-gray-200 text-gray-500 hover:text-red-600"><Trash2 size={12}/></button>
-                                                            <button onClick={()=>openModal("variety","add",{subclaUnico:sub.unico},{...EMPTY_VARIETY})} className="p-1 rounded hover:bg-gray-200 text-gray-500 hover:text-green-700"><Plus size={12}/></button>
+                                                            <button onClick={()=>openModal("subclass","edit",{...sub,classUnico:cls.unico})} className="p-1.5 rounded hover:bg-gray-200 text-gray-500 hover:text-gray-900"><Pencil size={14}/></button>
+                                                            <button onClick={()=>openModal("subclass","delete",{...sub,classUnico:cls.unico})} className="p-1.5 rounded hover:bg-gray-200 text-gray-500 hover:text-red-600"><Trash2 size={14}/></button>
+                                                            <button onClick={()=>openModal("variety","add",{subclaUnico:sub.unico},{...EMPTY_VARIETY})} className="p-1.5 rounded hover:bg-gray-200 text-gray-500 hover:text-green-700"><Plus size={14}/></button>
                                                         </div>
                                                     </div>
                                                     {/* Varieties — indented with orange left border */}
@@ -584,19 +584,19 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                                                                 return (
                                                                     <div key={vr.unico} className="border-b border-gray-100 last:border-b-0">
                                                                         {/* Variety row */}
-                                                                        <div className={cn("h-9 bg-gray-50 flex items-center gap-2 px-3 cursor-pointer transition-colors select-none hover:bg-gray-100",
+                                                                        <div className={cn("h-11 bg-gray-50 flex items-center gap-2 px-3 cursor-pointer transition-colors select-none hover:bg-gray-100",
                                                                             isSelVr && "bg-blue-50 ring-1 ring-inset ring-blue-100")}
                                                                             onClick={()=>toggleVariety(vr)}>
-                                                                            <ChevronRight size={11} className={cn("transition-transform shrink-0", isExpVr?"text-[#FB7506] rotate-90":"text-gray-300")}/>
-                                                                            {isLoadVr ? <RefreshCcw size={10} className="text-[#FB7506] animate-spin shrink-0"/> : <div className="w-1.5 h-1.5 rounded-full bg-gray-400 shrink-0"/>}
-                                                                            <span className={cn("text-xs font-medium flex-1 truncate", isSelVr?"text-blue-700":"text-gray-700")}>{t(vr.variety)}</span>
-                                                                            <span className="text-[10px] text-gray-400 shrink-0">{t(vr.color)}</span>
-                                                                            {isExpVr && products.length > 0 && <span className="text-[10px] text-gray-500 bg-white border border-gray-200 px-1.5 rounded-full shrink-0">{products.length} items</span>}
-                                                                            {vr.active && <Check size={11} strokeWidth={3} className="text-green-600 shrink-0"/>}
+                                                                            <ChevronRight size={13} className={cn("transition-transform shrink-0", isExpVr?"text-[#FB7506] rotate-90":"text-gray-300")}/>
+                                                                            {isLoadVr ? <RefreshCcw size={12} className="text-[#FB7506] animate-spin shrink-0"/> : <div className="w-2 h-2 rounded-full bg-gray-400 shrink-0"/>}
+                                                                            <span className={cn("text-[13px] font-medium flex-1 truncate", isSelVr?"text-blue-700":"text-gray-700")}>{t(vr.variety)}</span>
+                                                                            <span className="text-[11px] text-gray-400 shrink-0">{t(vr.color)}</span>
+                                                                            {isExpVr && products.length > 0 && <span className="text-[11px] text-gray-500 bg-white border border-gray-200 px-2 py-0.5 rounded-full shrink-0">{products.length} items</span>}
+                                                                            {vr.active && <Check size={13} strokeWidth={3} className="text-green-600 shrink-0"/>}
                                                                             <AuditLogModal recordId={vr.unico} disabled={!vr.unico}/>
                                                                             <div className="flex gap-1 shrink-0 ml-1" onClick={e=>e.stopPropagation()}>
-                                                                                <button title="Edit variety" onClick={()=>openModal("variety","edit",{...vr,subcla_uq:sub.unico})} className="p-1 rounded hover:bg-gray-200 text-gray-500 hover:text-blue-600"><Pencil size={12}/></button>
-                                                                                <button title="Delete variety" onClick={()=>openModal("variety","delete",{...vr,subcla_uq:sub.unico,subclaUnico:sub.unico})} className="p-1 rounded hover:bg-gray-200 text-gray-500 hover:text-red-600"><Trash2 size={12}/></button>
+                                                                                <button title="Edit variety" onClick={()=>openModal("variety","edit",{...vr,subcla_uq:sub.unico})} className="p-1.5 rounded hover:bg-gray-200 text-gray-500 hover:text-blue-600"><Pencil size={14}/></button>
+                                                                                <button title="Delete variety" onClick={()=>openModal("variety","delete",{...vr,subcla_uq:sub.unico,subclaUnico:sub.unico})} className="p-1.5 rounded hover:bg-gray-200 text-gray-500 hover:text-red-600"><Trash2 size={14}/></button>
                                                                             </div>
                                                                         </div>
                                                                         {/* Products — indented with gray left border */}
@@ -605,28 +605,28 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                                                                                 {isLoadVr && <div className="px-4 py-1.5 flex items-center gap-2 text-[10px] text-gray-400"><RefreshCcw size={9} className="animate-spin"/>Loading...</div>}
                                                                                 {!isLoadVr && products.length === 0 && <div className="px-4 py-1.5 text-[10px] text-gray-400 italic">No products</div>}
                                                                                 {products.map((p: any) => (
-                                                                                    <div key={p.unico} className={cn("h-8 bg-white flex items-center gap-2 px-3 hover:bg-gray-50 cursor-default group/prod border-b border-gray-50 last:border-0", !p.active && "opacity-50")}>
-                                                                                        <Package size={11} className="text-gray-400 shrink-0"/>
-                                                                                        <span className="text-[11px] text-gray-900 flex-1 truncate font-bold">{t(p.description)}</span>
+                                                                                    <div key={p.unico} className={cn("h-10 bg-white flex items-center gap-2 px-3 hover:bg-gray-50 cursor-default group/prod border-b border-gray-50 last:border-0", !p.active && "opacity-50")}>
+                                                                                        <Package size={13} className="text-gray-400 shrink-0"/>
+                                                                                        <span className="text-xs text-gray-900 flex-1 truncate font-bold">{t(p.description)}</span>
                                                                                         
                                                                                         {/* Extra info for product */}
-                                                                                        <span className="text-[10px] text-gray-500 shrink-0">{t(p.case_sh)}</span>
+                                                                                        <span className="text-[11px] text-gray-500 shrink-0">{t(p.case_sh)}</span>
                                                                                         {(p.up_x_case > 0 || p.up_x_pack > 0) && (
-                                                                                            <span className="text-[9px] text-gray-500 font-mono bg-gray-100 px-1 rounded border border-gray-200">
+                                                                                            <span className="text-[10px] text-gray-500 font-mono bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">
                                                                                                 {p.up_x_case||1}x{p.up_x_pack||1}
                                                                                             </span>
                                                                                         )}
                                                                                         {p.weight > 0 && (
-                                                                                            <span className="text-[9px] text-gray-500 bg-gray-100 px-1 rounded border border-gray-200">
+                                                                                            <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">
                                                                                                 {p.weight}kg
                                                                                             </span>
                                                                                         )}
 
-                                                                                        {p.active && <Check size={10} strokeWidth={3} className="text-green-600 shrink-0"/>}
+                                                                                        {p.active && <Check size={12} strokeWidth={3} className="text-green-600 shrink-0"/>}
                                                                                         {/* Product CRUD */}
-                                                                                        <div className="flex gap-1 shrink-0 opacity-0 group-hover/prod:opacity-100 transition-opacity ml-1" onClick={e=>e.stopPropagation()}>
-                                                                                            <button title="Edit product" onClick={()=>setProdEditModal({unico:p.unico,vrUnico:vr.unico})} className="p-1 rounded hover:bg-blue-100 text-gray-500 hover:text-blue-700"><Pencil size={11}/></button>
-                                                                                            <button title="Delete product" onClick={()=>openModal("product","delete",{...p,vrUnico:vr.unico})} className="p-1 rounded hover:bg-red-50 text-gray-500 hover:text-red-600"><Trash2 size={11}/></button>
+                                                                                        <div className="flex gap-1 shrink-0 opacity-100 md:opacity-0 md:group-hover/prod:opacity-100 transition-opacity ml-1" onClick={e=>e.stopPropagation()}>
+                                                                                            <button title="Edit product" onClick={()=>setProdEditModal({unico:p.unico,vrUnico:vr.unico})} className="p-1.5 rounded hover:bg-blue-100 text-gray-500 hover:text-blue-700"><Pencil size={14}/></button>
+                                                                                            <button title="Delete product" onClick={()=>openModal("product","delete",{...p,vrUnico:vr.unico})} className="p-1.5 rounded hover:bg-red-50 text-gray-500 hover:text-red-600"><Trash2 size={14}/></button>
                                                                                         </div>
                                                                                     </div>
                                                                                 ))}
