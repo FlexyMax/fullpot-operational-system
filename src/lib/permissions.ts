@@ -42,6 +42,9 @@ export const SCREEN_PANTA: Record<string, string> = {
     "accounts-payable":     "XD6Z7067",  // APP A-P
     "accounts-receivable":  "XD6Z7054",  // APP A-R
 
+    // ── Accounts Receivable ────────────────────────────────────────────────
+    "customer-payments":    "XD6Z7054",  // APP A-R
+
     // ── Masters ────────────────────────────────────────────────────────────
     "customers-setup":      "HWCM1581",  // CUSTOMERS DEFINITION
     "carriers-definition":  "XD6Z7048",  // APP Carriers Center
