@@ -44,7 +44,7 @@ export function AuditLogModal({ recordId, disabled, size = "sm" }: Props) {
                 className={cn(
                     "flex items-center justify-center rounded transition-all",
                     size === "sm"
-                        ? "w-7 h-7 bg-gray-600/80 hover:bg-gray-500 text-white"
+                        ? "p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-700"
                         : "p-1.5 text-gray-300 hover:text-white hover:bg-white/10",
                     disabled && "opacity-40 cursor-not-allowed"
                 )}

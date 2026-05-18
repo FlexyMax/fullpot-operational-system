@@ -531,12 +531,12 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                                     {isExpCl && subclasses.length > 0 && (
                                         <span className="text-[10px] text-gray-600 bg-gray-200 px-2 py-0.5 rounded-full shrink-0 border border-gray-300">{subclasses.length} sub</span>
                                     )}
-                                    {cls.display && <Check size={11} className="text-green-500 shrink-0"/>}
+                                    {cls.display && <Check size={12} strokeWidth={3} className="text-green-600 shrink-0"/>}
                                     {/* Class actions */}
                                     <div className="flex gap-1 shrink-0" onClick={e=>e.stopPropagation()}>
-                                        <button onClick={()=>openModal("class","edit",cls)} className="p-1 rounded hover:bg-gray-300 text-gray-400 hover:text-gray-700"><Pencil size={12}/></button>
-                                        <button onClick={()=>openModal("class","delete",cls)} className="p-1 rounded hover:bg-gray-300 text-gray-400 hover:text-red-500"><Trash2 size={12}/></button>
-                                        <button onClick={()=>openModal("subclass","add",{classUnico:cls.unico},{...EMPTY_SUBCLASS})} className="p-1 rounded hover:bg-gray-300 text-gray-400 hover:text-green-600"><Plus size={12}/></button>
+                                        <button onClick={()=>openModal("class","edit",cls)} className="p-1 rounded hover:bg-gray-300 text-gray-500 hover:text-gray-900"><Pencil size={13}/></button>
+                                        <button onClick={()=>openModal("class","delete",cls)} className="p-1 rounded hover:bg-gray-300 text-gray-500 hover:text-red-600"><Trash2 size={13}/></button>
+                                        <button onClick={()=>openModal("subclass","add",{classUnico:cls.unico},{...EMPTY_SUBCLASS})} className="p-1 rounded hover:bg-gray-300 text-gray-500 hover:text-green-700"><Plus size={13}/></button>
                                     </div>
                                 </div>
                                 {/* Subclasses — indented with left border */}
@@ -564,9 +564,9 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                                                         </div>
                                                         {isExpSc && varieties.length > 0 && <span className="text-[10px] text-gray-500 bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-full shrink-0">{varieties.length} var</span>}
                                                         <div className="flex gap-1 shrink-0" onClick={e=>e.stopPropagation()}>
-                                                            <button onClick={()=>openModal("subclass","edit",{...sub,classUnico:cls.unico})} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700"><Pencil size={11}/></button>
-                                                            <button onClick={()=>openModal("subclass","delete",{...sub,classUnico:cls.unico})} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-red-500"><Trash2 size={11}/></button>
-                                                            <button onClick={()=>openModal("variety","add",{subclaUnico:sub.unico},{...EMPTY_VARIETY})} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-green-600"><Plus size={11}/></button>
+                                                            <button onClick={()=>openModal("subclass","edit",{...sub,classUnico:cls.unico})} className="p-1 rounded hover:bg-gray-200 text-gray-500 hover:text-gray-900"><Pencil size={12}/></button>
+                                                            <button onClick={()=>openModal("subclass","delete",{...sub,classUnico:cls.unico})} className="p-1 rounded hover:bg-gray-200 text-gray-500 hover:text-red-600"><Trash2 size={12}/></button>
+                                                            <button onClick={()=>openModal("variety","add",{subclaUnico:sub.unico},{...EMPTY_VARIETY})} className="p-1 rounded hover:bg-gray-200 text-gray-500 hover:text-green-700"><Plus size={12}/></button>
                                                         </div>
                                                     </div>
                                                     {/* Varieties — indented with orange left border */}
@@ -592,11 +592,11 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                                                                             <span className={cn("text-xs font-medium flex-1 truncate", isSelVr?"text-blue-700":"text-gray-700")}>{t(vr.variety)}</span>
                                                                             <span className="text-[10px] text-gray-400 shrink-0">{t(vr.color)}</span>
                                                                             {isExpVr && products.length > 0 && <span className="text-[10px] text-gray-500 bg-white border border-gray-200 px-1.5 rounded-full shrink-0">{products.length} items</span>}
-                                                                            {vr.active && <Check size={10} className="text-green-500 shrink-0"/>}
+                                                                            {vr.active && <Check size={11} strokeWidth={3} className="text-green-600 shrink-0"/>}
                                                                             <AuditLogModal recordId={vr.unico} disabled={!vr.unico}/>
-                                                                            <div className="flex gap-0.5 shrink-0" onClick={e=>e.stopPropagation()}>
-                                                                                <button title="Edit variety" onClick={()=>openModal("variety","edit",{...vr,subcla_uq:sub.unico})} className="p-1 rounded hover:bg-gray-200 text-gray-300 hover:text-blue-500"><Pencil size={10}/></button>
-                                                                                <button title="Delete variety" onClick={()=>openModal("variety","delete",{...vr,subcla_uq:sub.unico,subclaUnico:sub.unico})} className="p-1 rounded hover:bg-gray-200 text-gray-300 hover:text-red-500"><Trash2 size={10}/></button>
+                                                                            <div className="flex gap-1 shrink-0 ml-1" onClick={e=>e.stopPropagation()}>
+                                                                                <button title="Edit variety" onClick={()=>openModal("variety","edit",{...vr,subcla_uq:sub.unico})} className="p-1 rounded hover:bg-gray-200 text-gray-500 hover:text-blue-600"><Pencil size={12}/></button>
+                                                                                <button title="Delete variety" onClick={()=>openModal("variety","delete",{...vr,subcla_uq:sub.unico,subclaUnico:sub.unico})} className="p-1 rounded hover:bg-gray-200 text-gray-500 hover:text-red-600"><Trash2 size={12}/></button>
                                                                             </div>
                                                                         </div>
                                                                         {/* Products — indented with gray left border */}
@@ -606,14 +606,27 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                                                                                 {!isLoadVr && products.length === 0 && <div className="px-4 py-1.5 text-[10px] text-gray-400 italic">No products</div>}
                                                                                 {products.map((p: any) => (
                                                                                     <div key={p.unico} className={cn("h-8 bg-white flex items-center gap-2 px-3 hover:bg-gray-50 cursor-default group/prod border-b border-gray-50 last:border-0", !p.active && "opacity-50")}>
-                                                                                        <Package size={10} className="text-gray-300 shrink-0"/>
-                                                                                        <span className="text-[11px] text-gray-600 flex-1 truncate font-medium">{t(p.description)}</span>
-                                                                                        <span className="text-[10px] text-gray-400 shrink-0">{t(p.case_sh)}</span>
-                                                                                        {p.active && <Check size={9} className="text-green-400 shrink-0"/>}
+                                                                                        <Package size={11} className="text-gray-400 shrink-0"/>
+                                                                                        <span className="text-[11px] text-gray-900 flex-1 truncate font-bold">{t(p.description)}</span>
+                                                                                        
+                                                                                        {/* Extra info for product */}
+                                                                                        <span className="text-[10px] text-gray-500 shrink-0">{t(p.case_sh)}</span>
+                                                                                        {(p.up_x_case > 0 || p.up_x_pack > 0) && (
+                                                                                            <span className="text-[9px] text-gray-500 font-mono bg-gray-100 px-1 rounded border border-gray-200">
+                                                                                                {p.up_x_case||1}x{p.up_x_pack||1}
+                                                                                            </span>
+                                                                                        )}
+                                                                                        {p.weight > 0 && (
+                                                                                            <span className="text-[9px] text-gray-500 bg-gray-100 px-1 rounded border border-gray-200">
+                                                                                                {p.weight}kg
+                                                                                            </span>
+                                                                                        )}
+
+                                                                                        {p.active && <Check size={10} strokeWidth={3} className="text-green-600 shrink-0"/>}
                                                                                         {/* Product CRUD */}
-                                                                                        <div className="flex gap-0.5 shrink-0 opacity-0 group-hover/prod:opacity-100 transition-opacity" onClick={e=>e.stopPropagation()}>
-                                                                                            <button title="Edit product" onClick={()=>setProdEditModal({unico:p.unico,vrUnico:vr.unico})} className="p-1 rounded hover:bg-blue-100 text-gray-300 hover:text-blue-600"><Pencil size={10}/></button>
-                                                                                            <button title="Delete product" onClick={()=>openModal("product","delete",{...p,vrUnico:vr.unico})} className="p-1 rounded hover:bg-red-50 text-gray-300 hover:text-red-500"><Trash2 size={10}/></button>
+                                                                                        <div className="flex gap-1 shrink-0 opacity-0 group-hover/prod:opacity-100 transition-opacity ml-1" onClick={e=>e.stopPropagation()}>
+                                                                                            <button title="Edit product" onClick={()=>setProdEditModal({unico:p.unico,vrUnico:vr.unico})} className="p-1 rounded hover:bg-blue-100 text-gray-500 hover:text-blue-700"><Pencil size={11}/></button>
+                                                                                            <button title="Delete product" onClick={()=>openModal("product","delete",{...p,vrUnico:vr.unico})} className="p-1 rounded hover:bg-red-50 text-gray-500 hover:text-red-600"><Trash2 size={11}/></button>
                                                                                         </div>
                                                                                     </div>
                                                                                 ))}
