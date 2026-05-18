@@ -18,8 +18,8 @@ const sF  = async (url: string) => { const r = await fetch(url); const j = await
 function CrudModal({ title, icon: Icon, form, setForm, fields, onSave, onDelete, onClose, saving, error, mode }: any) {
     const isDelete = mode === "delete";
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 sm:p-4">
-            <div className="bg-white rounded-t-xl sm:rounded-xl shadow-2xl w-full sm:max-w-md max-h-[85vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl w-full sm:max-w-md max-h-[85vh] overflow-y-auto">
                 <div className="h-10 bg-[#374151] rounded-t-xl flex items-center justify-between px-4 shrink-0">
                     <div className="flex items-center gap-2">
                         <Icon size={15} className="text-[#FB7506]"/>
@@ -161,16 +161,16 @@ function ProductEditModal({ unico, vrUnico, onSaved, onClose }: { unico:string; 
     const S = (key:string, val:any) => setForm((p:any) => ({...p,[key]:val}));
 
     if (loadProd || !form) return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 sm:p-4">
-            <div className="bg-white rounded-t-xl sm:rounded-xl shadow-2xl w-full sm:max-w-2xl flex items-center justify-center h-32">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl w-full sm:max-w-2xl flex items-center justify-center h-32">
                 <RefreshCcw size={20} className="animate-spin text-[#FB7506]"/>
             </div>
         </div>
     );
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 sm:p-4">
-            <div className="bg-white rounded-t-xl sm:rounded-xl shadow-2xl w-full sm:max-w-2xl flex flex-col h-[85vh] sm:h-[80vh]">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl w-full sm:max-w-2xl flex flex-col h-[85vh] sm:h-[80vh]">
                 {/* Header */}
                 <div className="h-10 bg-[#374151] rounded-t-xl flex items-center justify-between px-4 shrink-0">
                     <div className="flex items-center gap-2">
