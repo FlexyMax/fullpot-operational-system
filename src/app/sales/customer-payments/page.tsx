@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
     ArrowLeft, RefreshCcw, Search, Check, XCircle, Save, X, Trash2,
     Plus, Pencil, AlertCircle, Users, FileText, CreditCard, Menu,
@@ -791,6 +791,7 @@ export default function CustomerPaymentsPage() {
     const [activeTab,     setActiveTab]     = useState<"customer"|"invoices"|"payments"|"crdb"|"statement"|"corporate">("customer");
     const [selCustomer,   setSelCustomer]   = useState<any>(null);
     const [custSearch,    setCustSearch]    = useState("");
+    const [custBalance,   setCustBalance]   = useState<"A"|"B"|"N">("A"); // A=All, B=Bal>0, N=Bal=0
     const [balanceFilter, setBalanceFilter] = useState(true);    // true=Bal>0
     const [selInvoice,    setSelInvoice]    = useState<any>(null);
     const [selApply,      setSelApply]      = useState<any>(null);
@@ -832,11 +833,24 @@ export default function CustomerPaymentsPage() {
     useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
 
     // ── Queries ────────────────────────────────────────────────────────────────
-    const { data: customers = [], isFetching: loadingCust, refetch: refetchCust } = useQuery({
-        queryKey: ["cp-customers", custSearch],
-        queryFn:  () => cpFetch(`/api/customer-payments/customers?search=${encodeURIComponent(custSearch||"%")}`),
+    const { data: custPages, isFetching: loadingCust, fetchNextPage: fetchMoreCust, hasNextPage: hasMoreCust, isFetchingNextPage: fetchingMoreCust, refetch: refetchCust } = useInfiniteQuery({
+        queryKey: ["cp-customers", custSearch, custBalance],
+        queryFn:  ({ pageParam }) => cpFetch(`/api/customer-payments/customers?search=${encodeURIComponent(custSearch)}&balance=${custBalance}&page=${pageParam}&pageSize=50`),
+        initialPageParam: 1,
+        getNextPageParam: (last: any) => (last.page ?? 1) * (last.pageSize ?? 50) < (last.total ?? 0) ? (last.page ?? 1) + 1 : undefined,
         staleTime: 30000,
     });
+    const customers     = custPages?.pages.flatMap((p: any) => p.records ?? []) ?? [];
+    const custTotal     = custPages?.pages[0]?.total ?? 0;
+    // Sentinel for infinite scroll
+    const custSentRef   = useRef<HTMLTableRowElement>(null);
+    useEffect(() => {
+        const el = custSentRef.current;
+        if (!el) return;
+        const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting && hasMoreCust && !fetchingMoreCust) fetchMoreCust(); }, { threshold: 0.1 });
+        obs.observe(el);
+        return () => obs.disconnect();
+    }, [hasMoreCust, fetchingMoreCust, fetchMoreCust]);
     const { data: invoices = [], isFetching: loadingInv, refetch: refetchInv } = useQuery({
         queryKey: ["cp-invoices", selCustomer?.unico, balanceFilter],
         queryFn:  () => cpFetch(`/api/customer-payments/invoices/${selCustomer.unico}?balance=${balanceFilter}`),
@@ -964,7 +978,7 @@ export default function CustomerPaymentsPage() {
         setSelIncome(null);
     };
 
-    const refreshAll = () => { refetchCust(); refetchInv(); refetchIncomes(); refetchApplied(); };
+    const refreshAll = () => { qc.resetQueries({ queryKey: ["cp-customers"] }); refetchInv(); refetchIncomes(); refetchApplied(); };
 
     const handlePayAll = async () => {
         if (!selIncome) { setError("Select an income first."); return; }
@@ -988,7 +1002,8 @@ export default function CustomerPaymentsPage() {
         setActiveTab("invoices");
     };
 
-    const totalRow = { payments: (customers as any[]).reduce((s: number, c: any) => s + parseFloat(c.total_incomes||0), 0), balance: (customers as any[]).reduce((s: number, c: any) => s + parseFloat(c.total_books_bal||0), 0) };
+    // totalRow: only total_books_bal is raw numeric; other money fields are pre-formatted strings
+    const totalRow = { balance: (customers as any[]).reduce((s: number, c: any) => s + parseFloat(c.total_books_bal||0), 0) };
     const invTotals = { payments: (invoices as any[]).reduce((s: number, i: any) => s + parseFloat(i.in_ammount||0), 0), credits: (invoices as any[]).reduce((s: number, i: any) => s + parseFloat(i.cre_ammount||0), 0), debits: (invoices as any[]).reduce((s: number, i: any) => s + parseFloat(i.deb_ammount||0), 0), invBal: (invoices as any[]).reduce((s: number, i: any) => s + parseFloat(i.balance||0), 0), booksBal: selCustomer?.total_books_bal ?? 0 };
 
     const TAB_COLORS: Record<string, string> = { customer:"text-gray-300 hover:text-white", invoices:"text-blue-300 hover:text-blue-100", payments:"text-red-300 hover:text-red-100", crdb:"text-green-300 hover:text-green-100", statement:"text-rose-300 hover:text-rose-100", corporate:"text-gray-300 hover:text-white" };
@@ -1050,16 +1065,29 @@ export default function CustomerPaymentsPage() {
                             <div className="flex items-center gap-2">
                                 <Users size={15} className="text-[#FB7506]"/>
                                 <span className="fos-grid-header-text">Customers</span>
-                                {loadingCust && <RefreshCcw size={11} className="text-gray-400 animate-spin"/>}
-                                <span className="text-gray-400 text-[10px]">{(customers as any[]).length} records</span>
+                                {(loadingCust||fetchingMoreCust) && <RefreshCcw size={11} className="text-gray-400 animate-spin"/>}
                             </div>
                             <AuditLogModal recordId={selCustomer?.unico} disabled={!selCustomer}/>
                         </div>
                         <div className="p-1.5 border-b border-gray-100 shrink-0">
-                            <div className="relative">
-                                <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"/>
-                                <input value={custSearch} onChange={e=>setCustSearch(e.target.value)} placeholder="Search customers..."
-                                    className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded-md outline-none focus:ring-1 focus:ring-[#FB7506]"/>
+                            <div className="flex gap-2 items-center">
+                                <div className="relative flex-1">
+                                    <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"/>
+                                    <input value={custSearch} onChange={e=>setCustSearch(e.target.value)} placeholder="Search by name or code..."
+                                        className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded-md outline-none focus:ring-1 focus:ring-[#FB7506]"/>
+                                </div>
+                                {/* Balance filter — A=All, B=Bal>0, N=Bal=0 */}
+                                <div className="flex items-center gap-1 shrink-0">
+                                    {([{v:"A",l:"All"},{v:"B",l:"Bal > 0"},{v:"N",l:"Bal = 0"}] as const).map(opt=>(
+                                        <button key={opt.v} onClick={()=>setCustBalance(opt.v)}
+                                            className={cn("px-2.5 py-1.5 text-[10px] font-black uppercase rounded border transition-colors",
+                                                custBalance===opt.v ? "bg-[#FB7506] text-white border-[#FB7506]" : "border-gray-300 text-gray-500 hover:bg-gray-100")}>
+                                            {opt.l}
+                                        </button>
+                                    ))}
+                                </div>
+                                {(loadingCust||fetchingMoreCust) && <RefreshCcw size={11} className="text-gray-400 animate-spin shrink-0"/>}
+                                <span className="text-[9px] text-gray-400 shrink-0">{customers.length}/{custTotal}</span>
                             </div>
                         </div>
                         <div className="overflow-auto flex-1">
@@ -1081,34 +1109,35 @@ export default function CustomerPaymentsPage() {
                                                     <div className="font-bold text-gray-800">{t(c.cust_code)}</div>
                                                     <div className="text-gray-500 text-[10px]">{t(c.customer)}</div>
                                                 </td>
-                                                <td className="p-2 border-r border-gray-100 text-right">{fmt(c.price_margin)}%</td>
-                                                <td className="p-2 border-r border-gray-100 text-right">{fmt(c.credit_limit)}</td>
-                                                <td className="p-2 border-r border-gray-100 text-right">{fmt(c.total_invoice)}</td>
-                                                <td className="p-2 border-r border-gray-100 text-right text-green-600">{fmt(c.total_credits)}</td>
-                                                <td className="p-2 border-r border-gray-100 text-right text-red-500">{fmt(c.total_debits)}</td>
-                                                <td className="p-2 border-r border-gray-100 text-right font-bold">{fmt(c.total_in_cr_db)}</td>
-                                                <td className="p-2 border-r border-gray-100 text-right text-blue-700">{fmt(c.total_incomes)}</td>
-                                                <td className="p-2 border-r border-gray-100 text-right">{fmt(c.total_payments)}</td>
-                                                <td className="p-2 border-r border-gray-100 text-right font-bold text-orange-600">{fmt(c.total_inv_bal)}</td>
-                                                <td className="p-2 border-r border-gray-100 text-right">{fmt(c.total_unapply)}</td>
-                                                <td className="p-2 border-r border-gray-100 text-right font-bold">{fmt(c.total_books_bal)}</td>
+                                                {/* SP returns pre-formatted "$x,xxx.xx" strings for money — use t() directly */}
+                                                <td className="p-2 border-r border-gray-100 text-right">{t(c.price_margin)}%</td>
+                                                <td className="p-2 border-r border-gray-100 text-right">{t(c.credit_limit)}</td>
+                                                <td className="p-2 border-r border-gray-100 text-right">{t(c.total_invoice)}</td>
+                                                <td className="p-2 border-r border-gray-100 text-right text-green-600">{t(c.total_credits)}</td>
+                                                <td className="p-2 border-r border-gray-100 text-right text-red-500">{t(c.total_debits)}</td>
+                                                <td className="p-2 border-r border-gray-100 text-right font-bold">{t(c.total_in_cr_db)}</td>
+                                                <td className="p-2 border-r border-gray-100 text-right text-blue-700">{t(c.total_incomes)}</td>
+                                                <td className="p-2 border-r border-gray-100 text-right">{t(c.total_payments)}</td>
+                                                <td className="p-2 border-r border-gray-100 text-right font-bold text-orange-600">{t(c.total_inv_bal)}</td>
+                                                <td className="p-2 border-r border-gray-100 text-right">{t(c.total_unapply)}</td>
+                                                <td className="p-2 border-r border-gray-100 text-right font-bold">{fmt(c.total_books_bal)}</td>{/* raw numeric */}
                                                 <td className="p-2 border-r border-gray-100 text-gray-500">{t(c.statement_by)}</td>
-                                                <td className="p-2 text-center">{c.hold?<span className="text-red-500 font-black text-[9px]">HOLD</span>:"—"}</td>
+                                                <td className="p-2 text-center">{t(c.hold)==="Yes"?<span className="text-red-500 font-black text-[9px]">HOLD</span>:"—"}</td>
                                             </tr>
                                         );
                                     })}
-                                    {!loadingCust && (customers as any[]).length === 0 && <tr><td colSpan={14} className="p-8 text-center text-gray-400 italic text-xs">No customers found</td></tr>}
+                                    {/* Infinite scroll sentinel */}
+                                    <tr ref={custSentRef}><td colSpan={14} className="h-1 py-0">
+                                        {fetchingMoreCust && <div className="text-center py-1.5 text-[9px] text-gray-400"><RefreshCcw size={9} className="inline animate-spin mr-1"/>Loading more...</div>}
+                                    </td></tr>
+                                    {!loadingCust && customers.length === 0 && <tr><td colSpan={14} className="p-8 text-center text-gray-400 italic text-xs">No customers found</td></tr>}
                                 </tbody>
                                 {/* Totals row */}
                                 {(customers as any[]).length > 0 && (
                                     <tfoot className="bg-gray-100 border-t-2 border-gray-300 sticky bottom-0">
                                         <tr className="fos-grid-thead text-gray-700">
-                                            <td className="p-2 font-black">TOTALS</td>
-                                            <td colSpan={6} className="p-2"/>
-                                            <td className="p-2 text-right font-black text-blue-700">{fmt(totalRow.payments)}</td>
-                                            <td className="p-2"/>
-                                            <td className="p-2 text-right font-black text-orange-600">{fmt((customers as any[]).reduce((s:number,c:any)=>s+parseFloat(c.total_inv_bal||0),0))}</td>
-                                            <td className="p-2"/>
+                                            <td className="p-2 font-black">TOTALS ({custTotal} customers)</td>
+                                            <td colSpan={9} className="p-2"/>
                                             <td className="p-2 text-right font-black">{fmt(totalRow.balance)}</td>
                                             <td colSpan={2} className="p-2"/>
                                         </tr>
