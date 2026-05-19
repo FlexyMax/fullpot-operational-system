@@ -11,6 +11,7 @@ import {
     Bell, Banknote, Calendar, RotateCcw
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { useAuditLog } from "@/lib/audit";
 import { AuditLogModal } from "@/components/AuditLogModal";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
@@ -19,6 +20,15 @@ const t   = (v: any) => String(v ?? "").trim();
 const fmt = (v: any) => parseFloat(v ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = (v: any) => { if (!v) return ""; const d = new Date(v); return isNaN(d.getTime()) ? t(v) : d.toLocaleDateString("en-US"); };
 const today = () => new Date().toISOString().split("T")[0];
+
+// Show a toast with Confirm / Cancel buttons
+const toastConfirm = (message: string, onConfirm: () => void, confirmLabel = "Confirm") => {
+    toast(message, {
+        duration: 10000,
+        action:  { label: confirmLabel, onClick: onConfirm },
+        cancel:  { label: "Cancel",  onClick: () => {} },
+    });
+};
 
 const cpFetch = async (url: string) => {
     const r = await fetch(url);
@@ -796,7 +806,6 @@ export default function CustomerPaymentsPage() {
     const [selInvoice,    setSelInvoice]    = useState<any>(null);
     const [selApply,      setSelApply]      = useState<any>(null);
     const [selIncome,     setSelIncome]     = useState<any>(null);
-    const [error,         setError]         = useState<string|null>(null);
     const [payingAll,     setPayingAll]     = useState(false);
 
     // ── Modal state ────────────────────────────────────────────────────────────
@@ -980,19 +989,20 @@ export default function CustomerPaymentsPage() {
 
     const refreshAll = () => { qc.resetQueries({ queryKey: ["cp-customers"] }); refetchInv(); refetchIncomes(); refetchApplied(); };
 
-    const handlePayAll = async () => {
-        if (!selIncome) { setError("Select an income first."); return; }
-        if (!selCustomer) { setError("Select a customer first."); return; }
-        if (!confirm("Apply this income to all invoices with balance?")) return;
-        setPayingAll(true); setError(null);
-        try {
-            const res = await fetch("/api/customer-payments/pay-all", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ income_uq: selIncome.unico, customer_uq: selCustomer.unico }) });
-            const d = await res.json();
-            if (!d.success) throw new Error(d.error);
-            setError(`✓ ${d.message}`);
-            refetchInv(); refetchApplied(); refetchIncomes(); refetchCust();
-        } catch(e: any) { setError((e as any).message); }
-        finally { setPayingAll(false); }
+    const handlePayAll = () => {
+        if (!selIncome)   { toast.error("Select an income first."); return; }
+        if (!selCustomer) { toast.error("Select a customer first."); return; }
+        toastConfirm("Apply this income to all invoices with balance?", async () => {
+            setPayingAll(true);
+            try {
+                const res = await fetch("/api/customer-payments/pay-all", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ income_uq: selIncome.unico, customer_uq: selCustomer.unico }) });
+                const d = await res.json();
+                if (!d.success) throw new Error(d.error);
+                toast.success(d.message);
+                refetchInv(); refetchApplied(); refetchIncomes(); qc.resetQueries({ queryKey: ["cp-customers"] });
+            } catch(e: any) { toast.error((e as any).message); }
+            finally { setPayingAll(false); }
+        }, "Apply All");
     };
 
     const handleInvoiceFound = (inv: any) => {
@@ -1029,21 +1039,17 @@ export default function CustomerPaymentsPage() {
                         <Bell size={12}/>Approve Credits
                         {creditCount > 0 && <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center">{creditCount}</span>}
                     </button>
-                    {error && <span className={cn("flex items-center gap-1 text-[9px] font-bold max-w-xs truncate", error.startsWith("✓")?"text-green-400":"text-amber-400")}>
-                        {error.startsWith("✓")?<Check size={11}/>:<AlertCircle size={11}/>}{error}
-                        <button onClick={()=>setError(null)}><X size={10} className="text-gray-400 hover:text-white"/></button>
-                    </span>}
                     <span className="text-gray-400 text-[10px]">User: <span className="text-white">{session?.user?.name}</span></span>
                 </div>
             </div>
 
-            {/* Tab bar */}
-            <div className="h-9 bg-gray-800 flex items-center px-2 gap-0.5 shrink-0 border-b border-black/20">
+            {/* Tab bar — scrollable on mobile */}
+            <div className="h-9 bg-gray-800 flex items-center px-2 gap-0.5 shrink-0 border-b border-black/20 overflow-x-auto scrollbar-none">
                 {(["customer","invoices","payments","crdb","statement","corporate"] as const).map(tab => (
                     <button key={tab} onClick={()=>setActiveTab(tab)}
-                        className={cn("px-4 h-7 text-[10px] font-black uppercase tracking-wider rounded transition-all",
+                        className={cn("px-3 sm:px-4 h-7 text-[10px] font-black uppercase tracking-wider rounded transition-all whitespace-nowrap shrink-0",
                             activeTab===tab ? TAB_ACTIVE[tab] : TAB_COLORS[tab])}>
-                        {tab==="customer"?"Customer":tab==="invoices"?"Invoices":tab==="payments"?"Customer Payments":tab==="crdb"?"Credits / Debits":tab==="statement"?"Statement":"Corporate Payments"}
+                        {tab==="customer"?"Customer":tab==="invoices"?"Invoices":tab==="payments"?"Payments":tab==="crdb"?"Cr / Db":tab==="statement"?"Statement":"Corporate"}
                     </button>
                 ))}
             </div>
@@ -1052,12 +1058,12 @@ export default function CustomerPaymentsPage() {
             {activeTab === "customer" && (
                 <div className="flex flex-col flex-1 overflow-hidden p-1.5 gap-1.5">
                     {/* Toolbar */}
-                    <div className="bg-gray-100 border border-gray-200 rounded-lg px-2 py-1.5 flex flex-wrap gap-1 shrink-0">
-                        <Btn icon={Pencil}    label="Update"         color="blue"   onClick={()=>{ if(!selCustomer){setError("Select a customer.");return;} if(!perms.canEdit){setError(PERMISSION_MSGS.edit);return;} setCustEditModal(true); }} disabled={!selCustomer||!perms.canEdit}/>
+                    <div className="bg-gray-100 border border-gray-200 rounded-lg px-2 py-1.5 flex flex-wrap gap-1 shrink-0 overflow-x-auto">
+                        <Btn icon={Pencil}    label="Update"         color="blue"   onClick={()=>{ if(!selCustomer){toast.error("Select a customer.");return;} if(!perms.canEdit){toast.error(PERMISSION_MSGS.edit);return;} setCustEditModal(true); }} disabled={!selCustomer||!perms.canEdit}/>
                         <Btn icon={Search}    label="Invoice Search" color="gray"   onClick={()=>setInvSearchModal(true)}/>
-                        <Btn icon={AlertCircle} label="Hold No Sales" color="amber" onClick={async()=>{ if(!confirm("Put on hold customers with no sales?"))return; const r=await fetch("/api/customer-payments/hold-no-sales",{method:"POST"}); const d=await r.json(); setError(d.error||"Done."); }}/>
-                        <Btn icon={Printer}   label="All Statements" color="gray"   onClick={()=>setError("Statements report — Coming soon")} disabled={!perms.canReport}/>
-                        <Btn icon={Mail}      label="Send All"       color="gray"   onClick={()=>setError("Send all statements — Coming soon")} disabled={!perms.canReport}/>
+                        <Btn icon={AlertCircle} label="Hold No Sales" color="amber" onClick={()=>toastConfirm("Put on hold customers with no sales?", async()=>{ const r=await fetch("/api/customer-payments/hold-no-sales",{method:"POST"}); const d=await r.json(); d.error?toast.error(d.error):toast.success("Done."); }, "Hold")}/>
+                        <Btn icon={Printer}   label="All Statements" color="gray"   onClick={()=>toast.info("Statements report — Coming soon")} disabled={!perms.canReport}/>
+                        <Btn icon={Mail}      label="Send All"       color="gray"   onClick={()=>toast.info("Send all statements — Coming soon")} disabled={!perms.canReport}/>
                     </div>
                     {/* Search + grid */}
                     <div className="flex flex-col flex-1 bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
@@ -1070,7 +1076,7 @@ export default function CustomerPaymentsPage() {
                             <AuditLogModal recordId={selCustomer?.unico} disabled={!selCustomer}/>
                         </div>
                         <div className="p-1.5 border-b border-gray-100 shrink-0">
-                            <div className="flex gap-2 items-center">
+                            <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
                                 <div className="relative flex-1">
                                     <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"/>
                                     <input value={custSearch} onChange={e=>setCustSearch(e.target.value)} placeholder="Search by name or code..."
@@ -1156,12 +1162,12 @@ export default function CustomerPaymentsPage() {
                     <div className="bg-gray-100 border border-gray-200 rounded-lg px-2 py-1.5 flex flex-wrap gap-1.5 items-center shrink-0">
                         <Btn icon={RefreshCcw}   label="Refresh"      color="gray"   onClick={refreshAll}/>
                         <Btn icon={Search}        label="Inv. Search"  color="gray"   onClick={()=>setInvSearchModal(true)}/>
-                        <Btn icon={Mail}          label="Email"        color="gray"   onClick={()=>setError("Email invoice — Coming soon")} disabled={!selInvoice||!perms.canReport}/>
-                        <Btn icon={Printer}       label="Invoice"      color="gray"   onClick={()=>setError("Print invoice — Coming soon")} disabled={!selInvoice||!perms.canReport}/>
+                        <Btn icon={Mail}          label="Email"        color="gray"   onClick={()=>toast.info("Email invoice — Coming soon")} disabled={!selInvoice||!perms.canReport}/>
+                        <Btn icon={Printer}       label="Invoice"      color="gray"   onClick={()=>toast.info("Print invoice — Coming soon")} disabled={!selInvoice||!perms.canReport}/>
                         <Btn icon={BarChart2}     label="Reports"      color="gray"   onClick={()=>setPendingRptModal(true)} disabled={!selCustomer||!perms.canReport}/>
                         <div className="w-px h-5 bg-gray-300"/>
-                        <Btn icon={Plus}          label="New Payment"  color="green"  onClick={()=>{ if(!perms.canCreate){setError(PERMISSION_MSGS.create);return;} setNewPayModal({mode:"add"}); }} disabled={!selCustomer||!perms.canCreate}/>
-                        <Btn icon={CreditCard}    label="Insert Cr/Db" color="blue"   onClick={()=>{ if(!perms.canCreate){setError(PERMISSION_MSGS.create);return;} if(!selInvoice){setError("Select an invoice first.");return;} setCrdbModal({mode:"add"}); }} disabled={!selCustomer||!selInvoice||!perms.canCreate}/>
+                        <Btn icon={Plus}          label="New Payment"  color="green"  onClick={()=>{ if(!perms.canCreate){toast.error(PERMISSION_MSGS.create);return;} setNewPayModal({mode:"add"}); }} disabled={!selCustomer||!perms.canCreate}/>
+                        <Btn icon={CreditCard}    label="Insert Cr/Db" color="blue"   onClick={()=>{ if(!perms.canCreate){toast.error(PERMISSION_MSGS.create);return;} if(!selInvoice){toast.error("Select an invoice first.");return;} setCrdbModal({mode:"add"}); }} disabled={!selCustomer||!selInvoice||!perms.canCreate}/>
                         <div className="w-px h-5 bg-gray-300"/>
                         {/* Balance filter */}
                         <div className="flex items-center gap-2 text-xs font-bold">
@@ -1244,7 +1250,7 @@ export default function CustomerPaymentsPage() {
                                     {loadingApplied && <RefreshCcw size={11} className="text-gray-400 animate-spin"/>}
                                 </div>
                                 <div className="flex gap-1">
-                                    <Btn icon={Plus}   label="Apply Pay"    color="green" sm onClick={()=>{ if(!selInvoice){setError("Select an invoice.");return;} if(!selIncome){setError("Select an income.");return;} setApplyModal({mode:"add"}); }} disabled={!selInvoice||!selIncome||!perms.canCreate}/>
+                                    <Btn icon={Plus}   label="Apply Pay"    color="green" sm onClick={()=>{ if(!selInvoice){toast.error("Select an invoice.");return;} if(!selIncome){toast.error("Select an income.");return;} setApplyModal({mode:"add"}); }} disabled={!selInvoice||!selIncome||!perms.canCreate}/>
                                     <Btn icon={Pencil} label="Edit Apply"   color="blue"  sm onClick={()=>{ if(!selApply)return; setApplyModal({mode:"edit"}); }}   disabled={!selApply||!perms.canEdit}/>
                                     <Btn icon={Trash2} label="Delete Apply" color="red"   sm onClick={()=>{ if(!selApply)return; setApplyModal({mode:"delete"}); }} disabled={!selApply||!perms.canDelete}/>
                                 </div>
@@ -1316,19 +1322,20 @@ export default function CustomerPaymentsPage() {
             {activeTab === "payments" && (
                 <div className="flex flex-col flex-1 overflow-hidden p-1.5 gap-1.5">
                     {/* Toolbar */}
-                    <div className="bg-gray-100 border border-gray-200 rounded-lg px-2 py-1.5 flex flex-wrap gap-1 shrink-0">
-                        <Btn icon={Plus}       label="Add"          color="green"  onClick={()=>{ if(!perms.canCreate){setError(PERMISSION_MSGS.create);return;} setNewPayModal({mode:"add"}); }} disabled={!selCustomer||!perms.canCreate}/>
-                        <Btn icon={Pencil}     label="Edit"         color="blue"   onClick={()=>{ if(!selPayment){setError("Payment empty.");return;} setNewPayModal({mode:"edit",income:selPayment}); }} disabled={!selPayment}/>
-                        <Btn icon={Trash2}     label="Delete"       color="red"    onClick={()=>{ if(!selPayment){setError("Payment empty.");return;} setNewPayModal({mode:"delete",income:selPayment}); }} disabled={!selPayment}/>
+                    <div className="bg-gray-100 border border-gray-200 rounded-lg px-2 py-1.5 flex flex-wrap gap-1 shrink-0 overflow-x-auto">
+                        <Btn icon={Plus}       label="Add"          color="green"  onClick={()=>{ if(!perms.canCreate){toast.error(PERMISSION_MSGS.create);return;} setNewPayModal({mode:"add"}); }} disabled={!selCustomer||!perms.canCreate}/>
+                        <Btn icon={Pencil}     label="Edit"         color="blue"   onClick={()=>{ if(!selPayment){toast.error("Payment empty.");return;} setNewPayModal({mode:"edit",income:selPayment}); }} disabled={!selPayment}/>
+                        <Btn icon={Trash2}     label="Delete"       color="red"    onClick={()=>{ if(!selPayment){toast.error("Payment empty.");return;} setNewPayModal({mode:"delete",income:selPayment}); }} disabled={!selPayment}/>
                         <div className="w-px h-5 bg-gray-300"/>
-                        <Btn icon={RotateCcw}  label="Void Payment" color="amber"  onClick={async()=>{
-                            if(!selPayment){setError("Payment empty.");return;}
-                            if(!perms.canEdit){setError(PERMISSION_MSGS.edit);return;}
-                            if(!confirm("Do you want to VOID this payment?"))return;
-                            try{const r=await fetch(`/api/customer-payments/payment/${selPayment.unico}/void`,{method:"PUT"});const d=await r.json();if(!d.success)throw new Error(d.error);logAction("Edit",selPayment.unico,"Void");setSelPayment(null);refetchPay();refetchInv();refetchIncomes();}catch(e:any){setError((e as any).message);}
+                        <Btn icon={RotateCcw}  label="Void Payment" color="amber"  onClick={()=>{
+                            if(!selPayment){toast.error("Payment empty.");return;}
+                            if(!perms.canEdit){toast.error(PERMISSION_MSGS.edit);return;}
+                            toastConfirm("Do you want to VOID this payment?", async()=>{
+                                try{const r=await fetch(`/api/customer-payments/payment/${selPayment.unico}/void`,{method:"PUT"});const d=await r.json();if(!d.success)throw new Error(d.error);logAction("Edit",selPayment.unico,"Void");toast.success("Payment voided.");setSelPayment(null);refetchPay();refetchInv();refetchIncomes();}catch(e:any){toast.error((e as any).message);}
+                            }, "Void");
                         }} disabled={!selPayment||!perms.canEdit}/>
-                        <Btn icon={Printer}    label="Print"        color="gray"   onClick={async()=>{ if(!selPayment){setError("Payment empty.");return;} const d=await cpFetch(`/api/customer-payments/payment/${selPayment.unico}/report`); setError(`Report: ${d.records?.length??0} record(s) — print coming soon.`); }} disabled={!selPayment||!perms.canReport}/>
-                        <Btn icon={RotateCcw}  label="Cash Back"    color="purple" onClick={()=>{ if(!selPayment){setError("Payment empty.");return;} setCashbackModal(true); }} disabled={!selPayment||!perms.canCreate}/>
+                        <Btn icon={Printer}    label="Print"        color="gray"   onClick={async()=>{ if(!selPayment){toast.error("Payment empty.");return;} const d=await cpFetch(`/api/customer-payments/payment/${selPayment.unico}/report`); toast.info(`Report: ${d.records?.length??0} record(s) — print coming soon.`); }} disabled={!selPayment||!perms.canReport}/>
+                        <Btn icon={RotateCcw}  label="Cash Back"    color="purple" onClick={()=>{ if(!selPayment){toast.error("Payment empty.");return;} setCashbackModal(true); }} disabled={!selPayment||!perms.canCreate}/>
                     </div>
                     {/* Payments grid */}
                     <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden" style={{flex:"1 1 55%",minHeight:0}}>
@@ -1404,23 +1411,23 @@ export default function CustomerPaymentsPage() {
             {activeTab === "crdb" && (
                 <div className="flex flex-col flex-1 overflow-hidden p-1.5 gap-1.5">
                     {/* Toolbar */}
-                    <div className="bg-gray-100 border border-gray-200 rounded-lg px-2 py-1.5 flex flex-wrap gap-1 shrink-0">
+                    <div className="bg-gray-100 border border-gray-200 rounded-lg px-2 py-1.5 flex flex-wrap gap-1 shrink-0 overflow-x-auto">
                         <Btn icon={RefreshCcw} label="Refresh"      color="gray"   onClick={()=>{ setSelCrDbDate(null); setSelCrDb(null); refetchCrdbDates(); }}/>
                         <Btn icon={Pencil}     label="Edit Cr/Db"   color="blue"   onClick={()=>{
-                            if(!selCustomer){setError("Customer empty.");return;}
-                            if(!selCrDb){setError("Document empty.");return;}
-                            if(selCrDb.automatic){setError("Automatic Document. You can't edit/delete.");return;}
+                            if(!selCustomer){toast.error("Customer empty.");return;}
+                            if(!selCrDb){toast.error("Document empty.");return;}
+                            if(selCrDb.automatic){toast.error("Automatic Document. You can't edit/delete.");return;}
                             setCrdbModal({mode:"edit"});
                         }} disabled={!selCrDb||!perms.canEdit}/>
                         <Btn icon={Trash2}     label="Delete Cr/Db" color="red"    onClick={()=>{
-                            if(!selCustomer){setError("Customer empty.");return;}
-                            if(!selCrDb){setError("Document empty.");return;}
-                            if(selCrDb.automatic){setError("Automatic Document. You can't edit/delete.");return;}
+                            if(!selCustomer){toast.error("Customer empty.");return;}
+                            if(!selCrDb){toast.error("Document empty.");return;}
+                            if(selCrDb.automatic){toast.error("Automatic Document. You can't edit/delete.");return;}
                             setCrdbModal({mode:"delete"});
                         }} disabled={!selCrDb||!perms.canDelete}/>
                         <Btn icon={Printer}    label="Print Material" color="gray" onClick={()=>{
-                            if(!selCrDb){setError("Select a CR/DB record first.");return;}
-                            if(!perms.canReport){setError(PERMISSION_MSGS.report);return;}
+                            if(!selCrDb){toast.error("Select a CR/DB record first.");return;}
+                            if(!perms.canReport){toast.error(PERMISSION_MSGS.report);return;}
                             setCrdbReportModal(true);
                         }} disabled={!selCrDb||!perms.canReport}/>
                     </div>
@@ -1511,7 +1518,7 @@ export default function CustomerPaymentsPage() {
                     <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden" style={{flex:"1 1 40%",minHeight:0}}>
                         <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 shrink-0 rounded-t-lg">
                             <div className="flex items-center gap-2"><FileText size={15} className="text-[#FB7506]"/><span className="fos-grid-header-text">Statement {selCustomer?`— ${t(selCustomer.customer)}`:""}</span>{loadingStmt&&<RefreshCcw size={11} className="text-gray-400 animate-spin"/>}</div>
-                            <Btn icon={Printer} label="Print" color="gray" sm onClick={()=>setError("Print statement — coming soon")} disabled={!selCustomer||!perms.canReport}/>
+                            <Btn icon={Printer} label="Print" color="gray" sm onClick={()=>toast.info("Print statement — coming soon")} disabled={!selCustomer||!perms.canReport}/>
                         </div>
                         <div className="overflow-auto flex-1">
                             <table className="min-w-full text-left"><thead className="bg-gray-100 border-b border-gray-200 fos-grid-thead text-gray-700 sticky top-0 z-10"><tr>{["Type","Date","Doc.","Debits","Credits","Balance"].map(h=><th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>)}</tr></thead>
@@ -1530,8 +1537,8 @@ export default function CustomerPaymentsPage() {
                                 <select value={stmtDestination} onChange={e=>setStmtDestination(parseInt(e.target.value))} className="bg-gray-700 text-white text-[10px] font-bold border-none outline-none rounded px-2 py-0.5">
                                     <option value={1}>PRINT</option><option value={2}>EMAIL</option><option value={3}>FAX</option>
                                 </select>
-                                <Btn icon={Printer} label="Print"     color="gray"  sm onClick={()=>setError("Print statement balance — coming soon")} disabled={!selCustomer||!perms.canReport}/>
-                                <Btn icon={Users}   label="Print All" color="amber" sm onClick={async()=>{ if(!confirm("Print statements for all customers?"))return; setPrintAllProgress("Loading customers..."); try{const d=await cpFetch("/api/customer-payments/reports/all-statements");setPrintAllProgress(`Done: ${d.records?.length??0} statements generated.`);setTimeout(()=>setPrintAllProgress(null),3000);}catch(e:any){setError((e as any).message);setPrintAllProgress(null);} }} disabled={!perms.canReport}/>
+                                <Btn icon={Printer} label="Print"     color="gray"  sm onClick={()=>toast.info("Print statement balance — coming soon")} disabled={!selCustomer||!perms.canReport}/>
+                                <Btn icon={Users}   label="Print All" color="amber" sm onClick={()=>toastConfirm("Print statements for all customers?", async()=>{ setPrintAllProgress("Loading..."); try{const d=await cpFetch("/api/customer-payments/reports/all-statements");toast.success(`${d.records?.length??0} statements generated.`);setPrintAllProgress(null);}catch(e:any){toast.error((e as any).message);setPrintAllProgress(null);} }, "Print All")} disabled={!perms.canReport}/>
                                 <Btn icon={Search}  label="By Salesman" color="gray" sm onClick={()=>setSalesmanModal(true)} disabled={!perms.canReport}/>
                                 <Btn icon={Calendar} label="Print Cut"  color="gray" sm onClick={()=>setCutDateModal(true)}  disabled={!selCustomer||!perms.canReport}/>
                             </div>
@@ -1584,7 +1591,7 @@ export default function CustomerPaymentsPage() {
                                 <button disabled title="Coming soon" className="px-2 py-1 text-[10px] text-gray-400 font-black uppercase rounded bg-gray-200 opacity-40 cursor-not-allowed">Add</button>
                                 <button disabled title="Coming soon" className="px-2 py-1 text-[10px] text-gray-400 font-black uppercase rounded bg-gray-200 opacity-40 cursor-not-allowed">Edit</button>
                                 <button disabled title="Coming soon" className="px-2 py-1 text-[10px] text-gray-400 font-black uppercase rounded bg-gray-200 opacity-40 cursor-not-allowed">Delete</button>
-                                <Btn icon={Search} label="View" color="gray" sm onClick={()=>setError(selCorpPayment?"View payment — coming soon":"There isn't a Customer payment note...")} disabled={false}/>
+                                <Btn icon={Search} label="View" color="gray" sm onClick={()=>selCorpPayment?toast.info("View payment — coming soon"):toast.error("There isn't a Customer payment note...")} disabled={false}/>
                             </div>
                         </div>
                         <div className="overflow-auto flex-1">
@@ -1601,9 +1608,9 @@ export default function CustomerPaymentsPage() {
                         <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 shrink-0 rounded-t-lg">
                             <div className="flex items-center gap-2"><FileText size={15} className="text-[#FB7506]"/><span className="fos-grid-header-text">Invoice Applied Payments</span>{loadingCorpInv&&<RefreshCcw size={11} className="text-gray-400 animate-spin"/>}</div>
                             <div className="flex gap-1">
-                                <Btn icon={Plus}   label="Add Invoice"    color="green" sm onClick={()=>{ if(!selCorpIncome){setError("Select a corporate payment.");return;} if(parseFloat(selCorpIncome.pay_balance??0)<=0){setError("Corporate Payment Balance is 0.");return;} setCorpInvModal(true); }} disabled={!selCorpIncome||!perms.canCreate}/>
+                                <Btn icon={Plus}   label="Add Invoice"    color="green" sm onClick={()=>{ if(!selCorpIncome){toast.error("Select a corporate payment.");return;} if(parseFloat(selCorpIncome.pay_balance??0)<=0){toast.error("Corporate Payment Balance is 0.");return;} setCorpInvModal(true); }} disabled={!selCorpIncome||!perms.canCreate}/>
                                 <button disabled title="Coming soon" className="px-2 py-1 text-[10px] text-gray-400 font-black uppercase rounded bg-gray-200 opacity-40 cursor-not-allowed">Edit</button>
-                                <Btn icon={Trash2} label="Delete" color="red" sm onClick={()=>setError("Delete corp invoice — coming soon")} disabled={!selCorpPayment}/>
+                                <Btn icon={Trash2} label="Delete" color="red" sm onClick={()=>toast.info("Delete corp invoice — coming soon")} disabled={!selCorpPayment}/>
                             </div>
                         </div>
                         <div className="overflow-auto flex-1">
@@ -1672,7 +1679,7 @@ export default function CustomerPaymentsPage() {
             {/* ── Part 3 modals ─────────────────────────────────────────────── */}
             {salesmanModal && (
                 <SalesmanSelectorModal destination={stmtDestination} onClose={()=>setSalesmanModal(false)}
-                    onConfirm={async (salesmanUq: string)=>{ setError("Print by salesman — coming soon (print implementation pending)"); }}/>
+                    onConfirm={async (salesmanUq: string)=>{ toast.info("Print by salesman — coming soon"); }}/>
             )}
             {cutDateModal && selCustomer && (
                 <CutDateModal customerUq={selCustomer.unico} onClose={()=>setCutDateModal(false)}/>
