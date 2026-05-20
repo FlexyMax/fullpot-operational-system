@@ -7,7 +7,7 @@ import {
     ShoppingCart, Package, Users, LogOut, Search, Loader2,
     AlertCircle, Store, Settings, BarChart2, Receipt, DollarSign,
     Truck, ClipboardList, ScanLine, Building2, Grid3x3,
-    ChevronRight, Landmark, Calendar
+    ChevronRight, Landmark, Calendar, Plane
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +32,7 @@ function getRoute(appPage: string): string | null {
     if (p.includes('ITEM') || p.includes('PRODUCT') || p.includes('VARIETY') || p.includes('VARIEDAD') || p.includes('ITEM SETUP') || p.includes('PRODUCTO')) return '/masters/items';
     if (p.includes('USUARIO') || p.includes('USER ACCESS') || p.includes('ACCESO') || p.includes('ACCESS DEF')) return '/system/access';
     if (p.includes('COMPAN') || p.includes('EMPRESA') || p.includes('COMPANY SETUP')) return '/system/companies';
+    if (p.includes('AWB') || p.includes('GUIA') || p.includes('AIRWAY') || p.includes('VENTAS_AWB')) return '/awbs';
     if (p.includes('SCAN')) return '/scan';
     return null;
 }
@@ -50,6 +51,7 @@ function getIcon(appPage: string) {
     if (n.includes('SETUP') || n.includes('CONFIG') || n.includes('ADMIN') || n.includes('SETTING')) return Settings;
     if (n.includes('SCAN') || n.includes('QR')) return ScanLine;
     if (n.includes('GROWER') || n.includes('VENDOR') || n.includes('SUPPLIER') || n.includes('FARM')) return Building2;
+    if (n.includes('AWB') || n.includes('AIRWAY') || n.includes('GUIA')) return Plane;
     if (n.includes('PAYMENT') || n.includes('CASH')) return DollarSign;
     if (n.includes('USUARIO') || n.includes('USER') || n.includes('ACCESS') || n.includes('ACCESO')) return Users;
     return Grid3x3;
