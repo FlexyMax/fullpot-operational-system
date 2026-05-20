@@ -695,6 +695,18 @@ function CutDateModal({ customerUq, onClose }: any) {
     );
 }
 
+// ─── StatementPreviewModal ────────────────────────────────────────────────────
+function StatementPreviewModal({ html, onClose }: any) {
+    return (
+        <Modal title="Statement Preview" icon={Printer} onClose={onClose} size="xl"
+            footer={<button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Close</button>}>
+            <div className="w-full h-[70vh]">
+                <iframe srcDoc={html} className="w-full h-full border rounded" title="Statement Preview"/>
+            </div>
+        </Modal>
+    );
+}
+
 // ─── CorpPaymentModal ─────────────────────────────────────────────────────────
 function CorpPaymentModal({ mode, income, customerName, customerUq, onClose, onSaved }: any) {
     const isDelete = mode === "delete";
@@ -834,6 +846,9 @@ export default function CustomerPaymentsPage() {
     const [salesmanModal,    setSalesmanModal]      = useState(false);
     const [cutDateModal,     setCutDateModal]       = useState(false);
     const [printAllProgress, setPrintAllProgress]  = useState<string|null>(null);
+    const [stmtPreviewModal, setStmtPreviewModal]  = useState(false);
+    const [stmtPreviewHtml,  setStmtPreviewHtml]   = useState("");
+    const [stmtPreviewLoading, setStmtPreviewLoading] = useState(false);
     // ── Tab 6 state ───────────────────────────────────────────────────────────
     const [corpDate,         setCorpDate]           = useState(today());
     const [selCorpIncome,    setSelCorpIncome]      = useState<any>(null);
@@ -1576,7 +1591,15 @@ export default function CustomerPaymentsPage() {
                                 <select value={stmtDestination} onChange={e=>setStmtDestination(parseInt(e.target.value))} className="bg-gray-700 text-white text-[10px] font-bold border-none outline-none rounded px-2 py-0.5">
                                     <option value={1}>PRINT</option><option value={2}>EMAIL</option><option value={3}>FAX</option>
                                 </select>
-                                <Btn icon={Printer} label="Print"     color="gray"  sm onClick={()=>toast.info("Print statement balance — coming soon")} disabled={!selCustomer||!perms.canReport}/>
+                                <Btn icon={Printer} label="Print"     color="gray"  sm onClick={async()=>{
+                                    if(!selCustomer) return;
+                                    setStmtPreviewLoading(true); setStmtPreviewModal(true);
+                                    try{
+                                        const d = await cpFetch(`/api/customer-payments/reports/html-statement-balance/${selCustomer.unico}?from=${stmtFrom}&to=${stmtTo}`);
+                                        setStmtPreviewHtml(d.html || "<p>No statement available.</p>");
+                                    }catch(e:any){ toast.error(e.message); setStmtPreviewModal(false); }
+                                    finally{ setStmtPreviewLoading(false); }
+                                }} disabled={!selCustomer||!perms.canReport}/>
                                 <Btn icon={Users}   label="Print All" color="amber" sm onClick={()=>toastConfirm("Print statements for all customers?", async()=>{ setPrintAllProgress("Loading..."); try{const d=await cpFetch("/api/customer-payments/reports/all-statements");toast.success(`${d.records?.length??0} statements generated.`);setPrintAllProgress(null);}catch(e:any){toast.error((e as any).message);setPrintAllProgress(null);} }, "Print All")} disabled={!perms.canReport}/>
                                 <Btn icon={Search}  label="By Salesman" color="gray" sm onClick={()=>setSalesmanModal(true)} disabled={!perms.canReport}/>
                                 <Btn icon={Calendar} label="Print Cut"  color="gray" sm onClick={()=>setCutDateModal(true)}  disabled={!selCustomer||!perms.canReport}/>
@@ -1722,6 +1745,9 @@ export default function CustomerPaymentsPage() {
             )}
             {cutDateModal && selCustomer && (
                 <CutDateModal customerUq={selCustomer.unico} onClose={()=>setCutDateModal(false)}/>
+            )}
+            {stmtPreviewModal && (
+                <StatementPreviewModal html={stmtPreviewHtml} onClose={()=>setStmtPreviewModal(false)}/>
             )}
             {corpPayModal && selCustomer && (
                 <CorpPaymentModal mode={corpPayModal.mode} income={selCorpIncome}
