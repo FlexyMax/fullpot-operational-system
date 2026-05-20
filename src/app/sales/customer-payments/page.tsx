@@ -696,10 +696,32 @@ function CutDateModal({ customerUq, onClose }: any) {
 }
 
 // ─── StatementPreviewModal ────────────────────────────────────────────────────
-function StatementPreviewModal({ html, onClose }: any) {
+function StatementPreviewModal({ html, onClose, customer }: any) {
+    const [sending, setSending] = useState(false);
+    const sendEmail = async () => {
+        if (!customer?.email && !customer?.ap_email) { toast.error("Customer has no email address."); return; }
+        setSending(true);
+        try {
+            const res = await fetch("/api/customer-payments/reports/send-statement-email", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ customer_uq: customer.unico, email: customer.ap_email || customer.email, html }),
+            });
+            const d = await res.json();
+            d.success ? toast.success("Statement sent by email.") : toast.error(d.error || "Failed to send email.");
+        } catch (e: any) { toast.error(e.message); }
+        finally { setSending(false); }
+    };
     return (
         <Modal title="Statement Preview" icon={Printer} onClose={onClose} size="xl"
-            footer={<button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Close</button>}>
+            footer={<div className="flex items-center gap-2">
+                <button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Close</button>
+                <button onClick={sendEmail} disabled={sending} className="flex items-center gap-2 px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white text-sm font-black disabled:opacity-50">
+                    {sending?<RefreshCcw size={13} className="animate-spin"/>:<Mail size={13}/>}Email
+                </button>
+                <button onClick={()=>toast.info("Fax service — coming soon")} className="flex items-center gap-2 px-4 py-2 rounded bg-gray-500 hover:bg-gray-600 text-white text-sm font-black">
+                    <Printer size={13}/>Fax
+                </button>
+            </div>}>
             <div className="w-full h-[70vh]">
                 <iframe srcDoc={html} className="w-full h-full border rounded" title="Statement Preview"/>
             </div>
@@ -1099,12 +1121,16 @@ export default function CustomerPaymentsPage() {
             {activeTab === "customer" && (
                 <div className="flex flex-col flex-1 overflow-hidden p-1.5 gap-1.5">
                     {/* Toolbar */}
-                    <div className="bg-gray-100 border border-gray-200 rounded-lg px-2 py-1.5 flex flex-wrap gap-1 shrink-0 overflow-x-auto">
+                    <div className="bg-gray-100 border border-gray-200 rounded-lg px-2 py-1.5 flex flex-wrap gap-1 shrink-0 overflow-x-auto items-center">
                         <Btn icon={Pencil}    label="Update"         color="blue"   onClick={()=>{ if(!selCustomer){toast.error("Select a customer.");return;} if(!perms.canEdit){toast.error(PERMISSION_MSGS.edit);return;} setCustEditModal(true); }} disabled={!selCustomer||!perms.canEdit}/>
                         <Btn icon={Search}    label="Invoice Search" color="gray"   onClick={()=>setInvSearchModal(true)}/>
                         <Btn icon={AlertCircle} label="Hold No Sales" color="amber" onClick={()=>toastConfirm("Put on hold customers with no sales?", async()=>{ const r=await fetch("/api/customer-payments/hold-no-sales",{method:"POST"}); const d=await r.json(); d.error?toast.error(d.error):toast.success("Done."); }, "Hold")}/>
-                        <Btn icon={Printer}   label="All Statements" color="gray"   onClick={()=>toast.info("Statements report — Coming soon")} disabled={!perms.canReport}/>
-                        <Btn icon={Mail}      label="Send All"       color="gray"   onClick={()=>toast.info("Send all statements — Coming soon")} disabled={!perms.canReport}/>
+                        <div className="h-6 w-px bg-gray-300 mx-1"/>
+                        <select value={stmtDestination} onChange={e=>setStmtDestination(parseInt(e.target.value))} className="bg-white border border-gray-300 text-gray-700 text-[10px] font-bold outline-none rounded px-2 py-1 h-7">
+                            <option value={1}>PRINT</option><option value={2}>EMAIL</option><option value={3}>FAX</option>
+                        </select>
+                        <Btn icon={Users}   label="Print All" color="amber" sm onClick={()=>toastConfirm("Print statements for all customers?", async()=>{ setPrintAllProgress("Loading..."); try{const d=await cpFetch("/api/customer-payments/reports/all-statements");toast.success(`${d.records?.length??0} statements generated.`);setPrintAllProgress(null);}catch(e:any){toast.error((e as any).message);setPrintAllProgress(null);} }, "Print All")} disabled={!perms.canReport}/>
+                        <Btn icon={Search}  label="By Salesman" color="gray" sm onClick={()=>setSalesmanModal(true)} disabled={!perms.canReport}/>
                     </div>
                     {/* Search + grid */}
                     <div className="flex flex-col flex-1 bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
@@ -1572,15 +1598,18 @@ export default function CustomerPaymentsPage() {
                     <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden" style={{flex:"1 1 40%",minHeight:0}}>
                         <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 shrink-0 rounded-t-lg">
                             <div className="flex items-center gap-2"><FileText size={15} className="text-[#FB7506]"/><span className="fos-grid-header-text">Statement {selCustomer?`— ${t(selCustomer.customer)}`:""}</span>{loadingStmt&&<RefreshCcw size={11} className="text-gray-400 animate-spin"/>}</div>
-                            <Btn icon={Printer} label="Print" color="gray" sm onClick={async()=>{
-                                if(!selCustomer) return;
-                                setStmtPreviewLoading(true); setStmtPreviewModal(true);
-                                try{
-                                    const d = await cpFetch(`/api/customer-payments/reports/html-statement-balance/${selCustomer.unico}?from=${stmtFrom}&to=${stmtTo}`);
-                                    setStmtPreviewHtml(d.html || "<p>No statement available.</p>");
-                                }catch(e:any){ toast.error(e.message); setStmtPreviewModal(false); }
-                                finally{ setStmtPreviewLoading(false); }
-                            }} disabled={!selCustomer||!perms.canReport}/>
+                            <div className="flex items-center gap-2">
+                                <Btn icon={Printer} label="Print" color="gray" sm onClick={async()=>{
+                                    if(!selCustomer) return;
+                                    setStmtPreviewLoading(true); setStmtPreviewModal(true);
+                                    try{
+                                        const d = await cpFetch(`/api/customer-payments/reports/html-statement-balance/${selCustomer.unico}?from=${stmtFrom}&to=${stmtTo}`);
+                                        setStmtPreviewHtml(d.html || "<p>No statement available.</p>");
+                                    }catch(e:any){ toast.error(e.message); setStmtPreviewModal(false); }
+                                    finally{ setStmtPreviewLoading(false); }
+                                }} disabled={!selCustomer||!perms.canReport}/>
+                                <Btn icon={Calendar} label="Print Cut" color="gray" sm onClick={()=>setCutDateModal(true)} disabled={!selCustomer||!perms.canReport}/>
+                            </div>
                         </div>
                         <div className="overflow-auto flex-1">
                             <table className="min-w-full text-left"><thead className="bg-gray-100 border-b border-gray-200 fos-grid-thead text-gray-700 sticky top-0 z-10"><tr>{["Type","Date","Doc.","Debits","Credits","Balance"].map(h=><th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>)}</tr></thead>
@@ -1595,23 +1624,15 @@ export default function CustomerPaymentsPage() {
                     <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden" style={{flex:"1 1 60%",minHeight:0}}>
                         <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 shrink-0 rounded-t-lg">
                             <div className="flex items-center gap-2"><BarChart2 size={15} className="text-[#FB7506]"/><span className="fos-grid-header-text">Statement with Balance</span>{loadingStmtBal&&<RefreshCcw size={11} className="text-gray-400 animate-spin"/>}</div>
-                            <div className="flex items-center gap-2">
-                                <select value={stmtDestination} onChange={e=>setStmtDestination(parseInt(e.target.value))} className="bg-gray-700 text-white text-[10px] font-bold border-none outline-none rounded px-2 py-0.5">
-                                    <option value={1}>PRINT</option><option value={2}>EMAIL</option><option value={3}>FAX</option>
-                                </select>
-                                <Btn icon={Printer} label="Print"     color="gray"  sm onClick={async()=>{
-                                    if(!selCustomer) return;
-                                    setStmtPreviewLoading(true); setStmtPreviewModal(true);
-                                    try{
-                                        const d = await cpFetch(`/api/customer-payments/reports/html-statement-balance/${selCustomer.unico}?from=${stmtFrom}&to=${stmtTo}`);
-                                        setStmtPreviewHtml(d.html || "<p>No statement available.</p>");
-                                    }catch(e:any){ toast.error(e.message); setStmtPreviewModal(false); }
-                                    finally{ setStmtPreviewLoading(false); }
-                                }} disabled={!selCustomer||!perms.canReport}/>
-                                <Btn icon={Users}   label="Print All" color="amber" sm onClick={()=>toastConfirm("Print statements for all customers?", async()=>{ setPrintAllProgress("Loading..."); try{const d=await cpFetch("/api/customer-payments/reports/all-statements");toast.success(`${d.records?.length??0} statements generated.`);setPrintAllProgress(null);}catch(e:any){toast.error((e as any).message);setPrintAllProgress(null);} }, "Print All")} disabled={!perms.canReport}/>
-                                <Btn icon={Search}  label="By Salesman" color="gray" sm onClick={()=>setSalesmanModal(true)} disabled={!perms.canReport}/>
-                                <Btn icon={Calendar} label="Print Cut"  color="gray" sm onClick={()=>setCutDateModal(true)}  disabled={!selCustomer||!perms.canReport}/>
-                            </div>
+                            <Btn icon={Printer} label="Print" color="gray" sm onClick={async()=>{
+                                if(!selCustomer) return;
+                                setStmtPreviewLoading(true); setStmtPreviewModal(true);
+                                try{
+                                    const d = await cpFetch(`/api/customer-payments/reports/html-statement-balance/${selCustomer.unico}?from=${stmtFrom}&to=${stmtTo}`);
+                                    setStmtPreviewHtml(d.html || "<p>No statement available.</p>");
+                                }catch(e:any){ toast.error(e.message); setStmtPreviewModal(false); }
+                                finally{ setStmtPreviewLoading(false); }
+                            }} disabled={!selCustomer||!perms.canReport}/>
                         </div>
                         {printAllProgress && <div className="h-6 bg-blue-50 border-b border-blue-200 flex items-center px-3 text-xs font-bold text-blue-700 shrink-0"><RefreshCcw size={10} className="animate-spin mr-2"/>{printAllProgress}</div>}
                         <div className="overflow-auto flex-1">
@@ -1755,7 +1776,7 @@ export default function CustomerPaymentsPage() {
                 <CutDateModal customerUq={selCustomer.unico} onClose={()=>setCutDateModal(false)}/>
             )}
             {stmtPreviewModal && (
-                <StatementPreviewModal html={stmtPreviewHtml} onClose={()=>setStmtPreviewModal(false)}/>
+                <StatementPreviewModal html={stmtPreviewHtml} onClose={()=>setStmtPreviewModal(false)} customer={selCustomer}/>
             )}
             {corpPayModal && selCustomer && (
                 <CorpPaymentModal mode={corpPayModal.mode} income={selCorpIncome}
