@@ -868,6 +868,14 @@ export default function CustomerPaymentsPage() {
         obs.observe(el);
         return () => obs.disconnect();
     }, [fetchMoreCust]);
+    const handleCustScroll = useCallback(() => {
+        const root = custScrollRef.current;
+        if (!root) return;
+        const { scrollTop, scrollHeight, clientHeight } = root;
+        if (scrollHeight - scrollTop - clientHeight < 200 && hasMoreCustRef.current && !fetchingMoreCustRef.current) {
+            fetchMoreCust();
+        }
+    }, [fetchMoreCust]);
     const { data: invoices = [], isFetching: loadingInv, refetch: refetchInv } = useQuery({
         queryKey: ["cp-invoices", selCustomer?.unico, balanceFilter],
         queryFn:  () => cpFetch(`/api/customer-payments/invoices/${selCustomer.unico}?balance=${balanceFilter}`),
@@ -1104,7 +1112,7 @@ export default function CustomerPaymentsPage() {
                                 <span className="text-[9px] text-gray-400 shrink-0">{customers.length}/{custTotal}</span>
                             </div>
                         </div>
-                        <div ref={custScrollRef} className="overflow-auto flex-1">
+                        <div ref={custScrollRef} onScroll={handleCustScroll} className="overflow-auto flex-1">
                             <table className="min-w-full text-left">
                                 <thead className="bg-gray-100 border-b border-gray-200 text-gray-700 sticky top-0 z-10">
                                     <tr className="fos-grid-thead">
@@ -1164,6 +1172,13 @@ export default function CustomerPaymentsPage() {
                                     </tfoot>
                                 )}
                             </table>
+                            {hasMoreCust && !fetchingMoreCust && (
+                                <div className="text-center py-2">
+                                    <button onClick={() => fetchMoreCust()} className="px-4 py-1.5 bg-[#FB7506] text-white text-[10px] font-black uppercase rounded hover:bg-orange-600 transition-colors">
+                                        Load More
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
