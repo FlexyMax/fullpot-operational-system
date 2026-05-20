@@ -7,8 +7,8 @@ export async function GET(req: NextRequest) {
     const airline = req.nextUrl.searchParams.get("airline") || "%";
     try {
         const r = await executeProcedure("sp_flower_awbs_by_date", {
-            ldDate:          from,
-            ldEndDate:       to,
+            start_date:      from,
+            end_date:        to,
             lcairline_code:  airline,
         });
         return NextResponse.json({ records: r.recordset });

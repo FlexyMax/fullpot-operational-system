@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
 
+// sp_flower_awbs_invoice_charges_update params (verified):
+// @lcunico, @lcPack_uq, @lcawbcode, @lcap_type_uq,
+// @ldinvoice_date, @lnamount, @lcinvoice_no, @lcsupplier_uq, @lcdescription
+
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ unico: string }> }) {
     const { unico } = await params;
     const b = await req.json();
@@ -11,20 +15,15 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ unic
     if (!b.invoice_no)  return NextResponse.json({ success: false, error: "Invoice is required." }, { status: 400 });
     try {
         const r = await executeProcedure("sp_flower_awbs_invoice_charges_update", {
-            lcunico:        unico,
-            lcpack_uq:      b.pack_uq,
-            lcawbcode:      b.awbcode,
-            lcap_type_uq:   b.ap_type_uq,
-            lcsupplier_uq:  b.supplier_uq,
-            lnfreight:      parseFloat(b.freight)      || 0,
-            lntotal_boxes:  parseFloat(b.total_boxes)  || 0,
-            lnfull_boxes:   parseFloat(b.full_boxes)   || 0,
-            lnweight:       parseFloat(b.weight)       || 0,
-            lcdescription:  b.description              ?? "",
-            lcinvoice_no:   b.invoice_no               ?? "",
-            ldinvoice_date: b.invoice_date             ?? null,
-            lcnotes:        b.notes                    ?? "",
-            lbgrower_all:   b.grower_all ? 1 : 0,
+            lcunico:       unico,
+            lcPack_uq:     b.pack_uq,     // note: SP uses capital P
+            lcawbcode:     b.awbcode,
+            lcap_type_uq:  b.ap_type_uq,
+            ldinvoice_date: b.invoice_date ?? null,
+            lnamount:      parseFloat(b.amount) || 0,
+            lcinvoice_no:  b.invoice_no    ?? "",
+            lcsupplier_uq: b.supplier_uq,
+            lcdescription: b.description   ?? "",
         });
         const row = r.recordset?.[0];
         if (row?.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });

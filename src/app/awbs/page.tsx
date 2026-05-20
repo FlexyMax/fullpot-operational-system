@@ -80,20 +80,24 @@ function Btn({ icon: Icon, label, color = "gray", onClick, disabled = false }: a
 // ─── Modal 1: AwbsChargesModal — Add / Edit charge by AWB ────────────────────
 function AwbsChargesModal({ mode, charge, awbcode, onClose, onSaved }: any) {
     const isEdit = mode === "edit";
+    const blank = { supplier_uq: "", ap_type_uq: "", awc_date: today(), invoice_date: today(), invoice_no: "", description: "", duties: 0, o_charges: 0, handling: 0, freight: 0, broker: 0, oc_ammount: 0, total_boxes: 0, full_boxes: 0, weight: 0 };
     const [form, setForm] = useState<any>(isEdit ? {
         supplier_uq:  charge?.SUPPLIER_UQ ?? "",
         ap_type_uq:   charge?.AP_TYPE_UQ  ?? "",
-        duties:       charge?.DUTIES      ?? 0,
-        o_charges:    charge?.O_CHARGES   ?? 0,
-        apply_from:   charge?.APPLY_FROM?.split("T")[0] ?? "",
-        apply_to:     charge?.APPLY_TO?.split("T")[0]   ?? "",
-        charge_date:  charge?.AWC_DATE?.split("T")[0]   ?? today(),
-        invoice_no:   charge?.INVOICE_NO  ?? "",
-        description:  charge?.DESCRIPTION ?? "",
-    } : {
-        supplier_uq: "", ap_type_uq: "", duties: 0, o_charges: 0,
-        apply_from: "", apply_to: "", charge_date: today(), invoice_no: "", description: "",
-    });
+        awc_date:     charge?.AWC_DATE?.split("T")[0]    ?? today(),
+        invoice_date: charge?.INVOICE_DATE?.split("T")[0] ?? today(),
+        invoice_no:   charge?.INVOICE_NO   ?? "",
+        description:  charge?.DESCRIPTION  ?? "",
+        duties:       charge?.DUTIES       ?? 0,
+        o_charges:    charge?.O_CHARGES    ?? 0,
+        handling:     charge?.HANDLING     ?? 0,
+        freight:      charge?.FREIGHT      ?? 0,
+        broker:       charge?.BROKER       ?? 0,
+        oc_ammount:   charge?.OC_AMMOUNT   ?? 0,
+        total_boxes:  charge?.TOTAL_BOXES  ?? 0,
+        full_boxes:   0,
+        weight:       0,
+    } : blank);
     const [saving, setSaving] = useState(false);
     const [error,  setError]  = useState<string | null>(null);
 
@@ -146,6 +150,22 @@ function AwbsChargesModal({ mode, charge, awbcode, onClose, onSaved }: any) {
                     </select>
                 </div>
                 <div className="flex flex-col gap-0.5">
+                    <label className="text-[9px] font-black text-gray-400 uppercase">Charge Date</label>
+                    <input type="date" {...F("awc_date")} className="fos-input py-1"/>
+                </div>
+                <div className="flex flex-col gap-0.5">
+                    <label className="text-[9px] font-black text-gray-400 uppercase">Invoice Date</label>
+                    <input type="date" {...F("invoice_date")} className="fos-input py-1"/>
+                </div>
+                <div className="flex flex-col gap-0.5">
+                    <label className="text-[9px] font-black text-gray-400 uppercase">Invoice No. *</label>
+                    <input {...F("invoice_no")} className="fos-input py-1"/>
+                </div>
+                <div className="flex flex-col gap-0.5">
+                    <label className="text-[9px] font-black text-gray-400 uppercase">Total Boxes</label>
+                    <input {...F("total_boxes", true)} className="fos-input py-1"/>
+                </div>
+                <div className="flex flex-col gap-0.5">
                     <label className="text-[9px] font-black text-gray-400 uppercase">Duties</label>
                     <input {...F("duties", true)} className="fos-input py-1"/>
                 </div>
@@ -154,20 +174,28 @@ function AwbsChargesModal({ mode, charge, awbcode, onClose, onSaved }: any) {
                     <input {...F("o_charges", true)} className="fos-input py-1"/>
                 </div>
                 <div className="flex flex-col gap-0.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">Apply From</label>
-                    <input type="date" {...F("apply_from")} className="fos-input py-1"/>
+                    <label className="text-[9px] font-black text-gray-400 uppercase">Handling</label>
+                    <input {...F("handling", true)} className="fos-input py-1"/>
                 </div>
                 <div className="flex flex-col gap-0.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">Apply To</label>
-                    <input type="date" {...F("apply_to")} className="fos-input py-1"/>
+                    <label className="text-[9px] font-black text-gray-400 uppercase">Freight</label>
+                    <input {...F("freight", true)} className="fos-input py-1"/>
                 </div>
                 <div className="flex flex-col gap-0.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">Charge Date</label>
-                    <input type="date" {...F("charge_date")} className="fos-input py-1"/>
+                    <label className="text-[9px] font-black text-gray-400 uppercase">Broker</label>
+                    <input {...F("broker", true)} className="fos-input py-1"/>
                 </div>
                 <div className="flex flex-col gap-0.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">Invoice No. *</label>
-                    <input {...F("invoice_no")} className="fos-input py-1"/>
+                    <label className="text-[9px] font-black text-gray-400 uppercase">OC Amount</label>
+                    <input {...F("oc_ammount", true)} className="fos-input py-1"/>
+                </div>
+                <div className="flex flex-col gap-0.5">
+                    <label className="text-[9px] font-black text-gray-400 uppercase">Full Boxes</label>
+                    <input {...F("full_boxes", true)} className="fos-input py-1"/>
+                </div>
+                <div className="flex flex-col gap-0.5">
+                    <label className="text-[9px] font-black text-gray-400 uppercase">Weight</label>
+                    <input {...F("weight", true)} className="fos-input py-1"/>
                 </div>
                 <div className="col-span-2 flex flex-col gap-0.5">
                     <label className="text-[9px] font-black text-gray-400 uppercase">Description</label>
@@ -181,22 +209,21 @@ function AwbsChargesModal({ mode, charge, awbcode, onClose, onSaved }: any) {
 // ─── Modal 2: AwbsFreightsModal — Add / Edit charge by date ──────────────────
 function AwbsFreightsModal({ mode, charge, airline, onClose, onSaved }: any) {
     const isEdit = mode === "edit";
+    // SP params: lcap_type_uq, lcsupplier_uq, ldcharge_date, ldfrom, ldto,
+    //            lntotal_box, lnduties, lnocharges, lcnotes, lninvoice_no
+    const blankF = { ap_type_uq: "", supplier_uq: "", charge_date: today(), apply_from: "", apply_to: "", total_box: 0, duties: 0, ocharges: 0, notes: "", invoice_no: "" };
     const [form, setForm] = useState<any>(isEdit ? {
-        ap_type_uq:   charge?.AP_TYPE_UQ ?? "",
-        supplier_uq:  charge?.SUPPLIER_UQ ?? "",
-        freight:      charge?.OCHARGES    ?? 0,
-        total_box:    charge?.TOTAL_BOX   ?? 0,
-        full_boxes:   0,
-        weight:       0,
-        invoice_no:   charge?.INVOICE_NO  ?? "",
-        invoice_date: charge?.CHARGE_DATE?.split("T")[0] ?? today(),
-        notes:        charge?.NOTES       ?? "",
-        apply_from:   charge?.APPLY_FROM?.split("T")[0] ?? "",
-        apply_to:     charge?.APPLY_TO?.split("T")[0]   ?? "",
-    } : {
-        ap_type_uq: "", supplier_uq: "", freight: 0, total_box: 0, full_boxes: 0,
-        weight: 0, invoice_no: "", invoice_date: today(), notes: "", apply_from: "", apply_to: "",
-    });
+        ap_type_uq:  charge?.AP_TYPE_UQ  ?? "",
+        supplier_uq: charge?.SUPPLIER_UQ ?? "",
+        charge_date: charge?.CHARGE_DATE?.split("T")[0] ?? today(),
+        apply_from:  charge?.APPLY_FROM?.split("T")[0]  ?? "",
+        apply_to:    charge?.APPLY_TO?.split("T")[0]    ?? "",
+        total_box:   charge?.TOTAL_BOX   ?? 0,
+        duties:      charge?.DUTIES      ?? 0,
+        ocharges:    charge?.OCHARGES    ?? 0,
+        notes:       charge?.NOTES       ?? "",
+        invoice_no:  charge?.INVOICE_NO  ?? "",
+    } : blankF);
     const [saving, setSaving] = useState(false);
     const [error,  setError]  = useState<string | null>(null);
 
@@ -208,18 +235,16 @@ function AwbsFreightsModal({ mode, charge, airline, onClose, onSaved }: any) {
         : { value: form[key] ?? "", onChange: (e: any) => setForm((p: any) => ({ ...p, [key]: e.target.value })) };
 
     const save = async () => {
-        if (!form.ap_type_uq)   { setError("Charge type is required."); return; }
-        if (!form.supplier_uq)  { setError("Supplier is required."); return; }
-        if (!form.freight)      { setError("Amount is required."); return; }
-        if (!form.invoice_no)   { setError("Invoice is required."); return; }
-        if (!form.invoice_date) { setError("Invoice date is required."); return; }
+        if (!form.ap_type_uq)  { setError("Charge type is required."); return; }
+        if (!form.supplier_uq) { setError("Supplier is required."); return; }
+        if (!form.invoice_no)  { setError("Invoice is required."); return; }
         setSaving(true); setError(null);
         try {
             const url = isEdit ? `/api/awbs/charges-by-date/${charge.UNICO}` : "/api/awbs/charges-by-date";
             const res = await fetch(url, { method: isEdit ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
             const d   = await res.json();
             if (!d.success) throw new Error(d.error);
-            toast.success(isEdit ? "Freight charge updated." : "Freight charge added.");
+            toast.success(isEdit ? "Charge updated." : "Charge added.");
             onSaved(isEdit ? charge.UNICO : (d.unico ?? ""));
             onClose();
         } catch (e: any) { setError(e.message); }
@@ -250,28 +275,24 @@ function AwbsFreightsModal({ mode, charge, airline, onClose, onSaved }: any) {
                     </select>
                 </div>
                 <div className="flex flex-col gap-0.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">Amount *</label>
-                    <input {...F("freight", true)} className="fos-input py-1"/>
+                    <label className="text-[9px] font-black text-gray-400 uppercase">O. Charges (Amount) *</label>
+                    <input {...F("ocharges", true)} className="fos-input py-1"/>
+                </div>
+                <div className="flex flex-col gap-0.5">
+                    <label className="text-[9px] font-black text-gray-400 uppercase">Duties</label>
+                    <input {...F("duties", true)} className="fos-input py-1"/>
                 </div>
                 <div className="flex flex-col gap-0.5">
                     <label className="text-[9px] font-black text-gray-400 uppercase">Total Boxes</label>
                     <input {...F("total_box", true)} className="fos-input py-1"/>
                 </div>
                 <div className="flex flex-col gap-0.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">Full Boxes</label>
-                    <input {...F("full_boxes", true)} className="fos-input py-1"/>
-                </div>
-                <div className="flex flex-col gap-0.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">Weight</label>
-                    <input {...F("weight", true)} className="fos-input py-1"/>
-                </div>
-                <div className="flex flex-col gap-0.5">
                     <label className="text-[9px] font-black text-gray-400 uppercase">Invoice *</label>
                     <input {...F("invoice_no")} className="fos-input py-1"/>
                 </div>
                 <div className="flex flex-col gap-0.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">Invoice Date *</label>
-                    <input type="date" {...F("invoice_date")} className="fos-input py-1"/>
+                    <label className="text-[9px] font-black text-gray-400 uppercase">Charge Date</label>
+                    <input type="date" {...F("charge_date")} className="fos-input py-1"/>
                 </div>
                 <div className="flex flex-col gap-0.5">
                     <label className="text-[9px] font-black text-gray-400 uppercase">Apply From</label>
@@ -298,11 +319,9 @@ function AwbsFreightsModal({ mode, charge, airline, onClose, onSaved }: any) {
 function AwbsInvoiceChargesModal({ packUq, awbcode, onClose, onSaved }: any) {
     const [selCharge, setSelCharge] = useState<any>(null);
     const [editMode,  setEditMode]  = useState<"add" | "edit" | null>(null);
-    const [form, setForm] = useState<any>({
-        ap_type_uq: "", supplier_uq: "", freight: 0, total_boxes: 0,
-        full_boxes: 0, weight: 0, description: "", invoice_no: "",
-        invoice_date: today(), notes: "", grower_all: false,
-    });
+    // SP params: lcpack_uq, lcawbcode, lcap_type_uq, ldinvoice_date,
+    //            lnamount, lninvoice_no, lcsupplier_uq, lcdescription
+    const [form, setForm] = useState<any>({ ap_type_uq: "", supplier_uq: "", amount: 0, description: "", invoice_no: "", invoice_date: today() });
     const [saving, setSaving] = useState(false);
     const [error,  setError]  = useState<string | null>(null);
     const qc = useQueryClient();
@@ -318,11 +337,11 @@ function AwbsInvoiceChargesModal({ packUq, awbcode, onClose, onSaved }: any) {
     });
 
     const openAdd = () => {
-        setForm({ ap_type_uq: "", supplier_uq: "", freight: 0, total_boxes: 0, full_boxes: 0, weight: 0, description: "", invoice_no: "", invoice_date: today(), notes: "", grower_all: false });
+        setForm({ ap_type_uq: "", supplier_uq: "", amount: 0, description: "", invoice_no: "", invoice_date: today() });
         setSelCharge(null); setEditMode("add"); setError(null);
     };
     const openEdit = (row: any) => {
-        setForm({ ap_type_uq: row.AP_TYPE_UQ ?? "", supplier_uq: row.SUPPLIER_UQ ?? "", freight: row.FREIGHT ?? 0, total_boxes: row.TOTAL_BOXES ?? 0, full_boxes: row.FULL_BOXES ?? 0, weight: row.TOTAL_WEIGHT ?? 0, description: row.DESCRIPTION ?? "", invoice_no: row.INVOICE_NO ?? "", invoice_date: row.INVOICE_DATE?.split("T")[0] ?? today(), notes: "", grower_all: false });
+        setForm({ ap_type_uq: row.AP_TYPE_UQ ?? "", supplier_uq: row.SUPPLIER_UQ ?? "", amount: row.FREIGHT ?? 0, description: row.DESCRIPTION ?? "", invoice_no: row.INVOICE_NO ?? "", invoice_date: row.INVOICE_DATE?.split("T")[0] ?? today() });
         setSelCharge(row); setEditMode("edit"); setError(null);
     };
     const loadTemplate = async () => {
@@ -392,8 +411,8 @@ function AwbsInvoiceChargesModal({ packUq, awbcode, onClose, onSaved }: any) {
                         </select>
                     </div>
                     <div className="flex flex-col gap-0.5">
-                        <label className="text-[9px] font-black text-gray-400 uppercase">Amount</label>
-                        <input type="number" step="0.01" value={form.freight} onChange={e => setForm((p: any) => ({ ...p, freight: parseFloat(e.target.value) || 0 }))} className="fos-input py-1"/>
+                        <label className="text-[9px] font-black text-gray-400 uppercase">Amount *</label>
+                        <input type="number" step="0.01" value={form.amount} onChange={e => setForm((p: any) => ({ ...p, amount: parseFloat(e.target.value) || 0 }))} className="fos-input py-1"/>
                     </div>
                     <div className="flex flex-col gap-0.5">
                         <label className="text-[9px] font-black text-gray-400 uppercase">Invoice *</label>
@@ -404,13 +423,9 @@ function AwbsInvoiceChargesModal({ packUq, awbcode, onClose, onSaved }: any) {
                         <input type="date" value={form.invoice_date} onChange={e => setForm((p: any) => ({ ...p, invoice_date: e.target.value }))} className="fos-input py-1"/>
                     </div>
                     <div className="flex flex-col gap-0.5">
-                        <label className="text-[9px] font-black text-gray-400 uppercase">Notes</label>
-                        <textarea value={form.notes} onChange={e => setForm((p: any) => ({ ...p, notes: e.target.value }))} rows={2} className="fos-input py-1 resize-none"/>
+                        <label className="text-[9px] font-black text-gray-400 uppercase">Description</label>
+                        <input value={form.description} onChange={e => setForm((p: any) => ({ ...p, description: e.target.value }))} className="fos-input py-1"/>
                     </div>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" checked={!!form.grower_all} onChange={e => setForm((p: any) => ({ ...p, grower_all: e.target.checked }))} className="w-4 h-4 accent-[#FB7506]"/>
-                        <span className="text-xs font-semibold text-gray-600">All AWB Grower Invoices</span>
-                    </label>
                     <div className="flex gap-2 pt-1">
                         <Btn icon={Plus}     label="Add"      color="green" onClick={openAdd}/>
                         <Btn icon={FileText} label="Template" color="teal"  onClick={loadTemplate}/>
@@ -450,23 +465,40 @@ function AwbsInvoiceChargesModal({ packUq, awbcode, onClose, onSaved }: any) {
 
 // ─── Modal 4: AwbsBoxesModal — Inventory Entry ───────────────────────────────
 function AwbsBoxesModal({ box, onClose, onSaved }: any) {
+    // SP sp_flower_packing_box_update_new params (verified):
+    // @lcunico, @lccustomer_uq, @lncustomer, @lccporder_no, @lcproduct_uq,
+    // @lccase_uq, @lncut, @lnbox_qty, @lnpacks_box, @lnpacks_units,
+    // @lnunits_x_box, @lnfreight_cost, @lnhandling_cost, @lnduties_cost,
+    // @lnbroker_cost, @lncharge_cost, @f_cost_x_u, @lnprice_x_u,
+    // @lcbox_id, @lcinventory_notes
     const [form, setForm] = useState<any>({
-        awbcode:     box?.AWBCODE       ?? "",
-        description: t(box?.LOTE)       ?? "",
-        price:       parseFloat(box?.F_COST_X_U  ?? 0),
-        f_cost_x_u:  parseFloat(box?.F_COST_X_U  ?? 0),
-        c_cost_x_u:  parseFloat(box?.F_FCOST_X_U ?? 0),
-        t_charges:   0, flower_cost: 0,
-        units_x_box: parseFloat(box?.TOTAL_UNITS ?? 0),
-        box_qty:     parseFloat(box?.BOX_QTY     ?? 0),
-        lote:        parseFloat(box?.LOTE        ?? 0),
-        combo_awb:   box?.AWBCODE       ?? "",
+        // Editable cost fields
+        freight_cost:    parseFloat(box?.F_COST_X_U   ?? 0),
+        handling_cost:   0,
+        duties_cost:     0,
+        broker_cost:     0,
+        charge_cost:     0,
+        f_cost_x_u:      parseFloat(box?.F_COST_X_U   ?? 0),
+        price_x_u:       parseFloat(box?.F_FCOST_X_U  ?? 0),
+        box_qty:         parseInt(box?.BOX_QTY         ?? 0),
+        units_x_box:     parseInt(box?.TOTAL_UNITS     ?? 0),
+        inventory_notes: "",
+        // Pass-through from existing row (not shown in form)
+        customer_uq:     box?.CUSTOMER_UQ  ?? "",
+        customer_num:    box?.CUSTOMER_NUM ?? 0,
+        cporder_no:      box?.CPORDER_NO   ?? box?.PODER_NO ?? "",
+        product_uq:      box?.PRO_PACK_UQ  ?? box?.PRODUCT_UQ ?? "",
+        case_uq:         box?.CASE_UQ      ?? "",
+        cut:             box?.CUT          ?? 0,
+        packs_box:       box?.PACKS_BOX    ?? 0,
+        packs_units:     box?.PACKS_UNITS  ?? 0,
+        box_id:          box?.BOXNUM       ?? "",
     });
     const [saving, setSaving] = useState(false);
     const [error,  setError]  = useState<string | null>(null);
 
     const totalUnits = (form.units_x_box || 0) * (form.box_qty || 0);
-    const tCostXU    = (form.f_cost_x_u  || 0) + (form.c_cost_x_u || 0);
+    const tCostXU    = (form.freight_cost || 0) + (form.handling_cost || 0) + (form.duties_cost || 0) + (form.broker_cost || 0) + (form.charge_cost || 0);
 
     const F = (key: string, num = false) => num
         ? { type: "number", step: "0.01", value: form[key] ?? 0, onChange: (e: any) => setForm((p: any) => ({ ...p, [key]: parseFloat(e.target.value) || 0 })) }
@@ -494,22 +526,20 @@ function AwbsBoxesModal({ box, onClose, onSaved }: any) {
                 </button>
             </>}>
             <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">AWBCode</label><input readOnly value={form.awbcode} className="fos-input py-1 bg-gray-50 text-gray-500 font-bold"/></div>
+                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">AWBCode</label><input readOnly value={t(box?.AWBCODE)} className="fos-input py-1 bg-gray-50 text-gray-500 font-bold"/></div>
                 <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Customer</label><input readOnly value={t(box?.CUSTOMER)} className="fos-input py-1 bg-gray-50 text-gray-500"/></div>
-                <div className="col-span-2 flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Case / Description</label><input {...F("description")} className="fos-input py-1"/></div>
-                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Price</label><input {...F("price", true)} className="fos-input py-1"/></div>
-                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">T. Price (calc.)</label><input readOnly value={fmt((form.price || 0) * totalUnits)} className="fos-input py-1 bg-gray-50 text-gray-500 font-bold"/></div>
-                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">F. Cost x U</label><input {...F("f_cost_x_u", true)} className="fos-input py-1"/></div>
-                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">C. Cost x U</label><input {...F("c_cost_x_u", true)} className="fos-input py-1"/></div>
-                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">T. Cost x U (calc.)</label><input readOnly value={fmt(tCostXU)} className="fos-input py-1 bg-gray-50 text-gray-500 font-bold"/></div>
-                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">T. Cost (calc.)</label><input readOnly value={fmt(tCostXU * totalUnits)} className="fos-input py-1 bg-gray-50 text-gray-500 font-bold"/></div>
-                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">T. Charges</label><input {...F("t_charges", true)} className="fos-input py-1"/></div>
-                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Flower Cost</label><input {...F("flower_cost", true)} className="fos-input py-1"/></div>
-                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Units x Box</label><input {...F("units_x_box", true)} className="fos-input py-1"/></div>
                 <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Box Qty</label><input {...F("box_qty", true)} className="fos-input py-1"/></div>
+                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Units x Box</label><input {...F("units_x_box", true)} className="fos-input py-1"/></div>
                 <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Total Units (calc.)</label><input readOnly value={totalUnits} className="fos-input py-1 bg-gray-50 text-gray-500 font-bold"/></div>
-                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Lote</label><input {...F("lote", true)} className="fos-input py-1"/></div>
-                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">AWB (Combo)</label><input {...F("combo_awb")} className="fos-input py-1"/></div>
+                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">F. Cost x U</label><input {...F("f_cost_x_u", true)} className="fos-input py-1"/></div>
+                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Price x U</label><input {...F("price_x_u", true)} className="fos-input py-1"/></div>
+                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Freight Cost</label><input {...F("freight_cost", true)} className="fos-input py-1"/></div>
+                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Handling Cost</label><input {...F("handling_cost", true)} className="fos-input py-1"/></div>
+                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Duties Cost</label><input {...F("duties_cost", true)} className="fos-input py-1"/></div>
+                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Broker Cost</label><input {...F("broker_cost", true)} className="fos-input py-1"/></div>
+                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Charge Cost</label><input {...F("charge_cost", true)} className="fos-input py-1"/></div>
+                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Total Cost (calc.)</label><input readOnly value={fmt(tCostXU)} className="fos-input py-1 bg-gray-50 text-gray-500 font-bold"/></div>
+                <div className="col-span-2 flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Notes</label><input {...F("inventory_notes")} className="fos-input py-1"/></div>
             </div>
         </Modal>
     );

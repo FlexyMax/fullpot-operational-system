@@ -3,7 +3,8 @@ import { executeProcedure } from "@/lib/db";
 
 export async function GET() {
     try {
-        const r = await executeProcedure("sp_flower_growers_list", { lnmode: 0 });
+        // @llall = true → return all growers/suppliers
+        const r = await executeProcedure("sp_flower_growers_list", { llall: true });
         return NextResponse.json({ records: r.recordset });
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });
