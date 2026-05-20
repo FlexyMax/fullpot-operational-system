@@ -1572,7 +1572,15 @@ export default function CustomerPaymentsPage() {
                     <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden" style={{flex:"1 1 40%",minHeight:0}}>
                         <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 shrink-0 rounded-t-lg">
                             <div className="flex items-center gap-2"><FileText size={15} className="text-[#FB7506]"/><span className="fos-grid-header-text">Statement {selCustomer?`— ${t(selCustomer.customer)}`:""}</span>{loadingStmt&&<RefreshCcw size={11} className="text-gray-400 animate-spin"/>}</div>
-                            <Btn icon={Printer} label="Print" color="gray" sm onClick={()=>toast.info("Print statement — coming soon")} disabled={!selCustomer||!perms.canReport}/>
+                            <Btn icon={Printer} label="Print" color="gray" sm onClick={async()=>{
+                                if(!selCustomer) return;
+                                setStmtPreviewLoading(true); setStmtPreviewModal(true);
+                                try{
+                                    const d = await cpFetch(`/api/customer-payments/reports/html-statement-balance/${selCustomer.unico}?from=${stmtFrom}&to=${stmtTo}`);
+                                    setStmtPreviewHtml(d.html || "<p>No statement available.</p>");
+                                }catch(e:any){ toast.error(e.message); setStmtPreviewModal(false); }
+                                finally{ setStmtPreviewLoading(false); }
+                            }} disabled={!selCustomer||!perms.canReport}/>
                         </div>
                         <div className="overflow-auto flex-1">
                             <table className="min-w-full text-left"><thead className="bg-gray-100 border-b border-gray-200 fos-grid-thead text-gray-700 sticky top-0 z-10"><tr>{["Type","Date","Doc.","Debits","Credits","Balance"].map(h=><th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>)}</tr></thead>
