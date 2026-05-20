@@ -70,9 +70,19 @@ function Btn({ icon: Icon, label, color = "gray", onClick, disabled = false, siz
 
 // ─── CustomerEditModal ─────────────────────────────────────────────────────────
 function CustomerEditModal({ customer, onClose, onSaved }: any) {
+    const { data: detail } = useQuery({
+        queryKey: ["cp-customer-detail", customer.unico],
+        queryFn:  () => cpFetch(`/api/customer-payments/customers/${customer.unico}`),
+        enabled:  !!customer?.unico,
+        staleTime: 30000,
+    });
     const [form,   setForm]   = useState<any>({ ...customer });
     const [saving, setSaving] = useState(false);
     const [error,  setError]  = useState<string|null>(null);
+
+    useEffect(() => {
+        if (detail) setForm((p: any) => ({ ...p, ...detail }));
+    }, [detail]);
 
     const save = async () => {
         setSaving(true); setError(null);
