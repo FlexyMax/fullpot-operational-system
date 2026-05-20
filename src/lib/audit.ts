@@ -11,6 +11,7 @@ export const PANTA: Record<string, string> = {
     "users-definition":    "52961702",  // fallback — register dedicated pantalla record
     "access-definition":   "52961702",  // fallback — register dedicated pantalla record
     "customer-payments":   "XD6Z7054",  // APP A-R
+    "awbs":                "52961702",  // fallback — register ventas_awbs in pantalla table to get real UQ
     "freights-setup":      "52961702",  // fallback — register dedicated pantalla record
     "items-setup":         "52961702",  // fallback — register dedicated pantalla record
     // Add new pages here as they are registered in the pantalla table

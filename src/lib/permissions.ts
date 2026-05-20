@@ -45,6 +45,9 @@ export const SCREEN_PANTA: Record<string, string> = {
     // ── Accounts Receivable ────────────────────────────────────────────────
     "customer-payments":    "XD6Z7054",  // APP A-R
 
+    // ── Air Waybills ──────────────────────────────────────────────────────
+    "awbs":                 "52961702",  // fallback — register ventas_awbs in pantalla table to get real UQ
+
     // ── Masters ────────────────────────────────────────────────────────────
     "customers-setup":      "HWCM1581",  // CUSTOMERS DEFINITION
     "carriers-definition":  "XD6Z7048",  // APP Carriers Center

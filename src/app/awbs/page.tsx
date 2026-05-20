@@ -1,16 +1,18 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-    ArrowLeft, RefreshCcw, Search, XCircle, Save, X, Trash2,
+    ArrowLeft, RefreshCcw, Search, XCircle, Save, Trash2,
     Plus, Pencil, Printer, BarChart2, Calendar, Plane, FileText,
-    Package, DollarSign, ChevronDown, Loader2, AlertCircle
+    Package, DollarSign, Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useAuditLog } from "@/lib/audit";
+import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 
 const t       = (v: any) => String(v ?? "").trim();
 const fmt     = (v: any) => parseFloat(v ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -95,7 +97,7 @@ function AwbsChargesModal({ mode, charge, awbcode, onClose, onSaved }: any) {
     const [saving, setSaving] = useState(false);
     const [error,  setError]  = useState<string | null>(null);
 
-    const { data: suppliers  = [] } = useQuery({ queryKey: ["awb-suppliers"],    queryFn: () => awbFetch("/api/awbs/lookups/suppliers"),    staleTime: 60000, select: (d: any) => d.records ?? [] });
+    const { data: suppliers   = [] } = useQuery({ queryKey: ["awb-suppliers"],    queryFn: () => awbFetch("/api/awbs/lookups/suppliers"),    staleTime: 60000, select: (d: any) => d.records ?? [] });
     const { data: chargeTypes = [] } = useQuery({ queryKey: ["awb-chargetypes"], queryFn: () => awbFetch("/api/awbs/lookups/charge-types"), staleTime: 60000, select: (d: any) => d.records ?? [] });
 
     const F = (key: string, num = false) => num
@@ -114,7 +116,7 @@ function AwbsChargesModal({ mode, charge, awbcode, onClose, onSaved }: any) {
             const d    = await res.json();
             if (!d.success) throw new Error(d.error);
             toast.success(isEdit ? "Charge updated." : "Charge added.");
-            onSaved();
+            onSaved(isEdit ? charge.UNICO : (d.unico ?? ""));
             onClose();
         } catch (e: any) { setError(e.message); }
         finally { setSaving(false); }
@@ -177,20 +179,20 @@ function AwbsChargesModal({ mode, charge, awbcode, onClose, onSaved }: any) {
 }
 
 // ─── Modal 2: AwbsFreightsModal — Add / Edit charge by date ──────────────────
-function AwbsFreightsModal({ mode, charge, awbcode, airline, onClose, onSaved }: any) {
+function AwbsFreightsModal({ mode, charge, airline, onClose, onSaved }: any) {
     const isEdit = mode === "edit";
     const [form, setForm] = useState<any>(isEdit ? {
-        ap_type_uq:   charge?.AP_TYPE_UQ    ?? "",
-        supplier_uq:  charge?.SUPPLIER_UQ   ?? "",
-        freight:      charge?.OCHARGES      ?? 0,
-        total_box:    charge?.TOTAL_BOX     ?? 0,
+        ap_type_uq:   charge?.AP_TYPE_UQ ?? "",
+        supplier_uq:  charge?.SUPPLIER_UQ ?? "",
+        freight:      charge?.OCHARGES    ?? 0,
+        total_box:    charge?.TOTAL_BOX   ?? 0,
         full_boxes:   0,
         weight:       0,
-        invoice_no:   charge?.INVOICE_NO    ?? "",
+        invoice_no:   charge?.INVOICE_NO  ?? "",
         invoice_date: charge?.CHARGE_DATE?.split("T")[0] ?? today(),
-        notes:        charge?.NOTES         ?? "",
-        apply_from:   charge?.APPLY_FROM?.split("T")[0]  ?? "",
-        apply_to:     charge?.APPLY_TO?.split("T")[0]    ?? "",
+        notes:        charge?.NOTES       ?? "",
+        apply_from:   charge?.APPLY_FROM?.split("T")[0] ?? "",
+        apply_to:     charge?.APPLY_TO?.split("T")[0]   ?? "",
     } : {
         ap_type_uq: "", supplier_uq: "", freight: 0, total_box: 0, full_boxes: 0,
         weight: 0, invoice_no: "", invoice_date: today(), notes: "", apply_from: "", apply_to: "",
@@ -206,11 +208,11 @@ function AwbsFreightsModal({ mode, charge, awbcode, airline, onClose, onSaved }:
         : { value: form[key] ?? "", onChange: (e: any) => setForm((p: any) => ({ ...p, [key]: e.target.value })) };
 
     const save = async () => {
-        if (!form.ap_type_uq)  { setError("Charge type is required."); return; }
-        if (!form.supplier_uq) { setError("Supplier is required."); return; }
-        if (!form.freight)     { setError("Amount is required."); return; }
-        if (!form.invoice_no)  { setError("Invoice is required."); return; }
-        if (!form.invoice_date){ setError("Invoice date is required."); return; }
+        if (!form.ap_type_uq)   { setError("Charge type is required."); return; }
+        if (!form.supplier_uq)  { setError("Supplier is required."); return; }
+        if (!form.freight)      { setError("Amount is required."); return; }
+        if (!form.invoice_no)   { setError("Invoice is required."); return; }
+        if (!form.invoice_date) { setError("Invoice date is required."); return; }
         setSaving(true); setError(null);
         try {
             const url = isEdit ? `/api/awbs/charges-by-date/${charge.UNICO}` : "/api/awbs/charges-by-date";
@@ -218,7 +220,7 @@ function AwbsFreightsModal({ mode, charge, awbcode, airline, onClose, onSaved }:
             const d   = await res.json();
             if (!d.success) throw new Error(d.error);
             toast.success(isEdit ? "Freight charge updated." : "Freight charge added.");
-            onSaved();
+            onSaved(isEdit ? charge.UNICO : (d.unico ?? ""));
             onClose();
         } catch (e: any) { setError(e.message); }
         finally { setSaving(false); }
@@ -296,7 +298,11 @@ function AwbsFreightsModal({ mode, charge, awbcode, airline, onClose, onSaved }:
 function AwbsInvoiceChargesModal({ packUq, awbcode, onClose, onSaved }: any) {
     const [selCharge, setSelCharge] = useState<any>(null);
     const [editMode,  setEditMode]  = useState<"add" | "edit" | null>(null);
-    const [form, setForm] = useState<any>({ ap_type_uq: "", supplier_uq: "", freight: 0, total_boxes: 0, full_boxes: 0, weight: 0, description: "", invoice_no: "", invoice_date: today(), notes: "", grower_all: false });
+    const [form, setForm] = useState<any>({
+        ap_type_uq: "", supplier_uq: "", freight: 0, total_boxes: 0,
+        full_boxes: 0, weight: 0, description: "", invoice_no: "",
+        invoice_date: today(), notes: "", grower_all: false,
+    });
     const [saving, setSaving] = useState(false);
     const [error,  setError]  = useState<string | null>(null);
     const qc = useQueryClient();
@@ -308,46 +314,24 @@ function AwbsInvoiceChargesModal({ packUq, awbcode, onClose, onSaved }: any) {
         queryFn:  () => awbFetch(`/api/awbs/invoice-charges?pack_uq=${encodeURIComponent(packUq)}`),
         enabled:  !!packUq,
         select:   (d: any) => d.records ?? [],
+        staleTime: 0,
     });
-
-    const F = (key: string, num = false) => num
-        ? { type: "number", step: "0.01", value: form[key] ?? 0, onChange: (e: any) => setForm((p: any) => ({ ...p, [key]: parseFloat(e.target.value) || 0 })) }
-        : { value: form[key] ?? "", onChange: (e: any) => setForm((p: any) => ({ ...p, [key]: e.target.value })) };
 
     const openAdd = () => {
         setForm({ ap_type_uq: "", supplier_uq: "", freight: 0, total_boxes: 0, full_boxes: 0, weight: 0, description: "", invoice_no: "", invoice_date: today(), notes: "", grower_all: false });
-        setSelCharge(null);
-        setEditMode("add");
-        setError(null);
+        setSelCharge(null); setEditMode("add"); setError(null);
     };
-
     const openEdit = (row: any) => {
-        setForm({
-            ap_type_uq:   row.AP_TYPE_UQ   ?? "",
-            supplier_uq:  row.SUPPLIER_UQ  ?? "",
-            freight:      row.FREIGHT      ?? 0,
-            total_boxes:  row.TOTAL_BOXES  ?? 0,
-            full_boxes:   row.FULL_BOXES   ?? 0,
-            weight:       row.TOTAL_WEIGHT ?? 0,
-            description:  row.DESCRIPTION  ?? "",
-            invoice_no:   row.INVOICE_NO   ?? "",
-            invoice_date: row.INVOICE_DATE?.split("T")[0] ?? today(),
-            notes:        "",
-            grower_all:   false,
-        });
-        setSelCharge(row);
-        setEditMode("edit");
-        setError(null);
+        setForm({ ap_type_uq: row.AP_TYPE_UQ ?? "", supplier_uq: row.SUPPLIER_UQ ?? "", freight: row.FREIGHT ?? 0, total_boxes: row.TOTAL_BOXES ?? 0, full_boxes: row.FULL_BOXES ?? 0, weight: row.TOTAL_WEIGHT ?? 0, description: row.DESCRIPTION ?? "", invoice_no: row.INVOICE_NO ?? "", invoice_date: row.INVOICE_DATE?.split("T")[0] ?? today(), notes: "", grower_all: false });
+        setSelCharge(row); setEditMode("edit"); setError(null);
     };
-
     const loadTemplate = async () => {
         try {
-            const d = await awbFetch(`/api/awbs/template/${encodeURIComponent(awbcode)}`);
-            if (d.records?.length) toast.success(`Template loaded: ${d.records.length} records.`);
+            await awbFetch(`/api/awbs/template/${encodeURIComponent(awbcode)}`);
+            toast.success("Template applied.");
             qc.invalidateQueries({ queryKey: ["awb-invoice-charges", packUq] });
-        } catch (e: any) { toast.error(e.message); }
+        } catch (e: any) { toast.error((e as any).message); }
     };
-
     const save = async () => {
         if (!form.ap_type_uq)  { setError("Charge type is required."); return; }
         if (!form.supplier_uq) { setError("Supplier is required."); return; }
@@ -360,19 +344,20 @@ function AwbsInvoiceChargesModal({ packUq, awbcode, onClose, onSaved }: any) {
             const d    = await res.json();
             if (!d.success) throw new Error(d.error);
             toast.success("Invoice charge saved.");
+            onSaved(editMode === "edit" ? selCharge.UNICO : (d.unico ?? ""), editMode ?? "add");
             qc.invalidateQueries({ queryKey: ["awb-invoice-charges", packUq] });
             setEditMode(null);
         } catch (e: any) { setError(e.message); }
         finally { setSaving(false); }
     };
-
-    const del = async (row: any) => {
-        toastConfirm(`Delete charge ${t(row.UNICO)}?`, async () => {
+    const del = (row: any) => {
+        toastConfirm(`Delete charge?`, async () => {
             try {
                 const res = await fetch(`/api/awbs/invoice-charges/${row.UNICO}`, { method: "DELETE" });
                 const d   = await res.json();
                 if (!d.success) throw new Error(d.error);
                 toast.success("Charge deleted.");
+                onSaved(row.UNICO, "delete");
                 qc.invalidateQueries({ queryKey: ["awb-invoice-charges", packUq] });
             } catch (e: any) { toast.error((e as any).message); }
         });
@@ -387,7 +372,6 @@ function AwbsInvoiceChargesModal({ packUq, awbcode, onClose, onSaved }: any) {
                 </button>}
             </>}>
             <div className="flex gap-4 h-full min-h-0">
-                {/* Left: form */}
                 <div className="w-72 shrink-0 space-y-2 text-xs border-r pr-4">
                     <div className="flex items-center gap-2 mb-2">
                         <span className="text-[9px] font-black text-gray-400 uppercase">AWBCode:</span>
@@ -432,12 +416,11 @@ function AwbsInvoiceChargesModal({ packUq, awbcode, onClose, onSaved }: any) {
                         <Btn icon={FileText} label="Template" color="teal"  onClick={loadTemplate}/>
                     </div>
                 </div>
-                {/* Right: grid */}
                 <div className="flex-1 min-w-0 overflow-auto">
                     {isFetching ? <div className="flex items-center gap-2 text-gray-400 text-xs p-4"><Loader2 size={14} className="animate-spin"/>Loading...</div> : (
                         <table className="min-w-full text-left text-xs">
                             <thead className="bg-gray-100 border-b fos-grid-thead text-gray-700 sticky top-0">
-                                <tr>{["AWBCode","Type","Date","Supplier","Freight","Boxes","Description","Invoice","Inv.Date","Actions"].map(h => <th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>)}</tr>
+                                <tr>{["AWBCode","Type","Date","Supplier","Freight","Boxes","Description","Invoice","Inv.Date",""].map(h => <th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>)}</tr>
                             </thead>
                             <tbody className="fos-grid-tbody divide-y divide-gray-100">
                                 {(charges as any[]).map((row: any) => (
@@ -452,10 +435,7 @@ function AwbsInvoiceChargesModal({ packUq, awbcode, onClose, onSaved }: any) {
                                         <td className="p-2">{t(row.DESCRIPTION)}</td>
                                         <td className="p-2">{t(row.INVOICE_NO)}</td>
                                         <td className="p-2 whitespace-nowrap">{fmtDate(row.INVOICE_DATE)}</td>
-                                        <td className="p-2">
-                                            <button onClick={e => { e.stopPropagation(); del(row); }}
-                                                className="text-red-500 hover:text-red-700"><Trash2 size={13}/></button>
-                                        </td>
+                                        <td className="p-2"><button onClick={e => { e.stopPropagation(); del(row); }} className="text-red-500 hover:text-red-700"><Trash2 size={13}/></button></td>
                                     </tr>
                                 ))}
                                 {!(charges as any[]).length && <tr><td colSpan={10} className="p-4 text-center text-gray-400">No records</td></tr>}
@@ -471,40 +451,35 @@ function AwbsInvoiceChargesModal({ packUq, awbcode, onClose, onSaved }: any) {
 // ─── Modal 4: AwbsBoxesModal — Inventory Entry ───────────────────────────────
 function AwbsBoxesModal({ box, onClose, onSaved }: any) {
     const [form, setForm] = useState<any>({
-        awbcode:     box?.AWBCODE    ?? "",
-        description: box?.LOTE       ?? "",
-        price:       parseFloat(box?.F_COST_X_U   ?? 0),
-        f_cost_x_u:  parseFloat(box?.F_COST_X_U   ?? 0),
-        c_cost_x_u:  parseFloat(box?.F_FCOST_X_U  ?? 0),
-        t_charges:   0,
-        flower_cost: 0,
-        units_x_box: parseFloat(box?.TOTAL_UNITS  ?? 0),
-        box_qty:     parseFloat(box?.BOX_QTY       ?? 0),
-        lote:        parseFloat(box?.LOTE          ?? 0),
-        combo_awb:   box?.AWBCODE    ?? "",
+        awbcode:     box?.AWBCODE       ?? "",
+        description: t(box?.LOTE)       ?? "",
+        price:       parseFloat(box?.F_COST_X_U  ?? 0),
+        f_cost_x_u:  parseFloat(box?.F_COST_X_U  ?? 0),
+        c_cost_x_u:  parseFloat(box?.F_FCOST_X_U ?? 0),
+        t_charges:   0, flower_cost: 0,
+        units_x_box: parseFloat(box?.TOTAL_UNITS ?? 0),
+        box_qty:     parseFloat(box?.BOX_QTY     ?? 0),
+        lote:        parseFloat(box?.LOTE        ?? 0),
+        combo_awb:   box?.AWBCODE       ?? "",
     });
     const [saving, setSaving] = useState(false);
     const [error,  setError]  = useState<string | null>(null);
+
+    const totalUnits = (form.units_x_box || 0) * (form.box_qty || 0);
+    const tCostXU    = (form.f_cost_x_u  || 0) + (form.c_cost_x_u || 0);
 
     const F = (key: string, num = false) => num
         ? { type: "number", step: "0.01", value: form[key] ?? 0, onChange: (e: any) => setForm((p: any) => ({ ...p, [key]: parseFloat(e.target.value) || 0 })) }
         : { value: form[key] ?? "", onChange: (e: any) => setForm((p: any) => ({ ...p, [key]: e.target.value })) };
 
-    const totalUnits = (form.units_x_box || 0) * (form.box_qty || 0);
-    const tCostXU    = (form.f_cost_x_u || 0) + (form.c_cost_x_u || 0);
-    const tCost      = tCostXU * totalUnits;
-
     const save = async () => {
         setSaving(true); setError(null);
         try {
-            const res = await fetch(`/api/awbs/boxes/${box.UNICO}`, {
-                method: "PUT", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...form, units_x_box: form.units_x_box, box_qty: form.box_qty }),
-            });
+            const res = await fetch(`/api/awbs/boxes/${box.UNICO}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
             const d = await res.json();
             if (!d.success) throw new Error(d.error);
             toast.success("Box updated.");
-            onSaved();
+            onSaved(box.UNICO);
             onClose();
         } catch (e: any) { setError(e.message); }
         finally { setSaving(false); }
@@ -519,70 +494,22 @@ function AwbsBoxesModal({ box, onClose, onSaved }: any) {
                 </button>
             </>}>
             <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="flex flex-col gap-0.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">AWBCode</label>
-                    <input readOnly value={form.awbcode} className="fos-input py-1 bg-gray-50 text-gray-500 font-bold"/>
-                </div>
-                <div className="flex flex-col gap-0.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">Customer</label>
-                    <input readOnly value={t(box?.CUSTOMER)} className="fos-input py-1 bg-gray-50 text-gray-500"/>
-                </div>
-                <div className="col-span-2 flex flex-col gap-0.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">Case / Description</label>
-                    <input {...F("description")} className="fos-input py-1"/>
-                </div>
-                <div className="flex flex-col gap-0.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">Price</label>
-                    <input {...F("price", true)} className="fos-input py-1"/>
-                </div>
-                <div className="flex flex-col gap-0.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">T. Price (calc.)</label>
-                    <input readOnly value={fmt((form.price || 0) * totalUnits)} className="fos-input py-1 bg-gray-50 text-gray-500 font-bold"/>
-                </div>
-                <div className="flex flex-col gap-0.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">F. Cost x U</label>
-                    <input {...F("f_cost_x_u", true)} className="fos-input py-1"/>
-                </div>
-                <div className="flex flex-col gap-0.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">C. Cost x U</label>
-                    <input {...F("c_cost_x_u", true)} className="fos-input py-1"/>
-                </div>
-                <div className="flex flex-col gap-0.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">T. Cost x U (calc.)</label>
-                    <input readOnly value={fmt(tCostXU)} className="fos-input py-1 bg-gray-50 text-gray-500 font-bold"/>
-                </div>
-                <div className="flex flex-col gap-0.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">T. Cost (calc.)</label>
-                    <input readOnly value={fmt(tCost)} className="fos-input py-1 bg-gray-50 text-gray-500 font-bold"/>
-                </div>
-                <div className="flex flex-col gap-0.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">T. Charges</label>
-                    <input {...F("t_charges", true)} className="fos-input py-1"/>
-                </div>
-                <div className="flex flex-col gap-0.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">Flower Cost</label>
-                    <input {...F("flower_cost", true)} className="fos-input py-1"/>
-                </div>
-                <div className="flex flex-col gap-0.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">Units x Box</label>
-                    <input {...F("units_x_box", true)} className="fos-input py-1"/>
-                </div>
-                <div className="flex flex-col gap-0.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">Box Qty</label>
-                    <input {...F("box_qty", true)} className="fos-input py-1"/>
-                </div>
-                <div className="flex flex-col gap-0.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">Total Units (calc.)</label>
-                    <input readOnly value={totalUnits} className="fos-input py-1 bg-gray-50 text-gray-500 font-bold"/>
-                </div>
-                <div className="flex flex-col gap-0.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">Lote</label>
-                    <input {...F("lote", true)} className="fos-input py-1"/>
-                </div>
-                <div className="flex flex-col gap-0.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">AWB (Combo)</label>
-                    <input {...F("combo_awb")} className="fos-input py-1"/>
-                </div>
+                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">AWBCode</label><input readOnly value={form.awbcode} className="fos-input py-1 bg-gray-50 text-gray-500 font-bold"/></div>
+                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Customer</label><input readOnly value={t(box?.CUSTOMER)} className="fos-input py-1 bg-gray-50 text-gray-500"/></div>
+                <div className="col-span-2 flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Case / Description</label><input {...F("description")} className="fos-input py-1"/></div>
+                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Price</label><input {...F("price", true)} className="fos-input py-1"/></div>
+                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">T. Price (calc.)</label><input readOnly value={fmt((form.price || 0) * totalUnits)} className="fos-input py-1 bg-gray-50 text-gray-500 font-bold"/></div>
+                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">F. Cost x U</label><input {...F("f_cost_x_u", true)} className="fos-input py-1"/></div>
+                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">C. Cost x U</label><input {...F("c_cost_x_u", true)} className="fos-input py-1"/></div>
+                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">T. Cost x U (calc.)</label><input readOnly value={fmt(tCostXU)} className="fos-input py-1 bg-gray-50 text-gray-500 font-bold"/></div>
+                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">T. Cost (calc.)</label><input readOnly value={fmt(tCostXU * totalUnits)} className="fos-input py-1 bg-gray-50 text-gray-500 font-bold"/></div>
+                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">T. Charges</label><input {...F("t_charges", true)} className="fos-input py-1"/></div>
+                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Flower Cost</label><input {...F("flower_cost", true)} className="fos-input py-1"/></div>
+                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Units x Box</label><input {...F("units_x_box", true)} className="fos-input py-1"/></div>
+                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Box Qty</label><input {...F("box_qty", true)} className="fos-input py-1"/></div>
+                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Total Units (calc.)</label><input readOnly value={totalUnits} className="fos-input py-1 bg-gray-50 text-gray-500 font-bold"/></div>
+                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Lote</label><input {...F("lote", true)} className="fos-input py-1"/></div>
+                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">AWB (Combo)</label><input {...F("combo_awb")} className="fos-input py-1"/></div>
             </div>
         </Modal>
     );
@@ -599,14 +526,11 @@ function AwbsVarietiesMpfModal({ awbcode, onClose, onSaved }: any) {
         if (!form.mpf)        { setError("MPF value is required."); return; }
         setSaving(true); setError(null);
         try {
-            const res = await fetch("/api/awbs/varieties/mpf", {
-                method: "PUT", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ awbcode, ...form }),
-            });
+            const res = await fetch("/api/awbs/varieties/mpf", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ awbcode, ...form }) });
             const d = await res.json();
             if (!d.success) throw new Error(d.error);
             toast.success("MPF updated.");
-            onSaved();
+            onSaved(awbcode);
             onClose();
         } catch (e: any) { setError(e.message); }
         finally { setSaving(false); }
@@ -621,24 +545,15 @@ function AwbsVarietiesMpfModal({ awbcode, onClose, onSaved }: any) {
                 </button>
             </>}>
             <div className="space-y-3 text-xs">
-                <div className="flex flex-col gap-0.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">AWBCode</label>
-                    <input readOnly value={awbcode} className="fos-input py-1 bg-gray-50 text-gray-500 font-bold"/>
-                </div>
-                <div className="flex flex-col gap-0.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">Entry Code *</label>
-                    <input value={form.entry_code} onChange={e => setForm(p => ({ ...p, entry_code: e.target.value }))} className="fos-input py-1"/>
-                </div>
-                <div className="flex flex-col gap-0.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">MPF *</label>
-                    <input type="number" step="0.01" value={form.mpf} onChange={e => setForm(p => ({ ...p, mpf: parseFloat(e.target.value) || 0 }))} className="fos-input py-1"/>
-                </div>
+                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">AWBCode</label><input readOnly value={awbcode} className="fos-input py-1 bg-gray-50 text-gray-500 font-bold"/></div>
+                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Entry Code *</label><input value={form.entry_code} onChange={e => setForm(p => ({ ...p, entry_code: e.target.value }))} className="fos-input py-1"/></div>
+                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">MPF *</label><input type="number" step="0.01" value={form.mpf} onChange={e => setForm(p => ({ ...p, mpf: parseFloat(e.target.value) || 0 }))} className="fos-input py-1"/></div>
             </div>
         </Modal>
     );
 }
 
-// ─── Change Date Modal ────────────────────────────────────────────────────────
+// ─── Change AWB Date Modal ────────────────────────────────────────────────────
 function ChangeDateModal({ awbcode, currentDate, onClose, onSaved }: any) {
     const [newDate, setNewDate] = useState(currentDate?.split("T")[0] ?? today());
     const [saving,  setSaving]  = useState(false);
@@ -648,14 +563,11 @@ function ChangeDateModal({ awbcode, currentDate, onClose, onSaved }: any) {
         if (!newDate) { setError("Date is required."); return; }
         setSaving(true); setError(null);
         try {
-            const res = await fetch(`/api/awbs/${encodeURIComponent(awbcode)}`, {
-                method: "PUT", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ new_date: newDate }),
-            });
+            const res = await fetch(`/api/awbs/${encodeURIComponent(awbcode)}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ new_date: newDate }) });
             const d = await res.json();
             if (!d.success) throw new Error(d.error);
             toast.success("AWB date updated.");
-            onSaved();
+            onSaved(awbcode);
             onClose();
         } catch (e: any) { setError(e.message); }
         finally { setSaving(false); }
@@ -669,11 +581,9 @@ function ChangeDateModal({ awbcode, currentDate, onClose, onSaved }: any) {
                     {saving ? <RefreshCcw size={13} className="animate-spin"/> : <Save size={13}/>}{saving ? "Saving..." : "Save"}
                 </button>
             </>}>
-            <div className="space-y-3 text-xs">
-                <div className="flex flex-col gap-0.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">New Date *</label>
-                    <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} className="fos-input py-1.5"/>
-                </div>
+            <div className="flex flex-col gap-0.5 text-xs">
+                <label className="text-[9px] font-black text-gray-400 uppercase">New Date *</label>
+                <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} className="fos-input py-1.5"/>
             </div>
         </Modal>
     );
@@ -708,29 +618,28 @@ function ReportModal({ title, records, onClose }: any) {
 type TabId = "vendors" | "charges" | "boxes" | "by-date" | "varieties";
 
 export default function AwbsPage() {
-    const { data: session, status } = useSession();
+    // ── 1. Auth, audit, permissions — ALWAYS first, before any state or returns ─
+    const { status } = useSession();
     const router = useRouter();
     const qc     = useQueryClient();
+    const { logAction } = useAuditLog("awbs", "flower_awbs");
+    const perms          = usePagePermissions("awbs");
 
-    // Filters
-    const [ldDate,      setLdDate]      = useState(today());
-    const [ldEndDate,   setLdEndDate]   = useState(today());
-    const [lcAirline,   setLcAirline]   = useState("%");
-    const [awbSearch,   setAwbSearch]   = useState("");
-    const [searchKey,   setSearchKey]   = useState(0); // bump to re-run query
+    // ── 2. State ──────────────────────────────────────────────────────────────
+    const [ldDate,    setLdDate]    = useState(today());
+    const [ldEndDate, setLdEndDate] = useState(today());
+    const [lcAirline, setLcAirline] = useState("%");
+    const [awbSearch, setAwbSearch] = useState("");
+    const [searchKey, setSearchKey] = useState(0);  // 0 = not yet searched
 
-    // Selection
-    const [selAwb,      setSelAwb]      = useState<any>(null);
-    const [selVendor,   setSelVendor]   = useState<any>(null);
-    const [selCharge,   setSelCharge]   = useState<any>(null);
-    const [selByDate,   setSelByDate]   = useState<any>(null);
-    const [selBox,      setSelBox]      = useState<any>(null);
-    const [selVariety,  setSelVariety]  = useState<any>(null);
+    const [selAwb,     setSelAwb]     = useState<any>(null);
+    const [selVendor,  setSelVendor]  = useState<any>(null);
+    const [selCharge,  setSelCharge]  = useState<any>(null);
+    const [selByDate,  setSelByDate]  = useState<any>(null);
+    const [selBox,     setSelBox]     = useState<any>(null);
+    const [selVariety, setSelVariety] = useState<any>(null);
+    const [activeTab,  setActiveTab]  = useState<TabId>("vendors");
 
-    // Tabs
-    const [activeTab, setActiveTab] = useState<TabId>("vendors");
-
-    // Modals
     const [chargesModal,        setChargesModal]        = useState<{ mode: "add" | "edit" } | null>(null);
     const [freightsModal,       setFreightsModal]       = useState<{ mode: "add" | "edit" } | null>(null);
     const [invoiceChargesModal, setInvoiceChargesModal] = useState(false);
@@ -739,100 +648,121 @@ export default function AwbsPage() {
     const [changeDateModal,     setChangeDateModal]     = useState(false);
     const [reportModal,         setReportModal]         = useState<{ title: string; records: any[] } | null>(null);
 
-    if (status === "unauthenticated") { router.push("/login"); return null; }
-    if (status === "loading") return <div className="flex items-center justify-center h-screen"><Loader2 size={24} className="animate-spin text-[#FB7506]"/></div>;
+    // ── 3. Redirect — via useEffect, NOT early return before hooks ────────────
+    useEffect(() => {
+        if (status === "unauthenticated") router.push("/login");
+    }, [status, router]);
 
-    // ── Queries ──────────────────────────────────────────────────────────────
+    // ── 4. Data queries — ALL declared here, before any early returns ─────────
     const { data: airlines = [] } = useQuery({
         queryKey: ["awb-airlines"],
         queryFn:  () => awbFetch("/api/awbs/airlines"),
         staleTime: 300000,
+        enabled:  status === "authenticated",
         select:   (d: any) => d.records ?? [],
     });
 
-    const { data: awbs = [], isFetching: loadingAwbs, refetch: refetchAwbs } = useQuery({
-        queryKey: ["awb-list", searchKey],
+    // Main AWB grid: only fetches when searchKey > 0 (user pressed Search)
+    const { data: awbs = [], isFetching: loadingAwbs } = useQuery({
+        queryKey: ["awb-list", searchKey, ldDate, ldEndDate, lcAirline],
         queryFn:  () => awbFetch(`/api/awbs/list?from=${ldDate}&to=${ldEndDate}&airline=${encodeURIComponent(lcAirline)}`),
+        enabled:  status === "authenticated" && searchKey > 0,
         select:   (d: any) => d.records ?? [],
         staleTime: 0,
     });
 
     const { data: vendors = [], isFetching: loadingVendors } = useQuery({
-        queryKey: ["awb-packing",   selAwb?.AWBCODE],
-        queryFn:  () => awbFetch(`/api/awbs/${encodeURIComponent(selAwb.AWBCODE)}/packing`),
-        enabled:  !!selAwb && activeTab === "vendors",
+        queryKey: ["awb-packing", selAwb?.AWBCODE],
+        queryFn:  () => awbFetch(`/api/awbs/${encodeURIComponent(selAwb!.AWBCODE)}/packing`),
+        enabled:  !!selAwb?.AWBCODE && activeTab === "vendors",
         select:   (d: any) => d.records ?? [],
+        staleTime: 0,
     });
 
     const { data: chargesTab = [], isFetching: loadingCharges } = useQuery({
-        queryKey: ["awb-charges",   selAwb?.AWBCODE],
-        queryFn:  () => awbFetch(`/api/awbs/${encodeURIComponent(selAwb.AWBCODE)}/charges`),
-        enabled:  !!selAwb && activeTab === "charges",
+        queryKey: ["awb-charges", selAwb?.AWBCODE],
+        queryFn:  () => awbFetch(`/api/awbs/${encodeURIComponent(selAwb!.AWBCODE)}/charges`),
+        enabled:  !!selAwb?.AWBCODE && activeTab === "charges",
         select:   (d: any) => d.records ?? [],
+        staleTime: 0,
     });
 
     const { data: boxes = [], isFetching: loadingBoxes } = useQuery({
-        queryKey: ["awb-boxes",     selAwb?.AWBCODE],
-        queryFn:  () => awbFetch(`/api/awbs/${encodeURIComponent(selAwb.AWBCODE)}/boxes`),
-        enabled:  !!selAwb && activeTab === "boxes",
+        queryKey: ["awb-boxes", selAwb?.AWBCODE],
+        queryFn:  () => awbFetch(`/api/awbs/${encodeURIComponent(selAwb!.AWBCODE)}/boxes`),
+        enabled:  !!selAwb?.AWBCODE && activeTab === "boxes",
         select:   (d: any) => d.records ?? [],
+        staleTime: 0,
     });
 
     const { data: byDate = [], isFetching: loadingByDate } = useQuery({
         queryKey: ["awb-by-date", ldDate, ldEndDate],
         queryFn:  () => awbFetch(`/api/awbs/charges-by-date?from=${ldDate}&to=${ldEndDate}`),
-        enabled:  activeTab === "by-date",
+        enabled:  status === "authenticated" && activeTab === "by-date",
         select:   (d: any) => d.records ?? [],
+        staleTime: 0,
     });
 
     const { data: varieties = [], isFetching: loadingVarieties } = useQuery({
         queryKey: ["awb-varieties", selAwb?.AWBCODE],
-        queryFn:  () => awbFetch(`/api/awbs/${encodeURIComponent(selAwb.AWBCODE)}/varieties`),
-        enabled:  !!selAwb && activeTab === "varieties",
+        queryFn:  () => awbFetch(`/api/awbs/${encodeURIComponent(selAwb!.AWBCODE)}/varieties`),
+        enabled:  !!selAwb?.AWBCODE && activeTab === "varieties",
         select:   (d: any) => d.records ?? [],
+        staleTime: 0,
     });
 
-    // ── Handlers ─────────────────────────────────────────────────────────────
-    const handleSearch = useCallback(() => {
+    // ── 5. Guards — AFTER all hooks ───────────────────────────────────────────
+    if (status === "loading") {
+        return <div className="flex items-center justify-center h-screen"><Loader2 size={24} className="animate-spin text-[#FB7506]"/></div>;
+    }
+    if (status === "unauthenticated") return null;
+
+    if (!perms.loading && !perms.canAccess) {
+        return (
+            <div className="flex flex-col items-center justify-center h-screen gap-4 text-center px-8">
+                <XCircle size={48} className="text-red-400"/>
+                <p className="text-sm text-gray-600 max-w-md">{PERMISSION_MSGS.access}</p>
+                <button onClick={() => router.back()} className="px-4 py-2 rounded bg-gray-600 text-white text-sm font-bold">Go Back</button>
+            </div>
+        );
+    }
+
+    // ── 6. Event handlers ─────────────────────────────────────────────────────
+    const handleSearch = () => {
+        if (!perms.canQuery) { toast.error(PERMISSION_MSGS.access); return; }
         setSelAwb(null);
         setSearchKey(k => k + 1);
-    }, []);
+    };
 
-    const handleAwbSearch = useCallback(async () => {
+    const handleAwbSearch = async () => {
         if (!awbSearch.trim()) return;
         try {
             const d = await awbFetch(`/api/awbs/search?q=${encodeURIComponent(awbSearch)}`);
             const records: any[] = d.records ?? [];
             if (!records.length) { toast.error("AWB not found."); return; }
-            setSelAwb(records[0]);
-            setActiveTab("vendors");
+            handleSelectAwb(records[0]);
         } catch (e: any) { toast.error((e as any).message); }
-    }, [awbSearch]);
+    };
 
     const handleSelectAwb = (row: any) => {
         setSelAwb(row);
-        setSelVendor(null);
-        setSelCharge(null);
-        setSelByDate(null);
-        setSelBox(null);
-        setSelVariety(null);
+        setSelVendor(null); setSelCharge(null); setSelByDate(null); setSelBox(null); setSelVariety(null);
         setActiveTab("vendors");
-        // Invalidate all tab queries
-        if (row?.AWBCODE) {
-            qc.invalidateQueries({ queryKey: ["awb-packing",   row.AWBCODE] });
-            qc.invalidateQueries({ queryKey: ["awb-charges",   row.AWBCODE] });
-            qc.invalidateQueries({ queryKey: ["awb-boxes",     row.AWBCODE] });
-            qc.invalidateQueries({ queryKey: ["awb-varieties", row.AWBCODE] });
-        }
+        qc.invalidateQueries({ queryKey: ["awb-packing",   row.AWBCODE] });
+        qc.invalidateQueries({ queryKey: ["awb-charges",   row.AWBCODE] });
+        qc.invalidateQueries({ queryKey: ["awb-boxes",     row.AWBCODE] });
+        qc.invalidateQueries({ queryKey: ["awb-varieties", row.AWBCODE] });
     };
 
     const handleDeleteAwb = () => {
         if (!selAwb) return;
-        toastConfirm(`Delete AWB ${selAwb.AWBCODE}?`, async () => {
+        if (!perms.canDelete) { toast.error(PERMISSION_MSGS.delete); return; }
+        toastConfirm(`Delete AWB ${selAwb.AWBCODE}? This cannot be undone.`, async () => {
             try {
                 const res = await fetch(`/api/awbs/${encodeURIComponent(selAwb.AWBCODE)}`, { method: "DELETE" });
                 const d   = await res.json();
                 if (!d.success) throw new Error(d.error);
+                logAction("Delete", selAwb.AWBCODE, `AWB ${selAwb.AWBCODE} — ${t(selAwb.AIRLINE)}`);
                 toast.success("AWB deleted.");
                 setSelAwb(null);
                 setSearchKey(k => k + 1);
@@ -841,11 +771,13 @@ export default function AwbsPage() {
     };
 
     const handleDeleteCharge = (row: any) => {
-        toastConfirm(`Delete charge ${t(row.UNICO)}?`, async () => {
+        if (!perms.canDelete) { toast.error(PERMISSION_MSGS.delete); return; }
+        toastConfirm(`Delete charge?`, async () => {
             try {
                 const res = await fetch(`/api/awbs/charges/${row.UNICO}`, { method: "DELETE" });
                 const d   = await res.json();
                 if (!d.success) throw new Error(d.error);
+                logAction("Delete", row.UNICO, `AWB charge — AWB ${selAwb?.AWBCODE}`);
                 toast.success("Charge deleted.");
                 qc.invalidateQueries({ queryKey: ["awb-charges", selAwb?.AWBCODE] });
                 setSelCharge(null);
@@ -854,11 +786,13 @@ export default function AwbsPage() {
     };
 
     const handleDeleteByDate = (row: any) => {
-        toastConfirm(`Delete freight charge ${t(row.UNICO)}?`, async () => {
+        if (!perms.canDelete) { toast.error(PERMISSION_MSGS.delete); return; }
+        toastConfirm(`Delete freight charge?`, async () => {
             try {
                 const res = await fetch(`/api/awbs/charges-by-date/${row.UNICO}`, { method: "DELETE" });
                 const d   = await res.json();
                 if (!d.success) throw new Error(d.error);
+                logAction("Delete", row.UNICO, `AWB freight charge by date`);
                 toast.success("Charge deleted.");
                 qc.invalidateQueries({ queryKey: ["awb-by-date", ldDate, ldEndDate] });
                 setSelByDate(null);
@@ -866,13 +800,15 @@ export default function AwbsPage() {
         });
     };
 
-    const handleAddVariety = async () => {
+    const handleAddVariety = () => {
         if (!selAwb) return;
+        if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; }
         toastConfirm(`Add varieties for AWB ${selAwb.AWBCODE}?`, async () => {
             try {
                 const res = await fetch("/api/awbs/varieties", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ awbcode: selAwb.AWBCODE }) });
-                const d   = await res.json();
+                const d = await res.json();
                 if (!d.success) throw new Error(d.error);
+                logAction("Insert", selAwb.AWBCODE, `Varieties for AWB ${selAwb.AWBCODE}`);
                 toast.success("Variety added.");
                 qc.invalidateQueries({ queryKey: ["awb-varieties", selAwb.AWBCODE] });
             } catch (e: any) { toast.error((e as any).message); }
@@ -880,11 +816,13 @@ export default function AwbsPage() {
     };
 
     const handleDeleteVariety = (row: any) => {
-        toastConfirm(`Delete variety ${t(row.UNICO)}?`, async () => {
+        if (!perms.canDelete) { toast.error(PERMISSION_MSGS.delete); return; }
+        toastConfirm(`Delete variety?`, async () => {
             try {
                 const res = await fetch(`/api/awbs/varieties/${row.UNICO}`, { method: "DELETE" });
                 const d   = await res.json();
                 if (!d.success) throw new Error(d.error);
+                logAction("Delete", row.UNICO, `Variety — AWB ${selAwb?.AWBCODE}`);
                 toast.success("Variety deleted.");
                 qc.invalidateQueries({ queryKey: ["awb-varieties", selAwb?.AWBCODE] });
                 setSelVariety(null);
@@ -894,11 +832,13 @@ export default function AwbsPage() {
 
     const handleReport = async (type: "products" | "duties") => {
         if (!selAwb) return;
+        if (!perms.canReport) { toast.error(PERMISSION_MSGS.report); return; }
         try {
             const grower = type === "duties" ? (selVendor?.GROWER_UQ ?? "") : "%";
+            const date   = selAwb.DATE_INVO ?? selAwb.BOX_DATE ?? ldDate;
             const url    = type === "products"
-                ? `/api/awbs/reports/products?date_invo=${selAwb.DATE_INVO ?? selAwb.BOX_DATE ?? ldDate}&awbcode=${encodeURIComponent(selAwb.AWBCODE)}&grower_uq=${encodeURIComponent(grower)}`
-                : `/api/awbs/reports/duties?date_invo=${selAwb.DATE_INVO ?? selAwb.BOX_DATE ?? ldDate}&awbcode=${encodeURIComponent(selAwb.AWBCODE)}&grower_uq=${encodeURIComponent(grower)}`;
+                ? `/api/awbs/reports/products?date_invo=${date}&awbcode=${encodeURIComponent(selAwb.AWBCODE)}&grower_uq=${encodeURIComponent(grower)}`
+                : `/api/awbs/reports/duties?date_invo=${date}&awbcode=${encodeURIComponent(selAwb.AWBCODE)}&grower_uq=${encodeURIComponent(grower)}`;
             const d = await awbFetch(url);
             setReportModal({ title: type === "products" ? "Products Report" : "Credits Duties Report", records: d.records ?? [] });
         } catch (e: any) { toast.error((e as any).message); }
@@ -906,6 +846,7 @@ export default function AwbsPage() {
 
     const handleVendorPrint = async () => {
         if (!selAwb || !selVendor) return;
+        if (!perms.canReport) { toast.error(PERMISSION_MSGS.report); return; }
         try {
             const d = await awbFetch(`/api/awbs/reports/products?date_invo=${selAwb.DATE_INVO ?? selAwb.BOX_DATE ?? ldDate}&awbcode=${encodeURIComponent(selAwb.AWBCODE)}&grower_uq=${encodeURIComponent(selVendor.GROWER_UQ ?? "%")}`);
             setReportModal({ title: `Products — ${t(selVendor.GROWER)}`, records: d.records ?? [] });
@@ -923,16 +864,19 @@ export default function AwbsPage() {
     const TabLoading = ({ loading }: { loading: boolean }) =>
         loading ? <div className="flex items-center gap-2 text-gray-400 text-xs p-4"><Loader2 size={14} className="animate-spin"/>Loading...</div> : null;
 
+    // ── 7. Render ─────────────────────────────────────────────────────────────
     return (
         <div className="flex flex-col h-screen bg-gray-50">
-            {/* ── Header ────────────────────────────────────────────────── */}
+
+            {/* Header */}
             <div className="bg-[#374151] px-4 py-2 flex items-center gap-3 shrink-0">
                 <button onClick={() => router.back()} className="text-gray-400 hover:text-white"><ArrowLeft size={18}/></button>
                 <Plane size={18} className="text-[#FB7506]"/>
                 <span className="fos-grid-header-text text-sm">AWBs — Air Waybill Costs</span>
+                {perms.loading && <Loader2 size={13} className="animate-spin text-gray-400 ml-auto"/>}
             </div>
 
-            {/* ── Filter Bar ────────────────────────────────────────────── */}
+            {/* Filter bar */}
             <div className="bg-white border-b px-4 py-2 flex flex-wrap items-center gap-3 shrink-0">
                 <div className="flex items-center gap-1.5 text-xs">
                     <label className="text-[9px] font-black text-gray-400 uppercase">From</label>
@@ -944,7 +888,7 @@ export default function AwbsPage() {
                 </div>
                 <div className="flex items-center gap-1.5 text-xs">
                     <label className="text-[9px] font-black text-gray-400 uppercase">Airline</label>
-                    <select value={lcAirline} onChange={e => setLcAirline(e.target.value)} className="fos-input py-1 w-44">
+                    <select value={lcAirline} onChange={e => setLcAirline(e.target.value)} className="fos-input py-1 w-48">
                         <option value="%">— All Airlines —</option>
                         {(airlines as any[]).map((a: any) => (
                             <option key={a.UNICO ?? a.COD_LINEA} value={a.COD_LINEA ?? a.AIRLINE}>
@@ -953,25 +897,25 @@ export default function AwbsPage() {
                         ))}
                     </select>
                 </div>
-                <Btn icon={Search} label="Search" color="orange" onClick={handleSearch}/>
+                <Btn icon={loadingAwbs ? RefreshCcw : Search} label={loadingAwbs ? "Loading..." : "Search"} color="orange" onClick={handleSearch} disabled={loadingAwbs}/>
                 <div className="flex items-center gap-1.5 text-xs ml-auto">
                     <label className="text-[9px] font-black text-gray-400 uppercase">AWB #</label>
                     <input value={awbSearch} onChange={e => setAwbSearch(e.target.value)}
                         onKeyDown={e => e.key === "Enter" && handleAwbSearch()}
                         placeholder="Search by code..." className="fos-input py-1 w-44"/>
-                    <Btn icon={Search} label="Go" color="blue" onClick={handleAwbSearch}/>
+                    <Btn icon={Search} label="Go" color="blue" onClick={handleAwbSearch} disabled={!awbSearch.trim()}/>
                 </div>
             </div>
 
-            {/* ── Action Buttons ────────────────────────────────────────── */}
+            {/* Action buttons */}
             <div className="bg-white border-b px-4 py-1.5 flex flex-wrap items-center gap-2 shrink-0">
-                <Btn icon={Pencil}   label="Update"         color="amber"  disabled={!selAwb}/>
-                <Btn icon={Trash2}   label="Delete"         color="red"    disabled={!selAwb} onClick={handleDeleteAwb}/>
-                <Btn icon={Package}  label="Set MPF"        color="teal"   disabled={!selAwb} onClick={() => setMpfModal(true)}/>
-                <Btn icon={Calendar} label="Change Awb Date" color="blue"  disabled={!selAwb} onClick={() => setChangeDateModal(true)}/>
+                <Btn icon={Pencil}    label="Update"          color="amber"  disabled={!selAwb || !perms.canEdit}/>
+                <Btn icon={Trash2}    label="Delete"          color="red"    disabled={!selAwb || !perms.canDelete}   onClick={handleDeleteAwb}/>
+                <Btn icon={Package}   label="Set MPF"         color="teal"   disabled={!selAwb || !perms.canEdit}     onClick={() => { if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } setMpfModal(true); }}/>
+                <Btn icon={Calendar}  label="Change Awb Date" color="blue"   disabled={!selAwb || !perms.canEdit}     onClick={() => { if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } setChangeDateModal(true); }}/>
                 <div className="w-px h-5 bg-gray-200 mx-1"/>
-                <Btn icon={Printer}  label="Products"       color="gray"   disabled={!selAwb} onClick={() => handleReport("products")}/>
-                <Btn icon={BarChart2} label="Credits Duties" color="gray"  disabled={!selAwb} onClick={() => handleReport("duties")}/>
+                <Btn icon={Printer}   label="Products"        color="gray"   disabled={!selAwb || !perms.canReport}   onClick={() => handleReport("products")}/>
+                <Btn icon={BarChart2} label="Credits Duties"  color="gray"   disabled={!selAwb || !perms.canReport}   onClick={() => handleReport("duties")}/>
                 {selAwb && (
                     <div className="ml-auto flex items-center gap-2 text-xs bg-blue-50 px-3 py-1 rounded border border-blue-200">
                         <Plane size={12} className="text-blue-500"/>
@@ -982,21 +926,19 @@ export default function AwbsPage() {
                 )}
             </div>
 
-            {/* ── Main Split: Grid + Tabs ───────────────────────────────── */}
+            {/* Main content */}
             <div className="flex-1 flex flex-col min-h-0 p-3 gap-3">
 
-                {/* Main AWB Grid */}
+                {/* AWB grid */}
                 <div className="bg-white rounded border shadow-sm overflow-auto" style={{ maxHeight: "35vh" }}>
                     {loadingAwbs ? (
                         <div className="flex items-center gap-2 text-gray-400 text-xs p-4"><Loader2 size={14} className="animate-spin"/>Loading AWBs...</div>
                     ) : (
                         <table className="min-w-full text-left text-xs">
                             <thead className="bg-gray-100 border-b fos-grid-thead text-gray-700 sticky top-0">
-                                <tr>
-                                    {["AWBCode","Airline","Air Code","Box Date","Inv Date","Boxes","Units","Charge","Handling","Freight","Duties","Broker","Total"].map(h => (
-                                        <th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
-                                    ))}
-                                </tr>
+                                <tr>{["AWBCode","Airline","Air Code","Box Date","Inv Date","Boxes","Units","Charge","Handling","Freight","Duties","Broker","Total"].map(h => (
+                                    <th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
+                                ))}</tr>
                             </thead>
                             <tbody className="fos-grid-tbody divide-y divide-gray-100">
                                 {(awbs as any[]).map((row: any) => (
@@ -1019,7 +961,7 @@ export default function AwbsPage() {
                                 ))}
                                 {!(awbs as any[]).length && (
                                     <tr><td colSpan={13} className="p-6 text-center text-gray-400">
-                                        {searchKey === 0 ? "Click Search to load AWBs." : "No AWBs found."}
+                                        {searchKey === 0 ? "Set filters and click Search to load AWBs." : "No AWBs found for the selected filters."}
                                     </td></tr>
                                 )}
                             </tbody>
@@ -1027,31 +969,28 @@ export default function AwbsPage() {
                     )}
                 </div>
 
-                {/* Tabs Section */}
+                {/* Tabs */}
                 <div className="bg-white rounded border shadow-sm flex-1 flex flex-col min-h-0">
-                    {/* Tab headers */}
-                    <div className="flex border-b shrink-0">
+                    <div className="flex border-b shrink-0 overflow-x-auto">
                         {TABS.map(tab => (
                             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                                 className={cn("px-4 py-2 text-xs font-bold uppercase tracking-wide transition-colors whitespace-nowrap",
-                                    activeTab === tab.id
-                                        ? "border-b-2 border-[#FB7506] text-[#FB7506]"
-                                        : "text-gray-500 hover:text-gray-800")}>
+                                    activeTab === tab.id ? "border-b-2 border-[#FB7506] text-[#FB7506]" : "text-gray-500 hover:text-gray-800")}>
                                 {tab.label}
                             </button>
                         ))}
                     </div>
 
-                    {/* Tab content */}
                     <div className="flex-1 overflow-auto p-2">
 
-                        {/* ── Tab 1: Vendors x Awb ─────────────────────── */}
+                        {/* Tab 1: Vendors x Awb */}
                         {activeTab === "vendors" && (
                             <div className="flex flex-col gap-2 h-full">
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
                                     <span className="text-[9px] font-black text-gray-400 uppercase">Vendor Invoices x AWB</span>
-                                    <Btn icon={Plus}    label="Add Invoice Charge" color="green" disabled={!selVendor} onClick={() => setInvoiceChargesModal(true)}/>
-                                    <Btn icon={Printer} label="Print"              color="gray"  disabled={!selVendor} onClick={handleVendorPrint}/>
+                                    <Btn icon={Plus}    label="Add Invoice Charge" color="green" disabled={!selVendor || !perms.canCreate}
+                                        onClick={() => { if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; } setInvoiceChargesModal(true); }}/>
+                                    <Btn icon={Printer} label="Print"              color="gray"  disabled={!selVendor || !perms.canReport} onClick={handleVendorPrint}/>
                                 </div>
                                 <TabLoading loading={loadingVendors}/>
                                 {!loadingVendors && (
@@ -1081,8 +1020,8 @@ export default function AwbsPage() {
                                                         <td className="p-2 text-right">{fmt(row.FREIGHT_COST)}</td>
                                                     </tr>
                                                 ))}
-                                                {!selAwb && <tr><td colSpan={13} className="p-4 text-center text-gray-400">Select an AWB to view vendors.</td></tr>}
-                                                {selAwb && !(vendors as any[]).length && !loadingVendors && <tr><td colSpan={13} className="p-4 text-center text-gray-400">No vendor invoices.</td></tr>}
+                                                {!selAwb && <tr><td colSpan={13} className="p-4 text-center text-gray-400">Select an AWB from the grid above.</td></tr>}
+                                                {selAwb && !(vendors as any[]).length && !loadingVendors && <tr><td colSpan={13} className="p-4 text-center text-gray-400">No vendor invoices for this AWB.</td></tr>}
                                             </tbody>
                                         </table>
                                     </div>
@@ -1090,14 +1029,16 @@ export default function AwbsPage() {
                             </div>
                         )}
 
-                        {/* ── Tab 2: Charges Applied by Awb ────────────── */}
+                        {/* Tab 2: Charges Applied by Awb */}
                         {activeTab === "charges" && (
                             <div className="flex flex-col gap-2 h-full">
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
                                     <span className="text-[9px] font-black text-gray-400 uppercase">AWB's Direct Cost by Prorate by AWB</span>
-                                    <Btn icon={Plus}   label="Add"    color="green" disabled={!selAwb} onClick={() => { setSelCharge(null); setChargesModal({ mode: "add" }); }}/>
-                                    <Btn icon={Pencil} label="Edit"   color="amber" disabled={!selCharge} onClick={() => setChargesModal({ mode: "edit" })}/>
-                                    <Btn icon={Trash2} label="Delete" color="red"   disabled={!selCharge} onClick={() => handleDeleteCharge(selCharge)}/>
+                                    <Btn icon={Plus}   label="Add"    color="green" disabled={!selAwb || !perms.canCreate}
+                                        onClick={() => { if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; } setSelCharge(null); setChargesModal({ mode: "add" }); }}/>
+                                    <Btn icon={Pencil} label="Edit"   color="amber" disabled={!selCharge || !perms.canEdit}
+                                        onClick={() => { if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } setChargesModal({ mode: "edit" }); }}/>
+                                    <Btn icon={Trash2} label="Delete" color="red"   disabled={!selCharge || !perms.canDelete} onClick={() => handleDeleteCharge(selCharge)}/>
                                 </div>
                                 <TabLoading loading={loadingCharges}/>
                                 {!loadingCharges && (
@@ -1128,8 +1069,8 @@ export default function AwbsPage() {
                                                         <td className="p-2">{t(row.INVOICE_NO)}</td>
                                                     </tr>
                                                 ))}
-                                                {!selAwb && <tr><td colSpan={14} className="p-4 text-center text-gray-400">Select an AWB to view charges.</td></tr>}
-                                                {selAwb && !(chargesTab as any[]).length && !loadingCharges && <tr><td colSpan={14} className="p-4 text-center text-gray-400">No charges.</td></tr>}
+                                                {!selAwb && <tr><td colSpan={14} className="p-4 text-center text-gray-400">Select an AWB from the grid above.</td></tr>}
+                                                {selAwb && !(chargesTab as any[]).length && !loadingCharges && <tr><td colSpan={14} className="p-4 text-center text-gray-400">No charges for this AWB.</td></tr>}
                                             </tbody>
                                         </table>
                                     </div>
@@ -1137,12 +1078,13 @@ export default function AwbsPage() {
                             </div>
                         )}
 
-                        {/* ── Tab 3: Boxes x AWB ───────────────────────── */}
+                        {/* Tab 3: Boxes x AWB */}
                         {activeTab === "boxes" && (
                             <div className="flex flex-col gap-2 h-full">
                                 <div className="flex items-center gap-2">
                                     <span className="text-[9px] font-black text-gray-400 uppercase">Boxes x AWB</span>
-                                    <Btn icon={Pencil} label="Edit" color="amber" disabled={!selBox} onClick={() => setBoxesModal(true)}/>
+                                    <Btn icon={Pencil} label="Edit" color="amber" disabled={!selBox || !perms.canEdit}
+                                        onClick={() => { if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } setBoxesModal(true); }}/>
                                 </div>
                                 <TabLoading loading={loadingBoxes}/>
                                 {!loadingBoxes && (
@@ -1175,8 +1117,8 @@ export default function AwbsPage() {
                                                         <td className="p-2 text-right">{fmt(row.F_FCOST_X_U)}</td>
                                                     </tr>
                                                 ))}
-                                                {!selAwb && <tr><td colSpan={16} className="p-4 text-center text-gray-400">Select an AWB to view boxes.</td></tr>}
-                                                {selAwb && !(boxes as any[]).length && !loadingBoxes && <tr><td colSpan={16} className="p-4 text-center text-gray-400">No boxes.</td></tr>}
+                                                {!selAwb && <tr><td colSpan={16} className="p-4 text-center text-gray-400">Select an AWB from the grid above.</td></tr>}
+                                                {selAwb && !(boxes as any[]).length && !loadingBoxes && <tr><td colSpan={16} className="p-4 text-center text-gray-400">No boxes for this AWB.</td></tr>}
                                             </tbody>
                                         </table>
                                     </div>
@@ -1184,14 +1126,16 @@ export default function AwbsPage() {
                             </div>
                         )}
 
-                        {/* ── Tab 4: Charges Applied by Date ───────────── */}
+                        {/* Tab 4: Charges Applied by Date */}
                         {activeTab === "by-date" && (
                             <div className="flex flex-col gap-2 h-full">
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
                                     <span className="text-[9px] font-black text-gray-400 uppercase">AWB's Direct Cost Prorate by Date</span>
-                                    <Btn icon={Plus}   label="Add"    color="green" onClick={() => { setSelByDate(null); setFreightsModal({ mode: "add" }); }}/>
-                                    <Btn icon={Pencil} label="Edit"   color="amber" disabled={!selByDate} onClick={() => setFreightsModal({ mode: "edit" })}/>
-                                    <Btn icon={Trash2} label="Delete" color="red"   disabled={!selByDate} onClick={() => handleDeleteByDate(selByDate)}/>
+                                    <Btn icon={Plus}   label="Add"    color="green" disabled={!perms.canCreate}
+                                        onClick={() => { if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; } setSelByDate(null); setFreightsModal({ mode: "add" }); }}/>
+                                    <Btn icon={Pencil} label="Edit"   color="amber" disabled={!selByDate || !perms.canEdit}
+                                        onClick={() => { if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } setFreightsModal({ mode: "edit" }); }}/>
+                                    <Btn icon={Trash2} label="Delete" color="red"   disabled={!selByDate || !perms.canDelete} onClick={() => handleDeleteByDate(selByDate)}/>
                                 </div>
                                 <TabLoading loading={loadingByDate}/>
                                 {!loadingByDate && (
@@ -1220,7 +1164,7 @@ export default function AwbsPage() {
                                                         <td className="p-2 whitespace-nowrap text-gray-400">{fmtDate(row.TIMESTAMP)}</td>
                                                     </tr>
                                                 ))}
-                                                {!(byDate as any[]).length && !loadingByDate && <tr><td colSpan={12} className="p-4 text-center text-gray-400">No charges by date.</td></tr>}
+                                                {!(byDate as any[]).length && !loadingByDate && <tr><td colSpan={12} className="p-4 text-center text-gray-400">No charges by date in this period.</td></tr>}
                                             </tbody>
                                         </table>
                                     </div>
@@ -1228,13 +1172,13 @@ export default function AwbsPage() {
                             </div>
                         )}
 
-                        {/* ── Tab 5: Varieties ──────────────────────────── */}
+                        {/* Tab 5: Varieties */}
                         {activeTab === "varieties" && (
                             <div className="flex flex-col gap-2 h-full">
                                 <div className="flex items-center gap-2">
                                     <span className="text-[9px] font-black text-gray-400 uppercase">Varieties x AWB</span>
-                                    <Btn icon={Plus}   label="Add"    color="green" disabled={!selAwb} onClick={handleAddVariety}/>
-                                    <Btn icon={Trash2} label="Delete" color="red"   disabled={!selVariety} onClick={() => handleDeleteVariety(selVariety)}/>
+                                    <Btn icon={Plus}   label="Add"    color="green" disabled={!selAwb || !perms.canCreate} onClick={handleAddVariety}/>
+                                    <Btn icon={Trash2} label="Delete" color="red"   disabled={!selVariety || !perms.canDelete} onClick={() => handleDeleteVariety(selVariety)}/>
                                 </div>
                                 <TabLoading loading={loadingVarieties}/>
                                 {!loadingVarieties && (
@@ -1246,16 +1190,14 @@ export default function AwbsPage() {
                                                 ))}</tr>
                                             </thead>
                                             <tbody className="fos-grid-tbody divide-y divide-gray-100">
-                                                {(varieties as any[]).map((row: any) => (
-                                                    <tr key={row.UNICO} onClick={() => setSelVariety(row)}
+                                                {(varieties as any[]).map((row: any, i: number) => (
+                                                    <tr key={row.UNICO ?? i} onClick={() => setSelVariety(row)}
                                                         className={cn("cursor-pointer transition-colors", selVariety?.UNICO === row.UNICO ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50")}>
-                                                        {Object.values(row).map((v: any, i: number) => (
-                                                            <td key={i} className="p-2">{t(v)}</td>
-                                                        ))}
+                                                        {Object.values(row).map((v: any, j: number) => <td key={j} className="p-2">{t(v)}</td>)}
                                                     </tr>
                                                 ))}
-                                                {!selAwb && <tr><td colSpan={5} className="p-4 text-center text-gray-400">Select an AWB to view varieties.</td></tr>}
-                                                {selAwb && !(varieties as any[]).length && !loadingVarieties && <tr><td colSpan={5} className="p-4 text-center text-gray-400">No varieties.</td></tr>}
+                                                {!selAwb && <tr><td colSpan={5} className="p-4 text-center text-gray-400">Select an AWB from the grid above.</td></tr>}
+                                                {selAwb && !(varieties as any[]).length && !loadingVarieties && <tr><td colSpan={5} className="p-4 text-center text-gray-400">No varieties for this AWB.</td></tr>}
                                             </tbody>
                                         </table>
                                     </div>
@@ -1266,14 +1208,17 @@ export default function AwbsPage() {
                 </div>
             </div>
 
-            {/* ── Modals ────────────────────────────────────────────────── */}
+            {/* Modals */}
             {chargesModal && selAwb && (
                 <AwbsChargesModal
                     mode={chargesModal.mode}
                     charge={chargesModal.mode === "edit" ? selCharge : null}
                     awbcode={selAwb.AWBCODE}
                     onClose={() => setChargesModal(null)}
-                    onSaved={() => qc.invalidateQueries({ queryKey: ["awb-charges", selAwb.AWBCODE] })}
+                    onSaved={(unico: string) => {
+                        logAction(chargesModal.mode === "edit" ? "Edit" : "Insert", unico, `AWB ${selAwb.AWBCODE} charge`);
+                        qc.invalidateQueries({ queryKey: ["awb-charges", selAwb.AWBCODE] });
+                    }}
                 />
             )}
             {freightsModal && (
@@ -1283,7 +1228,10 @@ export default function AwbsPage() {
                     awbcode={selAwb?.AWBCODE ?? ""}
                     airline={selAwb?.AIRLINE ?? ""}
                     onClose={() => setFreightsModal(null)}
-                    onSaved={() => qc.invalidateQueries({ queryKey: ["awb-by-date", ldDate, ldEndDate] })}
+                    onSaved={(unico: string) => {
+                        logAction(freightsModal.mode === "edit" ? "Edit" : "Insert", unico, `AWB freight charge by date`);
+                        qc.invalidateQueries({ queryKey: ["awb-by-date", ldDate, ldEndDate] });
+                    }}
                 />
             )}
             {invoiceChargesModal && selAwb && selVendor && (
@@ -1291,21 +1239,31 @@ export default function AwbsPage() {
                     packUq={selVendor.PACK_UQ}
                     awbcode={selAwb.AWBCODE}
                     onClose={() => setInvoiceChargesModal(false)}
-                    onSaved={() => qc.invalidateQueries({ queryKey: ["awb-packing", selAwb.AWBCODE] })}
+                    onSaved={(unico: string, mode: string) => {
+                        logAction(mode === "delete" ? "Delete" : mode === "edit" ? "Edit" : "Insert", unico, `Invoice charge — AWB ${selAwb.AWBCODE}`);
+                        qc.invalidateQueries({ queryKey: ["awb-packing", selAwb.AWBCODE] });
+                    }}
                 />
             )}
             {boxesModal && selBox && (
                 <AwbsBoxesModal
                     box={selBox}
                     onClose={() => setBoxesModal(false)}
-                    onSaved={() => { qc.invalidateQueries({ queryKey: ["awb-boxes", selAwb?.AWBCODE] }); setSelBox(null); }}
+                    onSaved={(unico: string) => {
+                        logAction("Edit", unico, `Box ${t(selBox.BOXNUM)} — AWB ${selAwb?.AWBCODE}`);
+                        qc.invalidateQueries({ queryKey: ["awb-boxes", selAwb?.AWBCODE] });
+                        setSelBox(null);
+                    }}
                 />
             )}
             {mpfModal && selAwb && (
                 <AwbsVarietiesMpfModal
                     awbcode={selAwb.AWBCODE}
                     onClose={() => setMpfModal(false)}
-                    onSaved={() => qc.invalidateQueries({ queryKey: ["awb-varieties", selAwb.AWBCODE] })}
+                    onSaved={(unico: string) => {
+                        logAction("Edit", unico, `MPF — AWB ${selAwb.AWBCODE}`);
+                        qc.invalidateQueries({ queryKey: ["awb-varieties", selAwb.AWBCODE] });
+                    }}
                 />
             )}
             {changeDateModal && selAwb && (
@@ -1313,15 +1271,14 @@ export default function AwbsPage() {
                     awbcode={selAwb.AWBCODE}
                     currentDate={selAwb.BOX_DATE}
                     onClose={() => setChangeDateModal(false)}
-                    onSaved={() => setSearchKey(k => k + 1)}
+                    onSaved={(awbcode: string) => {
+                        logAction("Edit", awbcode, `AWB date change`);
+                        setSearchKey(k => k + 1);
+                    }}
                 />
             )}
             {reportModal && (
-                <ReportModal
-                    title={reportModal.title}
-                    records={reportModal.records}
-                    onClose={() => setReportModal(null)}
-                />
+                <ReportModal title={reportModal.title} records={reportModal.records} onClose={() => setReportModal(null)}/>
             )}
         </div>
     );
