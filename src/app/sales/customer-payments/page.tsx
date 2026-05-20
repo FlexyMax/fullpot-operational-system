@@ -852,17 +852,19 @@ export default function CustomerPaymentsPage() {
     const customers     = custPages?.pages.flatMap((p: any) => p.records ?? []) ?? [];
     const custTotal     = custPages?.pages[0]?.total ?? 0;
     // Sentinel for infinite scroll
-    const custSentRef   = useRef<HTMLTableRowElement>(null);
+    const custScrollRef = useRef<HTMLDivElement>(null);
+    const custSentRef   = useRef<HTMLDivElement>(null);
     const hasMoreCustRef = useRef(hasMoreCust);
     const fetchingMoreCustRef = useRef(fetchingMoreCust);
     hasMoreCustRef.current = hasMoreCust;
     fetchingMoreCustRef.current = fetchingMoreCust;
     useEffect(() => {
         const el = custSentRef.current;
-        if (!el) return;
+        const root = custScrollRef.current;
+        if (!el || !root) return;
         const obs = new IntersectionObserver(([e]) => {
             if (e.isIntersecting && hasMoreCustRef.current && !fetchingMoreCustRef.current) fetchMoreCust();
-        }, { threshold: 0.1, rootMargin: "200px" });
+        }, { threshold: 0.1, rootMargin: "200px", root });
         obs.observe(el);
         return () => obs.disconnect();
     }, [fetchMoreCust]);
@@ -1102,7 +1104,7 @@ export default function CustomerPaymentsPage() {
                                 <span className="text-[9px] text-gray-400 shrink-0">{customers.length}/{custTotal}</span>
                             </div>
                         </div>
-                        <div className="overflow-auto flex-1">
+                        <div ref={custScrollRef} className="overflow-auto flex-1">
                             <table className="min-w-full text-left">
                                 <thead className="bg-gray-100 border-b border-gray-200 text-gray-700 sticky top-0 z-10">
                                     <tr className="fos-grid-thead">
@@ -1139,12 +1141,14 @@ export default function CustomerPaymentsPage() {
                                         );
                                     })}
                                     {/* Infinite scroll sentinel */}
-                                    <tr ref={custSentRef} className="h-4"><td colSpan={14} className="h-4 py-1">
-                                        {fetchingMoreCust ? (
-                                            <div className="text-center py-1.5 text-[9px] text-gray-400"><RefreshCcw size={9} className="inline animate-spin mr-1"/>Loading more...</div>
-                                        ) : (
-                                            <span className="invisible">&nbsp;</span>
-                                        )}
+                                    <tr className="h-4"><td colSpan={14} className="h-4 py-1">
+                                        <div ref={custSentRef} className="h-4">
+                                            {fetchingMoreCust ? (
+                                                <div className="text-center py-1.5 text-[9px] text-gray-400"><RefreshCcw size={9} className="inline animate-spin mr-1"/>Loading more...</div>
+                                            ) : (
+                                                <span className="invisible">&nbsp;</span>
+                                            )}
+                                        </div>
                                     </td></tr>
                                     {!loadingCust && customers.length === 0 && <tr><td colSpan={14} className="p-8 text-center text-gray-400 italic text-xs">No customers found</td></tr>}
                                 </tbody>
