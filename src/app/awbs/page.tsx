@@ -19,6 +19,13 @@ const fmt     = (v: any) => parseFloat(v ?? 0).toLocaleString("en-US", { minimum
 const fmtDate = (v: any) => { if (!v) return ""; const d = new Date(v); return isNaN(d.getTime()) ? t(v) : d.toLocaleDateString("en-US"); };
 const today   = () => new Date().toISOString().split("T")[0];
 
+// Normalize record keys to UPPERCASE so frontend column references work
+const norm = (records: any[]) => records.map(r => {
+    const n: any = {};
+    for (const [k, v] of Object.entries(r)) n[k.toUpperCase()] = v;
+    return n;
+});
+
 const toastConfirm = (message: string, onConfirm: () => void) => {
     toast(message, {
         duration: 10000,
@@ -689,7 +696,7 @@ export default function AwbsPage() {
         queryFn:  () => awbFetch("/api/awbs/airlines"),
         staleTime: 300000,
         enabled:  status === "authenticated",
-        select:   (d: any) => d.records ?? [],
+        select:   (d: any) => norm(d.records ?? []),
     });
 
     // Main AWB grid: only fetches when searchKey > 0 (user pressed Search)
@@ -697,7 +704,7 @@ export default function AwbsPage() {
         queryKey: ["awb-list", searchKey, ldDate, ldEndDate, lcAirline],
         queryFn:  () => awbFetch(`/api/awbs/list?from=${ldDate}&to=${ldEndDate}&airline=${encodeURIComponent(lcAirline)}`),
         enabled:  status === "authenticated" && searchKey > 0,
-        select:   (d: any) => d.records ?? [],
+        select:   (d: any) => norm(d.records ?? []),
         staleTime: 0,
     });
 
@@ -705,7 +712,7 @@ export default function AwbsPage() {
         queryKey: ["awb-packing", selAwb?.AWBCODE],
         queryFn:  () => awbFetch(`/api/awbs/${encodeURIComponent(selAwb!.AWBCODE)}/packing`),
         enabled:  !!selAwb?.AWBCODE && activeTab === "vendors",
-        select:   (d: any) => d.records ?? [],
+        select:   (d: any) => norm(d.records ?? []),
         staleTime: 0,
     });
 
@@ -713,7 +720,7 @@ export default function AwbsPage() {
         queryKey: ["awb-charges", selAwb?.AWBCODE],
         queryFn:  () => awbFetch(`/api/awbs/${encodeURIComponent(selAwb!.AWBCODE)}/charges`),
         enabled:  !!selAwb?.AWBCODE && activeTab === "charges",
-        select:   (d: any) => d.records ?? [],
+        select:   (d: any) => norm(d.records ?? []),
         staleTime: 0,
     });
 
@@ -721,7 +728,7 @@ export default function AwbsPage() {
         queryKey: ["awb-boxes", selAwb?.AWBCODE],
         queryFn:  () => awbFetch(`/api/awbs/${encodeURIComponent(selAwb!.AWBCODE)}/boxes`),
         enabled:  !!selAwb?.AWBCODE && activeTab === "boxes",
-        select:   (d: any) => d.records ?? [],
+        select:   (d: any) => norm(d.records ?? []),
         staleTime: 0,
     });
 
@@ -729,7 +736,7 @@ export default function AwbsPage() {
         queryKey: ["awb-by-date", ldDate, ldEndDate],
         queryFn:  () => awbFetch(`/api/awbs/charges-by-date?from=${ldDate}&to=${ldEndDate}`),
         enabled:  status === "authenticated" && activeTab === "by-date",
-        select:   (d: any) => d.records ?? [],
+        select:   (d: any) => norm(d.records ?? []),
         staleTime: 0,
     });
 
@@ -737,7 +744,7 @@ export default function AwbsPage() {
         queryKey: ["awb-varieties", selAwb?.AWBCODE],
         queryFn:  () => awbFetch(`/api/awbs/${encodeURIComponent(selAwb!.AWBCODE)}/varieties`),
         enabled:  !!selAwb?.AWBCODE && activeTab === "varieties",
-        select:   (d: any) => d.records ?? [],
+        select:   (d: any) => norm(d.records ?? []),
         staleTime: 0,
     });
 
