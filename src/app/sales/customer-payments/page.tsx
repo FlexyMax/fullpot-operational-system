@@ -853,13 +853,19 @@ export default function CustomerPaymentsPage() {
     const custTotal     = custPages?.pages[0]?.total ?? 0;
     // Sentinel for infinite scroll
     const custSentRef   = useRef<HTMLTableRowElement>(null);
+    const hasMoreCustRef = useRef(hasMoreCust);
+    const fetchingMoreCustRef = useRef(fetchingMoreCust);
+    hasMoreCustRef.current = hasMoreCust;
+    fetchingMoreCustRef.current = fetchingMoreCust;
     useEffect(() => {
         const el = custSentRef.current;
         if (!el) return;
-        const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting && hasMoreCust && !fetchingMoreCust) fetchMoreCust(); }, { threshold: 0.1 });
+        const obs = new IntersectionObserver(([e]) => {
+            if (e.isIntersecting && hasMoreCustRef.current && !fetchingMoreCustRef.current) fetchMoreCust();
+        }, { threshold: 0.1, rootMargin: "200px" });
         obs.observe(el);
         return () => obs.disconnect();
-    }, [hasMoreCust, fetchingMoreCust, fetchMoreCust]);
+    }, [fetchMoreCust]);
     const { data: invoices = [], isFetching: loadingInv, refetch: refetchInv } = useQuery({
         queryKey: ["cp-invoices", selCustomer?.unico, balanceFilter],
         queryFn:  () => cpFetch(`/api/customer-payments/invoices/${selCustomer.unico}?balance=${balanceFilter}`),
@@ -1133,8 +1139,12 @@ export default function CustomerPaymentsPage() {
                                         );
                                     })}
                                     {/* Infinite scroll sentinel */}
-                                    <tr ref={custSentRef}><td colSpan={14} className="h-1 py-0">
-                                        {fetchingMoreCust && <div className="text-center py-1.5 text-[9px] text-gray-400"><RefreshCcw size={9} className="inline animate-spin mr-1"/>Loading more...</div>}
+                                    <tr ref={custSentRef} className="h-4"><td colSpan={14} className="h-4 py-1">
+                                        {fetchingMoreCust ? (
+                                            <div className="text-center py-1.5 text-[9px] text-gray-400"><RefreshCcw size={9} className="inline animate-spin mr-1"/>Loading more...</div>
+                                        ) : (
+                                            <span className="invisible">&nbsp;</span>
+                                        )}
                                     </td></tr>
                                     {!loadingCust && customers.length === 0 && <tr><td colSpan={14} className="p-8 text-center text-gray-400 italic text-xs">No customers found</td></tr>}
                                 </tbody>
