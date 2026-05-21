@@ -44,6 +44,7 @@ export const SCREEN_PANTA: Record<string, string> = {
 
     // ── Accounts Receivable ────────────────────────────────────────────────
     "customer-payments":    "XD6Z7054",  // APP A-R
+    "flexy2qb":             "XD6Y7055",  // Flexy2QB (APP A-R)
 
     // ── Air Waybills ──────────────────────────────────────────────────────
     "awbs":                 "52961702",  // fallback — register ventas_awbs in pantalla table to get real UQ

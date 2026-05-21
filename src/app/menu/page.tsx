@@ -34,6 +34,7 @@ function getRoute(appPage: string): string | null {
     if (p.includes('COMPAN') || p.includes('EMPRESA') || p.includes('COMPANY SETUP')) return '/system/companies';
     if (p.includes('AWB') || p.includes('GUIA') || p.includes('AIRWAY') || p.includes('VENTAS_AWB')) return '/awbs';
     if (p.includes('SCAN')) return '/scan';
+    if (p.includes('FLEXY2QB') || p.includes('QUICKBOOKS') || p.includes('QB')) return '/flexy2qb';
     return null;
 }
 

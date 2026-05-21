@@ -1,0 +1,228 @@
+"use client";
+
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { RefreshCcw, Calendar, CheckCircle, XCircle, Send } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { TabTable } from "../TabTable";
+import { useFlexy2QBContext } from "../../context/Flexy2QBContext";
+
+export default function PurchasesCreditsTab() {
+  const qc = useQueryClient();
+  const { refreshTrigger, triggerRefresh } = useFlexy2QBContext();
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [subTab, setSubTab] = useState<"not-ready" | "ready" | "sent">("not-ready");
+
+  const { data: years = [] } = useQuery({
+    queryKey: ["flexy2qb-pcredits-years"],
+    queryFn: async () => {
+      const r = await fetch("/api/flexy2qb/purchases-credits/years", { method: "POST", body: "{}" });
+      const json = await r.json();
+      return json.data || [];
+    }
+  });
+
+  const { data: dates = [], isFetching: loadingDates } = useQuery({
+    queryKey: ["flexy2qb-pcredits-dates", selectedYear],
+    queryFn: async () => {
+      const r = await fetch("/api/flexy2qb/purchases-credits/dates", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lnYears: selectedYear })
+      });
+      const json = await r.json();
+      return json.data || [];
+    },
+    enabled: !!selectedYear
+  });
+
+  const { data: notReady = [], isFetching: loadingNotReady } = useQuery({
+    queryKey: ["flexy2qb-pcredits-not-ready", selectedDate, refreshTrigger],
+    queryFn: async () => {
+      const r = await fetch("/api/flexy2qb/purchases-credits/not-ready", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ldcr_date: selectedDate })
+      });
+      const json = await r.json();
+      return json.data || [];
+    },
+    enabled: !!selectedDate && subTab === "not-ready"
+  });
+
+  const { data: readyData = [], isFetching: loadingReady } = useQuery({
+    queryKey: ["flexy2qb-pcredits-ready", refreshTrigger],
+    queryFn: async () => {
+      const r = await fetch("/api/flexy2qb/purchases-credits/ready", { method: "POST", body: "{}" });
+      const json = await r.json();
+      return json.data || [];
+    },
+    enabled: subTab === "ready"
+  });
+
+  const { data: sentData = [], isFetching: loadingSent } = useQuery({
+    queryKey: ["flexy2qb-pcredits-sent", selectedDate, refreshTrigger],
+    queryFn: async () => {
+      const r = await fetch("/api/flexy2qb/purchases-credits/sent", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ldcr_date: selectedDate })
+      });
+      const json = await r.json();
+      return json.data || [];
+    },
+    enabled: !!selectedDate && subTab === "sent"
+  });
+
+  const markReady = useMutation({
+    mutationFn: async ({ lccr_uq, llready }: any) => {
+      const r = await fetch("/api/flexy2qb/purchases-credits/update-ready", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lccr_uq, llready })
+      });
+      return r.json();
+    },
+    onSuccess: () => triggerRefresh()
+  });
+
+  const sendToQb = useMutation({
+    mutationFn: async ({ lccr_uq, llready }: any) => {
+      const r = await fetch("/api/flexy2qb/purchases-credits/send", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lccr_uq, llready, llSendByDate: false })
+      });
+      return r.json();
+    },
+    onSuccess: () => triggerRefresh()
+  });
+
+  return (
+    <div className="flex h-full gap-2">
+      {/* ── LEFT: Date Panel ─────────────────────── */}
+      <div className="w-[280px] flex flex-col gap-2 shrink-0">
+        <div className="bg-white p-2 rounded-lg border border-gray-200 shadow-sm flex items-center justify-between">
+          <span className="text-[10px] font-black uppercase text-gray-500 tracking-widest">Year</span>
+          <select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(Number(e.target.value))}
+            className="bg-gray-100 border-none text-[11px] font-black rounded px-2 py-1 outline-none"
+          >
+            {years.map((y: any) => (
+              <option key={y.year || y.lnYear || Object.values(y)[0] as string} value={y.year || y.lnYear || Object.values(y)[0] as string}>
+                {y.year || y.lnYear || Object.values(y)[0] as string}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="flex-1 bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex flex-col">
+          <div className="h-8 bg-[#374151] flex items-center justify-between px-3 shrink-0">
+            <div className="flex items-center gap-2">
+              <Calendar size={13} className="text-[#FB7506]" />
+              <span className="font-black text-[10px] uppercase tracking-widest text-white">Dates</span>
+            </div>
+            {loadingDates && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
+          </div>
+          <div className="overflow-y-auto flex-1">
+            <table className="min-w-full text-xs text-left">
+              <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0">
+                <tr>
+                  <th className="p-2">Credit Date</th>
+                  <th className="p-2 text-right">Credits</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dates.map((d: any, i: number) => {
+                  const dateStr = d.cddate || d.cd_date;
+                  const dateDisp = new Date(dateStr).toLocaleDateString('en-US');
+                  const active = selectedDate === dateStr;
+                  return (
+                    <tr key={i} onClick={() => setSelectedDate(dateStr)} className={cn("border-b cursor-pointer transition-colors", active ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "hover:bg-blue-50")}>
+                      <td className="p-2 font-medium">{dateDisp}</td>
+                      <td className="p-2 text-right text-gray-500">{d.Credits || 0}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* ── RIGHT: Data Tabs ─────────────────────── */}
+      <div className="flex-1 flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+        <div className="h-9 bg-[#374151] flex items-end px-2 shrink-0 gap-0.5">
+          {[
+            { id: "not-ready", label: "NOT READY" },
+            { id: "ready", label: "READY TO QB" },
+            { id: "sent", label: "SENT TO QB" },
+          ].map(t => (
+            <button
+              key={t.id}
+              onClick={() => setSubTab(t.id as any)}
+              className={cn("px-4 h-7 text-[9px] font-black uppercase tracking-widest rounded-t transition-all", subTab === t.id ? "bg-white text-[#FB7506]" : "text-gray-400 hover:text-white hover:bg-white/10")}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex-1 p-2 bg-[#f4f6f8] flex flex-col">
+          {subTab === "not-ready" && (
+            <div className="flex flex-col h-full gap-2">
+              <span className="text-[11px] font-black uppercase text-gray-500 tracking-widest">Data in Flexymax Not Ready</span>
+              <TabTable
+                loading={loadingNotReady}
+                rows={notReady}
+                empty={selectedDate ? "No pending data for this date" : "Select a date to view data"}
+                columns={[
+                  { key: "invoice_no", label: "Invoice" },
+                  { key: "grower", label: "Grower" },
+                  { key: "cr_amount", label: "Amount", className: "text-right font-semibold" },
+                ]}
+                actions={(row) => (
+                  <button onClick={() => markReady.mutate({ lccr_uq: row.unico, llready: true })} title="Mark Ready" className="text-green-600 hover:bg-green-100 p-1 rounded"><CheckCircle size={14} /></button>
+                )}
+              />
+            </div>
+          )}
+
+          {subTab === "ready" && (
+            <div className="flex flex-col h-full gap-2">
+              <span className="text-[11px] font-black uppercase text-gray-500 tracking-widest">Data Ready To QBooks</span>
+              <TabTable
+                loading={loadingReady}
+                rows={readyData}
+                empty="No data ready"
+                columns={[
+                  { key: "invoice_no", label: "Invoice" },
+                  { key: "grower", label: "Grower" },
+                  { key: "cr_amount", label: "Amount", className: "text-right font-semibold" },
+                ]}
+                actions={(row) => (
+                  <>
+                    <button onClick={() => sendToQb.mutate({ lccr_uq: row.unico, llready: true })} title="Send to QB" className="text-blue-600 hover:bg-blue-100 p-1 rounded"><Send size={14} /></button>
+                    <button onClick={() => markReady.mutate({ lccr_uq: row.unico, llready: false })} title="Unmark Ready" className="text-red-600 hover:bg-red-100 p-1 rounded"><XCircle size={14} /></button>
+                  </>
+                )}
+              />
+            </div>
+          )}
+
+          {subTab === "sent" && (
+            <div className="flex flex-col h-full gap-2">
+              <span className="text-[11px] font-black uppercase text-gray-500 tracking-widest">Data Sent To QBooks</span>
+              <TabTable
+                loading={loadingSent}
+                rows={sentData}
+                empty={selectedDate ? "No data sent for this date" : "Select a date"}
+                columns={[
+                  { key: "invoice_no", label: "Invoice" },
+                  { key: "grower", label: "Grower" },
+                  { key: "cr_amount", label: "Amount", className: "text-right font-semibold" },
+                ]}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
