@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -18,61 +19,79 @@ interface TopActionBarProps {
 }
 
 export function TopActionBar({ title, actions, disabled = false }: TopActionBarProps) {
-  const [open, setOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen]     = useState(false);
+  const [pos,  setPos]      = useState({ top: 0, right: 0 });
+  const buttonRef           = useRef<HTMLButtonElement>(null);
+  const dropdownRef         = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node) &&
+          buttonRef.current  && !buttonRef.current.contains(e.target as Node)) {
         setOpen(false);
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  const handleToggle = () => {
+    if (disabled) return;
+    if (!open && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    }
+    setOpen(v => !v);
+  };
+
+  const dropdown = open && mounted ? createPortal(
+    <div
+      ref={dropdownRef}
+      style={{ position: "fixed", top: pos.top, right: pos.right, zIndex: 9999 }}
+      className="w-56 bg-white border border-gray-200 shadow-xl rounded-lg py-1 text-[11px] font-medium"
+    >
+      {actions.map((action, i) => (
+        <button
+          key={i}
+          onClick={() => { action.onClick(); setOpen(false); }}
+          className={cn(
+            "w-full text-left px-4 py-2.5 hover:bg-gray-50 flex items-center gap-2 transition-colors",
+            action.colorClass || "text-green-600"
+          )}
+        >
+          {action.icon}
+          {action.label}
+        </button>
+      ))}
+    </div>,
+    document.body
+  ) : null;
 
   return (
-    <div className="h-8 flex items-stretch overflow-visible z-10 shrink-0">
-      {/* Title section - dark gray */}
-      <div className="bg-[#4b5563] text-white text-[11px] font-bold px-3 flex items-center shrink-0 w-1/2">
-        {title}
-      </div>
-      
-      {/* Action section - orange; grayed when user lacks write permission */}
-      <div className={cn("flex-1 flex justify-center items-center relative", disabled ? "bg-gray-300" : "bg-[#fb923c]")}>
+    <>
+      {/* Full-width dark header — matches project standard */}
+      <div className="h-9 bg-[#374151] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
+        <span className="text-white text-[11px] font-bold truncate">{title}</span>
         <button
-          onClick={() => !disabled && setOpen(!open)}
+          ref={buttonRef}
+          onClick={handleToggle}
           disabled={disabled}
           title={disabled ? "You do not have permission to perform actions." : undefined}
-          className="p-1 hover:bg-black/10 rounded transition-colors disabled:cursor-not-allowed"
+          className={cn(
+            "ml-3 px-2.5 py-1 rounded text-white flex items-center gap-1 shrink-0 transition-colors",
+            disabled
+              ? "bg-gray-500 cursor-not-allowed opacity-50"
+              : "bg-[#FB7506] hover:bg-orange-500"
+          )}
         >
-          <Menu size={16} className={disabled ? "text-gray-500" : "text-black"} />
+          <Menu size={14} />
         </button>
-
-        {open && (
-          <div 
-            ref={dropdownRef}
-            className="absolute top-full left-1/2 -translate-x-1/2 mt-1 w-64 bg-white border border-gray-200 shadow-lg rounded-md py-1 z-50 text-[11px] font-medium"
-          >
-            {actions.map((action, i) => (
-              <button
-                key={i}
-                onClick={() => {
-                  action.onClick();
-                  setOpen(false);
-                }}
-                className={cn(
-                  "w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2",
-                  action.colorClass || "text-green-600"
-                )}
-              >
-                {action.icon}
-                {action.label}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
-    </div>
+      {dropdown}
+    </>
   );
 }
