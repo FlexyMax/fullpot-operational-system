@@ -470,7 +470,7 @@ export default function SalesPage() {
                         {/* LEFT: SELECT YEAR / DATES (30% Width) */}
                         <div className="w-[30%] flex flex-col gap-2 min-h-0">
                             <div className="pos-grid-container flex flex-col flex-1 shadow-sm border-gray-300">
-                                <div className="pos-grid-header h-8 bg-[#374151]">
+                                <div className="pos-grid-header h-10 bg-[#374151]">
                                     <div className="flex items-center gap-2">
                                         <Calendar size={14} className="text-[#FB7506]" />
                                         <span className="font-black text-[11px] uppercase tracking-widest text-white">SELECT YEAR</span>
@@ -534,7 +534,7 @@ export default function SalesPage() {
 
                             {/* TOP: SALES BY CUSTOMER (40% Height) */}
                             <div className="flex-[0.4] pos-grid-container flex flex-col shadow-sm border-gray-300 min-h-0 overflow-hidden">
-                                <div className="pos-grid-header h-8 bg-[#374151]">
+                                <div className="pos-grid-header h-10 bg-[#374151]">
                                     <div className="flex items-center gap-2">
                                         <Users size={14} className="text-[#FB7506]" />
                                         <span className="font-black text-[11px] uppercase tracking-widest text-white">SALES BY CUSTOMER ({salesByRep.length})</span>
@@ -615,7 +615,7 @@ export default function SalesPage() {
 
                             {/* BOTTOM: ORDERS BY SALES REP (60% Height) */}
                             <div className="flex-[0.6] pos-grid-container flex flex-col shadow-sm border-gray-300 min-h-0 overflow-hidden">
-                                <div className="pos-grid-header h-8 bg-[#374151]">
+                                <div className="pos-grid-header h-10 bg-[#374151]">
                                     <div className="flex items-center gap-2">
                                         <Box size={14} className="text-[#FB7506]" />
                                         <span className="font-black text-[11px] uppercase tracking-widest text-white">ORDERS BY SALES REP. ({ordersList.length})</span>

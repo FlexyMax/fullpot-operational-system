@@ -450,7 +450,7 @@ export default function CustomersSetupPage() {
                         <>
                             {/* Ship-to grid */}
                             <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-0 flex flex-col">
-                                <div className="h-9 bg-[#374151] flex items-center justify-between px-3 shrink-0">
+                                <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
                                     <div className="flex items-center gap-2">
                                         <Truck size={13} className="text-[#FB7506]" />
                                         <span className="font-black text-[10px] uppercase tracking-widest text-white">Ship-to Addresses</span>
@@ -512,7 +512,7 @@ export default function CustomersSetupPage() {
 
                             {/* Carriers grid */}
                             <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-0 flex flex-col">
-                                <div className="h-9 bg-[#374151] flex items-center justify-between px-3 shrink-0">
+                                <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
                                     <div className="flex items-center gap-2">
                                         <Truck size={13} className="text-[#FB7506]" />
                                         <span className="font-black text-[10px] uppercase tracking-widest text-white">Carriers by Ship-to</span>
@@ -571,7 +571,7 @@ export default function CustomersSetupPage() {
                     {/* ── STATEMENT TAB ─────────────────────────────────────── */}
                     {activeTab === "statement" && (
                         <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 flex flex-col min-h-0">
-                            <div className="h-9 bg-[#374151] flex items-center justify-between px-3 shrink-0">
+                            <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
                                 <div className="flex items-center gap-2">
                                     <FileText size={13} className="text-[#FB7506]" />
                                     <span className="font-black text-[10px] uppercase tracking-widest text-white">Account Statement</span>
@@ -615,7 +615,7 @@ export default function CustomersSetupPage() {
                     {/* ── WEB USERS TAB ────────────────────────────────────── */}
                     {activeTab === "webusers" && (
                         <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 flex flex-col min-h-0">
-                            <div className="h-9 bg-[#374151] flex items-center justify-between px-3 shrink-0">
+                            <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
                                 <div className="flex items-center gap-2"><Users size={13} className="text-[#FB7506]" /><span className="font-black text-[10px] uppercase tracking-widest text-white">Web Users / Portal</span></div>
                                 <div className="flex items-center gap-1.5">
                                     <button onClick={() => { setWebUserForm({...EMPTY_WEBUSER}); setFormError(null); setWebUserModal({ mode:"add" }); }} disabled={!selCust || !perms.canCreate} className="flex items-center gap-1 bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase"><Plus size={9} /> Add</button>
@@ -661,7 +661,7 @@ export default function CustomersSetupPage() {
                     {/* ── MESSAGES TAB ─────────────────────────────────────── */}
                     {activeTab === "messages" && (
                         <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 flex flex-col min-h-0">
-                            <div className="h-9 bg-[#374151] flex items-center justify-between px-3 shrink-0">
+                            <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
                                 <div className="flex items-center gap-2"><MessageSquare size={13} className="text-[#FB7506]" /><span className="font-black text-[10px] uppercase tracking-widest text-white">Messages & Comments</span></div>
                                 <div className="flex items-center gap-1.5">
                                     <button onClick={() => { setMsgForm({ comments:"", deadline:"", user_to:"" }); setFormError(null); setMsgModal(true); }} disabled={!selCust || !perms.canCreate} className="flex items-center gap-1 bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase"><Plus size={9} /> Add</button>

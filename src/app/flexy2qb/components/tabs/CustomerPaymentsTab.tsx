@@ -103,7 +103,7 @@ export default function CustomerPaymentsTab() {
       {/* â”€â”€ LEFT: Date Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div className="w-[280px] flex flex-col gap-2 shrink-0">
         <div className="flex-1 bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex flex-col">
-          <div className="h-8 bg-[#374151] flex items-center justify-between px-3 shrink-0">
+          <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0">
             <div className="flex items-center gap-2">
               <Calendar size={13} className="text-[#FB7506]" />
               <span className="font-black text-[10px] uppercase tracking-widest text-white">Dates</span>

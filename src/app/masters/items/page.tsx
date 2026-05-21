@@ -39,7 +39,7 @@ export default function ItemsSetupPage() {
             </div>
 
             {/* Tab bar — below header */}
-            <div className="h-9 bg-gray-800 flex items-center px-2 gap-0.5 shrink-0 border-b border-black/20">
+            <div className="h-10 bg-[#374151] flex items-end px-2 gap-0.5 shrink-0">
                 {([1,2,3] as const).map(tab => (
                     <button key={tab} onClick={()=>setActiveTab(tab)}
                         className={cn("px-4 h-7 text-xs font-black uppercase tracking-wider rounded transition-all",

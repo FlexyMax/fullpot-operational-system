@@ -112,7 +112,7 @@ function DualListModal({ title, productDesc, productUq, availUrl, assignedUrl, o
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 sm:p-4">
             <div className="bg-white rounded-t-xl sm:rounded-xl shadow-2xl w-full sm:max-w-2xl flex flex-col h-[85vh] sm:h-[80vh]">
-                <div className="h-9 bg-[#374151] rounded-t-xl flex items-center justify-between px-4 shrink-0">
+                <div className="h-10 bg-[#374151] rounded-t-xl flex items-center justify-between px-4 shrink-0">
                     <div className="flex items-center gap-2">
                         <Shuffle size={13} className="text-[#FB7506]"/>
                         <span className="font-black text-[10px] uppercase tracking-widest text-white">{title}</span>
@@ -256,7 +256,7 @@ function BuyersQuotasModal({ productUq, productDesc, onClose }: { productUq: str
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 sm:p-4">
             <div className="bg-white rounded-t-xl sm:rounded-xl shadow-2xl w-full sm:max-w-3xl flex flex-col h-[85vh] sm:h-[80vh]">
-                <div className="h-9 bg-[#374151] rounded-t-xl flex items-center justify-between px-4 shrink-0">
+                <div className="h-10 bg-[#374151] rounded-t-xl flex items-center justify-between px-4 shrink-0">
                     <div className="flex items-center gap-2">
                         <Users size={13} className="text-[#FB7506]"/>
                         <span className="font-black text-[10px] uppercase tracking-widest text-white">Buyers Quotas — {productDesc}</span>
@@ -429,7 +429,7 @@ function POPricesModal({ onClose }: { onClose: () => void }) {
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 sm:p-4">
             <div className="bg-white rounded-t-xl sm:rounded-xl shadow-2xl w-full sm:max-w-3xl flex flex-col h-[85vh] sm:h-[80vh]">
-                <div className="h-9 bg-[#374151] rounded-t-xl flex items-center justify-between px-4 shrink-0">
+                <div className="h-10 bg-[#374151] rounded-t-xl flex items-center justify-between px-4 shrink-0">
                     <div className="flex items-center gap-2">
                         <ClipboardList size={13} className="text-[#FB7506]"/>
                         <span className="font-black text-[10px] uppercase tracking-widest text-white">PO Prices Setup</span>
@@ -589,7 +589,7 @@ function UpdateStockModal({ onClose, logAction }: { onClose: () => void; logActi
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 sm:p-4">
             <div className="bg-white rounded-t-xl sm:rounded-xl shadow-2xl w-full sm:max-w-3xl flex flex-col h-[85vh] sm:h-[80vh]">
-                <div className="h-9 bg-[#374151] rounded-t-xl flex items-center justify-between px-4 shrink-0">
+                <div className="h-10 bg-[#374151] rounded-t-xl flex items-center justify-between px-4 shrink-0">
                     <div className="flex items-center gap-2">
                         <ClipboardList size={13} className="text-[#FB7506]"/>
                         <span className="font-black text-[10px] uppercase tracking-widest text-white">Update UPC / Stocks</span>
@@ -677,7 +677,7 @@ function PreBookDateModal({ title, productDesc, showDeletePrior, showChangeCase,
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 sm:p-4">
             <div className="bg-white rounded-t-xl sm:rounded-xl shadow-2xl w-full sm:w-80 max-h-[85vh]">
-                <div className="h-9 bg-[#374151] rounded-t-xl flex items-center justify-between px-4">
+                <div className="h-10 bg-[#374151] rounded-t-xl flex items-center justify-between px-4">
                     <div className="flex items-center gap-2">
                         <Calendar size={13} className="text-[#FB7506]"/>
                         <span className="font-black text-[10px] uppercase tracking-widest text-white">{title}</span>
@@ -723,7 +723,7 @@ function ProductsModalTab2({ mode, form, setForm, lookups, onSave, onClose, savi
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 sm:p-4">
             <div className="bg-white rounded-t-xl sm:rounded-xl shadow-2xl w-full sm:max-w-2xl flex flex-col h-[85vh] sm:h-[80vh]">
-                <div className="h-9 bg-[#374151] rounded-t-xl flex items-center justify-between px-4 shrink-0">
+                <div className="h-10 bg-[#374151] rounded-t-xl flex items-center justify-between px-4 shrink-0">
                     <div className="flex items-center gap-2">
                         <Package size={13} className="text-[#FB7506]"/>
                         <span className="font-black text-[10px] uppercase tracking-widest text-white">
@@ -1116,7 +1116,7 @@ export default function Tab2() {
             {productModal?.mode === "delete" && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 sm:p-4">
                     <div className="bg-white rounded-t-xl sm:rounded-xl shadow-2xl w-full sm:w-80 max-h-[85vh]">
-                        <div className="h-9 bg-[#374151] rounded-t-xl flex items-center justify-between px-4">
+                        <div className="h-10 bg-[#374151] rounded-t-xl flex items-center justify-between px-4">
                             <span className="font-black text-[10px] uppercase tracking-widest text-white text-red-400">Delete Product</span>
                             <button onClick={()=>setProductModal(null)}><XCircle size={15} className="text-gray-400 hover:text-white"/></button>
                         </div>

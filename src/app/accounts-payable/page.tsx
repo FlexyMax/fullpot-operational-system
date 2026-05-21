@@ -330,7 +330,7 @@ export default function AccountsPayablePage() {
                 {/* ── LEFT: Date Panel (desktop only) ─────────────────────── */}
                 <div className="hidden lg:flex w-[280px] shrink-0 flex-col gap-2">
                     <div className="flex flex-col flex-1 bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-                        <div className="h-8 bg-[#374151] flex items-center justify-between px-3 shrink-0">
+                        <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
                             <div className="flex items-center gap-2">
                                 <Calendar size={13} className="text-[#FB7506]" />
                                 <span className="font-black text-[10px] uppercase tracking-widest text-white">Dates</span>
@@ -402,7 +402,7 @@ export default function AccountsPayablePage() {
 
                     {/* Invoice List */}
                     <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden min-h-[220px] max-h-[50vh] lg:max-h-none lg:h-[42%]">
-                        <div className="h-9 bg-[#374151] flex items-center justify-between px-3 shrink-0">
+                        <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
                             <div className="flex items-center gap-2">
                                 <FileText size={13} className="text-[#FB7506]" />
                                 <span className="font-black text-[10px] uppercase tracking-widest text-white">
@@ -502,7 +502,7 @@ export default function AccountsPayablePage() {
                     {/* Detail Tabs */}
                     <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-[300px] lg:min-h-0">
                         {/* Tab Bar */}
-                        <div className="h-9 bg-[#374151] flex items-end px-2 shrink-0 gap-0.5">
+                        <div className="h-10 bg-[#374151] flex items-end px-2 shrink-0 gap-0.5">
                             {([
                                 { id: "terms",    label: "Terms",            icon: BookOpen      },
                                 { id: "po",       label: "PO",               icon: ClipboardList },

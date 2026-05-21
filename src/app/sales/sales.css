@@ -9,8 +9,8 @@
     --pos-black: #000000;
 
     --pos-border-color: rgba(0, 0, 0, 0.05);
-    --pos-header-bg: #ffffff;
-    --pos-header-text: #6b7280;
+    --pos-header-bg: #374151;
+    --pos-header-text: #ffffff;
     --pos-row-hover: rgba(59, 130, 246, 0.05);
     --pos-row-selected: rgba(251, 117, 6, 0.1);
     --pos-row-alt-bg: rgba(0, 0, 0, 0.02);

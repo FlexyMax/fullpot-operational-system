@@ -1079,8 +1079,8 @@ export default function CustomerPaymentsPage() {
     const totalRow = { balance: (customers as any[]).reduce((s: number, c: any) => s + parseFloat(c.total_books_bal||0), 0) };
     const invTotals = { payments: (invoices as any[]).reduce((s: number, i: any) => s + parseFloat(i.in_ammount||0), 0), credits: (invoices as any[]).reduce((s: number, i: any) => s + parseFloat(i.cre_ammount||0), 0), debits: (invoices as any[]).reduce((s: number, i: any) => s + parseFloat(i.deb_ammount||0), 0), invBal: (invoices as any[]).reduce((s: number, i: any) => s + parseFloat(i.balance||0), 0), booksBal: selCustomer?.total_books_bal ?? 0 };
 
-    const TAB_COLORS: Record<string, string> = { customer:"text-gray-300 hover:text-white", invoices:"text-blue-300 hover:text-blue-100", payments:"text-red-300 hover:text-red-100", crdb:"text-green-300 hover:text-green-100", statement:"text-rose-300 hover:text-rose-100", corporate:"text-gray-300 hover:text-white" };
-    const TAB_ACTIVE: Record<string, string> = { customer:"bg-white text-[#FB7506]", invoices:"bg-blue-50 text-blue-700", payments:"bg-red-50 text-red-700", crdb:"bg-green-50 text-green-700", statement:"bg-rose-50 text-rose-700", corporate:"bg-gray-100 text-gray-800" };
+    const TAB_COLORS: Record<string, string> = { customer:"text-gray-400 hover:text-white hover:bg-white/10", invoices:"text-gray-400 hover:text-white hover:bg-white/10", payments:"text-gray-400 hover:text-white hover:bg-white/10", crdb:"text-gray-400 hover:text-white hover:bg-white/10", statement:"text-gray-400 hover:text-white hover:bg-white/10", corporate:"text-gray-400 hover:text-white hover:bg-white/10" };
+    const TAB_ACTIVE = "bg-[#f4f6f8] text-[#FB7506] border-b-2 border-[#FB7506]";
 
     if (status === "loading") return null;
 
@@ -1107,11 +1107,11 @@ export default function CustomerPaymentsPage() {
             </div>
 
             {/* Tab bar — scrollable on mobile */}
-            <div className="h-9 bg-gray-800 flex items-center px-2 gap-0.5 shrink-0 border-b border-black/20 overflow-x-auto scrollbar-none">
+            <div className="h-10 bg-[#374151] flex items-end px-2 gap-0.5 shrink-0 overflow-x-auto scrollbar-none">
                 {(["customer","invoices","payments","crdb","statement","corporate"] as const).map(tab => (
                     <button key={tab} onClick={()=>setActiveTab(tab)}
-                        className={cn("px-3 sm:px-4 h-7 text-[10px] font-black uppercase tracking-wider rounded transition-all whitespace-nowrap shrink-0",
-                            activeTab===tab ? TAB_ACTIVE[tab] : TAB_COLORS[tab])}>
+                        className={cn("px-3 sm:px-4 h-8 text-[10px] font-black uppercase tracking-wider rounded-t transition-all whitespace-nowrap shrink-0",
+                            activeTab===tab ? TAB_ACTIVE : TAB_COLORS[tab])}>
                         {tab==="customer"?"Customer":tab==="invoices"?"Invoices":tab==="payments"?"Payments":tab==="crdb"?"Cr / Db":tab==="statement"?"Statement":"Corporate"}
                     </button>
                 ))}

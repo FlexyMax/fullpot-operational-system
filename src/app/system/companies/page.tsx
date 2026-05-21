@@ -204,7 +204,7 @@ export default function CompaniesDefinitionPage() {
 
                 {/* ── Left: Company List ──────────────────────────────────── */}
                 <div className="w-56 shrink-0 flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-                    <div className="h-8 bg-[#374151] flex items-center justify-between px-3 shrink-0">
+                    <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
                         <div className="flex items-center gap-2">
                             <Building2 size={12} className="text-[#FB7506]" />
                             <span className="font-black text-[10px] uppercase tracking-widest text-white">Companies</span>
