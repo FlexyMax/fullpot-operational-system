@@ -2,17 +2,23 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { RefreshCcw, Calendar, CheckCircle, XCircle, Send, Download } from "lucide-react";
+import { RefreshCcw, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TabTable } from "../TabTable";
+import { TopActionBar } from "../TopActionBar";
 import { useFlexy2QBContext } from "../../context/Flexy2QBContext";
+import toast from "react-hot-toast";
 
 export default function Purchases2QBTab() {
   const qc = useQueryClient();
-  const { lcPack_uq, setLcPack_uq, llBillReady, setLlBillReady, refreshTrigger, triggerRefresh } = useFlexy2QBContext();
+  const { refreshTrigger, triggerRefresh } = useFlexy2QBContext();
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [subTab, setSubTab] = useState<"not-ready" | "ready" | "sent" | "tpo">("not-ready");
+  const [subTab, setSubTab] = useState<"not-ready" | "ready" | "sent">("not-ready");
+
+  const [selectedNotReadyIdx, setSelectedNotReadyIdx] = useState<number | undefined>();
+  const [selectedReadyIdx, setSelectedReadyIdx] = useState<number | undefined>();
+  const [selectedSentIdx, setSelectedSentIdx] = useState<number | undefined>();
 
   const { data: years = [] } = useQuery({
     queryKey: ["flexy2qb-purchases-years"],
@@ -72,15 +78,24 @@ export default function Purchases2QBTab() {
     enabled: !!selectedDate && subTab === "sent"
   });
 
-  const { data: tpoData = [], isFetching: loadingTpo } = useQuery({
+  // Fetch TPO data when on "ready" tab to allow downloading
+  const { data: tpoData = [] } = useQuery({
     queryKey: ["flexy2qb-purchases-tpo", refreshTrigger],
     queryFn: async () => {
       const r = await fetch("/api/flexy2qb/purchases/tpo", { method: "POST", body: "{}" });
       const json = await r.json();
       return json.data || [];
     },
-    enabled: subTab === "tpo"
+    enabled: subTab === "ready"
   });
+
+  const handleMutationResponse = (res: any) => {
+    if (res.error) toast.error(res.message || "An error occurred");
+    else {
+      toast.success(res.message || "Action successful");
+      triggerRefresh();
+    }
+  };
 
   const markReady = useMutation({
     mutationFn: async ({ lcpacking_box, lcawbcode, llready }: any) => {
@@ -90,7 +105,18 @@ export default function Purchases2QBTab() {
       });
       return r.json();
     },
-    onSuccess: () => triggerRefresh()
+    onSuccess: handleMutationResponse
+  });
+
+  const markReadyByDate = useMutation({
+    mutationFn: async ({ ldAwbDate, llready }: any) => {
+      const r = await fetch("/api/flexy2qb/purchases/update-ready-date", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ldAwbDate, llready })
+      });
+      return r.json();
+    },
+    onSuccess: handleMutationResponse
   });
 
   const markReadyInvoice = useMutation({
@@ -101,7 +127,7 @@ export default function Purchases2QBTab() {
       });
       return r.json();
     },
-    onSuccess: () => triggerRefresh()
+    onSuccess: handleMutationResponse
   });
 
   const sendToQb = useMutation({
@@ -112,13 +138,16 @@ export default function Purchases2QBTab() {
       });
       return r.json();
     },
-    onSuccess: () => triggerRefresh()
+    onSuccess: handleMutationResponse
   });
 
   const downloadCSV = () => {
-    if (!tpoData.length) return;
+    if (!tpoData.length) {
+      toast.error("No TPO data ready to download");
+      return;
+    }
     const headers = Object.keys(tpoData[0]);
-    const csv = [headers, ...tpoData.map((r: any) => headers.map(h => `"${String(r[h] || "").replace(/"/g, '""')}"`).join(','))].join('\n');
+    const csv = [headers, ...tpoData.map((r: any) => headers.map((h: string) => `"${String(r[h] || "").replace(/"/g, '""')}"`).join(','))].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = Object.assign(document.createElement('a'), { href: url, download: 'Bills2TPO.csv' });
@@ -162,7 +191,6 @@ export default function Purchases2QBTab() {
               </thead>
               <tbody>
                 {dates.map((d: any, i: number) => {
-                  // Standardize date field extraction based on exact DB returns
                   const dateStr = d.awbdate || d.awb_date;
                   const dateDisp = new Date(dateStr).toLocaleDateString('en-US');
                   const active = selectedDate === dateStr;
@@ -186,7 +214,6 @@ export default function Purchases2QBTab() {
             { id: "not-ready", label: "NOT READY" },
             { id: "ready", label: "READY TO QB" },
             { id: "sent", label: "SENT TO QB" },
-            { id: "tpo", label: "READY FOR TPO" },
           ].map(t => (
             <button
               key={t.id}
@@ -198,15 +225,29 @@ export default function Purchases2QBTab() {
           ))}
         </div>
 
-        <div className="flex-1 p-2 bg-[#f4f6f8] flex flex-col">
+        <div className="flex-1 bg-[#f4f6f8] flex flex-col p-2 min-h-0">
           {subTab === "not-ready" && (
-            <div className="flex flex-col h-full gap-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-black uppercase text-gray-500 tracking-widest">Data in Flexymax Not Ready To Transfer To QBooks</span>
-              </div>
+            <div className="flex flex-col h-full bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+              <TopActionBar 
+                title="Data in Flexymax Not Ready To Transfer To QBooks" 
+                actions={[
+                  { label: "Ready By Invoice", colorClass: "text-green-600", onClick: () => {
+                    if(selectedNotReadyIdx === undefined || !notReady[selectedNotReadyIdx]) return toast.error("Select a row first");
+                    const row = notReady[selectedNotReadyIdx];
+                    markReadyInvoice.mutate({ lcpacking_uq: row.pack_uq, llready: true });
+                  }},
+                  { label: "Ready By Date", colorClass: "text-green-600", onClick: () => {
+                    if(!selectedDate) return toast.error("Select a date first");
+                    markReadyByDate.mutate({ ldAwbDate: selectedDate, llready: true });
+                  }}
+                ]} 
+              />
               <TabTable
+                showToolbar
                 loading={loadingNotReady}
                 rows={notReady}
+                selectedIdx={selectedNotReadyIdx}
+                onSelectIdx={setSelectedNotReadyIdx}
                 empty={selectedDate ? "No pending data for this date" : "Select a date to view data"}
                 columns={[
                   { key: "awbcode", label: "AWB Code" },
@@ -215,22 +256,42 @@ export default function Purchases2QBTab() {
                   { key: "total_units", label: "Units", className: "text-right" },
                   { key: "total_cost", label: "Cost", className: "text-right font-semibold" },
                 ]}
-                actions={(row) => (
-                  <>
-                    <button onClick={() => markReady.mutate({ lcpacking_box: row.pack_uq, lcawbcode: row.awbcode, llready: true })} title="Mark Ready" className="text-green-600 hover:bg-green-100 p-1 rounded"><CheckCircle size={14} /></button>
-                    <button onClick={() => markReadyInvoice.mutate({ lcpacking_uq: row.pack_uq, llready: true })} title="Mark by Invoice" className="text-blue-600 hover:bg-blue-100 p-1 rounded"><Send size={14} /></button>
-                  </>
-                )}
               />
             </div>
           )}
 
           {subTab === "ready" && (
-            <div className="flex flex-col h-full gap-2">
-              <span className="text-[11px] font-black uppercase text-gray-500 tracking-widest">Data in Flexymax Ready To QBooks</span>
+            <div className="flex flex-col h-full bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+              <TopActionBar 
+                title="Data in Flexymax Ready To QBooks" 
+                actions={[
+                  { label: "Invoice Mark as Not Ready", colorClass: "text-red-500", onClick: () => {
+                    if(selectedReadyIdx === undefined || !readyData[selectedReadyIdx]) return toast.error("Select a row first");
+                    const row = readyData[selectedReadyIdx];
+                    markReady.mutate({ lcpacking_box: row.packing_uq, lcawbcode: row.awbcode, llready: false });
+                  }},
+                  { label: "Mark as Not Ready By Date", colorClass: "text-red-500", onClick: () => {
+                    if(!selectedDate) return toast.error("Select a date first");
+                    markReadyByDate.mutate({ ldAwbDate: selectedDate, llready: false });
+                  }},
+                  { label: "Sent By Invoice", colorClass: "text-green-600", onClick: () => {
+                    if(selectedReadyIdx === undefined || !readyData[selectedReadyIdx]) return toast.error("Select a row first");
+                    const row = readyData[selectedReadyIdx];
+                    sendToQb.mutate({ lcawbcode_aux: row.awbcode, llready: true, llByReadyByDate: false });
+                  }},
+                  { label: "Sent By Date", colorClass: "text-green-600", onClick: () => {
+                    if(!selectedDate) return toast.error("Select a date first");
+                    sendToQb.mutate({ lcawbcode_aux: null, llready: true, llByReadyByDate: true });
+                  }}
+                ]} 
+              />
               <TabTable
+                showToolbar
+                onDownload={downloadCSV}
                 loading={loadingReady}
                 rows={readyData}
+                selectedIdx={selectedReadyIdx}
+                onSelectIdx={setSelectedReadyIdx}
                 empty="No data ready"
                 columns={[
                   { key: "awbcode", label: "AWB Code" },
@@ -238,48 +299,38 @@ export default function Purchases2QBTab() {
                   { key: "Bill_No", label: "Bill No" },
                   { key: "Amount", label: "Amount", className: "text-right font-semibold" },
                 ]}
-                actions={(row) => (
-                  <>
-                    <button onClick={() => sendToQb.mutate({ lcawbcode_aux: row.awbcode, llready: true, llByReadyByDate: false })} title="Send to QB" className="text-blue-600 hover:bg-blue-100 p-1 rounded"><Send size={14} /></button>
-                    <button onClick={() => markReady.mutate({ lcpacking_box: row.packing_uq, lcawbcode: row.awbcode, llready: false })} title="Unmark Ready" className="text-red-600 hover:bg-red-100 p-1 rounded"><XCircle size={14} /></button>
-                  </>
-                )}
               />
             </div>
           )}
 
           {subTab === "sent" && (
-            <div className="flex flex-col h-full gap-2">
-              <span className="text-[11px] font-black uppercase text-gray-500 tracking-widest">Flexymax Data Sent To QBooks</span>
+            <div className="flex flex-col h-full bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+              <TopActionBar 
+                title="Flexymax Data Sent To QBooks" 
+                actions={[
+                  { label: "Mark as Not Sent", colorClass: "text-red-500", onClick: () => {
+                    if(selectedSentIdx === undefined || !sentData[selectedSentIdx]) return toast.error("Select a row first");
+                    const row = sentData[selectedSentIdx];
+                    sendToQb.mutate({ lcawbcode_aux: row.awbcode, llready: false, llByReadyByDate: false });
+                  }},
+                  { label: "Mark as Not Sent By Date", colorClass: "text-red-500", onClick: () => {
+                    if(!selectedDate) return toast.error("Select a date first");
+                    sendToQb.mutate({ lcawbcode_aux: null, llready: false, llByReadyByDate: true });
+                  }}
+                ]} 
+              />
               <TabTable
+                showToolbar
                 loading={loadingSent}
                 rows={sentData}
+                selectedIdx={selectedSentIdx}
+                onSelectIdx={setSelectedSentIdx}
                 empty={selectedDate ? "No data sent for this date" : "Select a date"}
                 columns={[
                   { key: "awbcode", label: "AWB Code" },
                   { key: "grower", label: "Grower" },
                   { key: "invoice_no", label: "Invoice" },
                   { key: "total_cost", label: "Cost", className: "text-right font-semibold" },
-                ]}
-              />
-            </div>
-          )}
-
-          {subTab === "tpo" && (
-            <div className="flex flex-col h-full gap-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-black uppercase text-gray-500 tracking-widest">Data Ready To Transaction PRO Online</span>
-                <button onClick={downloadCSV} className="flex items-center gap-1.5 bg-[#FB7506] text-white px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest"><Download size={12}/> CSV</button>
-              </div>
-              <TabTable
-                loading={loadingTpo}
-                rows={tpoData}
-                empty="No TPO data ready"
-                columns={[
-                  { key: "RefNumber", label: "Ref Number" },
-                  { key: "Vendor", label: "Vendor" },
-                  { key: "TxnDate", label: "Txn Date" },
-                  { key: "DueDate", label: "Due Date" },
                 ]}
               />
             </div>

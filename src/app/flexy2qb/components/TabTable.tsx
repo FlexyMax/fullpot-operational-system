@@ -18,11 +18,34 @@ interface TabTableProps {
   selectedIdx?: number;
   onSelectIdx?: (idx: number) => void;
   actions?: (row: any) => ReactNode;
+  showToolbar?: boolean;
+  onSearch?: (val: string) => void;
+  onDownload?: () => void;
 }
 
-export function TabTable({ loading, rows, empty, columns, selectedIdx, onSelectIdx, actions }: TabTableProps) {
+export function TabTable({ loading, rows, empty, columns, selectedIdx, onSelectIdx, actions, showToolbar, onSearch, onDownload }: TabTableProps) {
   return (
-    <div className="flex-1 overflow-auto bg-white border border-gray-200 rounded-lg">
+    <div className="flex-1 flex flex-col min-h-0 bg-white border border-gray-200 rounded-lg overflow-hidden">
+      {showToolbar && (
+        <div className="h-9 border-b border-gray-200 flex items-center px-2 gap-4 shrink-0 bg-white">
+          <div className="flex items-center gap-1 text-gray-400">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input 
+              type="text" 
+              placeholder="Search.." 
+              className="outline-none text-[11px] w-48 text-black placeholder-gray-400"
+              onChange={(e) => onSearch?.(e.target.value)}
+            />
+          </div>
+          {onDownload && (
+            <button onClick={onDownload} className="flex items-center gap-1 text-[11px] text-gray-500 hover:text-black">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              Download
+            </button>
+          )}
+        </div>
+      )}
+      <div className="flex-1 overflow-auto relative">
       <table className="min-w-full text-xs text-left">
         <thead className="bg-[#374151] border-b text-white font-bold sticky top-0 z-10">
           <tr>
@@ -70,6 +93,7 @@ export function TabTable({ loading, rows, empty, columns, selectedIdx, onSelectI
           )}
         </tbody>
       </table>
+    </div>
     </div>
   );
 }

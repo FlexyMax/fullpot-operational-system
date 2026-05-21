@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { RefreshCcw, Calendar, CheckCircle, XCircle, Send } from "lucide-react";
+import { RefreshCcw, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TabTable } from "../TabTable";
+import { TopActionBar } from "../TopActionBar";
 import { useFlexy2QBContext } from "../../context/Flexy2QBContext";
+import toast from "react-hot-toast";
 
 export default function PurchasesCreditsTab() {
   const qc = useQueryClient();
@@ -13,6 +15,10 @@ export default function PurchasesCreditsTab() {
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [subTab, setSubTab] = useState<"not-ready" | "ready" | "sent">("not-ready");
+
+  const [selectedNotReadyIdx, setSelectedNotReadyIdx] = useState<number | undefined>();
+  const [selectedReadyIdx, setSelectedReadyIdx] = useState<number | undefined>();
+  const [selectedSentIdx, setSelectedSentIdx] = useState<number | undefined>();
 
   const { data: years = [] } = useQuery({
     queryKey: ["flexy2qb-pcredits-years"],
@@ -72,6 +78,14 @@ export default function PurchasesCreditsTab() {
     enabled: !!selectedDate && subTab === "sent"
   });
 
+  const handleMutationResponse = (res: any) => {
+    if (res.error) toast.error(res.message || "An error occurred");
+    else {
+      toast.success(res.message || "Action successful");
+      triggerRefresh();
+    }
+  };
+
   const markReady = useMutation({
     mutationFn: async ({ lccr_uq, llready }: any) => {
       const r = await fetch("/api/flexy2qb/purchases-credits/update-ready", {
@@ -80,7 +94,7 @@ export default function PurchasesCreditsTab() {
       });
       return r.json();
     },
-    onSuccess: () => triggerRefresh()
+    onSuccess: handleMutationResponse
   });
 
   const sendToQb = useMutation({
@@ -91,7 +105,7 @@ export default function PurchasesCreditsTab() {
       });
       return r.json();
     },
-    onSuccess: () => triggerRefresh()
+    onSuccess: handleMutationResponse
   });
 
   return (
@@ -164,54 +178,80 @@ export default function PurchasesCreditsTab() {
           ))}
         </div>
 
-        <div className="flex-1 p-2 bg-[#f4f6f8] flex flex-col">
+        <div className="flex-1 bg-[#f4f6f8] flex flex-col p-2 min-h-0">
           {subTab === "not-ready" && (
-            <div className="flex flex-col h-full gap-2">
-              <span className="text-[11px] font-black uppercase text-gray-500 tracking-widest">Data in Flexymax Not Ready</span>
+            <div className="flex flex-col h-full bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+              <TopActionBar 
+                title="Data in Flexymax Not Ready" 
+                actions={[
+                  { label: "Mark Ready", colorClass: "text-green-600", onClick: () => {
+                    if(selectedNotReadyIdx === undefined || !notReady[selectedNotReadyIdx]) return toast.error("Select a row first");
+                    const row = notReady[selectedNotReadyIdx];
+                    markReady.mutate({ lccr_uq: row.unico, llready: true });
+                  }}
+                ]} 
+              />
               <TabTable
+                showToolbar
                 loading={loadingNotReady}
                 rows={notReady}
+                selectedIdx={selectedNotReadyIdx}
+                onSelectIdx={setSelectedNotReadyIdx}
                 empty={selectedDate ? "No pending data for this date" : "Select a date to view data"}
                 columns={[
                   { key: "invoice_no", label: "Invoice" },
                   { key: "grower", label: "Grower" },
                   { key: "cr_amount", label: "Amount", className: "text-right font-semibold" },
                 ]}
-                actions={(row) => (
-                  <button onClick={() => markReady.mutate({ lccr_uq: row.unico, llready: true })} title="Mark Ready" className="text-green-600 hover:bg-green-100 p-1 rounded"><CheckCircle size={14} /></button>
-                )}
               />
             </div>
           )}
 
           {subTab === "ready" && (
-            <div className="flex flex-col h-full gap-2">
-              <span className="text-[11px] font-black uppercase text-gray-500 tracking-widest">Data Ready To QBooks</span>
+            <div className="flex flex-col h-full bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+              <TopActionBar 
+                title="Data Ready To QBooks" 
+                actions={[
+                  { label: "Send to QB", colorClass: "text-blue-600", onClick: () => {
+                    if(selectedReadyIdx === undefined || !readyData[selectedReadyIdx]) return toast.error("Select a row first");
+                    const row = readyData[selectedReadyIdx];
+                    sendToQb.mutate({ lccr_uq: row.unico, llready: true });
+                  }},
+                  { label: "Unmark Ready", colorClass: "text-red-500", onClick: () => {
+                    if(selectedReadyIdx === undefined || !readyData[selectedReadyIdx]) return toast.error("Select a row first");
+                    const row = readyData[selectedReadyIdx];
+                    markReady.mutate({ lccr_uq: row.unico, llready: false });
+                  }}
+                ]} 
+              />
               <TabTable
+                showToolbar
                 loading={loadingReady}
                 rows={readyData}
+                selectedIdx={selectedReadyIdx}
+                onSelectIdx={setSelectedReadyIdx}
                 empty="No data ready"
                 columns={[
                   { key: "invoice_no", label: "Invoice" },
                   { key: "grower", label: "Grower" },
                   { key: "cr_amount", label: "Amount", className: "text-right font-semibold" },
                 ]}
-                actions={(row) => (
-                  <>
-                    <button onClick={() => sendToQb.mutate({ lccr_uq: row.unico, llready: true })} title="Send to QB" className="text-blue-600 hover:bg-blue-100 p-1 rounded"><Send size={14} /></button>
-                    <button onClick={() => markReady.mutate({ lccr_uq: row.unico, llready: false })} title="Unmark Ready" className="text-red-600 hover:bg-red-100 p-1 rounded"><XCircle size={14} /></button>
-                  </>
-                )}
               />
             </div>
           )}
 
           {subTab === "sent" && (
-            <div className="flex flex-col h-full gap-2">
-              <span className="text-[11px] font-black uppercase text-gray-500 tracking-widest">Data Sent To QBooks</span>
+            <div className="flex flex-col h-full bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+              <TopActionBar 
+                title="Data Sent To QBooks" 
+                actions={[]} 
+              />
               <TabTable
+                showToolbar
                 loading={loadingSent}
                 rows={sentData}
+                selectedIdx={selectedSentIdx}
+                onSelectIdx={setSelectedSentIdx}
                 empty={selectedDate ? "No data sent for this date" : "Select a date"}
                 columns={[
                   { key: "invoice_no", label: "Invoice" },

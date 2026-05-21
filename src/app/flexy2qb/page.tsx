@@ -33,9 +33,12 @@ const TABS = [
   { id: "customer-payments", label: "Customer Payments", icon: FileText },
 ] as const;
 
+import { Toaster } from "react-hot-toast";
+
 export default function Flexy2QBPageWrapper() {
   return (
     <Flexy2QBProvider>
+      <Toaster position="top-right" />
       <Flexy2QBPage />
     </Flexy2QBProvider>
   );
