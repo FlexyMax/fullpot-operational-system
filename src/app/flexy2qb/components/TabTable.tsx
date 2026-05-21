@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { Download, ChevronDown } from "lucide-react";
 import { ReactNode as RN } from "react";
@@ -51,6 +51,7 @@ export function TabTable({
 }: TabTableProps) {
   const [dlOpen,  setDlOpen]  = useState(false);
   const dlRef                  = useRef<HTMLDivElement>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     if (!dlOpen) return;
@@ -60,6 +61,35 @@ export function TabTable({
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
   }, [dlOpen]);
+
+  // Internal search filtering when parent doesn't provide onSearch
+  const filteredRows = useMemo(() => {
+    if (!searchTerm || onSearch) return rows;
+    const term = searchTerm.toLowerCase();
+    return rows.filter((row: any) =>
+      columns.some(col => String(row[col.key] ?? "").toLowerCase().includes(term))
+    );
+  }, [rows, searchTerm, onSearch, columns]);
+
+  const displayRows = onSearch ? rows : filteredRows;
+
+  // Default CSV download handler
+  const handleCsvDownload = () => {
+    if (!displayRows.length) return;
+    const headers = columns.map(c => c.label).join(",");
+    const lines = displayRows.map((r: any) =>
+      columns.map(c => {
+        const val = String(r[c.key] ?? "").replace(/"/g, String.fromCharCode(34, 34));
+        return `"${val}"`;
+      }).join(",")
+    );
+    const csv = [headers, ...lines].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = Object.assign(document.createElement("a"), { href: url, download: `${exportFilename}.csv` });
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
@@ -72,7 +102,11 @@ export function TabTable({
               type="text"
               placeholder="Search..."
               className="outline-none text-[11px] w-40 text-black placeholder-gray-400"
-              onChange={e => onSearch?.(e.target.value)}
+              value={searchTerm}
+              onChange={e => {
+                setSearchTerm(e.target.value);
+                onSearch?.(e.target.value);
+              }}
             />
           </div>
 
@@ -80,41 +114,39 @@ export function TabTable({
             {/* Record count */}
             {!loading && (
               <span className="text-[10px] text-gray-400 font-semibold whitespace-nowrap">
-                {rows.length} Record{rows.length !== 1 ? "s" : ""}
+                {displayRows.length} Record{displayRows.length !== 1 ? "s" : ""}
               </span>
             )}
 
             {/* Download dropdown */}
-            {onDownload && (
-              <div className="relative" ref={dlRef}>
-                <button
-                  onClick={() => setDlOpen(v => !v)}
-                  className="flex items-center gap-1.5 text-[11px] text-gray-600 hover:text-black font-semibold border border-gray-200 px-2.5 py-1 rounded hover:bg-gray-50 transition-colors"
-                >
-                  <Download size={12} />
-                  Download
-                  <ChevronDown size={10} />
-                </button>
-                {dlOpen && (
-                  <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-gray-200 shadow-lg rounded-lg py-1 z-50 text-[11px]">
-                    <button
-                      onClick={() => { onDownload(); setDlOpen(false); }}
-                      className="w-full text-left px-3 py-2 hover:bg-gray-50 font-medium text-gray-700 flex items-center gap-2"
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                      Download as CSV
-                    </button>
-                    <button
-                      onClick={() => { downloadExcel(rows, columns, exportFilename); setDlOpen(false); }}
-                      className="w-full text-left px-3 py-2 hover:bg-gray-50 font-medium text-gray-700 flex items-center gap-2"
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-                      Download as Excel
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
+            <div className="relative" ref={dlRef}>
+              <button
+                onClick={() => setDlOpen(v => !v)}
+                className="flex items-center gap-1.5 text-[11px] text-gray-600 hover:text-black font-semibold border border-gray-200 px-2.5 py-1 rounded hover:bg-gray-50 transition-colors"
+              >
+                <Download size={12} />
+                Download
+                <ChevronDown size={10} />
+              </button>
+              {dlOpen && (
+                <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-gray-200 shadow-lg rounded-lg py-1 z-50 text-[11px]">
+                  <button
+                    onClick={() => { (onDownload || handleCsvDownload)(); setDlOpen(false); }}
+                    className="w-full text-left px-3 py-2 hover:bg-gray-50 font-medium text-gray-700 flex items-center gap-2"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    Download as CSV
+                  </button>
+                  <button
+                    onClick={() => { downloadExcel(displayRows, columns, exportFilename); setDlOpen(false); }}
+                    className="w-full text-left px-3 py-2 hover:bg-gray-50 font-medium text-gray-700 flex items-center gap-2"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                    Download as Excel
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -134,10 +166,10 @@ export function TabTable({
           <tbody>
             {loading ? (
               <tr><td colSpan={columns.length + (actions ? 1 : 0)} className="p-8 text-center text-gray-400">Loading...</td></tr>
-            ) : rows.length === 0 ? (
+            ) : displayRows.length === 0 ? (
               <tr><td colSpan={columns.length + (actions ? 1 : 0)} className="p-8 text-center text-gray-400 italic">{empty}</td></tr>
             ) : (
-              rows.map((row, i) => {
+              displayRows.map((row, i) => {
                 const active = selectedIdx === i;
                 return (
                   <tr

@@ -163,7 +163,7 @@ export default function PurchasesOChargesTab() {
 
       {/* â”€â”€ RIGHT: Data Tabs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div className="flex-1 flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-        <div className="h-9 bg-[#374151] flex items-end px-2 shrink-0 gap-0.5">
+        <div className="h-10 bg-[#374151] flex items-end px-2 shrink-0 gap-0.5 rounded-t-lg">
           {[
             { id: "not-ready", label: "NOT READY" },
             { id: "ready", label: "READY TO QB" },

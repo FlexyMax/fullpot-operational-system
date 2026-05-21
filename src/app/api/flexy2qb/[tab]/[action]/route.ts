@@ -236,7 +236,19 @@ export async function POST(req: NextRequest, context: { params: Promise<{ tab: s
             return NextResponse.json({ success: false, error: result.recordset[0].message || "Database Error" });
         }
 
-        return NextResponse.json({ success: true, data: result.recordset, message: result.recordset?.[0]?.message });
+        // Normalize column names: replace spaces with underscores so frontend keys work
+        const normalizedData = (result.recordset || []).map((row: any) => {
+            const normalized: any = {};
+            for (const [key, value] of Object.entries(row)) {
+                const normalizedKey = key.replace(/\s+/g, "_");
+                normalized[normalizedKey] = value;
+                // Also expose a fully upper-cased alias for consistency
+                normalized[normalizedKey.toUpperCase()] = value;
+            }
+            return normalized;
+        });
+
+        return NextResponse.json({ success: true, data: normalizedData, message: result.recordset?.[0]?.message });
     } catch (error: any) {
         console.error("[flexy2qb api error]", error);
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });

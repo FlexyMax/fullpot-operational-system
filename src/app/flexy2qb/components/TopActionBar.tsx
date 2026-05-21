@@ -74,7 +74,7 @@ export function TopActionBar({ title, actions, disabled = false }: TopActionBarP
   return (
     <>
       {/* Full-width dark header — matches project standard */}
-      <div className="h-9 bg-[#374151] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
+      <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
         <span className="text-white text-[11px] font-bold truncate">{title}</span>
         <button
           ref={buttonRef}
@@ -82,7 +82,7 @@ export function TopActionBar({ title, actions, disabled = false }: TopActionBarP
           disabled={disabled}
           title={disabled ? "You do not have permission to perform actions." : undefined}
           className={cn(
-            "ml-3 px-2.5 py-1 rounded text-white flex items-center gap-1 shrink-0 transition-colors",
+            "ml-3 px-2.5 py-1 rounded-tr-lg text-white flex items-center gap-1 shrink-0 transition-colors",
             disabled
               ? "bg-gray-500 cursor-not-allowed opacity-50"
               : "bg-[#FB7506] hover:bg-orange-500"
