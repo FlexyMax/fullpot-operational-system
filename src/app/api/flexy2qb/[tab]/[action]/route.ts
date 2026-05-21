@@ -3,7 +3,7 @@ import { executeProcedure } from "@/lib/db";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
-export async function POST(req: NextRequest, { params }: { params: { tab: string; action: string } }) {
+export async function POST(req: NextRequest, context: { params: Promise<{ tab: string; action: string }> }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
@@ -11,6 +11,7 @@ export async function POST(req: NextRequest, { params }: { params: { tab: string
     }
 
     const body = await req.json();
+    const params = await context.params;
     const { tab, action } = params;
     let procName = "";
     let spParams: Record<string, any> = {};
