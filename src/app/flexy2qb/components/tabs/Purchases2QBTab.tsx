@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -7,11 +7,12 @@ import { cn } from "@/lib/utils";
 import { TabTable } from "../TabTable";
 import { TopActionBar } from "../TopActionBar";
 import { useFlexy2QBContext } from "../../context/Flexy2QBContext";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 
 export default function Purchases2QBTab() {
   const qc = useQueryClient();
   const { refreshTrigger, triggerRefresh } = useFlexy2QBContext();
+  const { canWrite } = useFlexy2QBContext();
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [subTab, setSubTab] = useState<"not-ready" | "ready" | "sent">("not-ready");
@@ -157,7 +158,7 @@ export default function Purchases2QBTab() {
 
   return (
     <div className="flex h-full gap-2">
-      {/* ── LEFT: Date Panel ─────────────────────── */}
+      {/* â”€â”€ LEFT: Date Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div className="w-[280px] flex flex-col gap-2 shrink-0">
         <div className="bg-white p-2 rounded-lg border border-gray-200 shadow-sm flex items-center justify-between">
           <span className="text-[10px] font-black uppercase text-gray-500 tracking-widest">Year</span>
@@ -207,7 +208,7 @@ export default function Purchases2QBTab() {
         </div>
       </div>
 
-      {/* ── RIGHT: Data Tabs ─────────────────────── */}
+      {/* â”€â”€ RIGHT: Data Tabs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div className="flex-1 flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
         <div className="h-9 bg-[#374151] flex items-end px-2 shrink-0 gap-0.5">
           {[
@@ -228,7 +229,7 @@ export default function Purchases2QBTab() {
         <div className="flex-1 bg-[#f4f6f8] flex flex-col p-2 min-h-0">
           {subTab === "not-ready" && (
             <div className="flex flex-col h-full bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-              <TopActionBar 
+              <TopActionBar disabled={!canWrite} 
                 title="Data in Flexymax Not Ready To Transfer To QBooks" 
                 actions={[
                   { label: "Ready By Invoice", colorClass: "text-green-600", onClick: () => {
@@ -262,7 +263,7 @@ export default function Purchases2QBTab() {
 
           {subTab === "ready" && (
             <div className="flex flex-col h-full bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-              <TopActionBar 
+              <TopActionBar disabled={!canWrite} 
                 title="Data in Flexymax Ready To QBooks" 
                 actions={[
                   { label: "Invoice Mark as Not Ready", colorClass: "text-red-500", onClick: () => {
@@ -305,7 +306,7 @@ export default function Purchases2QBTab() {
 
           {subTab === "sent" && (
             <div className="flex flex-col h-full bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-              <TopActionBar 
+              <TopActionBar disabled={!canWrite} 
                 title="Flexymax Data Sent To QBooks" 
                 actions={[
                   { label: "Mark as Not Sent", colorClass: "text-red-500", onClick: () => {
@@ -340,3 +341,5 @@ export default function Purchases2QBTab() {
     </div>
   );
 }
+
+

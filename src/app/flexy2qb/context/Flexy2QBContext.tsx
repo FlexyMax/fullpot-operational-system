@@ -51,6 +51,10 @@ interface Flexy2QBState {
   llPaymentSentByDate: boolean;
   setLlPaymentSentByDate: (val: boolean) => void;
 
+  // Permission gate — set by page.tsx once perms load
+  canWrite: boolean;
+  setCanWrite: (val: boolean) => void;
+
   // Trigger for refreshing tables after actions
   refreshTrigger: number;
   triggerRefresh: () => void;
@@ -83,6 +87,7 @@ export function Flexy2QBProvider({ children }: { children: ReactNode }) {
   const [llPaymentReady, setLlPaymentReady] = useState(false);
   const [llPaymentSentByDate, setLlPaymentSentByDate] = useState(false);
 
+  const [canWrite,      setCanWrite]      = useState(true); // fail open; page.tsx sets real value
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const triggerRefresh = React.useCallback(() => {
@@ -110,6 +115,7 @@ export function Flexy2QBProvider({ children }: { children: ReactNode }) {
         lcPaymentID, setLcPaymentID,
         llPaymentReady, setLlPaymentReady,
         llPaymentSentByDate, setLlPaymentSentByDate,
+        canWrite, setCanWrite,
         refreshTrigger, triggerRefresh,
       }}
     >

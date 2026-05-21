@@ -14,9 +14,10 @@ interface ActionItem {
 interface TopActionBarProps {
   title: string;
   actions: ActionItem[];
+  disabled?: boolean;
 }
 
-export function TopActionBar({ title, actions }: TopActionBarProps) {
+export function TopActionBar({ title, actions, disabled = false }: TopActionBarProps) {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -37,13 +38,15 @@ export function TopActionBar({ title, actions }: TopActionBarProps) {
         {title}
       </div>
       
-      {/* Action section - orange */}
-      <div className="bg-[#fb923c] flex-1 flex justify-center items-center relative">
-        <button 
-          onClick={() => setOpen(!open)}
-          className="p-1 hover:bg-black/10 rounded transition-colors"
+      {/* Action section - orange; grayed when user lacks write permission */}
+      <div className={cn("flex-1 flex justify-center items-center relative", disabled ? "bg-gray-300" : "bg-[#fb923c]")}>
+        <button
+          onClick={() => !disabled && setOpen(!open)}
+          disabled={disabled}
+          title={disabled ? "You do not have permission to perform actions." : undefined}
+          className="p-1 hover:bg-black/10 rounded transition-colors disabled:cursor-not-allowed"
         >
-          <Menu size={16} className="text-black" />
+          <Menu size={16} className={disabled ? "text-gray-500" : "text-black"} />
         </button>
 
         {open && (
