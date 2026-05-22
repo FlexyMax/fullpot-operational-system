@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, ReactNode, InputHTMLAttributes } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { LogOut, Save, RefreshCcw } from "lucide-react";
 import { toast } from "sonner";
@@ -111,7 +111,7 @@ function calcQC(form: QCForm, lot: any) {
 }
 
 // ── Input styled like the original ───────────────────────────────────────────
-function Field({ label, children, required }: { label: string; children: React.ReactNode; required?: boolean }) {
+function Field({ label, children, required }: { label: string; children: ReactNode; required?: boolean }) {
     return (
         <div className="flex flex-col gap-1">
             <span className="text-sm text-gray-500">{label}{required && " *"}</span>
@@ -120,7 +120,7 @@ function Field({ label, children, required }: { label: string; children: React.R
     );
 }
 
-function Input({ ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
+function Input({ ...props }: InputHTMLAttributes<HTMLInputElement>) {
     return <input {...props} className={`w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-green-400 focus:ring-1 focus:ring-green-300 ${props.readOnly || props.disabled ? "bg-gray-100 text-gray-500" : "bg-white"} ${props.className || ""}`}/>;
 }
 
