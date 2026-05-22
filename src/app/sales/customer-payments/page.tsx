@@ -1121,19 +1121,6 @@ export default function CustomerPaymentsPage() {
             {/* ── TAB 1: CUSTOMER ───────────────────────────────────────────── */}
             {activeTab === "customer" && (
                 <div className="flex flex-col flex-1 overflow-hidden p-1.5 gap-1.5">
-                    {/* Toolbar */}
-                    <div className="bg-gray-100 border border-gray-200 rounded-lg px-2 py-1.5 flex flex-wrap gap-1 shrink-0 overflow-x-auto items-center">
-                        <GridMenu items={[
-                            { label: "Update", icon: Pencil, color: "orange", onClick: ()=>{ if(!selCustomer){toast.error("Select a customer.");return;} if(!perms.canEdit){toast.error(PERMISSION_MSGS.edit);return;} setCustEditModal(true); }, disabled: !selCustomer||!perms.canEdit },
-                            { label: "Invoice Search", icon: Search, color: "gray", onClick: ()=>setInvSearchModal(true) },
-                            { label: "Hold No Sales", icon: AlertCircle, color: "amber", onClick: ()=>toastConfirm("Put on hold customers with no sales?", async()=>{ const r=await fetch("/api/customer-payments/hold-no-sales",{method:"POST"}); const d=await r.json(); d.error?toast.error(d.error):toast.success("Done."); }, "Hold") },
-                            { label: "Print All", icon: Users, color: "orange", onClick: ()=>toastConfirm("Print statements for all customers?", async()=>{ setPrintAllProgress("Loading..."); try{const d=await cpFetch("/api/customer-payments/reports/all-statements");toast.success(`${d.records?.length??0} statements generated.`);setPrintAllProgress(null);}catch(e:any){toast.error((e as any).message);setPrintAllProgress(null);} }, "Print All"), disabled: !perms.canReport },
-                            { label: "By Salesman", icon: Search, color: "gray", onClick: ()=>setSalesmanModal(true), disabled: !perms.canReport },
-                        ]} />
-                        <select value={stmtDestination} onChange={e=>setStmtDestination(parseInt(e.target.value))} className="bg-white border border-gray-300 text-gray-700 text-[10px] font-bold outline-none rounded px-2 py-1 h-7">
-                            <option value={1}>PRINT</option><option value={2}>EMAIL</option><option value={3}>FAX</option>
-                        </select>
-                    </div>
                     {/* Search + grid */}
                     <div className="flex flex-col flex-1 bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
                         <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
@@ -1142,7 +1129,19 @@ export default function CustomerPaymentsPage() {
                                 <span className="fos-grid-header-text">Customers</span>
                                 {(loadingCust||fetchingMoreCust) && <RefreshCcw size={11} className="text-gray-400 animate-spin"/>}
                             </div>
-                            <AuditLogModal recordId={selCustomer?.unico} disabled={!selCustomer}/>
+                            <div className="flex items-center">
+                                <AuditLogModal recordId={selCustomer?.unico} disabled={!selCustomer}/>
+                                <select value={stmtDestination} onChange={e=>setStmtDestination(parseInt(e.target.value))} className="bg-white border-none text-gray-700 text-[10px] font-bold outline-none rounded px-2 py-1 h-7 mr-1">
+                                    <option value={1}>PRINT</option><option value={2}>EMAIL</option><option value={3}>FAX</option>
+                                </select>
+                                <GridMenu items={[
+                                    { label: "Update", icon: Pencil, color: "orange", onClick: ()=>{ if(!selCustomer){toast.error("Select a customer.");return;} if(!perms.canEdit){toast.error(PERMISSION_MSGS.edit);return;} setCustEditModal(true); }, disabled: !selCustomer||!perms.canEdit },
+                                    { label: "Invoice Search", icon: Search, color: "gray", onClick: ()=>setInvSearchModal(true) },
+                                    { label: "Hold No Sales", icon: AlertCircle, color: "amber", onClick: ()=>toastConfirm("Put on hold customers with no sales?", async()=>{ const r=await fetch("/api/customer-payments/hold-no-sales",{method:"POST"}); const d=await r.json(); d.error?toast.error(d.error):toast.success("Done."); }, "Hold") },
+                                    { label: "Print All", icon: Users, color: "orange", onClick: ()=>toastConfirm("Print statements for all customers?", async()=>{ setPrintAllProgress("Loading..."); try{const d=await cpFetch("/api/customer-payments/reports/all-statements");toast.success(`${d.records?.length??0} statements generated.`);setPrintAllProgress(null);}catch(e:any){toast.error((e as any).message);setPrintAllProgress(null);} }, "Print All"), disabled: !perms.canReport },
+                                    { label: "By Salesman", icon: Search, color: "gray", onClick: ()=>setSalesmanModal(true), disabled: !perms.canReport },
+                                ]} />
+                            </div>
                         </div>
                         <div className="p-1.5 border-b border-gray-100 shrink-0">
                             <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
