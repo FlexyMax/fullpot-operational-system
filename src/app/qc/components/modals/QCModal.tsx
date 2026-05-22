@@ -5,7 +5,13 @@ import { useQuery } from "@tanstack/react-query";
 import { LogOut, Save, RefreshCcw } from "lucide-react";
 import { toast } from "sonner";
 
-const today = () => new Date().toISOString().split("T")[0];
+const today  = () => new Date().toISOString().split("T")[0];
+// mssql returns date columns as JS Date objects — convert safely to "YYYY-MM-DD"
+const toDateStr = (v: any): string => {
+    if (!v) return "";
+    if (v instanceof Date) return v.toISOString().split("T")[0];
+    return String(v).split("T")[0];
+};
 
 const qcPost = (url: string, body: any) =>
     fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
@@ -66,7 +72,7 @@ function blankForm(): QCForm {
 function fromCredit(_lot: any, c: any): QCForm {
     return {
         reasonUq:         c.reason_uq        ?? "",
-        crDate:           c.cr_date?.split("T")[0] ?? today(),
+        crDate:           toDateStr(c.cr_date) || today(),
         crUnitsBox:       Number(c.cr_units_box)   || 0,
         crTotalUnits:     Number(c.cr_units)        || 0,
         crBoxes:          Number(c.cr_boxes)        || 0,
