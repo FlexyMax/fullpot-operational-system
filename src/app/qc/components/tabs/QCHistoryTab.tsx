@@ -99,6 +99,13 @@ export default function QCHistoryTab({ onEditQC }: Props) {
         select:   (d: any) => d.data ?? [],
     });
 
+    // Auto-select first history row when date changes
+    useEffect(() => {
+        const list = historyRows as any[];
+        setSelRow(list.length > 0 ? list[0] : null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selDate?.crdate, (historyRows as any[]).length]);
+
     const totalDatePages = Math.max(1, Math.ceil((dateRows as any[]).length / DATE_PAGE));
     const pagedDates     = (dateRows as any[]).slice((datePage - 1) * DATE_PAGE, datePage * DATE_PAGE);
 

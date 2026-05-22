@@ -109,7 +109,7 @@ export default function QualityCreditsTab({ onAddQC, onEditQC }: Props) {
     const totPages = Math.max(1, Math.ceil(total / PAGE));
     const rows     = allRows.slice((page - 1) * PAGE, page * PAGE);
 
-    // Credits by lot
+    // Credits by lot — auto-select first row when data arrives
     const { data: creditRows = [], isFetching: loadingCredits } = useQuery({
         queryKey: ["qc-credits-by-box", selRow?.unico, refreshTrigger],
         queryFn:  () => qcPost("/api/qc/credits/by-box", { pkboxUq: selRow.unico }),
@@ -117,6 +117,18 @@ export default function QualityCreditsTab({ onAddQC, onEditQC }: Props) {
         staleTime: 0,
         select:   (d: any) => d.data ?? [],
     });
+
+    // Auto-select first credit whenever the credit list changes for a new lot
+    useEffect(() => {
+        const list = creditRows as any[];
+        if (list.length > 0) {
+            setSelCredit(list[0]);
+            setLcQCID(list[0].unico);
+        } else {
+            setSelCredit(null);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selRow?.unico, (creditRows as any[]).length]);
 
     const deleteCredit = useMutation({
         mutationFn: (unico: string) => qcPost("/api/qc/credits/delete", { unico }),
@@ -241,17 +253,34 @@ export default function QualityCreditsTab({ onAddQC, onEditQC }: Props) {
                 <div className="overflow-auto flex-1">
                     <table className="min-w-full text-xs text-left">
                         <thead className="bg-white border-b sticky top-0 z-10 fos-grid-thead text-gray-700">
-                            <tr>{["QC Date","QC Boxes","QC Amount","Reason","Notes","QC Units","Apply Vendor","Apply Freight","Apply Labor","Apply Replace"].map(h => (
+                            <tr>{["","QC Date","QC Boxes","QC Amount","Reason","Notes","QC Units","Apply Vendor","Apply Freight","Apply Labor","Apply Replace"].map(h => (
                                 <th key={h} className="p-2 border-r border-gray-100 last:border-r-0 whitespace-nowrap font-bold">{h}</th>
                             ))}</tr>
                         </thead>
                         <tbody className="fos-grid-tbody divide-y divide-gray-100">
                             {!selRow && <tr><td colSpan={10} className="p-6 text-center text-gray-400">Select a lot from the grid above.</td></tr>}
                             {selRow && loadingCredits && <tr><td colSpan={10} className="p-4 text-center text-gray-400">Loading...</td></tr>}
-                            {selRow && !loadingCredits && (creditRows as any[]).length === 0 && <tr><td colSpan={10} className="p-4 text-center text-gray-400">No QC credits for this lot.</td></tr>}
+                            {selRow && !loadingCredits && (creditRows as any[]).length === 0 && <tr><td colSpan={11} className="p-4 text-center text-gray-400">No QC credits for this lot.</td></tr>}
                             {(creditRows as any[]).map((row: any) => (
                                 <tr key={row.unico} onClick={() => { setSelCredit(row); setLcQCID(row.unico); }}
                                     className={cn("cursor-pointer transition-colors", selCredit?.unico === row.unico ? "!bg-blue-50 ring-1 ring-inset ring-blue-300" : "hover:bg-gray-50")}>
+                                    {/* Inline Edit / Delete buttons */}
+                                    <td className="p-1" onClick={e => e.stopPropagation()}>
+                                        <div className="flex gap-1">
+                                            {canEdit && (
+                                                <button onClick={() => { setSelCredit(row); setLcQCID(row.unico); onEditQC?.(selRow, row); }}
+                                                    className="text-[#FB7506] hover:text-orange-700" title="Edit QC Credit">
+                                                    <Pencil size={12}/>
+                                                </button>
+                                            )}
+                                            {canDelete && (
+                                                <button onClick={() => toastConfirm("Delete this QC credit?", () => deleteCredit.mutate(row.unico))}
+                                                    className="text-red-500 hover:text-red-700" title="Delete QC Credit">
+                                                    <Trash2 size={12}/>
+                                                </button>
+                                            )}
+                                        </div>
+                                    </td>
                                     <td className="p-2 whitespace-nowrap">{fmtDate(row.cr_date)}</td>
                                     <td className="p-2 text-right">{colorNum(row.cr_boxes, "text-orange-500")}</td>
                                     <td className="p-2 text-right font-bold text-orange-500">{fmtUSD(row.cr_amount)}</td>
