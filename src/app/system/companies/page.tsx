@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useRef } from "react";
 import { useSession } from "next-auth/react";
@@ -11,13 +11,13 @@ import {
     Trash2, Menu
 } from "lucide-react";
 import { GridMenu } from "@/components/GridMenu";
-import { GridMenu } from "@/components/GridMenu";
+
 import { cn } from "@/lib/utils";
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { AuditLogModal } from "@/components/AuditLogModal";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const t   = (v: any) => String(v ?? "").trim();
 const sF  = async (url: string) => { const r = await fetch(url); const j = await r.json(); if (!r.ok) throw new Error(j?.error || `HTTP ${r.status}`); return j; };
 
@@ -30,10 +30,10 @@ const EMPTY = {
 
 type Mode = "view" | "add" | "edit";
 
-// ─── GridMenu (Appsmith style) ────────────────────────────────────────────────
+// â”€â”€â”€ GridMenu (Appsmith style) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Main Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function CompaniesDefinitionPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
@@ -53,7 +53,7 @@ export default function CompaniesDefinitionPage() {
 
     useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
 
-    // ── Queries ───────────────────────────────────────────────────────────────
+    // â”€â”€ Queries â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const { data: companies = [], isFetching: loadingList } = useQuery({
         queryKey: ["sys-companies-list"],
         queryFn:  () => sF("/api/system/companies"),
@@ -95,14 +95,14 @@ export default function CompaniesDefinitionPage() {
         } catch {}
     };
 
-    // ── Navigation ────────────────────────────────────────────────────────────
+    // â”€â”€ Navigation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const list = companies as any[];
     const goFirst = () => loadCompany(0);
     const goPrev  = () => loadCompany(Math.max(0, currentIdx - 1));
     const goNext  = () => loadCompany(Math.min(list.length - 1, currentIdx + 1));
     const goLast  = () => loadCompany(list.length - 1);
 
-    // ── Validation ────────────────────────────────────────────────────────────
+    // â”€â”€ Validation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const validate = () => {
         if (!form.nombre.trim())    return "Company name is empty.";
         if (!form.basedatos.trim()) return "Data Base Company is empty.";
@@ -111,7 +111,7 @@ export default function CompaniesDefinitionPage() {
         return null;
     };
 
-    // ── Save ──────────────────────────────────────────────────────────────────
+    // â”€â”€ Save â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleSave = async () => {
         const err = validate(); if (err) { setFormError(err); return; }
         setSaving(true); setFormError(null);
@@ -168,7 +168,7 @@ export default function CompaniesDefinitionPage() {
             {/* Main layout */}
             <div className="flex flex-1 overflow-hidden gap-2 p-2">
 
-                {/* ── Left: Company List ──────────────────────────────────── */}
+                {/* â”€â”€ Left: Company List â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
                 <div className="w-56 shrink-0 flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
                     <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
                         <div className="flex items-center gap-2">
@@ -190,7 +190,7 @@ export default function CompaniesDefinitionPage() {
                     </div>
                 </div>
 
-                {/* ── Right: Form ─────────────────────────────────────────── */}
+                {/* â”€â”€ Right: Form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
                 <div className="flex-1 flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden min-w-0">
 
                     {/* Form header bar */}
@@ -239,7 +239,7 @@ export default function CompaniesDefinitionPage() {
                             <GridMenu items={[
                                 { label: "Add Company",   icon: Plus,   color: "green", onClick: () => { setForm({...EMPTY}); setLogoPreview(null); setLogoFile(null); setMode("add"); setFormError(null); }, disabled: !perms.canCreate },
                                 { label: "Edit Company",  icon: Pencil, color: "blue",  onClick: () => { if (list[currentIdx]) setMode("edit"); }, disabled: !selectedUnico || isEditing || !perms.canEdit },
-                                { label: "Delete",        icon: Trash2, color: "gray",  onClick: () => setFormError("Instruction isn't enabled. / Instrucción no disponible."), disabled: true },
+                                { label: "Delete",        icon: Trash2, color: "gray",  onClick: () => setFormError("Instruction isn't enabled. / InstrucciÃ³n no disponible."), disabled: true },
                             ]} />
                         </div>
                     </div>
@@ -255,11 +255,11 @@ export default function CompaniesDefinitionPage() {
                             <F label="R.U.C." value={form.ruc} readOnly={!isEditing}
                                 onChange={v => setForm((p:any) => ({...p, ruc:v}))} />
 
-                            {/* Company Name — spans 2 */}
+                            {/* Company Name â€” spans 2 */}
                             <F label="Company *" value={form.nombre} readOnly={!isEditing}
                                 onChange={v => setForm((p:any) => ({...p, nombre:v}))} span2 />
 
-                            {/* Address — spans full */}
+                            {/* Address â€” spans full */}
                             <div className="col-span-2 sm:col-span-3 lg:col-span-4 flex flex-col gap-0.5">
                                 <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Address</label>
                                 <textarea value={form.direccion} readOnly={!isEditing} rows={2}
@@ -284,7 +284,7 @@ export default function CompaniesDefinitionPage() {
                                     <input value={form.basedatos} readOnly={!isEditing}
                                         onChange={e => setForm((p:any)=>({...p,basedatos:e.target.value}))}
                                         className={cn("fos-input text-xs py-1 flex-1 min-w-0", !isEditing && "bg-gray-50 text-gray-600")} />
-                                    <button disabled title="Not available in web version" className="px-2 py-1 bg-gray-100 border border-gray-200 rounded text-[9px] text-gray-400 cursor-not-allowed">…</button>
+                                    <button disabled title="Not available in web version" className="px-2 py-1 bg-gray-100 border border-gray-200 rounded text-[9px] text-gray-400 cursor-not-allowed">â€¦</button>
                                 </div>
                             </div>
 
@@ -297,7 +297,7 @@ export default function CompaniesDefinitionPage() {
                                     <input value={form.servidor} readOnly={!isEditing}
                                         onChange={e => setForm((p:any)=>({...p,servidor:e.target.value}))}
                                         className={cn("fos-input text-xs py-1 flex-1 min-w-0", !isEditing && "bg-gray-50 text-gray-600")} />
-                                    <button disabled title="Not available in web version" className="px-2 py-1 bg-gray-100 border border-gray-200 rounded text-[9px] text-gray-400 cursor-not-allowed">…</button>
+                                    <button disabled title="Not available in web version" className="px-2 py-1 bg-gray-100 border border-gray-200 rounded text-[9px] text-gray-400 cursor-not-allowed">â€¦</button>
                                 </div>
                             </div>
 
@@ -357,7 +357,7 @@ export default function CompaniesDefinitionPage() {
     );
 }
 
-// ─── Field helper ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Field helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function F({ label, value, onChange, readOnly, span2 }: {
     label: string; value: string; onChange?: (v: string) => void;
     readOnly?: boolean; span2?: boolean;
@@ -371,3 +371,4 @@ function F({ label, value, onChange, readOnly, span2 }: {
         </div>
     );
 }
+

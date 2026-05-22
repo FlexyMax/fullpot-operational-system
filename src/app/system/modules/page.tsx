@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useMemo, useRef } from "react";
 import { useSession } from "next-auth/react";
@@ -10,13 +10,13 @@ import {
     Check, AlertCircle, ChevronRight, Search, XCircle, Menu
 } from "lucide-react";
 import { GridMenu } from "@/components/GridMenu";
-import { GridMenu } from "@/components/GridMenu";
+
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { AuditLogModal } from "@/components/AuditLogModal";
 import { cn } from "@/lib/utils";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const CLASSES   = ["Empresas", "Sistema", "Otros"];
 const t         = (v: any) => String(v ?? "").trim();
 const sysFetch  = async (url: string) => { const r = await fetch(url); const j = await r.json(); if (!r.ok) throw new Error(j?.error || `HTTP ${r.status}`); return j; };
@@ -31,7 +31,7 @@ const EMPTY_REPORT: ReportForm = { unico: "", panta_uq: "", nombre: "", titulo: 
 
 
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Main Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function ModuleScreenSetupPage() {
     const { data: session, status } = useSession();
     const router  = useRouter();
@@ -64,12 +64,12 @@ export default function ModuleScreenSetupPage() {
 
     useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
 
-    // ── Queries ───────────────────────────────────────────────────────────────
+    // â”€â”€ Queries â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const { data: modules = [], isFetching: loadingMods } = useQuery({ queryKey: ["sys-mods"], queryFn: () => sysFetch("/api/system/modules") });
     const { data: screens = [], isFetching: loadingScr, refetch: refetchScr } = useQuery({ queryKey: ["sys-scr", selModUnico], queryFn: () => sysFetch(`/api/system/modules/${selModUnico}/screens`), enabled: !!selModUnico, retry: false });
     const { data: reports = [], isFetching: loadingRpt, refetch: refetchRpt } = useQuery({ queryKey: ["sys-rpt", selScrUnico], queryFn: () => sysFetch(`/api/system/screens/${selScrUnico}/reports`), enabled: !!selScrUnico && !!screenModal, retry: false });
 
-    // ── Module selection ──────────────────────────────────────────────────────
+    // â”€â”€ Module selection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const selectModule = (m: any) => {
         if (modFormModal) return;
         setSelModUnico(m.unico);
@@ -88,7 +88,7 @@ export default function ModuleScreenSetupPage() {
         else setSelScrUnico(null);
     }, [screens]);
 
-    // ── Module CRUD ───────────────────────────────────────────────────────────
+    // â”€â”€ Module CRUD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const validateMod = () => {
         if (!modForm.nombre.trim()) return "Module name is required.";
         if (!modForm.clase.trim())  return "Class is required.";
@@ -130,7 +130,7 @@ export default function ModuleScreenSetupPage() {
         finally { setSaving(false); }
     };
 
-    // ── Screen CRUD ───────────────────────────────────────────────────────────
+    // â”€â”€ Screen CRUD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const validateScreen = () => {
         if (!screenForm.nombre?.trim()) return "Screen title is required.";
         if (!selModUnico) return "Module is required.";
@@ -171,7 +171,7 @@ export default function ModuleScreenSetupPage() {
         finally { setSavingScreen(false); }
     };
 
-    // ── Report CRUD ───────────────────────────────────────────────────────────
+    // â”€â”€ Report CRUD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const saveReport = async () => {
         if (!reportForm.nombre.trim()) { setReportError("Report name is required."); return; }
         setSavingReport(true); setReportError(null);
@@ -202,7 +202,7 @@ export default function ModuleScreenSetupPage() {
         finally { setSavingReport(false); }
     };
 
-    // ── Export ────────────────────────────────────────────────────────────────
+    // â”€â”€ Export â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const exportAll = async () => {
         const data = await sysFetch("/api/system/modules/export");
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
@@ -286,7 +286,7 @@ export default function ModuleScreenSetupPage() {
             {/* Main two-panel layout */}
             <div className="flex flex-col lg:flex-row flex-1 gap-2 p-2 overflow-y-auto lg:overflow-hidden">
 
-                {/* ── LEFT: Module List ─────────────────────────────────────── */}
+                {/* â”€â”€ LEFT: Module List â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
                 <div className="hidden lg:flex w-[240px] shrink-0 flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
                     <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 border-b border-black/10 shrink-0 rounded-t-lg">
                         <div className="flex items-center gap-2">
@@ -325,7 +325,7 @@ export default function ModuleScreenSetupPage() {
                     </div>
                 </div>
 
-                {/* ── RIGHT: Form + Screens ─────────────────────────────────── */}
+                {/* â”€â”€ RIGHT: Form + Screens â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
                 <div className="flex-1 flex flex-col gap-2 min-w-0 lg:overflow-hidden">
 
                     {/* Module Form */}
@@ -400,7 +400,7 @@ export default function ModuleScreenSetupPage() {
                             <div className="flex items-center gap-2">
                                 <Monitor size={16} className="text-[#FB7506]" />
                                 <span className="fos-grid-header-text">
-                                    Screens {selMod ? `— ${t(selMod.nombre)}` : ""}
+                                    Screens {selMod ? `â€” ${t(selMod.nombre)}` : ""}
                                 </span>
                                 <AuditLogModal recordId={selScrUnico} disabled={!selScrUnico} />
                                 {loadingScr && <RefreshCcw size={16} className="text-gray-400 animate-spin" />}
@@ -448,7 +448,7 @@ export default function ModuleScreenSetupPage() {
                                                     <td className="p-2 border-l border-gray-100 text-gray-400 truncate max-w-[80px]">{t(s.image)}</td>
                                                     <td className="p-2 border-l border-gray-100 text-center">{s.orden}</td>
                                                     <td className="p-2 border-l border-gray-100 text-center">
-                                                        {s.menu ? <Check size={12} className="text-green-500 mx-auto" /> : <span className="text-gray-300">—</span>}
+                                                        {s.menu ? <Check size={12} className="text-green-500 mx-auto" /> : <span className="text-gray-300">â€”</span>}
                                                     </td>
                                                 </tr>
                                             );
@@ -518,7 +518,7 @@ export default function ModuleScreenSetupPage() {
                 </div>
             )}
 
-            {/* ── Module Form Modal ─────────────────────────────────────── */}
+            {/* â”€â”€ Module Form Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             {modFormModal && (
                 <ModuleFormModal
                     mode={modFormModal.mode}
@@ -531,7 +531,7 @@ export default function ModuleScreenSetupPage() {
                 />
             )}
 
-            {/* ── Screen Modal ────────────────────────────────────────────── */}
+            {/* â”€â”€ Screen Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             {screenModal && (
                 <ScreenFormModal
                     mode={screenModal.mode} form={screenForm} setForm={setScreenForm}
@@ -546,14 +546,14 @@ export default function ModuleScreenSetupPage() {
                 />
             )}
 
-            {/* ── Report Modal ─────────────────────────────────────────────── */}
+            {/* â”€â”€ Report Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             {reportModal && (
                 <ReportFormModal mode={reportModal.mode} form={reportForm} setForm={setReportForm}
                     error={reportError} saving={savingReport}
                     onSave={saveReport} onClose={() => { setReportModal(null); setReportError(null); }} />
             )}
 
-            {/* ── Confirm dialogs ──────────────────────────────────────────── */}
+            {/* â”€â”€ Confirm dialogs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             {deleteModDlg && <ConfirmDelete title="Delete Module" msg={`Delete module "${t(modForm.nombre)}"? All screens must be removed first.`} onConfirm={deleteMod} onCancel={() => setDeleteModDlg(false)} saving={saving} error={modError} />}
             {deleteScrDlg && <ConfirmDelete title="Remove Screen" msg={`Remove screen "${t(screenForm.nombre)}"? All reports must be removed first.`} onConfirm={deleteScreen} onCancel={() => { setDeleteScrDlg(false); setScreenError(null); }} saving={savingScreen} error={screenError} />}
             {deleteRptDlg && <ConfirmDelete title="Delete Report" msg={`Delete report "${t(reportForm.nombre)}"?`} onConfirm={deleteReport} onCancel={() => { setDeleteRptDlg(false); setReportError(null); }} saving={savingReport} error={reportError} />}
@@ -561,7 +561,7 @@ export default function ModuleScreenSetupPage() {
     );
 }
 
-// ─── Module Form Modal ────────────────────────────────────────────────────────
+// â”€â”€â”€ Module Form Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function ModuleFormModal({ mode, form, setForm, onSave, onClose, saving, error }: any) {
     if (!mode) return null;
     return (
@@ -595,7 +595,7 @@ function ModuleFormModal({ mode, form, setForm, onSave, onClose, saving, error }
                         <div className="flex flex-col gap-0.5">
                             <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Class</label>
                             <select value={form.clase} onChange={e => setForm((p: any) => ({...p, clase: e.target.value}))} className="fos-input h-10 text-sm">
-                                <option value="">—</option>
+                                <option value="">â€”</option>
                                 {CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
                             </select>
                         </div>
@@ -636,7 +636,7 @@ function ModuleFormModal({ mode, form, setForm, onSave, onClose, saving, error }
     );
 }
 
-// ─── Screen Form Modal ────────────────────────────────────────────────────────
+// â”€â”€â”€ Screen Form Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function ScreenFormModal({ mode, form, setForm, error, saving, modName, reports, loadingRpt, onSave, onClose, onAddReport, onEditReport, onDeleteReport }: any) {
     const [selRpt, setSelRpt] = useState<string | null>(null);
     const hasWebForm = form.web_form.trim();
@@ -675,7 +675,7 @@ function ScreenFormModal({ mode, form, setForm, error, saving, modName, reports,
                             <input type="number" value={form.orden} onChange={e => setForm((p: any) => ({...p, orden: e.target.value}))} className="fos-input h-10 text-sm" />
                         </div>
                         <div className="flex flex-col gap-0.5 col-span-2">
-                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Route (Web) {hasWebForm && <span className="text-blue-500 normal-case font-normal ml-1">← web form detected, VFP fields optional</span>}</label>
+                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Route (Web) {hasWebForm && <span className="text-blue-500 normal-case font-normal ml-1">â† web form detected, VFP fields optional</span>}</label>
                             <input value={form.web_form} onChange={e => setForm((p: any) => ({...p, web_form: e.target.value}))} className="fos-input h-10 text-sm" placeholder="/system/users  or  customercare/page.aspx" />
                         </div>
                         <div className="flex flex-col gap-0.5">
@@ -735,9 +735,9 @@ function ScreenFormModal({ mode, form, setForm, error, saving, modName, reports,
                                                     className={cn("border-b cursor-pointer transition-colors", selRpt===r.unico ? "!bg-blue-100" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50")}>
                                                     <td className="p-1.5 border-r border-gray-100 font-medium">{t(r.nombre)}</td>
                                                     <td className="p-1.5 border-r border-gray-100 text-gray-500 truncate max-w-[120px]">{t(r.titulo)}</td>
-                                                    <td className="p-1.5 border-r border-gray-100 text-center">{r.actual ? <Check size={10} className="text-green-500 mx-auto" /> : "—"}</td>
-                                                    <td className="p-1.5 border-r border-gray-100 text-center">{(r.fecha_desde||r.fecha_hasta) ? <Check size={10} className="text-blue-500 mx-auto" /> : "—"}</td>
-                                                    <td className="p-1.5 border-r border-gray-100 text-center">{r.exportar ? <Check size={10} className="text-orange-500 mx-auto" /> : "—"}</td>
+                                                    <td className="p-1.5 border-r border-gray-100 text-center">{r.actual ? <Check size={10} className="text-green-500 mx-auto" /> : "â€”"}</td>
+                                                    <td className="p-1.5 border-r border-gray-100 text-center">{(r.fecha_desde||r.fecha_hasta) ? <Check size={10} className="text-blue-500 mx-auto" /> : "â€”"}</td>
+                                                    <td className="p-1.5 border-r border-gray-100 text-center">{r.exportar ? <Check size={10} className="text-orange-500 mx-auto" /> : "â€”"}</td>
                                                     <td className="p-1.5 text-gray-400 truncate max-w-[120px]">{t(r.descripcion)}</td>
                                                 </tr>
                                             ))}
@@ -761,7 +761,7 @@ function ScreenFormModal({ mode, form, setForm, error, saving, modName, reports,
     );
 }
 
-// ─── Report Form Modal ────────────────────────────────────────────────────────
+// â”€â”€â”€ Report Form Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function ReportFormModal({ mode, form, setForm, error, saving, onSave, onClose }: any) {
     const BOOL_FIELDS: Array<{ key: string; label: string }> = [
         { key: "fecha_desde", label: "Date From" }, { key: "fecha_hasta", label: "Date To" },
@@ -816,7 +816,7 @@ function ReportFormModal({ mode, form, setForm, error, saving, onSave, onClose }
     );
 }
 
-// ─── Confirm Delete Dialog ────────────────────────────────────────────────────
+// â”€â”€â”€ Confirm Delete Dialog â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function ConfirmDelete({ title, msg, onConfirm, onCancel, saving, error }: any) {
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -841,3 +841,4 @@ function ConfirmDelete({ title, msg, onConfirm, onCancel, saving, error }: any) 
         </div>
     );
 }
+

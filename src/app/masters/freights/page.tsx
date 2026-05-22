@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
@@ -10,7 +10,7 @@ import {
     XCircle, Search, ChevronLeft, Menu
 } from "lucide-react";
 import { GridMenu } from "@/components/GridMenu";
-import { GridMenu } from "@/components/GridMenu";
+
 import { cn } from "@/lib/utils";
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
@@ -18,11 +18,11 @@ import { AuditLogModal } from "@/components/AuditLogModal";
 import { EntityListModal } from "@/components/EntityListModal";
 import { EntityFormModal } from "@/components/EntityFormModal";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const t       = (v: any) => String(v ?? "").trim();
 const ff      = async (url: string) => { const r = await fetch(url); const j = await r.json(); if (!r.ok) throw new Error(j?.error || `HTTP ${r.status}`); return j; };
 
-// ─── Empty forms ──────────────────────────────────────────────────────────────
+// â”€â”€â”€ Empty forms â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const EMPTY_WH   = { wp_name:"", cargo:false, send_xml:false, charge:false, address:"", city:"", state:"", zipcode:"", country:"", phone:"", fax:"", email:"", grower_uq:"", handling_kg:0, send_to_whouse:false };
 const EMPTY_FR   = { wphysical_uq:"", season_uq:"", city_uq:"", freight:0, freight_kg:0 };
 const EMPTY_HA   = { wphysical_uq:"", season_uq:"", handling:0 };
@@ -31,7 +31,7 @@ const EMPTY_SE   = { season:"", sh_season:"", startdate:"", enddate:"", activeda
 const EMPTY_CI   = { country_iso:"", city:"", buyer_email:"" };
 const EMPTY_AL   = { cod_linea:"", airline:"", address:"", city:"", country:"", phone:"", fax:"", email:"", contact:"" };
 
-// ─── Shared mini-components ───────────────────────────────────────────────────
+// â”€â”€â”€ Shared mini-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function GridHeader({ icon: Icon, title, loading, children, recordId, onRefresh }: any) {
     return (
         <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 border-b border-black/10 shrink-0">
@@ -110,7 +110,7 @@ function MiniTable({ cols, rows, selUnico, onSelect, onDblClick, empty }: any) {
     );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Main Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function FreightsSetupPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
@@ -166,7 +166,7 @@ export default function FreightsSetupPage() {
 
     useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
 
-    // ── Queries ───────────────────────────────────────────────────────────────
+    // â”€â”€ Queries â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const { data: warehouses = [], isFetching: loadingWh }  = useQuery({ queryKey: ["fr-wh"],       queryFn: () => ff("/api/freights/warehouses") });
     const { data: freights   = [], isFetching: loadingFr, refetch: refetchFr }  = useQuery({ queryKey: ["fr-fr", selWh?.unico], queryFn: () => ff(`/api/freights/rates?warehouse=${selWh.unico}`),    enabled: !!selWh?.unico, retry: false });
     const { data: handling   = [], isFetching: loadingHa, refetch: refetchHa }  = useQuery({ queryKey: ["fr-ha", selWh?.unico], queryFn: () => ff(`/api/freights/handling?warehouse=${selWh.unico}`), enabled: !!selWh?.unico, retry: false });
@@ -183,7 +183,7 @@ export default function FreightsSetupPage() {
     const cities  = (lookups?.cities  || []) as any[];
     const growers = (lookups?.growers || []) as any[];
 
-    // ── Warehouse CRUD ────────────────────────────────────────────────────────
+    // â”€â”€ Warehouse CRUD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const saveWh = async () => {
         if (!whForm.wp_name.trim()) { setError("Warehouse Name is required."); return; }
         setSaving(true); setError(null);
@@ -208,7 +208,7 @@ export default function FreightsSetupPage() {
         finally { setSaving(false); }
     };
 
-    // ── Freight CRUD ──────────────────────────────────────────────────────────
+    // â”€â”€ Freight CRUD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const saveFr = async () => {
         if (!frForm.season_uq) { setError("Season is required."); return; }
         if (!frForm.city_uq)   { setError("City is required.");   return; }
@@ -235,7 +235,7 @@ export default function FreightsSetupPage() {
         finally { setSaving(false); }
     };
 
-    // ── Handling CRUD ─────────────────────────────────────────────────────────
+    // â”€â”€ Handling CRUD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const saveHa = async () => {
         if (!haForm.season_uq) { setError("Season is required."); return; }
         setSaving(true); setError(null);
@@ -260,7 +260,7 @@ export default function FreightsSetupPage() {
         finally { setSaving(false); }
     };
 
-    // ── ATPDA CRUD ────────────────────────────────────────────────────────────
+    // â”€â”€ ATPDA CRUD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const saveAt = async () => {
         if (!atForm.season_uq) { setError("Season is required."); return; }
         if (!atForm.city_uq)   { setError("City is required.");   return; }
@@ -286,7 +286,7 @@ export default function FreightsSetupPage() {
         finally { setSaving(false); }
     };
 
-    // ── Copy Freights ─────────────────────────────────────────────────────────
+    // â”€â”€ Copy Freights â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const [copySourceSeason, setCopySourceSeason] = useState("");
     const [copyTargetSeason, setCopyTargetSeason] = useState("");
     const doCopy = async () => {
@@ -302,7 +302,7 @@ export default function FreightsSetupPage() {
         finally { setSaving(false); }
     };
 
-    // ── Update AWBs ───────────────────────────────────────────────────────────
+    // â”€â”€ Update AWBs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const updateAwbs = async () => {
         if (!selFr) { setError("Select a freight rate first."); return; }
         if (!confirm("Are you sure you want to update AWB Freight Rates?")) return;
@@ -315,7 +315,7 @@ export default function FreightsSetupPage() {
         finally { setSaving(false); }
     };
 
-    // ── Cities CRUD ─────────────────────────────────────────────────────────────
+    // â”€â”€ Cities CRUD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const loadCities = useCallback(async () => {
         try {
             const d = await ff("/api/freights/cities?search=%");
@@ -354,7 +354,7 @@ export default function FreightsSetupPage() {
         finally { setCiSaving(false); }
     };
 
-    // ── Airlines CRUD ───────────────────────────────────────────────────────────
+    // â”€â”€ Airlines CRUD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const loadAirlines = useCallback(async () => {
         try {
             const d = await ff("/api/freights/airlines?search=%");
@@ -393,7 +393,7 @@ export default function FreightsSetupPage() {
         finally { setAlSaving(false); }
     };
 
-    // ── Seasons CRUD ────────────────────────────────────────────────────────────
+    // â”€â”€ Seasons CRUD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const saveSeason = async () => {
         if (!seForm.season.trim()) { setSeError("Season Name is required."); return; }
         setSeSaving(true); setSeError(null);
@@ -454,7 +454,7 @@ export default function FreightsSetupPage() {
                 </div>
             )}
 
-            {/* Main layout — responsive: stacked on mobile, 2-row grid on lg+ */}
+            {/* Main layout â€” responsive: stacked on mobile, 2-row grid on lg+ */}
             <div className="flex-1 p-2 pr-3 overflow-y-auto lg:overflow-hidden">
                 <div className="flex flex-col lg:grid lg:grid-rows-2 gap-2 lg:h-full">
 
@@ -494,7 +494,7 @@ export default function FreightsSetupPage() {
                                 { key:"startdate2", label:"From",   className:"text-center" },
                                 { key:"enddate2",   label:"To",     className:"text-center" },
                                 { key:"active",     label:"Active", className:"text-center",
-                                  render: (v: any) => v==="Yes"||v===true ? <Check size={10} className="text-green-500 mx-auto" /> : "—" },
+                                  render: (v: any) => v==="Yes"||v===true ? <Check size={10} className="text-green-500 mx-auto" /> : "â€”" },
                             ]}
                             rows={seasons}
                             selUnico={selSe?.unico}
@@ -509,7 +509,7 @@ export default function FreightsSetupPage() {
 
                     {/* Freights */}
                     <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden">
-                        <GridHeader icon={Cloud} title={`Freights${selWh ? ` — ${t(selWh.wp_name)}` : ""}`} loading={loadingFr} recordId={selFr?.unico} onRefresh={() => refetchFr()}>
+                        <GridHeader icon={Cloud} title={`Freights${selWh ? ` â€” ${t(selWh.wp_name)}` : ""}`} loading={loadingFr} recordId={selFr?.unico} onRefresh={() => refetchFr()}>
                             <GridMenu items={[
                                 { label:"Add Rate",      icon:Plus,   color:"green", onClick:() => { if(!selWh){setError("Select a warehouse first.");return;} setFrForm({...EMPTY_FR}); setError(null); setFrModal({mode:"add"}); }, disabled:!selWh || !perms.canCreate },
                                 { label:"Edit Selected", icon:Pencil, color:"blue",  onClick:async() => { if(!selFr) return; try { const d = await ff(`/api/freights/rates/${selFr.unico}`); setFrForm({ wphysical_uq: d.wphysical_uq||selWh?.unico, season_uq: d.season_uq||"", city_uq: d.city_uq||"", freight: d.freight||0, freight_kg: d.freight_kg||0 }); setError(null); setFrModal({mode:"edit"}); } catch(e:any){setError(e.message);} }, disabled:!selFr || !perms.canEdit },
@@ -584,7 +584,7 @@ export default function FreightsSetupPage() {
                 <span className="text-[#FB7506]">FOS Masters V.2.0.1</span>
             </div>
 
-            {/* ── Warehouse Modal ────────────────────────────────────────── */}
+            {/* â”€â”€ Warehouse Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             {whModal && (
                 <SimpleModal title={`${whModal.mode === "add" ? "Add" : whModal.mode === "edit" ? "Edit" : "Delete"} Warehouse`} icon={Building2}
                     onSave={saveWh} onClose={() => { setWhModal(null); setError(null); }} saving={saving} error={error}
@@ -604,7 +604,7 @@ export default function FreightsSetupPage() {
                             <div className="flex flex-col gap-0.5">
                                 <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Grower</label>
                                 <select value={whForm.grower_uq} onChange={e=>setWhForm((p:any)=>({...p,grower_uq:e.target.value}))} className="fos-input h-10 text-sm">
-                                    <option value="">— None —</option>
+                                    <option value="">â€” None â€”</option>
                                     {growers.map((g:any) => <option key={g.unico} value={g.unico}>{t(g.grower)}</option>)}
                                 </select>
                             </div>
@@ -621,7 +621,7 @@ export default function FreightsSetupPage() {
                 </SimpleModal>
             )}
 
-            {/* ── Freight Modal ──────────────────────────────────────────── */}
+            {/* â”€â”€ Freight Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             {frModal && (
                 <SimpleModal title={`${frModal.mode === "add" ? "Add" : frModal.mode === "edit" ? "Edit" : "Delete"} Freight Rate`} icon={Zap}
                     onSave={saveFr} onClose={() => { setFrModal(null); setError(null); }} saving={saving} error={error}
@@ -630,12 +630,12 @@ export default function FreightsSetupPage() {
                         <div className="grid grid-cols-2 gap-3 text-xs">
                             <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Season *</label>
                                 <select value={frForm.season_uq} onChange={e=>setFrForm((p:any)=>({...p,season_uq:e.target.value}))} className="fos-input h-10 text-sm">
-                                    <option value="">— Select —</option>
+                                    <option value="">â€” Select â€”</option>
                                     {seasons.map((s:any)=><option key={s.unico} value={s.unico}>{t(s.season)}</option>)}
                                 </select></div>
                             <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">City *</label>
                                 <select value={frForm.city_uq} onChange={e=>setFrForm((p:any)=>({...p,city_uq:e.target.value}))} className="fos-input h-10 text-sm">
-                                    <option value="">— Select —</option>
+                                    <option value="">â€” Select â€”</option>
                                     {cities.map((c:any)=><option key={c.unico} value={c.unico}>{t(c.city)}</option>)}
                                 </select></div>
                             <FField label="Freight FB (4 dec)" value={String(frForm.freight)} type="number" onChange={(v:string)=>setFrForm((p:any)=>({...p,freight:parseFloat(v)||0}))} />
@@ -645,7 +645,7 @@ export default function FreightsSetupPage() {
                 </SimpleModal>
             )}
 
-            {/* ── Handling Modal ─────────────────────────────────────────── */}
+            {/* â”€â”€ Handling Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             {haModal && (
                 <SimpleModal title={`${haModal.mode === "add" ? "Add" : haModal.mode === "edit" ? "Edit" : "Delete"} Handling Rate`} icon={Cloud}
                     onSave={saveHa} onClose={() => { setHaModal(null); setError(null); }} saving={saving} error={error}
@@ -654,7 +654,7 @@ export default function FreightsSetupPage() {
                         <div className="grid grid-cols-2 gap-3 text-xs">
                             <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Season *</label>
                                 <select value={haForm.season_uq} onChange={e=>setHaForm((p:any)=>({...p,season_uq:e.target.value}))} className="fos-input h-10 text-sm">
-                                    <option value="">— Select —</option>
+                                    <option value="">â€” Select â€”</option>
                                     {seasons.map((s:any)=><option key={s.unico} value={s.unico}>{t(s.season)}</option>)}
                                 </select></div>
                             <FField label="Handling FB (4 dec)" value={String(haForm.handling)} type="number" onChange={(v:string)=>setHaForm((p:any)=>({...p,handling:parseFloat(v)||0}))} />
@@ -663,7 +663,7 @@ export default function FreightsSetupPage() {
                 </SimpleModal>
             )}
 
-            {/* ── ATPDA Modal ────────────────────────────────────────────── */}
+            {/* â”€â”€ ATPDA Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             {atModal && (
                 <SimpleModal title={`${atModal.mode === "add" ? "Add" : atModal.mode === "edit" ? "Edit" : "Delete"} ATPDA Tariff`} icon={MapPin}
                     onSave={saveAt} onClose={() => { setAtModal(null); setError(null); }} saving={saving} error={error}
@@ -672,12 +672,12 @@ export default function FreightsSetupPage() {
                         <div className="grid grid-cols-2 gap-3 text-xs">
                             <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Season *</label>
                                 <select value={atForm.season_uq} onChange={e=>setAtForm((p:any)=>({...p,season_uq:e.target.value}))} className="fos-input h-10 text-sm">
-                                    <option value="">— Select —</option>
+                                    <option value="">â€” Select â€”</option>
                                     {seasons.map((s:any)=><option key={s.unico} value={s.unico}>{t(s.season)}</option>)}
                                 </select></div>
                             <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">City *</label>
                                 <select value={atForm.city_uq} onChange={e=>setAtForm((p:any)=>({...p,city_uq:e.target.value}))} className="fos-input h-10 text-sm">
-                                    <option value="">— Select —</option>
+                                    <option value="">â€” Select â€”</option>
                                     {cities.map((c:any)=><option key={c.unico} value={c.unico}>{t(c.city)}</option>)}
                                 </select></div>
                             <FField label="Tariff %" value={String(atForm.tariff)} type="number" onChange={(v:string)=>setAtForm((p:any)=>({...p,tariff:parseFloat(v)||0}))} />
@@ -686,25 +686,25 @@ export default function FreightsSetupPage() {
                 </SimpleModal>
             )}
 
-            {/* ── Copy Freights Modal ────────────────────────────────────── */}
+            {/* â”€â”€ Copy Freights Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             {copyModal && (
-                <SimpleModal title="Copy Freights — Select Source Season" icon={Copy} onSave={doCopy} onClose={()=>{setCopyModal(false);setError(null);setCopySourceSeason("");setCopyTargetSeason("");}} saving={saving} error={error}>
+                <SimpleModal title="Copy Freights â€” Select Source Season" icon={Copy} onSave={doCopy} onClose={()=>{setCopyModal(false);setError(null);setCopySourceSeason("");setCopyTargetSeason("");}} saving={saving} error={error}>
                     <div className="grid grid-cols-2 gap-3 text-xs">
                         <div className="flex flex-col gap-0.5"><label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Source Season *</label>
                             <select value={copySourceSeason} onChange={e=>setCopySourceSeason(e.target.value)} className="fos-input h-10 text-sm">
-                                <option value="">— From —</option>
+                                <option value="">â€” From â€”</option>
                                 {seasons.map((s:any)=><option key={s.unico} value={s.unico}>{t(s.season)}</option>)}
                             </select></div>
                         <div className="flex flex-col gap-0.5"><label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Target Season *</label>
                             <select value={copyTargetSeason} onChange={e=>setCopyTargetSeason(e.target.value)} className="fos-input h-10 text-sm">
-                                <option value="">— To —</option>
+                                <option value="">â€” To â€”</option>
                                 {seasons.map((s:any)=><option key={s.unico} value={s.unico}>{t(s.season)}</option>)}
                             </select></div>
                     </div>
                 </SimpleModal>
             )}
 
-            {/* ── Seasons Form Modal ─────────────────────────────────────── */}
+            {/* â”€â”€ Seasons Form Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             <EntityFormModal
                 open={seFormOpen}
                 title={seFormMode === "add" ? "New Season" : "Edit Season"}
@@ -721,8 +721,8 @@ export default function FreightsSetupPage() {
                 error={seError}
             />
 
-            {/* ── Cities Setup Modal ─────────────────────────────────────── */}
-            {/* ── Cities List + Form ─────────────────────────────────────── */}
+            {/* â”€â”€ Cities Setup Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+            {/* â”€â”€ Cities List + Form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             <EntityListModal
                 open={ciSetup}
                 title="Cities"
@@ -751,8 +751,8 @@ export default function FreightsSetupPage() {
                 error={ciError}
             />
 
-            {/* ── Airlines Setup Modal ───────────────────────────────────── */}
-            {/* ── Airlines List + Form ───────────────────────────────────── */}
+            {/* â”€â”€ Airlines Setup Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+            {/* â”€â”€ Airlines List + Form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             <EntityListModal
                 open={alSetup}
                 title="Airlines"
@@ -790,7 +790,7 @@ export default function FreightsSetupPage() {
     );
 }
 
-// ─── Reusable helpers ─────────────────────────────────────────────────────────
+// â”€â”€â”€ Reusable helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function FField({ label, value, onChange, type="text", span2=false }: any) {
     return (
         <div className={cn("flex flex-col gap-0.5", span2 && "col-span-2")}>
@@ -835,7 +835,7 @@ function SimpleModal({ title, icon: Icon, onSave, onClose, saving, error, isDele
     );
 }
 
-// ─── MENU dropdown (Appsmith style: outline icons + bold text + separators) ───
+// â”€â”€â”€ MENU dropdown (Appsmith style: outline icons + bold text + separators) â”€â”€â”€
 function MenuDropdown({ onAdd, onEdit, onDel, canEdit, canDel, menuOpen, setMenuOpen, saving }: any) {
     const items = [
         { label: "Add Record",      icon: Plus,   onClick: onAdd,  enabled: true,              color: "text-green-600",  text: "text-green-700" },
@@ -874,7 +874,7 @@ function MenuDropdown({ onAdd, onEdit, onDel, canEdit, canDel, menuOpen, setMenu
 );
 }
 
-// ─── Generic Setup Modal — list + form + MENU button ─────────────────────────
+// â”€â”€â”€ Generic Setup Modal â€” list + form + MENU button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function SetupModal({ title, onClose, listUrl, detailUrl, emptyForm, cols, formFields, checkFields }: any) {
     const t2 = (v: any) => String(v ?? "").trim();
     const [rows,     setRows]     = useState<any[]>([]);
@@ -947,7 +947,7 @@ function SetupModal({ title, onClose, listUrl, detailUrl, emptyForm, cols, formF
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[70vh] flex flex-col"
                 onClick={e => e.stopPropagation()}>
 
-                {/* Dark header — title + close only */}
+                {/* Dark header â€” title + close only */}
                 <div className="h-10 bg-[#374151] rounded-t-xl flex items-center justify-between px-4 shrink-0">
                     <div className="flex items-center gap-2">
                         <span className="font-black text-[11px] uppercase tracking-widest text-white">{title}</span>
@@ -957,7 +957,7 @@ function SetupModal({ title, onClose, listUrl, detailUrl, emptyForm, cols, formF
                 </div>
 
                 <div className="flex flex-1 overflow-hidden">
-                    {/* Left: list — wider + taller items */}
+                    {/* Left: list â€” wider + taller items */}
                     <div className="w-80 border-r border-gray-100 flex flex-col shrink-0">
                         <div className="px-3 border-b border-gray-100 shrink-0" style={{ height: "44px", display:"flex", alignItems:"center" }}>
                             <div className="relative flex-1">
@@ -1005,7 +1005,7 @@ function SetupModal({ title, onClose, listUrl, detailUrl, emptyForm, cols, formF
                                     <MenuDropdown onAdd={openAdd} onEdit={openEdit} onDel={del} canEdit={false} canDel={false} menuOpen={menuOpen} setMenuOpen={setMenuOpen} saving={saving} />
                                 </div>
                                 <div className="flex-1 flex flex-col items-center justify-center text-gray-300 gap-2">
-                                    <span className="text-4xl">≡</span>
+                                    <span className="text-4xl">â‰¡</span>
                                     <p className="text-xs font-bold uppercase tracking-widest">Use Menu to add a record</p>
                                 </div>
                             </>
@@ -1067,3 +1067,4 @@ function SetupModal({ title, onClose, listUrl, detailUrl, emptyForm, cols, formF
         </div>
     );
 }
+

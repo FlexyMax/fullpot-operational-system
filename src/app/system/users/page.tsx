@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
@@ -10,14 +10,14 @@ import {
     Calendar, Filter, ChevronRight, UserCircle2, XCircle, Menu
 } from "lucide-react";
 import { GridMenu } from "@/components/GridMenu";
-import { GridMenu } from "@/components/GridMenu";
+
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { AuditLogModal } from "@/components/AuditLogModal";
 import { cn } from "@/lib/utils";
 import { todayEST, formatDateEST, normalizeToISODate } from "@/lib/dates";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const LEVELS = ["ADMINISTRADOR", "DIGITADOR 1", "DIGITADOR 2", "VISITANTE"];
 
 const EMPTY_FORM = {
@@ -42,10 +42,10 @@ const generateUsername = (nombres: string, apellidos: string) => {
     return first + last;
 };
 
-// ─── GridMenu (Appsmith style) ────────────────────────────────────────────────
+// â”€â”€â”€ GridMenu (Appsmith style) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Main Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function UsersDefinitionPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
@@ -75,7 +75,7 @@ export default function UsersDefinitionPage() {
         if (status === "unauthenticated") router.push("/login");
     }, [status, router]);
 
-    // ── Queries ───────────────────────────────────────────────────────────────
+    // â”€â”€ Queries â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const { data: users = [], isFetching: loadingUsers } = useQuery({
         queryKey: ["sys-users-list"],
         queryFn:  () => sysFetch("/api/system/users"),
@@ -88,14 +88,14 @@ export default function UsersDefinitionPage() {
         retry:    false,
     });
 
-    // ── Auto-select first user ─────────────────────────────────────────────────
+    // â”€â”€ Auto-select first user â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     useEffect(() => {
         if ((users as any[]).length > 0 && !selectedUnico) {
             handleSelectUser((users as any[])[0].unico);
         }
     }, [users]);
 
-    // ── Select user ───────────────────────────────────────────────────────────
+    // â”€â”€ Select user â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleSelectUser = (unico: string) => {
         if (mode !== "view") return;
         const u = (users as any[]).find(x => x.unico === unico);
@@ -123,7 +123,7 @@ export default function UsersDefinitionPage() {
         setMobileOpen(false);
     };
 
-    // ── Mode handlers ─────────────────────────────────────────────────────────
+    // â”€â”€ Mode handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleAdd = () => {
         setForm({ ...EMPTY_FORM });
         setPhotoPreview(null); setPhotoFile(null);
@@ -145,7 +145,7 @@ export default function UsersDefinitionPage() {
         setMode("view"); setFormError(null); setPhotoFile(null); setPhotoPreview(null);
     };
 
-    // ── Validation ────────────────────────────────────────────────────────────
+    // â”€â”€ Validation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const validate = (): string | null => {
         if (!form.nombres.trim())   return "First name is required.";
         if (!form.apellidos.trim()) return "Last name is required.";
@@ -156,7 +156,7 @@ export default function UsersDefinitionPage() {
         return null;
     };
 
-    // ── Save ──────────────────────────────────────────────────────────────────
+    // â”€â”€ Save â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleSave = async () => {
         const err = validate();
         if (err) { setFormError(err); return; }
@@ -202,7 +202,7 @@ export default function UsersDefinitionPage() {
         }
     };
 
-    // ── Delete ────────────────────────────────────────────────────────────────
+    // â”€â”€ Delete â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleDelete = async () => {
         if (!selectedUnico) return;
         setSaving(true);
@@ -225,7 +225,7 @@ export default function UsersDefinitionPage() {
         }
     };
 
-    // ── Photo ─────────────────────────────────────────────────────────────────
+    // â”€â”€ Photo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -233,7 +233,7 @@ export default function UsersDefinitionPage() {
         setPhotoPreview(URL.createObjectURL(file));
     };
 
-    // ── Filtered users ────────────────────────────────────────────────────────
+    // â”€â”€ Filtered users â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const filteredUsers = useMemo(() => {
         if (!searchTerm.trim()) return users as any[];
         const q = searchTerm.toLowerCase();
@@ -246,7 +246,7 @@ export default function UsersDefinitionPage() {
 
     const isEditing = mode === "edit" || mode === "add";
 
-    // ── Photo URL ─────────────────────────────────────────────────────────────
+    // â”€â”€ Photo URL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const photoSrc = photoPreview
         ? photoPreview
         : selectedUnico
@@ -273,14 +273,14 @@ export default function UsersDefinitionPage() {
                 </div>
                 <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest">
                     <span className="text-gray-400">User: <span className="text-white">{session?.user?.name}</span></span>
-                    <span className="text-green-500 font-black">● Online</span>
+                    <span className="text-green-500 font-black">â— Online</span>
                 </div>
             </div>
 
             {/* Main layout */}
             <div className="flex flex-col lg:flex-row flex-1 gap-2 p-2 overflow-y-auto lg:overflow-hidden">
 
-                {/* ── Left: User List (desktop) ────────────────────────────── */}
+                {/* â”€â”€ Left: User List (desktop) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
                 <div className="hidden lg:flex w-[240px] shrink-0 flex-col gap-2">
                     <div className="flex flex-col flex-1 bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
                         <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 border-b border-black/10 shrink-0 rounded-t-lg">
@@ -315,7 +315,7 @@ export default function UsersDefinitionPage() {
                                             <p className="text-xs font-semibold text-gray-800 truncate">
                                                 {String(u.apellidos || "").trim()}, {String(u.nombres || "").trim()}
                                             </p>
-                                            <p className="text-[9px] text-gray-400 truncate">{String(u.username || "").trim()} · {String(u.nivel || "").trim()}</p>
+                                            <p className="text-[9px] text-gray-400 truncate">{String(u.username || "").trim()} Â· {String(u.nivel || "").trim()}</p>
                                         </div>
                                     </div>
                                 );
@@ -324,7 +324,7 @@ export default function UsersDefinitionPage() {
                     </div>
                 </div>
 
-                {/* ── Right: Form + Log ─────────────────────────────────────── */}
+                {/* â”€â”€ Right: Form + Log â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
                 <div className="flex-1 flex flex-col gap-2 min-w-0 lg:overflow-hidden">
 
                     {/* User Form Card */}
@@ -409,7 +409,7 @@ export default function UsersDefinitionPage() {
                             <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-2 text-xs">
                                 {[
                                     { label: "Code",       key: "unico",    readonly: true },
-                                    { label: "ID / Cédula",key: "cedula",   readonly: false },
+                                    { label: "ID / CÃ©dula",key: "cedula",   readonly: false },
                                     { label: "First Name", key: "nombres",  readonly: false },
                                     { label: "Last Name",  key: "apellidos",readonly: false },
                                     { label: "Username",   key: "username", readonly: false },
@@ -454,7 +454,7 @@ export default function UsersDefinitionPage() {
                                         <select value={form.nivel}
                                             onChange={e => setForm(prev => ({ ...prev, nivel: e.target.value }))}
                                             className="fos-input h-10 text-sm">
-                                            <option value="">— Select —</option>
+                                            <option value="">â€” Select â€”</option>
                                             {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
                                         </select>
                                     ) : (
@@ -487,12 +487,12 @@ export default function UsersDefinitionPage() {
                                 <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} />
                                 {loadingLog && <RefreshCcw size={16} className="text-gray-400 animate-spin" />}
                             </div>
-                            {/* Date filters — view mode only */}
+                            {/* Date filters â€” view mode only */}
                             {mode === "view" && (
                                 <div className="flex items-center gap-2 pr-2">
                                     <input type="date" value={logFrom} onChange={e => setLogFrom(e.target.value)}
                                         className="bg-gray-600 text-white text-xs border-none outline-none rounded px-2 h-8 w-32" />
-                                    <span className="text-gray-400 text-xs">→</span>
+                                    <span className="text-gray-400 text-xs">â†’</span>
                                     <input type="date" value={logTo} onChange={e => setLogTo(e.target.value)}
                                         className="bg-gray-600 text-white text-xs border-none outline-none rounded px-2 h-8 w-32" />
                                     <button onClick={() => { setLogEnabled(true); refetchLog(); }}
@@ -640,3 +640,4 @@ export default function UsersDefinitionPage() {
         </div>
     );
 }
+

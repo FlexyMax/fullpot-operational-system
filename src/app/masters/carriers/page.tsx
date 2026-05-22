@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useRef, useMemo } from "react";
 import { useSession } from "next-auth/react";
@@ -10,7 +10,7 @@ import {
     Mail, Check, AlertCircle, XCircle, Settings, Menu, Search
 } from "lucide-react";
 import { GridMenu } from "@/components/GridMenu";
-import { GridMenu } from "@/components/GridMenu";
+
 import { cn } from "@/lib/utils";
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
@@ -31,10 +31,10 @@ const EMPTY: any = {
 
 type Mode = "view" | "add" | "edit";
 
-// ─── Appsmith-style MENU ──────────────────────────────────────────────────────
+// â”€â”€â”€ Appsmith-style MENU â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
-// ─── Field helper ──────────────────────────────────────────────────────────────
+// â”€â”€â”€ Field helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function F({ label, value, onChange, readOnly, type="text", span2=false, children }: any) {
     return (
         <div className={cn("flex flex-col gap-0.5", span2 && "col-span-2")}>
@@ -49,7 +49,7 @@ function F({ label, value, onChange, readOnly, type="text", span2=false, childre
     );
 }
 
-// ─── Main Page ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Main Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function CarriersDefinitionPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
@@ -72,7 +72,7 @@ export default function CarriersDefinitionPage() {
 
     useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
 
-    // ── Queries ────────────────────────────────────────────────────────────────
+    // â”€â”€ Queries â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const { data: carriers = [], isFetching: loadingList } = useQuery({
         queryKey: ["carr-list"],
         queryFn:  () => sF("/api/masters/carriers"),
@@ -238,7 +238,7 @@ export default function CarriersDefinitionPage() {
             {/* Main layout */}
             <div className="flex flex-col lg:flex-row flex-1 gap-2 p-2 overflow-y-auto lg:overflow-hidden">
 
-                {/* ── Left: Carrier List ──────────────────────────────────── */}
+                {/* â”€â”€ Left: Carrier List â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
                 <div className="hidden lg:flex w-[240px] shrink-0 flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
                     <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 border-b border-black/10 shrink-0 rounded-t-lg">
                         <div className="flex items-center gap-2">
@@ -262,13 +262,13 @@ export default function CarriersDefinitionPage() {
                                     isEditing && "cursor-not-allowed opacity-60")}>
                                 <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", c.active ? "bg-green-400" : "bg-gray-300")} />
                                 <span className="truncate">{t(c.carrier)}</span>
-                                {c.isairline && <span className="text-[8px] text-blue-400 font-bold shrink-0">✈</span>}
+                                {c.isairline && <span className="text-[8px] text-blue-400 font-bold shrink-0">âœˆ</span>}
                             </div>
                         ))}
                     </div>
                 </div>
 
-                {/* ── Right: Form + Tabs ────────────────────────────────────── */}
+                {/* â”€â”€ Right: Form + Tabs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
                 <div className="flex-1 flex flex-col min-w-0 gap-2 lg:overflow-hidden">
 
                     {/* Form card */}
@@ -374,7 +374,7 @@ export default function CarriersDefinitionPage() {
                                         <select value={form.product_uq||""} disabled={!isEditing}
                                             onChange={e=>setForm((p:any)=>({...p,product_uq:e.target.value}))}
                                             className={cn("fos-input h-10 text-sm flex-1", !isEditing&&"bg-gray-50 text-gray-400")}>
-                                            <option value="">— None —</option>
+                                            <option value="">â€” None â€”</option>
                                             {(products as any[]).map((p:any) => (
                                                 <option key={p.unico} value={p.unico}>{t(p.description)}</option>
                                             ))}
@@ -419,7 +419,7 @@ export default function CarriersDefinitionPage() {
                                         <input type="checkbox" checked={Boolean(form.isairline)} disabled={!isEditing}
                                             onChange={e=>setForm((p:any)=>({...p,isairline:e.target.checked}))}
                                             className="w-4 h-4 accent-[#FB7506]" />
-                                        <span className="text-sm font-semibold text-gray-600">Airline ✈</span>
+                                        <span className="text-sm font-semibold text-gray-600">Airline âœˆ</span>
                                     </label>
                                     <label className="flex items-center gap-1.5">
                                         <input type="checkbox" checked={Boolean(form.chk_account)} disabled={!isEditing}
@@ -438,7 +438,7 @@ export default function CarriersDefinitionPage() {
                         </div>
                     </div>
 
-                    {/* ── Bottom Tabs ──────────────────────────────────────── */}
+                    {/* â”€â”€ Bottom Tabs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
                     <div className="flex-1 flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden min-h-0 h-[260px] lg:h-auto">
                         <div className="h-10 bg-[#374151] flex items-end px-2 gap-0.5 shrink-0">
                             {(["invoices","customers"] as const).map(tab => (
@@ -513,7 +513,7 @@ export default function CarriersDefinitionPage() {
                 <span className="text-[#FB7506]">FOS Masters V.2.0.1</span>
             </div>
 
-            {/* ── Mobile Carrier List Modal ───────────────────────────── */}
+            {/* â”€â”€ Mobile Carrier List Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             {mobileOpen && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
                     onClick={() => setMobileOpen(false)}>
@@ -545,7 +545,7 @@ export default function CarriersDefinitionPage() {
                                         list[currentIdx]?.unico === c.unico ? "bg-orange-50 text-[#FB7506] font-bold" : "text-gray-700 hover:bg-gray-50")}>
                                     <span className="text-[10px] text-gray-400 font-mono w-8 shrink-0">{c.carriercode}</span>
                                     <span className="text-sm truncate flex-1">{t(c.carrier)}</span>
-                                    {c.isairline && <span className="text-[10px] text-blue-400 font-bold shrink-0">✈</span>}
+                                    {c.isairline && <span className="text-[10px] text-blue-400 font-bold shrink-0">âœˆ</span>}
                                 </button>
                             ))}
                         </div>
@@ -553,7 +553,7 @@ export default function CarriersDefinitionPage() {
                 </div>
             )}
 
-            {/* ── Other Settings Modal ──────────────────────────────────── */}
+            {/* â”€â”€ Other Settings Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             {othersModal && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-lg shadow-2xl w-full max-w-sm overflow-hidden">
@@ -591,3 +591,4 @@ export default function CarriersDefinitionPage() {
         </div>
     );
 }
+
