@@ -1239,28 +1239,17 @@ export default function CustomerPaymentsPage() {
             {/* ── TAB 2: INVOICES ───────────────────────────────────────────── */}
             {activeTab === "invoices" && (
                 <div className="flex flex-col flex-1 overflow-hidden p-1.5 gap-1.5">
-                    {/* Toolbar */}
-                    <div className="bg-gray-100 border border-gray-200 rounded-lg px-2 py-1.5 flex flex-wrap gap-1.5 items-center shrink-0">
-                        <GridMenu items={[
-                            { label: "Refresh", icon: RefreshCcw, color: "gray", onClick: refreshAll },
-                            { label: "Inv. Search", icon: Search, color: "gray", onClick: ()=>setInvSearchModal(true) },
-                            { label: "Email", icon: Mail, color: "gray", onClick: ()=>toast.info("Email invoice — Coming soon"), disabled: !selInvoice||!perms.canReport },
-                            { label: "Invoice", icon: Printer, color: "gray", onClick: ()=>toast.info("Print invoice — Coming soon"), disabled: !selInvoice||!perms.canReport },
-                            { label: "Reports", icon: BarChart2, color: "gray", onClick: ()=>setPendingRptModal(true), disabled: !selCustomer||!perms.canReport },
-                            { label: "New Payment", icon: Plus, color: "green", onClick: ()=>{ if(!perms.canCreate){toast.error(PERMISSION_MSGS.create);return;} setNewPayModal({mode:"add"}); }, disabled: !selCustomer||!perms.canCreate },
-                            { label: "Insert Cr/Db", icon: CreditCard, color: "blue", onClick: ()=>{ if(!perms.canCreate){toast.error(PERMISSION_MSGS.create);return;} if(!selInvoice){toast.error("Select an invoice first.");return;} setCrdbModal({mode:"add"}); }, disabled: !selCustomer||!selInvoice||!perms.canCreate },
-                        ]} />
-                        {/* Balance filter */}
-                        <div className="flex items-center gap-2 text-xs font-bold">
-                            <label className="flex items-center gap-1 cursor-pointer">
-                                <input type="radio" checked={balanceFilter} onChange={()=>setBalanceFilter(true)} className="accent-[#FB7506]"/>
-                                <span className={cn(balanceFilter?"text-[#FB7506]":"text-gray-500")}>Bal &gt; 0</span>
-                            </label>
-                            <label className="flex items-center gap-1 cursor-pointer">
-                                <input type="radio" checked={!balanceFilter} onChange={()=>setBalanceFilter(false)} className="accent-[#FB7506]"/>
-                                <span className={cn(!balanceFilter?"text-[#FB7506]":"text-gray-500")}>Bal = 0</span>
-                            </label>
-                        </div>
+                    {/* Balance filter bar */}
+                    <div className="bg-gray-100 border border-gray-200 rounded-lg px-2 py-1 flex items-center gap-2 shrink-0">
+                        <span className="text-[10px] font-black text-gray-500 uppercase">Filter:</span>
+                        <label className="flex items-center gap-1 cursor-pointer text-xs font-bold">
+                            <input type="radio" checked={balanceFilter} onChange={()=>setBalanceFilter(true)} className="accent-[#FB7506]"/>
+                            <span className={cn(balanceFilter?"text-[#FB7506]":"text-gray-500")}>Bal &gt; 0</span>
+                        </label>
+                        <label className="flex items-center gap-1 cursor-pointer text-xs font-bold">
+                            <input type="radio" checked={!balanceFilter} onChange={()=>setBalanceFilter(false)} className="accent-[#FB7506]"/>
+                            <span className={cn(!balanceFilter?"text-[#FB7506]":"text-gray-500")}>Bal = 0</span>
+                        </label>
                     </div>
 
                     {/* Invoices grid */}
@@ -1271,7 +1260,18 @@ export default function CustomerPaymentsPage() {
                                 <span className="fos-grid-header-text">Invoices {selCustomer ? `— ${t(selCustomer.customer)}` : ""}</span>
                                 {loadingInv && <RefreshCcw size={11} className="text-gray-400 animate-spin"/>}
                             </div>
-                            <AuditLogModal recordId={selInvoice?.unico} disabled={!selInvoice}/>
+                            <div className="flex items-center">
+                                <AuditLogModal recordId={selInvoice?.unico} disabled={!selInvoice}/>
+                                <GridMenu items={[
+                                    { label: "Refresh", icon: RefreshCcw, color: "gray", onClick: refreshAll },
+                                    { label: "Inv. Search", icon: Search, color: "gray", onClick: ()=>setInvSearchModal(true) },
+                                    { label: "Email", icon: Mail, color: "gray", onClick: ()=>toast.info("Email invoice — Coming soon"), disabled: !selInvoice||!perms.canReport },
+                                    { label: "Invoice", icon: Printer, color: "gray", onClick: ()=>toast.info("Print invoice — Coming soon"), disabled: !selInvoice||!perms.canReport },
+                                    { label: "Reports", icon: BarChart2, color: "gray", onClick: ()=>setPendingRptModal(true), disabled: !selCustomer||!perms.canReport },
+                                    { label: "New Payment", icon: Plus, color: "green", onClick: ()=>{ if(!perms.canCreate){toast.error(PERMISSION_MSGS.create);return;} setNewPayModal({mode:"add"}); }, disabled: !selCustomer||!perms.canCreate },
+                                    { label: "Insert Cr/Db", icon: CreditCard, color: "blue", onClick: ()=>{ if(!perms.canCreate){toast.error(PERMISSION_MSGS.create);return;} if(!selInvoice){toast.error("Select an invoice first.");return;} setCrdbModal({mode:"add"}); }, disabled: !selCustomer||!selInvoice||!perms.canCreate },
+                                ]} />
+                            </div>
                         </div>
                         <div className="overflow-auto flex-1">
                             <table className="min-w-full text-left">
@@ -1324,17 +1324,17 @@ export default function CustomerPaymentsPage() {
                     <div className="flex gap-1.5 overflow-hidden" style={{flex:"1 1 45%",minHeight:0}}>
                         {/* Applied payments sub-grid */}
                         <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-0">
-                            <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 shrink-0 rounded-t-lg">
+                            <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
                                 <div className="flex items-center gap-2">
                                     <DollarSign size={15} className="text-[#FB7506]"/>
                                     <span className="fos-grid-header-text">Applied Payments {selInvoice ? `— Inv. ${selInvoice.invoice_no}` : ""}</span>
                                     {loadingApplied && <RefreshCcw size={11} className="text-gray-400 animate-spin"/>}
                                 </div>
-                                <div className="flex gap-1">
-                                    <Btn icon={Plus}   label="Apply Pay"    color="green" sm onClick={()=>{ if(!selInvoice){toast.error("Select an invoice.");return;} if(!selIncome){toast.error("Select an income.");return;} setApplyModal({mode:"add"}); }} disabled={!selInvoice||!selIncome||!perms.canCreate}/>
-                                    <Btn icon={Pencil} label="Edit Apply"   color="blue"  sm onClick={()=>{ if(!selApply)return; setApplyModal({mode:"edit"}); }}   disabled={!selApply||!perms.canEdit}/>
-                                    <Btn icon={Trash2} label="Delete Apply" color="red"   sm onClick={()=>{ if(!selApply)return; setApplyModal({mode:"delete"}); }} disabled={!selApply||!perms.canDelete}/>
-                                </div>
+                                <GridMenu items={[
+                                    { label: "Apply Pay", icon: Plus, color: "green", onClick: ()=>{ if(!selInvoice){toast.error("Select an invoice.");return;} if(!selIncome){toast.error("Select an income.");return;} setApplyModal({mode:"add"}); }, disabled: !selInvoice||!selIncome||!perms.canCreate },
+                                    { label: "Edit Apply", icon: Pencil, color: "orange", onClick: ()=>{ if(!selApply)return; setApplyModal({mode:"edit"}); }, disabled: !selApply||!perms.canEdit },
+                                    { label: "Delete Apply", icon: Trash2, color: "red", onClick: ()=>{ if(!selApply)return; setApplyModal({mode:"delete"}); }, disabled: !selApply||!perms.canDelete },
+                                ]} />
                             </div>
                             <div className="overflow-auto flex-1">
                                 <table className="min-w-full text-left">
@@ -1600,10 +1600,9 @@ export default function CustomerPaymentsPage() {
                     </div>
                     {/* Statement summary grid */}
                     <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden" style={{flex:"1 1 40%",minHeight:0}}>
-                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 shrink-0 rounded-t-lg">
+                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
                             <div className="flex items-center gap-2"><FileText size={15} className="text-[#FB7506]"/><span className="fos-grid-header-text">Statement {selCustomer?`— ${t(selCustomer.customer)}`:""}</span>{loadingStmt&&<RefreshCcw size={11} className="text-gray-400 animate-spin"/>}</div>
-                            <div className="flex items-center gap-2">
-                                <GridMenu items={[
+                            <GridMenu items={[
                                     { label: "Print", icon: Printer, color: "gray", onClick: async()=>{
                                         if(!selCustomer) return;
                                         setStmtPreviewLoading(true); setStmtPreviewModal(true);
@@ -1615,7 +1614,6 @@ export default function CustomerPaymentsPage() {
                                     }, disabled: !selCustomer||!perms.canReport },
                                     { label: "Print Cut", icon: Calendar, color: "gray", onClick: ()=>setCutDateModal(true), disabled: !selCustomer||!perms.canReport },
                                 ]} />
-                            </div>
                         </div>
                         <div className="overflow-auto flex-1">
                             <table className="min-w-full text-left"><thead className="bg-gray-100 border-b border-gray-200 fos-grid-thead text-gray-700 sticky top-0 z-10"><tr>{["Type","Date","Doc.","Debits","Credits","Balance"].map(h=><th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>)}</tr></thead>
@@ -1628,7 +1626,7 @@ export default function CustomerPaymentsPage() {
                     </div>
                     {/* Statement balance grid */}
                     <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden" style={{flex:"1 1 60%",minHeight:0}}>
-                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 shrink-0 rounded-t-lg">
+                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
                             <div className="flex items-center gap-2"><BarChart2 size={15} className="text-[#FB7506]"/><span className="fos-grid-header-text">Statement with Balance</span>{loadingStmtBal&&<RefreshCcw size={11} className="text-gray-400 animate-spin"/>}</div>
                             <GridMenu items={[
                                 { label: "Print", icon: Printer, color: "gray", onClick: async()=>{
@@ -1666,7 +1664,7 @@ export default function CustomerPaymentsPage() {
                     </div>
                     {/* Corp Incomes grid */}
                     <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden" style={{flex:"1 1 33%",minHeight:0}}>
-                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 shrink-0 rounded-t-lg">
+                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
                             <div className="flex items-center gap-2"><Banknote size={15} className="text-[#FB7506]"/><span className="fos-grid-header-text">Corp. Payments</span></div>
                             <GridMenu items={[
                                 { label: "Add", icon: Plus, color: "green", onClick: ()=>setCorpPayModal({mode:"add"}), disabled: !perms.canCreate },
@@ -1684,7 +1682,7 @@ export default function CustomerPaymentsPage() {
                     </div>
                     {/* Customer Payments (Detallecontrol3) */}
                     <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden" style={{flex:"1 1 33%",minHeight:0}}>
-                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 shrink-0 rounded-t-lg">
+                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
                             <div className="flex items-center gap-2"><DollarSign size={15} className="text-[#FB7506]"/><span className="fos-grid-header-text">Customer Payments {selCorpIncome?`— ${t(selCorpIncome.cust_code)}`:""}</span>{loadingCorpPay&&<RefreshCcw size={11} className="text-gray-400 animate-spin"/>}</div>
                             <GridMenu items={[
                                 { label: "Add", icon: Plus, color: "green", onClick: ()=>{}, disabled: true },
@@ -1704,7 +1702,7 @@ export default function CustomerPaymentsPage() {
                     </div>
                     {/* Invoice Applied Payments (Detallecontrol2) */}
                     <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden" style={{flex:"1 1 33%",minHeight:0}}>
-                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 shrink-0 rounded-t-lg">
+                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
                             <div className="flex items-center gap-2"><FileText size={15} className="text-[#FB7506]"/><span className="fos-grid-header-text">Invoice Applied Payments</span>{loadingCorpInv&&<RefreshCcw size={11} className="text-gray-400 animate-spin"/>}</div>
                             <GridMenu items={[
                                 { label: "Add Invoice", icon: Plus, color: "green", onClick: ()=>{ if(!selCorpIncome){toast.error("Select a corporate payment.");return;} if(parseFloat(selCorpIncome.pay_balance??0)<=0){toast.error("Corporate Payment Balance is 0.");return;} setCorpInvModal(true); }, disabled: !selCorpIncome||!perms.canCreate },
