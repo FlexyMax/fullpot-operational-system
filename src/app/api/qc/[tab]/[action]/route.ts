@@ -43,14 +43,16 @@ export async function POST(
                     procName = "sp_flower_warehouse_physical_list";
                     spParams = { llall: true };
                 } else if (action === "list") {
+                    // NOTE: lcwphysical_uq must be "%" for ALL (not "" — empty returns 0 rows)
+                    //       lcdescription must be "%" for no filter (LIKE wildcard)
                     procName = "sp_NC_packing_box_available_date";
                     spParams = {
-                        lnPageNumber:          body.pageNo   || 1,
-                        lnRowsOfPage:          body.pageSize || 50,
-                        ldpacking_date_from:   body.dateFrom  || null,
-                        ldpacking_date_to:     body.dateTo    || null,
-                        lcwphysical_uq:        body.warehouseUq || "",
-                        lcdescription:         body.search    || "",
+                        lnPageNumber:         body.pageNo   || 1,
+                        lnRowsOfPage:         body.pageSize || 50,
+                        ldpacking_date_from:  body.dateFrom || null,
+                        ldpacking_date_to:    body.dateTo   || null,
+                        lcwphysical_uq:       body.warehouseUq || "%",
+                        lcdescription:        body.search    || "%",
                     };
                 } else if (action === "stock-by-box") {
                     procName = "sp_flower_whouse_box_stock";

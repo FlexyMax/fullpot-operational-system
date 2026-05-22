@@ -18,13 +18,6 @@ const qcPost = (url: string, body: any) =>
 const toastConfirm = (msg: string, fn: () => void) =>
     toast(msg, { duration: 10000, action: { label: "Confirm", onClick: fn }, cancel: { label: "Cancel", onClick: () => {} } });
 
-function downloadCSV(rows: any[], filename: string) {
-    if (!rows.length) return;
-    const keys = Object.keys(rows[0]);
-    const csv  = [keys.join(","), ...rows.map(r => keys.map(k => `"${String(r[k] ?? "").replace(/"/g, '""')}"`).join(","))].join("\n");
-    const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob([csv], { type: "text/csv" })), download: `${filename}.csv` });
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-}
 
 type SubTab = "warehouse-stock" | "invoiced-lots";
 
@@ -42,8 +35,8 @@ function HelpIcon() {
 }
 
 // ── Grid toolbar ─────────────────────────────────────────────────────────────
-function GridToolbar({ rows, total, page, totalPages, onPage, filename }:
-    { rows: any[]; total: number; page: number; totalPages: number; onPage: (p: number) => void; filename: string }) {
+function GridToolbar({ total, page, totalPages, onPage }:
+    { total: number; page: number; totalPages: number; onPage: (p: number) => void }) {
     return (
         <div className="h-9 border-b border-gray-200 flex items-center px-3 gap-3 shrink-0 bg-white text-xs justify-between">
             <div className="flex items-center gap-2 text-gray-400 min-w-0">
@@ -51,7 +44,7 @@ function GridToolbar({ rows, total, page, totalPages, onPage, filename }:
                 <input type="text" placeholder="Search..." className="outline-none text-[11px] w-32 text-black placeholder-gray-400"/>
             </div>
             <div className="flex items-center gap-3 shrink-0">
-                <button onClick={() => downloadCSV(rows, filename)} className="flex items-center gap-1 text-gray-500 hover:text-black font-semibold">
+                <button className="flex items-center gap-1 text-gray-500 hover:text-black font-semibold">
                     <Download size={11}/> <span className="text-[10px]">Download</span>
                 </button>
                 {total > 0 && (
@@ -68,7 +61,7 @@ function GridToolbar({ rows, total, page, totalPages, onPage, filename }:
 }
 
 // ── Sub-grid toolbar (header bar) ─────────────────────────────────────────────
-function SubGridHeader({ title, rows, filename, actions }: { title: string; rows: any[]; filename: string; actions?: React.ReactNode }) {
+function SubGridHeader({ title, actions }: { title: string; actions?: React.ReactNode }) {
     return (
         <div className="h-8 bg-[#374151] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
             <span className="text-white text-[10px] font-black uppercase tracking-widest truncate">{title}</span>
@@ -87,7 +80,7 @@ function ScanPanel({ title, rows, loading }: { title: string; rows: any[]; loadi
                 <span className="text-white text-[10px] font-black uppercase tracking-widest">{title}</span>
                 <RefreshCw size={12} className="text-gray-400"/>
             </div>
-            <GridToolbar rows={rows} total={rows.length} page={1} totalPages={1} onPage={() => {}} filename={title.toLowerCase().replace(/ /g,"_")}/>
+            <GridToolbar total={rows.length} page={1} totalPages={1} onPage={() => {}}/>
             <div className="overflow-auto flex-1">
                 <table className="min-w-full text-xs">
                     <thead className="bg-white border-b fos-grid-thead text-gray-700 sticky top-0">
@@ -118,7 +111,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
     // Filters
     const [dateFrom,  setDateFrom]  = useState(today());
     const [dateTo,    setDateTo]    = useState(today());
-    const [warehouse, setWarehouse] = useState("");
+    const [warehouse, setWarehouse] = useState("%"); // "%" = ALL (matches physical_list unico for ALL)
     const [search,    setSearch]    = useState("");
     const [page,      setPage]      = useState(1);
     const PAGE_SIZE = 20;
@@ -207,10 +200,6 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
         qc.invalidateQueries({ queryKey: ["qc-invoiced-by-box", row.unico] });
     };
 
-    const warehouseName = physWarehouses.length && warehouse
-        ? (physWarehouses as any[]).find(w => (w.unico ?? w.wphysical_uq) === warehouse)?.description ?? "ALL"
-        : "ALL";
-
     return (
         <div className="flex flex-col h-full gap-1.5 text-xs">
 
@@ -230,14 +219,14 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                     <div className="relative flex items-center">
                         <select value={warehouse} onChange={e => setWarehouse(e.target.value)}
                             className="fos-input py-1 w-36 text-[11px] pr-12 appearance-none">
-                            <option value="">ALL</option>
+                            <option value="%">ALL</option>
                             {(physWarehouses as any[]).map((w: any) => (
                                 <option key={w.unico ?? w.wphysical_uq} value={w.unico ?? w.wphysical_uq}>{t(w.description ?? w.warehouse)}</option>
                             ))}
                         </select>
                         <div className="absolute right-1 flex items-center gap-0.5 pointer-events-none">
-                            {warehouse && (
-                                <button className="pointer-events-auto" onClick={() => setWarehouse("")}>
+                            {warehouse && warehouse !== "%" && (
+                                <button className="pointer-events-auto" onClick={() => setWarehouse("%")}>
                                     <X size={10} className="text-gray-400 hover:text-gray-700"/>
                                 </button>
                             )}
@@ -267,10 +256,9 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                         <RefreshCw size={12} className="text-gray-400 cursor-pointer hover:text-white" onClick={() => refetchPacking()}/>
                     </div>
                     <GridToolbar
-                        rows={packingRows} total={totalRecords}
+                        total={totalRecords}
                         page={page} totalPages={totalPages}
                         onPage={p => setPage(p)}
-                        filename="packing_list"
                     />
                     <div className="overflow-auto flex-1">
                         <table className="min-w-full text-xs text-left">
@@ -358,7 +346,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                     {/* Warehouse Stock */}
                     {subTab === "warehouse-stock" && (
                         <div className="flex flex-col flex-1 overflow-hidden">
-                            <SubGridHeader title="Packing List Boxes transferred to Stock" rows={stockRows as any[]} filename="warehouse_stock"
+                            <SubGridHeader title="Packing List Boxes transferred to Stock"
                                 actions={
                                     canCreate && selRow ? (
                                         <button onClick={() => onSendToWarehouse?.(selRow)}
@@ -368,7 +356,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                                     ) : undefined
                                 }
                             />
-                            <GridToolbar rows={stockRows as any[]} total={(stockRows as any[]).length} page={1} totalPages={1} onPage={() => {}} filename="warehouse_stock"/>
+                            <GridToolbar total={(stockRows as any[]).length} page={1} totalPages={1} onPage={() => {}}/>
                             <div className="overflow-auto flex-1">
                                 <table className="min-w-full text-xs text-left">
                                     <thead className="bg-white border-b fos-grid-thead text-gray-700 sticky top-0">
@@ -418,8 +406,8 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                     {subTab === "invoiced-lots" && (
                         <>
                             <div className="flex flex-col flex-1 overflow-hidden">
-                                <SubGridHeader title="Invoiced Stock Lots" rows={invoiceRows as any[]} filename="invoiced_lots"/>
-                                <GridToolbar rows={invoiceRows as any[]} total={(invoiceRows as any[]).length} page={1} totalPages={1} onPage={() => {}} filename="invoiced_lots"/>
+                                <SubGridHeader title="Invoiced Stock Lots"/>
+                                <GridToolbar total={(invoiceRows as any[]).length} page={1} totalPages={1} onPage={() => {}}/>
                                 <div className="overflow-auto flex-1">
                                     <table className="min-w-full text-xs text-left">
                                         <thead className="bg-white border-b fos-grid-thead text-gray-700 sticky top-0">
