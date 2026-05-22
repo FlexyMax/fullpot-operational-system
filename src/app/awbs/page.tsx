@@ -9,6 +9,7 @@ import {
     Plus, Pencil, Printer, BarChart2, Calendar, Plane, FileText,
     Package, DollarSign, Loader2
 } from "lucide-react";
+import { GridMenu } from "@/components/GridMenu";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAuditLog } from "@/lib/audit";
@@ -946,13 +947,14 @@ export default function AwbsPage() {
 
             {/* Action buttons */}
             <div className="bg-white border-b px-4 py-1.5 flex flex-wrap items-center gap-2 shrink-0">
-                <Btn icon={Pencil}    label="Update"          color="amber"  disabled={!selAwb || !perms.canEdit}/>
-                <Btn icon={Trash2}    label="Delete"          color="red"    disabled={!selAwb || !perms.canDelete}   onClick={handleDeleteAwb}/>
-                <Btn icon={Package}   label="Set MPF"         color="teal"   disabled={!selAwb || !perms.canEdit}     onClick={() => { if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } setMpfModal(true); }}/>
-                <Btn icon={Calendar}  label="Change Awb Date" color="blue"   disabled={!selAwb || !perms.canEdit}     onClick={() => { if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } setChangeDateModal(true); }}/>
-                <div className="w-px h-5 bg-gray-200 mx-1"/>
-                <Btn icon={Printer}   label="Products"        color="gray"   disabled={!selAwb || !perms.canReport}   onClick={() => handleReport("products")}/>
-                <Btn icon={BarChart2} label="Credits Duties"  color="gray"   disabled={!selAwb || !perms.canReport}   onClick={() => handleReport("duties")}/>
+                <GridMenu items={[
+                    { label: "Update", icon: Pencil, color: "orange", onClick: () => { if (!selAwb) { toast.error("Select an AWB."); return; } if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } /* open update modal */ }, disabled: !selAwb || !perms.canEdit },
+                    { label: "Delete", icon: Trash2, color: "red", onClick: handleDeleteAwb, disabled: !selAwb || !perms.canDelete },
+                    { label: "Set MPF", icon: Package, color: "blue", onClick: () => { if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } setMpfModal(true); }, disabled: !selAwb || !perms.canEdit },
+                    { label: "Change Awb Date", icon: Calendar, color: "blue", onClick: () => { if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } setChangeDateModal(true); }, disabled: !selAwb || !perms.canEdit },
+                    { label: "Products", icon: Printer, color: "gray", onClick: () => handleReport("products"), disabled: !selAwb || !perms.canReport },
+                    { label: "Credits Duties", icon: BarChart2, color: "gray", onClick: () => handleReport("duties"), disabled: !selAwb || !perms.canReport },
+                ]} />
                 {selAwb && (
                     <div className="ml-auto flex items-center gap-2 text-xs bg-blue-50 px-3 py-1 rounded border border-blue-200">
                         <Plane size={12} className="text-blue-500"/>

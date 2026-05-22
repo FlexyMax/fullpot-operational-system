@@ -6,10 +6,11 @@ import { useRouter } from "next/navigation";
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
     ArrowLeft, RefreshCcw, Search, Check, XCircle, Save, X, Trash2,
-    Plus, Pencil, AlertCircle, Users, FileText, CreditCard, Menu,
+    Plus, Pencil, AlertCircle, Users, FileText, CreditCard,
     ChevronRight, Printer, Mail, BarChart2, DollarSign, CheckCircle,
     Bell, Banknote, Calendar, RotateCcw
 } from "lucide-react";
+import { GridMenu } from "@/components/GridMenu";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAuditLog } from "@/lib/audit";
@@ -1122,15 +1123,16 @@ export default function CustomerPaymentsPage() {
                 <div className="flex flex-col flex-1 overflow-hidden p-1.5 gap-1.5">
                     {/* Toolbar */}
                     <div className="bg-gray-100 border border-gray-200 rounded-lg px-2 py-1.5 flex flex-wrap gap-1 shrink-0 overflow-x-auto items-center">
-                        <Btn icon={Pencil}    label="Update"         color="blue"   onClick={()=>{ if(!selCustomer){toast.error("Select a customer.");return;} if(!perms.canEdit){toast.error(PERMISSION_MSGS.edit);return;} setCustEditModal(true); }} disabled={!selCustomer||!perms.canEdit}/>
-                        <Btn icon={Search}    label="Invoice Search" color="gray"   onClick={()=>setInvSearchModal(true)}/>
-                        <Btn icon={AlertCircle} label="Hold No Sales" color="amber" onClick={()=>toastConfirm("Put on hold customers with no sales?", async()=>{ const r=await fetch("/api/customer-payments/hold-no-sales",{method:"POST"}); const d=await r.json(); d.error?toast.error(d.error):toast.success("Done."); }, "Hold")}/>
-                        <div className="h-6 w-px bg-gray-300 mx-1"/>
+                        <GridMenu items={[
+                            { label: "Update", icon: Pencil, color: "orange", onClick: ()=>{ if(!selCustomer){toast.error("Select a customer.");return;} if(!perms.canEdit){toast.error(PERMISSION_MSGS.edit);return;} setCustEditModal(true); }, disabled: !selCustomer||!perms.canEdit },
+                            { label: "Invoice Search", icon: Search, color: "gray", onClick: ()=>setInvSearchModal(true) },
+                            { label: "Hold No Sales", icon: AlertCircle, color: "amber", onClick: ()=>toastConfirm("Put on hold customers with no sales?", async()=>{ const r=await fetch("/api/customer-payments/hold-no-sales",{method:"POST"}); const d=await r.json(); d.error?toast.error(d.error):toast.success("Done."); }, "Hold") },
+                            { label: "Print All", icon: Users, color: "orange", onClick: ()=>toastConfirm("Print statements for all customers?", async()=>{ setPrintAllProgress("Loading..."); try{const d=await cpFetch("/api/customer-payments/reports/all-statements");toast.success(`${d.records?.length??0} statements generated.`);setPrintAllProgress(null);}catch(e:any){toast.error((e as any).message);setPrintAllProgress(null);} }, "Print All"), disabled: !perms.canReport },
+                            { label: "By Salesman", icon: Search, color: "gray", onClick: ()=>setSalesmanModal(true), disabled: !perms.canReport },
+                        ]} />
                         <select value={stmtDestination} onChange={e=>setStmtDestination(parseInt(e.target.value))} className="bg-white border border-gray-300 text-gray-700 text-[10px] font-bold outline-none rounded px-2 py-1 h-7">
                             <option value={1}>PRINT</option><option value={2}>EMAIL</option><option value={3}>FAX</option>
                         </select>
-                        <Btn icon={Users}   label="Print All" color="amber" sm onClick={()=>toastConfirm("Print statements for all customers?", async()=>{ setPrintAllProgress("Loading..."); try{const d=await cpFetch("/api/customer-payments/reports/all-statements");toast.success(`${d.records?.length??0} statements generated.`);setPrintAllProgress(null);}catch(e:any){toast.error((e as any).message);setPrintAllProgress(null);} }, "Print All")} disabled={!perms.canReport}/>
-                        <Btn icon={Search}  label="By Salesman" color="gray" sm onClick={()=>setSalesmanModal(true)} disabled={!perms.canReport}/>
                     </div>
                     {/* Search + grid */}
                     <div className="flex flex-col flex-1 bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
@@ -1240,15 +1242,15 @@ export default function CustomerPaymentsPage() {
                 <div className="flex flex-col flex-1 overflow-hidden p-1.5 gap-1.5">
                     {/* Toolbar */}
                     <div className="bg-gray-100 border border-gray-200 rounded-lg px-2 py-1.5 flex flex-wrap gap-1.5 items-center shrink-0">
-                        <Btn icon={RefreshCcw}   label="Refresh"      color="gray"   onClick={refreshAll}/>
-                        <Btn icon={Search}        label="Inv. Search"  color="gray"   onClick={()=>setInvSearchModal(true)}/>
-                        <Btn icon={Mail}          label="Email"        color="gray"   onClick={()=>toast.info("Email invoice — Coming soon")} disabled={!selInvoice||!perms.canReport}/>
-                        <Btn icon={Printer}       label="Invoice"      color="gray"   onClick={()=>toast.info("Print invoice — Coming soon")} disabled={!selInvoice||!perms.canReport}/>
-                        <Btn icon={BarChart2}     label="Reports"      color="gray"   onClick={()=>setPendingRptModal(true)} disabled={!selCustomer||!perms.canReport}/>
-                        <div className="w-px h-5 bg-gray-300"/>
-                        <Btn icon={Plus}          label="New Payment"  color="green"  onClick={()=>{ if(!perms.canCreate){toast.error(PERMISSION_MSGS.create);return;} setNewPayModal({mode:"add"}); }} disabled={!selCustomer||!perms.canCreate}/>
-                        <Btn icon={CreditCard}    label="Insert Cr/Db" color="blue"   onClick={()=>{ if(!perms.canCreate){toast.error(PERMISSION_MSGS.create);return;} if(!selInvoice){toast.error("Select an invoice first.");return;} setCrdbModal({mode:"add"}); }} disabled={!selCustomer||!selInvoice||!perms.canCreate}/>
-                        <div className="w-px h-5 bg-gray-300"/>
+                        <GridMenu items={[
+                            { label: "Refresh", icon: RefreshCcw, color: "gray", onClick: refreshAll },
+                            { label: "Inv. Search", icon: Search, color: "gray", onClick: ()=>setInvSearchModal(true) },
+                            { label: "Email", icon: Mail, color: "gray", onClick: ()=>toast.info("Email invoice — Coming soon"), disabled: !selInvoice||!perms.canReport },
+                            { label: "Invoice", icon: Printer, color: "gray", onClick: ()=>toast.info("Print invoice — Coming soon"), disabled: !selInvoice||!perms.canReport },
+                            { label: "Reports", icon: BarChart2, color: "gray", onClick: ()=>setPendingRptModal(true), disabled: !selCustomer||!perms.canReport },
+                            { label: "New Payment", icon: Plus, color: "green", onClick: ()=>{ if(!perms.canCreate){toast.error(PERMISSION_MSGS.create);return;} setNewPayModal({mode:"add"}); }, disabled: !selCustomer||!perms.canCreate },
+                            { label: "Insert Cr/Db", icon: CreditCard, color: "blue", onClick: ()=>{ if(!perms.canCreate){toast.error(PERMISSION_MSGS.create);return;} if(!selInvoice){toast.error("Select an invoice first.");return;} setCrdbModal({mode:"add"}); }, disabled: !selCustomer||!selInvoice||!perms.canCreate },
+                        ]} />
                         {/* Balance filter */}
                         <div className="flex items-center gap-2 text-xs font-bold">
                             <label className="flex items-center gap-1 cursor-pointer">
@@ -1403,19 +1405,20 @@ export default function CustomerPaymentsPage() {
                 <div className="flex flex-col flex-1 overflow-hidden p-1.5 gap-1.5">
                     {/* Toolbar */}
                     <div className="bg-gray-100 border border-gray-200 rounded-lg px-2 py-1.5 flex flex-wrap gap-1 shrink-0 overflow-x-auto">
-                        <Btn icon={Plus}       label="Add"          color="green"  onClick={()=>{ if(!perms.canCreate){toast.error(PERMISSION_MSGS.create);return;} setNewPayModal({mode:"add"}); }} disabled={!selCustomer||!perms.canCreate}/>
-                        <Btn icon={Pencil}     label="Edit"         color="blue"   onClick={()=>{ if(!selPayment){toast.error("Payment empty.");return;} setNewPayModal({mode:"edit",income:selPayment}); }} disabled={!selPayment}/>
-                        <Btn icon={Trash2}     label="Delete"       color="red"    onClick={()=>{ if(!selPayment){toast.error("Payment empty.");return;} setNewPayModal({mode:"delete",income:selPayment}); }} disabled={!selPayment}/>
-                        <div className="w-px h-5 bg-gray-300"/>
-                        <Btn icon={RotateCcw}  label="Void Payment" color="amber"  onClick={()=>{
-                            if(!selPayment){toast.error("Payment empty.");return;}
-                            if(!perms.canEdit){toast.error(PERMISSION_MSGS.edit);return;}
-                            toastConfirm("Do you want to VOID this payment?", async()=>{
-                                try{const r=await fetch(`/api/customer-payments/payment/${selPayment.unico}/void`,{method:"PUT"});const d=await r.json();if(!d.success)throw new Error(d.error);logAction("Edit",selPayment.unico,"Void");toast.success("Payment voided.");setSelPayment(null);refetchPay();refetchInv();refetchIncomes();}catch(e:any){toast.error((e as any).message);}
-                            }, "Void");
-                        }} disabled={!selPayment||!perms.canEdit}/>
-                        <Btn icon={Printer}    label="Print"        color="gray"   onClick={async()=>{ if(!selPayment){toast.error("Payment empty.");return;} const d=await cpFetch(`/api/customer-payments/payment/${selPayment.unico}/report`); toast.info(`Report: ${d.records?.length??0} record(s) — print coming soon.`); }} disabled={!selPayment||!perms.canReport}/>
-                        <Btn icon={RotateCcw}  label="Cash Back"    color="purple" onClick={()=>{ if(!selPayment){toast.error("Payment empty.");return;} setCashbackModal(true); }} disabled={!selPayment||!perms.canCreate}/>
+                        <GridMenu items={[
+                            { label: "Add", icon: Plus, color: "green", onClick: ()=>{ if(!perms.canCreate){toast.error(PERMISSION_MSGS.create);return;} setNewPayModal({mode:"add"}); }, disabled: !selCustomer||!perms.canCreate },
+                            { label: "Edit", icon: Pencil, color: "orange", onClick: ()=>{ if(!selPayment){toast.error("Payment empty.");return;} setNewPayModal({mode:"edit",income:selPayment}); }, disabled: !selPayment },
+                            { label: "Delete", icon: Trash2, color: "red", onClick: ()=>{ if(!selPayment){toast.error("Payment empty.");return;} setNewPayModal({mode:"delete",income:selPayment}); }, disabled: !selPayment },
+                            { label: "Void Payment", icon: RotateCcw, color: "amber", onClick: ()=>{
+                                if(!selPayment){toast.error("Payment empty.");return;}
+                                if(!perms.canEdit){toast.error(PERMISSION_MSGS.edit);return;}
+                                toastConfirm("Do you want to VOID this payment?", async()=>{
+                                    try{const r=await fetch(`/api/customer-payments/payment/${selPayment.unico}/void`,{method:"PUT"});const d=await r.json();if(!d.success)throw new Error(d.error);logAction("Edit",selPayment.unico,"Void");toast.success("Payment voided.");setSelPayment(null);refetchPay();refetchInv();refetchIncomes();}catch(e:any){toast.error((e as any).message);}
+                                }, "Void");
+                            }, disabled: !selPayment||!perms.canEdit },
+                            { label: "Print", icon: Printer, color: "gray", onClick: async()=>{ if(!selPayment){toast.error("Payment empty.");return;} const d=await cpFetch(`/api/customer-payments/payment/${selPayment.unico}/report`); toast.info(`Report: ${d.records?.length??0} record(s) — print coming soon.`); }, disabled: !selPayment||!perms.canReport },
+                            { label: "Cash Back", icon: RotateCcw, color: "purple", onClick: ()=>{ if(!selPayment){toast.error("Payment empty.");return;} setCashbackModal(true); }, disabled: !selPayment||!perms.canCreate },
+                        ]} />
                     </div>
                     {/* Payments grid */}
                     <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden" style={{flex:"1 1 55%",minHeight:0}}>
@@ -1492,24 +1495,26 @@ export default function CustomerPaymentsPage() {
                 <div className="flex flex-col flex-1 overflow-hidden p-1.5 gap-1.5">
                     {/* Toolbar */}
                     <div className="bg-gray-100 border border-gray-200 rounded-lg px-2 py-1.5 flex flex-wrap gap-1 shrink-0 overflow-x-auto">
-                        <Btn icon={RefreshCcw} label="Refresh"      color="gray"   onClick={()=>{ setSelCrDbDate(null); setSelCrDb(null); refetchCrdbDates(); }}/>
-                        <Btn icon={Pencil}     label="Edit Cr/Db"   color="blue"   onClick={()=>{
-                            if(!selCustomer){toast.error("Customer empty.");return;}
-                            if(!selCrDb){toast.error("Document empty.");return;}
-                            if(selCrDb.automatic){toast.error("Automatic Document. You can't edit/delete.");return;}
-                            setCrdbModal({mode:"edit"});
-                        }} disabled={!selCrDb||!perms.canEdit}/>
-                        <Btn icon={Trash2}     label="Delete Cr/Db" color="red"    onClick={()=>{
-                            if(!selCustomer){toast.error("Customer empty.");return;}
-                            if(!selCrDb){toast.error("Document empty.");return;}
-                            if(selCrDb.automatic){toast.error("Automatic Document. You can't edit/delete.");return;}
-                            setCrdbModal({mode:"delete"});
-                        }} disabled={!selCrDb||!perms.canDelete}/>
-                        <Btn icon={Printer}    label="Print Material" color="gray" onClick={()=>{
-                            if(!selCrDb){toast.error("Select a CR/DB record first.");return;}
-                            if(!perms.canReport){toast.error(PERMISSION_MSGS.report);return;}
-                            setCrdbReportModal(true);
-                        }} disabled={!selCrDb||!perms.canReport}/>
+                        <GridMenu items={[
+                            { label: "Refresh", icon: RefreshCcw, color: "gray", onClick: ()=>{ setSelCrDbDate(null); setSelCrDb(null); refetchCrdbDates(); } },
+                            { label: "Edit Cr/Db", icon: Pencil, color: "orange", onClick: ()=>{
+                                if(!selCustomer){toast.error("Customer empty.");return;}
+                                if(!selCrDb){toast.error("Document empty.");return;}
+                                if(selCrDb.automatic){toast.error("Automatic Document. You can't edit/delete.");return;}
+                                setCrdbModal({mode:"edit"});
+                            }, disabled: !selCrDb||!perms.canEdit },
+                            { label: "Delete Cr/Db", icon: Trash2, color: "red", onClick: ()=>{
+                                if(!selCustomer){toast.error("Customer empty.");return;}
+                                if(!selCrDb){toast.error("Document empty.");return;}
+                                if(selCrDb.automatic){toast.error("Automatic Document. You can't edit/delete.");return;}
+                                setCrdbModal({mode:"delete"});
+                            }, disabled: !selCrDb||!perms.canDelete },
+                            { label: "Print Material", icon: Printer, color: "gray", onClick: ()=>{
+                                if(!selCrDb){toast.error("Select a CR/DB record first.");return;}
+                                if(!perms.canReport){toast.error(PERMISSION_MSGS.report);return;}
+                                setCrdbReportModal(true);
+                            }, disabled: !selCrDb||!perms.canReport },
+                        ]} />
                     </div>
                     {/* Two-column layout */}
                     <div className="flex gap-1.5 flex-1 overflow-hidden min-h-0">
@@ -1599,16 +1604,18 @@ export default function CustomerPaymentsPage() {
                         <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 shrink-0 rounded-t-lg">
                             <div className="flex items-center gap-2"><FileText size={15} className="text-[#FB7506]"/><span className="fos-grid-header-text">Statement {selCustomer?`— ${t(selCustomer.customer)}`:""}</span>{loadingStmt&&<RefreshCcw size={11} className="text-gray-400 animate-spin"/>}</div>
                             <div className="flex items-center gap-2">
-                                <Btn icon={Printer} label="Print" color="gray" sm onClick={async()=>{
-                                    if(!selCustomer) return;
-                                    setStmtPreviewLoading(true); setStmtPreviewModal(true);
-                                    try{
-                                        const d = await cpFetch(`/api/customer-payments/reports/html-statement-balance/${selCustomer.unico}?from=${stmtFrom}&to=${stmtTo}`);
-                                        setStmtPreviewHtml(d.html || "<p>No statement available.</p>");
-                                    }catch(e:any){ toast.error(e.message); setStmtPreviewModal(false); }
-                                    finally{ setStmtPreviewLoading(false); }
-                                }} disabled={!selCustomer||!perms.canReport}/>
-                                <Btn icon={Calendar} label="Print Cut" color="gray" sm onClick={()=>setCutDateModal(true)} disabled={!selCustomer||!perms.canReport}/>
+                                <GridMenu items={[
+                                    { label: "Print", icon: Printer, color: "gray", onClick: async()=>{
+                                        if(!selCustomer) return;
+                                        setStmtPreviewLoading(true); setStmtPreviewModal(true);
+                                        try{
+                                            const d = await cpFetch(`/api/customer-payments/reports/html-statement-balance/${selCustomer.unico}?from=${stmtFrom}&to=${stmtTo}`);
+                                            setStmtPreviewHtml(d.html || "<p>No statement available.</p>");
+                                        }catch(e:any){ toast.error(e.message); setStmtPreviewModal(false); }
+                                        finally{ setStmtPreviewLoading(false); }
+                                    }, disabled: !selCustomer||!perms.canReport },
+                                    { label: "Print Cut", icon: Calendar, color: "gray", onClick: ()=>setCutDateModal(true), disabled: !selCustomer||!perms.canReport },
+                                ]} />
                             </div>
                         </div>
                         <div className="overflow-auto flex-1">
@@ -1624,15 +1631,17 @@ export default function CustomerPaymentsPage() {
                     <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden" style={{flex:"1 1 60%",minHeight:0}}>
                         <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 shrink-0 rounded-t-lg">
                             <div className="flex items-center gap-2"><BarChart2 size={15} className="text-[#FB7506]"/><span className="fos-grid-header-text">Statement with Balance</span>{loadingStmtBal&&<RefreshCcw size={11} className="text-gray-400 animate-spin"/>}</div>
-                            <Btn icon={Printer} label="Print" color="gray" sm onClick={async()=>{
-                                if(!selCustomer) return;
-                                setStmtPreviewLoading(true); setStmtPreviewModal(true);
-                                try{
-                                    const d = await cpFetch(`/api/customer-payments/reports/html-statement-balance/${selCustomer.unico}?from=${stmtFrom}&to=${stmtTo}`);
-                                    setStmtPreviewHtml(d.html || "<p>No statement available.</p>");
-                                }catch(e:any){ toast.error(e.message); setStmtPreviewModal(false); }
-                                finally{ setStmtPreviewLoading(false); }
-                            }} disabled={!selCustomer||!perms.canReport}/>
+                            <GridMenu items={[
+                                { label: "Print", icon: Printer, color: "gray", onClick: async()=>{
+                                    if(!selCustomer) return;
+                                    setStmtPreviewLoading(true); setStmtPreviewModal(true);
+                                    try{
+                                        const d = await cpFetch(`/api/customer-payments/reports/html-statement-balance/${selCustomer.unico}?from=${stmtFrom}&to=${stmtTo}`);
+                                        setStmtPreviewHtml(d.html || "<p>No statement available.</p>");
+                                    }catch(e:any){ toast.error(e.message); setStmtPreviewModal(false); }
+                                    finally{ setStmtPreviewLoading(false); }
+                                }, disabled: !selCustomer||!perms.canReport },
+                            ]} />
                         </div>
                         {printAllProgress && <div className="h-6 bg-blue-50 border-b border-blue-200 flex items-center px-3 text-xs font-bold text-blue-700 shrink-0"><RefreshCcw size={10} className="animate-spin mr-2"/>{printAllProgress}</div>}
                         <div className="overflow-auto flex-1">
@@ -1660,11 +1669,11 @@ export default function CustomerPaymentsPage() {
                     <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden" style={{flex:"1 1 33%",minHeight:0}}>
                         <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 shrink-0 rounded-t-lg">
                             <div className="flex items-center gap-2"><Banknote size={15} className="text-[#FB7506]"/><span className="fos-grid-header-text">Corp. Payments</span></div>
-                            <div className="flex gap-1">
-                                <Btn icon={Plus}   label="Add"    color="green" sm onClick={()=>setCorpPayModal({mode:"add"})}    disabled={!perms.canCreate}/>
-                                <Btn icon={Pencil} label="Edit"   color="blue"  sm onClick={()=>{ if(!selCorpIncome)return; setCorpPayModal({mode:"edit"}); }}   disabled={!selCorpIncome}/>
-                                <Btn icon={Trash2} label="Delete" color="red"   sm onClick={()=>{ if(!selCorpIncome)return; setCorpPayModal({mode:"delete"}); }} disabled={!selCorpIncome}/>
-                            </div>
+                            <GridMenu items={[
+                                { label: "Add", icon: Plus, color: "green", onClick: ()=>setCorpPayModal({mode:"add"}), disabled: !perms.canCreate },
+                                { label: "Edit", icon: Pencil, color: "orange", onClick: ()=>{ if(!selCorpIncome)return; setCorpPayModal({mode:"edit"}); }, disabled: !selCorpIncome },
+                                { label: "Delete", icon: Trash2, color: "red", onClick: ()=>{ if(!selCorpIncome)return; setCorpPayModal({mode:"delete"}); }, disabled: !selCorpIncome },
+                            ]} />
                         </div>
                         <div className="overflow-auto flex-1">
                             <table className="min-w-full text-left"><thead className="bg-gray-100 border-b border-gray-200 fos-grid-thead text-gray-700 sticky top-0 z-10"><tr>{["Date","Customer","Bank-Doc","Amount","Applied","Balance"].map(h=><th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>)}</tr></thead>
@@ -1678,12 +1687,12 @@ export default function CustomerPaymentsPage() {
                     <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden" style={{flex:"1 1 33%",minHeight:0}}>
                         <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 shrink-0 rounded-t-lg">
                             <div className="flex items-center gap-2"><DollarSign size={15} className="text-[#FB7506]"/><span className="fos-grid-header-text">Customer Payments {selCorpIncome?`— ${t(selCorpIncome.cust_code)}`:""}</span>{loadingCorpPay&&<RefreshCcw size={11} className="text-gray-400 animate-spin"/>}</div>
-                            <div className="flex gap-1">
-                                <button disabled title="Coming soon" className="px-2 py-1 text-[10px] text-gray-400 font-black uppercase rounded bg-gray-200 opacity-40 cursor-not-allowed">Add</button>
-                                <button disabled title="Coming soon" className="px-2 py-1 text-[10px] text-gray-400 font-black uppercase rounded bg-gray-200 opacity-40 cursor-not-allowed">Edit</button>
-                                <button disabled title="Coming soon" className="px-2 py-1 text-[10px] text-gray-400 font-black uppercase rounded bg-gray-200 opacity-40 cursor-not-allowed">Delete</button>
-                                <Btn icon={Search} label="View" color="gray" sm onClick={()=>selCorpPayment?toast.info("View payment — coming soon"):toast.error("There isn't a Customer payment note...")} disabled={false}/>
-                            </div>
+                            <GridMenu items={[
+                                { label: "Add", icon: Plus, color: "green", onClick: ()=>{}, disabled: true },
+                                { label: "Edit", icon: Pencil, color: "orange", onClick: ()=>{}, disabled: true },
+                                { label: "Delete", icon: Trash2, color: "red", onClick: ()=>{}, disabled: true },
+                                { label: "View", icon: Search, color: "gray", onClick: ()=>selCorpPayment?toast.info("View payment — coming soon"):toast.error("There isn't a Customer payment note...") },
+                            ]} />
                         </div>
                         <div className="overflow-auto flex-1">
                             <table className="min-w-full text-left"><thead className="bg-gray-100 border-b border-gray-200 fos-grid-thead text-gray-700 sticky top-0 z-10"><tr>{["Date","Customer","Bank-Doc","Payment","Applied","UnApply","Deposit"].map(h=><th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>)}</tr></thead>
@@ -1698,11 +1707,11 @@ export default function CustomerPaymentsPage() {
                     <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden" style={{flex:"1 1 33%",minHeight:0}}>
                         <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 shrink-0 rounded-t-lg">
                             <div className="flex items-center gap-2"><FileText size={15} className="text-[#FB7506]"/><span className="fos-grid-header-text">Invoice Applied Payments</span>{loadingCorpInv&&<RefreshCcw size={11} className="text-gray-400 animate-spin"/>}</div>
-                            <div className="flex gap-1">
-                                <Btn icon={Plus}   label="Add Invoice"    color="green" sm onClick={()=>{ if(!selCorpIncome){toast.error("Select a corporate payment.");return;} if(parseFloat(selCorpIncome.pay_balance??0)<=0){toast.error("Corporate Payment Balance is 0.");return;} setCorpInvModal(true); }} disabled={!selCorpIncome||!perms.canCreate}/>
-                                <button disabled title="Coming soon" className="px-2 py-1 text-[10px] text-gray-400 font-black uppercase rounded bg-gray-200 opacity-40 cursor-not-allowed">Edit</button>
-                                <Btn icon={Trash2} label="Delete" color="red" sm onClick={()=>toast.info("Delete corp invoice — coming soon")} disabled={!selCorpPayment}/>
-                            </div>
+                            <GridMenu items={[
+                                { label: "Add Invoice", icon: Plus, color: "green", onClick: ()=>{ if(!selCorpIncome){toast.error("Select a corporate payment.");return;} if(parseFloat(selCorpIncome.pay_balance??0)<=0){toast.error("Corporate Payment Balance is 0.");return;} setCorpInvModal(true); }, disabled: !selCorpIncome||!perms.canCreate },
+                                { label: "Edit", icon: Pencil, color: "orange", onClick: ()=>{}, disabled: true },
+                                { label: "Delete", icon: Trash2, color: "red", onClick: ()=>toast.info("Delete corp invoice — coming soon"), disabled: !selCorpPayment },
+                            ]} />
                         </div>
                         <div className="overflow-auto flex-1">
                             <table className="min-w-full text-left"><thead className="bg-gray-100 border-b border-gray-200 fos-grid-thead text-gray-700 sticky top-0 z-10"><tr>{["Date","Customer","Bank-Doc","Applied","Invoice","Due Date"].map(h=><th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>)}</tr></thead>
