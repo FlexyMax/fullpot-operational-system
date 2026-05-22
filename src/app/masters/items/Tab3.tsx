@@ -4,8 +4,9 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useQuery, useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import {
     Plus, Pencil, Trash2, Save, X, RefreshCcw, Search, Check, XCircle,
-    Layers, Box, ClipboardList, Calendar, ChevronDown, Menu
+    Layers, Box, ClipboardList, Calendar, ChevronDown
 } from "lucide-react";
+import { GridMenu } from "@/components/GridMenu";
 import { cn } from "@/lib/utils";
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
@@ -522,42 +523,37 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety }: Tab3Pro
     return (
         <div className="flex flex-col flex-1 overflow-hidden">
             {/* Toolbar */}
-            <div className="bg-gray-100 border-b border-gray-200 px-2 py-1 shrink-0 space-y-1">
-                <div className="flex flex-wrap items-center gap-1">
-                    {/* CRUD */}
-                    <Btn icon={Plus}   label="Insert" color="green"  onClick={()=>openVarietyModal("add")}    disabled={!perms.canCreate}/>
-                    <Btn icon={Pencil} label="Update" color="blue"   onClick={()=>openVarietyModal("edit")}   disabled={!selVariety||!perms.canEdit}/>
-                    <Btn icon={Trash2} label="Delete" color="red"    onClick={()=>openVarietyModal("delete")} disabled={!selVariety||!perms.canDelete}/>
-                    <div className="w-px h-5 bg-gray-300 mx-0.5"/>
-                    {/* BOGO */}
-                    <Btn label="BOGO"         color="amber" onClick={()=>requireComp(()=>setShowBOGO(true))}  disabled={!selComponent}/>
-                    <Btn label="BOGO WH"      color="amber" onClick={()=>requireComp(()=>setShowBogoWH(true))} disabled={!selComponent}/>
-                    <Btn label="BOGO Cleaner" color="red"   onClick={handleBogoClean}/>
-                    <div className="w-px h-5 bg-gray-300 mx-0.5"/>
-                    {/* Shared modals (coming soon until Tab1 modals are wired) */}
-                    <Btn icon={Layers} label="Bouquet"      color="amber" onClick={()=>setError("Bouquet Composition — Coming soon")} disabled={!selVariety}/>
-                    <Btn icon={Box}    label="Box"           color="amber" onClick={()=>setError("Box Composition — Coming soon")}     disabled={!selVariety}/>
-                    <Btn icon={ClipboardList} label="Update Stock" color="gray" onClick={()=>setError("Update Stock — use Tab 2")}/>
-                    {/* Prebook dropdowns */}
-                    {(["recipe","upc","sales"] as const).map(type=>{
-                        const labels: Record<string,string> = { recipe:"Recipe→Prebook", upc:"UPC→Prebook", sales:"Sales→Prebook" };
-                        return (
-                            <div key={type} className="relative">
-                                <button onClick={()=>setPrebookOpen(p=>p===type?null:type)} disabled={!selVariety}
-                                    className="flex items-center gap-0.5 bg-blue-700 hover:bg-blue-800 disabled:opacity-40 text-white text-[9px] font-black uppercase px-2 py-1 rounded">
-                                    <Calendar size={9}/> {labels[type]} <ChevronDown size={8}/>
-                                </button>
-                                {prebookOpen===type && (
-                                    <div className="absolute top-full left-0 mt-0.5 bg-white border border-gray-200 rounded shadow-lg z-20 w-48 text-xs">
-                                        <button onClick={()=>{setPrebookOpen(null);setShowPrebook(type);}} className="w-full text-left px-3 py-2 hover:bg-gray-50 font-semibold">
-                                            {type==="recipe"?"Fill Recipe in Prebooks":type==="upc"?"Fill UPC Info in Prebooks":"Fill Sales Info in Prebooks"}
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
+            <div className="bg-gray-100 border-b border-gray-200 px-2 py-1 shrink-0 flex items-center gap-2">
+                <GridMenu items={[
+                    { label: "Insert", icon: Plus, color: "green", onClick: ()=>openVarietyModal("add"), disabled: !perms.canCreate },
+                    { label: "Update", icon: Pencil, color: "orange", onClick: ()=>openVarietyModal("edit"), disabled: !selVariety||!perms.canEdit },
+                    { label: "Delete", icon: Trash2, color: "red", onClick: ()=>openVarietyModal("delete"), disabled: !selVariety||!perms.canDelete },
+                    { label: "BOGO", icon: Box, color: "amber", onClick: ()=>requireComp(()=>setShowBOGO(true)), disabled: !selComponent },
+                    { label: "BOGO WH", icon: Box, color: "amber", onClick: ()=>requireComp(()=>setShowBogoWH(true)), disabled: !selComponent },
+                    { label: "BOGO Cleaner", icon: Trash2, color: "red", onClick: handleBogoClean },
+                    { label: "Bouquet", icon: Layers, color: "amber", onClick: ()=>setError("Bouquet Composition — Coming soon"), disabled: !selVariety },
+                    { label: "Box", icon: Box, color: "amber", onClick: ()=>setError("Box Composition — Coming soon"), disabled: !selVariety },
+                    { label: "Update Stock", icon: ClipboardList, color: "gray", onClick: ()=>setError("Update Stock — use Tab 2") },
+                ]} />
+                {/* Prebook dropdowns */}
+                {(["recipe","upc","sales"] as const).map(type=>{
+                    const labels: Record<string,string> = { recipe:"Recipe→Prebook", upc:"UPC→Prebook", sales:"Sales→Prebook" };
+                    return (
+                        <div key={type} className="relative">
+                            <button onClick={()=>setPrebookOpen(p=>p===type?null:type)} disabled={!selVariety}
+                                className="flex items-center gap-0.5 bg-blue-700 hover:bg-blue-800 disabled:opacity-40 text-white text-[9px] font-black uppercase px-2 py-1 rounded">
+                                <Calendar size={9}/> {labels[type]} <ChevronDown size={8}/>
+                            </button>
+                            {prebookOpen===type && (
+                                <div className="absolute top-full left-0 mt-0.5 bg-white border border-gray-200 rounded shadow-lg z-20 w-48 text-xs">
+                                    <button onClick={()=>{setPrebookOpen(null);setShowPrebook(type);}} className="w-full text-left px-3 py-2 hover:bg-gray-50 font-semibold">
+                                        {type==="recipe"?"Fill Recipe in Prebooks":type==="upc"?"Fill UPC Info in Prebooks":"Fill Sales Info in Prebooks"}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
             </div>
 
             {/* Error bar */}

@@ -9,6 +9,7 @@ import {
     Users, Shield, Copy, Save, AlertCircle, CheckSquare, Square,
     Building2, LayoutGrid, UserCheck, ChevronRight
 } from "lucide-react";
+import { GridMenu } from "@/components/GridMenu";
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { AuditLogModal } from "@/components/AuditLogModal";
@@ -309,15 +310,11 @@ export default function SystemAccessPage() {
                             {/* Right: Edit -or- Save + Cancel */}
                             <div className="flex items-center gap-1.5 pr-2">
                                 {!editMode ? (
-                                    <button
-                                        onClick={handleEdit}
-                                        disabled={!selectedUnico || !perms.canEdit}
-                                        className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all"
-                                    >
-                                        <Pencil size={14} /> Edit
-                                    </button>
+                                    <GridMenu items={[
+                                        { label: "Edit", icon: Pencil, color: "orange", onClick: handleEdit, disabled: !selectedUnico || !perms.canEdit },
+                                    ]} />
                                 ) : (
-                                    <>
+                                    <div className="flex gap-2 pr-2">
                                         <button
                                             onClick={handleSave}
                                             disabled={saving || !perms.canEdit}
@@ -332,7 +329,7 @@ export default function SystemAccessPage() {
                                         >
                                             <X size={14} /> Cancel
                                         </button>
-                                    </>
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -412,20 +409,10 @@ export default function SystemAccessPage() {
                                 {loadingPerms && <RefreshCcw size={16} className="text-gray-400 animate-spin" />}
                             </div>
                             {!editMode && selectedUnico && (
-                                <div className="flex gap-2 pr-2">
-                                    <button
-                                        onClick={() => setCopyModal({ mode: "from" })}
-                                        className="flex items-center gap-1.5 bg-gray-600 hover:bg-gray-500 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all"
-                                    >
-                                        <Copy size={14} /> Copy From
-                                    </button>
-                                    <button
-                                        onClick={() => setCopyModal({ mode: "to" })}
-                                        className="flex items-center gap-1.5 bg-gray-600 hover:bg-gray-500 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all"
-                                    >
-                                        <Copy size={14} /> Copy To
-                                    </button>
-                                </div>
+                                <GridMenu items={[
+                                    { label: "Copy From", icon: Copy, color: "gray", onClick: () => setCopyModal({ mode: "from" }) },
+                                    { label: "Copy To",   icon: Copy, color: "gray", onClick: () => setCopyModal({ mode: "to" }) },
+                                ]} />
                             )}
                         </div>
 

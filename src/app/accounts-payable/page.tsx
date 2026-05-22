@@ -12,8 +12,9 @@ import {
     FileText, CreditCard, ClipboardList, BookOpen, Plus,
     Pencil, Trash2, Check, XCircle, X, AlertCircle, CheckCircle,
     ChevronRight, ChevronLeft, Search, Download, Printer,
-    BarChart2, Clock, Menu
+    BarChart2, Clock
 } from "lucide-react";
+import { GridMenu } from "@/components/GridMenu";
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { AuditLogModal } from "@/components/AuditLogModal";
@@ -411,44 +412,13 @@ export default function AccountsPayablePage() {
                                 <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} />
                                 {loadingInvoices && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
                             </div>
-                            <div className="flex items-center gap-1.5">
-                                <button
-                                    onClick={() => setSearchModal(true)}
-                                    className="flex items-center gap-1 bg-gray-600 hover:bg-gray-500 text-white px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all"
-                                >
-                                    <Search size={10} /> Search
-                                </button>
-                                <button
-                                    onClick={exportToCSV}
-                                    disabled={!invoices.length || !perms.canReport}
-                                    className="flex items-center gap-1 bg-gray-600 hover:bg-gray-500 disabled:opacity-40 text-white px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all"
-                                    title="Export to CSV"
-                                >
-                                    <Download size={10} /> CSV
-                                </button>
-                                <div className="w-px h-4 bg-white/20" />
-                                <button
-                                    onClick={() => setInvoiceModal({ open: true, mode: "Add" })}
-                                    disabled={!perms.canCreate}
-                                    className="flex items-center gap-1 bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all"
-                                >
-                                    <Plus size={10} /> Add
-                                </button>
-                                <button
-                                    onClick={() => selectedUnico && setInvoiceModal({ open: true, mode: "Edit" })}
-                                    disabled={!selectedUnico || !perms.canEdit}
-                                    className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:opacity-40 text-white px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all"
-                                >
-                                    <Pencil size={10} /> Edit
-                                </button>
-                                <button
-                                    onClick={() => selectedUnico && setInvoiceModal({ open: true, mode: "Delete" })}
-                                    disabled={!selectedUnico || !perms.canDelete}
-                                    className="flex items-center gap-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:opacity-40 text-white px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all"
-                                >
-                                    <Trash2 size={10} /> Delete
-                                </button>
-                            </div>
+                            <GridMenu items={[
+                                { label: "Search", icon: Search, color: "gray", onClick: () => setSearchModal(true) },
+                                { label: "Export CSV", icon: Download, color: "gray", onClick: exportToCSV, disabled: !invoices.length || !perms.canReport },
+                                { label: "Add", icon: Plus, color: "green", onClick: () => setInvoiceModal({ open: true, mode: "Add" }), disabled: !perms.canCreate },
+                                { label: "Edit", icon: Pencil, color: "orange", onClick: () => selectedUnico && setInvoiceModal({ open: true, mode: "Edit" }), disabled: !selectedUnico || !perms.canEdit },
+                                { label: "Delete", icon: Trash2, color: "red", onClick: () => selectedUnico && setInvoiceModal({ open: true, mode: "Delete" }), disabled: !selectedUnico || !perms.canDelete },
+                            ]} />
                         </div>
                         <div className="bg-[#F0F2F5] px-2 py-0.5 text-[9px] font-black text-gray-500 uppercase tracking-widest border-b border-gray-200 text-right">
                             {invoices.length} records
