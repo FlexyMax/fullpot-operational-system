@@ -73,7 +73,11 @@ function ActionMenu({ onEdit, onDelete, hasSelection, canEdit, canDelete }: any)
     );
 }
 
-export default function QCHistoryTab() {
+interface Props {
+    onEditQC?: (lot: any, credit: any) => void;
+}
+
+export default function QCHistoryTab({ onEditQC }: Props) {
     const { canEdit, canDelete } = useQCContext();
 
     const [selDate,   setSelDate]   = useState<any>(null);
@@ -98,11 +102,41 @@ export default function QCHistoryTab() {
     const totalDatePages = Math.max(1, Math.ceil((dateRows as any[]).length / DATE_PAGE));
     const pagedDates     = (dateRows as any[]).slice((datePage - 1) * DATE_PAGE, datePage * DATE_PAGE);
 
+    const handleEdit = () => {
+        if (!selRow) { toast.error("Select a QC credit row first."); return; }
+        const lot = {
+            unico:       selRow.pk_box_uq ?? selRow.unico,
+            lote:        selRow.lote,
+            description: selRow.description,
+            awbcode:     selRow.awbcode,
+            grower:      selRow.grower,
+            flower_cost: 0, f_cost_x_u: 0, c_cost_x_u: 0, stock: 0, qty_transit: 0, total_units: 0,
+        };
+        const credit = {
+            unico:             selRow.unico,
+            reason_uq:         selRow.reason_uq        ?? "",
+            cr_date:           selRow.cr_date,
+            cr_boxes:          selRow.cr_boxes,
+            cr_units:          selRow.cr_units,
+            cr_amount:         selRow.cr_amount,
+            notes:             selRow.notes,
+            apply_freight:     selRow.apply_freight    ?? false,
+            apply_farm:        selRow.apply_farm       ?? false,
+            apply_labor:       selRow.apply_labor      ?? false,
+            apply_replacement: selRow.apply_replacement ?? false,
+            sent:              selRow.sent             ?? false,
+            warning:           selRow.warning          ?? false,
+            suggested_value:   0,
+            percentage:        0,
+        };
+        onEditQC?.(lot, credit);
+    };
+
     const handleDelete = () => {
-        if (!selRow) return;
+        if (!selRow) { toast.error("Select a QC credit row first."); return; }
         toastConfirm("Delete this QC credit?", async () => {
             const d = await qcPost("/api/qc/credits/delete", { unico: selRow.unico });
-            if (!d.success) { toast.error(d.error || "Error"); return; }
+            if (!d.success) { toast.error(d.error || "Error deleting QC credit."); return; }
             toast.success("QC credit deleted.");
             setSelRow(null);
         });
@@ -120,7 +154,7 @@ export default function QCHistoryTab() {
                     <RefreshCw size={14} className={loadingDates ? "animate-spin" : ""}/>
                 </button>
                 <ActionMenu
-                    onEdit={() => toast.info("Open edit modal for: " + selRow?.unico)}
+                    onEdit={handleEdit}
                     onDelete={handleDelete}
                     hasSelection={!!selRow}
                     canEdit={canEdit} canDelete={canDelete}

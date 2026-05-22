@@ -220,9 +220,9 @@ export default function QualityCreditsTab({ onAddQC, onEditQC }: Props) {
                         <span className="text-white text-[10px] font-black uppercase tracking-widest">Quality Credits by Lot</span>
                     </div>
                     <ActionMenu
-                        onAdd={() => selRow && onAddQC?.(selRow)}
-                        onEdit={() => selRow && selCredit && onEditQC?.(selRow, selCredit)}
-                        onDelete={() => selCredit && toastConfirm("Delete this QC credit?", () => deleteCredit.mutate(selCredit.unico))}
+                        onAdd={() => { if (!selRow) { toast.error("Select a lot first."); return; } onAddQC?.(selRow); }}
+                        onEdit={() => { if (!selCredit) { toast.error("Select a QC credit from the grid below first."); return; } onEditQC?.(selRow, selCredit); }}
+                        onDelete={() => { if (!selCredit) { toast.error("Select a QC credit from the grid below first."); return; } toastConfirm("Delete this QC credit?", () => deleteCredit.mutate(selCredit.unico)); }}
                         hasSelection={!!selCredit}
                         canCreate={canCreate} canEdit={canEdit} canDelete={canDelete}
                     />

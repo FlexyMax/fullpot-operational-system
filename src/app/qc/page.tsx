@@ -152,7 +152,7 @@ function QCPage() {
                         {activeTab === "transit"      && <TransitBoxesTab/>}
                         {activeTab === "cancellations" && <CancelledPurchasesTab/>}
                         {activeTab === "credits"      && <QualityCreditsTab onAddQC={handleAddQC} onEditQC={handleEditQC}/>}
-                        {activeTab === "history"      && <QCHistoryTab/>}
+                        {activeTab === "history"      && <QCHistoryTab onEditQC={handleEditQC}/>}
                     </div>
                 </div>
             </div>
