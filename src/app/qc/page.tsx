@@ -8,7 +8,7 @@ import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { QCProvider, useQCContext } from "./context/QCContext";
 import { cn } from "@/lib/utils";
 import {
-    ArrowLeft, Package, Truck, ShoppingBag,
+    ArrowLeft, Package, Truck,
     XCircle, Award, History, Loader2
 } from "lucide-react";
 
@@ -26,7 +26,6 @@ import BoxTransferModal    from "./components/modals/BoxTransferModal";
 const TABS = [
     { id: "stock",        label: "Stock List",           icon: Package },
     { id: "transit",      label: "Transit Boxes",        icon: Truck },
-    { id: "preorder",     label: "PreOrderBoxes",        icon: ShoppingBag },
     { id: "cancellations",label: "Cancelled Purchases",  icon: XCircle },
     { id: "credits",      label: "Quality Credits",      icon: Award },
     { id: "history",      label: "QC History",           icon: History },
@@ -151,7 +150,6 @@ function QCPage() {
                     <div className="flex-1 overflow-auto bg-[#f4f6f8] p-2">
                         {activeTab === "stock"        && <StockListTab onSendToWarehouse={handleSendToWarehouse} onEditTransfer={handleEditTransfer} onAddQC={handleAddQC}/>}
                         {activeTab === "transit"      && <TransitBoxesTab/>}
-                        {activeTab === "preorder"     && <StockListTab onSendToWarehouse={handleSendToWarehouse} onEditTransfer={handleEditTransfer}/>}
                         {activeTab === "cancellations" && <CancelledPurchasesTab/>}
                         {activeTab === "credits"      && <QualityCreditsTab onAddQC={handleAddQC} onEditQC={handleEditQC}/>}
                         {activeTab === "history"      && <QCHistoryTab/>}
