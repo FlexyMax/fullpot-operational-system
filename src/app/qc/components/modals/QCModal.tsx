@@ -2,343 +2,354 @@
 
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { XCircle, Save, RefreshCcw } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { LogOut, Save, RefreshCcw } from "lucide-react";
 import { toast } from "sonner";
 
 const today = () => new Date().toISOString().split("T")[0];
-const fmt   = (v: any) => parseFloat(v ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const qcPost = (url: string, body: any) =>
     fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
         .then(r => r.json());
 
 interface QCModalProps {
-    mode:    "add" | "edit";          // 'C' = add, 'E' = edit
-    lot:     any;                     // selected row from TableQC (has f_cost_x_u, c_cost_x_u, stock, etc.)
-    credit?: any;                     // existing credit row (edit mode)
+    mode:    "add" | "edit";
+    lot:     any;    // row from sp_flower_inventory_quality_control
+    credit?: any;    // row from sp_flower_packing_quality_credits (edit mode)
     onClose: () => void;
     onSaved: () => void;
 }
 
 interface QCForm {
-    reasonUq:        string;
-    crDate:          string;
-    crUnitsBox:      number;
-    crTotalUnits:    number;
-    crBoxes:         number;
-    replacementCost: number;
-    laborCost:       number;
-    fumigationCost:  number;
-    amount:          number;
-    percentage:      number;
-    notes:           string;
+    reasonUq:         string;
+    crDate:           string;
+    crUnitsBox:       number;
+    crTotalUnits:     number;
+    crBoxes:          number;
+    replacementCost:  number;
+    laborCost:        number;
+    fumigationCost:   number;
+    amount:           number;
+    percentage:       number;
+    notes:            string;
     // Checkboxes
-    calculate:       boolean;
-    freightApply:    boolean;
-    farmApply:       boolean;
-    laborApply:      boolean;
-    replacementApply:boolean;
-    fumigation:      boolean;
-    vendorCredit:    boolean;
-    pending:         boolean;
-    invAdjusts:      boolean;
-    sent:            boolean;
-    usda:            boolean;
-    reject:          boolean;
-    warning:         boolean;
-    showPercent:     boolean;
-    // Computed (readonly)
-    suggested:       number;
-    farmCost:        number;
-    landingCost:     number;
+    calculate:        boolean;
+    freightApply:     boolean;
+    farmApply:        boolean;
+    laborApply:       boolean;
+    replacementApply: boolean;
+    fumigation:       boolean;
+    vendorCredit:     boolean;
+    pending:          boolean;
+    invAdjusts:       boolean;
+    sent:             boolean;
+    usda:             boolean;
+    reject:           boolean;
+    warning:          boolean;
+    showPercent:      boolean;
+    // Computed readonly
+    suggested:    number;
+    farmCost:     number;
+    landingCost:  number;
 }
 
-function blankForm(lot: any): QCForm {
+function blankForm(): QCForm {
     return {
         reasonUq: "", crDate: today(), crUnitsBox: 0, crTotalUnits: 0, crBoxes: 0,
-        replacementCost: 0, laborCost: 0, fumigationCost: 0, amount: 0, percentage: 0, notes: "",
+        replacementCost: 0, laborCost: 0, fumigationCost: 0, amount: 0, percentage: 100, notes: "",
         calculate: false, freightApply: false, farmApply: false, laborApply: false,
-        replacementApply: false, fumigation: false, vendorCredit: false, pending: false,
+        replacementApply: false, fumigation: false, vendorCredit: true, pending: false,
         invAdjusts: false, sent: false, usda: false, reject: false, warning: false, showPercent: false,
         suggested: 0, farmCost: 0, landingCost: 0,
     };
 }
 
-function fromCredit(lot: any, credit: any): QCForm {
+function fromCredit(_lot: any, c: any): QCForm {
     return {
-        reasonUq:        credit.reason_uq    ?? "",
-        crDate:          credit.cr_date?.split("T")[0] ?? today(),
-        crUnitsBox:      Number(credit.cr_units_box)   || 0,
-        crTotalUnits:    Number(credit.cr_units)        || 0,
-        crBoxes:         Number(credit.cr_boxes)        || 0,
-        replacementCost: Number(credit.replacement)     || 0,
-        laborCost:       Number(credit.labor_cost)      || 0,
-        fumigationCost:  Number(credit.lnfumigation_cost || 0),
-        amount:          Number(credit.cr_amount)       || 0,
-        percentage:      Number(credit.percentage)      || 0,
-        notes:           credit.notes                   ?? "",
-        calculate:       false,
-        freightApply:    !!credit.apply_freight,
-        farmApply:       !!credit.apply_farm,
-        laborApply:      !!credit.apply_labor,
-        replacementApply:!!credit.apply_replacement,
-        fumigation:      false,
-        vendorCredit:    false,
-        pending:         false,
-        invAdjusts:      false,
-        sent:            !!credit.sent,
-        usda:            false,
-        reject:          false,
-        warning:         !!credit.warning,
-        showPercent:     false,
-        suggested:       Number(credit.suggested_value) || 0,
-        farmCost:        0,
-        landingCost:     0,
+        reasonUq:         c.reason_uq        ?? "",
+        crDate:           c.cr_date?.split("T")[0] ?? today(),
+        crUnitsBox:       Number(c.cr_units_box)   || 0,
+        crTotalUnits:     Number(c.cr_units)        || 0,
+        crBoxes:          Number(c.cr_boxes)        || 0,
+        replacementCost:  Number(c.replacement)     || 0,
+        laborCost:        Number(c.labor_cost)      || 0,
+        fumigationCost:   Number(c.lnfumigation_cost || c.fumigation_cost || 0),
+        amount:           Number(c.cr_amount)       || 0,
+        percentage:       Number(c.percentage)      || 100,
+        notes:            c.notes                   ?? "",
+        calculate:        false,
+        freightApply:     !!c.apply_freight,
+        farmApply:        !!c.apply_farm,
+        laborApply:       !!c.apply_labor,
+        replacementApply: !!c.apply_replacement,
+        fumigation:       false,
+        vendorCredit:     false,
+        pending:          false,
+        invAdjusts:       !!c.comments,
+        sent:             !!c.sent,
+        usda:             !!c.llchecked || !!c.checked,
+        reject:           false,
+        warning:          !!c.warning,
+        showPercent:      !!c.show_porcentage,
+        suggested:        Number(c.suggested_value) || 0,
+        farmCost:         0,
+        landingCost:      0,
     };
 }
 
-/** QC Calculator: recalculate derived fields whenever checkboxes/inputs change */
-function calcQC(form: QCForm, lot: any): Pick<QCForm, "crTotalUnits" | "suggested" | "farmCost" | "landingCost" | "amount"> {
+function calcQC(form: QCForm, lot: any) {
     const crTotalUnits = form.calculate ? form.crUnitsBox * form.crBoxes : form.crTotalUnits;
-    const fCostXU  = Number(lot?.flower_cost  || lot?.f_cost_x_u  || 0);
-    const cCostXU  = Number(lot?.c_cost_x_u   || 0);
-
-    const lnfarm        = form.farmApply        ? fCostXU * crTotalUnits                    : 0;
-    const lnfreight     = form.freightApply     ? cCostXU * crTotalUnits                    : 0;
-    const lnlabor       = form.laborApply       ? form.laborCost * crTotalUnits              : 0;
-    const lnreplacement = form.replacementApply ? form.replacementCost * crTotalUnits        : 0;
-    const lnfumigation  = form.fumigation       ? form.fumigationCost                        : 0;
-
-    const suggested = lnfarm + lnfreight + lnlabor + lnreplacement + lnfumigation;
-    const amount    = form.vendorCredit ? (suggested * (form.percentage || 100) / 100) : form.amount;
-
+    const fCost = Number(lot?.flower_cost || lot?.f_cost_x_u || 0);
+    const cCost = Number(lot?.c_cost_x_u  || 0);
+    const lnfarm        = form.farmApply        ? fCost * crTotalUnits             : 0;
+    const lnfreight     = form.freightApply     ? cCost * crTotalUnits             : 0;
+    const lnlabor       = form.laborApply       ? form.laborCost * crTotalUnits    : 0;
+    const lnreplacement = form.replacementApply ? form.replacementCost * crTotalUnits : 0;
+    const lnfumigation  = form.fumigation       ? form.fumigationCost              : 0;
+    const suggested     = lnfarm + lnfreight + lnlabor + lnreplacement + lnfumigation;
+    const amount        = form.vendorCredit ? (suggested * (form.percentage || 100) / 100) : form.amount;
     return { crTotalUnits, suggested, farmCost: lnfarm, landingCost: lnfreight, amount };
+}
+
+// ── Input styled like the original ───────────────────────────────────────────
+function Field({ label, children, required }: { label: string; children: React.ReactNode; required?: boolean }) {
+    return (
+        <div className="flex flex-col gap-1">
+            <span className="text-sm text-gray-500">{label}{required && " *"}</span>
+            {children}
+        </div>
+    );
+}
+
+function Input({ ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
+    return <input {...props} className={`w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-green-400 focus:ring-1 focus:ring-green-300 ${props.readOnly || props.disabled ? "bg-gray-100 text-gray-500" : "bg-white"} ${props.className || ""}`}/>;
+}
+
+function CBRow({ label, checked, onChange, disabled }: { label: string; checked: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
+    return (
+        <label className={`flex items-center gap-2 cursor-pointer select-none text-sm ${disabled ? "opacity-40 cursor-not-allowed" : ""}`}>
+            <div onClick={() => !disabled && onChange(!checked)}
+                className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors shrink-0 ${checked ? "bg-green-600 border-green-600" : "border-gray-300"}`}>
+                {checked && <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+            </div>
+            <span className="text-gray-700 font-medium">{label}</span>
+        </label>
+    );
+}
+
+// ── Info row ─────────────────────────────────────────────────────────────────
+function InfoRow({ label, value }: { label: string; value: any }) {
+    return (
+        <div className="flex gap-1">
+            <span className="text-green-600 font-bold text-sm">{label}:</span>
+            <span className="text-gray-800 text-sm">{value ?? "—"}</span>
+        </div>
+    );
 }
 
 export default function QCModal({ mode, lot, credit, onClose, onSaved }: QCModalProps) {
     const isEdit = mode === "edit";
-    const [form,   setForm]   = useState<QCForm>(() => isEdit && credit ? fromCredit(lot, credit) : blankForm(lot));
+    const [form,   setForm]   = useState<QCForm>(() => isEdit && credit ? fromCredit(lot, credit) : blankForm());
     const [saving, setSaving] = useState(false);
     const [error,  setError]  = useState<string | null>(null);
 
-    // Reasons dropdown
     const { data: reasons = [] } = useQuery({
         queryKey: ["qc-reasons"],
-        queryFn: () => qcPost("/api/qc/lookup/reasons", {}),
+        queryFn:  () => qcPost("/api/qc/lookup/reasons", {}),
         staleTime: 300000,
-        select: (d: any) => d.data ?? [],
+        select:   (d: any) => d.data ?? [],
     });
 
-    // Recalculate whenever form changes
+    // Auto-recalculate when relevant fields change
     useEffect(() => {
-        const computed = calcQC(form, lot);
+        const c = calcQC(form, lot);
         setForm(prev => ({
             ...prev,
-            crTotalUnits: computed.crTotalUnits,
-            suggested:    computed.suggested,
-            farmCost:     computed.farmCost,
-            landingCost:  computed.landingCost,
-            // Only override amount if vendorCredit checkbox is on
-            amount: prev.vendorCredit ? computed.amount : prev.amount,
+            crTotalUnits: c.crTotalUnits,
+            suggested:    c.suggested,
+            farmCost:     c.farmCost,
+            landingCost:  c.landingCost,
+            amount:       prev.vendorCredit ? c.amount : prev.amount,
         }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [form.calculate, form.freightApply, form.farmApply, form.laborApply, form.replacementApply,
-        form.fumigation, form.vendorCredit, form.crUnitsBox, form.crBoxes, form.laborCost,
+    }, [form.calculate, form.freightApply, form.farmApply, form.laborApply,
+        form.replacementApply, form.fumigation, form.vendorCredit,
+        form.crUnitsBox, form.crBoxes, form.laborCost,
         form.replacementCost, form.fumigationCost, form.percentage]);
 
-    const set = (key: keyof QCForm, val: any) => setForm(prev => ({ ...prev, [key]: val }));
-    const Num = (key: keyof QCForm) => ({
-        type: "number", step: "0.01",
-        value: (form[key] as number) ?? 0,
-        onChange: (e: any) => set(key, parseFloat(e.target.value) || 0),
-    });
-    const Chk = (key: keyof QCForm) => ({
-        type: "checkbox",
-        checked: !!(form[key]),
-        onChange: (e: any) => set(key, e.target.checked),
-    });
+    const set    = (key: keyof QCForm, val: any) => setForm(p => ({ ...p, [key]: val }));
+    const setNum = (key: keyof QCForm, val: string) => set(key, parseFloat(val) || 0);
 
     const save = async () => {
-        if (!form.reasonUq) { setError("Reason is required."); return; }
+        if (!form.reasonUq) { setError("Credit Reason is required."); return; }
         if (!form.crDate)   { setError("Date is required."); return; }
         if (!form.crBoxes)  { setError("CR Boxes is required."); return; }
-        if (!form.amount && form.amount !== 0) { setError("Credit Amount is required."); return; }
         setSaving(true); setError(null);
         try {
             const payload = {
-                pkboxUq:         lot.unico,
-                unico:           credit?.unico,
-                reasonUq:        form.reasonUq,
-                crDate:          form.crDate,
-                crBoxes:         form.crBoxes,
-                crTotalUnits:    form.crTotalUnits,
-                crUnitsBox:      form.crUnitsBox,
-                crUnitsBunch:    0,
-                amount:          form.amount,
-                notes:           form.notes,
-                laborApply:      form.laborApply,
-                laborCost:       form.laborCost,
-                replacementApply:form.replacementApply,
-                replacementCost: form.replacementCost,
-                freightApply:    form.freightApply,
-                farmApply:       form.farmApply,
-                percentage:      form.percentage,
-                suggested:       form.suggested,
-                pending:         form.pending,
-                warning:         form.warning,
-                invAdjusts:      form.invAdjusts,
-                sent:            form.sent,
-                fumigation:      form.fumigation,
-                fumigationCost:  form.fumigationCost,
-                usda:            form.usda,
-                showPercent:     form.showPercent,
+                pkboxUq: lot.unico, unico: credit?.unico,
+                reasonUq: form.reasonUq, crDate: form.crDate,
+                crBoxes: form.crBoxes, crTotalUnits: form.crTotalUnits,
+                crUnitsBox: form.crUnitsBox, crUnitsBunch: 0,
+                amount: form.amount, notes: form.notes,
+                laborApply: form.laborApply, laborCost: form.laborCost,
+                replacementApply: form.replacementApply, replacementCost: form.replacementCost,
+                freightApply: form.freightApply, farmApply: form.farmApply,
+                percentage: form.percentage, suggested: form.suggested,
+                pending: form.pending, warning: form.warning,
+                invAdjusts: form.invAdjusts, sent: form.sent,
+                fumigation: form.fumigation, fumigationCost: form.fumigationCost,
+                usda: form.usda, showPercent: form.showPercent,
             };
             const url = isEdit ? "/api/qc/credits/update" : "/api/qc/credits/insert";
             const d   = await qcPost(url, payload);
             if (!d.success) throw new Error(d.error);
             toast.success(isEdit ? "QC credit updated." : "QC credit added.");
-            onSaved();
-            onClose();
+            onSaved(); onClose();
         } catch (e: any) { setError(e.message); }
         finally { setSaving(false); }
     };
 
-    const cb = (label: string, key: keyof QCForm, color?: string) => (
-        <label className={cn("flex items-center gap-1.5 cursor-pointer select-none", color)}>
-            <input {...Chk(key)} className="w-3.5 h-3.5 accent-[#FB7506]"/>
-            <span className="text-[10px] font-semibold text-gray-600">{label}</span>
-        </label>
-    );
+    const title = isEdit ? "Vendor PO - Update" : `Vendor PO - ${lot?.lote ?? ""} | ${(lot?.description ?? "").substring(0, 35)}`;
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col">
-                {/* Header */}
-                <div className="h-10 bg-[#374151] rounded-t-xl flex items-center justify-between px-4 shrink-0">
-                    <span className="text-white text-[11px] font-black uppercase tracking-wide truncate">
-                        {isEdit ? `Edit QC — ${lot?.lote} | ${lot?.description?.substring(0,40)}` : `Quality Credit — ${lot?.lote} | ${lot?.description?.substring(0,40)}`}
-                    </span>
-                    {error && <span className="text-amber-400 text-[10px] font-bold ml-2 truncate">{error}</span>}
-                    <button onClick={onClose}><XCircle size={16} className="text-gray-400 hover:text-white"/></button>
+        <div className="fixed inset-0 bg-black/40 flex items-start justify-center z-50 p-4 overflow-y-auto">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg my-4 flex flex-col">
+
+                {/* ── Header ─────────────────────────────────── */}
+                <div className="bg-[#374151] rounded-t-2xl flex items-center justify-between px-4 py-3 shrink-0">
+                    <span className="text-white text-sm font-bold truncate">{title}</span>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white ml-2 shrink-0">
+                        <LogOut size={18}/>
+                    </button>
                 </div>
 
-                <div className="overflow-y-auto flex-1 p-4 text-xs">
-                    {/* Lot info */}
-                    <div className="bg-gray-50 rounded p-2 grid grid-cols-4 gap-2 mb-4 border">
-                        {[
-                            { l:"AWBCode",  v: lot?.awbcode },
-                            { l:"Grower",   v: lot?.grower },
-                            { l:"Lote",     v: lot?.lote },
-                            { l:"Stock",    v: lot?.stock },
-                            { l:"F.Cost/U", v: `$${fmt(lot?.flower_cost || lot?.f_cost_x_u)}` },
-                            { l:"C.Cost/U", v: `$${fmt(lot?.c_cost_x_u)}` },
-                            { l:"T.Units",  v: lot?.total_units },
-                            { l:"In Transit",v: lot?.qty_transit },
-                        ].map(f => (
-                            <div key={f.l}>
-                                <span className="text-[9px] font-black text-gray-400 uppercase">{f.l}: </span>
-                                <span className="font-bold text-gray-700">{f.v ?? "—"}</span>
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-4">
-                        {/* Column 1: Core fields */}
-                        <div className="space-y-2">
-                            <div className="flex flex-col gap-0.5">
-                                <label className="text-[9px] font-black text-gray-400 uppercase">Reason *</label>
-                                <select value={form.reasonUq} onChange={e => set("reasonUq", e.target.value)} className="fos-input py-1">
-                                    <option value="">— Select —</option>
-                                    {(reasons as any[]).map((r: any) => <option key={r.unico ?? r.UNICO} value={r.unico ?? r.UNICO}>{r.reason ?? r.description ?? r.DESCRIPTION}</option>)}
-                                </select>
-                            </div>
-                            <div className="flex flex-col gap-0.5">
-                                <label className="text-[9px] font-black text-gray-400 uppercase">QC Credit Date *</label>
-                                <input type="date" value={form.crDate} onChange={e => set("crDate", e.target.value)} className="fos-input py-1"/>
-                            </div>
-                            <div className="flex flex-col gap-0.5">
-                                <label className="text-[9px] font-black text-gray-400 uppercase">CR Units x Box *</label>
-                                <input {...Num("crUnitsBox")} className="fos-input py-1"/>
-                            </div>
-                            <div className="flex flex-col gap-0.5">
-                                <label className="text-[9px] font-black text-gray-400 uppercase">CR Total Units *</label>
-                                <input {...Num("crTotalUnits")} className="fos-input py-1"/>
-                            </div>
-                            <div className="flex flex-col gap-0.5">
-                                <label className="text-[9px] font-black text-gray-400 uppercase">CR Boxes *</label>
-                                <input {...Num("crBoxes")} className="fos-input py-1"/>
-                            </div>
-                            <div className="flex flex-col gap-0.5">
-                                <label className="text-[9px] font-black text-gray-400 uppercase">Replacement Cost x Unit</label>
-                                <input {...Num("replacementCost")} className="fos-input py-1"/>
-                            </div>
-                            <div className="flex flex-col gap-0.5">
-                                <label className="text-[9px] font-black text-gray-400 uppercase">Labor Cost x Unit</label>
-                                <input {...Num("laborCost")} className="fos-input py-1"/>
-                            </div>
-                            <div className="flex flex-col gap-0.5">
-                                <label className="text-[9px] font-black text-gray-400 uppercase">Fumigation</label>
-                                <input {...Num("fumigationCost")} className="fos-input py-1"/>
-                            </div>
-                        </div>
-
-                        {/* Column 2: Calculated + amount */}
-                        <div className="space-y-2">
-                            <div className="flex flex-col gap-0.5">
-                                <label className="text-[9px] font-black text-gray-400 uppercase">Credit Amount *</label>
-                                <input {...Num("amount")} className="fos-input py-1 font-bold text-red-600"/>
-                            </div>
-                            <div className="flex flex-col gap-0.5">
-                                <label className="text-[9px] font-black text-gray-400 uppercase">QC %</label>
-                                <input {...Num("percentage")} className="fos-input py-1"/>
-                            </div>
-                            <div className="flex flex-col gap-0.5">
-                                <label className="text-[9px] font-black text-gray-400 uppercase">Notes</label>
-                                <textarea value={form.notes} onChange={e => set("notes", e.target.value)} rows={3} className="fos-input py-1 resize-none"/>
-                            </div>
-                            <div className="flex flex-col gap-0.5">
-                                <label className="text-[9px] font-black text-gray-400 uppercase">Suggested QC Amount</label>
-                                <input readOnly value={fmt(form.suggested)} className="fos-input py-1 bg-amber-50 text-amber-700 font-bold"/>
-                            </div>
-                            <div className="flex flex-col gap-0.5">
-                                <label className="text-[9px] font-black text-gray-400 uppercase">QC Farm Cost</label>
-                                <input readOnly value={fmt(form.farmCost)} className="fos-input py-1 bg-gray-50 text-gray-500"/>
-                            </div>
-                            <div className="flex flex-col gap-0.5">
-                                <label className="text-[9px] font-black text-gray-400 uppercase">QC Landing Cost</label>
-                                <input readOnly value={fmt(form.landingCost)} className="fos-input py-1 bg-gray-50 text-gray-500"/>
-                            </div>
-                        </div>
-
-                        {/* Column 3: Checkboxes */}
-                        <div className="space-y-1.5 border-l pl-4">
-                            <p className="text-[9px] font-black text-gray-400 uppercase mb-2">Options</p>
-                            {cb("Calculate (Units = Units/Box × Boxes)", "calculate", "text-blue-600")}
-                            {cb("Landing Cost",   "freightApply",     "text-blue-500")}
-                            {cb("Cost Farm",      "farmApply",        "text-green-600")}
-                            {cb("Labor",          "laborApply",       "text-gray-600")}
-                            {cb("Replacement",    "replacementApply", "text-gray-600")}
-                            {cb("Fumigation",     "fumigation",       "text-gray-600")}
-                            {cb("Vendor Credit (Amount = Suggested × %)", "vendorCredit", "text-[#FB7506]")}
-                            <div className="border-t pt-1.5 mt-1 grid grid-cols-2 gap-1">
-                                {cb("Pending",    "pending")}
-                                {cb("Inv. Adjusts","invAdjusts")}
-                                {cb("Sent",       "sent")}
-                                {cb("Check USDA", "usda")}
-                                {cb("Reject",     "reject")}
-                                {cb("Warning",    "warning")}
-                                {cb("Show %",     "showPercent")}
-                            </div>
-                        </div>
-                    </div>
+                {/* ── Lot info ────────────────────────────────── */}
+                <div className="px-5 pt-4 pb-3 grid grid-cols-2 gap-x-6 gap-y-1 border-b">
+                    <InfoRow label="Vendor"            value={lot?.grower}/>
+                    <InfoRow label="City"              value={lot?.city ?? lot?.farm}/>
+                    <InfoRow label="Product"           value={lot?.description}/>
+                    <div/>
+                    <InfoRow label="Price x Stem"      value={lot?.sprice_x_unit ?? lot?.price_x_u}/>
+                    <InfoRow label="Case"              value={lot?.case_sh ?? lot?.case_name}/>
+                    <InfoRow label="Lot"               value={lot?.lote}/>
+                    <InfoRow label="Qty In"            value={lot?.qty_whouse ?? lot?.box_qty}/>
+                    <InfoRow label="Units x Box"       value={lot?.tunits_x_box}/>
+                    <InfoRow label="Bunches x Box"     value={lot?.up_x_pack ?? lot?.pbbunches_case}/>
+                    <InfoRow label="Units x Bunch"     value={lot?.units_x_bunch ?? lot?.cr_units_bunch}/>
+                    <InfoRow label="Landing Cost x Unit" value={lot?.c_cost_x_u}/>
+                    <InfoRow label="Flower Cost x Unit"  value={lot?.flower_cost ?? lot?.f_cost_x_u}/>
+                    <InfoRow label="Total Cost x Unit"   value={lot?.t_cost_x_u}/>
                 </div>
 
-                {/* Footer */}
-                <div className="flex justify-end gap-2 px-4 py-3 bg-gray-50 border-t rounded-b-xl shrink-0">
-                    <button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Cancel</button>
-                    <button onClick={save} disabled={saving} className="flex items-center gap-2 px-4 py-2 rounded bg-[#FB7506] hover:bg-orange-600 text-white text-sm font-black disabled:opacity-50">
-                        {saving ? <RefreshCcw size={13} className="animate-spin"/> : <Save size={13}/>}{saving ? "Saving..." : "OK"}
+                {error && <div className="mx-5 mt-3 p-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-600 font-semibold">{error}</div>}
+
+                {/* ── Form ────────────────────────────────────── */}
+                <div className="px-5 py-4 space-y-4">
+
+                    {/* Row 1: Date + Reason */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <Field label="QC Credit Date" required>
+                            <Input type="date" value={form.crDate} onChange={e => set("crDate", e.target.value)}/>
+                        </Field>
+                        <Field label="Credit Reasons List" required>
+                            <select value={form.reasonUq} onChange={e => set("reasonUq", e.target.value)}
+                                className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-green-400 bg-white">
+                                <option value="">— Select —</option>
+                                {(reasons as any[]).map((r: any) => (
+                                    <option key={r.unico ?? r.UNICO} value={r.unico ?? r.UNICO}>{r.reason ?? r.description ?? r.DESCRIPTION}</option>
+                                ))}
+                            </select>
+                        </Field>
+                    </div>
+
+                    {/* Row 2: Top checkboxes */}
+                    <div className="flex gap-8">
+                        <CBRow label="Inventory Adjusts" checked={form.invAdjusts} onChange={v => set("invAdjusts", v)}/>
+                        <CBRow label="Vendor Credit"     checked={form.vendorCredit} onChange={v => set("vendorCredit", v)}/>
+                    </div>
+
+                    {/* Row 3: CR fields */}
+                    <div className="grid grid-cols-3 gap-3">
+                        <Field label="CR Units x Box" required>
+                            <Input type="number" step="1" value={form.crUnitsBox} onChange={e => setNum("crUnitsBox", e.target.value)}/>
+                        </Field>
+                        <Field label="CR Boxes" required>
+                            <Input type="number" step="1" value={form.crBoxes} onChange={e => setNum("crBoxes", e.target.value)}/>
+                        </Field>
+                        <Field label="CR Total Units" required>
+                            <Input type="number" value={form.crTotalUnits} readOnly/>
+                        </Field>
+                    </div>
+
+                    {/* Row 4: Cost inputs */}
+                    <div className="grid grid-cols-3 gap-3">
+                        <Field label="Labor Cost x Unit">
+                            <Input type="number" step="0.01" value={form.laborCost} onChange={e => setNum("laborCost", e.target.value)}/>
+                        </Field>
+                        <Field label="Fumigation">
+                            <Input type="number" step="0.01" value={form.fumigationCost} onChange={e => setNum("fumigationCost", e.target.value)}/>
+                        </Field>
+                        <Field label="Replacement Cost x Unit">
+                            <Input type="number" step="0.01" value={form.replacementCost} onChange={e => setNum("replacementCost", e.target.value)}/>
+                        </Field>
+                    </div>
+
+                    {/* Row 5: Computed costs */}
+                    <div className="grid grid-cols-3 gap-3">
+                        <Field label="QC Landing Cost">
+                            <Input type="number" value={form.landingCost.toFixed(2)} readOnly/>
+                        </Field>
+                        <div/>
+                        <Field label="QC Farm Cost">
+                            <Input type="number" value={form.farmCost.toFixed(2)} readOnly/>
+                        </Field>
+                    </div>
+
+                    {/* Row 6: 2-column checkbox grid */}
+                    <div className="grid grid-cols-2 gap-x-8 gap-y-3">
+                        <CBRow label="Cost Farm"    checked={form.farmApply}        onChange={v => set("farmApply", v)}/>
+                        <CBRow label="Pending"      checked={form.pending}          onChange={v => set("pending", v)}/>
+                        <CBRow label="Landing Cost" checked={form.freightApply}     onChange={v => set("freightApply", v)}/>
+                        <CBRow label="Warning"      checked={form.warning}          onChange={v => set("warning", v)}/>
+                        <CBRow label="Labor"        checked={form.laborApply}       onChange={v => set("laborApply", v)}/>
+                        <CBRow label="Check USDA"   checked={form.usda}             onChange={v => set("usda", v)}/>
+                        <CBRow label="Fumigation"   checked={form.fumigation}       onChange={v => set("fumigation", v)}/>
+                        <CBRow label="Reject"       checked={form.reject}           onChange={v => set("reject", v)}/>
+                        <CBRow label="Replacement"  checked={form.replacementApply} onChange={v => set("replacementApply", v)}/>
+                        <CBRow label="Sent"         checked={form.sent}             onChange={v => set("sent", v)}/>
+                        <CBRow label="Calculate"    checked={form.calculate}        onChange={v => set("calculate", v)}/>
+                        <CBRow label="Show %"       checked={form.showPercent}      onChange={v => set("showPercent", v)}/>
+                    </div>
+
+                    {/* Row 7: Suggested + % + Amount */}
+                    <div className="grid grid-cols-3 gap-3">
+                        <Field label="Suggested QC Amount">
+                            <Input type="number" value={form.suggested.toFixed(2)} readOnly/>
+                        </Field>
+                        <Field label="QC %">
+                            <Input type="number" value={form.percentage} onChange={e => setNum("percentage", e.target.value)} readOnly={form.vendorCredit}/>
+                        </Field>
+                        <Field label="Credit Amount" required>
+                            <Input type="number" step="0.01" value={form.amount}
+                                onChange={e => setNum("amount", e.target.value)}
+                                readOnly={form.vendorCredit}
+                                className={form.vendorCredit ? "" : "border-green-300 focus:border-green-500"}/>
+                        </Field>
+                    </div>
+
+                    {/* Notes */}
+                    <textarea value={form.notes} onChange={e => set("notes", e.target.value)} rows={3}
+                        placeholder="Notes..."
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-green-400 resize-none"/>
+
+                </div>
+
+                {/* ── Submit button ────────────────────────────── */}
+                <div className="px-5 pb-5 shrink-0">
+                    <button onClick={save} disabled={saving}
+                        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-sm font-black transition-colors">
+                        {saving ? <RefreshCcw size={16} className="animate-spin"/> : <Save size={16}/>}
+                        {saving ? "Saving..." : isEdit ? "Update" : "Save"}
                     </button>
                 </div>
             </div>
