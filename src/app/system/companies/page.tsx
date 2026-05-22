@@ -10,6 +10,8 @@ import {
     Camera, Check, AlertCircle, XCircle, Plus, Pencil,
     Trash2, Menu
 } from "lucide-react";
+import { GridMenu } from "@/components/GridMenu";
+import { GridMenu } from "@/components/GridMenu";
 import { cn } from "@/lib/utils";
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
@@ -29,43 +31,7 @@ const EMPTY = {
 type Mode = "view" | "add" | "edit";
 
 // ─── GridMenu (Appsmith style) ────────────────────────────────────────────────
-function GridMenu({ items }: { items: { label: string; icon: any; color: string; onClick: () => void; disabled?: boolean }[] }) {
-    const [open, setOpen] = useState(false);
-    const COLORS: Record<string,{icon:string;text:string}> = {
-        green:  {icon:"text-green-600", text:"text-green-700"},
-        blue:   {icon:"text-blue-500",  text:"text-gray-800"},
-        red:    {icon:"text-red-500",   text:"text-gray-400"},
-        gray:   {icon:"text-gray-400",  text:"text-gray-400"},
-    };
-    return (
-        <div className="relative" onClick={e => e.stopPropagation()}>
-            <button onClick={() => setOpen(o => !o)}
-                className="h-10 bg-[#FB7506] hover:bg-orange-600 text-white w-24 flex items-center justify-center transition-colors rounded-tr-lg"
-                title="Menu">
-                <Menu size={20} />
-            </button>
-            {open && (
-                <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-gray-200 rounded-lg shadow-2xl z-50 overflow-hidden"
-                    onMouseLeave={() => setOpen(false)}>
-                    {items.map((item, i) => {
-                        const c = COLORS[item.color] || COLORS.gray;
-                        return (
-                            <button key={i} onClick={() => { item.onClick(); setOpen(false); }}
-                                disabled={!!item.disabled}
-                                className={cn(
-                                    "w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors",
-                                    i < items.length - 1 && "border-b border-gray-100"
-                                )}>
-                                <item.icon size={18} className={c.icon} />
-                                <span className={cn("text-sm font-bold", c.text)}>{item.label}</span>
-                            </button>
-                        );
-                    })}
-                </div>
-            )}
-        </div>
-    );
-}
+
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function CompaniesDefinitionPage() {

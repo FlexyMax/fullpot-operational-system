@@ -9,6 +9,8 @@ import {
     Download, Upload, LayoutGrid, Monitor, FileText,
     Check, AlertCircle, ChevronRight, Search, XCircle, Menu
 } from "lucide-react";
+import { GridMenu } from "@/components/GridMenu";
+import { GridMenu } from "@/components/GridMenu";
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { AuditLogModal } from "@/components/AuditLogModal";
@@ -27,48 +29,7 @@ const EMPTY_MOD:    ModForm    = { unico: "", nombre: "", clase: "", orden: "0",
 const EMPTY_SCREEN: ScreenForm = { unico: "", modulo_uq: "", nombre: "", orden: "0", run_pantalla: "", executable: "", image: "", path: "", menu: true, web_form: "", descripcion: "" };
 const EMPTY_REPORT: ReportForm = { unico: "", panta_uq: "", nombre: "", titulo: "", path: "", descripcion: "", fecha_desde: false, fecha_hasta: false, numero_desde: false, numero_hasta: false, actual: true, comprimido: false, detallado: false, exportar: false };
 
-// ─── GridMenu (Appsmith style) ────────────────────────────────────────────────
-function GridMenu({ items, disabled: globalDisabled }: {
-    items: { label: string; icon: any; color: string; onClick: () => void; disabled?: boolean }[];
-    disabled?: boolean;
-}) {
-    const [open, setOpen] = useState(false);
-    const ITEM_COLORS: Record<string, { icon: string; text: string }> = {
-        green:  { icon: "text-green-600",  text: "text-green-700" },
-        orange: { icon: "text-[#FB7506]", text: "text-gray-800" },
-        red:    { icon: "text-red-500",    text: "text-gray-800" },
-        blue:   { icon: "text-blue-600",   text: "text-gray-800" },
-        gray:   { icon: "text-gray-500",   text: "text-gray-700" },
-    };
-    return (
-        <div className="relative" onClick={e => e.stopPropagation()}>
-            <button onClick={() => setOpen(o => !o)}
-                className="h-10 bg-[#FB7506] hover:bg-orange-600 text-white w-24 flex items-center justify-center transition-colors border-none cursor-pointer shadow-inner rounded-tr-lg"
-                title="Menu">
-                <Menu size={20} />
-            </button>
-            {open && (
-                <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-gray-200 rounded-lg shadow-2xl z-50 overflow-hidden"
-                    onMouseLeave={() => setOpen(false)}>
-                    {items.map((item, i) => {
-                        const c = ITEM_COLORS[item.color] || ITEM_COLORS.gray;
-                        return (
-                            <button key={i} onClick={() => { item.onClick(); setOpen(false); }}
-                                disabled={!!item.disabled || !!globalDisabled}
-                                className={cn(
-                                    "w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors",
-                                    i < items.length - 1 && "border-b border-gray-100"
-                                )}>
-                                <item.icon size={18} className={c.icon} />
-                                <span className={cn("text-sm font-bold", c.text)}>{item.label}</span>
-                            </button>
-                        );
-                    })}
-                </div>
-            )}
-        </div>
-    );
-}
+
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ModuleScreenSetupPage() {

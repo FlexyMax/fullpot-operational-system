@@ -7,6 +7,7 @@ import {
     Copy, Layers, Box, Shuffle, BookOpen, Users, Calendar, BarChart2,
     ClipboardList, Printer, Menu, ChevronDown, Package
 } from "lucide-react";
+import { GridMenu } from "@/components/GridMenu";
 import { cn } from "@/lib/utils";
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
@@ -37,26 +38,7 @@ const getTotal = (data: any) => data?.pages?.[0]?.total ?? 0;
 const nextPage  = (last: any) => (last.page ?? 1) * (last.pageSize ?? PAGE_SIZE) < (last.total ?? 0) ? (last.page ?? 1) + 1 : undefined;
 
 // ─── Mini helpers ─────────────────────────────────────────────────────────────
-function GridMenu({ items }: { items: { label:string; icon:any; color:string; onClick:()=>void; disabled?:boolean; separator?:boolean }[] }) {
-    const [open, setOpen] = useState(false);
-    const C: Record<string,{icon:string;text:string}> = { green:{icon:"text-green-600",text:"text-green-700"}, blue:{icon:"text-blue-500",text:"text-gray-800"}, red:{icon:"text-red-500",text:"text-gray-800"}, gray:{icon:"text-gray-500",text:"text-gray-700"}, amber:{icon:"text-amber-500",text:"text-gray-800"}, purple:{icon:"text-purple-500",text:"text-gray-800"} };
-    return (
-        <div className="relative" onClick={e=>e.stopPropagation()}>
-            <button onClick={()=>setOpen(o=>!o)} className="h-10 bg-[#FB7506] hover:bg-orange-600 text-white w-24 flex items-center justify-center transition-colors rounded-tr-lg cursor-pointer"><Menu size={20}/></button>
-            {open && <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-gray-200 rounded-lg shadow-2xl z-50" onMouseLeave={()=>setOpen(false)}>
-                {items.map((item,i) => {
-                    const c = C[item.color]||C.gray;
-                    return item.separator
-                        ? <div key={i} className="border-t border-gray-200 my-0.5"/>
-                        : <button key={i} onClick={()=>{item.onClick();setOpen(false);}} disabled={!!item.disabled}
-                            className={cn("w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors border-b border-gray-100 last:border-0")}>
-                            <item.icon size={18} className={c.icon}/><span className={cn("text-sm font-bold",c.text)}>{item.label}</span>
-                          </button>;
-                })}
-            </div>}
-        </div>
-    );
-}
+
 
 function Btn({ icon:Icon, label, color="gray", onClick, disabled=false, sm=false }: any) {
     const cls: Record<string,string> = { green:"bg-green-600 hover:bg-green-700", blue:"bg-blue-600 hover:bg-blue-700", red:"bg-red-600 hover:bg-red-700", gray:"bg-gray-600 hover:bg-gray-700", amber:"bg-amber-500 hover:bg-amber-600", purple:"bg-purple-600 hover:bg-purple-700" };
