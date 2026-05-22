@@ -8,12 +8,11 @@ import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { QCProvider, useQCContext } from "./context/QCContext";
 import { cn } from "@/lib/utils";
 import {
-    ArrowLeft, LayoutDashboard, Package, Truck, ShoppingBag,
+    ArrowLeft, Package, Truck, ShoppingBag,
     XCircle, Award, History, Loader2
 } from "lucide-react";
 
-// Tabs
-import DashboardTab        from "./components/tabs/DashboardTab";
+// Tabs (Dashboard removed — starts from Stock List)
 import StockListTab        from "./components/tabs/StockListTab";
 import TransitBoxesTab     from "./components/tabs/TransitBoxesTab";
 import CancelledPurchasesTab from "./components/tabs/CancelledPurchasesTab";
@@ -25,13 +24,12 @@ import QCModal             from "./components/modals/QCModal";
 import BoxTransferModal    from "./components/modals/BoxTransferModal";
 
 const TABS = [
-    { id: "dashboard",   label: "Dashboard",           icon: LayoutDashboard },
-    { id: "stock",       label: "Stock List",           icon: Package },
-    { id: "transit",     label: "Transit Boxes",        icon: Truck },
-    { id: "preorder",    label: "PreOrderBoxes",        icon: ShoppingBag },
-    { id: "cancellations",label: "Cancelled Purchases", icon: XCircle },
-    { id: "credits",     label: "Quality Credits",      icon: Award },
-    { id: "history",     label: "QC History",           icon: History },
+    { id: "stock",        label: "Stock List",           icon: Package },
+    { id: "transit",      label: "Transit Boxes",        icon: Truck },
+    { id: "preorder",     label: "PreOrderBoxes",        icon: ShoppingBag },
+    { id: "cancellations",label: "Cancelled Purchases",  icon: XCircle },
+    { id: "credits",      label: "Quality Credits",      icon: Award },
+    { id: "history",      label: "QC History",           icon: History },
 ] as const;
 
 type TabId = typeof TABS[number]["id"];
@@ -51,7 +49,7 @@ function QCPage() {
     const perms = usePagePermissions("qc");
     const { setCanCreate, setCanEdit, setCanDelete } = useQCContext();
 
-    const [activeTab, setActiveTab] = useState<TabId>("dashboard");
+    const [activeTab, setActiveTab] = useState<TabId>("stock");
 
     // Modals
     const [qcModal,       setQcModal]       = useState<{ lot: any; credit?: any } | null>(null);
@@ -151,8 +149,7 @@ function QCPage() {
 
                     {/* Tab content */}
                     <div className="flex-1 overflow-auto bg-[#f4f6f8] p-2">
-                        {activeTab === "dashboard"    && <DashboardTab/>}
-                        {activeTab === "stock"        && <StockListTab onSendToWarehouse={handleSendToWarehouse} onEditTransfer={handleEditTransfer}/>}
+                        {activeTab === "stock"        && <StockListTab onSendToWarehouse={handleSendToWarehouse} onEditTransfer={handleEditTransfer} onAddQC={handleAddQC}/>}
                         {activeTab === "transit"      && <TransitBoxesTab/>}
                         {activeTab === "preorder"     && <StockListTab onSendToWarehouse={handleSendToWarehouse} onEditTransfer={handleEditTransfer}/>}
                         {activeTab === "cancellations" && <CancelledPurchasesTab/>}
