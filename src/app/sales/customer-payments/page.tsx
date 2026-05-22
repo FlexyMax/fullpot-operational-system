@@ -1402,23 +1402,6 @@ export default function CustomerPaymentsPage() {
             {/* ── TAB 3: CUSTOMER PAYMENTS ──────────────────────────────────── */}
             {activeTab === "payments" && (
                 <div className="flex flex-col flex-1 overflow-hidden p-1.5 gap-1.5">
-                    {/* Toolbar */}
-                    <div className="bg-gray-100 border border-gray-200 rounded-lg px-2 py-1.5 flex flex-wrap gap-1 shrink-0 overflow-x-auto">
-                        <GridMenu items={[
-                            { label: "Add", icon: Plus, color: "green", onClick: ()=>{ if(!perms.canCreate){toast.error(PERMISSION_MSGS.create);return;} setNewPayModal({mode:"add"}); }, disabled: !selCustomer||!perms.canCreate },
-                            { label: "Edit", icon: Pencil, color: "orange", onClick: ()=>{ if(!selPayment){toast.error("Payment empty.");return;} setNewPayModal({mode:"edit",income:selPayment}); }, disabled: !selPayment },
-                            { label: "Delete", icon: Trash2, color: "red", onClick: ()=>{ if(!selPayment){toast.error("Payment empty.");return;} setNewPayModal({mode:"delete",income:selPayment}); }, disabled: !selPayment },
-                            { label: "Void Payment", icon: RotateCcw, color: "amber", onClick: ()=>{
-                                if(!selPayment){toast.error("Payment empty.");return;}
-                                if(!perms.canEdit){toast.error(PERMISSION_MSGS.edit);return;}
-                                toastConfirm("Do you want to VOID this payment?", async()=>{
-                                    try{const r=await fetch(`/api/customer-payments/payment/${selPayment.unico}/void`,{method:"PUT"});const d=await r.json();if(!d.success)throw new Error(d.error);logAction("Edit",selPayment.unico,"Void");toast.success("Payment voided.");setSelPayment(null);refetchPay();refetchInv();refetchIncomes();}catch(e:any){toast.error((e as any).message);}
-                                }, "Void");
-                            }, disabled: !selPayment||!perms.canEdit },
-                            { label: "Print", icon: Printer, color: "gray", onClick: async()=>{ if(!selPayment){toast.error("Payment empty.");return;} const d=await cpFetch(`/api/customer-payments/payment/${selPayment.unico}/report`); toast.info(`Report: ${d.records?.length??0} record(s) — print coming soon.`); }, disabled: !selPayment||!perms.canReport },
-                            { label: "Cash Back", icon: RotateCcw, color: "purple", onClick: ()=>{ if(!selPayment){toast.error("Payment empty.");return;} setCashbackModal(true); }, disabled: !selPayment||!perms.canCreate },
-                        ]} />
-                    </div>
                     {/* Payments grid */}
                     <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden" style={{flex:"1 1 55%",minHeight:0}}>
                         <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
@@ -1427,7 +1410,23 @@ export default function CustomerPaymentsPage() {
                                 <span className="fos-grid-header-text">Customer Payments {selCustomer?`— ${t(selCustomer.customer)}`:""}</span>
                                 {loadingPay && <RefreshCcw size={11} className="text-gray-400 animate-spin"/>}
                             </div>
-                            <AuditLogModal recordId={selPayment?.unico} disabled={!selPayment}/>
+                            <div className="flex items-center">
+                                <AuditLogModal recordId={selPayment?.unico} disabled={!selPayment}/>
+                                <GridMenu items={[
+                                    { label: "Add", icon: Plus, color: "green", onClick: ()=>{ if(!perms.canCreate){toast.error(PERMISSION_MSGS.create);return;} setNewPayModal({mode:"add"}); }, disabled: !selCustomer||!perms.canCreate },
+                                    { label: "Edit", icon: Pencil, color: "orange", onClick: ()=>{ if(!selPayment){toast.error("Payment empty.");return;} setNewPayModal({mode:"edit",income:selPayment}); }, disabled: !selPayment },
+                                    { label: "Delete", icon: Trash2, color: "red", onClick: ()=>{ if(!selPayment){toast.error("Payment empty.");return;} setNewPayModal({mode:"delete",income:selPayment}); }, disabled: !selPayment },
+                                    { label: "Void Payment", icon: RotateCcw, color: "amber", onClick: ()=>{
+                                        if(!selPayment){toast.error("Payment empty.");return;}
+                                        if(!perms.canEdit){toast.error(PERMISSION_MSGS.edit);return;}
+                                        toastConfirm("Do you want to VOID this payment?", async()=>{
+                                            try{const r=await fetch(`/api/customer-payments/payment/${selPayment.unico}/void`,{method:"PUT"});const d=await r.json();if(!d.success)throw new Error(d.error);logAction("Edit",selPayment.unico,"Void");toast.success("Payment voided.");setSelPayment(null);refetchPay();refetchInv();refetchIncomes();}catch(e:any){toast.error((e as any).message);}
+                                        }, "Void");
+                                    }, disabled: !selPayment||!perms.canEdit },
+                                    { label: "Print", icon: Printer, color: "gray", onClick: async()=>{ if(!selPayment){toast.error("Payment empty.");return;} const d=await cpFetch(`/api/customer-payments/payment/${selPayment.unico}/report`); toast.info(`Report: ${d.records?.length??0} record(s) — print coming soon.`); }, disabled: !selPayment||!perms.canReport },
+                                    { label: "Cash Back", icon: RotateCcw, color: "purple", onClick: ()=>{ if(!selPayment){toast.error("Payment empty.");return;} setCashbackModal(true); }, disabled: !selPayment||!perms.canCreate },
+                                ]} />
+                            </div>
                         </div>
                         <div className="overflow-auto flex-1">
                             <table className="min-w-full text-left">
@@ -1492,29 +1491,6 @@ export default function CustomerPaymentsPage() {
             {/* ── TAB 4: CREDITS / DEBITS ───────────────────────────────────── */}
             {activeTab === "crdb" && (
                 <div className="flex flex-col flex-1 overflow-hidden p-1.5 gap-1.5">
-                    {/* Toolbar */}
-                    <div className="bg-gray-100 border border-gray-200 rounded-lg px-2 py-1.5 flex flex-wrap gap-1 shrink-0 overflow-x-auto">
-                        <GridMenu items={[
-                            { label: "Refresh", icon: RefreshCcw, color: "gray", onClick: ()=>{ setSelCrDbDate(null); setSelCrDb(null); refetchCrdbDates(); } },
-                            { label: "Edit Cr/Db", icon: Pencil, color: "orange", onClick: ()=>{
-                                if(!selCustomer){toast.error("Customer empty.");return;}
-                                if(!selCrDb){toast.error("Document empty.");return;}
-                                if(selCrDb.automatic){toast.error("Automatic Document. You can't edit/delete.");return;}
-                                setCrdbModal({mode:"edit"});
-                            }, disabled: !selCrDb||!perms.canEdit },
-                            { label: "Delete Cr/Db", icon: Trash2, color: "red", onClick: ()=>{
-                                if(!selCustomer){toast.error("Customer empty.");return;}
-                                if(!selCrDb){toast.error("Document empty.");return;}
-                                if(selCrDb.automatic){toast.error("Automatic Document. You can't edit/delete.");return;}
-                                setCrdbModal({mode:"delete"});
-                            }, disabled: !selCrDb||!perms.canDelete },
-                            { label: "Print Material", icon: Printer, color: "gray", onClick: ()=>{
-                                if(!selCrDb){toast.error("Select a CR/DB record first.");return;}
-                                if(!perms.canReport){toast.error(PERMISSION_MSGS.report);return;}
-                                setCrdbReportModal(true);
-                            }, disabled: !selCrDb||!perms.canReport },
-                        ]} />
-                    </div>
                     {/* Two-column layout */}
                     <div className="flex gap-1.5 flex-1 overflow-hidden min-h-0">
                         {/* Left: Date picker */}
@@ -1552,7 +1528,29 @@ export default function CustomerPaymentsPage() {
                                     <span className="fos-grid-header-text">Cr/Db History {selCrDbDate?`— ${fmtDate(selCrDbDate)}`:""}</span>
                                     {loadingCrdb && <RefreshCcw size={11} className="text-gray-400 animate-spin"/>}
                                 </div>
-                                <AuditLogModal recordId={selCrDb?.unico} disabled={!selCrDb}/>
+                                <div className="flex items-center">
+                                    <AuditLogModal recordId={selCrDb?.unico} disabled={!selCrDb}/>
+                                    <GridMenu items={[
+                                        { label: "Refresh", icon: RefreshCcw, color: "gray", onClick: ()=>{ setSelCrDbDate(null); setSelCrDb(null); refetchCrdbDates(); } },
+                                        { label: "Edit Cr/Db", icon: Pencil, color: "orange", onClick: ()=>{
+                                            if(!selCustomer){toast.error("Customer empty.");return;}
+                                            if(!selCrDb){toast.error("Document empty.");return;}
+                                            if(selCrDb.automatic){toast.error("Automatic Document. You can't edit/delete.");return;}
+                                            setCrdbModal({mode:"edit"});
+                                        }, disabled: !selCrDb||!perms.canEdit },
+                                        { label: "Delete Cr/Db", icon: Trash2, color: "red", onClick: ()=>{
+                                            if(!selCustomer){toast.error("Customer empty.");return;}
+                                            if(!selCrDb){toast.error("Document empty.");return;}
+                                            if(selCrDb.automatic){toast.error("Automatic Document. You can't edit/delete.");return;}
+                                            setCrdbModal({mode:"delete"});
+                                        }, disabled: !selCrDb||!perms.canDelete },
+                                        { label: "Print Material", icon: Printer, color: "gray", onClick: ()=>{
+                                            if(!selCrDb){toast.error("Select a CR/DB record first.");return;}
+                                            if(!perms.canReport){toast.error(PERMISSION_MSGS.report);return;}
+                                            setCrdbReportModal(true);
+                                        }, disabled: !selCrDb||!perms.canReport },
+                                    ]} />
+                                </div>
                             </div>
                             <div className="overflow-auto flex-1">
                                 <table className="min-w-full text-left">
