@@ -28,6 +28,7 @@ function getRoute(appPage: string): string | null {
     if (p.includes('CUSTOMER') || p.includes('CLIENTES') || p.includes('CUSTOMERS SETUP')) return '/masters/customers';
     if (p.includes('FREIGHT') || p.includes('HANDLING SETUP') || p.includes('FLETE')) return '/masters/freights';
     if (p.includes('CARRIER') || p.includes('AEROLINEA') || p.includes('CARRIERS DEF')) return '/masters/carriers';
+    if (p.includes('PAYMENT AUTH') || p.includes('VENDOR PAY') || p.includes('AP PAY') || p.includes('GROWERS PAY') || p.includes('VENTAS_GROWERS_PAY')) return '/payment-authorizations';
     if (p.includes('RECEIVABLE') || p.includes('A/R') || p.includes('A-R') || p.includes('CUSTOMER PAY') || p.includes('PAYMENT') || p.includes('INCOME')) return '/sales/customer-payments';
     if (p.includes('ITEM') || p.includes('PRODUCT') || p.includes('VARIETY') || p.includes('VARIEDAD') || p.includes('ITEM SETUP') || p.includes('PRODUCTO')) return '/masters/items';
     if (p.includes('USUARIO') || p.includes('USER ACCESS') || p.includes('ACCESO') || p.includes('ACCESS DEF')) return '/system/access';
