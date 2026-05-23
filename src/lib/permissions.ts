@@ -64,6 +64,8 @@ export const SCREEN_PANTA: Record<string, string> = {
     "access-definition":    "52961702",  // fallback — register dedicated record
     "companies-definition": "52961702",  // fallback — register dedicated record
 
+    "payment-authorizations": "52961702",  // fallback — register in Module & Screen Setup to enforce real permissions
+
     // Add new pages here after registering in Module & Screen Setup
 };
 
