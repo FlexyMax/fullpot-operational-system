@@ -442,7 +442,7 @@ function AwbsInvoiceChargesModal({ packUq, awbcode, onClose, onSaved }: any) {
                 <div className="flex-1 min-w-0 overflow-auto">
                     {isFetching ? <div className="flex items-center gap-2 text-gray-400 text-xs p-4"><Loader2 size={14} className="animate-spin"/>Loading...</div> : (
                         <table className="min-w-full text-left text-xs">
-                            <thead className="bg-gray-100 border-b fos-grid-thead text-gray-700 sticky top-0">
+                            <thead className="bg-[#374151] border-b fos-grid-thead text-white sticky top-0">
                                 <tr>{["AWBCode","Type","Date","Supplier","Freight","Boxes","Description","Invoice","Inv.Date",""].map(h => <th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>)}</tr>
                             </thead>
                             <tbody className="fos-grid-tbody divide-y divide-gray-100">
@@ -635,7 +635,7 @@ function ReportModal({ title, records, onClose }: any) {
             footer={<button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Close</button>}>
             <div className="overflow-auto">
                 <table className="min-w-full text-xs">
-                    <thead className="bg-gray-100 border-b fos-grid-thead text-gray-700 sticky top-0">
+                    <thead className="bg-[#374151] border-b fos-grid-thead text-white sticky top-0">
                         <tr>{cols.map(c => <th key={c} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{c}</th>)}</tr>
                     </thead>
                     <tbody className="fos-grid-tbody divide-y divide-gray-100">
@@ -945,36 +945,35 @@ export default function AwbsPage() {
                 </div>
             </div>
 
-            {/* Action buttons */}
-            <div className="bg-white border-b px-4 py-1.5 flex flex-wrap items-center gap-2 shrink-0">
-                <GridMenu items={[
-                    { label: "Update", icon: Pencil, color: "orange", onClick: () => { if (!selAwb) { toast.error("Select an AWB."); return; } if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } /* open update modal */ }, disabled: !selAwb || !perms.canEdit },
-                    { label: "Delete", icon: Trash2, color: "red", onClick: handleDeleteAwb, disabled: !selAwb || !perms.canDelete },
-                    { label: "Set MPF", icon: Package, color: "blue", onClick: () => { if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } setMpfModal(true); }, disabled: !selAwb || !perms.canEdit },
-                    { label: "Change Awb Date", icon: Calendar, color: "blue", onClick: () => { if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } setChangeDateModal(true); }, disabled: !selAwb || !perms.canEdit },
-                    { label: "Products", icon: Printer, color: "gray", onClick: () => handleReport("products"), disabled: !selAwb || !perms.canReport },
-                    { label: "Credits Duties", icon: BarChart2, color: "gray", onClick: () => handleReport("duties"), disabled: !selAwb || !perms.canReport },
-                ]} />
-                {selAwb && (
-                    <div className="ml-auto flex items-center gap-2 text-xs bg-blue-50 px-3 py-1 rounded border border-blue-200">
-                        <Plane size={12} className="text-blue-500"/>
-                        <span className="font-bold text-blue-700">{t(selAwb.AWBCODE)}</span>
-                        <span className="text-gray-500">{t(selAwb.AIRLINE)}</span>
-                        <span className="text-gray-400">{fmtDate(selAwb.BOX_DATE)}</span>
-                    </div>
-                )}
-            </div>
-
             {/* Main content */}
             <div className="flex-1 flex flex-col min-h-0 p-3 gap-3">
 
                 {/* AWB grid */}
-                <div className="bg-white rounded border shadow-sm overflow-auto" style={{ maxHeight: "35vh" }}>
+                <div className="bg-white rounded-b border shadow-sm overflow-auto" style={{ maxHeight: "35vh" }}>
+                    <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
+                        <div className="flex items-center gap-2">
+                            <Plane size={15} className="text-[#FB7506]"/>
+                            <span className="fos-grid-header-text">AWBs</span>
+                            {selAwb && (
+                                <span className="text-xs text-gray-300 ml-2">
+                                    {t(selAwb.AWBCODE)} — {t(selAwb.AIRLINE)} — {fmtDate(selAwb.BOX_DATE)}
+                                </span>
+                            )}
+                        </div>
+                        <GridMenu items={[
+                            { label: "Update", icon: Pencil, color: "orange", onClick: () => { if (!selAwb) { toast.error("Select an AWB."); return; } if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } /* open update modal */ }, disabled: !selAwb || !perms.canEdit },
+                            { label: "Delete", icon: Trash2, color: "red", onClick: handleDeleteAwb, disabled: !selAwb || !perms.canDelete },
+                            { label: "Set MPF", icon: Package, color: "blue", onClick: () => { if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } setMpfModal(true); }, disabled: !selAwb || !perms.canEdit },
+                            { label: "Change Awb Date", icon: Calendar, color: "blue", onClick: () => { if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } setChangeDateModal(true); }, disabled: !selAwb || !perms.canEdit },
+                            { label: "Products", icon: Printer, color: "gray", onClick: () => handleReport("products"), disabled: !selAwb || !perms.canReport },
+                            { label: "Credits Duties", icon: BarChart2, color: "gray", onClick: () => handleReport("duties"), disabled: !selAwb || !perms.canReport },
+                        ]} />
+                    </div>
                     {loadingAwbs ? (
                         <div className="flex items-center gap-2 text-gray-400 text-xs p-4"><Loader2 size={14} className="animate-spin"/>Loading AWBs...</div>
                     ) : (
                         <table className="min-w-full text-left text-xs">
-                            <thead className="bg-gray-100 border-b fos-grid-thead text-gray-700 sticky top-0">
+                            <thead className="bg-[#374151] border-b fos-grid-thead text-white sticky top-0">
                                 <tr>{["AWBCode","Airline","Air Code","Box Date","Inv Date","Boxes","Units","Charge","Handling","Freight","Duties","Broker","Total"].map(h => (
                                     <th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
                                 ))}</tr>
@@ -1024,18 +1023,22 @@ export default function AwbsPage() {
 
                         {/* Tab 1: Vendors x Awb */}
                         {activeTab === "vendors" && (
-                            <div className="flex flex-col gap-2 h-full">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="text-[9px] font-black text-gray-400 uppercase">Vendor Invoices x AWB</span>
-                                    <Btn icon={Plus}    label="Add Invoice Charge" color="green" disabled={!selVendor || !perms.canCreate}
-                                        onClick={() => { if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; } setInvoiceChargesModal(true); }}/>
-                                    <Btn icon={Printer} label="Print"              color="gray"  disabled={!selVendor || !perms.canReport} onClick={handleVendorPrint}/>
+                            <div className="flex flex-col h-full">
+                                <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
+                                    <div className="flex items-center gap-2">
+                                        <FileText size={15} className="text-[#FB7506]"/>
+                                        <span className="fos-grid-header-text">Vendor Invoices x AWB</span>
+                                    </div>
+                                    <GridMenu items={[
+                                        { label: "Add Invoice Charge", icon: Plus, color: "green", onClick: () => { if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; } setInvoiceChargesModal(true); }, disabled: !selVendor || !perms.canCreate },
+                                        { label: "Print", icon: Printer, color: "gray", onClick: handleVendorPrint, disabled: !selVendor || !perms.canReport },
+                                    ]} />
                                 </div>
                                 <TabLoading loading={loadingVendors}/>
                                 {!loadingVendors && (
                                     <div className="overflow-auto flex-1">
                                         <table className="min-w-full text-left text-xs">
-                                            <thead className="bg-gray-100 border-b fos-grid-thead text-gray-700 sticky top-0">
+                                            <thead className="bg-[#374151] border-b fos-grid-thead text-white sticky top-0">
                                                 <tr>{["Pack UQ","Packing No","Invoice No","AWBCode","Box Date","Inv Date","Grower","Farm","Boxes","Units","Charge","Handling","Freight"].map(h => (
                                                     <th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
                                                 ))}</tr>
@@ -1070,20 +1073,23 @@ export default function AwbsPage() {
 
                         {/* Tab 2: Charges Applied by Awb */}
                         {activeTab === "charges" && (
-                            <div className="flex flex-col gap-2 h-full">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="text-[9px] font-black text-gray-400 uppercase">AWB's Direct Cost by Prorate by AWB</span>
-                                    <Btn icon={Plus}   label="Add"    color="green" disabled={!selAwb || !perms.canCreate}
-                                        onClick={() => { if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; } setSelCharge(null); setChargesModal({ mode: "add" }); }}/>
-                                    <Btn icon={Pencil} label="Edit"   color="amber" disabled={!selCharge || !perms.canEdit}
-                                        onClick={() => { if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } setChargesModal({ mode: "edit" }); }}/>
-                                    <Btn icon={Trash2} label="Delete" color="red"   disabled={!selCharge || !perms.canDelete} onClick={() => handleDeleteCharge(selCharge)}/>
+                            <div className="flex flex-col h-full">
+                                <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
+                                    <div className="flex items-center gap-2">
+                                        <DollarSign size={15} className="text-[#FB7506]"/>
+                                        <span className="fos-grid-header-text">AWB's Direct Cost by Prorate by AWB</span>
+                                    </div>
+                                    <GridMenu items={[
+                                        { label: "Add", icon: Plus, color: "green", onClick: () => { if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; } setSelCharge(null); setChargesModal({ mode: "add" }); }, disabled: !selAwb || !perms.canCreate },
+                                        { label: "Edit", icon: Pencil, color: "orange", onClick: () => { if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } setChargesModal({ mode: "edit" }); }, disabled: !selCharge || !perms.canEdit },
+                                        { label: "Delete", icon: Trash2, color: "red", onClick: () => handleDeleteCharge(selCharge), disabled: !selCharge || !perms.canDelete },
+                                    ]} />
                                 </div>
                                 <TabLoading loading={loadingCharges}/>
                                 {!loadingCharges && (
                                     <div className="overflow-auto flex-1">
                                         <table className="min-w-full text-left text-xs">
-                                            <thead className="bg-gray-100 border-b fos-grid-thead text-gray-700 sticky top-0">
+                                            <thead className="bg-[#374151] border-b fos-grid-thead text-white sticky top-0">
                                                 <tr>{["UNICO","OC Amount","Description","Date","O.Charges","Handling","Freight","Broker","Duties","Boxes","AP Type","Grower","AWBCode","Invoice"].map(h => (
                                                     <th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
                                                 ))}</tr>
@@ -1119,17 +1125,21 @@ export default function AwbsPage() {
 
                         {/* Tab 3: Boxes x AWB */}
                         {activeTab === "boxes" && (
-                            <div className="flex flex-col gap-2 h-full">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[9px] font-black text-gray-400 uppercase">Boxes x AWB</span>
-                                    <Btn icon={Pencil} label="Edit" color="amber" disabled={!selBox || !perms.canEdit}
-                                        onClick={() => { if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } setBoxesModal(true); }}/>
+                            <div className="flex flex-col h-full">
+                                <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
+                                    <div className="flex items-center gap-2">
+                                        <Package size={15} className="text-[#FB7506]"/>
+                                        <span className="fos-grid-header-text">Boxes x AWB</span>
+                                    </div>
+                                    <GridMenu items={[
+                                        { label: "Edit", icon: Pencil, color: "orange", onClick: () => { if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } setBoxesModal(true); }, disabled: !selBox || !perms.canEdit },
+                                    ]} />
                                 </div>
                                 <TabLoading loading={loadingBoxes}/>
                                 {!loadingBoxes && (
                                     <div className="overflow-auto flex-1">
                                         <table className="min-w-full text-left text-xs">
-                                            <thead className="bg-gray-100 border-b fos-grid-thead text-gray-700 sticky top-0">
+                                            <thead className="bg-[#374151] border-b fos-grid-thead text-white sticky top-0">
                                                 <tr>{["Ready","Order","UNICO","Sel","Lote","Market","P.Order","Customer","Qty","Box Date","Days","Box Qty","BoxNum","Units","F.Cost","FC.Cost"].map(h => (
                                                     <th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
                                                 ))}</tr>
@@ -1167,20 +1177,23 @@ export default function AwbsPage() {
 
                         {/* Tab 4: Charges Applied by Date */}
                         {activeTab === "by-date" && (
-                            <div className="flex flex-col gap-2 h-full">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="text-[9px] font-black text-gray-400 uppercase">AWB's Direct Cost Prorate by Date</span>
-                                    <Btn icon={Plus}   label="Add"    color="green" disabled={!perms.canCreate}
-                                        onClick={() => { if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; } setSelByDate(null); setFreightsModal({ mode: "add" }); }}/>
-                                    <Btn icon={Pencil} label="Edit"   color="amber" disabled={!selByDate || !perms.canEdit}
-                                        onClick={() => { if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } setFreightsModal({ mode: "edit" }); }}/>
-                                    <Btn icon={Trash2} label="Delete" color="red"   disabled={!selByDate || !perms.canDelete} onClick={() => handleDeleteByDate(selByDate)}/>
+                            <div className="flex flex-col h-full">
+                                <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
+                                    <div className="flex items-center gap-2">
+                                        <Calendar size={15} className="text-[#FB7506]"/>
+                                        <span className="fos-grid-header-text">AWB's Direct Cost Prorate by Date</span>
+                                    </div>
+                                    <GridMenu items={[
+                                        { label: "Add", icon: Plus, color: "green", onClick: () => { if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; } setSelByDate(null); setFreightsModal({ mode: "add" }); }, disabled: !perms.canCreate },
+                                        { label: "Edit", icon: Pencil, color: "orange", onClick: () => { if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } setFreightsModal({ mode: "edit" }); }, disabled: !selByDate || !perms.canEdit },
+                                        { label: "Delete", icon: Trash2, color: "red", onClick: () => handleDeleteByDate(selByDate), disabled: !selByDate || !perms.canDelete },
+                                    ]} />
                                 </div>
                                 <TabLoading loading={loadingByDate}/>
                                 {!loadingByDate && (
                                     <div className="overflow-auto flex-1">
                                         <table className="min-w-full text-left text-xs">
-                                            <thead className="bg-gray-100 border-b fos-grid-thead text-gray-700 sticky top-0">
+                                            <thead className="bg-[#374151] border-b fos-grid-thead text-white sticky top-0">
                                                 <tr>{["UNICO","AP Type","Supplier","Charge Date","Apply From","Apply To","Total Box","Duties","O.Charges","Notes","Invoice","Timestamp"].map(h => (
                                                     <th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
                                                 ))}</tr>
@@ -1213,17 +1226,22 @@ export default function AwbsPage() {
 
                         {/* Tab 5: Varieties */}
                         {activeTab === "varieties" && (
-                            <div className="flex flex-col gap-2 h-full">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[9px] font-black text-gray-400 uppercase">Varieties x AWB</span>
-                                    <Btn icon={Plus}   label="Add"    color="green" disabled={!selAwb || !perms.canCreate} onClick={handleAddVariety}/>
-                                    <Btn icon={Trash2} label="Delete" color="red"   disabled={!selVariety || !perms.canDelete} onClick={() => handleDeleteVariety(selVariety)}/>
+                            <div className="flex flex-col h-full">
+                                <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
+                                    <div className="flex items-center gap-2">
+                                        <BarChart2 size={15} className="text-[#FB7506]"/>
+                                        <span className="fos-grid-header-text">Varieties x AWB</span>
+                                    </div>
+                                    <GridMenu items={[
+                                        { label: "Add", icon: Plus, color: "green", onClick: handleAddVariety, disabled: !selAwb || !perms.canCreate },
+                                        { label: "Delete", icon: Trash2, color: "red", onClick: () => handleDeleteVariety(selVariety), disabled: !selVariety || !perms.canDelete },
+                                    ]} />
                                 </div>
                                 <TabLoading loading={loadingVarieties}/>
                                 {!loadingVarieties && (
                                     <div className="overflow-auto flex-1">
                                         <table className="min-w-full text-left text-xs">
-                                            <thead className="bg-gray-100 border-b fos-grid-thead text-gray-700 sticky top-0">
+                                            <thead className="bg-[#374151] border-b fos-grid-thead text-white sticky top-0">
                                                 <tr>{Object.keys((varieties as any[])[0] ?? { UNICO: "", AWBCODE: "" }).map(h => (
                                                     <th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
                                                 ))}</tr>
