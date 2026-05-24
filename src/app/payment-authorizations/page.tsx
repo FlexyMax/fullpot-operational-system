@@ -968,7 +968,7 @@ export default function PaymentAuthorizationsPage() {
                                                         <tr key={uq}
                                                             className={cn("cursor-pointer transition-colors",
                                                                 sel ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50")}
-                                                            onClick={() => { store.setApUq(uq); store.setApdUq(t(row.ACC_PAY_UQ)); setSelInvoiceRow(row); }}>
+                                                            onClick={() => { store.setApUq(uq); store.setApdUq(uq); setSelInvoiceRow(row); }}>
                                                             <td className="p-2 border-r border-gray-100 whitespace-nowrap font-medium">{t(row.INVOICE_NO)}</td>
                                                             <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right text-gray-500">
                                                                 {t(row.PORDER_NO) === "0" ? "" : t(row.PORDER_NO)}
@@ -1030,33 +1030,36 @@ export default function PaymentAuthorizationsPage() {
                             )}
                         </div>
 
-                        {/* Payments mini-grid — shows when an invoice is selected */}
-                        {store.lcapd_uq && (
-                            <div className="bg-white rounded border shadow-sm flex flex-col shrink-0" style={{ maxHeight: "10rem" }}>
-                                <div className="h-9 bg-[#374151] flex items-center pl-3 shrink-0 rounded-t-lg">
+                        {/* Payments mini-grid — always visible once vendor is selected, fixed height */}
+                        {store.lcgrower_uq && (
+                            <div className="bg-white rounded border shadow-sm flex flex-col shrink-0 h-36">
+                                <div className="h-9 bg-[#374151] flex items-center pl-3 shrink-0 rounded-t-lg gap-2">
                                     <CreditCard size={14} className="text-[#FB7506]"/>
-                                    <span className="fos-grid-header-text ml-2">Payments</span>
-                                    {loadingDetails && <Loader2 size={12} className="animate-spin text-gray-400 ml-2"/>}
+                                    <span className="fos-grid-header-text">Payments</span>
+                                    {loadingDetails && <Loader2 size={12} className="animate-spin text-gray-400"/>}
+                                    {selInvoiceRow && <span className="text-xs text-gray-400 ml-1">— {t(selInvoiceRow.INVOICE_NO)}</span>}
                                 </div>
                                 <div className="overflow-auto flex-1">
                                     <table className="min-w-full text-left text-xs">
                                         <thead className="bg-gray-100 border-b fos-grid-thead text-gray-700 sticky top-0">
                                             <tr>
-                                                <th className="p-2 border-r border-gray-200 whitespace-nowrap">Outcome</th>
+                                                <th className="p-2 border-r border-gray-200 whitespace-nowrap w-full">Outcome</th>
                                                 <th className="p-2 border-r border-gray-200 whitespace-nowrap text-right">Amount</th>
                                                 <th className="p-2 whitespace-nowrap">Pay Doc</th>
                                             </tr>
                                         </thead>
                                         <tbody className="fos-grid-tbody divide-y divide-gray-100">
-                                            {outcomeDetails.length === 0 && !loadingDetails ? (
-                                                <tr>
-                                                    <td colSpan={3} className="p-3 text-center text-gray-400 italic text-xs">No payment records</td>
-                                                </tr>
+                                            {!store.lcapd_uq ? (
+                                                <tr><td colSpan={3} className="p-3 text-center text-gray-400 italic text-xs">Select an invoice to see payments</td></tr>
+                                            ) : loadingDetails ? (
+                                                <tr><td colSpan={3} className="p-3 text-center text-gray-400 text-xs"><Loader2 size={12} className="animate-spin inline mr-1"/>Loading…</td></tr>
+                                            ) : outcomeDetails.length === 0 ? (
+                                                <tr><td colSpan={3} className="p-3 text-center text-gray-400 italic text-xs">No payment records</td></tr>
                                             ) : outcomeDetails.map((row: any, i: number) => (
                                                 <tr key={i} className="hover:bg-gray-50">
-                                                    <td className="p-2 border-r border-gray-100 whitespace-nowrap">{t(row.OUT_DOCUMENT ?? row.OUTCOME ?? row.UNICO)}</td>
-                                                    <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right font-medium">{fmt(row.OUT_AMMOUNT ?? row.AMMOUNT)}</td>
-                                                    <td className="p-2 whitespace-nowrap">{t(row.PAY_DOC)}</td>
+                                                    <td className="p-2 border-r border-gray-100 whitespace-nowrap">{t(row.DATO ?? row.OUT_DOCUMENT ?? row.UNICO)}</td>
+                                                    <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right font-medium text-blue-700">{fmt(row.OUT_AMMOUNT)}</td>
+                                                    <td className="p-2 whitespace-nowrap text-right">{t(row.PAY_DOC) === "0" ? "" : t(row.PAY_DOC)}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
