@@ -694,8 +694,8 @@ export default function PaymentAuthorizationsPage() {
                             const cre  = parseFloat(row.TOTAL_CREDITS)  || 0;
                             const deb  = parseFloat(row.TOTAL_DEBITS)   || 0;
                             const net  = inv - cre - deb;
-                            const bal  = parseFloat(row.TOTAL_IN_CR_DB) || 0;
-                            const pay  = net - bal;
+                            const pay  = parseFloat(row.TOTAL_PAYMENTS) || 0;
+                            const bal  = parseFloat(row.TOTAL_INV_BAL)  || 0;
                             return { inv, cre, deb, net, pay, bal };
                         } else {
                             return {
