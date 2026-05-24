@@ -486,6 +486,7 @@ export default function PaymentAuthorizationsPage() {
     // ── Local UI state ────────────────────────────────────────────────────
     const [activeTab,           setActiveTab]           = useState<"vendors" | "invoices" | "payments">("vendors");
     const [selectedBankUq,      setSelectedBankUq]      = useState("");
+    const [invoiceBalFilter,    setInvoiceBalFilter]    = useState<"pos" | "zero" | "all">("all");
     const [vendorSearch,        setVendorSearch]        = useState("");
     const [vendorBalFilter,     setVendorBalFilter]     = useState<"A" | "B" | "N">("A");
     const [vendorMode,          setVendorMode]          = useState<"all" | "quarterly">("all");
@@ -541,8 +542,8 @@ export default function PaymentAuthorizationsPage() {
 
     // Tab 2 — Invoices
     const { data: invoicesList = [], isFetching: loadingInvoices, refetch: refetchInvoices } = useQuery({
-        queryKey: ["pa-invoices", store.lcgrower_uq, store.llbalance],
-        queryFn:  () => paFetch(`/api/payment-authorizations/invoices?supplier_uq=${encodeURIComponent(store.lcgrower_uq)}&balance=${store.llbalance}`).then(d => norm(Array.isArray(d) ? d : [])),
+        queryKey: ["pa-invoices", store.lcgrower_uq, invoiceBalFilter],
+        queryFn:  () => paFetch(`/api/payment-authorizations/invoices?supplier_uq=${encodeURIComponent(store.lcgrower_uq)}&balance=${invoiceBalFilter}`).then(d => norm(Array.isArray(d) ? d : [])),
         enabled:  !!store.lcgrower_uq,
         staleTime: 0,
     });
@@ -627,11 +628,12 @@ export default function PaymentAuthorizationsPage() {
 
     // ─── Invoice totals ───────────────────────────────────────────────────
     const invTotals = invoicesList.reduce((acc: any, r: any) => ({
-        ammount:    acc.ammount    + (parseFloat(r.AMMOUNT)     || 0),
-        credits:    acc.credits    + (parseFloat(r.CRE_AMMOUNT) || 0),
-        payments:   acc.payments   + (parseFloat(r.OUT_AMMOUNT) || 0),
-        balance:    acc.balance    + (parseFloat(r.BALANCE)     || 0),
-    }), { ammount: 0, credits: 0, payments: 0, balance: 0 });
+        ammount:  acc.ammount  + (parseFloat(r.AMMOUNT)     || 0),
+        credits:  acc.credits  + (parseFloat(r.CRE_AMMOUNT) || 0),
+        debits:   acc.debits   + (parseFloat(r.DEB_AMMOUNT) || 0),
+        payments: acc.payments + (parseFloat(r.OUT_AMMOUNT) || 0),
+        balance:  acc.balance  + (parseFloat(r.BALANCE)     || 0),
+    }), { ammount: 0, credits: 0, debits: 0, payments: 0, balance: 0 });
 
     // ─── Render ────────────────────────────────────────────────────────────
     if (status === "loading") {
@@ -864,35 +866,67 @@ export default function PaymentAuthorizationsPage() {
 
                 {/* ════════════════════ TAB 2: INVOICES ════════════════════ */}
                 {activeTab === "invoices" && (
-                    <div className="flex flex-col gap-3 h-full">
+                    <div className="flex flex-col gap-2 h-full">
 
-                        {/* Filters */}
-                        <div className="bg-white rounded border shadow-sm p-3 flex flex-wrap gap-4 items-center shrink-0">
-                            <div className="flex flex-col gap-1">
-                                <label className="text-[10px] font-bold text-gray-500 uppercase">Vendor</label>
-                                <select value={store.lcgrower_uq} onChange={e => { store.setGrowerUq(e.target.value, growersList.find((g: any) => t(g.UNICO) === e.target.value)?.GROWER ?? ""); setSelInvoiceRow(null); }}
-                                    className="border rounded px-2 py-1 text-xs min-w-48">
-                                    <option value="">— Select Vendor —</option>
-                                    {growersList.map((g: any) => <option key={t(g.UNICO)} value={t(g.UNICO)}>{t(g.GROWER ?? g.SUPPLIER)}</option>)}
-                                </select>
+                        {/* Action bar */}
+                        <div className="bg-white rounded border shadow-sm px-3 py-2 flex flex-wrap items-center gap-2 shrink-0">
+                            {/* Vendor context */}
+                            <div className="flex items-center gap-2 mr-1">
+                                <Building2 size={13} className="text-[#FB7506]"/>
+                                <span className="text-xs font-bold text-gray-700">
+                                    {store.lcgrower ? store.lcgrower : <span className="text-gray-400 italic">No vendor selected</span>}
+                                </span>
                             </div>
-                            <div className="flex flex-col gap-1">
-                                <label className="text-[10px] font-bold text-gray-500 uppercase">Balance Filter</label>
-                                <div className="flex gap-3">
-                                    {([["pos", "Bal > 0"], ["zero", "Bal = 0"], ["all", "All"]] as const).map(([val, lbl]) => (
-                                        <label key={val} className="flex items-center gap-1.5 text-xs cursor-pointer">
-                                            <input type="radio" checked={store.llbalance === val} onChange={() => { store.setLlbalance(val); setSelInvoiceRow(null); }} className="accent-orange-500"/>
-                                            {lbl}
-                                        </label>
-                                    ))}
-                                </div>
+                            <div className="w-px h-5 bg-gray-200 mx-1"/>
+                            {/* Balance filter buttons */}
+                            <div className="flex items-center gap-1">
+                                {([["all","ALL"],["pos","BAL > 0"],["zero","BAL = 0"]] as const).map(([val, lbl]) => (
+                                    <button key={val}
+                                        onClick={() => { setInvoiceBalFilter(val); setSelInvoiceRow(null); store.setApUq(""); store.setApdUq(""); }}
+                                        className={cn("px-2.5 py-1 text-[10px] font-black uppercase rounded transition-colors",
+                                            invoiceBalFilter === val ? "bg-[#FB7506] text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                                        )}>
+                                        {lbl}
+                                    </button>
+                                ))}
                             </div>
-                            <Btn icon={RefreshCcw} label="Refresh" color="gray" onClick={() => refetchInvoices()} disabled={!store.lcgrower_uq}/>
+                            <div className="w-px h-5 bg-gray-200 mx-1"/>
+                            {/* Action buttons */}
+                            <button
+                                onClick={() => handleApprove(true)}
+                                disabled={!selInvoiceRow || !perms.canEdit}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-[10px] font-black uppercase rounded hover:bg-green-700 disabled:opacity-40 transition-colors">
+                                <Check size={11}/> Approve
+                            </button>
+                            <button
+                                onClick={() => handleApprove(false)}
+                                disabled={!selInvoiceRow || !perms.canEdit}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-500 text-white text-[10px] font-black uppercase rounded hover:bg-gray-600 disabled:opacity-40 transition-colors">
+                                <XCircle size={11}/> UnApp
+                            </button>
+                            <button
+                                onClick={() => setPaymentDateModal(true)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-[10px] font-black uppercase rounded hover:bg-blue-700 transition-colors">
+                                <Calendar size={11}/> AP Date
+                            </button>
+                            <div className="flex-1"/>
+                            <button
+                                onClick={() => refetchInvoices()}
+                                disabled={!store.lcgrower_uq}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-600 text-[10px] font-black uppercase rounded hover:bg-gray-200 disabled:opacity-40 transition-colors">
+                                <RefreshCcw size={11}/> Refresh
+                            </button>
+                            <button
+                                onClick={() => setReportsModal(true)}
+                                disabled={!perms.canReport}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-600 text-[10px] font-black uppercase rounded hover:bg-gray-200 disabled:opacity-40 transition-colors">
+                                <Printer size={11}/> Reports
+                            </button>
                         </div>
 
-                        {/* Invoices table */}
-                        <div className="bg-white rounded-b border shadow-sm overflow-auto flex-1 flex flex-col min-h-0">
-                            <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
+                        {/* Invoices grid */}
+                        <div className="bg-white rounded border shadow-sm flex flex-col flex-1 min-h-0">
+                            <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-3 shrink-0 rounded-t-lg">
                                 <div className="flex items-center gap-2">
                                     <FileText size={15} className="text-[#FB7506]"/>
                                     <span className="fos-grid-header-text">Vendor Invoices</span>
@@ -900,65 +934,136 @@ export default function PaymentAuthorizationsPage() {
                                         <span className="text-xs text-gray-300 ml-2">{t(selInvoiceRow.INVOICE_NO)}</span>
                                     )}
                                 </div>
-                                <GridMenu items={[
-                                    { label: "Approve",   icon: Check,      color: "green",  onClick: () => handleApprove(true),  disabled: !selInvoiceRow || !perms.canEdit },
-                                    { label: "UnApp",     icon: XCircle,    color: "gray",   onClick: () => handleApprove(false), disabled: !selInvoiceRow || !perms.canEdit },
-                                    { label: "Chk Pay Date", icon: Calendar, color: "blue",  onClick: () => setPaymentDateModal(true) },
-                                    { label: "Pending Invoices Report", icon: Printer, color: "gray", onClick: () => setReportsModal(true), disabled: !perms.canReport },
-                                ]} />
+                                {invoicesList.length > 0 && (
+                                    <span className="text-[10px] text-gray-400 font-bold">{invoicesList.length} records</span>
+                                )}
                             </div>
-                            {!store.lcgrower_uq
-                                ? <div className="flex items-center gap-2 text-gray-400 text-xs p-4"><AlertCircle size={14}/>Select a vendor to load invoices.</div>
-                                : loadingInvoices
-                                    ? <div className="flex items-center gap-2 text-gray-400 text-xs p-4"><Loader2 size={14} className="animate-spin"/>Loading…</div>
-                                    : (
-                                        <div className="overflow-auto flex-1">
-                                            <table className="min-w-full text-left text-xs">
-                                                <thead className="bg-[#374151] border-b fos-grid-thead text-white sticky top-0">
-                                                    <tr>{["Invoice No","AP Date","Due Date","Days","Amount","Payments","Credits","Debits","Balance","Pay"].map(h => (
-                                                        <th key={h} className="p-2 border-r border-gray-600 last:border-r-0 whitespace-nowrap">{h}</th>
-                                                    ))}</tr>
-                                                </thead>
-                                                <tbody className="fos-grid-tbody divide-y divide-gray-100">
-                                                    {invoicesList.map((row: any) => {
-                                                        const uq  = t(row.UNICO);
-                                                        const sel = store.lcap_uq === uq;
-                                                        return (
-                                                            <tr key={uq} className={cn("cursor-pointer hover:bg-orange-50", sel && "bg-orange-100 font-semibold")}
-                                                                onClick={() => { store.setApUq(uq); store.setApdUq(t(row.ACC_PAY_UQ)); setSelInvoiceRow(row); }}>
-                                                                <td className="p-2 border-r border-gray-100 whitespace-nowrap">{t(row.INVOICE_NO)}</td>
-                                                                <td className="p-2 border-r border-gray-100 whitespace-nowrap">{fmtDate(row.AP_DATE)}</td>
-                                                                <td className="p-2 border-r border-gray-100 whitespace-nowrap">{fmtDate(row.DATE_DUE)}</td>
-                                                                <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right">{t(row.DAYS)}</td>
-                                                                <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right">{fmt(row.AMMOUNT)}</td>
-                                                                <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right">{fmt(row.OUT_AMMOUNT)}</td>
-                                                                <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right">{fmt(row.CRE_AMMOUNT)}</td>
-                                                                <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right">{fmt(row.DEB_AMMOUNT)}</td>
-                                                                <td className={cn("p-2 border-r border-gray-100 whitespace-nowrap text-right font-bold",
-                                                                    parseFloat(row.BALANCE) > 0 ? "text-red-600" : "text-green-600")}>
-                                                                    {fmt(row.BALANCE)}
-                                                                </td>
-                                                                <td className="p-2 whitespace-nowrap text-center">
-                                                                    {row.PAY ? <Check size={12} className="text-green-500 inline"/> : ""}
-                                                                </td>
-                                                            </tr>
-                                                        );
-                                                    })}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    )
-                            }
-                            {/* Totals footer */}
-                            {invoicesList.length > 0 && (
-                                <div className="flex items-center gap-6 px-3 py-2 bg-gray-50 border-t text-xs font-bold shrink-0">
-                                    <span>Total Invoice: <span className="text-blue-700">{fmt(invTotals.ammount)}</span></span>
-                                    <span>Credits: <span className="text-green-700">{fmt(invTotals.credits)}</span></span>
-                                    <span>Payments: <span className="text-orange-700">{fmt(invTotals.payments)}</span></span>
-                                    <span>Balance: <span className={invTotals.balance > 0 ? "text-red-600" : "text-green-700"}>{fmt(invTotals.balance)}</span></span>
+
+                            {!store.lcgrower_uq ? (
+                                <div className="flex items-center gap-2 text-gray-400 text-xs p-4 flex-1">
+                                    <AlertCircle size={14}/>Select a vendor from the Vendors tab.
                                 </div>
+                            ) : loadingInvoices ? (
+                                <div className="flex items-center gap-2 text-gray-400 text-xs p-4 flex-1">
+                                    <Loader2 size={14} className="animate-spin"/>Loading invoices…
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="overflow-auto flex-1 min-h-0">
+                                        <table className="min-w-full text-left text-xs">
+                                            <thead className="bg-gray-100 border-b fos-grid-thead text-gray-700 sticky top-0">
+                                                <tr>
+                                                    {["Invoice","PO","Inv. Date","Days","%","Due Date","Amount","Payments","Credits","Debits","Balance","Approved","Pay","Accum. Bal"].map(h => (
+                                                        <th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody className="fos-grid-tbody divide-y divide-gray-100">
+                                                {invoicesList.map((row: any) => {
+                                                    const uq  = t(row.UNICO);
+                                                    const sel = store.lcap_uq === uq;
+                                                    const bal = parseFloat(row.BALANCE) || 0;
+                                                    const approved = t(row.APPROVED);
+                                                    return (
+                                                        <tr key={uq}
+                                                            className={cn("cursor-pointer transition-colors",
+                                                                sel ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50")}
+                                                            onClick={() => { store.setApUq(uq); store.setApdUq(t(row.ACC_PAY_UQ)); setSelInvoiceRow(row); }}>
+                                                            <td className="p-2 border-r border-gray-100 whitespace-nowrap font-medium">{t(row.INVOICE_NO)}</td>
+                                                            <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right text-gray-500">
+                                                                {t(row.PORDER_NO) === "0" ? "" : t(row.PORDER_NO)}
+                                                            </td>
+                                                            <td className="p-2 border-r border-gray-100 whitespace-nowrap">{fmtDate(row.APDATE)}</td>
+                                                            <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right">{t(row.DAYS)}</td>
+                                                            <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right">{t(row.PERCEN)}</td>
+                                                            <td className="p-2 border-r border-gray-100 whitespace-nowrap">{fmtDate(row.DATE_DUE)}</td>
+                                                            <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right">{fmt(row.AMMOUNT)}</td>
+                                                            <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right text-blue-700">{fmt(row.OUT_AMMOUNT)}</td>
+                                                            <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right text-green-600">{fmt(row.CRE_AMMOUNT)}</td>
+                                                            <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right text-red-500">{fmt(row.DEB_AMMOUNT)}</td>
+                                                            <td className={cn("p-2 border-r border-gray-100 whitespace-nowrap text-right font-bold",
+                                                                bal > 0 ? "text-orange-600" : "text-green-600")}>
+                                                                {fmt(row.BALANCE)}
+                                                            </td>
+                                                            <td className={cn("p-2 border-r border-gray-100 whitespace-nowrap text-center font-bold",
+                                                                approved === "Yes" ? "text-green-600" : "text-gray-400")}>
+                                                                {approved}
+                                                            </td>
+                                                            <td className="p-2 border-r border-gray-100 whitespace-nowrap text-center">
+                                                                {row.PAY ? <Check size={12} className="text-green-500 inline"/> : ""}
+                                                            </td>
+                                                            <td className="p-2 whitespace-nowrap text-right text-gray-600 font-bold">
+                                                                {fmt(row.ACCUMULATED)}
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                                {invoicesList.length === 0 && (
+                                                    <tr>
+                                                        <td colSpan={14} className="p-8 text-center text-gray-400 italic text-xs">
+                                                            No invoices found
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    {/* Totals footer */}
+                                    {invoicesList.length > 0 && (
+                                        <div className="grid grid-cols-5 divide-x border-t-2 border-gray-300 bg-gray-100 shrink-0">
+                                            {([
+                                                ["Total Invoices", fmt(invTotals.ammount),  "text-gray-700"],
+                                                ["Total Debits",   fmt(invTotals.debits),   "text-red-600"],
+                                                ["Total Credits",  fmt(invTotals.credits),  "text-green-700"],
+                                                ["Total Payments", fmt(invTotals.payments), "text-blue-700"],
+                                                ["Inv. Balance",   fmt(invTotals.balance),  invTotals.balance > 0 ? "text-orange-600" : "text-green-700"],
+                                            ] as [string, string, string][]).map(([label, value, cls]) => (
+                                                <div key={label} className="flex flex-col items-center py-2 px-2">
+                                                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest truncate">{label}</span>
+                                                    <span className={cn("text-sm font-black", cls)}>{value}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </>
                             )}
                         </div>
+
+                        {/* Payments mini-grid — shows when an invoice is selected */}
+                        {store.lcapd_uq && (
+                            <div className="bg-white rounded border shadow-sm flex flex-col shrink-0" style={{ maxHeight: "10rem" }}>
+                                <div className="h-9 bg-[#374151] flex items-center pl-3 shrink-0 rounded-t-lg">
+                                    <CreditCard size={14} className="text-[#FB7506]"/>
+                                    <span className="fos-grid-header-text ml-2">Payments</span>
+                                    {loadingDetails && <Loader2 size={12} className="animate-spin text-gray-400 ml-2"/>}
+                                </div>
+                                <div className="overflow-auto flex-1">
+                                    <table className="min-w-full text-left text-xs">
+                                        <thead className="bg-gray-100 border-b fos-grid-thead text-gray-700 sticky top-0">
+                                            <tr>
+                                                <th className="p-2 border-r border-gray-200 whitespace-nowrap">Outcome</th>
+                                                <th className="p-2 border-r border-gray-200 whitespace-nowrap text-right">Amount</th>
+                                                <th className="p-2 whitespace-nowrap">Pay Doc</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="fos-grid-tbody divide-y divide-gray-100">
+                                            {outcomeDetails.length === 0 && !loadingDetails ? (
+                                                <tr>
+                                                    <td colSpan={3} className="p-3 text-center text-gray-400 italic text-xs">No payment records</td>
+                                                </tr>
+                                            ) : outcomeDetails.map((row: any, i: number) => (
+                                                <tr key={i} className="hover:bg-gray-50">
+                                                    <td className="p-2 border-r border-gray-100 whitespace-nowrap">{t(row.OUT_DOCUMENT ?? row.OUTCOME ?? row.UNICO)}</td>
+                                                    <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right font-medium">{fmt(row.OUT_AMMOUNT ?? row.AMMOUNT)}</td>
+                                                    <td className="p-2 whitespace-nowrap">{t(row.PAY_DOC)}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 
