@@ -9,7 +9,7 @@ import {
     DollarSign, FileText, Users, CreditCard,
     Plus, Pencil, Trash2, Check, CheckCheck,
     Printer, BarChart2, Calendar, Building2,
-    ChevronDown, AlertCircle,
+    ChevronDown, AlertCircle, Search,
 } from "lucide-react";
 import { GridMenu } from "@/components/GridMenu";
 import { cn } from "@/lib/utils";
@@ -487,6 +487,8 @@ export default function PaymentAuthorizationsPage() {
     const [activeTab,           setActiveTab]           = useState<"vendors" | "invoices" | "payments">("vendors");
     const [selectedBankUq,      setSelectedBankUq]      = useState("");
     const [vendorSearch,        setVendorSearch]        = useState("");
+    const [vendorBalFilter,     setVendorBalFilter]     = useState<"A" | "B" | "N">("A");
+    const [vendorMode,          setVendorMode]          = useState<"all" | "quarterly">("all");
     const [quarterDetailModal,  setQuarterDetailModal]  = useState(false);
     const [quarterDetail,       setQuarterDetail]       = useState<any[]>([]);
     const [loadingQDetail,      setLoadingQDetail]      = useState(false);
@@ -524,10 +526,10 @@ export default function PaymentAuthorizationsPage() {
         staleTime: 5 * 60 * 1000,
     });
 
-    // Tab 1 — Vendors
+    // Tab 1 — Vendors (always load all, independent of selected vendor)
     const { data: vendorsList = [], isFetching: loadingVendors, refetch: refetchVendors } = useQuery({
-        queryKey: ["pa-vendors", store.lcgrower_uq],
-        queryFn:  () => paFetch(`/api/payment-authorizations/vendors?grower=${encodeURIComponent(store.lcgrower_uq)}`).then(d => norm(Array.isArray(d) ? d : [])),
+        queryKey: ["pa-vendors"],
+        queryFn:  () => paFetch(`/api/payment-authorizations/vendors?grower=`).then(d => norm(Array.isArray(d) ? d : [])),
         staleTime: 0,
     });
 
@@ -677,118 +679,188 @@ export default function PaymentAuthorizationsPage() {
             <div className="flex-1 overflow-auto p-3 flex flex-col gap-3 min-h-0">
 
                 {/* ════════════════════ TAB 1: VENDORS ════════════════════ */}
-                {activeTab === "vendors" && (
-                    <div className="flex flex-col h-full min-h-0">
-                        <div className="bg-white rounded-b border shadow-sm flex-1 flex flex-col min-h-0">
+                {activeTab === "vendors" && (() => {
+                    // Active dataset: "all" = sp_flower_growers_list_to_accounts_payable (all-time totals)
+                    //                 "quarterly" = sp_flower_growers_pending_accounts_last_quarter (last 4 months)
+                    const activeData: any[] = vendorMode === "all" ? vendorsList : vendorsSummary;
+                    const loading = vendorMode === "all" ? loadingVendors : loadingVendorsSummary;
 
-                            {/* Header row matching VFP: icon + title + search + action buttons */}
-                            <div className="h-10 bg-[#374151] flex items-center gap-2 pl-3 pr-0 shrink-0 rounded-t-lg">
-                                <Building2 size={15} className="text-[#FB7506]"/>
-                                <span className="fos-grid-header-text">Vendors</span>
-                                <input
-                                    type="text"
-                                    placeholder="Search vendor…"
-                                    value={vendorSearch}
-                                    onChange={e => setVendorSearch(e.target.value)}
-                                    className="ml-2 h-6 text-xs px-2 rounded border border-gray-500 bg-[#4b5563] text-white placeholder-gray-400 focus:outline-none focus:border-orange-400 w-48"
-                                />
-                                <div className="ml-auto">
-                                    <GridMenu items={[
-                                        { label: "Refresh",          icon: RefreshCcw, color: "gray",   onClick: () => refetchVendorsSummary() },
-                                        { label: "History",          icon: Calendar,   color: "gray",   onClick: () => setDateHistoryModal(true) },
-                                        { label: "4 Months",         icon: BarChart2,  color: "blue",   onClick: () => refetchVendorsSummary() },
-                                        { label: "4 Months Detail",  icon: FileText,   color: "blue",   onClick: async () => {
-                                            if (!store.lcgrower_uq) { toast.warning("Select a vendor first."); return; }
-                                            setLoadingQDetail(true);
-                                            try {
-                                                const d = await paFetch(`/api/payment-authorizations/vendors-summary-detail?grower_uq=${encodeURIComponent(store.lcgrower_uq)}`);
-                                                setQuarterDetail(norm(Array.isArray(d) ? d : []));
-                                                setQuarterDetailModal(true);
-                                            } catch (e: any) { toast.error(e.message); }
-                                            finally { setLoadingQDetail(false); }
-                                        }, disabled: !store.lcgrower_uq },
-                                    ]} />
+                    // Compute display values per row
+                    const getRow = (row: any) => {
+                        if (vendorMode === "all") {
+                            const inv  = parseFloat(row.TOTAL_INVOICE)  || 0;
+                            const cre  = parseFloat(row.TOTAL_CREDITS)  || 0;
+                            const deb  = parseFloat(row.TOTAL_DEBITS)   || 0;
+                            const net  = inv - cre - deb;
+                            const bal  = parseFloat(row.TOTAL_IN_CR_DB) || 0;
+                            const pay  = net - bal;
+                            return { inv, cre, deb, net, pay, bal };
+                        } else {
+                            return {
+                                inv: parseFloat(row.TOTAL_INVOICE)  || 0,
+                                cre: parseFloat(row.TOTAL_CREDITS)  || 0,
+                                deb: parseFloat(row.TOTAL_DEBITS)   || 0,
+                                net: parseFloat(row.TOTAL_INV_BAL)  || 0,
+                                pay: parseFloat(row.TOTAL_PAYMENTS) || 0,
+                                bal: parseFloat(row.TOTAL_BOOKS_BAL)|| 0,
+                            };
+                        }
+                    };
+
+                    const filtered = activeData.filter((row: any) => {
+                        if (vendorSearch && !t(row.GROWER).toUpperCase().includes(vendorSearch.toUpperCase())) return false;
+                        if (vendorBalFilter !== "A") {
+                            const { bal } = getRow(row);
+                            if (vendorBalFilter === "B" && bal <= 0) return false;
+                            if (vendorBalFilter === "N" && bal >  0) return false;
+                        }
+                        return true;
+                    });
+
+                    const totalBal = filtered.reduce((s: number, r: any) => s + getRow(r).bal, 0);
+
+                    return (
+                        <div className="flex flex-col h-full min-h-0">
+                            <div className="bg-white rounded-b border shadow-sm flex-1 flex flex-col min-h-0">
+
+                                {/* ── Dark section header ── */}
+                                <div className="h-10 bg-[#374151] flex items-center pl-3 pr-0 shrink-0 rounded-t-lg">
+                                    <Building2 size={15} className="text-[#FB7506]"/>
+                                    <span className="fos-grid-header-text ml-2">Vendors</span>
+                                    {vendorMode === "quarterly" && (
+                                        <span className="ml-2 text-[10px] text-amber-300 font-bold uppercase">4 Months</span>
+                                    )}
+                                    <div className="ml-auto flex items-center">
+                                        {loading && <RefreshCcw size={11} className="text-gray-400 animate-spin mr-2"/>}
+                                        <GridMenu items={[
+                                            { label: "Refresh",         icon: RefreshCcw, color: "gray", onClick: () => vendorMode === "all" ? refetchVendors() : refetchVendorsSummary() },
+                                            { label: "History",         icon: Calendar,   color: "gray", onClick: () => setDateHistoryModal(true) },
+                                            { label: "4 Months",        icon: BarChart2,  color: "blue", onClick: () => { setVendorMode("quarterly"); refetchVendorsSummary(); } },
+                                            { label: "All Vendors",     icon: Users,      color: "gray", onClick: () => { setVendorMode("all"); refetchVendors(); } },
+                                            { label: "4 Months Detail", icon: FileText,   color: "blue", onClick: async () => {
+                                                if (!store.lcgrower_uq) { toast.warning("Select a vendor first."); return; }
+                                                setLoadingQDetail(true);
+                                                try {
+                                                    const d = await paFetch(`/api/payment-authorizations/vendors-summary-detail?grower_uq=${encodeURIComponent(store.lcgrower_uq)}`);
+                                                    setQuarterDetail(norm(Array.isArray(d) ? d : []));
+                                                    setQuarterDetailModal(true);
+                                                } catch (e: any) { toast.error(e.message); }
+                                                finally { setLoadingQDetail(false); }
+                                            }, disabled: !store.lcgrower_uq },
+                                        ]} />
+                                    </div>
                                 </div>
-                            </div>
 
-                            {/* Table — matches VFP columns: Vendor | T.Invoice | T.Credits | T.Debits | Net Invoice | Payments | Inv-Bal */}
-                            {loadingVendorsSummary
-                                ? <div className="flex items-center gap-2 text-gray-400 text-xs p-4"><Loader2 size={14} className="animate-spin"/>Loading…</div>
-                                : (
-                                    <div className="overflow-auto flex-1">
-                                        <table className="min-w-full text-left text-xs">
-                                            <thead className="bg-[#374151] border-b fos-grid-thead text-white sticky top-0">
-                                                <tr>
-                                                    {["Vendor","T.Invoice","T.Credits","T.Debits","Net Invoice","Payments","Inv-Bal"].map(h => (
-                                                        <th key={h} className="p-2 border-r border-gray-600 last:border-r-0 whitespace-nowrap">{h}</th>
-                                                    ))}
-                                                </tr>
-                                            </thead>
-                                            <tbody className="fos-grid-tbody divide-y divide-gray-100">
-                                                {vendorsSummary
-                                                    .filter((row: any) => !vendorSearch || t(row.GROWER).toUpperCase().includes(vendorSearch.toUpperCase()))
-                                                    .map((row: any, i: number) => {
+                                {/* ── Search + balance filter bar (A/R style) ── */}
+                                <div className="p-1.5 border-b border-gray-100 shrink-0">
+                                    <div className="flex gap-2 items-center">
+                                        <div className="relative flex-1">
+                                            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"/>
+                                            <input value={vendorSearch} onChange={e => setVendorSearch(e.target.value)}
+                                                placeholder="Search by name..."
+                                                className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded-md outline-none focus:ring-1 focus:ring-[#FB7506]"/>
+                                        </div>
+                                        <div className="flex items-center gap-1 shrink-0">
+                                            {([{v:"A",l:"All"},{v:"B",l:"Bal > 0"},{v:"N",l:"Bal = 0"}] as const).map(opt => (
+                                                <button key={opt.v} onClick={() => setVendorBalFilter(opt.v)}
+                                                    className={cn("px-2.5 py-1.5 text-[10px] font-black uppercase rounded border transition-colors",
+                                                        vendorBalFilter === opt.v ? "bg-[#FB7506] text-white border-[#FB7506]" : "border-gray-300 text-gray-500 hover:bg-gray-100")}>
+                                                    {opt.l}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <span className="text-[9px] text-gray-400 shrink-0">{filtered.length}/{activeData.length}</span>
+                                    </div>
+                                </div>
+
+                                {/* ── Table ── */}
+                                {loading
+                                    ? <div className="flex items-center gap-2 text-gray-400 text-xs p-4"><Loader2 size={14} className="animate-spin"/>Loading…</div>
+                                    : (
+                                        <div className="overflow-auto flex-1">
+                                            <table className="min-w-full text-left">
+                                                <thead className="bg-gray-100 border-b border-gray-200 text-gray-700 sticky top-0 z-10">
+                                                    <tr className="fos-grid-thead">
+                                                        {["Vendor","T.Invoice","T.Credits","T.Debits","Net Invoice","Payments","Inv-Bal"].map(h => (
+                                                            <th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
+                                                        ))}
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-gray-100 fos-grid-tbody">
+                                                    {filtered.map((row: any, i: number) => {
                                                         const uq  = t(row.UNICO);
                                                         const sel = store.lcgrower_uq === uq;
+                                                        const { inv, cre, deb, net, pay, bal } = getRow(row);
                                                         return (
                                                             <tr key={i}
-                                                                className={cn("cursor-pointer hover:bg-orange-50", sel && "bg-orange-100 font-semibold")}
+                                                                className={cn("cursor-pointer transition-colors", sel ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50")}
                                                                 onClick={() => { store.setGrowerUq(uq, t(row.GROWER)); setSelVendorRow(row); setSelInvoiceRow(null); setSelOutcomeRow(null); }}
                                                             >
-                                                                <td className="p-2 border-r border-gray-100 whitespace-nowrap">{t(row.GROWER)}</td>
-                                                                <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right">{fmt(row.TOTAL_INVOICE)}</td>
-                                                                <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right">{fmt(row.TOTAL_CREDITS)}</td>
-                                                                <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right">{fmt(row.TOTAL_DEBITS)}</td>
-                                                                <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right">{fmt(row.TOTAL_INV_BAL)}</td>
-                                                                <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right">{fmt(row.TOTAL_PAYMENTS)}</td>
-                                                                <td className={cn("p-2 whitespace-nowrap text-right font-bold",
-                                                                    parseFloat(row.TOTAL_BOOKS_BAL) > 0 ? "text-red-600" : "")}>
-                                                                    {fmt(row.TOTAL_BOOKS_BAL)}
+                                                                <td className="p-2 border-r border-gray-100 font-medium whitespace-nowrap min-w-48">{t(row.GROWER)}</td>
+                                                                <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right">{fmt(inv)}</td>
+                                                                <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right text-green-600">{fmt(cre)}</td>
+                                                                <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right text-red-500">{fmt(deb)}</td>
+                                                                <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right font-bold">{fmt(net)}</td>
+                                                                <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right text-blue-700">{fmt(pay)}</td>
+                                                                <td className={cn("p-2 whitespace-nowrap text-right font-bold", bal > 0 ? "text-orange-600" : "")}>
+                                                                    {fmt(bal)}
                                                                 </td>
                                                             </tr>
                                                         );
-                                                    })
-                                                }
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                )
-                            }
-                        </div>
-
-                        {/* 4 Months Detail modal */}
-                        {quarterDetailModal && (
-                            <Modal title={`4 Months Detail — ${store.lcgrower}`} icon={FileText} onClose={() => setQuarterDetailModal(false)} size="xl"
-                                footer={<button onClick={() => setQuarterDetailModal(false)} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Close</button>}>
-                                {loadingQDetail
-                                    ? <div className="flex items-center gap-2 text-gray-400 text-xs"><Loader2 size={14} className="animate-spin"/>Loading…</div>
-                                    : quarterDetail.length === 0
-                                        ? <p className="text-xs text-gray-400">No detail records found.</p>
-                                        : (
-                                            <div className="overflow-auto">
-                                                <table className="min-w-full text-xs">
-                                                    <thead className="bg-[#374151] text-white sticky top-0">
-                                                        <tr>{Object.keys(quarterDetail[0]).map(c => (
-                                                            <th key={c} className="p-2 border-r border-gray-600 last:border-r-0 whitespace-nowrap">{c}</th>
-                                                        ))}</tr>
-                                                    </thead>
-                                                    <tbody className="divide-y divide-gray-100">
-                                                        {quarterDetail.map((row, i) => (
-                                                            <tr key={i} className="hover:bg-gray-50">
-                                                                {Object.keys(quarterDetail[0]).map(c => (
-                                                                    <td key={c} className="p-2 border-r border-gray-100 last:border-r-0 whitespace-nowrap">{t(row[c])}</td>
-                                                                ))}
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        )
+                                                    })}
+                                                    {filtered.length === 0 && !loading && (
+                                                        <tr><td colSpan={7} className="p-8 text-center text-gray-400 italic text-xs">No vendors found</td></tr>
+                                                    )}
+                                                </tbody>
+                                                {filtered.length > 0 && (
+                                                    <tfoot className="bg-gray-100 border-t-2 border-gray-300 sticky bottom-0">
+                                                        <tr className="fos-grid-thead text-gray-700">
+                                                            <td className="p-2 font-black">TOTALS ({filtered.length} vendors)</td>
+                                                            <td colSpan={5} className="p-2"/>
+                                                            <td className="p-2 text-right font-black">{fmt(totalBal)}</td>
+                                                        </tr>
+                                                    </tfoot>
+                                                )}
+                                            </table>
+                                        </div>
+                                    )
                                 }
-                            </Modal>
-                        )}
-                    </div>
-                )}
+                            </div>
+
+                            {/* 4 Months Detail modal */}
+                            {quarterDetailModal && (
+                                <Modal title={`4 Months Detail — ${store.lcgrower}`} icon={FileText} onClose={() => setQuarterDetailModal(false)} size="xl"
+                                    footer={<button onClick={() => setQuarterDetailModal(false)} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Close</button>}>
+                                    {loadingQDetail
+                                        ? <div className="flex items-center gap-2 text-gray-400 text-xs"><Loader2 size={14} className="animate-spin"/>Loading…</div>
+                                        : quarterDetail.length === 0
+                                            ? <p className="text-xs text-gray-400">No detail records found.</p>
+                                            : (
+                                                <div className="overflow-auto">
+                                                    <table className="min-w-full text-xs">
+                                                        <thead className="bg-gray-100 border-b border-gray-200 text-gray-700 sticky top-0">
+                                                            <tr className="fos-grid-thead">{Object.keys(quarterDetail[0]).map(c => (
+                                                                <th key={c} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{c}</th>
+                                                            ))}</tr>
+                                                        </thead>
+                                                        <tbody className="divide-y divide-gray-100 fos-grid-tbody">
+                                                            {quarterDetail.map((row, i) => (
+                                                                <tr key={i} className="hover:bg-gray-50">
+                                                                    {Object.keys(quarterDetail[0]).map(c => (
+                                                                        <td key={c} className="p-2 border-r border-gray-100 last:border-r-0 whitespace-nowrap">{t(row[c])}</td>
+                                                                    ))}
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            )
+                                    }
+                                </Modal>
+                            )}
+                        </div>
+                    );
+                })()}
 
                 {/* ════════════════════ TAB 2: INVOICES ════════════════════ */}
                 {activeTab === "invoices" && (
