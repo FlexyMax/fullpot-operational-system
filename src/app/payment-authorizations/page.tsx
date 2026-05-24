@@ -963,7 +963,7 @@ export default function PaymentAuthorizationsPage() {
                                                     const uq  = t(row.UNICO);
                                                     const sel = store.lcap_uq === uq;
                                                     const bal = parseFloat(row.BALANCE) || 0;
-                                                    const approved = t(row.APPROVED);
+                                                    const approved = row.APPROVED == null ? "—" : t(row.APPROVED);
                                                     return (
                                                         <tr key={uq}
                                                             className={cn("cursor-pointer transition-colors",
