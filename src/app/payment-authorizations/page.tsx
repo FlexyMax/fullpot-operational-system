@@ -1074,173 +1074,159 @@ export default function PaymentAuthorizationsPage() {
                 {activeTab === "payments" && (
                     <div className="flex flex-col gap-3 h-full">
 
-                        {/* Payments filters */}
-                        <div className="bg-white rounded border shadow-sm p-3 flex flex-wrap gap-4 items-center shrink-0">
-                            <div className="flex flex-col gap-1">
-                                <label className="text-[10px] font-bold text-gray-500 uppercase">Vendor</label>
-                                <select value={store.lcgrower_uq} onChange={e => { store.setGrowerUq(e.target.value, growersList.find((g: any) => t(g.UNICO) === e.target.value)?.GROWER ?? ""); setSelOutcomeRow(null); }}
-                                    className="border rounded px-2 py-1 text-xs min-w-48">
-                                    <option value="">— Select Vendor —</option>
-                                    {growersList.map((g: any) => <option key={t(g.UNICO)} value={t(g.UNICO)}>{t(g.GROWER ?? g.SUPPLIER)}</option>)}
-                                </select>
+                        {/* Payments filter bar */}
+                        <div className="bg-white rounded border shadow-sm px-3 py-2 flex flex-wrap gap-4 items-center shrink-0">
+                            {/* Vendor context label */}
+                            <div className="flex items-center gap-2 min-w-0">
+                                <Building2 size={13} className="text-[#FB7506] shrink-0"/>
+                                <span className="text-xs font-black text-gray-700 uppercase tracking-wide truncate">
+                                    {store.lcgrower || <span className="text-gray-400 font-normal normal-case tracking-normal">Select a vendor in the Vendors tab</span>}
+                                </span>
                             </div>
-                            <div className="flex flex-col gap-1">
-                                <label className="text-[10px] font-bold text-gray-500 uppercase">Bank</label>
-                                <select value={selectedBankUq} onChange={e => setSelectedBankUq(e.target.value)} className="border rounded px-2 py-1 text-xs min-w-36">
-                                    <option value="">— All Banks —</option>
-                                    {banksList.map((b: any) => <option key={t(b.UNICO)} value={t(b.UNICO)}>{t(b.BANK)}</option>)}
-                                </select>
+
+                            <div className="w-px h-5 bg-gray-200 shrink-0"/>
+
+                            {/* Date filter */}
+                            <div className="flex items-center gap-2">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase whitespace-nowrap">Payment date ≥</label>
+                                <input
+                                    type="date"
+                                    value={store.ldPaymentsFrom}
+                                    onChange={e => { store.setLdPaymentsFrom(e.target.value); setSelOutcomeRow(null); }}
+                                    className="border rounded px-2 py-1 text-xs"
+                                />
                             </div>
-                            <div className="flex flex-col gap-1">
-                                <label className="text-[10px] font-bold text-gray-500 uppercase">Payments From</label>
-                                <input type="date" value={store.ldPaymentsFrom} onChange={e => store.setLdPaymentsFrom(e.target.value)} className="border rounded px-2 py-1 text-xs"/>
+
+                            {/* Status toggle */}
+                            <div className="flex items-center gap-1.5">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase mr-1">Status</label>
+                                {([[-1,"All"],[0,"Pending"],[1,"Paid"]] as const).map(([val, lbl]) => (
+                                    <button
+                                        key={val}
+                                        onClick={() => { store.setLnclose(val); setSelOutcomeRow(null); }}
+                                        className={cn(
+                                            "px-2.5 py-1 text-[11px] font-bold rounded border transition-colors",
+                                            store.lnclose === val
+                                                ? "bg-[#374151] text-white border-[#374151]"
+                                                : "bg-white text-gray-600 border-gray-300 hover:border-gray-400"
+                                        )}
+                                    >{lbl}</button>
+                                ))}
                             </div>
-                            <div className="flex flex-col gap-1">
-                                <label className="text-[10px] font-bold text-gray-500 uppercase">Status</label>
-                                <div className="flex gap-3">
-                                    {([[0,"Open"],[1,"Closed"]] as const).map(([val, lbl]) => (
-                                        <label key={val} className="flex items-center gap-1.5 text-xs cursor-pointer">
-                                            <input type="radio" checked={store.lnclose === val} onChange={() => { store.setLnclose(val); setSelOutcomeRow(null); }} className="accent-orange-500"/>
-                                            {lbl}
-                                        </label>
-                                    ))}
-                                </div>
+
+                            <div className="ml-auto flex items-center gap-2">
+                                {loadingOutcomes && <Loader2 size={13} className="animate-spin text-gray-400"/>}
                             </div>
                         </div>
 
-                        <div className="flex flex-col lg:flex-row gap-3 flex-1 min-h-0">
-
-                            {/* Outcomes (payments) */}
-                            <div className="bg-white rounded-b border shadow-sm flex flex-col min-h-0 lg:w-1/2">
-                                <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
-                                    <div className="flex items-center gap-2">
-                                        <CreditCard size={15} className="text-[#FB7506]"/>
-                                        <span className="fos-grid-header-text">Payments</span>
-                                    </div>
-                                    <GridMenu items={[
-                                        { label: "Add",          icon: Plus,      color: "green",  onClick: () => { if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; } setAddPaymentModal(true); }, disabled: !store.lcgrower_uq || !perms.canCreate },
-                                        { label: "Auto Pay",     icon: CheckCheck, color: "blue",  onClick: handleClosePayment, disabled: !selOutcomeRow || !perms.canEdit },
-                                        { label: "History",      icon: Calendar,  color: "gray",   onClick: () => setDateHistoryModal(true) },
-                                        { label: "Reports",      icon: Printer,   color: "blue",   onClick: () => setPaymentsReportModal(true), disabled: !perms.canReport },
-                                    ]} />
+                        {/* Payments upper grid */}
+                        <div className="bg-white rounded-b border shadow-sm flex flex-col min-h-0 flex-1">
+                            <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
+                                <div className="flex items-center gap-2">
+                                    <CreditCard size={15} className="text-[#FB7506]"/>
+                                    <span className="fos-grid-header-text">Payments</span>
+                                    {outcomesList.length > 0 && (
+                                        <span className="text-[10px] text-gray-400 ml-1">({outcomesList.length})</span>
+                                    )}
                                 </div>
-                                {!store.lcgrower_uq
-                                    ? <div className="flex items-center gap-2 text-gray-400 text-xs p-4"><AlertCircle size={14}/>Select a vendor.</div>
-                                    : loadingOutcomes
-                                        ? <div className="flex items-center gap-2 text-gray-400 text-xs p-4"><Loader2 size={14} className="animate-spin"/>Loading…</div>
-                                        : (
-                                            <div className="overflow-auto flex-1">
-                                                <table className="min-w-full text-left text-xs">
-                                                    <thead className="bg-[#374151] border-b fos-grid-thead text-white sticky top-0">
-                                                        <tr>{["Date","Document","Status","Bank","Vendor","Farm","Amount","Total","Balance","Pay Doc"].map(h => (
-                                                            <th key={h} className="p-2 border-r border-gray-600 last:border-r-0 whitespace-nowrap">{h}</th>
-                                                        ))}</tr>
-                                                    </thead>
-                                                    <tbody className="fos-grid-tbody divide-y divide-gray-100">
-                                                        {outcomesList.map((row: any) => {
-                                                            const uq  = t(row.UNICO);
-                                                            const sel = store.lcoutcome_uq === uq;
-                                                            return (
-                                                                <tr key={uq} className={cn("cursor-pointer hover:bg-orange-50", sel && "bg-orange-100 font-semibold")}
-                                                                    onClick={() => { store.setOutcomeUq(uq); setSelOutcomeRow(row); }}>
-                                                                    <td className="p-2 border-r border-gray-100 whitespace-nowrap">{fmtDate(row.OUT_DATE)}</td>
-                                                                    <td className="p-2 border-r border-gray-100 whitespace-nowrap">{t(row.OUT_DOCUMENT)}</td>
-                                                                    <td className="p-2 border-r border-gray-100 whitespace-nowrap">{t(row.STATUS)}</td>
-                                                                    <td className="p-2 border-r border-gray-100 whitespace-nowrap">{t(row.BANK)}</td>
-                                                                    <td className="p-2 border-r border-gray-100 whitespace-nowrap">{t(row.GROWER)}</td>
-                                                                    <td className="p-2 border-r border-gray-100 whitespace-nowrap">{t(row.FARM)}</td>
-                                                                    <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right">{fmt(row.OUT_AMMOUNT)}</td>
-                                                                    <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right">{fmt(row.OUT_TOTAL)}</td>
-                                                                    <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right font-bold">{fmt(row.OUT_BALANCE)}</td>
-                                                                    <td className="p-2 whitespace-nowrap text-right">{t(row.PAY_DOC)}</td>
-                                                                </tr>
-                                                            );
-                                                        })}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        )
-                                }
+                                <GridMenu items={[
+                                    { label: "Add",      icon: Plus,       color: "green", onClick: () => { if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; } setAddPaymentModal(true); }, disabled: !store.lcgrower_uq || !perms.canCreate },
+                                    { label: "Auto Pay", icon: CheckCheck,  color: "blue",  onClick: handleClosePayment, disabled: !selOutcomeRow || !perms.canEdit },
+                                    { label: "History",  icon: Calendar,   color: "gray",  onClick: () => setDateHistoryModal(true) },
+                                    { label: "Reports",  icon: Printer,    color: "blue",  onClick: () => setPaymentsReportModal(true), disabled: !perms.canReport },
+                                ]} />
                             </div>
 
-                            {/* Right panel: Payment Invoices + Outcome Details */}
-                            <div className="flex flex-col gap-3 flex-1 min-h-0">
-
-                                {/* Payment Invoices */}
-                                <div className="bg-white rounded-b border shadow-sm flex flex-col min-h-0" style={{ maxHeight: "45%" }}>
-                                    <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
-                                        <div className="flex items-center gap-2">
-                                            <FileText size={15} className="text-[#FB7506]"/>
-                                            <span className="fos-grid-header-text">Payment Invoices</span>
-                                        </div>
-                                    </div>
-                                    {loadingPayInv
-                                        ? <div className="flex items-center gap-2 text-gray-400 text-xs p-3"><Loader2 size={14} className="animate-spin"/>Loading…</div>
-                                        : (
-                                            <div className="overflow-auto flex-1">
-                                                <table className="min-w-full text-left text-xs">
-                                                    <thead className="bg-[#374151] border-b fos-grid-thead text-white sticky top-0">
-                                                        <tr>{["Invoice No","Invoice Date","Line Value","Payment","Credits","Notes"].map(h => (
-                                                            <th key={h} className="p-2 border-r border-gray-600 last:border-r-0 whitespace-nowrap">{h}</th>
-                                                        ))}</tr>
-                                                    </thead>
-                                                    <tbody className="fos-grid-tbody divide-y divide-gray-100">
-                                                        {paymentInvoices.map((row: any, i: number) => (
-                                                            <tr key={i} className={cn("cursor-pointer hover:bg-orange-50", selPayInvRow === row && "bg-orange-100")}
-                                                                onClick={() => setSelPayInvRow(row)}>
-                                                                <td className="p-2 border-r border-gray-100 whitespace-nowrap">{t(row.INVOICE_NO)}</td>
-                                                                <td className="p-2 border-r border-gray-100 whitespace-nowrap">{fmtDate(row.INVOICE_DATE)}</td>
-                                                                <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right">{fmt(row.LINE_VALUE)}</td>
-                                                                <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right">{fmt(row.PAYMENT)}</td>
-                                                                <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right">{fmt(row.LINE_CREDITS)}</td>
-                                                                <td className="p-2 whitespace-nowrap">{t(row.DATO)}</td>
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        )
-                                    }
+                            {!store.lcgrower_uq ? (
+                                <div className="flex items-center gap-2 text-gray-400 text-xs p-4"><AlertCircle size={14}/>Select a vendor in the Vendors tab.</div>
+                            ) : loadingOutcomes ? (
+                                <div className="flex items-center gap-2 text-gray-400 text-xs p-4"><Loader2 size={14} className="animate-spin"/>Loading…</div>
+                            ) : outcomesList.length === 0 ? (
+                                <div className="flex items-center gap-2 text-gray-400 text-xs p-4"><AlertCircle size={14}/>No payments found.</div>
+                            ) : (
+                                <div className="overflow-auto flex-1">
+                                    <table className="min-w-full text-left text-xs">
+                                        <thead className="bg-gray-100 border-b border-gray-200 sticky top-0">
+                                            <tr>{["Farm","Bank","Date","Document","Amount","Status"].map(h => (
+                                                <th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap font-black text-[10px] text-gray-600 uppercase tracking-wide">{h}</th>
+                                            ))}</tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                            {outcomesList.map((row: any) => {
+                                                const uq  = t(row.UNICO);
+                                                const sel = store.lcoutcome_uq === uq;
+                                                return (
+                                                    <tr key={uq}
+                                                        onClick={() => { store.setOutcomeUq(uq); setSelOutcomeRow(row); }}
+                                                        className={cn(
+                                                            "cursor-pointer hover:bg-gray-50",
+                                                            sel && "!bg-blue-50 ring-1 ring-inset ring-blue-200"
+                                                        )}>
+                                                        <td className="p-2 border-r border-gray-100 whitespace-nowrap">{t(row.FARM)}</td>
+                                                        <td className="p-2 border-r border-gray-100 whitespace-nowrap">{t(row.BANK)}</td>
+                                                        <td className="p-2 border-r border-gray-100 whitespace-nowrap">{fmtDate(row.OUT_DATE)}</td>
+                                                        <td className="p-2 border-r border-gray-100 whitespace-nowrap">{t(row.OUT_DOCUMENT)}</td>
+                                                        <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right font-medium">{fmt(row.OUT_AMMOUNT)}</td>
+                                                        <td className={cn(
+                                                            "p-2 whitespace-nowrap font-semibold text-[11px]",
+                                                            t(row.STATUS).toUpperCase().includes("CLOSE") || t(row.STATUS).toUpperCase().includes("PAID")
+                                                                ? "text-green-600" : "text-amber-600"
+                                                        )}>{t(row.STATUS)}</td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
                                 </div>
+                            )}
+                        </div>
 
-                                {/* Outcome Details (AP x Outcome) */}
-                                <div className="bg-white rounded-b border shadow-sm flex flex-col flex-1 min-h-0">
-                                    <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
-                                        <div className="flex items-center gap-2">
-                                            <DollarSign size={15} className="text-[#FB7506]"/>
-                                            <span className="fos-grid-header-text">Payment Details</span>
-                                        </div>
-                                        <GridMenu items={[
-                                            { label: "Delete Detail", icon: Trash2, color: "red", onClick: () => handleDeleteDetail(selDetailRow), disabled: !selDetailRow || !perms.canDelete },
-                                        ]} />
-                                    </div>
-                                    {loadingDetails
-                                        ? <div className="flex items-center gap-2 text-gray-400 text-xs p-3"><Loader2 size={14} className="animate-spin"/>Loading…</div>
-                                        : (
-                                            <div className="overflow-auto flex-1">
-                                                <table className="min-w-full text-left text-xs">
-                                                    <thead className="bg-[#374151] border-b fos-grid-thead text-white sticky top-0">
-                                                        <tr>{["Amount","Pay Doc","Outcome","Notes"].map(h => (
-                                                            <th key={h} className="p-2 border-r border-gray-600 last:border-r-0 whitespace-nowrap">{h}</th>
-                                                        ))}</tr>
-                                                    </thead>
-                                                    <tbody className="fos-grid-tbody divide-y divide-gray-100">
-                                                        {outcomeDetails.map((row: any, i: number) => (
-                                                            <tr key={i} className={cn("cursor-pointer hover:bg-orange-50", selDetailRow === row && "bg-orange-100")}
-                                                                onClick={() => setSelDetailRow(row)}>
-                                                                <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right">{fmt(row.OUT_AMMOUNT)}</td>
-                                                                <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right">{t(row.PAY_DOC)}</td>
-                                                                <td className="p-2 border-r border-gray-100 whitespace-nowrap">{t(row.OUTCOME_UQ)}</td>
-                                                                <td className="p-2 whitespace-nowrap">{t(row.DATO)}</td>
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        )
-                                    }
+                        {/* Invoices lower grid — shown once a payment is selected */}
+                        <div className="bg-white rounded-b border shadow-sm flex flex-col shrink-0" style={{ height: "240px" }}>
+                            <div className="h-10 bg-[#374151] flex items-center pl-3 pr-0 shrink-0 rounded-t-lg">
+                                <div className="flex items-center gap-2">
+                                    <FileText size={15} className="text-[#FB7506]"/>
+                                    <span className="fos-grid-header-text">Invoices</span>
+                                    {selOutcomeRow && paymentInvoices.length > 0 && (
+                                        <span className="text-[10px] text-gray-400 ml-1">({paymentInvoices.length})</span>
+                                    )}
                                 </div>
+                                {!selOutcomeRow && (
+                                    <span className="text-[10px] text-gray-400 ml-3">— select a payment to view its invoices</span>
+                                )}
                             </div>
+
+                            {loadingPayInv ? (
+                                <div className="flex items-center gap-2 text-gray-400 text-xs p-3"><Loader2 size={14} className="animate-spin"/>Loading…</div>
+                            ) : (
+                                <div className="overflow-auto flex-1">
+                                    <table className="min-w-full text-left text-xs">
+                                        <thead className="bg-gray-100 border-b border-gray-200 sticky top-0">
+                                            <tr>{["Invoice","Invoice Date","Due Date","Amount","Payment","Balance"].map(h => (
+                                                <th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap font-black text-[10px] text-gray-600 uppercase tracking-wide">{h}</th>
+                                            ))}</tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                            {paymentInvoices.map((row: any, i: number) => {
+                                                const amt  = parseFloat(row.LINE_VALUE) || 0;
+                                                const pay  = parseFloat(row.PAYMENT)    || 0;
+                                                const bal  = parseFloat(row.BALANCE ?? (amt - pay).toFixed(2)) || (amt - pay);
+                                                return (
+                                                    <tr key={i} className={cn("cursor-pointer hover:bg-gray-50", selPayInvRow === row && "!bg-blue-50 ring-1 ring-inset ring-blue-200")}
+                                                        onClick={() => setSelPayInvRow(row)}>
+                                                        <td className="p-2 border-r border-gray-100 whitespace-nowrap">{t(row.INVOICE_NO)}</td>
+                                                        <td className="p-2 border-r border-gray-100 whitespace-nowrap">{fmtDate(row.INVOICE_DATE ?? row.APDATE)}</td>
+                                                        <td className="p-2 border-r border-gray-100 whitespace-nowrap">{fmtDate(row.DATE_DUE ?? row.DUE_DATE)}</td>
+                                                        <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right">{fmt(amt)}</td>
+                                                        <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right text-blue-700 font-medium">{fmt(pay)}</td>
+                                                        <td className="p-2 whitespace-nowrap text-right font-bold">{fmt(bal)}</td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

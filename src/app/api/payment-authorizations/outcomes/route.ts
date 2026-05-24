@@ -6,12 +6,27 @@ export async function GET(req: NextRequest) {
     const ldfrom    = req.nextUrl.searchParams.get("ldfrom")    ?? "";
     const lnclose   = parseInt(req.nextUrl.searchParams.get("lnclose") ?? "0", 10);
     if (!grower_uq) return NextResponse.json({ error: "grower_uq required" }, { status: 400 });
+
+    const base = { lcgrower_uq: grower_uq, ldfrom: ldfrom || new Date("2000-01-01").toISOString() };
+
     try {
-        const r = await executeProcedure("sp_flower_growers_payments", {
-            lcgrower_uq: grower_uq,
-            ldfrom:      ldfrom || new Date("2000-01-01").toISOString(),
-            lnclose,
-        });
+        if (lnclose === -1) {
+            // All — merge pending + paid, dedup by UNICO
+            const [pending, paid] = await Promise.all([
+                executeProcedure("sp_flower_growers_payments", { ...base, lnclose: 0 }),
+                executeProcedure("sp_flower_growers_payments", { ...base, lnclose: 1 }),
+            ]);
+            const seen = new Set<string>();
+            const merged = [...pending.recordset, ...paid.recordset].filter(row => {
+                const key = String(row.UNICO ?? row.unico ?? JSON.stringify(row));
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            });
+            return NextResponse.json(merged);
+        }
+
+        const r = await executeProcedure("sp_flower_growers_payments", { ...base, lnclose });
         return NextResponse.json(r.recordset);
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });
