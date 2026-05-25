@@ -149,9 +149,9 @@ function DualPanel({
     };
 
     return (
-        <div className="flex gap-2 h-full min-h-0">
+        <div className="flex flex-col md:flex-row gap-2 h-full min-h-0">
             {/* Assigned */}
-            <div className="flex-1 flex flex-col min-h-0 min-w-0">
+            <div className="flex-1 flex flex-col min-h-0 min-w-0 md:min-h-0" style={{ minHeight: "200px" }}>
                 <div className="bg-gray-100 border-b border-gray-200 px-2 py-1">
                     <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Assigned ({assignedRows.length})</span>
                 </div>
@@ -189,19 +189,23 @@ function DualPanel({
             </div>
 
             {/* Buttons */}
-            <div className="flex flex-col items-center justify-center gap-2 shrink-0 px-1">
+            <div className="flex md:flex-col flex-row items-center justify-center gap-2 shrink-0 px-1 py-1 md:py-0">
                 <button onClick={handleAdd} disabled={!selAvailable || busy}
                     className="flex items-center gap-1 px-2 py-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors">
-                    <ChevronLeft size={12} /><ChevronLeft size={12} /> Add
+                    <ChevronLeft size={12} className="hidden md:block" /><ChevronLeft size={12} className="hidden md:block" />
+                    <span className="md:hidden"><ChevronLeft size={12} /></span>
+                    Add
                 </button>
                 <button onClick={handleRemove} disabled={!selAssigned || busy}
                     className="flex items-center gap-1 px-2 py-1.5 bg-red-500 hover:bg-red-600 disabled:opacity-40 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors">
-                    Remove <ChevronRight size={12} /><ChevronRight size={12} />
+                    Remove
+                    <ChevronRight size={12} className="hidden md:block" /><ChevronRight size={12} className="hidden md:block" />
+                    <span className="md:hidden"><ChevronRight size={12} /></span>
                 </button>
             </div>
 
             {/* Available */}
-            <div className="flex-1 flex flex-col min-h-0 min-w-0">
+            <div className="flex-1 flex flex-col min-h-0 min-w-0" style={{ minHeight: "200px" }}>
                 <div className="bg-gray-100 border-b border-gray-200 px-2 py-1">
                     <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Available ({availableRows.length})</span>
                 </div>
@@ -254,6 +258,7 @@ export default function SalesRepsPage() {
     const [selectedUq,   setSelectedUq]   = useState<string | null>(null);
     const [activeTab,    setActiveTab]    = useState<ActiveTab>("customers");
     const [tabLoaded,    setTabLoaded]    = useState<Partial<Record<ActiveTab, boolean>>>({});
+    const [mobilePanel,  setMobilePanel]  = useState<"list" | "detail">("list");
 
     // Modal state
     const [modalOpen,    setModalOpen]    = useState(false);
@@ -396,9 +401,8 @@ export default function SalesRepsPage() {
     const handleSelectRow = (row: any) => {
         const uq = t(row.UNICO);
         setSelectedUq(uq);
-        setTabLoaded({});
-        // Load current tab when row changes
         setTabLoaded({ [activeTab]: true });
+        setMobilePanel("detail");
     };
 
     // ── Open Add modal ────────────────────────────────────────────────────────
@@ -690,24 +694,42 @@ export default function SalesRepsPage() {
         <div className="flex flex-col h-screen bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
 
             {/* ── Page Header ── */}
-            <div className="h-10 bg-[#374151] flex items-center justify-between px-4 shrink-0 text-white">
-                <div className="flex items-center gap-3">
-                    <button onClick={() => router.push("/menu")} className="hover:bg-white/10 p-1 rounded transition-colors">
+            <div className="h-10 bg-[#374151] flex items-center justify-between px-3 md:px-4 shrink-0 text-white">
+                <div className="flex items-center gap-2 md:gap-3">
+                    {/* Mobile: back to list when in detail */}
+                    {mobilePanel === "detail" ? (
+                        <button onClick={() => setMobilePanel("list")} className="md:hidden hover:bg-white/10 p-1 rounded transition-colors">
+                            <ArrowLeft size={16} />
+                        </button>
+                    ) : (
+                        <button onClick={() => router.push("/menu")} className="hover:bg-white/10 p-1 rounded transition-colors">
+                            <ArrowLeft size={16} />
+                        </button>
+                    )}
+                    {/* Desktop: always show menu back */}
+                    <button onClick={() => router.push("/menu")} className="hidden md:flex hover:bg-white/10 p-1 rounded transition-colors">
                         <ArrowLeft size={16} />
                     </button>
-                    <Users size={14} className="text-[#FB7506]" />
-                    <span className="font-black text-xs uppercase tracking-widest">Sales Reps</span>
+                    <Users size={14} className="text-[#FB7506] hidden md:block" />
+                    <span className="font-black text-xs uppercase tracking-widest">
+                        {mobilePanel === "detail" && selectedUq ? (selName || "Sales Rep") : "Sales Reps"}
+                    </span>
                 </div>
-                <span className="text-gray-400 text-[10px] font-bold">
+                <span className="text-gray-400 text-[10px] font-bold hidden sm:block">
                     User: <span className="text-white">{session?.user?.name}</span>
                 </span>
             </div>
 
             {/* ── Main Layout ── */}
-            <div className="flex flex-1 gap-2 p-2 overflow-hidden min-h-0">
+            <div className="flex flex-col md:flex-row flex-1 gap-2 p-2 overflow-hidden min-h-0">
 
                 {/* ── Left: Sales Reps List ── */}
-                <div className="w-[30%] shrink-0 flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden min-h-0">
+                {/* On mobile: show only when mobilePanel === "list" */}
+                <div className={cn(
+                    "flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden min-h-0",
+                    "md:w-[32%] md:shrink-0 md:flex",
+                    mobilePanel === "list" ? "flex flex-1" : "hidden md:flex"
+                )}>
                     {/* List header */}
                     <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
                         <div className="flex items-center gap-2">
@@ -757,20 +779,26 @@ export default function SalesRepsPage() {
                     </div>
 
                     {/* Grid header */}
-                    <div className="bg-gray-100 border-b border-gray-200 shrink-0 overflow-x-auto">
-                        <div className="grid px-2 py-1.5 min-w-[560px]"
-                            style={{ gridTemplateColumns: "160px 50px 100px 90px 1fr 60px" }}>
+                    <div className="bg-gray-100 border-b border-gray-200 shrink-0">
+                        {/* Mobile: 2 cols */}
+                        <div className="grid grid-cols-[1fr_40px] px-2 py-1.5 md:hidden">
+                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Salesman</span>
+                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide text-center">Act.</span>
+                        </div>
+                        {/* Desktop: full cols */}
+                        <div className="hidden md:grid px-2 py-1.5 overflow-x-auto"
+                            style={{ gridTemplateColumns: "1fr 48px 90px 80px 1fr 48px" }}>
                             <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Salesman</span>
                             <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Code</span>
                             <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Phone</span>
-                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">P.Warehouse</span>
+                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Whouse</span>
                             <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Email</span>
-                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide text-center">Active</span>
+                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide text-center">Act.</span>
                         </div>
                     </div>
 
                     {/* List rows */}
-                    <div className="overflow-y-auto overflow-x-auto flex-1 divide-y divide-gray-50 text-gray-800">
+                    <div className="overflow-y-auto flex-1 divide-y divide-gray-50 text-gray-800">
                         {filteredList.length === 0 && !loadingList ? (
                             <div className="p-6 text-center text-gray-300 text-xs italic">
                                 {search ? "No results" : "No sales reps found"}
@@ -778,19 +806,29 @@ export default function SalesRepsPage() {
                         ) : filteredList.map((row: any, i: number) => {
                             const uq = t(row.UNICO);
                             const selected = selectedUq === uq;
+                            const rowBase = cn("cursor-pointer transition-colors text-xs px-2 py-1.5",
+                                selected ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50");
+                            const nameCol = cn("truncate font-semibold", selected ? "text-blue-800" : "text-gray-800");
                             return (
-                                <div key={uq || i} onClick={() => handleSelectRow(row)}
-                                    className={cn(
-                                        "grid px-2 py-1.5 cursor-pointer transition-colors text-xs min-w-[560px]",
-                                        selected ? "!bg-blue-50 ring-1 ring-inset ring-blue-200 font-semibold text-blue-800" : "hover:bg-gray-50 text-gray-700"
-                                    )}
-                                    style={{ gridTemplateColumns: "160px 50px 100px 90px 1fr 60px" }}>
-                                    <span className={cn("truncate pr-1 font-semibold", selected ? "text-blue-800" : "text-gray-800")}>{`${t(row.FIRST_NAME)} ${t(row.LAST_NAME)}`.trim()}</span>
-                                    <span className="font-mono text-gray-500 truncate">{t(row.OLD_CODE)}</span>
-                                    <span className="truncate text-gray-500">{t(row.PHONE_1)}</span>
-                                    <span className="truncate text-gray-500">{t(row.WPHYSICAL_UQ ?? row.WAREHOUSE ?? "")}</span>
-                                    <span className="truncate text-gray-500">{t(row.EMAIL_1)}</span>
-                                    <span className="text-center">{Boolean(row.ACTIVE) ? <span className="text-green-600 font-black text-[10px]">YES</span> : <span className="text-gray-400 text-[10px]">—</span>}</span>
+                                <div key={uq || i} onClick={() => handleSelectRow(row)}>
+                                    {/* Mobile row */}
+                                    <div className={cn(rowBase, "grid grid-cols-[1fr_40px] md:hidden")}>
+                                        <div className="min-w-0">
+                                            <p className={cn(nameCol, "text-xs")}>{`${t(row.FIRST_NAME)} ${t(row.LAST_NAME)}`.trim()}</p>
+                                            <p className="text-[10px] text-gray-400 truncate">{t(row.EMAIL_1)}</p>
+                                        </div>
+                                        <span className="text-center self-center">{Boolean(row.ACTIVE) ? <span className="text-green-600 font-black text-[10px]">✓</span> : <span className="text-gray-300 text-[10px]">—</span>}</span>
+                                    </div>
+                                    {/* Desktop row */}
+                                    <div className={cn(rowBase, "hidden md:grid")}
+                                        style={{ gridTemplateColumns: "1fr 48px 90px 80px 1fr 48px" }}>
+                                        <span className={cn(nameCol, "truncate pr-1")}>{`${t(row.FIRST_NAME)} ${t(row.LAST_NAME)}`.trim()}</span>
+                                        <span className="font-mono text-gray-500 truncate text-[11px]">{t(row.OLD_CODE)}</span>
+                                        <span className="truncate text-gray-500 text-[11px]">{t(row.PHONE_1)}</span>
+                                        <span className="truncate text-gray-500 text-[11px]">{t(row.WPHYSICAL_UQ ?? row.WAREHOUSE ?? "")}</span>
+                                        <span className="truncate text-gray-500 text-[11px]">{t(row.EMAIL_1)}</span>
+                                        <span className="text-center">{Boolean(row.ACTIVE) ? <span className="text-green-600 font-black text-[10px]">YES</span> : <span className="text-gray-400 text-[10px]">—</span>}</span>
+                                    </div>
                                 </div>
                             );
                         })}
@@ -801,16 +839,21 @@ export default function SalesRepsPage() {
                 </div>
 
                 {/* ── Right: Detail tabs ── */}
-                <div className="flex-1 flex flex-col min-w-0 min-h-0 bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                {/* On mobile: show only when mobilePanel === "detail" */}
+                <div className={cn(
+                    "flex flex-col min-w-0 min-h-0 bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden",
+                    "md:flex md:flex-1",
+                    mobilePanel === "detail" ? "flex flex-1" : "hidden md:flex"
+                )}>
 
-                    {/* Tab bar */}
-                    <div className="h-10 bg-[#374151] flex items-end px-2 gap-0.5 shrink-0">
+                    {/* Tab bar — scrollable on small screens */}
+                    <div className="h-10 bg-[#374151] flex items-end px-2 gap-0.5 shrink-0 overflow-x-auto scrollbar-none">
                         {TABS.map(tab => (
                             <button key={tab.key}
                                 onClick={() => { if (selectedUq) handleTabClick(tab.key); }}
                                 disabled={!selectedUq}
                                 className={cn(
-                                    "px-4 h-8 text-[10px] font-black uppercase tracking-wider rounded-t transition-all",
+                                    "px-2 md:px-4 h-8 text-[9px] md:text-[10px] font-black uppercase tracking-wider rounded-t transition-all whitespace-nowrap shrink-0",
                                     !selectedUq && "opacity-40 cursor-not-allowed",
                                     activeTab === tab.key ? "bg-[#f4f6f8] text-[#FB7506]" : "text-gray-400 hover:text-white hover:bg-white/10"
                                 )}>
@@ -986,9 +1029,9 @@ export default function SalesRepsPage() {
 
             {/* ─── Salesman Detail Modal ─────────────────────────────────────────────── */}
             {modalOpen && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
                     onClick={() => setModalOpen(false)}>
-                    <div className="bg-white rounded-lg shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden"
+                    <div className="bg-white rounded-t-2xl sm:rounded-lg shadow-2xl w-full sm:max-w-5xl h-[95vh] sm:max-h-[92vh] flex flex-col overflow-hidden"
                         onClick={e => e.stopPropagation()}>
 
                         {/* Modal header */}
@@ -1030,18 +1073,17 @@ export default function SalesRepsPage() {
                             ))}
                         </div>
 
-                        {/* ── Always-visible top fields (matching VFP layout) ── */}
-                        <div className="px-4 pt-3 pb-2 border-b border-gray-200 bg-gray-50 shrink-0">
-                            <div className="grid grid-cols-5 gap-x-3 gap-y-2 text-xs">
+                        {/* ── Always-visible top fields ── */}
+                        <div className="px-3 md:px-4 pt-3 pb-2 border-b border-gray-200 bg-gray-50 shrink-0">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-x-3 gap-y-2 text-xs">
+                                {/* Row 1 */}
                                 <div className="flex flex-col gap-0.5">
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">EDI Code</label>
-                                    <input value={t(form.old_code)} onChange={e => setField("old_code", e.target.value)}
-                                        className="fos-input h-8 text-xs" />
+                                    <input value={t(form.old_code)} onChange={e => setField("old_code", e.target.value)} className="fos-input h-8 text-xs" />
                                 </div>
-                                <div className="col-span-3 flex flex-col gap-0.5">
+                                <div className="col-span-1 sm:col-span-2 lg:col-span-4 flex flex-col gap-0.5">
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">User Name *</label>
-                                    <select value={t(form.user_uq)} onChange={e => setField("user_uq", e.target.value)}
-                                        className="fos-input h-8 text-xs">
+                                    <select value={t(form.user_uq)} onChange={e => setField("user_uq", e.target.value)} className="fos-input h-8 text-xs">
                                         <option value="">-- None --</option>
                                         {(systemUsers as any[]).map((u: any) => (
                                             <option key={t(u.UNICO ?? u.unico)} value={t(u.UNICO ?? u.unico)}>
@@ -1052,49 +1094,43 @@ export default function SalesRepsPage() {
                                 </div>
                                 <div className="flex flex-col gap-0.5 items-center justify-end pb-1">
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Active</label>
-                                    <input type="checkbox" checked={Boolean(form.active)}
-                                        onChange={e => setField("active", e.target.checked)}
-                                        className="w-5 h-5 accent-[#FB7506]" />
+                                    <input type="checkbox" checked={Boolean(form.active)} onChange={e => setField("active", e.target.checked)} className="w-5 h-5 accent-[#FB7506]" />
                                 </div>
-                                <div className="col-span-2 flex flex-col gap-0.5">
+                                {/* Row 2 */}
+                                <div className="col-span-1 sm:col-span-2 lg:col-span-3 flex flex-col gap-0.5">
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">First Name *</label>
-                                    <input value={t(form.first_name)} onChange={e => setField("first_name", e.target.value)}
-                                        className="fos-input h-8 text-xs" />
+                                    <input value={t(form.first_name)} onChange={e => setField("first_name", e.target.value)} className="fos-input h-8 text-xs" />
                                 </div>
-                                <div className="col-span-3 flex flex-col gap-0.5">
+                                <div className="col-span-1 sm:col-span-2 lg:col-span-3 flex flex-col gap-0.5">
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Last Name *</label>
-                                    <input value={t(form.last_name)} onChange={e => setField("last_name", e.target.value)}
-                                        className="fos-input h-8 text-xs" />
+                                    <input value={t(form.last_name)} onChange={e => setField("last_name", e.target.value)} className="fos-input h-8 text-xs" />
                                 </div>
-                                <div className="col-span-3 flex flex-col gap-0.5">
+                                {/* Row 3 */}
+                                <div className="col-span-2 sm:col-span-2 lg:col-span-4 flex flex-col gap-0.5">
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Address 1</label>
-                                    <input value={t(form.address)} onChange={e => setField("address", e.target.value)}
-                                        className="fos-input h-8 text-xs" />
+                                    <input value={t(form.address)} onChange={e => setField("address", e.target.value)} className="fos-input h-8 text-xs" />
                                 </div>
                                 <div className="flex flex-col gap-0.5">
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Phone 1</label>
-                                    <input value={t(form.phone_1)} onChange={e => setField("phone_1", e.target.value)}
-                                        className="fos-input h-8 text-xs" />
+                                    <input value={t(form.phone_1)} onChange={e => setField("phone_1", e.target.value)} className="fos-input h-8 text-xs" />
                                 </div>
                                 <div className="flex flex-col gap-0.5">
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Phone 2</label>
-                                    <input value={t(form.phone_2)} onChange={e => setField("phone_2", e.target.value)}
-                                        className="fos-input h-8 text-xs" />
+                                    <input value={t(form.phone_2)} onChange={e => setField("phone_2", e.target.value)} className="fos-input h-8 text-xs" />
                                 </div>
-                                <div className="col-span-2 flex flex-col gap-0.5">
+                                {/* Row 4 */}
+                                <div className="col-span-1 sm:col-span-2 lg:col-span-3 flex flex-col gap-0.5">
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">E-mail *</label>
-                                    <input type="email" value={t(form.email_1)} onChange={e => setField("email_1", e.target.value)}
-                                        className="fos-input h-8 text-xs" />
+                                    <input type="email" value={t(form.email_1)} onChange={e => setField("email_1", e.target.value)} className="fos-input h-8 text-xs" />
                                 </div>
-                                <div className="col-span-3 flex flex-col gap-0.5">
+                                <div className="col-span-1 sm:col-span-2 lg:col-span-3 flex flex-col gap-0.5">
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">E-mail 2</label>
-                                    <input type="email" value={t(form.email_2)} onChange={e => setField("email_2", e.target.value)}
-                                        className="fos-input h-8 text-xs" />
+                                    <input type="email" value={t(form.email_2)} onChange={e => setField("email_2", e.target.value)} className="fos-input h-8 text-xs" />
                                 </div>
-                                <div className="col-span-2 flex flex-col gap-0.5">
+                                {/* Row 5 */}
+                                <div className="col-span-1 sm:col-span-2 lg:col-span-3 flex flex-col gap-0.5">
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">P. Warehouse Default *</label>
-                                    <select value={t(form.wphysical_uq)} onChange={e => setField("wphysical_uq", e.target.value)}
-                                        className="fos-input h-8 text-xs">
+                                    <select value={t(form.wphysical_uq)} onChange={e => setField("wphysical_uq", e.target.value)} className="fos-input h-8 text-xs">
                                         <option value="">-- None --</option>
                                         {(physicalWarehouses as any[]).map((w: any) => (
                                             <option key={t(w.UNICO ?? w.unico)} value={t(w.UNICO ?? w.unico)}>
@@ -1103,10 +1139,9 @@ export default function SalesRepsPage() {
                                         ))}
                                     </select>
                                 </div>
-                                <div className="col-span-3 flex flex-col gap-0.5">
+                                <div className="col-span-1 sm:col-span-2 lg:col-span-3 flex flex-col gap-0.5">
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Superior</label>
-                                    <select value={t(form.superior_uq)} onChange={e => setField("superior_uq", e.target.value)}
-                                        className="fos-input h-8 text-xs">
+                                    <select value={t(form.superior_uq)} onChange={e => setField("superior_uq", e.target.value)} className="fos-input h-8 text-xs">
                                         <option value="">-- None --</option>
                                         {(salesmanSearch as any[]).filter(r => t(r.UNICO) !== form.unico).map((r: any) => (
                                             <option key={t(r.UNICO)} value={t(r.UNICO)}>
@@ -1121,10 +1156,10 @@ export default function SalesRepsPage() {
                         {/* Modal tab content */}
                         <div className="flex-1 overflow-y-auto p-3">
 
-                            {/* ── Salesman Setup Tab: numeric fields + 5-col permission grid (VFP layout) ── */}
+                            {/* ── Salesman Setup Tab: numeric fields + permission grid ── */}
                             {modalTab === "setup" && (
                                 <div className="space-y-2">
-                                    <div className="grid grid-cols-5 gap-2">
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
                                         {[
                                             { key: "commi_osales",  label: "% Sales Commission",       step: "0.01", isFloat: true },
                                             { key: "due_days",      label: "Commission Due Days",       step: "1",    isFloat: false },
@@ -1140,13 +1175,14 @@ export default function SalesRepsPage() {
                                             </div>
                                         ))}
                                     </div>
-                                    <div className="grid grid-cols-5 gap-x-1 gap-y-0 border-t border-gray-100 pt-2">
+                                    {/* Permission grid: 2 cols mobile → 3 sm → 4 md → 5 lg */}
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-1 gap-y-0 border-t border-gray-100 pt-2">
                                         {PERM_LABELS.map(([key, label]) => (
-                                            <label key={key} className="flex items-center gap-1.5 cursor-pointer py-0.5 px-1 rounded hover:bg-gray-50">
+                                            <label key={key} className="flex items-center gap-1.5 cursor-pointer py-1 px-1 rounded hover:bg-gray-50">
                                                 <input type="checkbox" checked={Boolean(form[key])}
                                                     onChange={e => setField(key, e.target.checked)}
-                                                    className="w-3.5 h-3.5 accent-[#FB7506] shrink-0" />
-                                                <span className="text-[10px] font-semibold text-gray-700 leading-tight">{label}</span>
+                                                    className="w-4 h-4 md:w-3.5 md:h-3.5 accent-[#FB7506] shrink-0" />
+                                                <span className="text-[11px] md:text-[10px] font-semibold text-gray-700 leading-tight">{label}</span>
                                             </label>
                                         ))}
                                     </div>
