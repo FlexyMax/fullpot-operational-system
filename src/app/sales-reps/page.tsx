@@ -770,7 +770,7 @@ export default function SalesRepsPage() {
                     </div>
 
                     {/* List rows */}
-                    <div className="overflow-y-auto overflow-x-auto flex-1 divide-y divide-gray-50">
+                    <div className="overflow-y-auto overflow-x-auto flex-1 divide-y divide-gray-50 text-gray-800">
                         {filteredList.length === 0 && !loadingList ? (
                             <div className="p-6 text-center text-gray-300 text-xs italic">
                                 {search ? "No results" : "No sales reps found"}
@@ -785,12 +785,12 @@ export default function SalesRepsPage() {
                                         selected ? "!bg-blue-50 ring-1 ring-inset ring-blue-200 font-semibold text-blue-800" : "hover:bg-gray-50 text-gray-700"
                                     )}
                                     style={{ gridTemplateColumns: "160px 50px 100px 90px 1fr 60px" }}>
-                                    <span className="truncate pr-1 font-semibold">{`${t(row.FIRST_NAME)} ${t(row.LAST_NAME)}`.trim()}</span>
+                                    <span className={cn("truncate pr-1 font-semibold", selected ? "text-blue-800" : "text-gray-800")}>{`${t(row.FIRST_NAME)} ${t(row.LAST_NAME)}`.trim()}</span>
                                     <span className="font-mono text-gray-500 truncate">{t(row.OLD_CODE)}</span>
                                     <span className="truncate text-gray-500">{t(row.PHONE_1)}</span>
                                     <span className="truncate text-gray-500">{t(row.WPHYSICAL_UQ ?? row.WAREHOUSE ?? "")}</span>
                                     <span className="truncate text-gray-500">{t(row.EMAIL_1)}</span>
-                                    <span className="text-center">{Boolean(row.ACTIVE) ? <span className="text-green-600 font-black text-[10px]">YES</span> : <span className="text-gray-300 text-[10px]">—</span>}</span>
+                                    <span className="text-center">{Boolean(row.ACTIVE) ? <span className="text-green-600 font-black text-[10px]">YES</span> : <span className="text-gray-400 text-[10px]">—</span>}</span>
                                 </div>
                             );
                         })}
