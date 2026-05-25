@@ -17,6 +17,7 @@ export const PANTA: Record<string, string> = {
     "freights-setup":      "52961702",  // fallback — register dedicated pantalla record
     "items-setup":            "52961702",  // fallback — register dedicated pantalla record
     "payment-authorizations": "52961702",  // fallback — register in pantalla table to get real UQ
+    "sales-reps":             "52961702",  // fallback — register in pantalla table to get real UQ
     // Add new pages here as they are registered in the pantalla table
 };
 
