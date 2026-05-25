@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
     const search = req.nextUrl.searchParams.get("search");
     try {
         const r = await executeProcedure("sp_flower_growers_list_for_growers", {
-            lcsearch: search || "%",
+            lcgrower: search || "%",
         });
         return NextResponse.json(r.recordset ?? []);
     } catch (err: any) {
