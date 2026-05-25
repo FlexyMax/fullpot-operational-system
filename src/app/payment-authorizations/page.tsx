@@ -1208,9 +1208,9 @@ export default function PaymentAuthorizationsPage() {
                                         </thead>
                                         <tbody className="divide-y divide-gray-100">
                                             {paymentInvoices.map((row: any, i: number) => {
-                                                const amt  = parseFloat(row.LINE_VALUE) || 0;
-                                                const pay  = parseFloat(row.PAYMENT)    || 0;
-                                                const bal  = parseFloat(row.BALANCE ?? (amt - pay).toFixed(2)) || (amt - pay);
+                                                const amt  = parseFloat(row.AMMOUNT)     || 0;
+                                                const pay  = parseFloat(row.OUT_AMMOUNT) || 0;
+                                                const bal  = parseFloat(row.LINE_BALANCE ?? row.BALANCE ?? (amt - pay).toFixed(2)) || (amt - pay);
                                                 return (
                                                     <tr key={i} className={cn("cursor-pointer hover:bg-gray-50", selPayInvRow === row && "!bg-blue-50 ring-1 ring-inset ring-blue-200")}
                                                         onClick={() => setSelPayInvRow(row)}>
