@@ -10,23 +10,8 @@ export async function GET(req: NextRequest) {
     const base = { lcgrower_uq: grower_uq, ldfrom: new Date(ldfrom || "2000-01-01") };
 
     try {
-        if (lnclose === -1) {
-            // All — merge pending + paid, dedup by UNICO
-            const [pending, paid] = await Promise.all([
-                executeProcedure("sp_flower_growers_payments", { ...base, lnclose: 0 }),
-                executeProcedure("sp_flower_growers_payments", { ...base, lnclose: 1 }),
-            ]);
-            const seen = new Set<string>();
-            const merged = [...pending.recordset, ...paid.recordset].filter(row => {
-                const key = String(row.UNICO ?? row.unico ?? JSON.stringify(row));
-                if (seen.has(key)) return false;
-                seen.add(key);
-                return true;
-            });
-            return NextResponse.json(merged);
-        }
-
-        const r = await executeProcedure("sp_flower_growers_payments", { ...base, lnclose });
+        const dbLnclose = lnclose === -1 ? 3 : lnclose === 0 ? 1 : lnclose === 1 ? 2 : lnclose;
+        const r = await executeProcedure("sp_flower_growers_payments", { ...base, lnclose: dbLnclose });
         return NextResponse.json(r.recordset);
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });
