@@ -56,51 +56,59 @@ const EMPTY_FORM: any = {
     supervisor: false,
 };
 
+// Permission checkboxes in VFP 5-column order with exact VFP labels
 const PERM_LABELS: [string, string][] = [
-    ["change_prices",        "Change Prices"],
+    ["view_days",            "View Days"],
+    ["view_hold",            "View Hold"],
+    ["change_prices",        "Change Inventory Prices"],
     ["view_flowercost",      "View Flower Cost"],
-    ["po_unreception",       "PO Unreception"],
-    ["price_override",       "Price Override"],
-    ["change_product",       "Change Product"],
-    ["whouse_control",       "Warehouse Control"],
-    ["edit_all_inv",         "Edit All Invoices"],
-    ["credit_override",      "Credit Override"],
+    ["lock_production",      "Lock Production"],
+    ["view_lot",             "View Lot"],
+    ["move_hold",            "Move Hold"],
+    ["remote",               "Remote"],
+    ["po_unreception",       "Unreceive PO"],
+    ["view_qty_in",          "View Qty In"],
+    ["view_grower",          "View Vendor"],
+    ["price_override",       "Request Price Override"],
+    ["change_product",       "Update Products"],
+    ["whouse_control",       "WHouse Control"],
+    ["update_stock_invoice", "Update Stock From Invoices"],
+    ["credit_all_inv",       "CR All Invoices"],
+    ["credit_override",      "Request Credit Override"],
+    ["open_invoice",         "Open Invoices"],
+    ["pti_take_om",          "Take OM in Invoices"],
+    ["view_all_inv",         "View All Invoices"],
     ["view_all_customers",   "View All Customers"],
-    ["view_price_wo_fuel",   "View Price w/o Fuel"],
-    ["autorize_transfer",    "Authorize Transfer"],
-    ["cls_spcarriers",       "Close Sp. Carriers"],
-    ["web",                  "Web Access"],
-    ["delete_lines",         "Delete Lines"],
+    ["autorize_transfer",    "Transfer Inventory"],
     ["open_packing",         "Open Packing"],
+    ["inventory_from_po",    "Inventory From PO"],
+    ["print_customers",      "Print Customers"],
+    ["print_all_customers",  "Print All Customers"],
+    ["view_price_wo_fuel",   "View Price W. Fuel"],
+    ["view_pb_recipe",       "View PB Recipe"],
+    ["edit_all_inv",         "Edit All Invoices"],
+    ["view_reports",         "View Reports"],
+    ["reports_all_salesmen", "Reports All Salesmen"],
+    ["invoice_add_charges",  "Add Charges"],
+    ["invoice_scan_sale",    "Scan to Sale"],
     ["limited_po",           "Limited PO"],
     ["view_quotas",          "View Quotas"],
     ["loc_autotran",         "Local Auto Transfer"],
-    ["open_invoice",         "Open Invoice"],
-    ["print_customers",      "Print Customers"],
-    ["print_all_customers",  "Print All Customers"],
-    ["view_pb_recipe",       "View PB Recipe"],
-    ["approve_override",     "Approve Override"],
-    ["make_payment",         "Make Payment"],
-    ["lock_production",      "Lock Production"],
-    ["view_qty_in",          "View Qty In"],
-    ["update_stock_invoice", "Update Stock Invoice"],
-    ["pti_take_om",          "PTI Take OM"],
-    ["view_om",              "View OM"],
-    ["inventory_from_po",    "Inventory from PO"],
-    ["po_change_date",       "PO Change Date"],
     ["open_prebook",         "Open Prebook"],
     ["season_poprice",       "Season PO Price"],
-    ["view_reports",         "View Reports"],
-    ["reports_all_salesmen", "Reports All Salesmen"],
-    ["invoice_add_charges",  "Invoice Add Charges"],
-    ["invoice_scan_sale",    "Invoice Scan Sale"],
-    ["credit_all_inv",       "Credit All Invoices"],
+    ["po_change_date",       "PO Change Date"],
+    ["view_om",              "View OM"],
     ["accept_returns",       "Accept Returns"],
     ["view_whouse",          "View Warehouse"],
     ["make_discounts",       "Make Discounts"],
     ["view_sales_price",     "View Sales Price"],
     ["prebook_check_stock",  "Prebook Check Stock"],
     ["supervisor",           "Supervisor"],
+    ["web",                  "Web Access"],
+    ["delete_lines",         "Delete Lines"],
+    ["cls_spcarriers",       "Close Sp. Carriers"],
+    ["approve_override",     "Approve Override"],
+    ["make_payment",         "Make Payment"],
 ];
 
 type ActiveTab = "customers" | "product-classes" | "vendors" | "warehouses" | "cities" | "salesmen";
@@ -749,16 +757,20 @@ export default function SalesRepsPage() {
                     </div>
 
                     {/* Grid header */}
-                    <div className="bg-gray-100 border-b border-gray-200 shrink-0">
-                        <div className="grid grid-cols-[1fr_auto_1fr] px-2 py-1.5">
-                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Name</span>
-                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide px-2">Code</span>
+                    <div className="bg-gray-100 border-b border-gray-200 shrink-0 overflow-x-auto">
+                        <div className="grid px-2 py-1.5 min-w-[560px]"
+                            style={{ gridTemplateColumns: "160px 50px 100px 90px 1fr 60px" }}>
+                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Salesman</span>
+                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Code</span>
+                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Phone</span>
+                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">P.Warehouse</span>
                             <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Email</span>
+                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide text-center">Active</span>
                         </div>
                     </div>
 
                     {/* List rows */}
-                    <div className="overflow-y-auto flex-1 divide-y divide-gray-50">
+                    <div className="overflow-y-auto overflow-x-auto flex-1 divide-y divide-gray-50">
                         {filteredList.length === 0 && !loadingList ? (
                             <div className="p-6 text-center text-gray-300 text-xs italic">
                                 {search ? "No results" : "No sales reps found"}
@@ -769,12 +781,16 @@ export default function SalesRepsPage() {
                             return (
                                 <div key={uq || i} onClick={() => handleSelectRow(row)}
                                     className={cn(
-                                        "grid grid-cols-[1fr_auto_1fr] px-2 py-1.5 cursor-pointer transition-colors text-xs",
+                                        "grid px-2 py-1.5 cursor-pointer transition-colors text-xs min-w-[560px]",
                                         selected ? "!bg-blue-50 ring-1 ring-inset ring-blue-200 font-semibold text-blue-800" : "hover:bg-gray-50 text-gray-700"
-                                    )}>
-                                    <span className="truncate pr-1">{`${t(row.FIRST_NAME)} ${t(row.LAST_NAME)}`.trim()}</span>
-                                    <span className="text-gray-400 font-mono px-2 whitespace-nowrap">{t(row.OLD_CODE)}</span>
+                                    )}
+                                    style={{ gridTemplateColumns: "160px 50px 100px 90px 1fr 60px" }}>
+                                    <span className="truncate pr-1 font-semibold">{`${t(row.FIRST_NAME)} ${t(row.LAST_NAME)}`.trim()}</span>
+                                    <span className="font-mono text-gray-500 truncate">{t(row.OLD_CODE)}</span>
+                                    <span className="truncate text-gray-500">{t(row.PHONE_1)}</span>
+                                    <span className="truncate text-gray-500">{t(row.WPHYSICAL_UQ ?? row.WAREHOUSE ?? "")}</span>
                                     <span className="truncate text-gray-500">{t(row.EMAIL_1)}</span>
+                                    <span className="text-center">{Boolean(row.ACTIVE) ? <span className="text-green-600 font-black text-[10px]">YES</span> : <span className="text-gray-300 text-[10px]">—</span>}</span>
                                 </div>
                             );
                         })}
@@ -802,6 +818,18 @@ export default function SalesRepsPage() {
                             </button>
                         ))}
                     </div>
+
+                    {/* Salesman name header */}
+                    {selectedUq && (
+                        <div className="bg-white border-b border-gray-200 px-4 py-2 shrink-0 flex items-center justify-between">
+                            <span className="font-black text-lg text-[#374151] uppercase tracking-tight">
+                                {selName || "—"}
+                            </span>
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                Salesman and {TABS.find(t => t.key === activeTab)?.label ?? ""} Definition
+                            </span>
+                        </div>
+                    )}
 
                     {/* Tab content */}
                     <div className="flex-1 overflow-hidden min-h-0 flex flex-col">
@@ -960,7 +988,7 @@ export default function SalesRepsPage() {
             {modalOpen && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
                     onClick={() => setModalOpen(false)}>
-                    <div className="bg-white rounded-lg shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden"
+                    <div className="bg-white rounded-lg shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden"
                         onClick={e => e.stopPropagation()}>
 
                         {/* Modal header */}
@@ -1002,110 +1030,123 @@ export default function SalesRepsPage() {
                             ))}
                         </div>
 
-                        {/* Modal body */}
-                        <div className="flex-1 overflow-y-auto p-4">
+                        {/* ── Always-visible top fields (matching VFP layout) ── */}
+                        <div className="px-4 pt-3 pb-2 border-b border-gray-200 bg-gray-50 shrink-0">
+                            <div className="grid grid-cols-5 gap-x-3 gap-y-2 text-xs">
+                                <div className="flex flex-col gap-0.5">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">EDI Code</label>
+                                    <input value={t(form.old_code)} onChange={e => setField("old_code", e.target.value)}
+                                        className="fos-input h-8 text-xs" />
+                                </div>
+                                <div className="col-span-3 flex flex-col gap-0.5">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">User Name *</label>
+                                    <select value={t(form.user_uq)} onChange={e => setField("user_uq", e.target.value)}
+                                        className="fos-input h-8 text-xs">
+                                        <option value="">-- None --</option>
+                                        {(systemUsers as any[]).map((u: any) => (
+                                            <option key={t(u.UNICO ?? u.unico)} value={t(u.UNICO ?? u.unico)}>
+                                                {t(u.NAME ?? u.name ?? u.USER_NAME ?? u.username ?? u.UNICO ?? u.unico)}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="flex flex-col gap-0.5 items-center justify-end pb-1">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Active</label>
+                                    <input type="checkbox" checked={Boolean(form.active)}
+                                        onChange={e => setField("active", e.target.checked)}
+                                        className="w-5 h-5 accent-[#FB7506]" />
+                                </div>
+                                <div className="col-span-2 flex flex-col gap-0.5">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">First Name *</label>
+                                    <input value={t(form.first_name)} onChange={e => setField("first_name", e.target.value)}
+                                        className="fos-input h-8 text-xs" />
+                                </div>
+                                <div className="col-span-3 flex flex-col gap-0.5">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Last Name *</label>
+                                    <input value={t(form.last_name)} onChange={e => setField("last_name", e.target.value)}
+                                        className="fos-input h-8 text-xs" />
+                                </div>
+                                <div className="col-span-3 flex flex-col gap-0.5">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Address 1</label>
+                                    <input value={t(form.address)} onChange={e => setField("address", e.target.value)}
+                                        className="fos-input h-8 text-xs" />
+                                </div>
+                                <div className="flex flex-col gap-0.5">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Phone 1</label>
+                                    <input value={t(form.phone_1)} onChange={e => setField("phone_1", e.target.value)}
+                                        className="fos-input h-8 text-xs" />
+                                </div>
+                                <div className="flex flex-col gap-0.5">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Phone 2</label>
+                                    <input value={t(form.phone_2)} onChange={e => setField("phone_2", e.target.value)}
+                                        className="fos-input h-8 text-xs" />
+                                </div>
+                                <div className="col-span-2 flex flex-col gap-0.5">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">E-mail *</label>
+                                    <input type="email" value={t(form.email_1)} onChange={e => setField("email_1", e.target.value)}
+                                        className="fos-input h-8 text-xs" />
+                                </div>
+                                <div className="col-span-3 flex flex-col gap-0.5">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">E-mail 2</label>
+                                    <input type="email" value={t(form.email_2)} onChange={e => setField("email_2", e.target.value)}
+                                        className="fos-input h-8 text-xs" />
+                                </div>
+                                <div className="col-span-2 flex flex-col gap-0.5">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">P. Warehouse Default *</label>
+                                    <select value={t(form.wphysical_uq)} onChange={e => setField("wphysical_uq", e.target.value)}
+                                        className="fos-input h-8 text-xs">
+                                        <option value="">-- None --</option>
+                                        {(physicalWarehouses as any[]).map((w: any) => (
+                                            <option key={t(w.UNICO ?? w.unico)} value={t(w.UNICO ?? w.unico)}>
+                                                {t(w.WAREHOUSE ?? w.warehouse ?? w.DESCRIPTION ?? w.description ?? w.UNICO ?? w.unico)}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="col-span-3 flex flex-col gap-0.5">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Superior</label>
+                                    <select value={t(form.superior_uq)} onChange={e => setField("superior_uq", e.target.value)}
+                                        className="fos-input h-8 text-xs">
+                                        <option value="">-- None --</option>
+                                        {(salesmanSearch as any[]).filter(r => t(r.UNICO) !== form.unico).map((r: any) => (
+                                            <option key={t(r.UNICO)} value={t(r.UNICO)}>
+                                                {`${t(r.FIRST_NAME)} ${t(r.LAST_NAME)}`.trim()}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
 
-                            {/* ── Setup Tab ── */}
+                        {/* Modal tab content */}
+                        <div className="flex-1 overflow-y-auto p-3">
+
+                            {/* ── Salesman Setup Tab: numeric fields + 5-col permission grid (VFP layout) ── */}
                             {modalTab === "setup" && (
-                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 text-xs">
-                                    {/* First Name */}
-                                    <div className="flex flex-col gap-0.5">
-                                        <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">First Name *</label>
-                                        <input value={t(form.first_name)} onChange={e => setField("first_name", e.target.value)}
-                                            className="fos-input h-9 text-sm" />
-                                    </div>
-                                    {/* Last Name */}
-                                    <div className="flex flex-col gap-0.5">
-                                        <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Last Name *</label>
-                                        <input value={t(form.last_name)} onChange={e => setField("last_name", e.target.value)}
-                                            className="fos-input h-9 text-sm" />
-                                    </div>
-                                    {/* EDI Code */}
-                                    <div className="flex flex-col gap-0.5">
-                                        <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">EDI Code</label>
-                                        <input value={t(form.old_code)} onChange={e => setField("old_code", e.target.value)}
-                                            className="fos-input h-9 text-sm" />
-                                    </div>
-                                    {/* Address */}
-                                    <div className="flex flex-col gap-0.5 col-span-2">
-                                        <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Address</label>
-                                        <input value={t(form.address)} onChange={e => setField("address", e.target.value)}
-                                            className="fos-input h-9 text-sm" />
-                                    </div>
-                                    {/* Phone 1 */}
-                                    <div className="flex flex-col gap-0.5">
-                                        <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Phone 1</label>
-                                        <input value={t(form.phone_1)} onChange={e => setField("phone_1", e.target.value)}
-                                            className="fos-input h-9 text-sm" />
-                                    </div>
-                                    {/* Phone 2 */}
-                                    <div className="flex flex-col gap-0.5">
-                                        <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Phone 2</label>
-                                        <input value={t(form.phone_2)} onChange={e => setField("phone_2", e.target.value)}
-                                            className="fos-input h-9 text-sm" />
-                                    </div>
-                                    {/* Email 1 */}
-                                    <div className="flex flex-col gap-0.5 col-span-2">
-                                        <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Email 1</label>
-                                        <input type="email" value={t(form.email_1)} onChange={e => setField("email_1", e.target.value)}
-                                            className="fos-input h-9 text-sm" />
-                                    </div>
-                                    {/* Email 2 */}
-                                    <div className="flex flex-col gap-0.5 col-span-2">
-                                        <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Email 2</label>
-                                        <input type="email" value={t(form.email_2)} onChange={e => setField("email_2", e.target.value)}
-                                            className="fos-input h-9 text-sm" />
-                                    </div>
-                                    {/* Superior */}
-                                    <div className="flex flex-col gap-0.5 col-span-2">
-                                        <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Superior</label>
-                                        <select value={t(form.superior_uq)} onChange={e => setField("superior_uq", e.target.value)}
-                                            className="fos-input h-9 text-sm">
-                                            <option value="">-- None --</option>
-                                            {(salesmanSearch as any[]).filter(r => t(r.UNICO) !== form.unico).map((r: any) => (
-                                                <option key={t(r.UNICO)} value={t(r.UNICO)}>
-                                                    {`${t(r.FIRST_NAME)} ${t(r.LAST_NAME)}`.trim()}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    {/* User Name */}
-                                    <div className="flex flex-col gap-0.5 col-span-2">
-                                        <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">User Name</label>
-                                        <select value={t(form.user_uq)} onChange={e => setField("user_uq", e.target.value)}
-                                            className="fos-input h-9 text-sm">
-                                            <option value="">-- None --</option>
-                                            {(systemUsers as any[]).map((u: any) => (
-                                                <option key={t(u.UNICO ?? u.unico)} value={t(u.UNICO ?? u.unico)}>
-                                                    {t(u.NAME ?? u.name ?? u.USER_NAME ?? u.username ?? u.UNICO ?? u.unico)}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    {/* Physical Warehouse */}
-                                    <div className="flex flex-col gap-0.5 col-span-2">
-                                        <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">P. Warehouse</label>
-                                        <select value={t(form.wphysical_uq)} onChange={e => setField("wphysical_uq", e.target.value)}
-                                            className="fos-input h-9 text-sm">
-                                            <option value="">-- None --</option>
-                                            {(physicalWarehouses as any[]).map((w: any) => (
-                                                <option key={t(w.UNICO ?? w.unico)} value={t(w.UNICO ?? w.unico)}>
-                                                    {t(w.WAREHOUSE ?? w.warehouse ?? w.DESCRIPTION ?? w.description ?? w.UNICO ?? w.unico)}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    {/* Checkboxes */}
-                                    <div className="col-span-2 sm:col-span-3 lg:col-span-4 flex flex-wrap items-center gap-4 pt-2 border-t border-gray-100">
+                                <div className="space-y-2">
+                                    <div className="grid grid-cols-5 gap-2">
                                         {[
-                                            { key: "active",  label: "Active" },
-                                            { key: "remote",  label: "Remote" },
-                                        ].map(cb => (
-                                            <label key={cb.key} className="flex items-center gap-1.5 cursor-pointer">
-                                                <input type="checkbox" checked={Boolean(form[cb.key])}
-                                                    onChange={e => setField(cb.key, e.target.checked)}
-                                                    className="w-4 h-4 accent-[#FB7506]" />
-                                                <span className="text-sm font-semibold text-gray-600">{cb.label}</span>
+                                            { key: "commi_osales",  label: "% Sales Commission",       step: "0.01", isFloat: true },
+                                            { key: "due_days",      label: "Commission Due Days",       step: "1",    isFloat: false },
+                                            { key: "autho_over",    label: "% G.Profit Override Level", step: "0.01", isFloat: true },
+                                            { key: "commi_gsales",  label: "Comm. G.Sales %",           step: "0.01", isFloat: true },
+                                            { key: "lot_fifo_lifo", label: "Fresh Override",            step: "1",    isFloat: false },
+                                        ].map(f => (
+                                            <div key={f.key} className="flex flex-col gap-0.5">
+                                                <label className="text-[9px] font-black text-gray-500 uppercase tracking-wide leading-tight">{f.label}</label>
+                                                <input type="number" step={f.step} value={form[f.key] ?? 0}
+                                                    onChange={e => setField(f.key, f.isFloat ? (parseFloat(e.target.value) || 0) : (parseInt(e.target.value) || 0))}
+                                                    className="fos-input h-7 text-xs text-right" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="grid grid-cols-5 gap-x-1 gap-y-0 border-t border-gray-100 pt-2">
+                                        {PERM_LABELS.map(([key, label]) => (
+                                            <label key={key} className="flex items-center gap-1.5 cursor-pointer py-0.5 px-1 rounded hover:bg-gray-50">
+                                                <input type="checkbox" checked={Boolean(form[key])}
+                                                    onChange={e => setField(key, e.target.checked)}
+                                                    className="w-3.5 h-3.5 accent-[#FB7506] shrink-0" />
+                                                <span className="text-[10px] font-semibold text-gray-700 leading-tight">{label}</span>
                                             </label>
                                         ))}
                                     </div>
@@ -1114,59 +1155,12 @@ export default function SalesRepsPage() {
 
                             {/* ── Buyer Setup Tab ── */}
                             {modalTab === "buyer" && (
-                                <div className="space-y-4">
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                                        {[
-                                            { key: "view_hold",    label: "View Hold" },
-                                            { key: "view_lot",     label: "View Lot" },
-                                            { key: "view_grower",  label: "View Grower" },
-                                            { key: "view_days",    label: "View Days" },
-                                            { key: "move_hold",    label: "Move Hold" },
-                                            { key: "view_all_inv", label: "View All Inventory" },
-                                        ].map(cb => (
-                                            <label key={cb.key} className="flex items-center gap-2 cursor-pointer p-2 rounded border border-gray-100 hover:bg-gray-50">
-                                                <input type="checkbox" checked={Boolean(form[cb.key])}
-                                                    onChange={e => setField(cb.key, e.target.checked)}
-                                                    className="w-4 h-4 accent-[#FB7506]" />
-                                                <span className="text-sm font-semibold text-gray-600">{cb.label}</span>
-                                            </label>
-                                        ))}
-                                    </div>
-                                    <div className="grid grid-cols-3 gap-3 pt-2 border-t border-gray-100">
-                                        <div className="flex flex-col gap-0.5">
-                                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">% Sales Commission</label>
-                                            <input type="number" step="0.01" value={form.commi_osales}
-                                                onChange={e => setField("commi_osales", parseFloat(e.target.value) || 0)}
-                                                className="fos-input h-9 text-sm text-right" />
-                                        </div>
-                                        <div className="flex flex-col gap-0.5">
-                                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Due Days</label>
-                                            <input type="number" step="1" value={form.due_days}
-                                                onChange={e => setField("due_days", parseInt(e.target.value) || 0)}
-                                                className="fos-input h-9 text-sm text-right" />
-                                        </div>
-                                        <div className="flex flex-col gap-0.5">
-                                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Auth Override %</label>
-                                            <input type="number" step="0.01" value={form.autho_over}
-                                                onChange={e => setField("autho_over", parseFloat(e.target.value) || 0)}
-                                                className="fos-input h-9 text-sm text-right" />
-                                        </div>
-                                    </div>
-                                </div>
+                                <p className="text-xs text-gray-400 italic text-center py-8">Buyer Setup — coming soon.</p>
                             )}
 
                             {/* ── Others Tab ── */}
                             {modalTab === "others" && (
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                    {PERM_LABELS.map(([key, label]) => (
-                                        <label key={key} className="flex items-center gap-2 cursor-pointer p-2 rounded border border-gray-100 hover:bg-gray-50">
-                                            <input type="checkbox" checked={Boolean(form[key])}
-                                                onChange={e => setField(key, e.target.checked)}
-                                                className="w-4 h-4 accent-[#FB7506] shrink-0" />
-                                            <span className="text-xs font-semibold text-gray-600 leading-tight">{label}</span>
-                                        </label>
-                                    ))}
-                                </div>
+                                <p className="text-xs text-gray-400 italic text-center py-8">Additional settings — coming soon.</p>
                             )}
                         </div>
                     </div>
