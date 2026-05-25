@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { executeProcedure } from "@/lib/db";
+import { executeProcedure, executeQuery } from "@/lib/db";
 
 const bit = (v: any) => (v ? 1 : 0);
 const num = (v: any) => { const n = parseFloat(String(v ?? 0)); return isNaN(n) ? 0 : n; };
@@ -8,7 +8,20 @@ const str = (v: any, len = 255) => String(v ?? "").trim().substring(0, len);
 
 export async function GET(_req: NextRequest) {
     try {
-        const r = await executeProcedure("sp_flower_salesman_list", { llall: true });
+        const r = await executeQuery(`
+            SELECT 
+                unico,
+                old_code,
+                salesman_fname AS first_name,
+                salesman_lname AS last_name,
+                salesman_name,
+                phone_1,
+                wphysical_uq,
+                email_1,
+                active
+            FROM flower_salesmen
+            ORDER BY salesman_name
+        `);
         return NextResponse.json(r.recordset ?? []);
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });
