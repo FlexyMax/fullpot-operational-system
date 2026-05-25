@@ -486,9 +486,9 @@ export default function PaymentAuthorizationsPage() {
     // ── Local UI state ────────────────────────────────────────────────────
     const [activeTab,           setActiveTab]           = useState<"vendors" | "invoices" | "payments">("vendors");
     const [selectedBankUq,      setSelectedBankUq]      = useState("");
-    const [invoiceBalFilter,    setInvoiceBalFilter]    = useState<"pos" | "zero" | "all">("all");
+    const [invoiceBalFilter,    setInvoiceBalFilter]    = useState<"pos" | "zero" | "all">("pos");
     const [vendorSearch,        setVendorSearch]        = useState("");
-    const [vendorBalFilter,     setVendorBalFilter]     = useState<"A" | "B" | "N">("A");
+    const [vendorBalFilter,     setVendorBalFilter]     = useState<"A" | "B" | "N">("B");
     const [vendorMode,          setVendorMode]          = useState<"all" | "quarterly">("all");
     const [quarterDetailModal,  setQuarterDetailModal]  = useState(false);
     const [quarterDetail,       setQuarterDetail]       = useState<any[]>([]);
@@ -796,7 +796,7 @@ export default function PaymentAuthorizationsPage() {
                                                         return (
                                                             <tr key={i}
                                                                 className={cn("cursor-pointer transition-colors", sel ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50")}
-                                                                onClick={() => { store.setGrowerUq(uq, t(row.GROWER)); setSelVendorRow(row); setSelInvoiceRow(null); setSelOutcomeRow(null); }}
+                                                                onClick={() => { store.setGrowerUq(uq, t(row.GROWER)); setSelVendorRow(row); setSelInvoiceRow(null); setSelOutcomeRow(null); setInvoiceBalFilter("pos"); }}
                                                             >
                                                                 <td className="p-2 border-r border-gray-100 font-medium whitespace-nowrap min-w-48">{t(row.GROWER)}</td>
                                                                 <td className="p-2 border-r border-gray-100 whitespace-nowrap text-right">{fmt(inv)}</td>
