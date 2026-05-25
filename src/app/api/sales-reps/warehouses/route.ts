@@ -29,10 +29,8 @@ export async function POST(req: NextRequest) {
             lcsalesman_uq: String(b.salesman_uq ?? ""),
         });
         const row = r.recordset?.[0];
-        if (row?.error === 1 || row?.Error === 1) {
-            return NextResponse.json({ success: false, error: row.message || row.Message }, { status: 400 });
-        }
-        return NextResponse.json({ success: true, message: row?.message || row?.Message || "Warehouse added." });
+        if (row?.error === 1 || row?.Error === 1) return NextResponse.json({ success: false, error: row.message || row.Message }, { status: 400 });
+        return NextResponse.json({ success: true, message: "Warehouse added." });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }
@@ -45,10 +43,8 @@ export async function DELETE(req: NextRequest) {
             lcunico: String(b.unico ?? ""),
         });
         const row = r.recordset?.[0];
-        if (row?.error === 1 || row?.Error === 1) {
-            return NextResponse.json({ success: false, error: row.message || row.Message }, { status: 400 });
-        }
-        return NextResponse.json({ success: true, message: row?.message || row?.Message || "Warehouse removed." });
+        if (row?.error === 1 || row?.Error === 1) return NextResponse.json({ success: false, error: row.message || row.Message }, { status: 400 });
+        return NextResponse.json({ success: true, message: "Warehouse removed." });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }

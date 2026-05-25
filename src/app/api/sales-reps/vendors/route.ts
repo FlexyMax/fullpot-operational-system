@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
         } else {
             const r = await executeProcedure("sp_flower_salesmen_growers", {
                 lcsalesman_uq: salesman_uq,
-                lcparam:       "%",
+                lcgrower_uq:   "%",
             });
             return NextResponse.json(r.recordset ?? []);
         }
@@ -30,10 +30,8 @@ export async function POST(req: NextRequest) {
             lcsalesman_uq: String(b.salesman_uq ?? ""),
         });
         const row = r.recordset?.[0];
-        if (row?.error === 1 || row?.Error === 1) {
-            return NextResponse.json({ success: false, error: row.message || row.Message }, { status: 400 });
-        }
-        return NextResponse.json({ success: true, message: row?.message || row?.Message || "Vendor added." });
+        if (row?.error === 1 || row?.Error === 1) return NextResponse.json({ success: false, error: row.message || row.Message }, { status: 400 });
+        return NextResponse.json({ success: true, message: "Vendor added." });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }
@@ -46,10 +44,8 @@ export async function DELETE(req: NextRequest) {
             lcunico: String(b.unico ?? ""),
         });
         const row = r.recordset?.[0];
-        if (row?.error === 1 || row?.Error === 1) {
-            return NextResponse.json({ success: false, error: row.message || row.Message }, { status: 400 });
-        }
-        return NextResponse.json({ success: true, message: row?.message || row?.Message || "Vendor removed." });
+        if (row?.error === 1 || row?.Error === 1) return NextResponse.json({ success: false, error: row.message || row.Message }, { status: 400 });
+        return NextResponse.json({ success: true, message: "Vendor removed." });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }

@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
 
-const txt = (v: any) => String(v ?? "").replace(/'/g, "''");
 const bit = (v: any) => (v ? 1 : 0);
 const num = (v: any) => { const n = parseFloat(String(v ?? 0)); return isNaN(n) ? 0 : n; };
+const int = (v: any) => { const n = parseInt(String(v ?? 0), 10); return isNaN(n) ? 0 : n; };
+const str = (v: any, len = 255) => String(v ?? "").trim().substring(0, len);
 
 export async function GET(_req: NextRequest) {
     try {
-        const r = await executeProcedure("sp_flower_salesman_list", { llactive: 0 });
+        const r = await executeProcedure("sp_flower_salesman_list", { llall: true });
         return NextResponse.json(r.recordset ?? []);
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });
@@ -18,74 +19,77 @@ export async function POST(req: NextRequest) {
     const b = await req.json();
     try {
         const r = await executeProcedure("sp_flower_salesmen_insert", {
-            lcfirst_name:           txt(b.first_name),
-            lclast_name:            txt(b.last_name),
-            lcaddress:              txt(b.address ?? ""),
-            lcphone_1:              txt(b.phone_1 ?? ""),
-            lcphone_2:              txt(b.phone_2 ?? ""),
-            lcemail_1:              txt(b.email_1 ?? ""),
-            lcemail_2:              txt(b.email_2 ?? ""),
-            lcold_code:             txt(b.old_code ?? ""),
-            llactive:               bit(b.active !== false),
-            llremote:               bit(b.remote),
-            lcsuperior_uq:          txt(b.superior_uq ?? ""),
-            lcuser_uq:              txt(b.user_uq ?? ""),
-            lcwphysical_uq:         txt(b.wphysical_uq ?? ""),
-            llview_hold:            bit(b.view_hold),
-            llview_lot:             bit(b.view_lot),
-            llview_grower:          bit(b.view_grower),
+            lcuser_uq:              str(b.user_uq, 8),
+            lnold_code:             int(b.old_code),
+            lcsalesman_fname:       str(b.first_name, 20),
+            lcsalesman_lname:       str(b.last_name, 20),
+            lcaddress:              str(b.address, 50),
+            lcphone_1:              str(b.phone_1, 15),
+            lcphone_2:              str(b.phone_2, 15),
+            lcemail_1:              str(b.email_1, 50),
+            lcemail_2:              str(b.email_2, 50),
+            lcwphysical_uq:         str(b.wphysical_uq, 8),
+            lcsuperior_uq:          str(b.superior_uq, 8),
+            lncommi_osales:         num(b.commi_osales),
+            lndue_days:             int(b.due_days),
+            lnautho_over:           num(b.autho_over),
             llview_days:            bit(b.view_days),
+            llview_hold:            bit(b.view_hold),
+            llchange_prices:        bit(b.change_prices),
+            llview_flowercost:      bit(b.view_flowercost),
+            llview_lot:             bit(b.view_lot),
             llmove_hold:            bit(b.move_hold),
+            llremote:               bit(b.remote),
+            llpo_unreception:       bit(b.po_unreception),
+            llview_grower:          bit(b.view_grower),
+            llprice_override:       bit(b.price_override),
+            llchange_product:       bit(b.change_product),
+            llwhouse_control:       bit(b.whouse_control),
+            lledit_all_inv:         bit(b.edit_all_inv),
+            llcredit_override:      bit(b.credit_override),
+            lnlot_fifo_lifo:        int(b.lot_fifo_lifo),
             llview_all_inv:         bit(b.view_all_inv),
-            lnpct_sales_commission: num(b.pct_sales_commission ?? 0),
-            lncommission_due_days:  num(b.commission_due_days ?? 0),
-            lnpct_gp_override:      num(b.pct_gp_override ?? 0),
-            llother_1:              bit(b.other_1),
-            llother_2:              bit(b.other_2),
-            llother_3:              bit(b.other_3),
-            llother_4:              bit(b.other_4),
-            llother_5:              bit(b.other_5),
-            llother_6:              bit(b.other_6),
-            llother_7:              bit(b.other_7),
-            llother_8:              bit(b.other_8),
-            llother_9:              bit(b.other_9),
-            llother_10:             bit(b.other_10),
-            llother_11:             bit(b.other_11),
-            llother_12:             bit(b.other_12),
-            llother_13:             bit(b.other_13),
-            llother_14:             bit(b.other_14),
-            llother_15:             bit(b.other_15),
-            llother_16:             bit(b.other_16),
-            llother_17:             bit(b.other_17),
-            llother_18:             bit(b.other_18),
-            llother_19:             bit(b.other_19),
-            llother_20:             bit(b.other_20),
-            llother_21:             bit(b.other_21),
-            llother_22:             bit(b.other_22),
-            llother_23:             bit(b.other_23),
-            llother_24:             bit(b.other_24),
-            llother_25:             bit(b.other_25),
-            llother_26:             bit(b.other_26),
-            llother_27:             bit(b.other_27),
-            llother_28:             bit(b.other_28),
-            llother_29:             bit(b.other_29),
-            llother_30:             bit(b.other_30),
-            llother_31:             bit(b.other_31),
-            llother_32:             bit(b.other_32),
-            llother_33:             bit(b.other_33),
-            llother_34:             bit(b.other_34),
-            llother_35:             bit(b.other_35),
-            llother_36:             bit(b.other_36),
-            llother_37:             bit(b.other_37),
-            llother_38:             bit(b.other_38),
-            llother_39:             bit(b.other_39),
-            llother_40:             bit(b.other_40),
+            llview_all_customers:   bit(b.view_all_customers),
+            llview_price_wo_fuel:   bit(b.view_price_wo_fuel),
+            llautorize_transfer:    bit(b.autorize_transfer),
+            llcls_spcarriers:       bit(b.cls_spcarriers),
+            llweb:                  bit(b.web),
+            lldelete_lines:         bit(b.delete_lines),
+            llopen_packing:         bit(b.open_packing),
+            lllimited_po:           bit(b.limited_po),
+            llview_quotas:          bit(b.view_quotas),
+            lncommi_gsales:         num(b.commi_gsales),
+            llloc_autotran:         bit(b.loc_autotran),
+            llopen_invoice:         bit(b.open_invoice),
+            llprint_customers:      bit(b.print_customers),
+            llprint_all_customers:  bit(b.print_all_customers),
+            llview_pb_recipe:       bit(b.view_pb_recipe),
+            llapprove_override:     bit(b.approve_override),
+            llmake_payment:         bit(b.make_payment),
+            lllock_production:      bit(b.lock_production),
+            llview_qty_in:          bit(b.view_qty_in),
+            llupdate_stock_invoice: bit(b.update_stock_invoice),
+            llpti_take_om:          bit(b.pti_take_om),
+            llview_om:              bit(b.view_om),
+            llinventory_from_po:    bit(b.inventory_from_po),
+            llpo_change_date:       bit(b.po_change_date),
+            llopen_prebook:         bit(b.open_prebook),
+            llseason_poprice:       bit(b.season_poprice),
+            llview_reports:         bit(b.view_reports),
+            llreports_all_salesmen: bit(b.reports_all_salesmen),
+            llinvoice_add_charges:  bit(b.invoice_add_charges),
+            llinvoice_scan_sale:    bit(b.invoice_scan_sale),
+            llcredit_all_inv:       bit(b.credit_all_inv),
+            llaccept_returns:       bit(b.accept_returns),
+            llview_whouse:          bit(b.view_whouse),
+            llmake_discounts:       bit(b.make_discounts),
+            llview_sales_price:     bit(b.view_sales_price),
+            llprebook_check_stock:  bit(b.prebook_check_stock),
+            llsupervisor:           bit(b.supervisor),
         });
         const row = r.recordset?.[0];
-        if (row?.error === 1 || row?.Error === 1) {
-            return NextResponse.json({ success: false, error: row.message || row.Message }, { status: 400 });
-        }
-        return NextResponse.json({ success: true, unico: row?.unico, message: row?.message || row?.Message || "Sales rep created." });
+        if (row?.error === 1 || row?.Error === 1) return NextResponse.json({ success: false, error: row.message || row.Message }, { status: 400 });
+        return NextResponse.json({ success: true, unico: row?.unico ?? row?.UNICO, message: "Sales rep created." });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }

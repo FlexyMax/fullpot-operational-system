@@ -34,41 +34,74 @@ const EMPTY_FORM: any = {
     unico: "", first_name: "", last_name: "", address: "", phone_1: "", phone_2: "",
     email_1: "", email_2: "", old_code: "", active: true, remote: false,
     superior_uq: "", user_uq: "", wphysical_uq: "",
-    view_hold: false, view_lot: false, view_grower: false, view_days: false,
+    // Buyer Setup
+    view_days: false, view_hold: false, view_lot: false, view_grower: false,
     move_hold: false, view_all_inv: false,
-    pct_sales_commission: 0, commission_due_days: 0, pct_gp_override: 0,
-    other_1: false, other_2: false, other_3: false, other_4: false, other_5: false,
-    other_6: false, other_7: false, other_8: false, other_9: false, other_10: false,
-    other_11: false, other_12: false, other_13: false, other_14: false, other_15: false,
-    other_16: false, other_17: false, other_18: false, other_19: false, other_20: false,
-    other_21: false, other_22: false, other_23: false, other_24: false, other_25: false,
-    other_26: false, other_27: false, other_28: false, other_29: false, other_30: false,
-    other_31: false, other_32: false, other_33: false, other_34: false, other_35: false,
-    other_36: false, other_37: false, other_38: false, other_39: false, other_40: false,
+    commi_osales: 0, due_days: 0, autho_over: 0, commi_gsales: 0, lot_fifo_lifo: 0,
+    // Permissions
+    change_prices: false, view_flowercost: false, po_unreception: false,
+    price_override: false, change_product: false, whouse_control: false,
+    edit_all_inv: false, credit_override: false, view_all_customers: false,
+    view_price_wo_fuel: false, autorize_transfer: false, cls_spcarriers: false,
+    web: false, delete_lines: false, open_packing: false, limited_po: false,
+    view_quotas: false, loc_autotran: false, open_invoice: false,
+    print_customers: false, print_all_customers: false, view_pb_recipe: false,
+    approve_override: false, make_payment: false, lock_production: false,
+    view_qty_in: false, update_stock_invoice: false, pti_take_om: false,
+    view_om: false, inventory_from_po: false, po_change_date: false,
+    open_prebook: false, season_poprice: false, view_reports: false,
+    reports_all_salesmen: false, invoice_add_charges: false, invoice_scan_sale: false,
+    credit_all_inv: false, accept_returns: false, view_whouse: false,
+    make_discounts: false, view_sales_price: false, prebook_check_stock: false,
+    supervisor: false,
 };
 
-const OTHERS_LABELS: Record<string, string> = {
-    other_1:  "Allow Viewing Reports",       other_2:  "Allow Price Override",
-    other_3:  "Allow Credit Override",       other_4:  "Allow Discount",
-    other_5:  "Can View Cost",               other_6:  "Can Approve Orders",
-    other_7:  "Can Delete Orders",           other_8:  "Can Edit Invoices",
-    other_9:  "Allow Transfer",              other_10: "Can View All Customers",
-    other_11: "Bypass Credit Hold",          other_12: "Allow Free Freight",
-    other_13: "Can Issue Credits",           other_14: "Can Apply Payments",
-    other_15: "Can Export Data",             other_16: "Allow PO Access",
-    other_17: "Can View Margins",            other_18: "Can Edit Customers",
-    other_19: "Allow Backorder",             other_20: "Can View AR",
-    other_21: "Can View AP",                 other_22: "Allow Inventory Adjust",
-    other_23: "Can Override Tax",            other_24: "Allow All Warehouses",
-    other_25: "Can View Purchase Orders",    other_26: "Can Edit Purchase Orders",
-    other_27: "Can Approve POs",             other_28: "Can Receive Inventory",
-    other_29: "Can View Receiving",          other_30: "Can Close Lots",
-    other_31: "Allow Hold Override",         other_32: "Can Print Labels",
-    other_33: "Can View All Invoices",       other_34: "Can Void Invoices",
-    other_35: "Allow Commission View",       other_36: "Can Change Salesman",
-    other_37: "Allow Bulk Operations",       other_38: "Can View Audit Log",
-    other_39: "Allow API Access",            other_40: "Super User Privileges",
-};
+const PERM_LABELS: [string, string][] = [
+    ["change_prices",        "Change Prices"],
+    ["view_flowercost",      "View Flower Cost"],
+    ["po_unreception",       "PO Unreception"],
+    ["price_override",       "Price Override"],
+    ["change_product",       "Change Product"],
+    ["whouse_control",       "Warehouse Control"],
+    ["edit_all_inv",         "Edit All Invoices"],
+    ["credit_override",      "Credit Override"],
+    ["view_all_customers",   "View All Customers"],
+    ["view_price_wo_fuel",   "View Price w/o Fuel"],
+    ["autorize_transfer",    "Authorize Transfer"],
+    ["cls_spcarriers",       "Close Sp. Carriers"],
+    ["web",                  "Web Access"],
+    ["delete_lines",         "Delete Lines"],
+    ["open_packing",         "Open Packing"],
+    ["limited_po",           "Limited PO"],
+    ["view_quotas",          "View Quotas"],
+    ["loc_autotran",         "Local Auto Transfer"],
+    ["open_invoice",         "Open Invoice"],
+    ["print_customers",      "Print Customers"],
+    ["print_all_customers",  "Print All Customers"],
+    ["view_pb_recipe",       "View PB Recipe"],
+    ["approve_override",     "Approve Override"],
+    ["make_payment",         "Make Payment"],
+    ["lock_production",      "Lock Production"],
+    ["view_qty_in",          "View Qty In"],
+    ["update_stock_invoice", "Update Stock Invoice"],
+    ["pti_take_om",          "PTI Take OM"],
+    ["view_om",              "View OM"],
+    ["inventory_from_po",    "Inventory from PO"],
+    ["po_change_date",       "PO Change Date"],
+    ["open_prebook",         "Open Prebook"],
+    ["season_poprice",       "Season PO Price"],
+    ["view_reports",         "View Reports"],
+    ["reports_all_salesmen", "Reports All Salesmen"],
+    ["invoice_add_charges",  "Invoice Add Charges"],
+    ["invoice_scan_sale",    "Invoice Scan Sale"],
+    ["credit_all_inv",       "Credit All Invoices"],
+    ["accept_returns",       "Accept Returns"],
+    ["view_whouse",          "View Warehouse"],
+    ["make_discounts",       "Make Discounts"],
+    ["view_sales_price",     "View Sales Price"],
+    ["prebook_check_stock",  "Prebook Check Stock"],
+    ["supervisor",           "Supervisor"],
+];
 
 type ActiveTab = "customers" | "product-classes" | "vendors" | "warehouses" | "cities" | "salesmen";
 
@@ -401,15 +434,12 @@ export default function SalesRepsPage() {
                 view_days:              Boolean(fill.view_days),
                 move_hold:              Boolean(fill.move_hold),
                 view_all_inv:           Boolean(fill.view_all_inv),
-                pct_sales_commission:   parseFloat(fill.pct_sales_commission ?? 0) || 0,
-                commission_due_days:    parseFloat(fill.commission_due_days ?? 0) || 0,
-                pct_gp_override:        parseFloat(fill.pct_gp_override ?? 0) || 0,
-                ...Object.fromEntries(
-                    Array.from({ length: 40 }, (_, i) => {
-                        const k = `other_${i + 1}`;
-                        return [k, Boolean(fill[k])];
-                    })
-                ),
+                commi_osales:           parseFloat(fill.commi_osales ?? 0) || 0,
+                due_days:               parseInt(fill.due_days ?? 0, 10) || 0,
+                autho_over:             parseFloat(fill.autho_over ?? 0) || 0,
+                commi_gsales:           parseFloat(fill.commi_gsales ?? 0) || 0,
+                lot_fifo_lifo:          parseInt(fill.lot_fifo_lifo ?? 0, 10) || 0,
+                ...Object.fromEntries(PERM_LABELS.map(([k]) => [k, Boolean(fill[k])])),
             });
             setFormError(null);
             setModalTab("setup");
@@ -1105,20 +1135,20 @@ export default function SalesRepsPage() {
                                     <div className="grid grid-cols-3 gap-3 pt-2 border-t border-gray-100">
                                         <div className="flex flex-col gap-0.5">
                                             <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">% Sales Commission</label>
-                                            <input type="number" step="0.01" value={form.pct_sales_commission}
-                                                onChange={e => setField("pct_sales_commission", parseFloat(e.target.value) || 0)}
+                                            <input type="number" step="0.01" value={form.commi_osales}
+                                                onChange={e => setField("commi_osales", parseFloat(e.target.value) || 0)}
                                                 className="fos-input h-9 text-sm text-right" />
                                         </div>
                                         <div className="flex flex-col gap-0.5">
-                                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Commission Due Days</label>
-                                            <input type="number" step="1" value={form.commission_due_days}
-                                                onChange={e => setField("commission_due_days", parseFloat(e.target.value) || 0)}
+                                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Due Days</label>
+                                            <input type="number" step="1" value={form.due_days}
+                                                onChange={e => setField("due_days", parseInt(e.target.value) || 0)}
                                                 className="fos-input h-9 text-sm text-right" />
                                         </div>
                                         <div className="flex flex-col gap-0.5">
-                                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">% GP Override</label>
-                                            <input type="number" step="0.01" value={form.pct_gp_override}
-                                                onChange={e => setField("pct_gp_override", parseFloat(e.target.value) || 0)}
+                                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Auth Override %</label>
+                                            <input type="number" step="0.01" value={form.autho_over}
+                                                onChange={e => setField("autho_over", parseFloat(e.target.value) || 0)}
                                                 className="fos-input h-9 text-sm text-right" />
                                         </div>
                                     </div>
@@ -1128,18 +1158,14 @@ export default function SalesRepsPage() {
                             {/* ── Others Tab ── */}
                             {modalTab === "others" && (
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                    {Array.from({ length: 40 }, (_, i) => {
-                                        const key = `other_${i + 1}`;
-                                        const label = OTHERS_LABELS[key] || `Permission ${i + 1}`;
-                                        return (
-                                            <label key={key} className="flex items-center gap-2 cursor-pointer p-2 rounded border border-gray-100 hover:bg-gray-50">
-                                                <input type="checkbox" checked={Boolean(form[key])}
-                                                    onChange={e => setField(key, e.target.checked)}
-                                                    className="w-4 h-4 accent-[#FB7506] shrink-0" />
-                                                <span className="text-xs font-semibold text-gray-600 leading-tight">{label}</span>
-                                            </label>
-                                        );
-                                    })}
+                                    {PERM_LABELS.map(([key, label]) => (
+                                        <label key={key} className="flex items-center gap-2 cursor-pointer p-2 rounded border border-gray-100 hover:bg-gray-50">
+                                            <input type="checkbox" checked={Boolean(form[key])}
+                                                onChange={e => setField(key, e.target.checked)}
+                                                className="w-4 h-4 accent-[#FB7506] shrink-0" />
+                                            <span className="text-xs font-semibold text-gray-600 leading-tight">{label}</span>
+                                        </label>
+                                    ))}
                                 </div>
                             )}
                         </div>
