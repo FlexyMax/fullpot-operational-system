@@ -27,7 +27,7 @@ function getRoute(appPage: string): string | null {
     // SALESMEN / SALESMAN / BUYER must be checked BEFORE the generic SALES catch
     if (p.includes('SALESM') || p.includes('SALES REP') || p.includes('SALES REPS') || p.includes('VENDEDOR') || p.includes('VENTAS_SALES') || p.includes('REPRESENTANT') || p.includes('SALES MEN') || p.includes('BUYER SETUP') || p.includes('BUYERS') || p.includes('VENTAS_SALESM')) return '/sales-reps';
     // VENDORS / GROWERS must be checked BEFORE the generic SALES catch
-    if (p.includes('GROWER') || p.includes('PRODUCTOR') || p.includes('PRODUCCION_GROWER') || p.includes('PROVEEDOR') || p.includes('PRODUCCION GROWER') || p.includes('GROWERS SETUP') || p.includes('VENTAS_GROWER') && !p.includes('GROWERS PAY')) return '/vendors';
+    if (p.includes('GROWER') || p.includes('VENDOR') || p.includes('PRODUCTOR') || p.includes('PRODUCCION_GROWER') || p.includes('PROVEEDOR') || p.includes('PRODUCCION GROWER') || p.includes('GROWERS SETUP') || p.includes('VENTAS_GROWER')) return '/vendors';
     if (p.includes('SALES') || p.includes('P.O.S') || p.includes('BILLING')) return '/sales';
     if (p.includes('ACCOUNTS PAY') || p.includes('A/P') || p.includes('A-P') || p.includes('PAYABLE')) return '/accounts-payable';
     if (p.includes('USER SETUP') || p.includes('USERS DEF') || p.includes('USER DEF')) return '/system/users';
