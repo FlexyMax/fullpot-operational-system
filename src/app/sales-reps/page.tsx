@@ -427,8 +427,8 @@ export default function SalesRepsPage() {
             for (const [k, v] of Object.entries(d)) fill[k.toLowerCase()] = v;
             setForm({
                 unico:                  t(fill.unico),
-                first_name:             t(fill.first_name),
-                last_name:              t(fill.last_name),
+                first_name:             t(fill.salesman_fname),
+                last_name:              t(fill.salesman_lname),
                 address:                t(fill.address),
                 phone_1:                t(fill.phone_1),
                 phone_2:                t(fill.phone_2),
@@ -787,9 +787,8 @@ export default function SalesRepsPage() {
                         </div>
                         {/* Desktop: full cols */}
                         <div className="hidden md:grid px-2 py-1.5 overflow-x-auto"
-                            style={{ gridTemplateColumns: "1fr 48px 90px 80px 1fr 48px" }}>
+                            style={{ gridTemplateColumns: "1fr 90px 80px 1fr 48px" }}>
                             <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Salesman</span>
-                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Code</span>
                             <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Phone</span>
                             <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Whouse</span>
                             <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Email</span>
@@ -821,9 +820,8 @@ export default function SalesRepsPage() {
                                     </div>
                                     {/* Desktop row */}
                                     <div className={cn(rowBase, "hidden md:grid")}
-                                        style={{ gridTemplateColumns: "1fr 48px 90px 80px 1fr 48px" }}>
+                                        style={{ gridTemplateColumns: "1fr 90px 80px 1fr 48px" }}>
                                         <span className={cn(nameCol, "truncate pr-1")}>{`${t(row.FIRST_NAME)} ${t(row.LAST_NAME)}`.trim()}</span>
-                                        <span className="font-mono text-gray-500 truncate text-[11px]">{t(row.OLD_CODE)}</span>
                                         <span className="truncate text-gray-500 text-[11px]">{t(row.PHONE_1)}</span>
                                         <span className="truncate text-gray-500 text-[11px]">{t(row.WPHYSICAL_UQ ?? row.WAREHOUSE ?? "")}</span>
                                         <span className="truncate text-gray-500 text-[11px]">{t(row.EMAIL_1)}</span>
@@ -1087,7 +1085,7 @@ export default function SalesRepsPage() {
                                         <option value="">-- None --</option>
                                         {(systemUsers as any[]).map((u: any) => (
                                             <option key={t(u.UNICO ?? u.unico)} value={t(u.UNICO ?? u.unico)}>
-                                                {t(u.NAME ?? u.name ?? u.USER_NAME ?? u.username ?? u.UNICO ?? u.unico)}
+                                                {t(u.USUARIO ? `${u.NOMBRES} ${u.APELLIDOS} (${u.USUARIO})`.trim() : (u.NAME ?? u.USER_NAME ?? u.UNICO ?? u.unico))}
                                             </option>
                                         ))}
                                     </select>
