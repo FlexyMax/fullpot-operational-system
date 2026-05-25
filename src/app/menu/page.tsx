@@ -23,7 +23,8 @@ function getRoute(appPage: string): string | null {
     const p = appPage.toUpperCase();
     // Payment Authorizations must be checked FIRST — before any generic PAYMENT catch
     if (p.includes('PAYMENT AUTH') || p.includes('AUTHORIZ') || p.includes('VENDOR PAY') || p.includes('AP PAY') || p.includes('GROWERS PAY') || p.includes('VENTAS_GROWERS_PAY')) return '/payment-authorizations';
-    if (p.includes('SALESMAN') || p.includes('SALES REP') || p.includes('SALES REPS') || p.includes('VENDEDOR')) return '/sales-reps';
+    // SALESMEN / SALESMAN must be checked BEFORE the generic SALES catch
+    if (p.includes('SALESMEN') || p.includes('SALESMAN') || p.includes('SALES REP') || p.includes('SALES REPS') || p.includes('VENDEDOR')) return '/sales-reps';
     if (p.includes('SALES') || p.includes('P.O.S') || p.includes('BILLING')) return '/sales';
     if (p.includes('ACCOUNTS PAY') || p.includes('A/P') || p.includes('A-P') || p.includes('PAYABLE')) return '/accounts-payable';
     if (p.includes('USER SETUP') || p.includes('USERS DEF') || p.includes('USER DEF')) return '/system/users';
