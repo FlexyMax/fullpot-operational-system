@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
     const lnclose   = parseInt(req.nextUrl.searchParams.get("lnclose") ?? "0", 10);
     if (!grower_uq) return NextResponse.json({ error: "grower_uq required" }, { status: 400 });
 
-    const base = { lcgrower_uq: grower_uq, ldfrom: ldfrom || new Date("2000-01-01").toISOString() };
+    const base = { lcgrower_uq: grower_uq, ldfrom: new Date(ldfrom || "2000-01-01") };
 
     try {
         if (lnclose === -1) {
