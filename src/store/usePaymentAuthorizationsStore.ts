@@ -20,14 +20,16 @@ interface PaymentAuthorizationsState {
     reset:              () => void;
 }
 
+const currentYearStart = `${new Date().getFullYear()}-01-01`;
+
 const defaults = {
     lcgrower_uq:    "",
     lcgrower:       "",
     lcoutcome_uq:   "",
     lcapd_uq:       "",
     lcap_uq:        "",
-    ldPaymentsFrom: "",
-    lnclose:        0,
+    ldPaymentsFrom: currentYearStart,
+    lnclose:        -1,
     llbalance:      "pos" as const,
 };
 
