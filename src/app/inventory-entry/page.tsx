@@ -179,6 +179,14 @@ export default function InventoryEntryPage() {
         staleTime: 0,
     });
 
+    // PL Control tab: all packings for the current date
+    const { data: plControlAll = [], isFetching: loadingPLC } = useQuery({
+        queryKey: ["ie-plcontrol-all", lddate],
+        queryFn:  () => fetch(`/api/inventory-entry/packing-x-awb?awb=%25&date=${lddate}`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
+        enabled:  activeTab === "plcontrol" && !!tabLoaded.plcontrol,
+        staleTime: 0,
+    });
+
     const { data: adjustsOnly = [], isFetching: loadingAdj } = useQuery({
         queryKey: ["ie-adjusts", lcpk_box_uq],
         queryFn:  () => fetch(`/api/inventory-entry/warehouse?pk_box_uq=${lcpk_box_uq}`).then(r => r.json()).then(d => norm(d.adjusts ?? [])),
@@ -791,46 +799,55 @@ export default function InventoryEntryPage() {
                             </div>
                         )}
 
-                        {/* Tab 3: PL Control */}
+                        {/* Tab 3: PL Control — all packings for the date */}
                         {activeTab === "plcontrol" && (
                             <div className="flex flex-col flex-1 min-h-0">
                                 <div className="bg-gray-50 border-b border-gray-200 px-2 py-1 shrink-0 flex items-center justify-between">
-                                    <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Packing List Control</span>
-                                    {loadingPL && <RefreshCcw size={12} className="animate-spin text-gray-400" />}
+                                    <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">
+                                        Packing List Control — {lddate}
+                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        {loadingPLC && <RefreshCcw size={12} className="animate-spin text-gray-400" />}
+                                        <span className="text-[9px] font-bold text-gray-400">{(plControlAll as any[]).length} pkgs</span>
+                                    </div>
                                 </div>
-                                {!lcpack_uq ? (
-                                    <div className="flex-1 flex items-center justify-center text-gray-300 text-xs font-bold uppercase p-4 text-center">
-                                        Select a packing first
-                                    </div>
-                                ) : (
-                                    <div className="flex-1 overflow-auto">
-                                        <table className="min-w-full text-left text-xs">
-                                            <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
-                                                <tr>
-                                                    {["S.Order","C.POrder","Market","Days","Ready","Customer"].map(h => (
-                                                        <th key={h} className="px-1.5 py-1 font-black text-[9px] text-gray-600 uppercase tracking-wide whitespace-nowrap border-r border-gray-200 last:border-r-0">{h}</th>
-                                                    ))}
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-gray-50">
-                                                {(plDetails as any[]).length === 0 ? (
-                                                    <tr><td colSpan={6} className="p-4 text-center text-gray-300 italic">No details</td></tr>
-                                                ) : (plDetails as any[]).map((row: any, i: number) => (
-                                                    <tr key={i} className="hover:bg-gray-50">
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 font-mono">{t(row.SORDER_NO)}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50">{t(row.CPORDER_NO)}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50">{t(row.MARKET)}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-right">{t(row.DAYS)}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-center">
-                                                            {Boolean(row.READY_TRAN) && <span className="text-green-600 font-black text-[9px]">✓</span>}
-                                                        </td>
-                                                        <td className="px-1.5 py-1 truncate max-w-[80px]">{t(row.CUSTOMER)}</td>
-                                                    </tr>
+                                <div className="flex-1 overflow-auto">
+                                    <table className="min-w-full text-left text-xs">
+                                        <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
+                                            <tr>
+                                                {["Ctrl","Grower","Airline","AWB","Date","Invoice","Packing","Pcs","Total$","Whouse","Details","St."].map(h => (
+                                                    <th key={h} className="px-1.5 py-1 font-black text-[9px] text-gray-600 uppercase tracking-wide whitespace-nowrap border-r border-gray-200 last:border-r-0">{h}</th>
                                                 ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                )}
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-50">
+                                            {(plControlAll as any[]).length === 0 ? (
+                                                <tr><td colSpan={12} className="p-4 text-center text-gray-300 italic">No packings for this date</td></tr>
+                                            ) : (plControlAll as any[]).map((row: any, i: number) => {
+                                                const uq  = t(row.PACK_UQ);
+                                                const sel = lcpack_uq === uq;
+                                                const st  = t(row.STATUS ?? row.PSTATUS ?? "");
+                                                return (
+                                                    <tr key={i} onClick={() => handleSelectPacking(row)}
+                                                        className={cn("cursor-pointer hover:bg-gray-50 transition-colors", sel && "!bg-blue-50 font-semibold")}>
+                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-[9px] font-bold text-orange-600">{t(row.GROWER_CONTROL ?? row.CTRL ?? "")}</td>
+                                                        <td className="px-1.5 py-1 border-r border-gray-50 truncate max-w-[90px] font-semibold">{t(row.GROWER)}</td>
+                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-[9px]">{t(row.AIRLINE ?? row.AIRLINE_UQ ?? "")}</td>
+                                                        <td className="px-1.5 py-1 border-r border-gray-50 font-mono text-[9px]">{t(row.AWBCODE)}</td>
+                                                        <td className="px-1.5 py-1 border-r border-gray-50 whitespace-nowrap text-[9px]">{t(row.BOX_DATE ?? row.DATE_INVO ?? "").substring(0,10)}</td>
+                                                        <td className="px-1.5 py-1 border-r border-gray-50">{t(row.INVOICE_NO)}</td>
+                                                        <td className="px-1.5 py-1 border-r border-gray-50 font-mono font-bold">{t(row.PACKING_NO)}</td>
+                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-right">{t(row.TOTAL_PIECES)}</td>
+                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-right font-mono">{fmt2(row.TOTAL_INVOICE ?? row.TOTAL_COST ?? 0)}</td>
+                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-[9px] truncate max-w-[55px]">{t(row.WHOUSE ?? row.WPHYSICAL ?? row.PWHOUSE ?? "")}</td>
+                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-[9px] truncate max-w-[80px] text-gray-400">{t(row.DETAILS ?? row.COMMENTS ?? "")}</td>
+                                                        <td className={cn("px-1.5 py-1 text-[9px] font-bold", st === "CLOSED" ? "text-red-500" : st === "OPEN" ? "text-green-600" : "text-gray-400")}>{st}</td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         )}
 
@@ -962,23 +979,29 @@ export default function InventoryEntryPage() {
                                         <table className="min-w-full text-left text-xs">
                                             <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
                                                 <tr>
-                                                    {["P.Order","Grower","Ship Date","Qty","Amount"].map(h => (
+                                                    {["Farm","P.Order","S.Order","Customer","Case","Description","T.Units","Ordered","Confirm","Diff","Ship"].map(h => (
                                                         <th key={h} className="px-1.5 py-1 font-black text-[9px] text-gray-600 uppercase tracking-wide whitespace-nowrap border-r border-gray-200 last:border-r-0">{h}</th>
                                                     ))}
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-50">
                                                 {loadingPOG ? (
-                                                    <tr><td colSpan={5} className="p-4 text-center"><RefreshCcw size={14} className="animate-spin mx-auto text-gray-400" /></td></tr>
+                                                    <tr><td colSpan={11} className="p-4 text-center"><RefreshCcw size={14} className="animate-spin mx-auto text-gray-400" /></td></tr>
                                                 ) : (poByGrower as any[]).length === 0 ? (
-                                                    <tr><td colSpan={5} className="p-3 text-center text-gray-300 italic">No orders</td></tr>
+                                                    <tr><td colSpan={11} className="p-3 text-center text-gray-300 italic">No orders</td></tr>
                                                 ) : (poByGrower as any[]).map((row: any, i: number) => (
                                                     <tr key={i} className="hover:bg-gray-50">
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 font-mono">{t(row.PORDER_NO)}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 truncate max-w-[80px]">{t(row.GROWER)}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 whitespace-nowrap">{t(row.SHIP_DATE).substring(0,10)}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-right">{t(row.QTY_BOXES ?? row.QTY_PORDER)}</td>
-                                                        <td className="px-1.5 py-1 text-right font-mono">{fmt2(row.EXT_PRICE ?? row.AMOUNT)}</td>
+                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-[9px] font-bold text-gray-500">{t(row.FARM ?? row.GROWER ?? "")}</td>
+                                                        <td className="px-1.5 py-1 border-r border-gray-50 font-mono font-bold">{t(row.PORDER_NO)}</td>
+                                                        <td className="px-1.5 py-1 border-r border-gray-50 font-mono text-gray-500">{t(row.SORDER_NO ?? "")}</td>
+                                                        <td className="px-1.5 py-1 border-r border-gray-50 truncate max-w-[90px]">{t(row.CUSTOMER ?? "")}</td>
+                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-[9px]">{t(row.CASE_NAME ?? row.PACK ?? "")}</td>
+                                                        <td className="px-1.5 py-1 border-r border-gray-50 truncate max-w-[120px] font-semibold">{t(row.DESCRIPTION ?? row.VARIETY ?? "")}</td>
+                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-right">{t(row.TOTAL_UNITS ?? row.TUNITS_X_BOX ?? "")}</td>
+                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-right font-semibold">{t(row.QTY_PORDER ?? row.QTY_BOXES ?? "")}</td>
+                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-right text-green-600">{t(row.QTY_CONFIRM ?? "")}</td>
+                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-right text-orange-500">{t(row.QTY_DIFF ?? "")}</td>
+                                                        <td className="px-1.5 py-1 text-right text-blue-600 font-semibold">{t(row.QTY_SHIP ?? "")}</td>
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -1008,8 +1031,8 @@ export default function InventoryEntryPage() {
 
                         {/* Column headers */}
                         <div className="bg-gray-100 border-b border-gray-200 shrink-0">
-                            <div className="grid px-2 py-1" style={{ gridTemplateColumns: "70px 80px 100px 1fr 1fr 60px 60px 60px 60px" }}>
-                                {["Packing","Invoice","AWB","Grower","Farm","Box Date","Boxes","Pieces","Units"].map(h => (
+                            <div className="grid px-2 py-1" style={{ gridTemplateColumns: "65px 75px 100px 1fr 60px 50px 55px 55px 55px 55px 1fr" }}>
+                                {["Packing","Invoice","AWB","Grower","Whouse","WHSt.","Status","Boxes","Pieces","Units","Details"].map(h => (
                                     <span key={h} className="font-black text-[9px] text-gray-600 uppercase tracking-wide truncate">{h}</span>
                                 ))}
                             </div>
@@ -1023,22 +1046,26 @@ export default function InventoryEntryPage() {
                             ) : (packingXAwb as any[]).map((row: any, i: number) => {
                                 const uq  = t(row.PACK_UQ);
                                 const sel = lcpack_uq === uq;
+                                const whst = t(row.WHSTATUS ?? row.WH_STATUS ?? "");
+                                const status = t(row.STATUS ?? row.PSTATUS ?? "");
                                 return (
                                     <div key={i} onClick={() => handleSelectPacking(row)}
                                         className={cn(
                                             "grid px-2 py-1 cursor-pointer text-xs transition-colors",
                                             sel ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50"
                                         )}
-                                        style={{ gridTemplateColumns: "70px 80px 100px 1fr 1fr 60px 60px 60px 60px" }}>
+                                        style={{ gridTemplateColumns: "65px 75px 100px 1fr 60px 50px 55px 55px 55px 55px 1fr" }}>
                                         <span className={cn("font-mono font-bold truncate", sel ? "text-blue-800" : "text-gray-800")}>{t(row.PACKING_NO)}</span>
                                         <span className="truncate text-gray-600">{t(row.INVOICE_NO)}</span>
                                         <span className="truncate font-mono text-gray-600">{t(row.AWBCODE)}</span>
                                         <span className="truncate font-semibold text-gray-700">{t(row.GROWER)}</span>
-                                        <span className="truncate text-gray-500">{t(row.FARM)}</span>
-                                        <span className="text-gray-500">{t(row.BOX_DATE ?? "").substring(5,10)}</span>
+                                        <span className="truncate text-gray-500 text-[9px]">{t(row.WHOUSE ?? row.WPHYSICAL ?? row.PWHOUSE ?? "")}</span>
+                                        <span className={cn("text-[9px] font-bold truncate", whst === "WH" ? "text-green-600" : whst === "CHECK" ? "text-blue-500" : "text-gray-500")}>{whst}</span>
+                                        <span className={cn("text-[9px] font-bold truncate", status === "CLOSED" ? "text-red-500" : status === "OPEN" ? "text-green-600" : "text-gray-500")}>{status}</span>
                                         <span className="text-right text-gray-700 font-semibold">{t(row.TOTAL_BOXES)}</span>
                                         <span className="text-right text-gray-600">{t(row.TOTAL_PIECES)}</span>
                                         <span className="text-right text-gray-600">{t(row.TOTAL_UNITS)}</span>
+                                        <span className="truncate text-gray-400 text-[9px] pl-1">{t(row.DETAILS ?? row.COMMENTS ?? "")}</span>
                                     </div>
                                 );
                             })}
@@ -1059,8 +1086,8 @@ export default function InventoryEntryPage() {
                         </div>
 
                         <div className="bg-gray-100 border-b border-gray-200 shrink-0">
-                            <div className="grid px-2 py-1" style={{ gridTemplateColumns: "50px 50px 70px 60px 50px 50px 50px 60px 60px 70px 60px" }}>
-                                {["Box#","Lote","Market","C.POrder","Rdy","Sel","Days","Boxes","Up/Box","T.Units","F.Cost"].map(h => (
+                            <div className="grid px-2 py-1" style={{ gridTemplateColumns: "40px 40px 40px 40px 45px 40px 1fr 50px 50px 60px 60px 55px" }}>
+                                {["Box#","Lote","Rdy","Sel","Days","Bxs","Description","Up/Bx","T.Units","Price","F.Cost","Stock"].map(h => (
                                     <span key={h} className="font-black text-[9px] text-gray-600 uppercase tracking-wide truncate">{h}</span>
                                 ))}
                             </div>
@@ -1076,24 +1103,27 @@ export default function InventoryEntryPage() {
                                 .map((row: any, i: number) => {
                                     const uq  = t(row.UNICO);
                                     const sel = lcpk_box_uq === uq;
+                                    const desc = t(row.DESCRIPTION ?? row.PRODUCT ?? row.VARIETY ?? "");
+                                    const stock = t(row.STOCK ?? row.WH_STOCK ?? "");
                                     return (
                                         <div key={i} onClick={() => handleSelectBox(row)}
                                             className={cn(
                                                 "grid px-2 py-1 cursor-pointer text-xs transition-colors",
                                                 sel ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50"
                                             )}
-                                            style={{ gridTemplateColumns: "50px 50px 70px 60px 50px 50px 50px 60px 60px 70px 60px" }}>
+                                            style={{ gridTemplateColumns: "40px 40px 40px 40px 45px 40px 1fr 50px 50px 60px 60px 55px" }}>
                                             <span className={cn("font-mono font-bold", sel ? "text-blue-800" : "text-gray-800")}>{t(row.BOXNUM)}</span>
                                             <span className="text-gray-600">{t(row.LOTE)}</span>
-                                            <span className="truncate text-gray-600">{t(row.MARKET)}</span>
-                                            <span className="truncate text-gray-500 text-[10px]">{t(row.SORDER_NO)}</span>
-                                            <span className="text-center">{Boolean(row.READY_TRAN) && <span className="text-green-600 font-black text-[9px]">✓</span>}</span>
-                                            <span className="text-center">{Boolean(row.SEL) && <span className="text-blue-500 font-black text-[9px]">✓</span>}</span>
+                                            <span className="text-center">{Boolean(row.READY_TRAN) && <span className="text-green-600 font-black text-[9px]">OK</span>}</span>
+                                            <span className="text-center">{Boolean(row.SEL) && <span className="text-blue-500 font-black text-[9px]">S</span>}</span>
                                             <span className="text-right text-gray-500">{t(row.DAYS)}</span>
                                             <span className="text-right font-semibold text-gray-700">{t(row.BOX_QTY)}</span>
-                                            <span className="text-right text-gray-600">{t(row.UP_X_PACK ?? row.PACKS_BOX)}</span>
+                                            <span className={cn("truncate font-semibold text-[10px]", sel ? "text-blue-700" : "text-gray-800")} title={desc}>{desc}</span>
+                                            <span className="text-right text-gray-600">{t(row.UP_X_PACK ?? row.UP_X_CASE ?? row.PACKS_BOX)}</span>
                                             <span className="text-right font-semibold text-gray-700">{t(row.TOTAL_UNITS)}</span>
+                                            <span className="text-right font-mono text-gray-600">{fmt4(row.PRICE ?? row.U_PRICE ?? 0)}</span>
                                             <span className="text-right font-mono text-gray-600">{fmt4(row.F_COST_X_U)}</span>
+                                            <span className={cn("text-right font-semibold", Number(stock) > 0 ? "text-green-600" : Number(stock) < 0 ? "text-red-500" : "text-gray-400")}>{stock}</span>
                                         </div>
                                     );
                                 })}
