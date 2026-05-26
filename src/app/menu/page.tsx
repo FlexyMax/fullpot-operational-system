@@ -39,6 +39,7 @@ function getRoute(appPage: string): string | null {
     if (p.includes('ITEM') || p.includes('PRODUCT') || p.includes('VARIETY') || p.includes('VARIEDAD') || p.includes('ITEM SETUP') || p.includes('PRODUCTO')) return '/masters/items';
     if (p.includes('USUARIO') || p.includes('USER ACCESS') || p.includes('ACCESO') || p.includes('ACCESS DEF')) return '/system/access';
     if (p.includes('COMPAN') || p.includes('EMPRESA') || p.includes('COMPANY SETUP')) return '/system/companies';
+    if (p.includes('INVENTORY ENTRY') || p.includes('PACKING LIST') || p.includes('VENTAS_INVENTORY') || p.includes('INVENTORY_ENTRY')) return '/inventory-entry';
     if (p.includes('AWB') || p.includes('GUIA') || p.includes('AIRWAY') || p.includes('VENTAS_AWB')) return '/awbs';
     if (p.includes('SCAN')) return '/scan';
     if (p.includes('FLEXY2QB') || p.includes('QUICKBOOKS') || p.includes('QB')) return '/flexy2qb';

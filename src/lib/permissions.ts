@@ -70,6 +70,8 @@ export const SCREEN_PANTA: Record<string, string> = {
 
     "vendors":                "52961702",  // fallback — register in Module & Screen Setup to enforce real permissions
 
+    "inventory-entry":        "52961702",  // fallback — register in Module & Screen Setup to enforce real permissions
+
     // Add new pages here after registering in Module & Screen Setup
 };
 
