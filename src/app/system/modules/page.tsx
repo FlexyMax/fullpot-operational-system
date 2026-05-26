@@ -325,7 +325,7 @@ export default function ModuleScreenSetupPage() {
                     </div>
                 </div>
 
-                {/* â”€â”€ RIGHT: Form + Screens â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+                {/* RIGHT: Form + Screens */}
                 <div className="flex-1 flex flex-col gap-2 min-w-0 lg:overflow-hidden">
 
                     {/* Module Form */}
@@ -400,7 +400,7 @@ export default function ModuleScreenSetupPage() {
                             <div className="flex items-center gap-2">
                                 <Monitor size={16} className="text-[#FB7506]" />
                                 <span className=”fos-grid-header-text”>
-                                    {“Screens”}{selMod ? <> &mdash; {t(selMod.nombre)}</> : “”}
+                                    {“Screens” + (selMod ? “ - “ + t(selMod.nombre) : “”)}
                                 </span>
                                 <AuditLogModal recordId={selScrUnico} disabled={!selScrUnico} />
                                 {loadingScr && <RefreshCcw size={16} className="text-gray-400 animate-spin" />}
@@ -448,7 +448,7 @@ export default function ModuleScreenSetupPage() {
                                                     <td className="p-2 border-l border-gray-100 text-gray-400 truncate max-w-[80px]">{t(s.image)}</td>
                                                     <td className="p-2 border-l border-gray-100 text-center">{s.orden}</td>
                                                     <td className="p-2 border-l border-gray-100 text-center">
-                                                        {s.menu ? <Check size={12} className="text-green-500 mx-auto" /> : <span className="text-gray-300">â€”</span>}
+                                                        {s.menu ? <Check size={12} className="text-green-500 mx-auto" /> : <span className="text-gray-300">-</span>}
                                                     </td>
                                                 </tr>
                                             );
@@ -595,7 +595,7 @@ function ModuleFormModal({ mode, form, setForm, onSave, onClose, saving, error }
                         <div className="flex flex-col gap-0.5">
                             <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Class</label>
                             <select value={form.clase} onChange={e => setForm((p: any) => ({...p, clase: e.target.value}))} className="fos-input h-10 text-sm">
-                                <option value="">â€”</option>
+                                <option value="">-</option>
                                 {CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
                             </select>
                         </div>
@@ -735,9 +735,9 @@ function ScreenFormModal({ mode, form, setForm, error, saving, modName, reports,
                                                     className={cn("border-b cursor-pointer transition-colors", selRpt===r.unico ? "!bg-blue-100" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50")}>
                                                     <td className="p-1.5 border-r border-gray-100 font-medium">{t(r.nombre)}</td>
                                                     <td className="p-1.5 border-r border-gray-100 text-gray-500 truncate max-w-[120px]">{t(r.titulo)}</td>
-                                                    <td className="p-1.5 border-r border-gray-100 text-center">{r.actual ? <Check size={10} className="text-green-500 mx-auto" /> : "â€”"}</td>
-                                                    <td className="p-1.5 border-r border-gray-100 text-center">{(r.fecha_desde||r.fecha_hasta) ? <Check size={10} className="text-blue-500 mx-auto" /> : "â€”"}</td>
-                                                    <td className="p-1.5 border-r border-gray-100 text-center">{r.exportar ? <Check size={10} className="text-orange-500 mx-auto" /> : "â€”"}</td>
+                                                    <td className="p-1.5 border-r border-gray-100 text-center">{r.actual ? <Check size={10} className="text-green-500 mx-auto" /> : "-"}</td>
+                                                    <td className="p-1.5 border-r border-gray-100 text-center">{(r.fecha_desde||r.fecha_hasta) ? <Check size={10} className="text-blue-500 mx-auto" /> : "-"}</td>
+                                                    <td className="p-1.5 border-r border-gray-100 text-center">{r.exportar ? <Check size={10} className="text-orange-500 mx-auto" /> : "-"}</td>
                                                     <td className="p-1.5 text-gray-400 truncate max-w-[120px]">{t(r.descripcion)}</td>
                                                 </tr>
                                             ))}
