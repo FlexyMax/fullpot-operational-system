@@ -400,7 +400,7 @@ export default function ModuleScreenSetupPage() {
                             <div className="flex items-center gap-2">
                                 <Monitor size={16} className="text-[#FB7506]" />
                                 <span className="fos-grid-header-text">
-                                    Screens {selMod ? `â€” ${t(selMod.nombre)}` : ""}
+                                    Screens {selMod ? `— ${t(selMod.nombre)}` : “”}
                                 </span>
                                 <AuditLogModal recordId={selScrUnico} disabled={!selScrUnico} />
                                 {loadingScr && <RefreshCcw size={16} className="text-gray-400 animate-spin" />}
