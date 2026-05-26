@@ -399,8 +399,8 @@ export default function ModuleScreenSetupPage() {
                         <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 border-b border-black/10 shrink-0 rounded-t-lg">
                             <div className="flex items-center gap-2">
                                 <Monitor size={16} className="text-[#FB7506]" />
-                                <span className="fos-grid-header-text">
-                                    Screens {selMod ? `— ${t(selMod.nombre)}` : “”}
+                                <span className=”fos-grid-header-text”>
+                                    {“Screens”}{selMod ? <> &mdash; {t(selMod.nombre)}</> : “”}
                                 </span>
                                 <AuditLogModal recordId={selScrUnico} disabled={!selScrUnico} />
                                 {loadingScr && <RefreshCcw size={16} className="text-gray-400 animate-spin" />}
