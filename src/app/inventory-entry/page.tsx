@@ -61,7 +61,7 @@ const calcBox = (f: any) => {
     };
 };
 
-type LeftTab = "awb" | "warehouse" | "plcontrol" | "adjusts" | "awbsearch" | "polist";
+type LeftTab = "awbpackings" | "products" | "plcontrol" | "awbsearch" | "polist";
 
 // ─── Audit helper ─────────────────────────────────────────────────────────────
 const AUDIT_MAP: Record<string, { table: string; ext: string }> = {
@@ -101,8 +101,8 @@ export default function InventoryEntryPage() {
     const [lcawbcode,    setLcawbcode]    = useState("");   // selected AWB from left Tab1
     const [lcpack_uq,    setLcpack_uq]    = useState("");   // selected packing (right upper)
     const [lcpk_box_uq,  setLcpk_box_uq]  = useState("");   // selected box (right lower)
-    const [activeTab,    setActiveTab]    = useState<LeftTab>("awb");
-    const [tabLoaded,    setTabLoaded]    = useState<Partial<Record<LeftTab, boolean>>>({ awb: true });
+    const [activeTab,    setActiveTab]    = useState<LeftTab>("awbpackings");
+    const [tabLoaded,    setTabLoaded]    = useState<Partial<Record<LeftTab, boolean>>>({ awbpackings: true });
 
     // PO List tab
     const [ldship_date,  setLdship_date]  = useState(today());
@@ -165,7 +165,7 @@ export default function InventoryEntryPage() {
     const { data: whData, isFetching: loadingWH } = useQuery({
         queryKey: ["ie-warehouse", lcpk_box_uq],
         queryFn:  () => fetch(`/api/inventory-entry/warehouse?pk_box_uq=${lcpk_box_uq}`).then(r => r.json()),
-        enabled:  !!lcpk_box_uq && activeTab === "warehouse" && !!tabLoaded.warehouse,
+        enabled:  false,  // warehouse tab removed
         staleTime: 0,
     });
     const whStock    = useMemo(() => norm(whData?.stock    ?? []), [whData]);
@@ -190,7 +190,7 @@ export default function InventoryEntryPage() {
     const { data: adjustsOnly = [], isFetching: loadingAdj } = useQuery({
         queryKey: ["ie-adjusts", lcpk_box_uq],
         queryFn:  () => fetch(`/api/inventory-entry/warehouse?pk_box_uq=${lcpk_box_uq}`).then(r => r.json()).then(d => norm(d.adjusts ?? [])),
-        enabled:  !!lcpk_box_uq && activeTab === "adjusts" && !!tabLoaded.adjusts,
+        enabled:  false,  // adjusts tab removed
         staleTime: 0,
     });
 
@@ -214,6 +214,12 @@ export default function InventoryEntryPage() {
         queryFn:  () => fetch(`/api/inventory-entry/purchase-orders?ship_date=${ldship_date}&grower_uq=${poGrower}`).then(r => r.json()).then(d => norm(d.byGrower ?? [])),
         enabled:  !!poGrower,
         staleTime: 0,
+    });
+
+    const { data: awbDates = [], isFetching: loadingDates } = useQuery({
+        queryKey: ["ie-awb-dates"],
+        queryFn:  () => fetch("/api/inventory-entry/awb-dates").then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
+        staleTime: 1000 * 60 * 5,
     });
 
     // ── Handlers ──────────────────────────────────────────────────────────────
@@ -491,15 +497,6 @@ export default function InventoryEntryPage() {
     const selPacking = (packingXAwb as any[]).find(r => t(r.PACK_UQ) === lcpack_uq);
     const selBox     = (boxesDetail as any[]).find(r => t(r.UNICO) === lcpk_box_uq);
 
-    const LEFT_TABS: { key: LeftTab; label: string; icon: any }[] = [
-        { key: "awb",       label: "AWB",       icon: Plane },
-        { key: "warehouse", label: "Warehouse",  icon: Warehouse },
-        { key: "plcontrol", label: "PL Control", icon: ClipboardList },
-        { key: "adjusts",   label: "Adjusts",   icon: BarChart2 },
-        { key: "awbsearch", label: "AWB Search", icon: Search },
-        { key: "polist",    label: "PO List",    icon: Boxes },
-    ];
-
     const fLabel = "text-[10px] font-black text-gray-500 uppercase tracking-wider";
     const fInput = "fos-input h-7 text-xs";
 
@@ -627,200 +624,275 @@ export default function InventoryEntryPage() {
             </div>
 
             {/* ── Main Content ── */}
-            <div className="flex flex-1 gap-1.5 p-1.5 overflow-hidden min-h-0">
+            <div className="flex flex-col flex-1 overflow-hidden min-h-0">
 
-                {/* ── Left Panel ── */}
-                <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden min-h-0 w-[36%] shrink-0">
+                {/* ── Tab bar (full-width) ── */}
+                <div className="bg-[#374151] flex items-end px-1 pt-1 gap-0.5 shrink-0 overflow-x-auto scrollbar-none">
+                    {([
+                        { key: "awbpackings", label: "AWB's Packings" },
+                        { key: "products",    label: "Products List" },
+                        { key: "plcontrol",   label: "PL Control" },
+                        { key: "awbsearch",   label: "AWB Search" },
+                        { key: "polist",      label: "PO List" },
+                    ] as const).map(tab => (
+                        <button key={tab.key}
+                            onClick={() => { setActiveTab(tab.key as LeftTab); setTabLoaded(prev => ({ ...prev, [tab.key]: true })); }}
+                            className={cn(
+                                "flex items-center px-4 h-8 text-[10px] font-black uppercase tracking-wide rounded-t transition-all whitespace-nowrap shrink-0",
+                                activeTab === tab.key ? "bg-[#f4f6f8] text-[#FB7506]" : "text-gray-400 hover:text-white hover:bg-white/10"
+                            )}>
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
 
-                    {/* Tab bar */}
-                    <div className="bg-[#374151] flex items-end px-1 gap-0.5 shrink-0 overflow-x-auto scrollbar-none">
-                        {LEFT_TABS.map(tab => {
-                            const Icon = tab.icon;
-                            return (
-                                <button key={tab.key} onClick={() => handleTabClick(tab.key)}
-                                    className={cn(
-                                        "flex items-center gap-1 px-2 h-8 text-[9px] font-black uppercase tracking-wide rounded-t transition-all whitespace-nowrap shrink-0",
-                                        activeTab === tab.key ? "bg-[#f4f6f8] text-[#FB7506]" : "text-gray-400 hover:text-white hover:bg-white/10"
-                                    )}>
-                                    <Icon size={10} />{tab.label}
-                                </button>
-                            );
-                        })}
-                    </div>
+                {/* ── Tab Content ── */}
+                <div className="flex-1 min-h-0 flex flex-col bg-[#f4f6f8]">
 
-                    {/* Tab content */}
-                    <div className="flex-1 overflow-hidden min-h-0 flex flex-col">
+                    {/* ══ Tab 1: AWB's Packings ══ */}
+                    {activeTab === "awbpackings" && (
+                        <div className="flex flex-col flex-1 min-h-0 gap-1 p-1">
 
-                        {/* Tab 1: AWB by date */}
-                        {activeTab === "awb" && (
-                            <div className="flex flex-col flex-1 min-h-0">
-                                <div className="bg-gray-50 border-b border-gray-200 px-2 py-1 shrink-0 flex items-center justify-between">
-                                    <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">AWBs — {lddate}</span>
-                                    {loadingAwb && <RefreshCcw size={12} className="animate-spin text-gray-400" />}
+                            {/* Row 1: Date Picker + AWB List */}
+                            <div className="flex bg-white rounded border border-gray-200 shadow-sm overflow-hidden shrink-0" style={{ height: "27%" }}>
+
+                                {/* Date Picker */}
+                                <div className="flex flex-col border-r border-gray-200 shrink-0" style={{ width: "200px" }}>
+                                    <div className="bg-[#FB7506] px-2 py-1 flex items-center justify-between shrink-0">
+                                        <span className="font-black text-[10px] text-white uppercase tracking-wide">Date Picker</span>
+                                        {loadingDates && <RefreshCcw size={10} className="animate-spin text-white/70" />}
+                                    </div>
+                                    <div className="flex-1 overflow-y-auto">
+                                        <table className="w-full text-xs">
+                                            <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
+                                                <tr>
+                                                    {["G.Ship Date","AWBs","Pcs","Dly"].map(h => (
+                                                        <th key={h} className="px-1 py-1 font-black text-[9px] text-gray-600 uppercase border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {(awbDates as any[]).length === 0 ? (
+                                                    <tr><td colSpan={4} className="p-3 text-center text-gray-300 text-[9px] italic">No dates</td></tr>
+                                                ) : (awbDates as any[]).map((row: any, i: number) => {
+                                                    const d = t(row.GSHIP_DATE ?? row.SHIP_DATE ?? row.G_SHIP_DATE ?? "").substring(0, 10);
+                                                    const sel = lddate === d;
+                                                    const dly = Number(row.DELAYED ?? 0);
+                                                    return (
+                                                        <tr key={i}
+                                                            onClick={() => { setLddate(d); setLcawbcode(""); setLcpack_uq(""); setLcpk_box_uq(""); }}
+                                                            className={cn("cursor-pointer border-b border-gray-50 transition-colors", sel ? "bg-blue-100" : dly > 0 ? "bg-red-50 hover:bg-red-100" : "hover:bg-gray-50")}>
+                                                            <td className={cn("px-1 py-0.5 border-r border-gray-100 font-mono text-[9px] whitespace-nowrap", sel ? "text-blue-700 font-bold" : dly > 0 ? "text-red-700" : "text-gray-700")}>{d}</td>
+                                                            <td className="px-1 py-0.5 border-r border-gray-100 text-right text-[10px]">{t(row.AWBS ?? row.AWB_COUNT ?? "")}</td>
+                                                            <td className="px-1 py-0.5 border-r border-gray-100 text-right text-[10px]">{t(row.PIECES ?? "")}</td>
+                                                            <td className={cn("px-1 py-0.5 text-right text-[10px] font-bold", dly > 0 ? "text-red-600" : "text-gray-300")}>{dly || ""}</td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                {/* AWB List */}
+                                <div className="flex flex-col flex-1 min-w-0">
+                                    <div className="bg-[#FB7506] px-2 py-1 flex items-center justify-between shrink-0">
+                                        <span className="font-black text-[10px] text-white uppercase tracking-wide">AWB List — {lddate}</span>
+                                        {loadingAwb && <RefreshCcw size={10} className="animate-spin text-white/70" />}
+                                    </div>
+                                    <div className="flex-1 overflow-auto">
+                                        <table className="min-w-full text-xs">
+                                            <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
+                                                <tr>
+                                                    {["AWB","Rec.","WHStatus","Pieces","FBoxes","Delayed","InWHouse"].map(h => (
+                                                        <th key={h} className="px-2 py-1 font-black text-[9px] text-gray-600 uppercase border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {(awbByDate as any[]).length === 0 && !loadingAwb ? (
+                                                    <tr><td colSpan={7} className="p-3 text-center text-gray-300 text-[10px] italic">No AWBs for this date</td></tr>
+                                                ) : (awbByDate as any[]).map((row: any, i: number) => {
+                                                    const code = t(row.AWBCODE);
+                                                    const sel  = lcawbcode === code;
+                                                    const dly  = Number(row.DELAYED ?? 0);
+                                                    return (
+                                                        <tr key={i} onClick={() => handleSelectAwb(row)}
+                                                            className={cn("cursor-pointer border-b border-gray-50 transition-colors", sel ? "bg-blue-100" : "hover:bg-gray-50")}>
+                                                            <td className={cn("px-2 py-1 border-r border-gray-100 font-mono font-bold text-[10px]", sel ? "text-blue-700" : "")}>{code}</td>
+                                                            <td className="px-2 py-1 border-r border-gray-100 text-right">{t(row.RECORDS)}</td>
+                                                            <td className={cn("px-2 py-1 border-r border-gray-100 text-center text-[9px] font-bold", t(row.WHSTATUS) === "WH" ? "text-green-600" : t(row.WHSTATUS) === "CHECK" ? "text-blue-500" : "text-gray-500")}>{t(row.WHSTATUS)}</td>
+                                                            <td className="px-2 py-1 border-r border-gray-100 text-right">{t(row.BOXES ?? row.PIECES ?? "")}</td>
+                                                            <td className="px-2 py-1 border-r border-gray-100 text-right">{t(row.FULL_BOXES ?? "")}</td>
+                                                            <td className={cn("px-2 py-1 border-r border-gray-100 text-right font-bold", dly > 0 ? "text-red-500" : "text-gray-300")}>{dly || ""}</td>
+                                                            <td className="px-2 py-1 text-right">{t(row.QTY_TRANSFER ?? row.IN_WHOUSE ?? "")}</td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="px-2 py-0.5 border-t border-gray-100 bg-gray-50 shrink-0">
+                                        <span className="text-[9px] font-bold text-gray-400">{(awbByDate as any[]).length} AWBs</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Row 2: Vendors / Packings */}
+                            <div className="flex flex-col bg-white rounded border border-gray-200 shadow-sm overflow-hidden shrink-0" style={{ height: "24%" }}>
+                                <div className="bg-[#374151] px-3 py-1 flex items-center justify-between shrink-0">
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-black text-[10px] text-gray-100 uppercase tracking-widest">Vendors{lcawbcode ? ` — ${lcawbcode}` : ""}</span>
+                                        {loadingPacking && <RefreshCcw size={10} className="animate-spin text-gray-400" />}
+                                    </div>
+                                    <span className="text-[9px] font-bold text-gray-400">{(packingXAwb as any[]).length} records</span>
                                 </div>
                                 <div className="flex-1 overflow-auto">
-                                    <table className="min-w-full text-left text-xs">
+                                    <table className="min-w-full text-xs whitespace-nowrap">
                                         <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
                                             <tr>
-                                                {["AWB", "Rec.", "Boxes", "Full", "Trans.", "Wh.St.", "Dly"].map(h => (
-                                                    <th key={h} className="px-1.5 py-1 font-black text-[9px] text-gray-600 uppercase tracking-wide whitespace-nowrap border-r border-gray-200 last:border-r-0">{h}</th>
+                                                {["Vendor","FullBxs","Pieces","Delayed","T.Units","T.Cost","T.Charge","Invoice","Packing","PWHouse","WHStatus","Available","Status","COT","Received","Comments"].map(h => (
+                                                    <th key={h} className="px-2 py-1 font-black text-[9px] text-gray-600 uppercase border-r border-gray-200 last:border-r-0">{h}</th>
                                                 ))}
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-gray-50">
-                                            {(awbByDate as any[]).length === 0 && !loadingAwb ? (
-                                                <tr><td colSpan={7} className="p-4 text-center text-gray-300 italic text-[10px]">No AWBs for this date</td></tr>
-                                            ) : (awbByDate as any[]).map((row: any, i: number) => {
-                                                const code = t(row.AWBCODE);
-                                                const sel  = lcawbcode === code;
+                                        <tbody>
+                                            {(packingXAwb as any[]).length === 0 && !loadingPacking ? (
+                                                <tr><td colSpan={16} className="p-3 text-center text-gray-300 text-[10px] italic">{lcawbcode ? "No packings for this AWB" : "Select an AWB"}</td></tr>
+                                            ) : (packingXAwb as any[]).map((row: any, i: number) => {
+                                                const uq   = t(row.PACK_UQ);
+                                                const sel  = lcpack_uq === uq;
+                                                const st   = t(row.STATUS ?? row.PSTATUS ?? "");
+                                                const whst = t(row.WHSTATUS ?? "");
+                                                const avail = t(row.AVAILABLE_DATE ?? row.AVAILABLE ?? "").substring(0, 10);
                                                 return (
-                                                    <tr key={i} onClick={() => handleSelectAwb(row)}
-                                                        style={rowStyle(t(row.COLOR))}
-                                                        className={cn("cursor-pointer transition-colors", sel ? "!bg-blue-100 ring-1 ring-inset ring-blue-300" : "hover:bg-gray-50")}>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 font-mono font-bold text-[10px]">{code}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-right text-[10px]">{t(row.RECORDS)}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-right text-[10px]">{t(row.BOXES)}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-right text-[10px]">{t(row.FULL_BOXES)}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-right text-[10px]">{t(row.QTY_TRANSFER)}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-center text-[9px]">{t(row.WHSTATUS)}</td>
-                                                        <td className="px-1.5 py-1 text-center text-[9px]">{t(row.DELAYED)}</td>
+                                                    <tr key={i} onClick={() => handleSelectPacking(row)}
+                                                        className={cn("cursor-pointer border-b border-gray-50 transition-colors", sel ? "bg-blue-100" : "hover:bg-gray-50")}>
+                                                        <td className={cn("px-2 py-1 border-r border-gray-100 font-semibold max-w-[140px] truncate", sel ? "text-blue-700" : "")}>{t(row.GROWER)}</td>
+                                                        <td className="px-2 py-1 border-r border-gray-100 text-right font-mono">{t(row.TOTAL_BOXES ?? row.FULL_BOXES ?? "")}</td>
+                                                        <td className="px-2 py-1 border-r border-gray-100 text-right">{t(row.TOTAL_PIECES)}</td>
+                                                        <td className={cn("px-2 py-1 border-r border-gray-100 text-right font-bold", Number(row.DELAYED ?? 0) > 0 ? "text-red-500" : "text-gray-300")}>{t(row.DELAYED ?? "") || ""}</td>
+                                                        <td className="px-2 py-1 border-r border-gray-100 text-right">{t(row.TOTAL_UNITS)}</td>
+                                                        <td className="px-2 py-1 border-r border-gray-100 text-right font-mono">{fmt2(row.TOTAL_COST ?? 0)}</td>
+                                                        <td className="px-2 py-1 border-r border-gray-100 text-right font-mono">{fmt2(row.T_CHARGE ?? row.TOTAL_CHARGE ?? 0)}</td>
+                                                        <td className="px-2 py-1 border-r border-gray-100 font-mono text-[9px]">{t(row.INVOICE_NO)}</td>
+                                                        <td className="px-2 py-1 border-r border-gray-100 font-mono font-bold">{t(row.PACKING_NO)}</td>
+                                                        <td className="px-2 py-1 border-r border-gray-100 text-[9px]">{t(row.WHOUSE ?? row.WPHYSICAL ?? row.PWHOUSE ?? "")}</td>
+                                                        <td className={cn("px-2 py-1 border-r border-gray-100 text-[9px] font-bold", whst === "WH" ? "text-green-600" : whst === "CHECK" ? "text-blue-500" : "text-gray-500")}>{whst}</td>
+                                                        <td className="px-2 py-1 border-r border-gray-100 text-[9px]">{avail}</td>
+                                                        <td className={cn("px-2 py-1 border-r border-gray-100 text-[9px] font-bold", st === "CLOSED" ? "text-red-500" : st === "OPEN" ? "text-green-600" : "text-gray-400")}>{st}</td>
+                                                        <td className="px-2 py-1 border-r border-gray-100 text-[9px]">{t(row.COT ?? "")}</td>
+                                                        <td className="px-2 py-1 border-r border-gray-100 text-[9px]">{t(row.RECEIVED ?? "")}</td>
+                                                        <td className="px-2 py-1 text-[9px] text-gray-400 max-w-[160px] truncate">{t(row.DETAILS ?? row.COMMENTS ?? "")}</td>
                                                     </tr>
                                                 );
                                             })}
                                         </tbody>
                                     </table>
                                 </div>
-                                <div className="px-2 py-1 border-t border-gray-100 bg-gray-50 shrink-0">
-                                    <span className="text-[9px] font-bold text-gray-400">{(awbByDate as any[]).length} AWBs</span>
+                            </div>
+
+                            {/* Row 3: Boxes Detail */}
+                            <div className="flex flex-col bg-white rounded border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-0">
+                                <div className="bg-[#374151] px-3 py-1 flex items-center justify-between shrink-0">
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-black text-[10px] text-gray-100 uppercase tracking-widest">
+                                            Boxes Detail{selPacking ? ` — ${t(selPacking.GROWER)}` : ""}
+                                        </span>
+                                        {loadingBoxes && <RefreshCcw size={10} className="animate-spin text-gray-400" />}
+                                    </div>
+                                    <span className="text-[9px] font-bold text-gray-400">
+                                        {(boxesDetail as any[]).filter((r: any) => !lcpack_uq || t(r.PACK_UQ) === lcpack_uq).length} boxes
+                                    </span>
+                                </div>
+                                <div className="flex-1 overflow-auto">
+                                    <table className="min-w-full text-xs whitespace-nowrap">
+                                        <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
+                                            <tr>
+                                                {["Dly","Rdy","Lot","Pcs","Stock","BxCase","UxBunch","T.Units","U.Price","Case","Description","Customer","BoxId","PB","Std.","C.POrder","C.Cost","T.Cost","S.U.Price","Days","FCost","CCost","TCost"].map(h => (
+                                                    <th key={h} className="px-1.5 py-1 font-black text-[9px] text-gray-600 uppercase border-r border-gray-200 last:border-r-0">{h}</th>
+                                                ))}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {!lcawbcode ? (
+                                                <tr><td colSpan={23} className="p-4 text-center text-gray-300 text-xs italic">Select an AWB to view boxes</td></tr>
+                                            ) : (boxesDetail as any[]).filter((r: any) => !lcpack_uq || t(r.PACK_UQ) === lcpack_uq).length === 0 && !loadingBoxes ? (
+                                                <tr><td colSpan={23} className="p-4 text-center text-gray-300 text-xs italic">No boxes</td></tr>
+                                            ) : (boxesDetail as any[])
+                                                .filter((r: any) => !lcpack_uq || t(r.PACK_UQ) === lcpack_uq)
+                                                .map((row: any, i: number) => {
+                                                    const uq   = t(row.UNICO);
+                                                    const sel  = lcpk_box_uq === uq;
+                                                    const desc = t(row.DESCRIPTION ?? row.PRODUCT ?? row.VARIETY ?? "");
+                                                    const dly  = Number(row.DELAYED ?? 0);
+                                                    const rdy  = Boolean(row.READY_TRAN) ? "OK" : "";
+                                                    const stk  = Number(row.STOCK ?? row.WH_STOCK ?? 0);
+                                                    return (
+                                                        <tr key={i} onClick={() => handleSelectBox(row)}
+                                                            className={cn("cursor-pointer border-b border-gray-50 transition-colors", sel ? "bg-blue-100" : "hover:bg-gray-50")}>
+                                                            <td className={cn("px-1.5 py-0.5 border-r border-gray-100 text-center font-bold text-[9px]", dly > 0 ? "text-red-600" : "text-gray-300")}>{dly || ""}</td>
+                                                            <td className={cn("px-1.5 py-0.5 border-r border-gray-100 text-[9px] font-bold", rdy ? "text-green-600" : "text-gray-300")}>{rdy}</td>
+                                                            <td className="px-1.5 py-0.5 border-r border-gray-100 font-mono text-[10px]">{t(row.LOTE ?? row.BOXNUM ?? "")}</td>
+                                                            <td className="px-1.5 py-0.5 border-r border-gray-100 text-right">{t(row.TOTAL_PIECES ?? row.PIECES ?? "")}</td>
+                                                            <td className={cn("px-1.5 py-0.5 border-r border-gray-100 text-right font-semibold", stk < 0 ? "text-red-500" : stk > 0 ? "text-green-600" : "text-gray-300")}>{stk || ""}</td>
+                                                            <td className="px-1.5 py-0.5 border-r border-gray-100 text-right">{t(row.BOX_QTY ?? "")}</td>
+                                                            <td className="px-1.5 py-0.5 border-r border-gray-100 text-right">{t(row.UP_X_PACK ?? row.UP_X_CASE ?? "")}</td>
+                                                            <td className="px-1.5 py-0.5 border-r border-gray-100 text-right font-semibold">{t(row.TOTAL_UNITS)}</td>
+                                                            <td className="px-1.5 py-0.5 border-r border-gray-100 text-right font-mono">{fmt4(row.PRICE ?? row.U_PRICE ?? 0)}</td>
+                                                            <td className="px-1.5 py-0.5 border-r border-gray-100 text-[9px]">{t(row.CASE_NAME ?? row.CASE ?? "")}</td>
+                                                            <td className={cn("px-1.5 py-0.5 border-r border-gray-100 font-semibold max-w-[200px] truncate", sel ? "text-blue-700" : "")} title={desc}>{desc}</td>
+                                                            <td className="px-1.5 py-0.5 border-r border-gray-100 max-w-[80px] truncate text-[9px]">{t(row.CUSTOMER ?? "")}</td>
+                                                            <td className="px-1.5 py-0.5 border-r border-gray-100 text-right text-[9px]">{t(row.BOXID ?? row.BOX_ID ?? "")}</td>
+                                                            <td className="px-1.5 py-0.5 border-r border-gray-100 text-center text-[9px]">{Boolean(row.PB) ? "Y" : ""}</td>
+                                                            <td className="px-1.5 py-0.5 border-r border-gray-100 text-center text-[9px]">{Boolean(row.STD) ? "Y" : ""}</td>
+                                                            <td className="px-1.5 py-0.5 border-r border-gray-100 text-[9px]">{t(row.CPORDER_NO ?? row.SORDER_NO ?? "")}</td>
+                                                            <td className="px-1.5 py-0.5 border-r border-gray-100 text-right font-mono">{fmt4(row.C_COST_X_U ?? 0)}</td>
+                                                            <td className="px-1.5 py-0.5 border-r border-gray-100 text-right font-mono">{fmt2(row.T_COST ?? 0)}</td>
+                                                            <td className="px-1.5 py-0.5 border-r border-gray-100 text-right font-mono">{fmt4(row.S_U_PRICE ?? row.PRICE ?? 0)}</td>
+                                                            <td className={cn("px-1.5 py-0.5 border-r border-gray-100 text-right", Number(row.DAYS ?? 0) < 0 ? "text-red-500" : "text-gray-500")}>{t(row.DAYS ?? "")}</td>
+                                                            <td className="px-1.5 py-0.5 border-r border-gray-100 text-right font-mono">{fmt2(row.F_COST_X_U ?? row.FCOST ?? 0)}</td>
+                                                            <td className="px-1.5 py-0.5 border-r border-gray-100 text-right font-mono">{fmt2(row.C_COST_X_U ?? row.CCOST ?? 0)}</td>
+                                                            <td className="px-1.5 py-0.5 text-right font-mono font-bold">{fmt2(row.TCOST ?? row.T_COST ?? 0)}</td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
-                        )}
 
-                        {/* Tab 2: Warehouse */}
-                        {activeTab === "warehouse" && (
-                            <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-                                {!lcpk_box_uq ? (
-                                    <div className="flex-1 flex items-center justify-center text-gray-300 text-xs font-bold uppercase p-4 text-center">
-                                        Select a box to view warehouse data
-                                    </div>
-                                ) : (
-                                    <div className="flex-1 overflow-auto space-y-0 divide-y divide-gray-100">
-                                        {/* Stock */}
-                                        <div className="shrink-0">
-                                            <div className="bg-gray-50 px-2 py-1 flex items-center justify-between border-b border-gray-200">
-                                                <span className="font-black text-[9px] text-gray-600 uppercase tracking-wide">Stock ({whStock.length})</span>
-                                                {loadingWH && <RefreshCcw size={10} className="animate-spin text-gray-400" />}
-                                            </div>
-                                            <table className="min-w-full text-left text-[10px]">
-                                                <thead className="bg-gray-100 border-b border-gray-200">
-                                                    <tr>
-                                                        {["Warehouse","Lote","Units","In","Out","Stock","Hold"].map(h => (
-                                                            <th key={h} className="px-1.5 py-1 font-black text-[9px] text-gray-600 uppercase tracking-wide whitespace-nowrap border-r border-gray-200 last:border-r-0">{h}</th>
-                                                        ))}
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-gray-50">
-                                                    {whStock.length === 0 ? (
-                                                        <tr><td colSpan={7} className="p-3 text-center text-gray-300 italic">No stock records</td></tr>
-                                                    ) : whStock.map((row: any, i: number) => (
-                                                        <tr key={i} className="hover:bg-gray-50">
-                                                            <td className="px-1.5 py-1 border-r border-gray-50 truncate max-w-[90px]">{t(row.WAREHOUSE)}</td>
-                                                            <td className="px-1.5 py-1 border-r border-gray-50 text-right">{t(row.LOTE)}</td>
-                                                            <td className="px-1.5 py-1 border-r border-gray-50 text-right">{t(row.TOTAL_UNITS)}</td>
-                                                            <td className="px-1.5 py-1 border-r border-gray-50 text-right">{t(row.QTY_IN)}</td>
-                                                            <td className="px-1.5 py-1 border-r border-gray-50 text-right">{t(row.QTY_OUT)}</td>
-                                                            <td className="px-1.5 py-1 border-r border-gray-50 text-right font-bold">{t(row.WH_STOCK)}</td>
-                                                            <td className="px-1.5 py-1 text-right text-orange-600">{t(row.QTY_HOLD)}</td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                        {/* Adjusts */}
-                                        <div className="shrink-0">
-                                            <div className="bg-gray-50 px-2 py-1 border-b border-gray-200">
-                                                <span className="font-black text-[9px] text-gray-600 uppercase tracking-wide">Adjusts ({whAdjusts.length})</span>
-                                            </div>
-                                            <table className="min-w-full text-left text-[10px]">
-                                                <thead className="bg-gray-100 border-b border-gray-200">
-                                                    <tr>
-                                                        {["Date","Reason","Qty","Amount","Notes"].map(h => (
-                                                            <th key={h} className="px-1.5 py-1 font-black text-[9px] text-gray-600 uppercase tracking-wide whitespace-nowrap border-r border-gray-200 last:border-r-0">{h}</th>
-                                                        ))}
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-gray-50">
-                                                    {whAdjusts.length === 0 ? (
-                                                        <tr><td colSpan={5} className="p-3 text-center text-gray-300 italic">No adjusts</td></tr>
-                                                    ) : whAdjusts.map((row: any, i: number) => (
-                                                        <tr key={i} className="hover:bg-gray-50">
-                                                            <td className="px-1.5 py-1 border-r border-gray-50 whitespace-nowrap">{t(row.ADJ_DATE).substring(0,10)}</td>
-                                                            <td className="px-1.5 py-1 border-r border-gray-50 truncate max-w-[80px]">{t(row.REASON)}</td>
-                                                            <td className="px-1.5 py-1 border-r border-gray-50 text-right">{t(row.QTYBOXES)}</td>
-                                                            <td className="px-1.5 py-1 border-r border-gray-50 text-right font-mono">{fmt2(row.AMOUNT)}</td>
-                                                            <td className="px-1.5 py-1 truncate max-w-[100px]">{t(row.NOTES)}</td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                        {/* Invoices */}
-                                        <div className="shrink-0">
-                                            <div className="bg-gray-50 px-2 py-1 border-b border-gray-200">
-                                                <span className="font-black text-[9px] text-gray-600 uppercase tracking-wide">Invoices ({whInvoices.length})</span>
-                                            </div>
-                                            <table className="min-w-full text-left text-[10px]">
-                                                <thead className="bg-gray-100 border-b border-gray-200">
-                                                    <tr>
-                                                        {["Invoice","Date","Customer","Boxes","Units","Price","Total"].map(h => (
-                                                            <th key={h} className="px-1.5 py-1 font-black text-[9px] text-gray-600 uppercase tracking-wide whitespace-nowrap border-r border-gray-200 last:border-r-0">{h}</th>
-                                                        ))}
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-gray-50">
-                                                    {whInvoices.length === 0 ? (
-                                                        <tr><td colSpan={7} className="p-3 text-center text-gray-300 italic">No invoices</td></tr>
-                                                    ) : whInvoices.map((row: any, i: number) => (
-                                                        <tr key={i} className="hover:bg-gray-50">
-                                                            <td className="px-1.5 py-1 border-r border-gray-50 font-mono">{t(row.INVOICE_NO)}</td>
-                                                            <td className="px-1.5 py-1 border-r border-gray-50 whitespace-nowrap">{t(row.INVOICE_DATE ?? "").substring(0,10)}</td>
-                                                            <td className="px-1.5 py-1 border-r border-gray-50 truncate max-w-[80px]">{t(row.CUSTOMER)}</td>
-                                                            <td className="px-1.5 py-1 border-r border-gray-50 text-right">{t(row.BOX_QTY)}</td>
-                                                            <td className="px-1.5 py-1 border-r border-gray-50 text-right">{t(row.TOTAL_UNITS)}</td>
-                                                            <td className="px-1.5 py-1 border-r border-gray-50 text-right font-mono">{fmt4(row.PRICE)}</td>
-                                                            <td className="px-1.5 py-1 text-right font-mono font-bold">{fmt2(row.EXT_PRICE)}</td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                        </div>
+                    )}
 
-                        {/* Tab 3: PL Control — all packings for the date */}
-                        {activeTab === "plcontrol" && (
-                            <div className="flex flex-col flex-1 min-h-0">
-                                <div className="bg-gray-50 border-b border-gray-200 px-2 py-1 shrink-0 flex items-center justify-between">
-                                    <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">
-                                        Packing List Control — {lddate}
-                                    </span>
+                    {/* ══ Tab 2: Products List ══ */}
+                    {activeTab === "products" && (
+                        <div className="flex-1 flex items-center justify-center text-gray-300 text-sm font-bold uppercase tracking-widest">
+                            Products List — coming soon
+                        </div>
+                    )}
+
+                    {/* ══ Tab 3: PL Control ══ */}
+                    {activeTab === "plcontrol" && (
+                        <div className="flex flex-col flex-1 min-h-0 p-1">
+                            <div className="flex flex-col bg-white rounded border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-0">
+                                <div className="bg-[#374151] px-3 py-1 flex items-center justify-between shrink-0">
+                                    <span className="font-black text-[10px] text-gray-100 uppercase tracking-widest">Packing List Control — {lddate}</span>
                                     <div className="flex items-center gap-2">
-                                        {loadingPLC && <RefreshCcw size={12} className="animate-spin text-gray-400" />}
+                                        {loadingPLC && <RefreshCcw size={10} className="animate-spin text-gray-400" />}
                                         <span className="text-[9px] font-bold text-gray-400">{(plControlAll as any[]).length} pkgs</span>
                                     </div>
                                 </div>
                                 <div className="flex-1 overflow-auto">
-                                    <table className="min-w-full text-left text-xs">
+                                    <table className="min-w-full text-xs whitespace-nowrap">
                                         <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
                                             <tr>
                                                 {["Ctrl","Grower","Airline","AWB","Date","Invoice","Packing","Pcs","Total$","Whouse","Details","St."].map(h => (
-                                                    <th key={h} className="px-1.5 py-1 font-black text-[9px] text-gray-600 uppercase tracking-wide whitespace-nowrap border-r border-gray-200 last:border-r-0">{h}</th>
+                                                    <th key={h} className="px-2 py-1 font-black text-[9px] text-gray-600 uppercase border-r border-gray-200 last:border-r-0">{h}</th>
                                                 ))}
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-gray-50">
+                                        <tbody>
                                             {(plControlAll as any[]).length === 0 ? (
                                                 <tr><td colSpan={12} className="p-4 text-center text-gray-300 italic">No packings for this date</td></tr>
                                             ) : (plControlAll as any[]).map((row: any, i: number) => {
@@ -829,19 +901,19 @@ export default function InventoryEntryPage() {
                                                 const st  = t(row.STATUS ?? row.PSTATUS ?? "");
                                                 return (
                                                     <tr key={i} onClick={() => handleSelectPacking(row)}
-                                                        className={cn("cursor-pointer hover:bg-gray-50 transition-colors", sel && "!bg-blue-50 font-semibold")}>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-[9px] font-bold text-orange-600">{t(row.GROWER_CONTROL ?? row.CTRL ?? "")}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 truncate max-w-[90px] font-semibold">{t(row.GROWER)}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-[9px]">{t(row.AIRLINE ?? row.AIRLINE_UQ ?? "")}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 font-mono text-[9px]">{t(row.AWBCODE)}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 whitespace-nowrap text-[9px]">{t(row.BOX_DATE ?? row.DATE_INVO ?? "").substring(0,10)}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50">{t(row.INVOICE_NO)}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 font-mono font-bold">{t(row.PACKING_NO)}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-right">{t(row.TOTAL_PIECES)}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-right font-mono">{fmt2(row.TOTAL_INVOICE ?? row.TOTAL_COST ?? 0)}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-[9px] truncate max-w-[55px]">{t(row.WHOUSE ?? row.WPHYSICAL ?? row.PWHOUSE ?? "")}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-[9px] truncate max-w-[80px] text-gray-400">{t(row.DETAILS ?? row.COMMENTS ?? "")}</td>
-                                                        <td className={cn("px-1.5 py-1 text-[9px] font-bold", st === "CLOSED" ? "text-red-500" : st === "OPEN" ? "text-green-600" : "text-gray-400")}>{st}</td>
+                                                        className={cn("cursor-pointer border-b border-gray-50 transition-colors", sel ? "bg-blue-100 font-semibold" : "hover:bg-gray-50")}>
+                                                        <td className="px-2 py-0.5 border-r border-gray-100 text-[9px] font-bold text-orange-600">{t(row.GROWER_CONTROL ?? row.CTRL ?? "")}</td>
+                                                        <td className={cn("px-2 py-0.5 border-r border-gray-100 font-semibold max-w-[100px] truncate", sel ? "text-blue-700" : "")}>{t(row.GROWER)}</td>
+                                                        <td className="px-2 py-0.5 border-r border-gray-100 text-[9px]">{t(row.AIRLINE ?? row.AIRLINE_UQ ?? "")}</td>
+                                                        <td className="px-2 py-0.5 border-r border-gray-100 font-mono text-[9px]">{t(row.AWBCODE)}</td>
+                                                        <td className="px-2 py-0.5 border-r border-gray-100 text-[9px]">{t(row.BOX_DATE ?? row.DATE_INVO ?? "").substring(0, 10)}</td>
+                                                        <td className="px-2 py-0.5 border-r border-gray-100">{t(row.INVOICE_NO)}</td>
+                                                        <td className="px-2 py-0.5 border-r border-gray-100 font-mono font-bold">{t(row.PACKING_NO)}</td>
+                                                        <td className="px-2 py-0.5 border-r border-gray-100 text-right">{t(row.TOTAL_PIECES)}</td>
+                                                        <td className="px-2 py-0.5 border-r border-gray-100 text-right font-mono">{fmt2(row.TOTAL_INVOICE ?? row.TOTAL_COST ?? 0)}</td>
+                                                        <td className="px-2 py-0.5 border-r border-gray-100 text-[9px]">{t(row.WHOUSE ?? row.WPHYSICAL ?? row.PWHOUSE ?? "")}</td>
+                                                        <td className="px-2 py-0.5 border-r border-gray-100 text-[9px] text-gray-400 max-w-[100px] truncate">{t(row.DETAILS ?? row.COMMENTS ?? "")}</td>
+                                                        <td className={cn("px-2 py-0.5 text-[9px] font-bold", st === "CLOSED" ? "text-red-500" : st === "OPEN" ? "text-green-600" : "text-gray-400")}>{st}</td>
                                                     </tr>
                                                 );
                                             })}
@@ -849,159 +921,124 @@ export default function InventoryEntryPage() {
                                     </table>
                                 </div>
                             </div>
-                        )}
+                        </div>
+                    )}
 
-                        {/* Tab 4: Adjusts */}
-                        {activeTab === "adjusts" && (
-                            <div className="flex flex-col flex-1 min-h-0">
-                                <div className="bg-gray-50 border-b border-gray-200 px-2 py-1 shrink-0 flex items-center justify-between">
-                                    <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Adjusts</span>
-                                    {loadingAdj && <RefreshCcw size={12} className="animate-spin text-gray-400" />}
-                                </div>
-                                {!lcpk_box_uq ? (
-                                    <div className="flex-1 flex items-center justify-center text-gray-300 text-xs font-bold uppercase p-4 text-center">
-                                        Select a box first
-                                    </div>
-                                ) : (
-                                    <div className="flex-1 overflow-auto">
-                                        <table className="min-w-full text-left text-xs">
-                                            <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
-                                                <tr>
-                                                    {["Date","Reason","Qty","Amount","Notes"].map(h => (
-                                                        <th key={h} className="px-1.5 py-1 font-black text-[9px] text-gray-600 uppercase tracking-wide whitespace-nowrap border-r border-gray-200 last:border-r-0">{h}</th>
-                                                    ))}
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-gray-50">
-                                                {adjustsOnly.length === 0 ? (
-                                                    <tr><td colSpan={5} className="p-4 text-center text-gray-300 italic">No adjusts</td></tr>
-                                                ) : (adjustsOnly as any[]).map((row: any, i: number) => (
-                                                    <tr key={i} className="hover:bg-gray-50">
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 whitespace-nowrap">{t(row.ADJ_DATE).substring(0,10)}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 truncate max-w-[80px]">{t(row.REASON)}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-right">{t(row.QTYBOXES)}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-right font-mono">{fmt2(row.AMOUNT)}</td>
-                                                        <td className="px-1.5 py-1 truncate max-w-[100px]">{t(row.NOTES)}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {/* Tab 5: AWB Search */}
-                        {activeTab === "awbsearch" && (
-                            <div className="flex flex-col flex-1 min-h-0">
+                    {/* ══ Tab 4: AWB Search ══ */}
+                    {activeTab === "awbsearch" && (
+                        <div className="flex flex-col flex-1 min-h-0 p-1">
+                            <div className="flex flex-col bg-white rounded border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-0">
                                 <div className="bg-gray-50 border-b border-gray-200 px-2 py-1 shrink-0">
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex items-center gap-2">
                                         <input type="text" value={awbSearchInput} onChange={e => setAwbSearchInput(e.target.value)}
                                             onKeyDown={e => e.key === "Enter" && setAwbSearchQ(awbSearchInput)}
-                                            placeholder="AWB code..."
-                                            className="flex-1 h-6 text-xs border border-gray-200 rounded px-2 outline-none focus:ring-1 focus:ring-[#FB7506]" />
+                                            placeholder="AWB code or PO#..."
+                                            className="flex-1 h-7 text-xs border border-gray-200 rounded px-2 outline-none focus:ring-1 focus:ring-[#FB7506]" />
                                         <button onClick={() => setAwbSearchQ(awbSearchInput)}
-                                            className="flex items-center gap-1 h-6 px-2 bg-[#FB7506] hover:bg-orange-600 text-white rounded text-[9px] font-black uppercase tracking-wide transition-colors">
-                                            <Search size={10} />
+                                            className="flex items-center gap-1 h-7 px-3 bg-[#FB7506] hover:bg-orange-600 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors">
+                                            <Search size={11} /> Search
                                         </button>
+                                        {loadingSearch && <RefreshCcw size={13} className="animate-spin text-gray-400" />}
                                     </div>
                                 </div>
                                 <div className="flex-1 overflow-auto">
-                                    <table className="min-w-full text-left text-xs">
+                                    <table className="min-w-full text-xs">
                                         <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
                                             <tr>
                                                 {["Packing","Invoice","AWB","Date","Grower","Boxes","Units"].map(h => (
-                                                    <th key={h} className="px-1.5 py-1 font-black text-[9px] text-gray-600 uppercase tracking-wide whitespace-nowrap border-r border-gray-200 last:border-r-0">{h}</th>
+                                                    <th key={h} className="px-2 py-1 font-black text-[9px] text-gray-600 uppercase border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
                                                 ))}
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-gray-50">
-                                            {loadingSearch ? (
-                                                <tr><td colSpan={7} className="p-4 text-center"><RefreshCcw size={14} className="animate-spin mx-auto text-gray-400" /></td></tr>
-                                            ) : awbSearchResults.length === 0 ? (
-                                                <tr><td colSpan={7} className="p-4 text-center text-gray-300 italic">{awbSearchQ ? "No results" : "Enter AWB to search"}</td></tr>
+                                        <tbody>
+                                            {awbSearchResults.length === 0 ? (
+                                                <tr><td colSpan={7} className="p-4 text-center text-gray-300 italic text-[10px]">{awbSearchQ ? "No results" : "Enter AWB to search"}</td></tr>
                                             ) : (awbSearchResults as any[]).map((row: any, i: number) => (
-                                                <tr key={i} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleSelectPacking(row)}>
-                                                    <td className="px-1.5 py-1 border-r border-gray-50 font-mono">{t(row.PACKING_NO)}</td>
-                                                    <td className="px-1.5 py-1 border-r border-gray-50">{t(row.INVOICE_NO)}</td>
-                                                    <td className="px-1.5 py-1 border-r border-gray-50 font-mono">{t(row.AWBCODE)}</td>
-                                                    <td className="px-1.5 py-1 border-r border-gray-50 whitespace-nowrap">{t(row.BOX_DATE).substring(0,10)}</td>
-                                                    <td className="px-1.5 py-1 border-r border-gray-50 truncate max-w-[80px]">{t(row.GROWER)}</td>
-                                                    <td className="px-1.5 py-1 border-r border-gray-50 text-right">{t(row.TOTAL_BOXES)}</td>
-                                                    <td className="px-1.5 py-1 text-right">{t(row.TOTAL_UNITS)}</td>
+                                                <tr key={i} className="hover:bg-gray-50 cursor-pointer border-b border-gray-50" onClick={() => handleSelectPacking(row)}>
+                                                    <td className="px-2 py-1 border-r border-gray-100 font-mono">{t(row.PACKING_NO)}</td>
+                                                    <td className="px-2 py-1 border-r border-gray-100">{t(row.INVOICE_NO)}</td>
+                                                    <td className="px-2 py-1 border-r border-gray-100 font-mono">{t(row.AWBCODE)}</td>
+                                                    <td className="px-2 py-1 border-r border-gray-100">{t(row.BOX_DATE ?? "").substring(0, 10)}</td>
+                                                    <td className="px-2 py-1 border-r border-gray-100 font-semibold max-w-[120px] truncate">{t(row.GROWER)}</td>
+                                                    <td className="px-2 py-1 border-r border-gray-100 text-right">{t(row.TOTAL_BOXES)}</td>
+                                                    <td className="px-2 py-1 text-right">{t(row.TOTAL_UNITS)}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
                                     </table>
                                 </div>
                             </div>
-                        )}
+                        </div>
+                    )}
 
-                        {/* Tab 6: PO List */}
-                        {activeTab === "polist" && (
-                            <div className="flex flex-col flex-1 min-h-0">
+                    {/* ══ Tab 5: PO List ══ */}
+                    {activeTab === "polist" && (
+                        <div className="flex flex-col flex-1 min-h-0 p-1">
+                            <div className="flex flex-col bg-white rounded border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-0">
                                 <div className="bg-gray-50 border-b border-gray-200 px-2 py-1 shrink-0 flex items-center gap-2">
-                                    <label className={fLabel}>Ship Date</label>
+                                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Ship Date</span>
                                     <input type="date" value={ldship_date} onChange={e => { setLdship_date(e.target.value); setPoGrower(""); }}
-                                        className="h-6 text-xs border border-gray-200 rounded px-1.5 outline-none focus:ring-1 focus:ring-[#FB7506]" />
-                                    {loadingPO && <RefreshCcw size={12} className="animate-spin text-gray-400" />}
+                                        className="h-7 text-xs border border-gray-200 rounded px-1.5 outline-none focus:ring-1 focus:ring-[#FB7506]" />
+                                    {(loadingPO || loadingPOG) && <RefreshCcw size={12} className="animate-spin text-gray-400" />}
                                     {poGrower && (
-                                        <button onClick={() => setPoGrower("")} className="text-[9px] text-gray-400 hover:text-gray-600">← Back</button>
+                                        <button onClick={() => setPoGrower("")} className="text-[10px] text-[#FB7506] hover:text-orange-700 font-black">
+                                            &larr; Back to Summary
+                                        </button>
                                     )}
                                 </div>
                                 <div className="flex-1 overflow-auto">
                                     {!poGrower ? (
-                                        <table className="min-w-full text-left text-xs">
+                                        <table className="min-w-full text-xs">
                                             <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
                                                 <tr>
                                                     {["Grower","Ship Date","POrders","Shipped","Arrived","Amount"].map(h => (
-                                                        <th key={h} className="px-1.5 py-1 font-black text-[9px] text-gray-600 uppercase tracking-wide whitespace-nowrap border-r border-gray-200 last:border-r-0">{h}</th>
+                                                        <th key={h} className="px-2 py-1 font-black text-[9px] text-gray-600 uppercase border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
                                                     ))}
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-gray-50">
+                                            <tbody>
                                                 {poRows.length === 0 ? (
                                                     <tr><td colSpan={6} className="p-4 text-center text-gray-300 italic">No purchase orders for this date</td></tr>
                                                 ) : (poRows as any[]).map((row: any, i: number) => (
-                                                    <tr key={i} style={rowStyle(t(row.COLOR))} onClick={() => setPoGrower(t(row.GROWER_UQ))}
-                                                        className="cursor-pointer hover:bg-gray-50">
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 truncate max-w-[100px] font-semibold">{t(row.GROWER)}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 whitespace-nowrap">{t(row.SHIP_DATE).substring(0,10)}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-right">{t(row.QTY_PORDER)}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-right">{t(row.QTY_SHIP)}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-right">{t(row.QTY_ARRIVED)}</td>
-                                                        <td className="px-1.5 py-1 text-right font-mono">{fmt2(row.EXT_PRICE)}</td>
+                                                    <tr key={i} onClick={() => setPoGrower(t(row.GROWER_UQ))}
+                                                        className="cursor-pointer hover:bg-gray-50 border-b border-gray-50">
+                                                        <td className="px-2 py-1 border-r border-gray-100 font-semibold max-w-[120px] truncate">{t(row.GROWER)}</td>
+                                                        <td className="px-2 py-1 border-r border-gray-100">{t(row.SHIP_DATE ?? "").substring(0, 10)}</td>
+                                                        <td className="px-2 py-1 border-r border-gray-100 text-right">{t(row.QTY_PORDER)}</td>
+                                                        <td className="px-2 py-1 border-r border-gray-100 text-right">{t(row.QTY_SHIP)}</td>
+                                                        <td className="px-2 py-1 border-r border-gray-100 text-right">{t(row.QTY_ARRIVED)}</td>
+                                                        <td className="px-2 py-1 text-right font-mono">{fmt2(row.EXT_PRICE)}</td>
                                                     </tr>
                                                 ))}
                                             </tbody>
                                         </table>
                                     ) : (
-                                        <table className="min-w-full text-left text-xs">
+                                        <table className="min-w-full text-xs whitespace-nowrap">
                                             <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
                                                 <tr>
                                                     {["Farm","P.Order","S.Order","Customer","Case","Description","T.Units","Ordered","Confirm","Diff","Ship"].map(h => (
-                                                        <th key={h} className="px-1.5 py-1 font-black text-[9px] text-gray-600 uppercase tracking-wide whitespace-nowrap border-r border-gray-200 last:border-r-0">{h}</th>
+                                                        <th key={h} className="px-2 py-1 font-black text-[9px] text-gray-600 uppercase border-r border-gray-200 last:border-r-0">{h}</th>
                                                     ))}
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-gray-50">
+                                            <tbody>
                                                 {loadingPOG ? (
                                                     <tr><td colSpan={11} className="p-4 text-center"><RefreshCcw size={14} className="animate-spin mx-auto text-gray-400" /></td></tr>
                                                 ) : (poByGrower as any[]).length === 0 ? (
                                                     <tr><td colSpan={11} className="p-3 text-center text-gray-300 italic">No orders</td></tr>
                                                 ) : (poByGrower as any[]).map((row: any, i: number) => (
-                                                    <tr key={i} className="hover:bg-gray-50">
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-[9px] font-bold text-gray-500">{t(row.FARM ?? row.GROWER ?? "")}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 font-mono font-bold">{t(row.PORDER_NO)}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 font-mono text-gray-500">{t(row.SORDER_NO ?? "")}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 truncate max-w-[90px]">{t(row.CUSTOMER ?? "")}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-[9px]">{t(row.CASE_NAME ?? row.PACK ?? "")}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 truncate max-w-[120px] font-semibold">{t(row.DESCRIPTION ?? row.VARIETY ?? "")}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-right">{t(row.TOTAL_UNITS ?? row.TUNITS_X_BOX ?? "")}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-right font-semibold">{t(row.QTY_PORDER ?? row.QTY_BOXES ?? "")}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-right text-green-600">{t(row.QTY_CONFIRM ?? "")}</td>
-                                                        <td className="px-1.5 py-1 border-r border-gray-50 text-right text-orange-500">{t(row.QTY_DIFF ?? "")}</td>
-                                                        <td className="px-1.5 py-1 text-right text-blue-600 font-semibold">{t(row.QTY_SHIP ?? "")}</td>
+                                                    <tr key={i} className="hover:bg-gray-50 border-b border-gray-50">
+                                                        <td className="px-2 py-0.5 border-r border-gray-100 text-[9px] font-bold text-gray-500">{t(row.FARM ?? row.GROWER ?? "")}</td>
+                                                        <td className="px-2 py-0.5 border-r border-gray-100 font-mono font-bold">{t(row.PORDER_NO)}</td>
+                                                        <td className="px-2 py-0.5 border-r border-gray-100 font-mono text-gray-500">{t(row.SORDER_NO ?? "")}</td>
+                                                        <td className="px-2 py-0.5 border-r border-gray-100 max-w-[100px] truncate">{t(row.CUSTOMER ?? "")}</td>
+                                                        <td className="px-2 py-0.5 border-r border-gray-100 text-[9px]">{t(row.CASE_NAME ?? row.PACK ?? "")}</td>
+                                                        <td className="px-2 py-0.5 border-r border-gray-100 font-semibold max-w-[160px] truncate">{t(row.DESCRIPTION ?? row.VARIETY ?? "")}</td>
+                                                        <td className="px-2 py-0.5 border-r border-gray-100 text-right">{t(row.TOTAL_UNITS ?? "")}</td>
+                                                        <td className="px-2 py-0.5 border-r border-gray-100 text-right font-semibold">{t(row.QTY_PORDER ?? "")}</td>
+                                                        <td className="px-2 py-0.5 border-r border-gray-100 text-right text-green-600">{t(row.QTY_CONFIRM ?? "")}</td>
+                                                        <td className="px-2 py-0.5 border-r border-gray-100 text-right text-orange-500">{t(row.QTY_DIFF ?? "")}</td>
+                                                        <td className="px-2 py-0.5 text-right text-blue-600 font-semibold">{t(row.QTY_SHIP ?? "")}</td>
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -1009,126 +1046,9 @@ export default function InventoryEntryPage() {
                                     )}
                                 </div>
                             </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* ── Right Panel ── */}
-                <div className="flex flex-col flex-1 min-h-0 min-w-0 gap-1.5">
-
-                    {/* Upper: Packing x AWB */}
-                    <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden min-h-0 flex-[4]">
-                        <div className="h-8 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
-                            <div className="flex items-center gap-2">
-                                <Package size={13} className="text-[#FB7506]" />
-                                <span className="font-black text-[10px] text-gray-100 uppercase tracking-widest">
-                                    Packing x AWB {lcawbcode ? `· ${lcawbcode}` : ""}
-                                </span>
-                                {loadingPacking && <RefreshCcw size={11} className="animate-spin text-gray-400" />}
-                            </div>
-                            <span className="text-[9px] font-bold text-gray-400 px-2">{(packingXAwb as any[]).length} records</span>
                         </div>
+                    )}
 
-                        {/* Column headers */}
-                        <div className="bg-gray-100 border-b border-gray-200 shrink-0">
-                            <div className="grid px-2 py-1" style={{ gridTemplateColumns: "65px 75px 100px 1fr 60px 50px 55px 55px 55px 55px 1fr" }}>
-                                {["Packing","Invoice","AWB","Grower","Whouse","WHSt.","Status","Boxes","Pieces","Units","Details"].map(h => (
-                                    <span key={h} className="font-black text-[9px] text-gray-600 uppercase tracking-wide truncate">{h}</span>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto divide-y divide-gray-50">
-                            {(packingXAwb as any[]).length === 0 && !loadingPacking ? (
-                                <div className="p-4 text-center text-gray-300 text-xs italic">
-                                    {lcawbcode ? "No packings for this AWB" : "Select an AWB or search"}
-                                </div>
-                            ) : (packingXAwb as any[]).map((row: any, i: number) => {
-                                const uq  = t(row.PACK_UQ);
-                                const sel = lcpack_uq === uq;
-                                const whst = t(row.WHSTATUS ?? row.WH_STATUS ?? "");
-                                const status = t(row.STATUS ?? row.PSTATUS ?? "");
-                                return (
-                                    <div key={i} onClick={() => handleSelectPacking(row)}
-                                        className={cn(
-                                            "grid px-2 py-1 cursor-pointer text-xs transition-colors",
-                                            sel ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50"
-                                        )}
-                                        style={{ gridTemplateColumns: "65px 75px 100px 1fr 60px 50px 55px 55px 55px 55px 1fr" }}>
-                                        <span className={cn("font-mono font-bold truncate", sel ? "text-blue-800" : "text-gray-800")}>{t(row.PACKING_NO)}</span>
-                                        <span className="truncate text-gray-600">{t(row.INVOICE_NO)}</span>
-                                        <span className="truncate font-mono text-gray-600">{t(row.AWBCODE)}</span>
-                                        <span className="truncate font-semibold text-gray-700">{t(row.GROWER)}</span>
-                                        <span className="truncate text-gray-500 text-[9px]">{t(row.WHOUSE ?? row.WPHYSICAL ?? row.PWHOUSE ?? "")}</span>
-                                        <span className={cn("text-[9px] font-bold truncate", whst === "WH" ? "text-green-600" : whst === "CHECK" ? "text-blue-500" : "text-gray-500")}>{whst}</span>
-                                        <span className={cn("text-[9px] font-bold truncate", status === "CLOSED" ? "text-red-500" : status === "OPEN" ? "text-green-600" : "text-gray-500")}>{status}</span>
-                                        <span className="text-right text-gray-700 font-semibold">{t(row.TOTAL_BOXES)}</span>
-                                        <span className="text-right text-gray-600">{t(row.TOTAL_PIECES)}</span>
-                                        <span className="text-right text-gray-600">{t(row.TOTAL_UNITS)}</span>
-                                        <span className="truncate text-gray-400 text-[9px] pl-1">{t(row.DETAILS ?? row.COMMENTS ?? "")}</span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    {/* Lower: Boxes Detail */}
-                    <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden min-h-0 flex-[5]">
-                        <div className="h-8 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
-                            <div className="flex items-center gap-2">
-                                <Boxes size={13} className="text-[#FB7506]" />
-                                <span className="font-black text-[10px] text-gray-100 uppercase tracking-widest">
-                                    Boxes Detail {selPacking ? `· ${t(selPacking.PACKING_NO)}` : ""}
-                                </span>
-                                {loadingBoxes && <RefreshCcw size={11} className="animate-spin text-gray-400" />}
-                            </div>
-                            <span className="text-[9px] font-bold text-gray-400 px-2">{(boxesDetail as any[]).filter((r: any) => !lcpack_uq || t(r.PACK_UQ) === lcpack_uq).length} boxes</span>
-                        </div>
-
-                        <div className="bg-gray-100 border-b border-gray-200 shrink-0">
-                            <div className="grid px-2 py-1" style={{ gridTemplateColumns: "40px 40px 40px 40px 45px 40px 1fr 50px 50px 60px 60px 55px" }}>
-                                {["Box#","Lote","Rdy","Sel","Days","Bxs","Description","Up/Bx","T.Units","Price","F.Cost","Stock"].map(h => (
-                                    <span key={h} className="font-black text-[9px] text-gray-600 uppercase tracking-wide truncate">{h}</span>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto divide-y divide-gray-50">
-                            {!lcawbcode ? (
-                                <div className="p-4 text-center text-gray-300 text-xs italic">Select an AWB to view boxes</div>
-                            ) : (boxesDetail as any[]).filter((r: any) => !lcpack_uq || t(r.PACK_UQ) === lcpack_uq).length === 0 && !loadingBoxes ? (
-                                <div className="p-4 text-center text-gray-300 text-xs italic">No boxes</div>
-                            ) : (boxesDetail as any[])
-                                .filter((r: any) => !lcpack_uq || t(r.PACK_UQ) === lcpack_uq)
-                                .map((row: any, i: number) => {
-                                    const uq  = t(row.UNICO);
-                                    const sel = lcpk_box_uq === uq;
-                                    const desc = t(row.DESCRIPTION ?? row.PRODUCT ?? row.VARIETY ?? "");
-                                    const stock = t(row.STOCK ?? row.WH_STOCK ?? "");
-                                    return (
-                                        <div key={i} onClick={() => handleSelectBox(row)}
-                                            className={cn(
-                                                "grid px-2 py-1 cursor-pointer text-xs transition-colors",
-                                                sel ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50"
-                                            )}
-                                            style={{ gridTemplateColumns: "40px 40px 40px 40px 45px 40px 1fr 50px 50px 60px 60px 55px" }}>
-                                            <span className={cn("font-mono font-bold", sel ? "text-blue-800" : "text-gray-800")}>{t(row.BOXNUM)}</span>
-                                            <span className="text-gray-600">{t(row.LOTE)}</span>
-                                            <span className="text-center">{Boolean(row.READY_TRAN) && <span className="text-green-600 font-black text-[9px]">OK</span>}</span>
-                                            <span className="text-center">{Boolean(row.SEL) && <span className="text-blue-500 font-black text-[9px]">S</span>}</span>
-                                            <span className="text-right text-gray-500">{t(row.DAYS)}</span>
-                                            <span className="text-right font-semibold text-gray-700">{t(row.BOX_QTY)}</span>
-                                            <span className={cn("truncate font-semibold text-[10px]", sel ? "text-blue-700" : "text-gray-800")} title={desc}>{desc}</span>
-                                            <span className="text-right text-gray-600">{t(row.UP_X_PACK ?? row.UP_X_CASE ?? row.PACKS_BOX)}</span>
-                                            <span className="text-right font-semibold text-gray-700">{t(row.TOTAL_UNITS)}</span>
-                                            <span className="text-right font-mono text-gray-600">{fmt4(row.PRICE ?? row.U_PRICE ?? 0)}</span>
-                                            <span className="text-right font-mono text-gray-600">{fmt4(row.F_COST_X_U)}</span>
-                                            <span className={cn("text-right font-semibold", Number(stock) > 0 ? "text-green-600" : Number(stock) < 0 ? "text-red-500" : "text-gray-400")}>{stock}</span>
-                                        </div>
-                                    );
-                                })}
-                        </div>
-                    </div>
                 </div>
             </div>
 
