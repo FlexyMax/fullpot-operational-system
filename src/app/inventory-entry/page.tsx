@@ -547,113 +547,7 @@ export default function InventoryEntryPage() {
             </div>
 
             {/* ── Main Layout ── */}
-            <div className="flex flex-col flex-1 gap-2 p-2 overflow-hidden">
-
-                {/* ── Filter Bar ── */}
-                <div className="bg-white rounded-lg border border-gray-200 shadow-sm px-3 py-2 flex flex-wrap items-center gap-2 shrink-0">
-                {/* Date */}
-                <div className="flex items-center gap-1">
-                    <Calendar size={13} className="text-gray-400" />
-                    <input type="date" value={lddate} onChange={e => { setLddate(e.target.value); }}
-                        className="h-7 text-xs border border-gray-200 rounded px-1.5 outline-none focus:ring-1 focus:ring-[#FB7506]" />
-                </div>
-                {/* Vendor */}
-                <select value={lcgrower_uq} onChange={e => setLcgrower_uq(e.target.value)}
-                    className="h-7 text-xs border border-gray-200 rounded px-1.5 outline-none focus:ring-1 focus:ring-[#FB7506] max-w-[160px]">
-                    <option value="">All Vendors</option>
-                    {growers.map((g: any) => (
-                        <option key={t(g.UNICO)} value={t(g.UNICO)}>{t(g.GROWER ?? g.DESCRIPTION ?? g.UNICO)}</option>
-                    ))}
-                </select>
-                {/* AWB input */}
-                <div className="flex items-center gap-1">
-                    <input type="text" value={lcawbInput} onChange={e => setLcawbInput(e.target.value)}
-                        onKeyDown={e => e.key === "Enter" && handleSearch()}
-                        placeholder="AWB..."
-                        className="h-7 text-xs border border-gray-200 rounded px-2 outline-none focus:ring-1 focus:ring-[#FB7506] w-28" />
-                    <button onClick={handleSearch}
-                        className="flex items-center gap-1 h-7 px-2 bg-[#FB7506] hover:bg-orange-600 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors">
-                        <Search size={11} /> Search
-                    </button>
-                    <button onClick={handleRefresh}
-                        className="flex items-center gap-1 h-7 px-2 bg-gray-600 hover:bg-gray-700 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors">
-                        <RefreshCcw size={11} className={loadingAwb || loadingPacking ? "animate-spin" : ""} /> Refresh
-                    </button>
-                </div>
-                {/* Packing action group */}
-                {lcpack_uq && (
-                    <div className="flex items-center gap-1 border-l border-gray-200 pl-2">
-                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest hidden md:block">Packing:</span>
-                        <GridMenu items={[
-                            { label: "AWB Setup",    icon: Pencil,    color: "orange",  onClick: () => handleOpenPackingModal("edit"),  disabled: !perms.canEdit },
-                            { label: "Open",         icon: Check,     color: "green",   onClick: () => packAction("open", "Open"),      disabled: !perms.canEdit },
-                            { label: "Close",        icon: X,         color: "gray",    onClick: () => packAction("close", "Close"),    disabled: !perms.canEdit },
-                            { label: "Delete",       icon: Trash2,    color: "red",     onClick: handleDeletePacking,                  disabled: !perms.canDelete },
-                            { separator: true } as any,
-                            { label: "Reception",    icon: Package,   color: "blue",    onClick: () => packAction("reception", "Reception"), disabled: !perms.canEdit },
-                            { label: "Copy Packing", icon: Copy,      color: "gray",    onClick: () => packAction("copy", "Copy"),     disabled: !perms.canCreate },
-                            { label: "Change AWB",   icon: ArrowRight,color: "orange",  onClick: () => { setChgAwbForm({ awbcode: lcawbcode, airline_uq: "", date_invo: today() }); setModalChgAwb(true); }, disabled: !perms.canEdit },
-                            { label: "Add P.O",      icon: Plus,      color: "green",   onClick: () => packAction("from_porder", "Add P.O"), disabled: !perms.canCreate },
-                        ]} />
-                    </div>
-                )}
-                {/* Box action group */}
-                {lcpack_uq && (
-                    <div className="flex items-center gap-1 border-l border-gray-200 pl-2">
-                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest hidden md:block">Box:</span>
-                        <button onClick={() => handleOpenBoxModal("add")} disabled={!perms.canCreate}
-                            className="flex items-center gap-1 h-7 px-2 bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors">
-                            <Plus size={11} /> Add
-                        </button>
-                        <button onClick={() => handleOpenBoxModal("edit")} disabled={!lcpk_box_uq || !perms.canEdit}
-                            className="flex items-center gap-1 h-7 px-2 bg-[#FB7506] hover:bg-orange-600 disabled:opacity-40 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors">
-                            <Pencil size={11} /> Edit
-                        </button>
-                        <button onClick={handleDeleteBox} disabled={!lcpk_box_uq || !perms.canDelete}
-                            className="flex items-center gap-1 h-7 px-2 bg-red-500 hover:bg-red-600 disabled:opacity-40 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors">
-                            <Trash2 size={11} /> Del
-                        </button>
-                        <GridMenu items={[
-                            { label: "Copy Box",          icon: Copy,        color: "gray",   onClick: () => toast.info("Copy Box — coming soon.") },
-                            { label: "Composition",       icon: Boxes,       color: "blue",   onClick: () => toast.info("Composition — coming soon.") },
-                            { label: "RePacking",         icon: Package,     color: "orange", onClick: () => toast.info("RePacking — coming soon.") },
-                            { label: "Transform",         icon: ArrowRight,  color: "gray",   onClick: () => toast.info("Transform — coming soon.") },
-                            { label: "Transfer",          icon: ArrowRight,  color: "blue",   onClick: () => toast.info("Transfer — coming soon.") },
-                            { label: "Move Box",          icon: ArrowRight,  color: "gray",   onClick: () => toast.info("Move Box — coming soon.") },
-                            { label: "Change Prices",     icon: Pencil,      color: "orange", onClick: () => toast.info("Change Prices — coming soon.") },
-                            { separator: true } as any,
-                            { label: "History",           icon: FileText,    color: "gray",   onClick: () => toast.info("History — coming soon.") },
-                            { label: "Notes",             icon: FileText,    color: "gray",   onClick: () => toast.info("Notes — coming soon.") },
-                        ]} />
-                    </div>
-                )}
-                {/* Reports */}
-                <div className="flex items-center gap-1 border-l border-gray-200 pl-2 ml-auto">
-                    <GridMenu items={[
-                        { label: "Packing",          icon: FileText, color: "blue", onClick: () => toast.info("Report: Packing — coming soon.") },
-                        { label: "AWB Cust. PO",     icon: FileText, color: "blue", onClick: () => toast.info("Report: AWB Cust. PO — coming soon.") },
-                        { label: "Customer PO",      icon: FileText, color: "blue", onClick: () => toast.info("Report: Customer PO — coming soon.") },
-                        { label: "Invoice",          icon: FileText, color: "blue", onClick: () => toast.info("Report: Invoice — coming soon.") },
-                        { label: "NS Summary",       icon: FileText, color: "gray", onClick: () => toast.info("Report: NS Summary — coming soon.") },
-                        { label: "No Scanned",       icon: FileText, color: "gray", onClick: () => toast.info("Report: No Scanned — coming soon.") },
-                        { separator: true } as any,
-                        { label: "Label Laser",      icon: FileText, color: "gray", onClick: () => toast.info("Report: Label Laser — coming soon.") },
-                        { label: "Z300 / Zebra",     icon: FileText, color: "gray", onClick: () => toast.info("Report: Zebra — coming soon.") },
-                        { label: "Zebra by Lot",     icon: FileText, color: "gray", onClick: () => toast.info("Report: Zebra by Lot — coming soon.") },
-                        { label: "METO",             icon: FileText, color: "gray", onClick: () => toast.info("Report: METO — coming soon.") },
-                        { separator: true } as any,
-                        { label: "WH Instructions",  icon: FileText, color: "gray", onClick: () => toast.info("Report: WH Instructions — coming soon.") },
-                        { label: "Income Note",      icon: FileText, color: "gray", onClick: () => toast.info("Report: Income Note — coming soon.") },
-                        { label: "Arrived Products", icon: FileText, color: "gray", onClick: () => toast.info("Report: Arrived Products — coming soon.") },
-                        { label: "Unconfirmed",      icon: FileText, color: "gray", onClick: () => toast.info("Report: Unconfirmed — coming soon.") },
-                    ]} />
-                </div>
-                {/* New Packing button */}
-                <button onClick={() => handleOpenPackingModal("add")} disabled={!perms.canCreate}
-                    className="flex items-center gap-1 h-7 px-2 bg-green-700 hover:bg-green-800 disabled:opacity-40 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors">
-                    <Plus size={11} /> New Packing
-                </button>
-                </div>
+            <div className="flex flex-col flex-1 gap-1 p-1 overflow-hidden">
 
                 {/* ── Tab Container ── */}
                 <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1">
@@ -686,7 +580,7 @@ export default function InventoryEntryPage() {
                         <div className="flex flex-col gap-2 h-full">
 
                             {/* Row 1: Date Picker + AWB List */}
-                            <div className="flex gap-2 shrink-0" style={{ height: "22%" }}>
+                            <div className="flex gap-2 shrink-0" style={{ height: "32%" }}>
                                 {/* Date Picker */}
                                 <div className="w-[30%] flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden shrink-0">
                                     <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0">
@@ -698,7 +592,7 @@ export default function InventoryEntryPage() {
                                     </div>
                                     <div className="flex-1 overflow-y-auto">
                                         <table className="w-full text-[10px] leading-tight">
-                                            <thead className="bg-[#374151] text-white font-bold sticky top-0 z-10">
+                                            <thead className="bg-gray-100 text-gray-700 font-bold sticky top-0 z-10">
                                                 <tr>
                                                     {["G.Ship Date","AWBs","Pcs","Dly"].map(h => (
                                                         <th key={h} className="p-2 border-r border-gray-600/50 whitespace-nowrap">{h}</th>
@@ -740,7 +634,7 @@ export default function InventoryEntryPage() {
                                     </div>
                                     <div className="flex-1 overflow-auto">
                                         <table className="min-w-full text-xs text-left">
-                                            <thead className="bg-[#374151] text-white font-bold sticky top-0 z-10">
+                                            <thead className="bg-gray-100 text-gray-700 font-bold sticky top-0 z-10">
                                                 <tr>
                                                     {["AWB","Rec.","WHStatus","Pieces","FBoxes","Delayed","InWHouse"].map(h => (
                                                         <th key={h} className="p-2 border-r border-gray-600/50 whitespace-nowrap">{h}</th>
@@ -804,7 +698,7 @@ export default function InventoryEntryPage() {
                             </div>
 
                             {/* Row 2: Vendors / Packings */}
-                            <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden shrink-0" style={{ height: "20%" }}>
+                            <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden shrink-0" style={{ height: "28%" }}>
                                 <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0">
                                     <div className="flex items-center gap-2">
                                         <Package size={13} className="text-[#FB7506]" />
@@ -815,7 +709,7 @@ export default function InventoryEntryPage() {
                                 </div>
                                 <div className="flex-1 overflow-auto">
                                     <table className="min-w-full text-xs text-left whitespace-nowrap">
-                                        <thead className="bg-[#374151] text-white font-bold sticky top-0 z-10">
+                                        <thead className="bg-gray-100 text-gray-700 font-bold sticky top-0 z-10">
                                             <tr>
                                                 {["Vendor","FullBxs","Pieces","Delayed","T.Units","T.Cost","T.Charge","Invoice","Packing","PWHouse","WHStatus","Available","Status","Offer","COT","Received","Comments"].map(h => (
                                                     <th key={h} className="p-2 border-r border-gray-600/50 whitespace-nowrap">{h}</th>
@@ -912,7 +806,7 @@ export default function InventoryEntryPage() {
                                 </div>
                                 <div className="flex-1 overflow-auto">
                                     <table className="min-w-full text-xs text-left whitespace-nowrap">
-                                        <thead className="bg-[#374151] text-white font-bold sticky top-0 z-10">
+                                        <thead className="bg-gray-100 text-gray-700 font-bold sticky top-0 z-10">
                                             <tr>
                                                 {["Dly","Rdy","Lot","Pcs","Stock","BxCase","UxBunch","T.Units","U.Price","Case","Description","Customer","BoxId","PB","Std.","C.POrder","C.Cost","T.Cost","S.U.Price","Days","FCost","CCost","TCost"].map(h => (
                                                     <th key={h} className="p-2 border-r border-gray-600/50 whitespace-nowrap">{h}</th>
