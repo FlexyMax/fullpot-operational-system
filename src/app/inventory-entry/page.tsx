@@ -580,7 +580,7 @@ export default function InventoryEntryPage() {
                         <div className="flex flex-col gap-2 h-full">
 
                             {/* Row 1: Date Picker + AWB List */}
-                            <div className="flex gap-2 shrink-0" style={{ height: "32%" }}>
+                            <div className="flex gap-2 shrink-0" style={{ height: "28%" }}>
                                 {/* Date Picker */}
                                 <div className="w-[30%] flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden shrink-0">
                                     <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0">
@@ -670,42 +670,40 @@ export default function InventoryEntryPage() {
                                 </div>
                             </div>
 
-                            {/* Toolbar 1 */}
-                            <div className="shrink-0 flex items-center gap-1 bg-white rounded-lg border border-gray-200 shadow-sm px-2 py-1 overflow-x-auto">
-                                {[
-                                    { label: "AWB Cust. PO", icon: FileText },
-                                    { label: "Label Laser", icon: FileText },
-                                    { label: "Packing", icon: Package },
-                                    { label: "Send to Whouse", icon: ArrowRight, active: true },
-                                    { label: "COff", icon: FileText },
-                                    { label: "PDF Label", icon: FileText },
-                                    { label: "Z300", icon: FileText },
-                                    { label: "Z 4M", icon: FileText },
-                                    { label: "RPK", icon: FileText },
-                                    { label: "Copy", icon: Copy },
-                                ].map((btn, idx) => (
-                                    <button key={idx} onClick={() => toast.info(`${btn.label} — coming soon.`)}
-                                        className={cn(
-                                            "flex items-center gap-1 px-2 py-1 text-[9px] font-bold rounded border whitespace-nowrap shrink-0 transition-colors",
-                                            btn.active
-                                                ? "bg-blue-700 text-white border-blue-800 hover:bg-blue-800"
-                                                : "bg-gray-50 text-gray-700 border-gray-300 hover:bg-white"
-                                        )}>
-                                        {btn.icon && <btn.icon size={10} />}
-                                        {btn.label}
-                                    </button>
-                                ))}
-                            </div>
-
                             {/* Row 2: Vendors / Packings */}
-                            <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden shrink-0" style={{ height: "28%" }}>
-                                <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0">
-                                    <div className="flex items-center gap-2">
+                            <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden shrink-0" style={{ height: "24%" }}>
+                                <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 gap-2">
+                                    <div className="flex items-center gap-2 shrink-0">
                                         <Package size={13} className="text-[#FB7506]" />
                                         <span className="font-black text-[10px] uppercase tracking-widest text-white">Vendors{lcawbcode ? ` — ${lcawbcode}` : ""}</span>
                                         {loadingPacking && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
                                     </div>
-                                    <span className="text-[10px] font-bold text-gray-400">{(packingXAwb as any[]).length} records</span>
+                                    <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+                                        {[
+                                            { label: "AWB Cust. PO", icon: FileText },
+                                            { label: "Label Laser", icon: FileText },
+                                            { label: "Packing", icon: Package },
+                                            { label: "Send to Whouse", icon: ArrowRight, active: true },
+                                            { label: "COff", icon: FileText },
+                                            { label: "PDF Label", icon: FileText },
+                                            { label: "Z300", icon: FileText },
+                                            { label: "Z 4M", icon: FileText },
+                                            { label: "RPK", icon: FileText },
+                                            { label: "Copy", icon: Copy },
+                                        ].map((btn, idx) => (
+                                            <button key={idx} onClick={() => toast.info(`${btn.label} — coming soon.`)}
+                                                className={cn(
+                                                    "flex items-center gap-1 px-2 py-1 text-[9px] font-bold rounded border whitespace-nowrap shrink-0 transition-colors",
+                                                    btn.active
+                                                        ? "bg-blue-700 text-white border-blue-800 hover:bg-blue-800"
+                                                        : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                                                )}>
+                                                {btn.icon && <btn.icon size={10} />}
+                                                {btn.label}
+                                            </button>
+                                        ))}
+                                        <span className="text-[10px] font-bold text-gray-400 ml-2 shrink-0">{(packingXAwb as any[]).length} records</span>
+                                    </div>
                                 </div>
                                 <div className="flex-1 overflow-auto">
                                     <table className="min-w-full text-xs text-left whitespace-nowrap">
@@ -753,56 +751,54 @@ export default function InventoryEntryPage() {
                                 </div>
                             </div>
 
-                            {/* Toolbar 2 */}
-                            <div className="shrink-0 flex items-center gap-1 bg-white rounded-lg border border-gray-200 shadow-sm px-2 py-1 overflow-x-auto">
-                                <span className="text-[10px] font-black text-[#FB7506] uppercase tracking-wide truncate max-w-[160px]">
-                                    {selBox ? t(selBox.DESCRIPTION ?? selBox.PRODUCT ?? selBox.VARIETY ?? "") : selPacking ? t(selPacking.GROWER) : ""}
-                                </span>
-                                <div className="w-px h-3 bg-gray-300 mx-1" />
-                                {[
-                                    { label: "Transform Inventory", icon: ArrowRight, color: "green" },
-                                    { label: "Change Prices", icon: Pencil, color: "gray" },
-                                    { label: "RePacking", icon: Package, color: "orange" },
-                                    { label: "WHControl", icon: Warehouse, color: "green" },
-                                ].map((btn, idx) => (
-                                    <button key={idx} onClick={() => toast.info(`${btn.label} — coming soon.`)}
-                                        className="flex items-center gap-1 px-2 py-1 text-[9px] font-bold rounded border bg-gray-50 text-gray-700 border-gray-300 hover:bg-white whitespace-nowrap shrink-0 transition-colors">
-                                        {btn.icon && <btn.icon size={10} />}
-                                        {btn.label}
-                                    </button>
-                                ))}
-                                <div className="w-px h-3 bg-gray-300 mx-1" />
-                                <span className="text-[9px] font-bold text-gray-500">From Label:</span>
-                                <input className="w-8 h-5 text-[9px] border border-gray-300 rounded px-1 bg-white" defaultValue="0" readOnly />
-                                <span className="text-[9px] font-bold text-gray-500">To Label:</span>
-                                <input className="w-8 h-5 text-[9px] border border-gray-300 rounded px-1 bg-white" defaultValue="0" readOnly />
-                                <div className="w-px h-3 bg-gray-300 mx-1" />
-                                {[
-                                    { label: "Zebra by Lot", icon: FileText },
-                                    { label: "Meto by Lot", icon: FileText },
-                                    { label: "Selection", icon: FileText },
-                                ].map((btn, idx) => (
-                                    <button key={idx} onClick={() => toast.info(`${btn.label} — coming soon.`)}
-                                        className="flex items-center gap-1 px-2 py-1 text-[9px] font-bold rounded border bg-gray-50 text-gray-700 border-gray-300 hover:bg-white whitespace-nowrap shrink-0 transition-colors">
-                                        {btn.icon && <btn.icon size={10} />}
-                                        {btn.label}
-                                    </button>
-                                ))}
-                            </div>
-
                             {/* Row 3: Boxes Detail */}
                             <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-0">
-                                <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0">
-                                    <div className="flex items-center gap-2">
+                                <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 gap-2">
+                                    <div className="flex items-center gap-2 shrink-0">
                                         <Boxes size={13} className="text-[#FB7506]" />
                                         <span className="font-black text-[10px] uppercase tracking-widest text-white">
                                             Boxes Detail{selPacking ? ` — ${t(selPacking.GROWER)}` : ""}
                                         </span>
                                         {loadingBoxes && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
                                     </div>
-                                    <span className="text-[10px] font-bold text-gray-400">
-                                        {(boxesDetail as any[]).filter((r: any) => !lcpack_uq || t(r.PACK_UQ) === lcpack_uq).length} boxes
-                                    </span>
+                                    <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+                                        <span className="text-[10px] font-black text-[#FB7506] uppercase tracking-wide truncate max-w-[160px]">
+                                            {selBox ? t(selBox.DESCRIPTION ?? selBox.PRODUCT ?? selBox.VARIETY ?? "") : selPacking ? t(selPacking.GROWER) : ""}
+                                        </span>
+                                        <div className="w-px h-3 bg-gray-600 mx-1" />
+                                        {[
+                                            { label: "Transform Inventory", icon: ArrowRight, color: "green" },
+                                            { label: "Change Prices", icon: Pencil, color: "gray" },
+                                            { label: "RePacking", icon: Package, color: "orange" },
+                                            { label: "WHControl", icon: Warehouse, color: "green" },
+                                        ].map((btn, idx) => (
+                                            <button key={idx} onClick={() => toast.info(`${btn.label} — coming soon.`)}
+                                                className="flex items-center gap-1 px-2 py-1 text-[9px] font-bold rounded border bg-white text-gray-700 border-gray-200 hover:bg-gray-50 whitespace-nowrap shrink-0 transition-colors">
+                                                {btn.icon && <btn.icon size={10} />}
+                                                {btn.label}
+                                            </button>
+                                        ))}
+                                        <div className="w-px h-3 bg-gray-600 mx-1" />
+                                        <span className="text-[9px] font-bold text-gray-300">From Label:</span>
+                                        <input className="w-8 h-5 text-[9px] border border-gray-300 rounded px-1 bg-white" defaultValue="0" readOnly />
+                                        <span className="text-[9px] font-bold text-gray-300">To Label:</span>
+                                        <input className="w-8 h-5 text-[9px] border border-gray-300 rounded px-1 bg-white" defaultValue="0" readOnly />
+                                        <div className="w-px h-3 bg-gray-600 mx-1" />
+                                        {[
+                                            { label: "Zebra by Lot", icon: FileText },
+                                            { label: "Meto by Lot", icon: FileText },
+                                            { label: "Selection", icon: FileText },
+                                        ].map((btn, idx) => (
+                                            <button key={idx} onClick={() => toast.info(`${btn.label} — coming soon.`)}
+                                                className="flex items-center gap-1 px-2 py-1 text-[9px] font-bold rounded border bg-white text-gray-700 border-gray-200 hover:bg-gray-50 whitespace-nowrap shrink-0 transition-colors">
+                                                {btn.icon && <btn.icon size={10} />}
+                                                {btn.label}
+                                            </button>
+                                        ))}
+                                        <span className="text-[10px] font-bold text-gray-400 ml-2 shrink-0">
+                                            {(boxesDetail as any[]).filter((r: any) => !lcpack_uq || t(r.PACK_UQ) === lcpack_uq).length} boxes
+                                        </span>
+                                    </div>
                                 </div>
                                 <div className="flex-1 overflow-auto">
                                     <table className="min-w-full text-xs text-left whitespace-nowrap">
