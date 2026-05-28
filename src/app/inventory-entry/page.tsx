@@ -121,6 +121,14 @@ export default function InventoryEntryPage() {
     // AWB Search tab
     const [awbSearchInput, setAwbSearchInput] = useState("");
     const [awbSearchQ,     setAwbSearchQ]     = useState("");  // committed query
+    const [awbSearchPage,  setAwbSearchPage]  = useState(1);
+    const AWB_PAGE_SIZE = 50;
+
+    // Products tab
+    const [prodSearchInput, setProdSearchInput] = useState("");
+    const [prodSearch,      setProdSearch]      = useState("");   // committed query
+    const [prodPage,        setProdPage]        = useState(1);
+    const PROD_PAGE_SIZE = 50;
 
     // ── Packing modal ─────────────────────────────────────────────────────────
     const [modalPacking,     setModalPacking]     = useState(false);
@@ -190,10 +198,10 @@ export default function InventoryEntryPage() {
     });
 
     // PL Control tab: all packings for the current date
-    const { data: plControlAll = [], isFetching: loadingPLC } = useQuery({
+    const { data: plControlAll = [], isFetching: loadingPLC, refetch: refetchPLC } = useQuery({
         queryKey: ["ie-plcontrol-all", lddate],
         queryFn:  () => fetch(`/api/inventory-entry/packing-x-awb?awb=%25&date=${lddate}`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
-        enabled:  activeTab === "plcontrol" && !!tabLoaded.plcontrol,
+        enabled:  activeTab === "plcontrol",
         staleTime: 0,
     });
 
@@ -204,12 +212,15 @@ export default function InventoryEntryPage() {
         staleTime: 0,
     });
 
-    const { data: awbSearchResults = [], isFetching: loadingSearch } = useQuery({
-        queryKey: ["ie-awb-search", awbSearchQ, lddate],
-        queryFn:  () => fetch(`/api/inventory-entry/awb-search?awb=${encodeURIComponent(awbSearchQ)}&date=${lddate}`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
-        enabled:  !!awbSearchQ && activeTab === "awbsearch" && !!tabLoaded.awbsearch,
+    const { data: awbSearchData, isFetching: loadingSearch } = useQuery<{ rows: any[]; total: number }>({
+        queryKey: ["ie-awb-search", awbSearchQ, awbSearchPage],
+        queryFn:  () => fetch(`/api/inventory-entry/awb-search?page=${awbSearchPage}&pageSize=${AWB_PAGE_SIZE}&search=${encodeURIComponent(awbSearchQ)}`).then(r => r.json()),
+        enabled:  activeTab === "awbsearch",
         staleTime: 0,
     });
+    const awbSearchResults = useMemo(() => norm(awbSearchData?.rows ?? []), [awbSearchData]);
+    const awbSearchTotal   = Number(awbSearchData?.total ?? 0);
+    const awbSearchHasMore = awbSearchPage * AWB_PAGE_SIZE < awbSearchTotal;
 
     const { data: poSummary, isFetching: loadingPO } = useQuery({
         queryKey: ["ie-po-summary", ldship_date],
@@ -231,6 +242,16 @@ export default function InventoryEntryPage() {
         queryFn:  () => fetch("/api/inventory-entry/awb-dates").then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         staleTime: 1000 * 60 * 5,
     });
+
+    const { data: prodData, isFetching: loadingProds } = useQuery({
+        queryKey: ["ie-products", prodSearch, prodPage],
+        queryFn:  () => fetch(`/api/inventory-entry/products?page=${prodPage}&pageSize=${PROD_PAGE_SIZE}&search=${encodeURIComponent(prodSearch)}`).then(r => r.json()),
+        enabled:  activeTab === "products",
+        staleTime: 0,
+    });
+    const prodRows  = useMemo(() => norm((prodData as any)?.rows ?? []), [prodData]);
+    const prodTotal = Number((prodData as any)?.total ?? 0);
+    const prodHasMore = prodPage * PROD_PAGE_SIZE < prodTotal;
 
     // Auto-select first available date if current lddate has no data
     useEffect(() => {
@@ -262,17 +283,15 @@ export default function InventoryEntryPage() {
         refetchAwb();
         refetchPacking();
         if (lcawbcode) refetchBoxes();
+        qc.invalidateQueries({ queryKey: ["ie-plcontrol-all"] });
     };
 
     const handleSelectAwb = (row: any) => {
         const code = t(row.AWBCODE);
         setLcawbcode(code);
-        // Keep lcawb as "%" so packing query returns all packings for the date;
-        // we filter by selected AWB in the render.
+        setLcawb(code);   // pass specific AWB to SP — server-side filter, no client AWBCODE filter needed
         setLcpack_uq("");
         setLcpk_box_uq("");
-        qc.invalidateQueries({ queryKey: ["ie-packing-x-awb"] });
-        qc.invalidateQueries({ queryKey: ["ie-boxes"] });
     };
 
     const handleSelectPacking = (row: any) => {
@@ -718,9 +737,9 @@ export default function InventoryEntryPage() {
                                         </thead>
                                         <tbody>
                                             {(() => {
-                                            const filtered = (packingXAwb as any[]).filter((r: any) => !lcawbcode || t(r.AWBCODE) === lcawbcode);
+                                            const filtered = packingXAwb as any[];  // SP already filters by lcawb
                                             if (filtered.length === 0 && !loadingPacking) return (
-                                                <tr><td colSpan={17} className="p-4 text-center text-gray-400 italic">{lcawbcode ? "No packings for this AWB" : "Select an AWB"}</td></tr>
+                                                <tr><td colSpan={17} className="p-4 text-center text-gray-400 italic">{lcawbcode ? "No packings for this AWB" : "Select a date"}</td></tr>
                                             );
                                             return filtered.map((row: any, i: number) => {
                                                 const uq   = t(row.PACK_UQ);
@@ -869,61 +888,91 @@ export default function InventoryEntryPage() {
 
                     {/* ══ Tab 2: Products List ══ */}
                     {activeTab === "products" && (
-                        <div className="flex flex-col gap-2 h-full">
-                            {/* Row 1: Filter bar + Grid */}
+                        <div className="flex flex-col h-full min-h-0">
                             <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-0">
+
+                                {/* Header */}
                                 <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 gap-2">
                                     <div className="flex items-center gap-2 shrink-0">
                                         <Flower2 size={13} className="text-[#FB7506]" />
                                         <span className="font-black text-[10px] uppercase tracking-widest text-white">Products List</span>
+                                        {loadingProds && <RefreshCcw size={10} className="animate-spin text-gray-400" />}
+                                        {prodTotal > 0 && (
+                                            <span className="text-[10px] font-bold text-gray-300 ml-2">
+                                                {prodRows.length} / {prodTotal} records
+                                            </span>
+                                        )}
                                     </div>
-                                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-                                        <span className="text-[10px] font-bold text-gray-300 shrink-0">Farm:</span>
-                                        <input placeholder="Farm..." className="h-7 text-xs border border-gray-300 rounded px-2 bg-white w-32 shrink-0" />
-                                        <span className="text-[10px] font-bold text-gray-300 shrink-0">AWB:</span>
-                                        <input placeholder="AWB..." className="h-7 text-xs border border-gray-300 rounded px-2 bg-white w-28 shrink-0" />
-                                        <span className="text-[10px] font-bold text-gray-300 shrink-0">Invoice:</span>
-                                        <input placeholder="Invoice..." className="h-7 text-xs border border-gray-300 rounded px-2 bg-white w-24 shrink-0" />
-                                        <span className="text-[10px] font-bold text-gray-300 shrink-0">Pieces:</span>
-                                        <input placeholder="Pieces..." className="h-7 text-xs border border-gray-300 rounded px-2 bg-white w-16 shrink-0" />
-                                        <div className="w-px h-3 bg-gray-600 mx-1" />
-                                        <button onClick={() => toast.info("Change Structure — coming soon.")}
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        <input
+                                            type="text"
+                                            value={prodSearchInput}
+                                            onChange={e => setProdSearchInput(e.target.value)}
+                                            onKeyDown={e => { if (e.key === "Enter") { setProdSearch(prodSearchInput); setProdPage(1); } }}
+                                            placeholder="Search products..."
+                                            className="h-7 text-xs border border-gray-300 rounded px-2 bg-white w-48 shrink-0"
+                                        />
+                                        <button
+                                            onClick={() => { setProdSearch(prodSearchInput); setProdPage(1); }}
+                                            className="flex items-center gap-1 h-7 px-3 bg-[#FB7506] hover:bg-orange-600 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors shrink-0">
+                                            <Search size={11} /> Search
+                                        </button>
+                                        {prodSearch && (
+                                            <button onClick={() => { setProdSearch(""); setProdSearchInput(""); setProdPage(1); }}
+                                                className="h-7 px-2 text-[10px] font-bold text-gray-400 hover:text-gray-700 shrink-0">
+                                                <X size={11} />
+                                            </button>
+                                        )}
+                                        <button onClick={() => toast.info("Add to Packing — coming soon.")}
                                             className="flex items-center gap-1 h-7 px-2 bg-green-700 hover:bg-green-800 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors shrink-0">
-                                            Change Structure
-                                        </button>
-                                        <button onClick={() => toast.info("Change To Prices Mode — coming soon.")}
-                                            className="flex items-center gap-1 h-7 px-2 bg-red-500 hover:bg-red-600 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors shrink-0">
-                                            Prices Mode
-                                        </button>
-                                        <button onClick={() => toast.info("Add Prod. To Packing — coming soon.")}
-                                            className="flex items-center gap-1 h-7 px-2 bg-[#FB7506] hover:bg-orange-600 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors shrink-0">
                                             <Plus size={11} /> Add to Packing
                                         </button>
                                     </div>
                                 </div>
+
+                                {/* Grid */}
                                 <div className="flex-1 overflow-auto">
                                     <table className="min-w-full text-xs text-left whitespace-nowrap">
                                         <thead className="bg-gray-100 text-gray-700 font-bold sticky top-0 z-10">
                                             <tr>
-                                                {["Description","StemsBunch","BunchesCase","UnitsInv","SalesPrice","PriceBy$","Case"].map(h => (
-                                                    <th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
+                                                {["Description","Class","Subclass","Variety","Color","Grade","Stems/Bunch","Bunches/Case","Units","Sales Price","Case"].map(h => (
+                                                    <th key={h} className="p-2 border-r border-gray-600/50 last:border-r-0 whitespace-nowrap">{h}</th>
                                                 ))}
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <tr><td colSpan={7} className="p-4 text-center text-gray-400 italic">Products List — coming soon</td></tr>
+                                            {prodRows.length === 0 && !loadingProds ? (
+                                                <tr><td colSpan={11} className="p-4 text-center text-gray-400 italic">No products found</td></tr>
+                                            ) : (prodRows as any[]).map((row: any, i: number) => (
+                                                <tr key={i} className="border-b transition-colors odd:bg-white even:bg-gray-50 hover:bg-blue-50 cursor-pointer">
+                                                    <td className="p-2 border-r border-gray-100 font-semibold max-w-[200px] truncate">{t(row.DESCRIPTION ?? row.DESC ?? row.PRODUCT_DESC ?? row.PRODUCT ?? "")}</td>
+                                                    <td className="p-2 border-r border-gray-100 text-[10px]">{t(row.CLASS ?? row.CLASE ?? "")}</td>
+                                                    <td className="p-2 border-r border-gray-100 text-[10px]">{t(row.SUBCLASS ?? row.SUBCLASE ?? "")}</td>
+                                                    <td className="p-2 border-r border-gray-100">{t(row.VARIETY ?? row.VARIEDAD ?? "")}</td>
+                                                    <td className="p-2 border-r border-gray-100">{t(row.COLOR ?? "")}</td>
+                                                    <td className="p-2 border-r border-gray-100 text-[10px]">{t(row.GRADE ?? row.GRADO ?? "")}</td>
+                                                    <td className="p-2 border-r border-gray-100 text-right">{t(row.STEMS_BUNCH ?? row.STEMS_X_BUNCH ?? row.BUNCHES_X_CASE ?? "")}</td>
+                                                    <td className="p-2 border-r border-gray-100 text-right">{t(row.BUNCHES_CASE ?? row.BUNCHES_X_CASE ?? row.UP_X_CASE ?? "")}</td>
+                                                    <td className="p-2 border-r border-gray-100 text-right">{t(row.TOTAL_UNITS ?? row.UNITS ?? "")}</td>
+                                                    <td className="p-2 border-r border-gray-100 text-right font-mono">{fmt2(row.SALES_PRICE ?? row.PRICE ?? row.UNIT_PRICE ?? 0)}</td>
+                                                    <td className="p-2 text-[10px]">{t(row.CASE_NAME ?? row.CASE ?? row.PACK ?? "")}</td>
+                                                </tr>
+                                            ))}
+                                            {prodHasMore && (
+                                                <tr>
+                                                    <td colSpan={11} className="p-2 text-center">
+                                                        <button
+                                                            onClick={() => setProdPage(p => p + 1)}
+                                                            disabled={loadingProds}
+                                                            className="h-7 px-4 bg-gray-700 hover:bg-gray-800 disabled:opacity-50 text-white text-[10px] font-black uppercase tracking-wide rounded transition-colors">
+                                                            {loadingProds ? <RefreshCcw size={11} className="animate-spin inline" /> : "Load More"}
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            )}
                                         </tbody>
                                     </table>
                                 </div>
-                            </div>
-                            {/* Row 2: Description search bar */}
-                            <div className="shrink-0 flex items-center gap-2 bg-[#374151] px-3 py-1.5 rounded-lg">
-                                <span className="text-[10px] font-black text-white uppercase tracking-widest">:: Description : Class Subclass Variety Color Grade ::</span>
-                                <input placeholder="Type to search..." className="h-7 text-xs border border-gray-300 rounded px-2 bg-white flex-1 max-w-xs" />
-                                <button onClick={() => toast.info("View All — coming soon.")}
-                                    className="flex items-center gap-1 h-7 px-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded text-[10px] font-black uppercase tracking-wide transition-colors">
-                                    View All
-                                </button>
                             </div>
                         </div>
                     )}
@@ -1003,56 +1052,84 @@ export default function InventoryEntryPage() {
 
                     {/* ══ Tab 4: AWB Search ══ */}
                     {activeTab === "awbsearch" && (
-                        <div className="flex flex-col gap-2 h-full">
+                        <div className="flex flex-col h-full min-h-0">
                             <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-0">
+
+                                {/* Header */}
                                 <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 gap-2">
                                     <div className="flex items-center gap-2 shrink-0">
                                         <Search size={13} className="text-[#FB7506]" />
-                                        <span className="font-black text-[10px] uppercase tracking-widest text-white">Packing Box by AWB / PO#</span>
+                                        <span className="font-black text-[10px] uppercase tracking-widest text-white">Packing Box Search</span>
+                                        {loadingSearch && <RefreshCcw size={10} className="animate-spin text-gray-400" />}
+                                        {awbSearchTotal > 0 && (
+                                            <span className="text-[10px] font-bold text-gray-300 ml-2">
+                                                {awbSearchResults.length} / {awbSearchTotal} records
+                                            </span>
+                                        )}
                                     </div>
-                                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-                                        <input type="text" value={awbSearchInput} onChange={e => setAwbSearchInput(e.target.value)}
-                                            onKeyDown={e => e.key === "Enter" && setAwbSearchQ(awbSearchInput)}
-                                            placeholder="AWB code or PO#..."
-                                            className="h-7 text-xs border border-gray-300 rounded px-2 bg-white w-40 shrink-0" />
-                                        <button onClick={() => setAwbSearchQ(awbSearchInput)}
-                                            className="flex items-center gap-1 h-7 px-2 bg-[#FB7506] hover:bg-orange-600 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors shrink-0">
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        <input type="text" value={awbSearchInput}
+                                            onChange={e => setAwbSearchInput(e.target.value)}
+                                            onKeyDown={e => { if (e.key === "Enter") { setAwbSearchQ(awbSearchInput); setAwbSearchPage(1); } }}
+                                            placeholder="AWB code, PO#, product..."
+                                            className="h-7 text-xs border border-gray-300 rounded px-2 bg-white w-44 shrink-0" />
+                                        <button onClick={() => { setAwbSearchQ(awbSearchInput); setAwbSearchPage(1); }}
+                                            className="flex items-center gap-1 h-7 px-3 bg-[#FB7506] hover:bg-orange-600 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors shrink-0">
                                             <Search size={11} /> Search
                                         </button>
+                                        {awbSearchQ && (
+                                            <button onClick={() => { setAwbSearchQ(""); setAwbSearchInput(""); setAwbSearchPage(1); }}
+                                                className="h-7 px-2 text-[10px] font-bold text-gray-400 hover:text-gray-700 shrink-0">
+                                                <X size={11} />
+                                            </button>
+                                        )}
                                         <button onClick={() => toast.info("Invoices — coming soon.")}
                                             className="flex items-center gap-1 h-7 px-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded text-[10px] font-black uppercase tracking-wide transition-colors shrink-0">
                                             <FileText size={11} /> Invoices
                                         </button>
-                                        <button onClick={() => toast.info("All Records — coming soon.")}
-                                            className="flex items-center gap-1 h-7 px-2 bg-blue-700 hover:bg-blue-800 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors shrink-0">
-                                            All Records
-                                        </button>
-                                        {loadingSearch && <RefreshCcw size={12} className="animate-spin text-gray-400 shrink-0" />}
                                     </div>
                                 </div>
+
+                                {/* Grid */}
                                 <div className="flex-1 overflow-auto">
-                                    <table className="min-w-full text-xs text-left">
+                                    <table className="min-w-full text-xs text-left whitespace-nowrap">
                                         <thead className="bg-gray-100 text-gray-700 font-bold sticky top-0 z-10">
                                             <tr>
-                                                {["Packing","Invoice","AWB","Date","Grower","Boxes","Units"].map(h => (
-                                                    <th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
+                                                {["Packing","Invoice","AWB","Date","Grower","Description","Case","Qty","Units","Price"].map(h => (
+                                                    <th key={h} className="p-2 border-r border-gray-600/50 last:border-r-0 whitespace-nowrap">{h}</th>
                                                 ))}
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {awbSearchResults.length === 0 ? (
-                                                <tr><td colSpan={7} className="p-4 text-center text-gray-400 italic">{awbSearchQ ? "No results" : "Enter AWB to search"}</td></tr>
+                                            {awbSearchResults.length === 0 && !loadingSearch ? (
+                                                <tr><td colSpan={10} className="p-4 text-center text-gray-400 italic">Type to search — AWB code, PO#, or product name</td></tr>
                                             ) : (awbSearchResults as any[]).map((row: any, i: number) => (
-                                                <tr key={i} className="border-b cursor-pointer transition-colors odd:bg-white even:bg-gray-50 hover:bg-blue-50" onClick={() => handleSelectPacking(row)}>
-                                                    <td className="p-2 border-r border-gray-100 font-mono">{t(row.PACKING_NO)}</td>
+                                                <tr key={i} className="border-b cursor-pointer transition-colors odd:bg-white even:bg-gray-50 hover:bg-blue-50"
+                                                    onClick={() => handleSelectPacking(row)}>
+                                                    <td className="p-2 border-r border-gray-100 font-mono font-bold">{t(row.PACKING_NO)}</td>
                                                     <td className="p-2 border-r border-gray-100">{t(row.INVOICE_NO)}</td>
                                                     <td className="p-2 border-r border-gray-100 font-mono">{t(row.AWBCODE)}</td>
-                                                    <td className="p-2 border-r border-gray-100">{t(row.BOX_DATE ?? "").substring(0, 10)}</td>
-                                                    <td className="p-2 border-r border-gray-100 font-semibold max-w-[120px] truncate">{t(row.GROWER)}</td>
-                                                    <td className="p-2 border-r border-gray-100 text-right">{t(row.TOTAL_BOXES)}</td>
-                                                    <td className="p-2 text-right">{t(row.TOTAL_UNITS)}</td>
+                                                    <td className="p-2 border-r border-gray-100">{t(row.BOX_DATE ?? row.DATE_INVO ?? "").substring(0, 10)}</td>
+                                                    <td className="p-2 border-r border-gray-100 font-semibold max-w-[100px] truncate">{t(row.GROWER ?? row.VENDOR ?? "")}</td>
+                                                    <td className="p-2 border-r border-gray-100 max-w-[160px] truncate">{t(row.DESCRIPTION ?? row.PRODUCT ?? row.VARIETY ?? "")}</td>
+                                                    <td className="p-2 border-r border-gray-100 text-[10px]">{t(row.CASE_NAME ?? row.CASE ?? "")}</td>
+                                                    <td className="p-2 border-r border-gray-100 text-right">{t(row.BOX_QTY ?? row.TOTAL_BOXES ?? "")}</td>
+                                                    <td className="p-2 border-r border-gray-100 text-right">{t(row.TOTAL_UNITS ?? row.UNITS ?? "")}</td>
+                                                    <td className="p-2 text-right font-mono">{fmt4(row.PRICE ?? row.PRICE_X_U ?? 0)}</td>
                                                 </tr>
                                             ))}
+                                            {awbSearchHasMore && (
+                                                <tr>
+                                                    <td colSpan={10} className="p-2 text-center">
+                                                        <button
+                                                            onClick={() => setAwbSearchPage(p => p + 1)}
+                                                            disabled={loadingSearch}
+                                                            className="h-7 px-4 bg-gray-700 hover:bg-gray-800 disabled:opacity-50 text-white text-[10px] font-black uppercase tracking-wide rounded transition-colors">
+                                                            {loadingSearch ? <RefreshCcw size={11} className="animate-spin inline" /> : "Load More"}
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            )}
                                         </tbody>
                                     </table>
                                 </div>
@@ -1079,9 +1156,10 @@ export default function InventoryEntryPage() {
                                         <select value={poGrower} onChange={e => setPoGrower(e.target.value)}
                                             className="h-7 text-xs border border-gray-300 rounded px-1.5 bg-white max-w-[140px] shrink-0">
                                             <option value="">All Vendors</option>
-                                            {poRows.map((r: any) => (
-                                                <option key={t(r.GROWER_UQ)} value={t(r.GROWER_UQ)}>{t(r.GROWER)}</option>
-                                            ))}
+                                            {poRows.map((r: any, i: number) => {
+                                                const uq = t(r.GROWER_UQ ?? r.GRO_UQ ?? r.VENDOR_UQ ?? r.GROW_UQ ?? "") || String(i);
+                                                return <option key={uq} value={uq}>{t(r.GROWER ?? r.GROWER_NAME ?? r.VENDOR ?? "")}</option>;
+                                            })}
                                         </select>
                                         {poGrower && (
                                             <button onClick={() => setPoGrower("")}
@@ -1108,8 +1186,10 @@ export default function InventoryEntryPage() {
                                             <tbody>
                                                 {poRows.length === 0 ? (
                                                     <tr><td colSpan={6} className="p-4 text-center text-gray-400 italic">No purchase orders for this date</td></tr>
-                                                ) : (poRows as any[]).map((row: any, i: number) => (
-                                                    <tr key={i} onClick={() => setPoGrower(t(row.GROWER_UQ))}
+                                                ) : (poRows as any[]).map((row: any, i: number) => {
+                                                    const uq = t(row.GROWER_UQ ?? row.GRO_UQ ?? row.VENDOR_UQ ?? row.GROW_UQ ?? "") || String(i);
+                                                    return (
+                                                    <tr key={i} onClick={() => setPoGrower(uq)}
                                                         className="border-b cursor-pointer transition-colors odd:bg-white even:bg-gray-50 hover:bg-blue-50">
                                                         <td className="p-2 border-r border-gray-100 font-semibold max-w-[120px] truncate">{t(row.GROWER)}</td>
                                                         <td className="p-2 border-r border-gray-100">{t(row.SHIP_DATE ?? "").substring(0, 10)}</td>
@@ -1118,7 +1198,8 @@ export default function InventoryEntryPage() {
                                                         <td className="p-2 border-r border-gray-100 text-right">{t(row.QTY_ARRIVED)}</td>
                                                         <td className="p-2 text-right font-mono">{fmt2(row.EXT_PRICE)}</td>
                                                     </tr>
-                                                ))}
+                                                    );
+                                                })}
                                             </tbody>
                                         </table>
                                     ) : (
