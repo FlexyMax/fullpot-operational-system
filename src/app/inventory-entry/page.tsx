@@ -34,13 +34,14 @@ const fmtDate = (v: any): string => {
     const d = new Date(s);
     return isNaN(d.getTime()) ? s.trim() : d.toISOString().substring(0, 10);
 };
+// VFP stores colors as R + G*256 + B*65536 (low byte = Red, high byte = Blue)
 const colorFromInt = (n: any) => {
     if (n == null) return undefined;
     const num = Number(n);
     if (isNaN(num) || num === 0) return undefined;
-    const b = num & 0xFF;
+    const r = num & 0xFF;
     const g = (num >> 8) & 0xFF;
-    const r = (num >> 16) & 0xFF;
+    const b = (num >> 16) & 0xFF;
     return `rgb(${r}, ${g}, ${b})`;
 };
 
@@ -796,7 +797,8 @@ export default function InventoryEntryPage() {
                                                 const avail = t(row.AVAILABLE_DATE ?? row.AVAILABLE ?? "").substring(0, 10);
                                                 return (
                                                     <tr key={i} onClick={() => handleSelectPacking(row)}
-                                                        className={cn("border-b cursor-pointer transition-colors", sel ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50")}>
+                                                        className={cn("border-b cursor-pointer transition-colors", sel ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50")}
+                                                        style={{ backgroundColor: colorFromInt(row.COLOR) }}>
                                                         <td className={cn("p-2 border-r border-gray-100 font-semibold max-w-[120px] truncate", sel ? "text-blue-700" : "")}>{t(row.GROWER)}</td>
                                                         <td className="p-2 border-r border-gray-100 text-right font-mono">{t(row.TOTAL_BOXES ?? row.FULL_BOXES ?? "")}</td>
                                                         <td className="p-2 border-r border-gray-100 text-right">{t(row.TOTAL_PIECES)}</td>
@@ -1069,7 +1071,8 @@ export default function InventoryEntryPage() {
                                                 const st  = t(row.STATUS ?? row.PSTATUS ?? "");
                                                 return (
                                                     <tr key={i} onClick={() => handleSelectPacking(row)}
-                                                        className={cn("border-b cursor-pointer transition-colors", sel ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50")}>
+                                                        className={cn("border-b cursor-pointer transition-colors", sel ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50")}
+                                                        style={{ backgroundColor: colorFromInt(row.COLOR) }}>
                                                         <td className="p-2 border-r border-gray-100 text-[10px] font-bold text-orange-600">{t(row.GROWER_CONTROL ?? row.CTRL ?? "")}</td>
                                                         <td className={cn("p-2 border-r border-gray-100 font-semibold max-w-[100px] truncate", sel ? "text-blue-700" : "")}>{t(row.GROWER)}</td>
                                                         <td className="p-2 border-r border-gray-100 text-[10px]">{t(row.AIRLINE ?? row.AIRLINE_UQ ?? "")}</td>
