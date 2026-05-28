@@ -9,6 +9,7 @@ import {
     Search, X, Save, ChevronDown, Calendar, FileText,
     AlertCircle, Check, Copy, ArrowRight, Warehouse,
     ClipboardList, Boxes, BarChart2, Plane,
+    ShoppingCart, Flower2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -863,8 +864,62 @@ export default function InventoryEntryPage() {
 
                     {/* ══ Tab 2: Products List ══ */}
                     {activeTab === "products" && (
-                        <div className="flex-1 flex items-center justify-center text-gray-300 text-sm font-bold uppercase tracking-widest">
-                            Products List — coming soon
+                        <div className="flex flex-col gap-2 h-full">
+                            {/* Row 1: Filter bar + Grid */}
+                            <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-0">
+                                <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 gap-2">
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        <Flower2 size={13} className="text-[#FB7506]" />
+                                        <span className="font-black text-[10px] uppercase tracking-widest text-white">Products List</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+                                        <span className="text-[10px] font-bold text-gray-300 shrink-0">Farm:</span>
+                                        <input placeholder="Farm..." className="h-7 text-xs border border-gray-300 rounded px-2 bg-white w-32 shrink-0" />
+                                        <span className="text-[10px] font-bold text-gray-300 shrink-0">AWB:</span>
+                                        <input placeholder="AWB..." className="h-7 text-xs border border-gray-300 rounded px-2 bg-white w-28 shrink-0" />
+                                        <span className="text-[10px] font-bold text-gray-300 shrink-0">Invoice:</span>
+                                        <input placeholder="Invoice..." className="h-7 text-xs border border-gray-300 rounded px-2 bg-white w-24 shrink-0" />
+                                        <span className="text-[10px] font-bold text-gray-300 shrink-0">Pieces:</span>
+                                        <input placeholder="Pieces..." className="h-7 text-xs border border-gray-300 rounded px-2 bg-white w-16 shrink-0" />
+                                        <div className="w-px h-3 bg-gray-600 mx-1" />
+                                        <button onClick={() => toast.info("Change Structure — coming soon.")}
+                                            className="flex items-center gap-1 h-7 px-2 bg-green-700 hover:bg-green-800 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors shrink-0">
+                                            Change Structure
+                                        </button>
+                                        <button onClick={() => toast.info("Change To Prices Mode — coming soon.")}
+                                            className="flex items-center gap-1 h-7 px-2 bg-red-500 hover:bg-red-600 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors shrink-0">
+                                            Prices Mode
+                                        </button>
+                                        <button onClick={() => toast.info("Add Prod. To Packing — coming soon.")}
+                                            className="flex items-center gap-1 h-7 px-2 bg-[#FB7506] hover:bg-orange-600 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors shrink-0">
+                                            <Plus size={11} /> Add to Packing
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="flex-1 overflow-auto">
+                                    <table className="min-w-full text-xs text-left whitespace-nowrap">
+                                        <thead className="bg-gray-100 text-gray-700 font-bold sticky top-0 z-10">
+                                            <tr>
+                                                {["Description","StemsBunch","BunchesCase","UnitsInv","SalesPrice","PriceBy$","Case"].map(h => (
+                                                    <th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
+                                                ))}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr><td colSpan={7} className="p-4 text-center text-gray-400 italic">Products List — coming soon</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            {/* Row 2: Description search bar */}
+                            <div className="shrink-0 flex items-center gap-2 bg-[#374151] px-3 py-1.5 rounded-lg">
+                                <span className="text-[10px] font-black text-white uppercase tracking-widest">:: Description : Class Subclass Variety Color Grade ::</span>
+                                <input placeholder="Type to search..." className="h-7 text-xs border border-gray-300 rounded px-2 bg-white flex-1 max-w-xs" />
+                                <button onClick={() => toast.info("View All — coming soon.")}
+                                    className="flex items-center gap-1 h-7 px-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded text-[10px] font-black uppercase tracking-wide transition-colors">
+                                    View All
+                                </button>
+                            </div>
                         </div>
                     )}
 
@@ -872,44 +927,65 @@ export default function InventoryEntryPage() {
                     {activeTab === "plcontrol" && (
                         <div className="flex flex-col gap-2 h-full">
                             <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-0">
-                                <div className="bg-[#374151] px-3 py-1 flex items-center justify-between shrink-0">
-                                    <span className="font-black text-[10px] text-gray-100 uppercase tracking-widest">Packing List Control — {lddate}</span>
-                                    <div className="flex items-center gap-2">
-                                        {loadingPLC && <RefreshCcw size={10} className="animate-spin text-gray-400" />}
-                                        <span className="text-[9px] font-bold text-gray-400">{(plControlAll as any[]).length} pkgs</span>
+                                <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 gap-2">
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        <ClipboardList size={13} className="text-[#FB7506]" />
+                                        <span className="font-black text-[10px] uppercase tracking-widest text-white">Packing List Control</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+                                        <input type="date" value={lddate} onChange={e => setLddate(e.target.value)}
+                                            className="h-7 text-xs border border-gray-300 rounded px-1.5 bg-white shrink-0" />
+                                        <button onClick={handleRefresh}
+                                            className="flex items-center gap-1 h-7 px-2 bg-gray-600 hover:bg-gray-700 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors shrink-0">
+                                            <RefreshCcw size={11} className={loadingPLC ? "animate-spin" : ""} /> Refresh
+                                        </button>
+                                        <div className="w-px h-3 bg-gray-600 mx-1" />
+                                        <button onClick={() => toast.info("Update Available Date — coming soon.")}
+                                            className="flex items-center gap-1 h-7 px-2 bg-[#FB7506] hover:bg-orange-600 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors shrink-0">
+                                            Update Available
+                                        </button>
+                                        <button onClick={() => packAction("open", "Open")} disabled={!lcpack_uq || !perms.canEdit}
+                                            className="flex items-center gap-1 h-7 px-2 bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors shrink-0">
+                                            <Check size={11} /> Open
+                                        </button>
+                                        <button onClick={() => packAction("close", "Close")} disabled={!lcpack_uq || !perms.canEdit}
+                                            className="flex items-center gap-1 h-7 px-2 bg-red-500 hover:bg-red-600 disabled:opacity-40 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors shrink-0">
+                                            <X size={11} /> Close
+                                        </button>
+                                        <span className="text-[10px] font-bold text-gray-400 ml-2 shrink-0">{(plControlAll as any[]).length} pkgs</span>
                                     </div>
                                 </div>
                                 <div className="flex-1 overflow-auto">
-                                    <table className="min-w-full text-xs whitespace-nowrap">
-                                        <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
+                                    <table className="min-w-full text-xs text-left whitespace-nowrap">
+                                        <thead className="bg-gray-100 text-gray-700 font-bold sticky top-0 z-10">
                                             <tr>
                                                 {["Ctrl","Grower","Airline","AWB","Date","Invoice","Packing","Pcs","Total$","Whouse","Details","St."].map(h => (
-                                                    <th key={h} className="px-2 py-1 font-black text-[9px] text-gray-600 uppercase border-r border-gray-200 last:border-r-0">{h}</th>
+                                                    <th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
                                                 ))}
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {(plControlAll as any[]).length === 0 ? (
-                                                <tr><td colSpan={12} className="p-4 text-center text-gray-300 italic">No packings for this date</td></tr>
+                                                <tr><td colSpan={12} className="p-4 text-center text-gray-400 italic">No packings for this date</td></tr>
                                             ) : (plControlAll as any[]).map((row: any, i: number) => {
                                                 const uq  = t(row.PACK_UQ);
                                                 const sel = lcpack_uq === uq;
                                                 const st  = t(row.STATUS ?? row.PSTATUS ?? "");
                                                 return (
                                                     <tr key={i} onClick={() => handleSelectPacking(row)}
-                                                        className={cn("cursor-pointer border-b border-gray-50 transition-colors", sel ? "bg-blue-100 font-semibold" : "hover:bg-gray-50")}>
-                                                        <td className="px-2 py-0.5 border-r border-gray-100 text-[9px] font-bold text-orange-600">{t(row.GROWER_CONTROL ?? row.CTRL ?? "")}</td>
-                                                        <td className={cn("px-2 py-0.5 border-r border-gray-100 font-semibold max-w-[100px] truncate", sel ? "text-blue-700" : "")}>{t(row.GROWER)}</td>
-                                                        <td className="px-2 py-0.5 border-r border-gray-100 text-[9px]">{t(row.AIRLINE ?? row.AIRLINE_UQ ?? "")}</td>
-                                                        <td className="px-2 py-0.5 border-r border-gray-100 font-mono text-[9px]">{t(row.AWBCODE)}</td>
-                                                        <td className="px-2 py-0.5 border-r border-gray-100 text-[9px]">{t(row.BOX_DATE ?? row.DATE_INVO ?? "").substring(0, 10)}</td>
-                                                        <td className="px-2 py-0.5 border-r border-gray-100">{t(row.INVOICE_NO)}</td>
-                                                        <td className="px-2 py-0.5 border-r border-gray-100 font-mono font-bold">{t(row.PACKING_NO)}</td>
-                                                        <td className="px-2 py-0.5 border-r border-gray-100 text-right">{t(row.TOTAL_PIECES)}</td>
-                                                        <td className="px-2 py-0.5 border-r border-gray-100 text-right font-mono">{fmt2(row.TOTAL_INVOICE ?? row.TOTAL_COST ?? 0)}</td>
-                                                        <td className="px-2 py-0.5 border-r border-gray-100 text-[9px]">{t(row.WHOUSE ?? row.WPHYSICAL ?? row.PWHOUSE ?? "")}</td>
-                                                        <td className="px-2 py-0.5 border-r border-gray-100 text-[9px] text-gray-400 max-w-[100px] truncate">{t(row.DETAILS ?? row.COMMENTS ?? "")}</td>
-                                                        <td className={cn("px-2 py-0.5 text-[9px] font-bold", st === "CLOSED" ? "text-red-500" : st === "OPEN" ? "text-green-600" : "text-gray-400")}>{st}</td>
+                                                        className={cn("border-b cursor-pointer transition-colors", sel ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50")}>
+                                                        <td className="p-2 border-r border-gray-100 text-[10px] font-bold text-orange-600">{t(row.GROWER_CONTROL ?? row.CTRL ?? "")}</td>
+                                                        <td className={cn("p-2 border-r border-gray-100 font-semibold max-w-[100px] truncate", sel ? "text-blue-700" : "")}>{t(row.GROWER)}</td>
+                                                        <td className="p-2 border-r border-gray-100 text-[10px]">{t(row.AIRLINE ?? row.AIRLINE_UQ ?? "")}</td>
+                                                        <td className="p-2 border-r border-gray-100 font-mono text-[10px]">{t(row.AWBCODE)}</td>
+                                                        <td className="p-2 border-r border-gray-100 text-[10px]">{t(row.BOX_DATE ?? row.DATE_INVO ?? "").substring(0, 10)}</td>
+                                                        <td className="p-2 border-r border-gray-100">{t(row.INVOICE_NO)}</td>
+                                                        <td className="p-2 border-r border-gray-100 font-mono font-bold">{t(row.PACKING_NO)}</td>
+                                                        <td className="p-2 border-r border-gray-100 text-right">{t(row.TOTAL_PIECES)}</td>
+                                                        <td className="p-2 border-r border-gray-100 text-right font-mono">{fmt2(row.TOTAL_INVOICE ?? row.TOTAL_COST ?? 0)}</td>
+                                                        <td className="p-2 border-r border-gray-100 text-[10px]">{t(row.WHOUSE ?? row.WPHYSICAL ?? row.PWHOUSE ?? "")}</td>
+                                                        <td className="p-2 border-r border-gray-100 text-[10px] text-gray-400 max-w-[100px] truncate">{t(row.DETAILS ?? row.COMMENTS ?? "")}</td>
+                                                        <td className={cn("p-2 text-[10px] font-bold", st === "CLOSED" ? "text-red-500" : st === "OPEN" ? "text-green-600" : "text-gray-400")}>{st}</td>
                                                     </tr>
                                                 );
                                             })}
@@ -924,40 +1000,52 @@ export default function InventoryEntryPage() {
                     {activeTab === "awbsearch" && (
                         <div className="flex flex-col gap-2 h-full">
                             <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-0">
-                                <div className="bg-gray-50 border-b border-gray-200 px-2 py-1 shrink-0">
-                                    <div className="flex items-center gap-2">
+                                <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 gap-2">
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        <Search size={13} className="text-[#FB7506]" />
+                                        <span className="font-black text-[10px] uppercase tracking-widest text-white">Packing Box by AWB / PO#</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
                                         <input type="text" value={awbSearchInput} onChange={e => setAwbSearchInput(e.target.value)}
                                             onKeyDown={e => e.key === "Enter" && setAwbSearchQ(awbSearchInput)}
                                             placeholder="AWB code or PO#..."
-                                            className="flex-1 h-7 text-xs border border-gray-200 rounded px-2 outline-none focus:ring-1 focus:ring-[#FB7506]" />
+                                            className="h-7 text-xs border border-gray-300 rounded px-2 bg-white w-40 shrink-0" />
                                         <button onClick={() => setAwbSearchQ(awbSearchInput)}
-                                            className="flex items-center gap-1 h-7 px-3 bg-[#FB7506] hover:bg-orange-600 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors">
+                                            className="flex items-center gap-1 h-7 px-2 bg-[#FB7506] hover:bg-orange-600 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors shrink-0">
                                             <Search size={11} /> Search
                                         </button>
-                                        {loadingSearch && <RefreshCcw size={13} className="animate-spin text-gray-400" />}
+                                        <button onClick={() => toast.info("Invoices — coming soon.")}
+                                            className="flex items-center gap-1 h-7 px-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded text-[10px] font-black uppercase tracking-wide transition-colors shrink-0">
+                                            <FileText size={11} /> Invoices
+                                        </button>
+                                        <button onClick={() => toast.info("All Records — coming soon.")}
+                                            className="flex items-center gap-1 h-7 px-2 bg-blue-700 hover:bg-blue-800 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors shrink-0">
+                                            All Records
+                                        </button>
+                                        {loadingSearch && <RefreshCcw size={12} className="animate-spin text-gray-400 shrink-0" />}
                                     </div>
                                 </div>
                                 <div className="flex-1 overflow-auto">
-                                    <table className="min-w-full text-xs">
-                                        <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
+                                    <table className="min-w-full text-xs text-left">
+                                        <thead className="bg-gray-100 text-gray-700 font-bold sticky top-0 z-10">
                                             <tr>
                                                 {["Packing","Invoice","AWB","Date","Grower","Boxes","Units"].map(h => (
-                                                    <th key={h} className="px-2 py-1 font-black text-[9px] text-gray-600 uppercase border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
+                                                    <th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
                                                 ))}
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {awbSearchResults.length === 0 ? (
-                                                <tr><td colSpan={7} className="p-4 text-center text-gray-300 italic text-[10px]">{awbSearchQ ? "No results" : "Enter AWB to search"}</td></tr>
+                                                <tr><td colSpan={7} className="p-4 text-center text-gray-400 italic">{awbSearchQ ? "No results" : "Enter AWB to search"}</td></tr>
                                             ) : (awbSearchResults as any[]).map((row: any, i: number) => (
-                                                <tr key={i} className="hover:bg-gray-50 cursor-pointer border-b border-gray-50" onClick={() => handleSelectPacking(row)}>
-                                                    <td className="px-2 py-1 border-r border-gray-100 font-mono">{t(row.PACKING_NO)}</td>
-                                                    <td className="px-2 py-1 border-r border-gray-100">{t(row.INVOICE_NO)}</td>
-                                                    <td className="px-2 py-1 border-r border-gray-100 font-mono">{t(row.AWBCODE)}</td>
-                                                    <td className="px-2 py-1 border-r border-gray-100">{t(row.BOX_DATE ?? "").substring(0, 10)}</td>
-                                                    <td className="px-2 py-1 border-r border-gray-100 font-semibold max-w-[120px] truncate">{t(row.GROWER)}</td>
-                                                    <td className="px-2 py-1 border-r border-gray-100 text-right">{t(row.TOTAL_BOXES)}</td>
-                                                    <td className="px-2 py-1 text-right">{t(row.TOTAL_UNITS)}</td>
+                                                <tr key={i} className="border-b cursor-pointer transition-colors odd:bg-white even:bg-gray-50 hover:bg-blue-50" onClick={() => handleSelectPacking(row)}>
+                                                    <td className="p-2 border-r border-gray-100 font-mono">{t(row.PACKING_NO)}</td>
+                                                    <td className="p-2 border-r border-gray-100">{t(row.INVOICE_NO)}</td>
+                                                    <td className="p-2 border-r border-gray-100 font-mono">{t(row.AWBCODE)}</td>
+                                                    <td className="p-2 border-r border-gray-100">{t(row.BOX_DATE ?? "").substring(0, 10)}</td>
+                                                    <td className="p-2 border-r border-gray-100 font-semibold max-w-[120px] truncate">{t(row.GROWER)}</td>
+                                                    <td className="p-2 border-r border-gray-100 text-right">{t(row.TOTAL_BOXES)}</td>
+                                                    <td className="p-2 text-right">{t(row.TOTAL_UNITS)}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -971,49 +1059,69 @@ export default function InventoryEntryPage() {
                     {activeTab === "polist" && (
                         <div className="flex flex-col gap-2 h-full">
                             <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-0">
-                                <div className="bg-gray-50 border-b border-gray-200 px-2 py-1 shrink-0 flex items-center gap-2">
-                                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Ship Date</span>
-                                    <input type="date" value={ldship_date} onChange={e => { setLdship_date(e.target.value); setPoGrower(""); }}
-                                        className="h-7 text-xs border border-gray-200 rounded px-1.5 outline-none focus:ring-1 focus:ring-[#FB7506]" />
-                                    {(loadingPO || loadingPOG) && <RefreshCcw size={12} className="animate-spin text-gray-400" />}
-                                    {poGrower && (
-                                        <button onClick={() => setPoGrower("")} className="text-[10px] text-[#FB7506] hover:text-orange-700 font-black">
-                                            &larr; Back to Summary
+                                <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 gap-2">
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        <ShoppingCart size={13} className="text-[#FB7506]" />
+                                        <span className="font-black text-[10px] uppercase tracking-widest text-white">Purchase Orders</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+                                        <input type="date" value={ldship_date} onChange={e => { setLdship_date(e.target.value); setPoGrower(""); }}
+                                            className="h-7 text-xs border border-gray-300 rounded px-1.5 bg-white shrink-0" />
+                                        <button onClick={() => toast.info("Refresh — coming soon.")}
+                                            className="flex items-center gap-1 h-7 px-2 bg-gray-600 hover:bg-gray-700 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors shrink-0">
+                                            <RefreshCcw size={11} /> Refresh
                                         </button>
-                                    )}
+                                        <select value={poGrower} onChange={e => setPoGrower(e.target.value)}
+                                            className="h-7 text-xs border border-gray-300 rounded px-1.5 bg-white max-w-[140px] shrink-0">
+                                            <option value="">All Vendors</option>
+                                            {poRows.map((r: any) => (
+                                                <option key={t(r.GROWER_UQ)} value={t(r.GROWER_UQ)}>{t(r.GROWER)}</option>
+                                            ))}
+                                        </select>
+                                        {poGrower && (
+                                            <button onClick={() => setPoGrower("")}
+                                                className="text-[10px] text-[#FB7506] hover:text-orange-700 font-black shrink-0">
+                                                &larr; Back
+                                            </button>
+                                        )}
+                                        <button onClick={() => toast.info("Add P.O to Inventory — coming soon.")}
+                                            className="flex items-center gap-1 h-7 px-2 bg-green-700 hover:bg-green-800 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors shrink-0">
+                                            <Plus size={11} /> Add P.O
+                                        </button>
+                                    </div>
                                 </div>
                                 <div className="flex-1 overflow-auto">
                                     {!poGrower ? (
-                                        <table className="min-w-full text-xs">
-                                            <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
+                                        <table className="min-w-full text-xs text-left">
+                                            <thead className="bg-gray-100 text-gray-700 font-bold sticky top-0 z-10">
                                                 <tr>
                                                     {["Grower","Ship Date","POrders","Shipped","Arrived","Amount"].map(h => (
-                                                        <th key={h} className="px-2 py-1 font-black text-[9px] text-gray-600 uppercase border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
+                                                        <th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
                                                     ))}
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 {poRows.length === 0 ? (
-                                                    <tr><td colSpan={6} className="p-4 text-center text-gray-300 italic">No purchase orders for this date</td></tr>
+                                                    <tr><td colSpan={6} className="p-4 text-center text-gray-400 italic">No purchase orders for this date</td></tr>
                                                 ) : (poRows as any[]).map((row: any, i: number) => (
                                                     <tr key={i} onClick={() => setPoGrower(t(row.GROWER_UQ))}
-                                                        className="cursor-pointer hover:bg-gray-50 border-b border-gray-50">
-                                                        <td className="px-2 py-1 border-r border-gray-100 font-semibold max-w-[120px] truncate">{t(row.GROWER)}</td>
-                                                        <td className="px-2 py-1 border-r border-gray-100">{t(row.SHIP_DATE ?? "").substring(0, 10)}</td>
-                                                        <td className="px-2 py-1 border-r border-gray-100 text-right">{t(row.QTY_PORDER)}</td>
-                                                        <td className="px-2 py-1 border-r border-gray-100 text-right">{t(row.QTY_SHIP)}</td>
-                                                        <td className="px-2 py-1 border-r border-gray-100 text-right">{t(row.QTY_ARRIVED)}</td>
-                                                        <td className="px-2 py-1 text-right font-mono">{fmt2(row.EXT_PRICE)}</td>
+                                                        className="border-b cursor-pointer transition-colors odd:bg-white even:bg-gray-50 hover:bg-blue-50">
+                                                        <td className="p-2 border-r border-gray-100 font-semibold max-w-[120px] truncate">{t(row.GROWER)}</td>
+                                                        <td className="p-2 border-r border-gray-100">{t(row.SHIP_DATE ?? "").substring(0, 10)}</td>
+                                                        <td className="p-2 border-r border-gray-100 text-right">{t(row.QTY_PORDER)}</td>
+                                                        <td className="p-2 border-r border-gray-100 text-right">{t(row.QTY_SHIP)}</td>
+                                                        <td className="p-2 border-r border-gray-100 text-right">{t(row.QTY_ARRIVED)}</td>
+                                                        <td className="p-2 text-right font-mono">{fmt2(row.EXT_PRICE)}</td>
                                                     </tr>
                                                 ))}
                                             </tbody>
                                         </table>
                                     ) : (
-                                        <table className="min-w-full text-xs whitespace-nowrap">
-                                            <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
+                                        <table className="min-w-full text-xs text-left whitespace-nowrap">
+                                            <thead className="bg-gray-100 text-gray-700 font-bold sticky top-0 z-10">
                                                 <tr>
                                                     {["Farm","P.Order","S.Order","Customer","Case","Description","T.Units","Ordered","Confirm","Diff","Ship"].map(h => (
-                                                        <th key={h} className="px-2 py-1 font-black text-[9px] text-gray-600 uppercase border-r border-gray-200 last:border-r-0">{h}</th>
+                                                        <th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
                                                     ))}
                                                 </tr>
                                             </thead>
@@ -1021,20 +1129,20 @@ export default function InventoryEntryPage() {
                                                 {loadingPOG ? (
                                                     <tr><td colSpan={11} className="p-4 text-center"><RefreshCcw size={14} className="animate-spin mx-auto text-gray-400" /></td></tr>
                                                 ) : (poByGrower as any[]).length === 0 ? (
-                                                    <tr><td colSpan={11} className="p-3 text-center text-gray-300 italic">No orders</td></tr>
+                                                    <tr><td colSpan={11} className="p-4 text-center text-gray-400 italic">No orders</td></tr>
                                                 ) : (poByGrower as any[]).map((row: any, i: number) => (
-                                                    <tr key={i} className="hover:bg-gray-50 border-b border-gray-50">
-                                                        <td className="px-2 py-0.5 border-r border-gray-100 text-[9px] font-bold text-gray-500">{t(row.FARM ?? row.GROWER ?? "")}</td>
-                                                        <td className="px-2 py-0.5 border-r border-gray-100 font-mono font-bold">{t(row.PORDER_NO)}</td>
-                                                        <td className="px-2 py-0.5 border-r border-gray-100 font-mono text-gray-500">{t(row.SORDER_NO ?? "")}</td>
-                                                        <td className="px-2 py-0.5 border-r border-gray-100 max-w-[100px] truncate">{t(row.CUSTOMER ?? "")}</td>
-                                                        <td className="px-2 py-0.5 border-r border-gray-100 text-[9px]">{t(row.CASE_NAME ?? row.PACK ?? "")}</td>
-                                                        <td className="px-2 py-0.5 border-r border-gray-100 font-semibold max-w-[160px] truncate">{t(row.DESCRIPTION ?? row.VARIETY ?? "")}</td>
-                                                        <td className="px-2 py-0.5 border-r border-gray-100 text-right">{t(row.TOTAL_UNITS ?? "")}</td>
-                                                        <td className="px-2 py-0.5 border-r border-gray-100 text-right font-semibold">{t(row.QTY_PORDER ?? "")}</td>
-                                                        <td className="px-2 py-0.5 border-r border-gray-100 text-right text-green-600">{t(row.QTY_CONFIRM ?? "")}</td>
-                                                        <td className="px-2 py-0.5 border-r border-gray-100 text-right text-orange-500">{t(row.QTY_DIFF ?? "")}</td>
-                                                        <td className="px-2 py-0.5 text-right text-blue-600 font-semibold">{t(row.QTY_SHIP ?? "")}</td>
+                                                    <tr key={i} className="border-b transition-colors odd:bg-white even:bg-gray-50 hover:bg-blue-50">
+                                                        <td className="p-2 border-r border-gray-100 text-[10px] font-bold text-gray-500">{t(row.FARM ?? row.GROWER ?? "")}</td>
+                                                        <td className="p-2 border-r border-gray-100 font-mono font-bold">{t(row.PORDER_NO)}</td>
+                                                        <td className="p-2 border-r border-gray-100 font-mono text-gray-500">{t(row.SORDER_NO ?? "")}</td>
+                                                        <td className="p-2 border-r border-gray-100 max-w-[100px] truncate">{t(row.CUSTOMER ?? "")}</td>
+                                                        <td className="p-2 border-r border-gray-100 text-[10px]">{t(row.CASE_NAME ?? row.PACK ?? "")}</td>
+                                                        <td className="p-2 border-r border-gray-100 font-semibold max-w-[160px] truncate">{t(row.DESCRIPTION ?? row.VARIETY ?? "")}</td>
+                                                        <td className="p-2 border-r border-gray-100 text-right">{t(row.TOTAL_UNITS ?? "")}</td>
+                                                        <td className="p-2 border-r border-gray-100 text-right font-semibold">{t(row.QTY_PORDER ?? "")}</td>
+                                                        <td className="p-2 border-r border-gray-100 text-right text-green-600">{t(row.QTY_CONFIRM ?? "")}</td>
+                                                        <td className="p-2 border-r border-gray-100 text-right text-orange-500">{t(row.QTY_DIFF ?? "")}</td>
+                                                        <td className="p-2 text-right text-blue-600 font-semibold">{t(row.QTY_SHIP ?? "")}</td>
                                                     </tr>
                                                 ))}
                                             </tbody>
