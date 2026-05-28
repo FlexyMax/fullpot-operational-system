@@ -129,12 +129,16 @@ export default function InventoryEntryPage() {
     const [awbSearchInput, setAwbSearchInput] = useState("");
     const [awbSearchQ,     setAwbSearchQ]     = useState("");  // committed query
     const [awbSearchPage,  setAwbSearchPage]  = useState(1);
+    const [awbAccRows,     setAwbAccRows]     = useState<any[]>([]);
+    const [awbTotal,       setAwbTotal]       = useState(0);
     const AWB_PAGE_SIZE = 50;
 
     // Products tab
     const [prodSearchInput, setProdSearchInput] = useState("");
     const [prodSearch,      setProdSearch]      = useState("");   // committed query
     const [prodPage,        setProdPage]        = useState(1);
+    const [prodAccRows,     setProdAccRows]     = useState<any[]>([]);
+    const [prodTotal,       setProdTotal]       = useState(0);
     const PROD_PAGE_SIZE = 50;
 
     // ── Packing modal ─────────────────────────────────────────────────────────
@@ -225,9 +229,14 @@ export default function InventoryEntryPage() {
         enabled:  activeTab === "awbsearch" && awbSearchQ.length > 0,
         staleTime: 0,
     });
-    const awbSearchResults = useMemo(() => norm(awbSearchData?.rows ?? []), [awbSearchData]);
-    const awbSearchTotal   = Number(awbSearchData?.total ?? 0);
-    const awbSearchHasMore = awbSearchPage * AWB_PAGE_SIZE < awbSearchTotal;
+    useEffect(() => {
+        if (!awbSearchData) return;
+        const incoming = norm(awbSearchData.rows ?? []);
+        const total = Number(awbSearchData.total ?? 0);
+        setAwbTotal(total);
+        setAwbAccRows(prev => awbSearchPage === 1 ? incoming : [...prev, ...incoming]);
+    }, [awbSearchData]);
+    const awbSearchHasMore = awbAccRows.length < awbTotal;
 
     const { data: poSummary, isFetching: loadingPO } = useQuery({
         queryKey: ["ie-po-summary", ldship_date],
@@ -256,9 +265,14 @@ export default function InventoryEntryPage() {
         enabled:  activeTab === "products",
         staleTime: 0,
     });
-    const prodRows  = useMemo(() => norm((prodData as any)?.rows ?? []), [prodData]);
-    const prodTotal = Number((prodData as any)?.total ?? 0);
-    const prodHasMore = prodPage * PROD_PAGE_SIZE < prodTotal;
+    useEffect(() => {
+        if (!prodData) return;
+        const incoming = norm((prodData as any).rows ?? []);
+        const total = Number((prodData as any).total ?? 0);
+        setProdTotal(total);
+        setProdAccRows(prev => prodPage === 1 ? incoming : [...prev, ...incoming]);
+    }, [prodData]);
+    const prodHasMore = prodAccRows.length < prodTotal;
 
     // Auto-select first available date if current lddate has no data
     useEffect(() => {
@@ -906,7 +920,7 @@ export default function InventoryEntryPage() {
                                         {loadingProds && <RefreshCcw size={10} className="animate-spin text-gray-400" />}
                                         {prodTotal > 0 && (
                                             <span className="text-[10px] font-bold text-gray-300 ml-2">
-                                                {prodRows.length} / {prodTotal} records
+                                                {prodAccRows.length} / {prodTotal} records
                                             </span>
                                         )}
                                     </div>
@@ -915,17 +929,17 @@ export default function InventoryEntryPage() {
                                             type="text"
                                             value={prodSearchInput}
                                             onChange={e => setProdSearchInput(e.target.value)}
-                                            onKeyDown={e => { if (e.key === "Enter") { setProdSearch(prodSearchInput); setProdPage(1); } }}
+                                            onKeyDown={e => { if (e.key === "Enter") { setProdAccRows([]); setProdSearch(prodSearchInput); setProdPage(1); } }}
                                             placeholder="Search products..."
                                             className="h-7 text-xs border border-gray-300 rounded px-2 bg-white w-48 shrink-0"
                                         />
                                         <button
-                                            onClick={() => { setProdSearch(prodSearchInput); setProdPage(1); }}
+                                            onClick={() => { setProdAccRows([]); setProdSearch(prodSearchInput); setProdPage(1); }}
                                             className="flex items-center gap-1 h-7 px-3 bg-[#FB7506] hover:bg-orange-600 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors shrink-0">
                                             <Search size={11} /> Search
                                         </button>
                                         {prodSearch && (
-                                            <button onClick={() => { setProdSearch(""); setProdSearchInput(""); setProdPage(1); }}
+                                            <button onClick={() => { setProdAccRows([]); setProdSearch(""); setProdSearchInput(""); setProdPage(1); }}
                                                 className="h-7 px-2 text-[10px] font-bold text-gray-400 hover:text-gray-700 shrink-0">
                                                 <X size={11} />
                                             </button>
@@ -948,9 +962,9 @@ export default function InventoryEntryPage() {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {prodRows.length === 0 && !loadingProds ? (
+                                            {prodAccRows.length === 0 && !loadingProds ? (
                                                 <tr><td colSpan={11} className="p-4 text-center text-gray-400 italic">No products found</td></tr>
-                                            ) : (prodRows as any[]).map((row: any, i: number) => (
+                                            ) : (prodAccRows as any[]).map((row: any, i: number) => (
                                                 <tr key={i} className="border-b transition-colors odd:bg-white even:bg-gray-50 hover:bg-blue-50 cursor-pointer">
                                                     <td className="p-2 border-r border-gray-100 font-semibold max-w-[200px] truncate">{t(row.DESCRIPTION ?? row.DESC ?? row.PRODUCT_DESC ?? row.PRODUCT ?? "")}</td>
                                                     <td className="p-2 border-r border-gray-100 text-[10px]">{t(row.CLASS ?? row.CLASE ?? "")}</td>
@@ -1068,24 +1082,24 @@ export default function InventoryEntryPage() {
                                         <Search size={13} className="text-[#FB7506]" />
                                         <span className="font-black text-[10px] uppercase tracking-widest text-white">Packing Box Search</span>
                                         {loadingSearch && <RefreshCcw size={10} className="animate-spin text-gray-400" />}
-                                        {awbSearchTotal > 0 && (
+                                        {awbTotal > 0 && (
                                             <span className="text-[10px] font-bold text-gray-300 ml-2">
-                                                {awbSearchResults.length} / {awbSearchTotal} records
+                                                {awbAccRows.length} / {awbTotal} records
                                             </span>
                                         )}
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0">
                                         <input type="text" value={awbSearchInput}
                                             onChange={e => setAwbSearchInput(e.target.value)}
-                                            onKeyDown={e => { if (e.key === "Enter") { setAwbSearchQ(awbSearchInput); setAwbSearchPage(1); } }}
+                                            onKeyDown={e => { if (e.key === "Enter") { setAwbAccRows([]); setAwbSearchQ(awbSearchInput); setAwbSearchPage(1); } }}
                                             placeholder="AWB code, PO#, product..."
                                             className="h-7 text-xs border border-gray-300 rounded px-2 bg-white w-44 shrink-0" />
-                                        <button onClick={() => { setAwbSearchQ(awbSearchInput); setAwbSearchPage(1); }}
+                                        <button onClick={() => { setAwbAccRows([]); setAwbSearchQ(awbSearchInput); setAwbSearchPage(1); }}
                                             className="flex items-center gap-1 h-7 px-3 bg-[#FB7506] hover:bg-orange-600 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors shrink-0">
                                             <Search size={11} /> Search
                                         </button>
                                         {awbSearchQ && (
-                                            <button onClick={() => { setAwbSearchQ(""); setAwbSearchInput(""); setAwbSearchPage(1); }}
+                                            <button onClick={() => { setAwbAccRows([]); setAwbTotal(0); setAwbSearchQ(""); setAwbSearchInput(""); setAwbSearchPage(1); }}
                                                 className="h-7 px-2 text-[10px] font-bold text-gray-400 hover:text-gray-700 shrink-0">
                                                 <X size={11} />
                                             </button>
@@ -1108,9 +1122,9 @@ export default function InventoryEntryPage() {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {awbSearchResults.length === 0 && !loadingSearch ? (
+                                            {awbAccRows.length === 0 && !loadingSearch ? (
                                                 <tr><td colSpan={10} className="p-4 text-center text-gray-400 italic">Type to search — AWB code, lot#, or product name</td></tr>
-                                            ) : (awbSearchResults as any[]).map((row: any, i: number) => {
+                                            ) : (awbAccRows as any[]).map((row: any, i: number) => {
                                                 const stk = Number(row.STOCK ?? 0);
                                                 return (
                                                 <tr key={i} className="border-b cursor-pointer transition-colors odd:bg-white even:bg-gray-50 hover:bg-blue-50"
