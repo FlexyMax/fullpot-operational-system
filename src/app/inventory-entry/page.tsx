@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -273,6 +273,32 @@ export default function InventoryEntryPage() {
         setProdAccRows(prev => prodPage === 1 ? incoming : [...prev, ...incoming]);
     }, [prodData]);
     const prodHasMore = prodAccRows.length < prodTotal;
+
+    // Infinite scroll sentinels
+    const prodSentinelRef = useRef<HTMLDivElement>(null);
+    const awbSentinelRef  = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!prodSentinelRef.current) return;
+        const obs = new IntersectionObserver(([entry]) => {
+            if (entry.isIntersecting && prodHasMore && !loadingProds) {
+                setProdPage(p => p + 1);
+            }
+        }, { threshold: 0.1 });
+        obs.observe(prodSentinelRef.current);
+        return () => obs.disconnect();
+    }, [prodHasMore, loadingProds]);
+
+    useEffect(() => {
+        if (!awbSentinelRef.current) return;
+        const obs = new IntersectionObserver(([entry]) => {
+            if (entry.isIntersecting && awbSearchHasMore && !loadingSearch) {
+                setAwbSearchPage(p => p + 1);
+            }
+        }, { threshold: 0.1 });
+        obs.observe(awbSentinelRef.current);
+        return () => obs.disconnect();
+    }, [awbSearchHasMore, loadingSearch]);
 
     // Auto-select first available date if current lddate has no data
     useEffect(() => {
@@ -979,20 +1005,15 @@ export default function InventoryEntryPage() {
                                                     <td className="p-2 text-[10px]">{t(row.CASE_NAME ?? row.CASE ?? row.PACK ?? "")}</td>
                                                 </tr>
                                             ))}
-                                            {prodHasMore && (
-                                                <tr>
-                                                    <td colSpan={11} className="p-2 text-center">
-                                                        <button
-                                                            onClick={() => setProdPage(p => p + 1)}
-                                                            disabled={loadingProds}
-                                                            className="h-7 px-4 bg-gray-700 hover:bg-gray-800 disabled:opacity-50 text-white text-[10px] font-black uppercase tracking-wide rounded transition-colors">
-                                                            {loadingProds ? <RefreshCcw size={11} className="animate-spin inline" /> : "Load More"}
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            )}
                                         </tbody>
                                     </table>
+                                    {/* sentinel — triggers next page when scrolled into view */}
+                                    <div ref={prodSentinelRef} className="h-1" />
+                                    {loadingProds && (
+                                        <div className="flex justify-center py-2">
+                                            <RefreshCcw size={14} className="animate-spin text-gray-400" />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -1142,20 +1163,14 @@ export default function InventoryEntryPage() {
                                                 </tr>
                                                 );
                                             })}
-                                            {awbSearchHasMore && (
-                                                <tr>
-                                                    <td colSpan={10} className="p-2 text-center">
-                                                        <button
-                                                            onClick={() => setAwbSearchPage(p => p + 1)}
-                                                            disabled={loadingSearch}
-                                                            className="h-7 px-4 bg-gray-700 hover:bg-gray-800 disabled:opacity-50 text-white text-[10px] font-black uppercase tracking-wide rounded transition-colors">
-                                                            {loadingSearch ? <RefreshCcw size={11} className="animate-spin inline" /> : "Load More"}
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            )}
                                         </tbody>
                                     </table>
+                                    <div ref={awbSentinelRef} className="h-1" />
+                                    {loadingSearch && (
+                                        <div className="flex justify-center py-2">
+                                            <RefreshCcw size={14} className="animate-spin text-gray-400" />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
