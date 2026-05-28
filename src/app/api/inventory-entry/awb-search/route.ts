@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
             lcSearch:     search,
         });
         const rows  = r.recordset ?? [];
-        const total = rows.length > 0 ? Number(rows[0].TOTAL_RECORDS ?? rows[0].TOTAL ?? rows[0].total_records ?? 0) : 0;
+        const total = rows.length > 0 ? Number(rows[0].TotalLines ?? rows[0].TOTAL_RECORDS ?? rows[0].TOTAL ?? rows.length) : 0;
         return NextResponse.json({ rows, total, page, pageSize });
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });
