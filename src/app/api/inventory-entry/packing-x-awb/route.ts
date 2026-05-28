@@ -6,8 +6,8 @@ export async function GET(req: NextRequest) {
     const date = req.nextUrl.searchParams.get("date");
     try {
         const r = await executeProcedure("sp_flower_packing_x_awb", {
-            lcawb:  awb,
-            lddate: new Date(date || new Date().toISOString().split("T")[0]),
+            awbcode: awb,
+            lddate:  new Date(date || new Date().toISOString().split("T")[0]),
         });
         return NextResponse.json(r.recordset ?? []);
     } catch (err: any) {

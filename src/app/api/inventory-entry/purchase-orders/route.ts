@@ -8,8 +8,8 @@ export async function GET(req: NextRequest) {
     try {
         if (grower_uq) {
             const r = await executeProcedure("sp_flower_porders_by_grower", {
-                lcgrower_uq: grower_uq,
-                ldship_date: new Date(ship_date || new Date().toISOString().split("T")[0]),
+                grower_uq: grower_uq,
+                date:      new Date(ship_date || new Date().toISOString().split("T")[0]),
             });
             return NextResponse.json({ byGrower: r.recordset ?? [], summary: [] });
         }
