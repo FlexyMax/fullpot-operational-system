@@ -267,7 +267,8 @@ export default function InventoryEntryPage() {
     const handleSelectAwb = (row: any) => {
         const code = t(row.AWBCODE);
         setLcawbcode(code);
-        setLcawb(code);
+        // Keep lcawb as "%" so packing query returns all packings for the date;
+        // we filter by selected AWB in the render.
         setLcpack_uq("");
         setLcpk_box_uq("");
         qc.invalidateQueries({ queryKey: ["ie-packing-x-awb"] });
@@ -554,7 +555,7 @@ export default function InventoryEntryPage() {
                 <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1">
 
                     {/* ── Tab bar ── */}
-                    <div className="h-10 bg-[#374151] flex items-end px-2 shrink-0 gap-0.5 overflow-x-auto no-scrollbar">
+                    <div className="h-10 bg-[#374151] flex items-end px-2 shrink-0 gap-0.5">
                         {([
                             { key: "awbpackings", label: "AWB's Packings" },
                             { key: "products",    label: "Products List" },
@@ -716,9 +717,12 @@ export default function InventoryEntryPage() {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {(packingXAwb as any[]).length === 0 && !loadingPacking ? (
+                                            {(() => {
+                                            const filtered = (packingXAwb as any[]).filter((r: any) => !lcawbcode || t(r.AWBCODE) === lcawbcode);
+                                            if (filtered.length === 0 && !loadingPacking) return (
                                                 <tr><td colSpan={17} className="p-4 text-center text-gray-400 italic">{lcawbcode ? "No packings for this AWB" : "Select an AWB"}</td></tr>
-                                            ) : (packingXAwb as any[]).map((row: any, i: number) => {
+                                            );
+                                            return filtered.map((row: any, i: number) => {
                                                 const uq   = t(row.PACK_UQ);
                                                 const sel  = lcpack_uq === uq;
                                                 const st   = t(row.STATUS ?? row.PSTATUS ?? "");
@@ -746,7 +750,8 @@ export default function InventoryEntryPage() {
                                                         <td className="p-2 text-[10px] text-gray-500 max-w-[120px] truncate">{t(row.DETAILS ?? row.COMMENTS ?? "")}</td>
                                                     </tr>
                                                 );
-                                            })}
+                                            });
+                                        })()}
                                         </tbody>
                                     </table>
                                 </div>
