@@ -363,9 +363,10 @@ export default function InventoryEntryPage() {
     };
 
     const handleSelectPacking = (row: any) => {
-        setLcpack_uq(t(row.PACK_UQ));
+        const id = t(row.PACK_UQ ?? row.UNICO);
+        setLcpack_uq(id);
         setLcpk_box_uq("");
-        qc.invalidateQueries({ queryKey: ["ie-packing-details"] });
+        qc.invalidateQueries({ queryKey: ["ie-packing-details", id] });
     };
 
     const handleSelectBox = (row: any) => setLcpk_box_uq(t(row.UNICO));
@@ -607,7 +608,8 @@ export default function InventoryEntryPage() {
     if (status === "loading") return null;
     if (status === "unauthenticated") { router.push("/login"); return null; }
 
-    const selPacking = (packingXAwb as any[]).find(r => t(r.PACK_UQ) === lcpack_uq);
+    const packingId = (r: any) => t(r.PACK_UQ ?? r.UNICO);
+    const selPacking = (packingXAwb as any[]).find(r => packingId(r) === lcpack_uq);
     const selBox     = (packingDetails as any[]).find(r => t(r.UNICO) === lcpk_box_uq);
 
     const fLabel = "text-[10px] font-black text-gray-500 uppercase tracking-wider";
@@ -680,7 +682,7 @@ export default function InventoryEntryPage() {
                                         {loadingDates && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
                                     </div>
                                     <div className="flex-1 overflow-y-auto">
-                                        <table className="w-full text-[10px] leading-tight">
+                                        <table className="w-full text-xs leading-tight">
                                             <thead className="bg-gray-100 text-gray-700 font-bold sticky top-0 z-10">
                                                 <tr>
                                                     {["G.Ship Date","AWBs","Pcs","Dly"].map(h => (
@@ -700,7 +702,7 @@ export default function InventoryEntryPage() {
                                                         <tr key={i}
                                                             onClick={() => { setLddate(d); setLcawb("%"); setLcawbcode(""); setLcpack_uq(""); setLcpk_box_uq(""); }}
                                                             className={cn("cursor-pointer border-b border-gray-100 transition-colors", sel ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : dly > 0 ? "bg-red-50 hover:bg-red-100" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50")}>
-                                                            <td className={cn("p-2 border-r border-gray-100 font-mono whitespace-nowrap", sel ? "text-blue-700 font-bold" : dly > 0 ? "text-red-700" : "text-gray-700")}>{displayDate}</td>
+                                                            <td className={cn("p-2 border-r border-gray-100 font-mono whitespace-nowrap text-xs", sel ? "text-blue-700 font-bold" : dly > 0 ? "text-red-700" : "text-gray-700")}>{displayDate}</td>
                                                             <td className="p-2 border-r border-gray-100 text-right">{t(row.RECORDS ?? row.AWBS ?? row.AWB_COUNT ?? "")}</td>
                                                             <td className="p-2 border-r border-gray-100 text-right">{t(row.PIECES ?? "")}</td>
                                                             <td className={cn("p-2 text-right font-bold", dly > 0 ? "text-red-600" : "text-gray-300")}>{dly || ""}</td>
@@ -742,7 +744,7 @@ export default function InventoryEntryPage() {
                                                             className={cn("border-b cursor-pointer transition-colors", sel ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50")}>
                                                             <td className={cn("p-2 border-r border-gray-100 font-mono font-bold", sel ? "text-blue-700" : "")}>{code}</td>
                                                             <td className="p-2 border-r border-gray-100 text-right">{t(row.RECORDS)}</td>
-                                                            <td className={cn("p-2 border-r border-gray-100 text-center font-bold text-[10px]", t(row.WHSTATUS) === "WH" ? "text-green-600" : t(row.WHSTATUS) === "CHECK" ? "text-blue-500" : "text-gray-500")}>{t(row.WHSTATUS)}</td>
+                                                            <td className={cn("p-2 border-r border-gray-100 text-center font-bold", t(row.WHSTATUS) === "WH" ? "text-green-600" : t(row.WHSTATUS) === "CHECK" ? "text-blue-500" : "text-gray-500")}>{t(row.WHSTATUS)}</td>
                                                             <td className="p-2 border-r border-gray-100 text-right">{t(row.BOXES ?? row.PIECES ?? "")}</td>
                                                             <td className="p-2 border-r border-gray-100 text-right">{t(row.FULL_BOXES ?? "")}</td>
                                                             <td className={cn("p-2 border-r border-gray-100 text-right font-bold", dly > 0 ? "text-red-500" : "text-gray-300")}>{dly || ""}</td>
@@ -810,7 +812,7 @@ export default function InventoryEntryPage() {
                                                 <tr><td colSpan={17} className="p-4 text-center text-gray-400 italic">{lcawbcode ? "No packings for this AWB" : "Select a date"}</td></tr>
                                             );
                                             return filtered.map((row: any, i: number) => {
-                                                const uq   = t(row.PACK_UQ);
+                                                const uq   = packingId(row);
                                                 const sel  = lcpack_uq === uq;
                                                 const st   = t(row.STATUS ?? row.PSTATUS ?? "");
                                                 const whst = t(row.WHSTATUS ?? "");
@@ -826,16 +828,16 @@ export default function InventoryEntryPage() {
                                                         <td className="p-2 border-r border-gray-100 text-right">{t(row.TOTAL_UNITS)}</td>
                                                         <td className="p-2 border-r border-gray-100 text-right font-mono">{fmt2(row.TOTAL_COST ?? row.FLOWER_COST ?? 0)}</td>
                                                         <td className="p-2 border-r border-gray-100 text-right font-mono">{fmt2(row.T_CHARGE ?? row.TOTAL_CHARGE ?? 0)}</td>
-                                                        <td className="p-2 border-r border-gray-100 font-mono text-[10px]">{t(row.INVOICE_NO)}</td>
+                                                        <td className="p-2 border-r border-gray-100 font-mono">{t(row.INVOICE_NO)}</td>
                                                         <td className="p-2 border-r border-gray-100 font-mono font-bold">{t(row.PACKING_NO)}</td>
-                                                        <td className="p-2 border-r border-gray-100 text-[10px]">{t(row.WHOUSE ?? row.WPHYSICAL ?? row.PWHOUSE ?? row.WP_NAME ?? "")}</td>
-                                                        <td className={cn("p-2 border-r border-gray-100 text-[10px] font-bold", whst === "WH" ? "text-green-600" : whst === "CHECK" ? "text-blue-500" : "text-gray-500")}>{whst}</td>
-                                                        <td className="p-2 border-r border-gray-100 text-[10px]">{avail}</td>
-                                                        <td className={cn("p-2 border-r border-gray-100 text-[10px] font-bold", st === "CLOSED" ? "text-red-500" : st === "OPEN" ? "text-green-600" : "text-gray-400")}>{st}</td>
-                                                        <td className="p-2 border-r border-gray-100 text-[10px]">{t(row.OFFER ?? "")}</td>
-                                                        <td className="p-2 border-r border-gray-100 text-[10px]">{t(row.CUTOFF ?? row.COT ?? "").substring(0, 10)}</td>
-                                                        <td className="p-2 border-r border-gray-100 text-[10px]">{t(row.RECEIVED ?? "")}</td>
-                                                        <td className="p-2 text-[10px] text-gray-500 max-w-[120px] truncate">{t(row.DETAILS ?? row.COMMENTS ?? "")}</td>
+                                                        <td className="p-2 border-r border-gray-100">{t(row.WHOUSE ?? row.WPHYSICAL ?? row.PWHOUSE ?? row.WP_NAME ?? "")}</td>
+                                                        <td className={cn("p-2 border-r border-gray-100 font-bold", whst === "WH" ? "text-green-600" : whst === "CHECK" ? "text-blue-500" : "text-gray-500")}>{whst}</td>
+                                                        <td className="p-2 border-r border-gray-100">{avail}</td>
+                                                        <td className={cn("p-2 border-r border-gray-100 font-bold", st === "CLOSED" ? "text-red-500" : st === "OPEN" ? "text-green-600" : "text-gray-400")}>{st}</td>
+                                                        <td className="p-2 border-r border-gray-100">{t(row.OFFER ?? "")}</td>
+                                                        <td className="p-2 border-r border-gray-100">{t(row.CUTOFF ?? row.COT ?? "").substring(0, 10)}</td>
+                                                        <td className="p-2 border-r border-gray-100">{t(row.RECEIVED ?? "")}</td>
+                                                        <td className="p-2 text-gray-500 max-w-[120px] truncate">{t(row.DETAILS ?? row.COMMENTS ?? "")}</td>
                                                     </tr>
                                                 );
                                             });
@@ -919,8 +921,8 @@ export default function InventoryEntryPage() {
                                                         <tr key={i} onClick={() => handleSelectBox(row)}
                                                             className={cn("border-b cursor-pointer transition-colors", sel ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50")}
                                                             style={subtleColorFromInt(row.BACKCOLOR)}>
-                                                            <td className={cn("p-2 border-r border-gray-100 text-center font-bold text-[10px]", dly > 0 ? "text-red-600" : "text-gray-300")}>{dly || ""}</td>
-                                                            <td className={cn("p-2 border-r border-gray-100 text-[10px] font-bold", rdy ? "text-green-600" : "text-gray-300")}>{rdy}</td>
+                                                            <td className={cn("p-2 border-r border-gray-100 text-center font-bold", dly > 0 ? "text-red-600" : "text-gray-300")}>{dly || ""}</td>
+                                                            <td className={cn("p-2 border-r border-gray-100 font-bold", rdy ? "text-green-600" : "text-gray-300")}>{rdy}</td>
                                                             <td className="p-2 border-r border-gray-100 font-mono">{t(row.LOTE ?? row.BOXNUM ?? "")}</td>
                                                             <td className="p-2 border-r border-gray-100 text-right">{t(row.TOTAL_PIECES ?? row.PIECES ?? row.BOXNUM ?? "")}</td>
                                                             <td className={cn("p-2 border-r border-gray-100 text-right font-semibold", stk < 0 ? "text-red-500" : stk > 0 ? "text-green-600" : "text-gray-300")}>{stk || ""}</td>
@@ -928,13 +930,13 @@ export default function InventoryEntryPage() {
                                                             <td className="p-2 border-r border-gray-100 text-right">{t(row.UP_X_PACK ?? row.UP_X_CASE ?? row.TUNITS_X_BOX ?? "")}</td>
                                                             <td className="p-2 border-r border-gray-100 text-right font-semibold">{t(row.TOTAL_UNITS)}</td>
                                                             <td className="p-2 border-r border-gray-100 text-right font-mono">{fmt4(row.PRICE_X_U ?? row.PRICE ?? row.U_PRICE ?? 0)}</td>
-                                                            <td className="p-2 border-r border-gray-100 text-[10px]">{t(row.CASE_SH ?? row.CASE_NAME ?? row.CASE ?? "")}</td>
+                                                            <td className="p-2 border-r border-gray-100">{t(row.CASE_SH ?? row.CASE_NAME ?? row.CASE ?? "")}</td>
                                                             <td className={cn("p-2 border-r border-gray-100 font-semibold max-w-[150px] truncate", sel ? "text-blue-700" : "")} title={desc}>{desc}</td>
-                                                            <td className="p-2 border-r border-gray-100 max-w-[60px] truncate text-[10px]">{t(row.CUSTOMER ?? "")}</td>
-                                                            <td className="p-2 border-r border-gray-100 text-right text-[10px]">{t(row.BOXID ?? row.BOX_ID ?? "")}</td>
-                                                            <td className="p-2 border-r border-gray-100 text-center text-[10px]">{Boolean(row.PB) ? "Y" : ""}</td>
-                                                            <td className="p-2 border-r border-gray-100 text-center text-[10px]">{Boolean(row.STD) ? "Y" : ""}</td>
-                                                            <td className="p-2 border-r border-gray-100 text-[10px]">{t(row.CPORDER_NO ?? row.SORDER_NO ?? "")}</td>
+                                                            <td className="p-2 border-r border-gray-100 max-w-[60px] truncate">{t(row.CUSTOMER ?? "")}</td>
+                                                            <td className="p-2 border-r border-gray-100 text-right">{t(row.BOXID ?? row.BOX_ID ?? "")}</td>
+                                                            <td className="p-2 border-r border-gray-100 text-center">{Boolean(row.PB) ? "Y" : ""}</td>
+                                                            <td className="p-2 border-r border-gray-100 text-center">{Boolean(row.STD) ? "Y" : ""}</td>
+                                                            <td className="p-2 border-r border-gray-100">{t(row.CPORDER_NO ?? row.SORDER_NO ?? "")}</td>
                                                             <td className="p-2 border-r border-gray-100 text-right font-mono">{fmt4(row.C_COST_X_U ?? 0)}</td>
                                                             <td className="p-2 border-r border-gray-100 text-right font-mono">{fmt2(row.TOTAL_COST ?? row.T_COST_X_U ?? row.T_COST ?? row.TCOST ?? 0)}</td>
                                                             <td className="p-2 border-r border-gray-100 text-right font-mono">{fmt4(row.SPRICE_X_UNIT ?? row.S_U_PRICE ?? row.PRICE ?? 0)}</td>
@@ -1013,16 +1015,16 @@ export default function InventoryEntryPage() {
                                             ) : (prodAccRows as any[]).map((row: any, i: number) => (
                                                 <tr key={i} className="border-b transition-colors odd:bg-white even:bg-gray-50 hover:bg-blue-50 cursor-pointer">
                                                     <td className="p-2 border-r border-gray-100 font-semibold max-w-[200px] truncate">{t(row.DESCRIPTION ?? row.DESC ?? row.PRODUCT_DESC ?? row.PRODUCT ?? "")}</td>
-                                                    <td className="p-2 border-r border-gray-100 text-[10px]">{t(row.CLASS ?? row.CLASE ?? "")}</td>
-                                                    <td className="p-2 border-r border-gray-100 text-[10px]">{t(row.SUBCLASS ?? row.SUBCLASE ?? "")}</td>
+                                                    <td className="p-2 border-r border-gray-100">{t(row.CLASS ?? row.CLASE ?? "")}</td>
+                                                    <td className="p-2 border-r border-gray-100">{t(row.SUBCLASS ?? row.SUBCLASE ?? "")}</td>
                                                     <td className="p-2 border-r border-gray-100">{t(row.VARIETY ?? row.VARIEDAD ?? "")}</td>
                                                     <td className="p-2 border-r border-gray-100">{t(row.COLOR ?? "")}</td>
-                                                    <td className="p-2 border-r border-gray-100 text-[10px]">{t(row.GRADE ?? row.GRADO ?? "")}</td>
+                                                    <td className="p-2 border-r border-gray-100">{t(row.GRADE ?? row.GRADO ?? "")}</td>
                                                     <td className="p-2 border-r border-gray-100 text-right">{t(row.STEMS_BUNCH ?? row.STEMS_X_BUNCH ?? row.BUNCHES_X_CASE ?? "")}</td>
                                                     <td className="p-2 border-r border-gray-100 text-right">{t(row.BUNCHES_CASE ?? row.BUNCHES_X_CASE ?? row.UP_X_CASE ?? "")}</td>
                                                     <td className="p-2 border-r border-gray-100 text-right">{t(row.TOTAL_UNITS ?? row.UNITS ?? "")}</td>
                                                     <td className="p-2 border-r border-gray-100 text-right font-mono">{fmt2(row.SALES_PRICE ?? row.PRICE ?? row.UNIT_PRICE ?? 0)}</td>
-                                                    <td className="p-2 text-[10px]">{t(row.CASE_NAME ?? row.CASE ?? row.PACK ?? "")}</td>
+                                                    <td className="p-2">{t(row.CASE_NAME ?? row.CASE ?? row.PACK ?? "")}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -1084,25 +1086,25 @@ export default function InventoryEntryPage() {
                                             {(plControlAll as any[]).length === 0 ? (
                                                 <tr><td colSpan={12} className="p-4 text-center text-gray-400 italic">No packings for this date</td></tr>
                                             ) : (plControlAll as any[]).map((row: any, i: number) => {
-                                                const uq  = t(row.PACK_UQ);
+                                                const uq  = packingId(row);
                                                 const sel = lcpack_uq === uq;
                                                 const st  = t(row.STATUS ?? row.PSTATUS ?? "");
                                                 return (
                                                     <tr key={i} onClick={() => handleSelectPacking(row)}
                                                         className={cn("border-b cursor-pointer transition-colors", sel ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50")}
                                                         style={subtleColorFromInt(row.COLOR)}>
-                                                        <td className="p-2 border-r border-gray-100 text-[10px] font-bold text-orange-600">{t(row.GROWER_CONTROL ?? row.CTRL ?? "")}</td>
+                                                        <td className="p-2 border-r border-gray-100 font-bold text-orange-600">{t(row.GROWER_CONTROL ?? row.CTRL ?? "")}</td>
                                                         <td className={cn("p-2 border-r border-gray-100 font-semibold max-w-[100px] truncate", sel ? "text-blue-700" : "")}>{t(row.GROWER)}</td>
-                                                        <td className="p-2 border-r border-gray-100 text-[10px]">{t(row.AIRLINE ?? row.AIRLINE_UQ ?? "")}</td>
-                                                        <td className="p-2 border-r border-gray-100 font-mono text-[10px]">{t(row.AWBCODE)}</td>
-                                                        <td className="p-2 border-r border-gray-100 text-[10px]">{t(row.BOX_DATE ?? row.DATE_INVO ?? "").substring(0, 10)}</td>
+                                                        <td className="p-2 border-r border-gray-100">{t(row.AIRLINE ?? row.AIRLINE_UQ ?? "")}</td>
+                                                        <td className="p-2 border-r border-gray-100 font-mono">{t(row.AWBCODE)}</td>
+                                                        <td className="p-2 border-r border-gray-100">{t(row.BOX_DATE ?? row.DATE_INVO ?? "").substring(0, 10)}</td>
                                                         <td className="p-2 border-r border-gray-100">{t(row.INVOICE_NO)}</td>
                                                         <td className="p-2 border-r border-gray-100 font-mono font-bold">{t(row.PACKING_NO)}</td>
                                                         <td className="p-2 border-r border-gray-100 text-right">{t(row.TOTAL_PIECES)}</td>
                                                         <td className="p-2 border-r border-gray-100 text-right font-mono">{fmt2(row.TOTAL_INVOICE ?? row.TOTAL_COST ?? 0)}</td>
-                                                        <td className="p-2 border-r border-gray-100 text-[10px]">{t(row.WHOUSE ?? row.WPHYSICAL ?? row.PWHOUSE ?? "")}</td>
-                                                        <td className="p-2 border-r border-gray-100 text-[10px] text-gray-400 max-w-[100px] truncate">{t(row.DETAILS ?? row.COMMENTS ?? "")}</td>
-                                                        <td className={cn("p-2 text-[10px] font-bold", st === "CLOSED" ? "text-red-500" : st === "OPEN" ? "text-green-600" : "text-gray-400")}>{st}</td>
+                                                        <td className="p-2 border-r border-gray-100">{t(row.WHOUSE ?? row.WPHYSICAL ?? row.PWHOUSE ?? "")}</td>
+                                                        <td className="p-2 border-r border-gray-100 text-gray-400 max-w-[100px] truncate">{t(row.DETAILS ?? row.COMMENTS ?? "")}</td>
+                                                        <td className={cn("p-2 font-bold", st === "CLOSED" ? "text-red-500" : st === "OPEN" ? "text-green-600" : "text-gray-400")}>{st}</td>
                                                     </tr>
                                                 );
                                             })}
@@ -1172,11 +1174,11 @@ export default function InventoryEntryPage() {
                                                 <tr key={i} className="border-b cursor-pointer transition-colors odd:bg-white even:bg-gray-50 hover:bg-blue-50"
                                                     onClick={() => handleSelectPacking(row)}>
                                                     <td className="p-2 border-r border-gray-100 font-mono font-bold">{t(row.LOTE ?? "")}</td>
-                                                    <td className="p-2 border-r border-gray-100 font-mono text-[10px]">{t(row.AWBCODE)}</td>
-                                                    <td className="p-2 border-r border-gray-100 text-[10px]">{fmtDate(row.BOX_DATE ?? row.AVAILABLE_DATE ?? "")}</td>
+                                                    <td className="p-2 border-r border-gray-100 font-mono">{t(row.AWBCODE)}</td>
+                                                    <td className="p-2 border-r border-gray-100">{fmtDate(row.BOX_DATE ?? row.AVAILABLE_DATE ?? "")}</td>
                                                     <td className="p-2 border-r border-gray-100 font-semibold max-w-[100px] truncate">{t(row.GROWER ?? "")}</td>
                                                     <td className="p-2 border-r border-gray-100 max-w-[180px] truncate">{t(row.DESCRIPTION ?? "")}</td>
-                                                    <td className="p-2 border-r border-gray-100 text-[10px]">{t(row.CASE_SH ?? row.CASE_NAME ?? "")}</td>
+                                                    <td className="p-2 border-r border-gray-100">{t(row.CASE_SH ?? row.CASE_NAME ?? "")}</td>
                                                     <td className="p-2 border-r border-gray-100 text-right">{t(row.BOX_QTY ?? "")}</td>
                                                     <td className="p-2 border-r border-gray-100 text-right">{t(row.TOTAL_UNITS ?? "")}</td>
                                                     <td className="p-2 border-r border-gray-100 text-right font-mono">{fmt4(row.PRICE_X_U ?? 0)}</td>
@@ -1278,11 +1280,11 @@ export default function InventoryEntryPage() {
                                                     <tr><td colSpan={11} className="p-4 text-center text-gray-400 italic">No orders</td></tr>
                                                 ) : (poByGrower as any[]).map((row: any, i: number) => (
                                                     <tr key={i} className="border-b transition-colors odd:bg-white even:bg-gray-50 hover:bg-blue-50">
-                                                        <td className="p-2 border-r border-gray-100 text-[10px] font-bold text-gray-500 w-12">{t(row.FARM ?? "")}</td>
+                                                        <td className="p-2 border-r border-gray-100 font-bold text-gray-500 w-12">{t(row.FARM ?? "")}</td>
                                                         <td className="p-2 border-r border-gray-100 font-mono font-bold">{t(row.PORDER ?? row.PORDER_NO ?? "")}</td>
                                                         <td className="p-2 border-r border-gray-100 font-mono text-gray-500">{t(row.SORDER_NO ?? "")}</td>
                                                         <td className="p-2 border-r border-gray-100 max-w-[130px] truncate">{t(row.CUSTOMER ?? "")}</td>
-                                                        <td className="p-2 border-r border-gray-100 text-[10px]">{t(row.CASE_NAME ?? row.PACK ?? "")}</td>
+                                                        <td className="p-2 border-r border-gray-100">{t(row.CASE_NAME ?? row.PACK ?? "")}</td>
                                                         <td className="p-2 border-r border-gray-100 font-semibold max-w-[180px] truncate">{t(row.DESCRIPTION ?? row.VARIETY ?? "")}</td>
                                                         <td className="p-2 border-r border-gray-100 text-center w-16">{t(row.TOTAL_UNITS ?? "")}</td>
                                                         <td className="p-2 border-r border-gray-100 text-center w-16 font-semibold">{t(row.QTY_PORDER ?? "")}</td>
