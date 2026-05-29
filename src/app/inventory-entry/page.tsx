@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef, type CSSProperties } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -43,6 +43,18 @@ const colorFromInt = (n: any) => {
     const g = (num >> 8) & 0xFF;
     const b = (num >> 16) & 0xFF;
     return `rgb(${r}, ${g}, ${b})`;
+};
+// Subtle tint for web: left border + very faint background
+const subtleColorFromInt = (n: any): CSSProperties | undefined => {
+    const c = colorFromInt(n);
+    if (!c) return undefined;
+    const rgb = c.replace("rgb(", "").replace(")", "").split(",").map(v => parseInt(v.trim()));
+    return {
+        borderLeftColor: c,
+        borderLeftWidth: "3px",
+        borderLeftStyle: "solid",
+        backgroundColor: `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.06)`,
+    };
 };
 
 // ─── Empty forms ──────────────────────────────────────────────────────────────
@@ -192,6 +204,13 @@ export default function InventoryEntryPage() {
         staleTime: 0,
     });
 
+    const { data: packingDetails = [], isFetching: loadingPackingDetails } = useQuery({
+        queryKey: ["ie-packing-details", lcpack_uq],
+        queryFn:  () => fetch(`/api/inventory-entry/packings/${lcpack_uq}/details`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
+        enabled:  !!lcpack_uq,
+        staleTime: 0,
+    });
+
     const { data: whData, isFetching: loadingWH } = useQuery({
         queryKey: ["ie-warehouse", lcpk_box_uq],
         queryFn:  () => fetch(`/api/inventory-entry/warehouse?pk_box_uq=${lcpk_box_uq}`).then(r => r.json()),
@@ -331,6 +350,7 @@ export default function InventoryEntryPage() {
         refetchAwb();
         refetchPacking();
         if (lcawbcode) refetchBoxes();
+        qc.invalidateQueries({ queryKey: ["ie-packing-details"] });
         qc.invalidateQueries({ queryKey: ["ie-plcontrol-all"] });
     };
 
@@ -345,7 +365,7 @@ export default function InventoryEntryPage() {
     const handleSelectPacking = (row: any) => {
         setLcpack_uq(t(row.PACK_UQ));
         setLcpk_box_uq("");
-        qc.invalidateQueries({ queryKey: ["ie-boxes", t(row.AWBCODE ?? lcawbcode)] });
+        qc.invalidateQueries({ queryKey: ["ie-packing-details"] });
     };
 
     const handleSelectBox = (row: any) => setLcpk_box_uq(t(row.UNICO));
@@ -588,7 +608,7 @@ export default function InventoryEntryPage() {
     if (status === "unauthenticated") { router.push("/login"); return null; }
 
     const selPacking = (packingXAwb as any[]).find(r => t(r.PACK_UQ) === lcpack_uq);
-    const selBox     = (boxesDetail as any[]).find(r => t(r.UNICO) === lcpk_box_uq);
+    const selBox     = (packingDetails as any[]).find(r => t(r.UNICO) === lcpk_box_uq);
 
     const fLabel = "text-[10px] font-black text-gray-500 uppercase tracking-wider";
     const fInput = "fos-input h-7 text-xs";
@@ -616,7 +636,7 @@ export default function InventoryEntryPage() {
             </div>
 
             {/* ── Main Layout ── */}
-            <div className="flex flex-col flex-1 gap-1 p-1 overflow-hidden">
+            <div className="flex flex-col flex-1 gap-2 p-2 overflow-hidden">
 
                 {/* ── Tab Container ── */}
                 <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1">
@@ -762,7 +782,7 @@ export default function InventoryEntryPage() {
                                         ].map((btn, idx) => (
                                             <button key={idx} onClick={() => toast.info(`${btn.label} — coming soon.`)}
                                                 className={cn(
-                                                    "flex items-center gap-1 px-2 py-1 text-[9px] font-bold rounded border whitespace-nowrap shrink-0 transition-colors",
+                                                    "flex items-center gap-1 px-2 py-1 text-[10px] font-bold rounded border whitespace-nowrap shrink-0 transition-colors",
                                                     btn.active
                                                         ? "bg-blue-700 text-white border-blue-800 hover:bg-blue-800"
                                                         : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
@@ -798,7 +818,7 @@ export default function InventoryEntryPage() {
                                                 return (
                                                     <tr key={i} onClick={() => handleSelectPacking(row)}
                                                         className={cn("border-b cursor-pointer transition-colors", sel ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50")}
-                                                        style={{ backgroundColor: colorFromInt(row.COLOR) }}>
+                                                        style={subtleColorFromInt(row.COLOR)}>
                                                         <td className={cn("p-2 border-r border-gray-100 font-semibold max-w-[120px] truncate", sel ? "text-blue-700" : "")}>{t(row.GROWER)}</td>
                                                         <td className="p-2 border-r border-gray-100 text-right font-mono">{t(row.TOTAL_BOXES ?? row.FULL_BOXES ?? "")}</td>
                                                         <td className="p-2 border-r border-gray-100 text-right">{t(row.TOTAL_PIECES)}</td>
@@ -833,7 +853,7 @@ export default function InventoryEntryPage() {
                                         <span className="font-black text-[10px] uppercase tracking-widest text-white">
                                             Boxes Detail{selPacking ? ` — ${t(selPacking.GROWER)}` : ""}
                                         </span>
-                                        {loadingBoxes && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
+                                        {loadingPackingDetails && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
                                     </div>
                                     <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
                                         <span className="text-[10px] font-black text-[#FB7506] uppercase tracking-wide truncate max-w-[160px]">
@@ -847,16 +867,16 @@ export default function InventoryEntryPage() {
                                             { label: "WHControl", icon: Warehouse, color: "green" },
                                         ].map((btn, idx) => (
                                             <button key={idx} onClick={() => toast.info(`${btn.label} — coming soon.`)}
-                                                className="flex items-center gap-1 px-2 py-1 text-[9px] font-bold rounded border bg-white text-gray-700 border-gray-200 hover:bg-gray-50 whitespace-nowrap shrink-0 transition-colors">
+                                                className="flex items-center gap-1 px-2 py-1 text-[10px] font-bold rounded border bg-white text-gray-700 border-gray-200 hover:bg-gray-50 whitespace-nowrap shrink-0 transition-colors">
                                                 {btn.icon && <btn.icon size={10} />}
                                                 {btn.label}
                                             </button>
                                         ))}
                                         <div className="w-px h-3 bg-gray-600 mx-1" />
-                                        <span className="text-[9px] font-bold text-gray-300">From Label:</span>
-                                        <input className="w-8 h-5 text-[9px] border border-gray-300 rounded px-1 bg-white" defaultValue="0" readOnly />
-                                        <span className="text-[9px] font-bold text-gray-300">To Label:</span>
-                                        <input className="w-8 h-5 text-[9px] border border-gray-300 rounded px-1 bg-white" defaultValue="0" readOnly />
+                                        <span className="text-[10px] font-bold text-gray-300">From Label:</span>
+                                        <input className="w-8 h-5 text-[10px] border border-gray-300 rounded px-1 bg-white" defaultValue="0" readOnly />
+                                        <span className="text-[10px] font-bold text-gray-300">To Label:</span>
+                                        <input className="w-8 h-5 text-[10px] border border-gray-300 rounded px-1 bg-white" defaultValue="0" readOnly />
                                         <div className="w-px h-3 bg-gray-600 mx-1" />
                                         {[
                                             { label: "Zebra by Lot", icon: FileText },
@@ -864,13 +884,13 @@ export default function InventoryEntryPage() {
                                             { label: "Selection", icon: FileText },
                                         ].map((btn, idx) => (
                                             <button key={idx} onClick={() => toast.info(`${btn.label} — coming soon.`)}
-                                                className="flex items-center gap-1 px-2 py-1 text-[9px] font-bold rounded border bg-white text-gray-700 border-gray-200 hover:bg-gray-50 whitespace-nowrap shrink-0 transition-colors">
+                                                className="flex items-center gap-1 px-2 py-1 text-[10px] font-bold rounded border bg-white text-gray-700 border-gray-200 hover:bg-gray-50 whitespace-nowrap shrink-0 transition-colors">
                                                 {btn.icon && <btn.icon size={10} />}
                                                 {btn.label}
                                             </button>
                                         ))}
                                         <span className="text-[10px] font-bold text-gray-400 ml-2 shrink-0">
-                                            {(boxesDetail as any[]).filter((r: any) => !lcpack_uq || t(r.PACK_UQ) === lcpack_uq).length} boxes
+                                            {(packingDetails as any[]).length} boxes
                                         </span>
                                     </div>
                                 </div>
@@ -884,13 +904,11 @@ export default function InventoryEntryPage() {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {!lcawbcode ? (
-                                                <tr><td colSpan={23} className="p-4 text-center text-gray-400 italic">Select an AWB to view boxes</td></tr>
-                                            ) : (boxesDetail as any[]).filter((r: any) => !lcpack_uq || t(r.PACK_UQ) === lcpack_uq).length === 0 && !loadingBoxes ? (
+                                            {!lcpack_uq ? (
+                                                <tr><td colSpan={23} className="p-4 text-center text-gray-400 italic">Select a vendor to view boxes</td></tr>
+                                            ) : (packingDetails as any[]).length === 0 && !loadingPackingDetails ? (
                                                 <tr><td colSpan={23} className="p-4 text-center text-gray-400 italic">No boxes</td></tr>
-                                            ) : (boxesDetail as any[])
-                                                .filter((r: any) => !lcpack_uq || t(r.PACK_UQ) === lcpack_uq)
-                                                .map((row: any, i: number) => {
+                                            ) : (packingDetails as any[]).map((row: any, i: number) => {
                                                     const uq   = t(row.UNICO);
                                                     const sel  = lcpk_box_uq === uq;
                                                     const desc = t(row.DESCRIPTION ?? row.PRODUCT ?? row.VARIETY ?? "");
@@ -900,7 +918,7 @@ export default function InventoryEntryPage() {
                                                     return (
                                                         <tr key={i} onClick={() => handleSelectBox(row)}
                                                             className={cn("border-b cursor-pointer transition-colors", sel ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50")}
-                                                            style={{ backgroundColor: colorFromInt(row.BACKCOLOR), color: colorFromInt(row.FORECOLOR) }}>
+                                                            style={subtleColorFromInt(row.BACKCOLOR)}>
                                                             <td className={cn("p-2 border-r border-gray-100 text-center font-bold text-[10px]", dly > 0 ? "text-red-600" : "text-gray-300")}>{dly || ""}</td>
                                                             <td className={cn("p-2 border-r border-gray-100 text-[10px] font-bold", rdy ? "text-green-600" : "text-gray-300")}>{rdy}</td>
                                                             <td className="p-2 border-r border-gray-100 font-mono">{t(row.LOTE ?? row.BOXNUM ?? "")}</td>
@@ -1072,7 +1090,7 @@ export default function InventoryEntryPage() {
                                                 return (
                                                     <tr key={i} onClick={() => handleSelectPacking(row)}
                                                         className={cn("border-b cursor-pointer transition-colors", sel ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50")}
-                                                        style={{ backgroundColor: colorFromInt(row.COLOR) }}>
+                                                        style={subtleColorFromInt(row.COLOR)}>
                                                         <td className="p-2 border-r border-gray-100 text-[10px] font-bold text-orange-600">{t(row.GROWER_CONTROL ?? row.CTRL ?? "")}</td>
                                                         <td className={cn("p-2 border-r border-gray-100 font-semibold max-w-[100px] truncate", sel ? "text-blue-700" : "")}>{t(row.GROWER)}</td>
                                                         <td className="p-2 border-r border-gray-100 text-[10px]">{t(row.AIRLINE ?? row.AIRLINE_UQ ?? "")}</td>
@@ -1495,7 +1513,7 @@ export default function InventoryEntryPage() {
 
                             {/* Price fields */}
                             <div className="border-t border-gray-100 pt-2">
-                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Pricing</p>
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Pricing</p>
                                 <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-x-3 gap-y-2 text-xs">
                                     <div className="flex flex-col gap-0.5">
                                         <label className={fLabel}>Price / Stem</label>
@@ -1526,7 +1544,7 @@ export default function InventoryEntryPage() {
 
                             {/* Charges */}
                             <div className="border-t border-gray-100 pt-2">
-                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Charges per Box</p>
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Charges per Box</p>
                                 <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-x-3 gap-y-2 text-xs">
                                     {[
                                         { key: "freight_x_bx",  label: "Freight x Bx" },
