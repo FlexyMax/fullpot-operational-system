@@ -11,13 +11,12 @@ export async function PUT(req: NextRequest, { params }: P) {
     const b = await req.json();
     try {
         const r = await executeProcedure("sp_flower_packing_box_update_whcontrol", {
-            lcunico:         unico,
-            lccase_uq:       str(b.case_uq,      8),
-            lnbox_qty:       int(b.box_qty),
-            lnpacks_box:     int(b.packs_box),
-            lnpacks_units:   int(b.packs_units),
-            lcsalesman_uq:   str(b.salesman_uq,  8),
-            lcuser_uq:       str(b.user_uq,      8),
+            lcunico:       unico,
+            lccase_uq:     str(b.case_uq,  8),
+            lnbox_qty:     int(b.box_qty),
+            lnpacks_box:   int(b.packs_box),
+            lnpacks_units: int(b.packs_units),
+            lcuser_uq:     str(b.user_uq,  8),
         });
         const row = r.recordset?.[0];
         if (row?.error === 1 || row?.Error === 1) return NextResponse.json({ success: false, error: row.message || row.Message }, { status: 400 });

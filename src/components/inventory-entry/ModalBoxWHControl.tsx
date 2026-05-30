@@ -1,9 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
-import { X, Warehouse, RefreshCcw, Check } from "lucide-react";
+import { X, Package, RefreshCcw, Check } from "lucide-react";
 import { toast } from "sonner";
 
 const t = (v: any) => String(v ?? "").trim();
+const int = (v: any) => { const n = parseInt(String(v ?? 0), 10); return isNaN(n) ? 0 : n; };
 
 interface Props {
     open: boolean;
@@ -14,10 +15,12 @@ interface Props {
     onSuccess: () => void;
 }
 
-const EMPTY = { case_uq: "", box_qty: 0, packs_box: 0, packs_units: 0, salesman_uq: "" };
+const EMPTY = { case_uq: "", box_qty: 0, packs_box: 0, packs_units: 0, stem_pack: false };
+const EMPTY_INFO = { lote: "", case_sh: "", description: "" };
 
 export function ModalBoxWHControl({ open, onClose, boxUnico, cases, userId, onSuccess }: Props) {
     const [form,    setForm]    = useState({ ...EMPTY });
+    const [info,    setInfo]    = useState({ ...EMPTY_INFO });
     const [loading, setLoading] = useState(false);
     const [saving,  setSaving]  = useState(false);
     const [error,   setError]   = useState<string | null>(null);
@@ -30,14 +33,20 @@ export function ModalBoxWHControl({ open, onClose, boxUnico, cases, userId, onSu
             .then(r => r.json())
             .then(d => {
                 if (!d) return;
-                const fill: any = {};
-                for (const [k, v] of Object.entries(d)) fill[k.toLowerCase()] = v;
+                const f: any = {};
+                for (const [k, v] of Object.entries(d)) f[k.toLowerCase()] = v;
+                const packs_units = int(f.up_x_pack ?? f.units_x_bunch ?? f.packs_units ?? 0);
                 setForm({
-                    case_uq:     t(fill.case_uq),
-                    box_qty:     parseInt(fill.box_qty  ?? 0) || 0,
-                    packs_box:   parseInt(fill.packs_box ?? fill.bunches_x_case ?? 0) || 0,
-                    packs_units: parseInt(fill.packs_units ?? fill.units_x_bunch ?? 0) || 0,
-                    salesman_uq: t(fill.salesman_uq ?? fill.customer_uq ?? ""),
+                    case_uq:    t(f.case_uq),
+                    box_qty:    int(f.box_qty ?? f.qtyin ?? 0),
+                    packs_box:  int(f.bunches_x_case ?? f.packs_box ?? 0),
+                    packs_units,
+                    stem_pack:  Boolean(f.stem_pack) || packs_units > 0,
+                });
+                setInfo({
+                    lote:        t(f.lote ?? ""),
+                    case_sh:     t(f.case_sh ?? f.case_uq ?? ""),
+                    description: t(f.description ?? f.product_desc ?? f.product ?? ""),
                 });
             })
             .catch(() => {})
@@ -48,17 +57,27 @@ export function ModalBoxWHControl({ open, onClose, boxUnico, cases, userId, onSu
 
     const setF = (key: string, val: any) => setForm(p => ({ ...p, [key]: val }));
 
+    // VFP calc: if stem_pack => units_x_box = packs_box * packs_units; else units_x_box = packs_box
+    const units_x_box  = form.stem_pack ? form.packs_box * form.packs_units : form.packs_box;
+    const total_units  = units_x_box * form.box_qty;
+
     const handleSave = async () => {
         setSaving(true); setError(null);
         try {
             const res = await fetch(`/api/inventory-entry/boxes/${boxUnico}/wh-control`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...form, user_uq: userId }),
+                body: JSON.stringify({
+                    case_uq:    form.case_uq,
+                    box_qty:    form.box_qty,
+                    packs_box:  form.packs_box,
+                    packs_units: form.packs_units,
+                    user_uq:    userId,
+                }),
             });
             const d = await res.json();
-            if (!d.success) throw new Error(d.error || "WH Control update failed");
-            toast.success("WH Control updated.");
+            if (!d.success) throw new Error(d.error || "Update failed");
+            toast.success("Lot info updated.");
             onSuccess();
             onClose();
         } catch (e: any) {
@@ -76,15 +95,18 @@ export function ModalBoxWHControl({ open, onClose, boxUnico, cases, userId, onSu
             <div className="bg-white rounded-lg shadow-2xl w-full max-w-sm flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
                 <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 rounded-t-lg shrink-0">
                     <div className="flex items-center gap-2">
-                        <Warehouse size={16} className="text-[#FB7506]" />
-                        <span className="font-black text-[10px] text-white uppercase tracking-widest">Box WH Control</span>
+                        <Package size={16} className="text-[#FB7506]" />
+                        <span className="font-black text-[10px] text-white uppercase tracking-widest">Update Lot Info</span>
                     </div>
                     <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors"><X size={16} /></button>
                 </div>
                 <div className="p-4 space-y-3">
                     {loading && <div className="flex items-center gap-2 text-gray-400 text-xs"><RefreshCcw size={12} className="animate-spin" /> Loading...</div>}
-                    <div className="bg-gray-50 rounded p-2 text-xs text-gray-600 border border-gray-100">
-                        Box: <span className="font-mono font-bold text-gray-800">{boxUnico}</span>
+                    {/* Read-only info */}
+                    <div className="bg-gray-50 rounded p-2 text-xs text-gray-600 border border-gray-100 space-y-0.5">
+                        {info.lote && <div>Lote: <span className="font-bold text-gray-800">{info.lote}</span></div>}
+                        {info.case_sh && <div>Case: <span className="font-bold text-gray-800">{info.case_sh}</span></div>}
+                        {info.description && <div>Description: <span className="font-bold text-gray-800">{info.description}</span></div>}
                     </div>
                     <div className="flex flex-col gap-0.5">
                         <label className={fLabel}>Case</label>
@@ -97,21 +119,28 @@ export function ModalBoxWHControl({ open, onClose, boxUnico, cases, userId, onSu
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                         <div className="flex flex-col gap-0.5">
-                            <label className={fLabel}>Box Qty</label>
-                            <input type="number" value={form.box_qty} onChange={e => setF("box_qty", parseInt(e.target.value) || 0)} className={fInput + " text-right"} />
+                            <label className={fLabel}>Box Qty (Qtyin)</label>
+                            <input type="number" value={form.box_qty} onChange={e => setF("box_qty", int(e.target.value))} className={fInput + " text-right"} />
                         </div>
                         <div className="flex flex-col gap-0.5">
-                            <label className={fLabel}>Packs / Box</label>
-                            <input type="number" value={form.packs_box} onChange={e => setF("packs_box", parseInt(e.target.value) || 0)} className={fInput + " text-right"} />
+                            <label className={fLabel}>Bunches / Case</label>
+                            <input type="number" value={form.packs_box} onChange={e => setF("packs_box", int(e.target.value))} className={fInput + " text-right"} />
                         </div>
                         <div className="flex flex-col gap-0.5">
-                            <label className={fLabel}>Packs Units</label>
-                            <input type="number" value={form.packs_units} onChange={e => setF("packs_units", parseInt(e.target.value) || 0)} className={fInput + " text-right"} />
+                            <label className={fLabel}>Stems / Bunch</label>
+                            <input type="number" value={form.packs_units} onChange={e => setF("packs_units", int(e.target.value))} className={fInput + " text-right"} />
                         </div>
-                        <div className="flex flex-col gap-0.5">
-                            <label className={fLabel}>Salesman UQ</label>
-                            <input value={form.salesman_uq} onChange={e => setF("salesman_uq", e.target.value)} className={fInput + " font-mono"} />
+                        <div className="flex flex-col gap-0.5 justify-end">
+                            <label className="flex items-center gap-2 cursor-pointer h-7">
+                                <input type="checkbox" checked={form.stem_pack} onChange={e => setF("stem_pack", e.target.checked)} className="w-4 h-4 accent-[#FB7506]" />
+                                <span className="text-xs font-semibold text-gray-700">Stem Pack</span>
+                            </label>
                         </div>
+                    </div>
+                    {/* Calculated totals */}
+                    <div className="bg-blue-50 rounded p-2 text-xs text-blue-800 border border-blue-100 grid grid-cols-2 gap-1">
+                        <div>Units/Box: <span className="font-bold">{units_x_box.toLocaleString()}</span></div>
+                        <div>Total Units: <span className="font-bold">{total_units.toLocaleString()}</span></div>
                     </div>
                     {error && <p className="text-xs text-red-500 bg-red-50 rounded p-2">{error}</p>}
                 </div>
@@ -122,7 +151,7 @@ export function ModalBoxWHControl({ open, onClose, boxUnico, cases, userId, onSu
                     <button onClick={handleSave} disabled={saving}
                         className="flex items-center gap-2 px-5 py-2 rounded bg-[#FB7506] hover:bg-orange-600 disabled:opacity-40 text-white text-xs font-black uppercase tracking-wider transition-all">
                         {saving ? <RefreshCcw size={12} className="animate-spin" /> : <Check size={12} />}
-                        {saving ? "Saving..." : "Save WH Control"}
+                        {saving ? "Saving..." : "Save Lot Info"}
                     </button>
                 </div>
             </div>

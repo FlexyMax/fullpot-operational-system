@@ -1722,6 +1722,7 @@ export default function InventoryEntryPage() {
                 open={modalWhTotals}
                 onClose={() => setModalWhTotals(false)}
                 lddate={lddate}
+                warehouses={warehouses}
             />
 
             {/* ─── Send to Warehouse Modal ──────────────────────────────────────────── */}
@@ -1784,7 +1785,6 @@ export default function InventoryEntryPage() {
             <ModalAWBSetup
                 open={modalAWBSetup}
                 onClose={() => setModalAWBSetup(false)}
-                airlines={airlines}
                 userId={(session?.user as any)?.id || ""}
                 defaultDate={lddate}
                 defaultAwbcode={lcawbcode}

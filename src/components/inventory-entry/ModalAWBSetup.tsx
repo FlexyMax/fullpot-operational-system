@@ -1,36 +1,28 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { X, Plane, RefreshCcw, Plus, Pencil, Trash2, Save, Check, Search } from "lucide-react";
+import { X, Plane, RefreshCcw, Plus, Pencil, Trash2, Save, Search, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 
 const t = (v: any) => String(v ?? "").trim();
 const today = () => new Date().toISOString().split("T")[0];
-const num = (v: any) => { const n = parseFloat(String(v ?? 0)); return isNaN(n) ? 0 : n; };
-const fmt2 = (v: any) => parseFloat(v ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtDate = (v: any) => { const s = t(v); if (!s) return ""; const d = new Date(s); return isNaN(d.getTime()) ? s.substring(0, 10) : d.toISOString().substring(0, 10); };
 
 interface Props {
     open: boolean;
     onClose: () => void;
-    airlines: any[];
     userId: string;
     defaultDate?: string;
     defaultAwbcode?: string;
 }
 
-const EMPTY_FORM = {
-    awbcode: "", date_invo: today(), airline_uq: "",
-    freight_x_bx: 0, duties_x_bx: 0, broker_x_bx: 0,
-    handling_x_bx: 0, ocharges_x_bx: 0,
-    origin_uq: "", dest_uq: "",
-};
+const EMPTY_FORM = { awbcode: "", awbdate: today(), city_uq: "" };
 
-export function ModalAWBSetup({ open, onClose, airlines, userId, defaultDate, defaultAwbcode }: Props) {
-    const [searchAwb,  setSearchAwb]  = useState(defaultAwbcode ?? "");
-    const [searchDate, setSearchDate] = useState(defaultDate ?? today());
-    const [rows,       setRows]       = useState<any[]>([]);
-    const [loading,    setLoading]    = useState(false);
-    const [selUnico,   setSelUnico]   = useState("");
+export function ModalAWBSetup({ open, onClose, userId, defaultDate, defaultAwbcode }: Props) {
+    const [search,   setSearch]   = useState(defaultAwbcode ?? "");
+    const [rows,     setRows]     = useState<any[]>([]);
+    const [loading,  setLoading]  = useState(false);
+    const [cities,   setCities]   = useState<any[]>([]);
+    const [selUnico, setSelUnico] = useState("");
 
     const [mode,    setMode]    = useState<"list" | "edit">("list");
     const [form,    setForm]    = useState({ ...EMPTY_FORM });
@@ -41,7 +33,7 @@ export function ModalAWBSetup({ open, onClose, airlines, userId, defaultDate, de
     const doSearch = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await fetch(`/api/inventory-entry/awb-setup?awbcode=${encodeURIComponent(searchAwb)}&date=${searchDate}`);
+            const res = await fetch(`/api/inventory-entry/awb-setup?search=${encodeURIComponent(search)}`);
             const d = await res.json();
             if (d.error) throw new Error(d.error);
             setRows((Array.isArray(d) ? d : []).map((r: any) => {
@@ -54,14 +46,28 @@ export function ModalAWBSetup({ open, onClose, airlines, userId, defaultDate, de
         } finally {
             setLoading(false);
         }
-    }, [searchAwb, searchDate]);
+    }, [search]);
 
-    useEffect(() => { if (open) doSearch(); }, [open]);
+    useEffect(() => {
+        if (!open) return;
+        doSearch();
+        fetch("/api/inventory-entry/cities?city=%25")
+            .then(r => r.json())
+            .then(d => {
+                setCities((Array.isArray(d) ? d : []).map((r: any) => {
+                    const n: any = {};
+                    for (const [k, v] of Object.entries(r)) n[k.toUpperCase()] = v;
+                    return n;
+                }));
+            })
+            .catch(() => {});
+    }, [open]);
 
     const openEdit = async (unico?: string) => {
         setError(null);
+        setDelConf(false);
         if (!unico) {
-            setForm({ ...EMPTY_FORM, awbcode: searchAwb, date_invo: searchDate });
+            setForm({ ...EMPTY_FORM, awbcode: search, awbdate: defaultDate ?? today() });
             setSelUnico("");
         } else {
             setSelUnico(unico);
@@ -71,16 +77,9 @@ export function ModalAWBSetup({ open, onClose, airlines, userId, defaultDate, de
             const fill: any = {};
             for (const [k, v] of Object.entries(d)) fill[k.toLowerCase()] = v;
             setForm({
-                awbcode:        t(fill.awbcode),
-                date_invo:      fill.date_invo ? new Date(fill.date_invo).toISOString().split("T")[0] : today(),
-                airline_uq:     t(fill.airline_uq),
-                freight_x_bx:   num(fill.freight_x_bx),
-                duties_x_bx:    num(fill.duties_x_bx),
-                broker_x_bx:    num(fill.broker_x_bx),
-                handling_x_bx:  num(fill.handling_x_bx),
-                ocharges_x_bx:  num(fill.ocharges_x_bx),
-                origin_uq:      t(fill.origin_uq),
-                dest_uq:        t(fill.dest_uq),
+                awbcode:  t(fill.awbcode),
+                awbdate:  fmtDate(fill.awbdate ?? fill.date_invo) || today(),
+                city_uq:  t(fill.city_uq),
             });
         }
         setMode("edit");
@@ -147,7 +146,7 @@ export function ModalAWBSetup({ open, onClose, airlines, userId, defaultDate, de
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
-            <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden" style={{ maxHeight: "85vh" }} onClick={e => e.stopPropagation()}>
+            <div className="bg-white rounded-lg shadow-2xl w-full max-w-lg flex flex-col overflow-hidden" style={{ maxHeight: "85vh" }} onClick={e => e.stopPropagation()}>
                 <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 rounded-t-lg shrink-0">
                     <div className="flex items-center gap-2">
                         <Plane size={16} className="text-[#FB7506]" />
@@ -171,10 +170,8 @@ export function ModalAWBSetup({ open, onClose, airlines, userId, defaultDate, de
                 {mode === "list" && (
                     <>
                         <div className="p-3 border-b shrink-0 flex gap-2">
-                            <input value={searchAwb} onChange={e => setSearchAwb(e.target.value)} onKeyDown={e => e.key === "Enter" && doSearch()}
-                                className={fInput + " flex-1"} placeholder="AWB code..." />
-                            <input type="date" value={searchDate} onChange={e => setSearchDate(e.target.value)}
-                                className={fInput + " w-36"} />
+                            <input value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === "Enter" && doSearch()}
+                                className={fInput + " flex-1"} placeholder="Search AWB..." />
                             <button onClick={doSearch} className="px-3 py-1 bg-gray-700 text-white text-xs font-bold rounded hover:bg-gray-800 flex items-center gap-1 shrink-0">
                                 {loading ? <RefreshCcw size={11} className="animate-spin" /> : <Search size={11} />}
                                 Search
@@ -184,26 +181,20 @@ export function ModalAWBSetup({ open, onClose, airlines, userId, defaultDate, de
                             <table className="w-full text-xs">
                                 <thead className="bg-gray-100 sticky top-0">
                                     <tr>
-                                        {["AWB Code","Date","Airline","Freight","Duties","Broker","Handling","Other","Origin","Dest",""].map(h => (
-                                            <th key={h} className="p-2 text-left font-bold text-gray-700 border-r border-gray-200 whitespace-nowrap">{h}</th>
-                                        ))}
+                                        <th className="p-2 text-left font-bold text-gray-700 border-r border-gray-200 whitespace-nowrap">AWB Code</th>
+                                        <th className="p-2 text-left font-bold text-gray-700 border-r border-gray-200 whitespace-nowrap">Date</th>
+                                        <th className="p-2 text-left font-bold text-gray-700 border-r border-gray-200">City</th>
+                                        <th className="p-2 w-8"></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {rows.length === 0 ? (
-                                        <tr><td colSpan={11} className="p-4 text-center text-gray-400 italic">{loading ? "" : "No AWB setups found"}</td></tr>
+                                        <tr><td colSpan={4} className="p-4 text-center text-gray-400 italic">{loading ? "" : "No AWB setups found"}</td></tr>
                                     ) : rows.map((row: any, i: number) => (
                                         <tr key={i} className="border-b border-gray-100 odd:bg-white even:bg-gray-50">
                                             <td className="p-2 border-r border-gray-100 font-mono font-bold">{t(row.AWBCODE)}</td>
-                                            <td className="p-2 border-r border-gray-100">{t(row.DATE_INVO ?? row.AWBDATE ?? "").substring(0, 10)}</td>
-                                            <td className="p-2 border-r border-gray-100">{t(row.AIRLINE ?? row.AIRLINE_UQ ?? "")}</td>
-                                            <td className="p-2 border-r border-gray-100 text-right">{fmt2(row.FREIGHT_X_BX)}</td>
-                                            <td className="p-2 border-r border-gray-100 text-right">{fmt2(row.DUTIES_X_BX)}</td>
-                                            <td className="p-2 border-r border-gray-100 text-right">{fmt2(row.BROKER_X_BX)}</td>
-                                            <td className="p-2 border-r border-gray-100 text-right">{fmt2(row.HANDLING_X_BX)}</td>
-                                            <td className="p-2 border-r border-gray-100 text-right">{fmt2(row.OCHARGES_X_BX)}</td>
-                                            <td className="p-2 border-r border-gray-100">{t(row.ORIGIN ?? row.ORIGIN_UQ ?? "")}</td>
-                                            <td className="p-2 border-r border-gray-100">{t(row.DEST ?? row.DEST_UQ ?? "")}</td>
+                                            <td className="p-2 border-r border-gray-100">{fmtDate(row.AWBDATE ?? row.DATE_INVO ?? "")}</td>
+                                            <td className="p-2 border-r border-gray-100">{t(row.CITY ?? row.CITY_UQ ?? row.DESCRIPTION ?? "")}</td>
                                             <td className="p-2">
                                                 <button onClick={() => openEdit(t(row.UNICO))}
                                                     className="p-1 text-gray-500 hover:text-[#FB7506] transition-colors">
@@ -226,55 +217,34 @@ export function ModalAWBSetup({ open, onClose, airlines, userId, defaultDate, de
                         <div className="flex-1 overflow-y-auto p-4 space-y-3">
                             <div className="grid grid-cols-2 gap-x-3 gap-y-2">
                                 <div className="flex flex-col gap-0.5">
-                                    <label className={fLabel}>AWB Code *</label>
-                                    <input value={form.awbcode} onChange={e => setF("awbcode", e.target.value)} className={fInput + " font-mono"} />
+                                    <label className={fLabel}>AWB Code * (11 chars)</label>
+                                    <input
+                                        value={form.awbcode}
+                                        onChange={e => setF("awbcode", e.target.value)}
+                                        className={fInput + " font-mono"}
+                                        maxLength={11}
+                                    />
                                 </div>
                                 <div className="flex flex-col gap-0.5">
                                     <label className={fLabel}>Date</label>
-                                    <input type="date" value={form.date_invo} onChange={e => setF("date_invo", e.target.value)} className={fInput} />
+                                    <input type="date" value={form.awbdate} onChange={e => setF("awbdate", e.target.value)} className={fInput} />
                                 </div>
                                 <div className="col-span-2 flex flex-col gap-0.5">
-                                    <label className={fLabel}>Airline</label>
-                                    <select value={form.airline_uq} onChange={e => setF("airline_uq", e.target.value)} className={fInput}>
-                                        <option value="">-- None --</option>
-                                        {airlines.map((a: any) => (
-                                            <option key={t(a.UNICO)} value={t(a.UNICO)}>{t(a.AIRLINE ?? a.DESCRIPTION ?? a.UNICO)}</option>
+                                    <label className={fLabel}>Departure City</label>
+                                    <select value={form.city_uq} onChange={e => setF("city_uq", e.target.value)} className={fInput}>
+                                        <option value="">-- Select City --</option>
+                                        {cities.map((c: any) => (
+                                            <option key={t(c.UNICO)} value={t(c.UNICO)}>
+                                                {t(c.CITY ?? c.DESCRIPTION ?? c.UNICO)}
+                                            </option>
                                         ))}
                                     </select>
                                 </div>
                             </div>
-                            <div className="border-t pt-2">
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Charges per Box</p>
-                                <div className="grid grid-cols-3 gap-x-3 gap-y-2">
-                                    {[
-                                        { key: "freight_x_bx",  label: "Freight x Bx" },
-                                        { key: "duties_x_bx",   label: "Duties x Bx" },
-                                        { key: "broker_x_bx",   label: "Broker x Bx" },
-                                        { key: "handling_x_bx", label: "Handling x Bx" },
-                                        { key: "ocharges_x_bx", label: "Other x Bx" },
-                                    ].map(f => (
-                                        <div key={f.key} className="flex flex-col gap-0.5">
-                                            <label className={fLabel}>{f.label}</label>
-                                            <input type="number" step="0.01" value={(form as any)[f.key]}
-                                                onChange={e => setF(f.key, num(e.target.value))}
-                                                className={fInput + " text-right"} />
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="border-t pt-2 grid grid-cols-2 gap-x-3 gap-y-2">
-                                <div className="flex flex-col gap-0.5">
-                                    <label className={fLabel}>Origin Code</label>
-                                    <input value={form.origin_uq} onChange={e => setF("origin_uq", e.target.value)} className={fInput + " font-mono"} />
-                                </div>
-                                <div className="flex flex-col gap-0.5">
-                                    <label className={fLabel}>Destination Code</label>
-                                    <input value={form.dest_uq} onChange={e => setF("dest_uq", e.target.value)} className={fInput + " font-mono"} />
-                                </div>
-                            </div>
                             {error && <p className="text-xs text-red-500 bg-red-50 rounded p-2">{error}</p>}
                             {delConf && (
-                                <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded p-2 font-bold">
+                                <div className="flex items-center gap-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded p-2 font-bold">
+                                    <AlertCircle size={13} className="shrink-0" />
                                     Click Delete again to confirm permanent deletion.
                                 </div>
                             )}
