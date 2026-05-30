@@ -1,15 +1,16 @@
-# Graph Report - .  (2026-05-29)
+# Graph Report - fullpot-operational-system  (2026-05-29)
 
 ## Corpus Check
-- cluster-only mode — file stats not available
+- 380 files · ~174,046 words
+- Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1509 nodes · 2922 edges · 280 communities (118 shown, 162 thin omitted)
-- Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 4 edges (avg confidence: 0.83)
+- 1600 nodes · 3140 edges · 279 communities (114 shown, 165 thin omitted)
+- Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 3 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `aebb348b`
+- Built from commit: `83713979`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -223,6 +224,7 @@
 - [[_COMMUNITY_Community 210|Community 210]]
 - [[_COMMUNITY_Community 211|Community 211]]
 - [[_COMMUNITY_Community 212|Community 212]]
+- [[_COMMUNITY_Community 213|Community 213]]
 - [[_COMMUNITY_Community 214|Community 214]]
 - [[_COMMUNITY_Community 215|Community 215]]
 - [[_COMMUNITY_Community 216|Community 216]]
@@ -276,81 +278,80 @@
 - [[_COMMUNITY_Community 265|Community 265]]
 - [[_COMMUNITY_Community 266|Community 266]]
 - [[_COMMUNITY_Community 267|Community 267]]
-- [[_COMMUNITY_Community 268|Community 268]]
 - [[_COMMUNITY_Community 269|Community 269]]
 - [[_COMMUNITY_Community 270|Community 270]]
 - [[_COMMUNITY_Community 271|Community 271]]
 - [[_COMMUNITY_Community 272|Community 272]]
 - [[_COMMUNITY_Community 273|Community 273]]
 - [[_COMMUNITY_Community 274|Community 274]]
-- [[_COMMUNITY_Community 275|Community 275]]
 - [[_COMMUNITY_Community 277|Community 277]]
+- [[_COMMUNITY_Community 282|Community 282]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `executeProcedure()` - 580 edges
 2. `executeQuery()` - 162 edges
-3. `cn()` - 76 edges
+3. `cn()` - 89 edges
 4. `useAuditLog()` - 41 edges
 5. `usePagePermissions()` - 39 edges
 6. `authOptions` - 25 edges
-7. `GridMenu()` - 17 edges
-8. `PERMISSION_MSGS` - 17 edges
-9. `compilerOptions` - 16 edges
-10. `StockListTab()` - 16 edges
+7. `useFlexy2QBContext()` - 18 edges
+8. `StockListTab()` - 17 edges
+9. `GridMenu()` - 17 edges
+10. `PERMISSION_MSGS` - 17 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `Accounts Payable API Routes` --calls--> `sp_flower_accounts_pay_years`  [EXTRACTED]
-  api/routes/accountsPayable.js → AccountsPayable.md
 - `GET()` --calls--> `executeQuery()`  [INFERRED]
   src/app/api/sales/reps/route.ts → src/lib/db.ts
 - `GET()` --calls--> `executeQuery()`  [INFERRED]
   src/app/api/sales-reps/route.ts → src/lib/db.ts
-- `VendorCombobox()` --calls--> `cn()`  [EXTRACTED]
-  src/app/accounts-payable/page.tsx → src/lib/utils.ts
 - `GET()` --calls--> `executeProcedure()`  [EXTRACTED]
   src/app/api/accounts-payable/ap-types/route.ts → src/lib/db.ts
+- `GET()` --calls--> `executeProcedure()`  [EXTRACTED]
+  src/app/api/accounts-payable/crdb/route.ts → src/lib/db.ts
+- `GET()` --calls--> `executeProcedure()`  [EXTRACTED]
+  src/app/api/accounts-payable/credits/route.ts → src/lib/db.ts
 
-## Communities (280 total, 162 thin omitted)
+## Communities (279 total, 165 thin omitted)
 
 ### Community 0 - "Community 0"
-Cohesion: 0.07
-Nodes (26): POST(), DELETE(), getEmpresaUq(), POST(), getEmpresaUq(), POST(), baseConfig, fullpotConfig (+18 more)
+Cohesion: 0.08
+Nodes (25): POST(), DELETE(), getEmpresaUq(), POST(), getEmpresaUq(), POST(), baseConfig, fullpotConfig (+17 more)
 
 ### Community 1 - "Community 1"
 Cohesion: 0.06
-Nodes (33): ALLOWED, PUT(), txt(), GET(), executeQuery(), getFullpotPool(), GET(), PUT() (+25 more)
+Nodes (34): ALLOWED, PUT(), DELETE(), GET(), PUT(), txt(), GET(), executeQuery() (+26 more)
 
 ### Community 2 - "Community 2"
-Cohesion: 0.07
-Nodes (30): CopyAccessModal(), PERM_FIELDS, PERM_LABELS, PermField, SystemAccessPage(), CarriersDefinitionPage(), EMPTY, F() (+22 more)
+Cohesion: 0.10
+Nodes (18): PERM_FIELDS, PERM_LABELS, PermField, CarriersDefinitionPage(), EMPTY, Mode, t(), GridMenu() (+10 more)
 
 ### Community 3 - "Community 3"
 Cohesion: 0.08
-Nodes (22): GET(), GET(), GET(), POST(), DELETE(), GET(), POST(), PUT() (+14 more)
+Nodes (23): GET(), GET(), DELETE(), POST(), executeProcedure(), GET(), GET(), DELETE() (+15 more)
 
 ### Community 4 - "Community 4"
-Cohesion: 0.07
-Nodes (17): QCContext, QCProvider(), QCState, useQCContext(), GridHeader(), QCPage(), fmtDate(), Props (+9 more)
+Cohesion: 0.06
+Nodes (45): QCContext, QCProvider(), QCState, useQCContext(), GridHeader(), BoxTransferModal(), BoxTransferModalProps, fmt() (+37 more)
 
 ### Community 5 - "Community 5"
-Cohesion: 0.08
-Nodes (23): CheckField, EntityFormModalProps, FormField, EMPTY_AL, EMPTY_AT, EMPTY_CI, EMPTY_FR, EMPTY_HA (+15 more)
+Cohesion: 0.12
+Nodes (13): EMPTY_AL, EMPTY_AT, EMPTY_CI, EMPTY_FR, EMPTY_HA, EMPTY_SE, EMPTY_WH, FField() (+5 more)
 
 ### Community 6 - "Community 6"
 Cohesion: 0.06
-Nodes (31): dependencies, axios, clsx, date-fns, date-fns-tz, framer-motion, @hookform/resolvers, lucide-react (+23 more)
+Nodes (32): dependencies, axios, clsx, date-fns, date-fns-tz, framer-motion, @hookform/resolvers, lucide-react (+24 more)
 
 ### Community 7 - "Community 7"
-Cohesion: 0.23
-Nodes (18): Column, TabTable(), TabTableProps, ActionItem, TopActionBar(), Flexy2QBContext, Flexy2QBProvider(), Flexy2QBState (+10 more)
+Cohesion: 0.06
+Nodes (54): CopyAccessModal(), VendorCombobox(), F(), F(), CheckField, EntityFormModal(), EntityFormModalProps, FormField (+46 more)
 
 ### Community 8 - "Community 8"
 Cohesion: 0.17
 Nodes (17): ApplyPaymentModal(), ApproveCreditModal(), Btn(), CashBackModal(), CorpInvoiceModal(), CorpPaymentModal(), CrDbModal(), CustomerEditModal() (+9 more)
 
 ### Community 10 - "Community 10"
-Cohesion: 0.11
-Nodes (14): CrdbForm, crdbSchema, DAYS, InvoiceForm, invoiceSchema, MONTHS, PendingAPModal(), PobForm (+6 more)
+Cohesion: 0.08
+Nodes (25): APCalendar(), CrdbForm, crdbSchema, CreditDebitModal(), DAYS, InvoiceForm, InvoiceModal(), invoiceSchema (+17 more)
 
 ### Community 11 - "Community 11"
 Cohesion: 0.10
@@ -366,7 +367,7 @@ Nodes (13): AwbsBoxesModal(), AwbsChargesModal(), AwbsFreightsModal(), AwbsInvoi
 
 ### Community 14 - "Community 14"
 Cohesion: 0.15
-Nodes (13): Btn(), fmt(), fmtDate(), Modal(), ModalDateToHistory(), ModalPaymentDate(), ModalPaymentsReport(), ModalReports() (+5 more)
+Nodes (14): Btn(), fmt(), fmtDate(), Modal(), ModalDateToHistory(), ModalPaymentDate(), ModalPaymentsReport(), ModalReports() (+6 more)
 
 ### Community 15 - "Community 15"
 Cohesion: 0.20
@@ -381,8 +382,8 @@ Cohesion: 0.16
 Nodes (10): Btn(), EMPTY_VD, getPages(), getTotal(), SubclassBOGOModal(), t(), Tab3(), Tab3Props (+2 more)
 
 ### Community 18 - "Community 18"
-Cohesion: 0.13
-Nodes (11): CrudModal(), EMPTY_CASE, EMPTY_CLASS, EMPTY_COLOR, EMPTY_GRADE, EMPTY_SUBCLASS, EMPTY_VARIETY, ProductEditModal() (+3 more)
+Cohesion: 0.11
+Nodes (14): AuditLogModal(), Props, CrudModal(), EMPTY_CASE, EMPTY_CLASS, EMPTY_COLOR, EMPTY_GRADE, EMPTY_SUBCLASS (+6 more)
 
 ### Community 19 - "Community 19"
 Cohesion: 0.18
@@ -393,20 +394,20 @@ Cohesion: 0.14
 Nodes (9): CLASSES, EMPTY_MOD, EMPTY_REPORT, EMPTY_SCREEN, ModForm, ModuleScreenSetupPage(), ReportForm, ScreenForm (+1 more)
 
 ### Community 21 - "Community 21"
-Cohesion: 0.18
-Nodes (6): blankForm(), fromCredit(), QCForm, QCModalProps, toDateStr(), today()
+Cohesion: 0.12
+Nodes (15): 1. ESTRUCTURA DE ARCHIVOS A CREAR, 2. LAYOUT DE LA PANTALLA PRINCIPAL, 3. ENDPOINTS NODE.JS, 4. COLUMNAS DE CADA GRILLA, 5. MODAL: Credit / Debit (`CreditDebitModal`), 6. MODAL: PO by Account (`POModal`), 7. PERMISOS, 8. NOTAS DE IMPLEMENTACIÓN (+7 more)
 
 ### Community 22 - "Community 22"
 Cohesion: 0.22
 Nodes (10): ActiveTab, EMPTY_DOC, EMPTY_FORM, firstOfYear(), fmtDate(), ModalVendorTab, norm(), t() (+2 more)
 
 ### Community 23 - "Community 23"
-Cohesion: 0.20
-Nodes (9): devDependencies, dotenv, eslint, tailwindcss, @tailwindcss/postcss, @types/mssql, @types/node, @types/react (+1 more)
+Cohesion: 0.15
+Nodes (12): eslintConfig, devDependencies, dotenv, eslint, eslint-config-next, tailwindcss, @tailwindcss/postcss, @types/mssql (+4 more)
 
 ### Community 24 - "Community 24"
 Cohesion: 0.14
-Nodes (11): useAuditLog(), SalesPage(), ActiveTab, EMPTY_FORM, fmtDate(), PERM_LABELS, SalesRepsPage(), t() (+3 more)
+Nodes (17): SystemAccessPage(), AccountsPayablePage(), CompaniesDefinitionPage(), EMPTY, Mode, t(), Tab1(), useAuditLog() (+9 more)
 
 ### Community 25 - "Community 25"
 Cohesion: 0.22
@@ -449,8 +450,8 @@ Cohesion: 0.28
 Nodes (6): bit(), DELETE(), GET(), num(), P, PUT()
 
 ### Community 35 - "Community 35"
-Cohesion: 0.22
-Nodes (4): CLASSES, CUSTOMER_TYPES, SUB_TABS, SubTab
+Cohesion: 0.12
+Nodes (15): 1. Add to `SCREEN_PANTA` in `src/lib/permissions.ts`, 2. Add to `PANTA` in `src/lib/audit.ts`, 3. Add menu routing in `src/app/menu/page.tsx`, 4. Add icon mapping in menu (if needed), 5. Initialize permissions for users, API Route Standards, Auto-Select First Record (All Grids), Currently Implemented Pages (Reference) (+7 more)
 
 ### Community 36 - "Community 36"
 Cohesion: 0.43
@@ -480,9 +481,9 @@ Nodes (7): bit(), DELETE(), GET(), num(), P, PUT(), txt()
 Cohesion: 0.43
 Nodes (5): bit(), GET(), num(), POST(), txt()
 
-### Community 44 - "Community 44"
-Cohesion: 0.33
-Nodes (6): Date Picker Panel, Invoice List Grid, Accounts Payable Page, Audit Log Library, Permissions Library, APState
+### Community 43 - "Community 43"
+Cohesion: 0.15
+Nodes (12): 1. Database Layer, 2. API Endpoint, 3. React Hook, 4. Standard Denial Messages, Adding Permissions to a New Page, FOS — Page-Level Permission System, How It Works, Overview (+4 more)
 
 ### Community 45 - "Community 45"
 Cohesion: 0.48
@@ -509,8 +510,8 @@ Cohesion: 0.43
 Nodes (5): GET(), bit(), num(), POST(), txt()
 
 ### Community 51 - "Community 51"
-Cohesion: 0.29
-Nodes (4): P, txt(), POST(), POST()
+Cohesion: 0.16
+Nodes (6): P, P, POST(), txt(), POST(), POST()
 
 ### Community 52 - "Community 52"
 Cohesion: 0.43
@@ -537,16 +538,16 @@ Cohesion: 0.53
 Nodes (4): bit(), num(), POST(), txt()
 
 ### Community 58 - "Community 58"
-Cohesion: 0.40
-Nodes (6): InvoiceModal(), Credit/Debit Modal, Invoice Detail Tabs, PO Modal, normalizeToISODate(), parseMoney()
+Cohesion: 0.17
+Nodes (11): FOS — Missing Stored Procedures, Group 1 — Prebook Actions (Tab 2 toolbar), Group 2 — Composition Reports (Tab 2 Print menu), Group 3 — Grades CRUD (Tab 1, Grades sub-tab), Group 4 — Colors CRUD (Tab 1, Colors sub-tab), Group 5 — Packs / Bouquet & Box Composition (Tabs 1 and 2), How to Integrate After Adding SPs, ✅ Previously Thought Missing — Actually Present (+3 more)
 
 ### Community 59 - "Community 59"
-Cohesion: 0.47
-Nodes (4): APCalendar(), todayEST(), GET(), GET()
+Cohesion: 0.40
+Nodes (4): DELETE(), GET(), POST(), PUT()
 
 ### Community 60 - "Community 60"
-Cohesion: 0.40
-Nodes (3): getGreeting(), MenuItem, MenuPage()
+Cohesion: 0.50
+Nodes (3): Deploy on Vercel, Getting Started, Learn More
 
 ### Community 61 - "Community 61"
 Cohesion: 0.53
@@ -559,10 +560,6 @@ Nodes (5): bit(), genUq(), GET(), POST(), txt()
 ### Community 63 - "Community 63"
 Cohesion: 0.53
 Nodes (5): bit(), genUq(), POST(), txt(), GET()
-
-### Community 64 - "Community 64"
-Cohesion: 0.53
-Nodes (5): DELETE(), GET(), PUT(), txt(), POST()
 
 ### Community 65 - "Community 65"
 Cohesion: 0.53
@@ -598,7 +595,7 @@ Nodes (5): DELETE(), GET(), P, PUT(), txt()
 
 ### Community 74 - "Community 74"
 Cohesion: 0.33
-Nodes (3): geistMono, geistSans, metadata
+Nodes (4): geistMono, geistSans, metadata, Providers()
 
 ### Community 75 - "Community 75"
 Cohesion: 0.60
@@ -680,17 +677,9 @@ Nodes (4): DELETE(), GET(), P, PUT()
 Cohesion: 0.40
 Nodes (3): GET(), P, POST()
 
-### Community 95 - "Community 95"
-Cohesion: 0.40
-Nodes (4): DELETE(), GET(), POST(), PUT()
-
 ### Community 96 - "Community 96"
 Cohesion: 0.40
 Nodes (4): DELETE(), GET(), P, PUT()
-
-### Community 97 - "Community 97"
-Cohesion: 0.12
-Nodes (7): PERMISSION_MSGS, BoxTransferModal(), TabId, TABS, CancelledPurchasesTab(), fmtDate(), t()
 
 ### Community 98 - "Community 98"
 Cohesion: 0.70
@@ -749,24 +738,24 @@ Cohesion: 0.50
 Nodes (3): buildCommand, framework, installCommand
 
 ## Knowledge Gaps
-- **255 isolated node(s):** `sql`, `config`, `sql`, `config`, `sql` (+250 more)
+- **303 isolated node(s):** `eslintConfig`, `sql`, `config`, `sql`, `config` (+298 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **162 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **165 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `executeProcedure()` connect `Community 3` to `Community 0`, `Community 1`, `Community 9`, `Community 12`, `Community 27`, `Community 28`, `Community 29`, `Community 30`, `Community 31`, `Community 32`, `Community 33`, `Community 34`, `Community 36`, `Community 37`, `Community 38`, `Community 39`, `Community 40`, `Community 41`, `Community 42`, `Community 49`, `Community 50`, `Community 51`, `Community 52`, `Community 53`, `Community 54`, `Community 55`, `Community 56`, `Community 57`, `Community 59`, `Community 61`, `Community 62`, `Community 64`, `Community 70`, `Community 71`, `Community 72`, `Community 73`, `Community 75`, `Community 77`, `Community 79`, `Community 81`, `Community 83`, `Community 88`, `Community 90`, `Community 91`, `Community 92`, `Community 93`, `Community 94`, `Community 95`, `Community 96`, `Community 98`, `Community 104`, `Community 105`, `Community 106`, `Community 107`, `Community 108`, `Community 109`, `Community 110`, `Community 111`, `Community 112`, `Community 113`, `Community 114`, `Community 115`, `Community 116`, `Community 120`, `Community 121`, `Community 122`, `Community 123`, `Community 124`, `Community 125`, `Community 126`, `Community 127`, `Community 128`, `Community 129`, `Community 130`, `Community 131`, `Community 132`, `Community 133`, `Community 134`, `Community 135`, `Community 136`, `Community 137`, `Community 138`, `Community 139`, `Community 140`, `Community 141`, `Community 142`, `Community 143`, `Community 144`, `Community 145`, `Community 146`, `Community 147`, `Community 154`, `Community 155`, `Community 156`, `Community 157`, `Community 158`, `Community 159`, `Community 160`, `Community 161`, `Community 162`, `Community 163`, `Community 164`, `Community 165`, `Community 166`, `Community 167`, `Community 168`, `Community 169`, `Community 170`, `Community 171`, `Community 172`, `Community 173`, `Community 174`, `Community 175`, `Community 176`, `Community 177`, `Community 178`, `Community 179`, `Community 180`, `Community 181`, `Community 182`, `Community 183`, `Community 184`, `Community 185`, `Community 186`, `Community 187`, `Community 188`, `Community 189`, `Community 190`, `Community 191`, `Community 192`, `Community 193`, `Community 194`, `Community 195`, `Community 196`, `Community 197`, `Community 198`, `Community 199`, `Community 200`, `Community 201`, `Community 202`, `Community 203`, `Community 204`, `Community 205`, `Community 206`, `Community 207`, `Community 208`, `Community 209`, `Community 210`, `Community 211`, `Community 212`, `Community 214`, `Community 215`, `Community 216`, `Community 217`, `Community 218`, `Community 219`, `Community 220`, `Community 221`, `Community 222`, `Community 223`, `Community 224`, `Community 225`, `Community 226`, `Community 227`, `Community 228`, `Community 229`, `Community 230`, `Community 231`, `Community 232`, `Community 233`, `Community 234`, `Community 235`, `Community 236`, `Community 237`, `Community 238`, `Community 239`, `Community 240`, `Community 241`, `Community 242`, `Community 243`, `Community 244`, `Community 245`, `Community 246`, `Community 247`, `Community 248`, `Community 249`, `Community 250`, `Community 251`, `Community 252`, `Community 253`, `Community 254`, `Community 255`, `Community 256`, `Community 257`, `Community 258`, `Community 259`, `Community 260`, `Community 261`, `Community 263`, `Community 264`, `Community 265`, `Community 266`, `Community 267`, `Community 268`, `Community 269`, `Community 270`, `Community 271`, `Community 272`, `Community 273`, `Community 274`, `Community 275`, `Community 277`?**
-  _High betweenness centrality (0.468) - this node is a cross-community bridge._
-- **Why does `todayEST()` connect `Community 59` to `Community 2`, `Community 10`, `Community 43`, `Community 44`, `Community 16`, `Community 58`?**
-  _High betweenness centrality (0.214) - this node is a cross-community bridge._
-- **Why does `cn()` connect `Community 5` to `Community 97`, `Community 2`, `Community 35`, `Community 4`, `Community 7`, `Community 8`, `Community 10`, `Community 13`, `Community 14`, `Community 15`, `Community 16`, `Community 17`, `Community 18`, `Community 19`, `Community 20`, `Community 22`, `Community 24`, `Community 60`?**
-  _High betweenness centrality (0.107) - this node is a cross-community bridge._
+- **Why does `executeProcedure()` connect `Community 3` to `Community 0`, `Community 1`, `Community 9`, `Community 10`, `Community 12`, `Community 27`, `Community 28`, `Community 29`, `Community 30`, `Community 31`, `Community 32`, `Community 33`, `Community 34`, `Community 36`, `Community 37`, `Community 38`, `Community 39`, `Community 40`, `Community 41`, `Community 42`, `Community 49`, `Community 50`, `Community 51`, `Community 52`, `Community 53`, `Community 54`, `Community 55`, `Community 56`, `Community 57`, `Community 59`, `Community 61`, `Community 62`, `Community 70`, `Community 71`, `Community 72`, `Community 73`, `Community 75`, `Community 77`, `Community 79`, `Community 81`, `Community 83`, `Community 88`, `Community 90`, `Community 91`, `Community 92`, `Community 93`, `Community 94`, `Community 96`, `Community 97`, `Community 98`, `Community 104`, `Community 105`, `Community 106`, `Community 107`, `Community 108`, `Community 109`, `Community 110`, `Community 111`, `Community 112`, `Community 113`, `Community 114`, `Community 115`, `Community 116`, `Community 120`, `Community 121`, `Community 122`, `Community 123`, `Community 124`, `Community 125`, `Community 126`, `Community 127`, `Community 128`, `Community 129`, `Community 130`, `Community 131`, `Community 132`, `Community 133`, `Community 134`, `Community 135`, `Community 136`, `Community 137`, `Community 138`, `Community 139`, `Community 140`, `Community 141`, `Community 142`, `Community 143`, `Community 144`, `Community 145`, `Community 146`, `Community 147`, `Community 154`, `Community 155`, `Community 156`, `Community 157`, `Community 158`, `Community 159`, `Community 160`, `Community 161`, `Community 162`, `Community 163`, `Community 164`, `Community 165`, `Community 166`, `Community 167`, `Community 168`, `Community 169`, `Community 170`, `Community 171`, `Community 172`, `Community 173`, `Community 174`, `Community 175`, `Community 176`, `Community 177`, `Community 178`, `Community 179`, `Community 180`, `Community 182`, `Community 183`, `Community 184`, `Community 185`, `Community 186`, `Community 187`, `Community 188`, `Community 189`, `Community 190`, `Community 191`, `Community 192`, `Community 193`, `Community 194`, `Community 195`, `Community 196`, `Community 197`, `Community 198`, `Community 199`, `Community 200`, `Community 201`, `Community 202`, `Community 203`, `Community 204`, `Community 205`, `Community 206`, `Community 207`, `Community 208`, `Community 209`, `Community 210`, `Community 211`, `Community 212`, `Community 213`, `Community 214`, `Community 215`, `Community 216`, `Community 217`, `Community 218`, `Community 219`, `Community 220`, `Community 221`, `Community 222`, `Community 223`, `Community 224`, `Community 225`, `Community 226`, `Community 227`, `Community 228`, `Community 229`, `Community 230`, `Community 231`, `Community 232`, `Community 233`, `Community 234`, `Community 235`, `Community 236`, `Community 237`, `Community 238`, `Community 239`, `Community 240`, `Community 241`, `Community 242`, `Community 243`, `Community 244`, `Community 245`, `Community 246`, `Community 247`, `Community 248`, `Community 249`, `Community 250`, `Community 252`, `Community 253`, `Community 254`, `Community 255`, `Community 256`, `Community 257`, `Community 258`, `Community 259`, `Community 260`, `Community 261`, `Community 263`, `Community 264`, `Community 265`, `Community 266`, `Community 267`, `Community 269`, `Community 270`, `Community 271`, `Community 272`, `Community 273`, `Community 274`, `Community 277`?**
+  _High betweenness centrality (0.455) - this node is a cross-community bridge._
+- **Why does `todayEST()` connect `Community 10` to `Community 24`, `Community 16`, `Community 2`?**
+  _High betweenness centrality (0.188) - this node is a cross-community bridge._
+- **Why does `cn()` connect `Community 7` to `Community 2`, `Community 4`, `Community 5`, `Community 8`, `Community 10`, `Community 13`, `Community 14`, `Community 15`, `Community 16`, `Community 17`, `Community 18`, `Community 19`, `Community 20`, `Community 22`, `Community 24`?**
+  _High betweenness centrality (0.090) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `executeQuery()` (e.g. with `GET()` and `GET()`) actually correct?**
   _`executeQuery()` has 2 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `sql`, `config`, `sql` to the rest of the system?**
-  _255 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **What connects `eslintConfig`, `sql`, `config` to the rest of the system?**
+  _303 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
-  _Cohesion score 0.07329462989840348 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07541478129713423 - nodes in this community are weakly interconnected._
 - **Should `Community 1` be split into smaller, more focused modules?**
-  _Cohesion score 0.05735430157261795 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.05920444033302498 - nodes in this community are weakly interconnected._

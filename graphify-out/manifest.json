@@ -1868,5 +1868,65 @@
     "mtime": 1772425738.2700253,
     "ast_hash": "7c3efc721b057edf45487ad65f708752",
     "semantic_hash": "7c3efc721b057edf45487ad65f708752"
+  },
+  "C:\\EIS-Data\\AppSmith\\Antigravity\\fullpot-operational-system\\AccountsPayable.md": {
+    "mtime": 1778648688.5227537,
+    "ast_hash": "43130a4ed54fe751c9f39742ca54823d",
+    "semantic_hash": ""
+  },
+  "C:\\EIS-Data\\AppSmith\\Antigravity\\fullpot-operational-system\\CLAUDE.md": {
+    "mtime": 1780108708.964969,
+    "ast_hash": "8a6643a420fdad6bfb583523bc6cef16",
+    "semantic_hash": ""
+  },
+  "C:\\EIS-Data\\AppSmith\\Antigravity\\fullpot-operational-system\\DEVELOPMENT_STANDARDS.md": {
+    "mtime": 1778964834.2679167,
+    "ast_hash": "a19f2bd05389dc717c55c8bf281768c5",
+    "semantic_hash": ""
+  },
+  "C:\\EIS-Data\\AppSmith\\Antigravity\\fullpot-operational-system\\flexy2qb_sps_params.txt": {
+    "mtime": 1779321154.4117746,
+    "ast_hash": "ed547dabf83fb8fe3db107440cca75f3",
+    "semantic_hash": ""
+  },
+  "C:\\EIS-Data\\AppSmith\\Antigravity\\fullpot-operational-system\\MISSING_SPS.md": {
+    "mtime": 1778986908.540076,
+    "ast_hash": "966336dbdb196030840a16c001f43521",
+    "semantic_hash": ""
+  },
+  "C:\\EIS-Data\\AppSmith\\Antigravity\\fullpot-operational-system\\PERMISSIONS.md": {
+    "mtime": 1778947586.5580602,
+    "ast_hash": "dcfc30176045cde08788b37af79ea05f",
+    "semantic_hash": ""
+  },
+  "C:\\EIS-Data\\AppSmith\\Antigravity\\fullpot-operational-system\\README.md": {
+    "mtime": 1772264945.0407581,
+    "ast_hash": "f15aaa42d5d299d091b1171097ea56ad",
+    "semantic_hash": ""
+  },
+  "C:\\EIS-Data\\AppSmith\\Antigravity\\fullpot-operational-system\\public\\file.svg": {
+    "mtime": 1772264945.2370987,
+    "ast_hash": "d09f95206c3fa0bb9bd9fefabfd0ea71",
+    "semantic_hash": ""
+  },
+  "C:\\EIS-Data\\AppSmith\\Antigravity\\fullpot-operational-system\\public\\globe.svg": {
+    "mtime": 1772264945.274001,
+    "ast_hash": "2aaafa6a49b6563925fe440891e32717",
+    "semantic_hash": ""
+  },
+  "C:\\EIS-Data\\AppSmith\\Antigravity\\fullpot-operational-system\\public\\next.svg": {
+    "mtime": 1772264945.325602,
+    "ast_hash": "8e061864f388b47f33a1c3780831193e",
+    "semantic_hash": ""
+  },
+  "C:\\EIS-Data\\AppSmith\\Antigravity\\fullpot-operational-system\\public\\vercel.svg": {
+    "mtime": 1772264945.3712347,
+    "ast_hash": "c0af2f507b369b085b35ef4bbe3bcf1e",
+    "semantic_hash": ""
+  },
+  "C:\\EIS-Data\\AppSmith\\Antigravity\\fullpot-operational-system\\public\\window.svg": {
+    "mtime": 1772264945.409509,
+    "ast_hash": "a2760511c65806022ad20adf74370ff3",
+    "semantic_hash": ""
   }
 }
