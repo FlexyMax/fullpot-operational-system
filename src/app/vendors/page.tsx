@@ -708,8 +708,11 @@ export default function VendorsPage() {
                             <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Vendor</span>
                             <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide text-center">Act.</span>
                         </div>
-                        <div className="hidden md:grid px-2 py-1.5" style={{ gridTemplateColumns: "1fr 80px 70px 48px" }}>
-                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Grower</span>
+                        <div className="hidden md:grid px-2 py-1.5" style={{ gridTemplateColumns: "55px 1fr 45px 55px 80px 65px 44px" }}>
+                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Code</span>
+                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Vendor</span>
+                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">FOB</span>
+                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">SalesRep</span>
                             <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">City</span>
                             <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Country</span>
                             <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide text-center">Act.</span>
@@ -740,11 +743,11 @@ export default function VendorsPage() {
                                         </span>
                                     </div>
                                     {/* Desktop row */}
-                                    <div className={cn(rowBase, "hidden md:grid")} style={{ gridTemplateColumns: "1fr 80px 70px 48px" }}>
-                                        <div className="min-w-0 pr-1">
-                                            <p className={cn("truncate font-semibold", selected ? "text-blue-800" : "text-gray-800")}>{t(row.GROWER)}</p>
-                                            <p className="text-[10px] text-gray-400 truncate">{t(row.FARM)}</p>
-                                        </div>
+                                    <div className={cn(rowBase, "hidden md:grid")} style={{ gridTemplateColumns: "55px 1fr 45px 55px 80px 65px 44px" }}>
+                                        <span className="truncate text-gray-500 text-[11px] self-center font-mono">{t(row.FARM)}</span>
+                                        <span className={cn("truncate font-semibold text-[11px] self-center", selected ? "text-blue-800" : "text-gray-800")}>{t(row.GROWER)}</span>
+                                        <span className="truncate text-gray-500 text-[11px] self-center">{t(row.FOB)}</span>
+                                        <span className="truncate text-gray-500 text-[11px] self-center">{t(row.SALES_PERSON)}</span>
                                         <span className="truncate text-gray-500 text-[11px] self-center">{t(row.CITY)}</span>
                                         <span className="truncate text-gray-500 text-[11px] self-center">{t(row.COUNTRY)}</span>
                                         <span className="text-center self-center">
@@ -846,26 +849,33 @@ export default function VendorsPage() {
                                                     <table className="min-w-full text-left">
                                                         <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
                                                             <tr>
-                                                                {["Date", "Reference", "Description", "Debit", "Credit", "Balance"].map(h => (
+                                                                {["Invoice", "PO", "Inv.Date", "Amount", "Payments", "Credits", "Debits", "Balance", "Due Date", "Accum.Bal"].map(h => (
                                                                     <th key={h} className="px-2 py-1.5 font-black text-[10px] text-gray-600 uppercase tracking-wide whitespace-nowrap border-r border-gray-200 last:border-r-0">{h}</th>
                                                                 ))}
                                                             </tr>
                                                         </thead>
                                                         <tbody className="divide-y divide-gray-50 text-xs">
                                                             {loadingStmt ? (
-                                                                <tr><td colSpan={6} className="p-4 text-center"><RefreshCcw size={14} className="animate-spin mx-auto text-gray-400" /></td></tr>
+                                                                <tr><td colSpan={10} className="p-4 text-center"><RefreshCcw size={14} className="animate-spin mx-auto text-gray-400" /></td></tr>
                                                             ) : stmtRows.length === 0 ? (
-                                                                <tr><td colSpan={6} className="p-6 text-center text-gray-300 italic">No statement records</td></tr>
+                                                                <tr><td colSpan={10} className="p-6 text-center text-gray-300 italic">No statement records</td></tr>
                                                             ) : stmtRows.map((row: any, i: number) => (
                                                                 <tr key={i} className="hover:bg-gray-50">
-                                                                    <td className="px-2 py-1.5 border-r border-gray-50 whitespace-nowrap">{fmtDate(row.DATE ?? row.AP_DATE ?? row.INVOICE_DATE ?? row.FECHA)}</td>
-                                                                    <td className="px-2 py-1.5 border-r border-gray-50 truncate max-w-[80px]">{t(row.REFERENCE ?? row.REF ?? row.AP_NUMBER ?? row.INVOICE_NO ?? "")}</td>
-                                                                    <td className="px-2 py-1.5 border-r border-gray-50 truncate max-w-[140px]">{t(row.DESCRIPTION ?? row.CONCEPTO ?? row.VENDOR ?? "")}</td>
-                                                                    <td className="px-2 py-1.5 border-r border-gray-50 text-right font-mono">{fmt(row.DEBIT ?? row.DEB_AMMOUNT ?? row.DEBITO ?? 0)}</td>
-                                                                    <td className="px-2 py-1.5 border-r border-gray-50 text-right font-mono">{fmt(row.CREDIT ?? row.CRE_AMMOUNT ?? row.CREDITO ?? 0)}</td>
+                                                                    <td className="px-2 py-1.5 border-r border-gray-50 truncate max-w-[90px]">{t(row.INVOICE_NO ?? "")}</td>
+                                                                    <td className="px-2 py-1.5 border-r border-gray-50 truncate max-w-[70px]">{t(row.PORDER_NO ?? "")}</td>
+                                                                    <td className="px-2 py-1.5 border-r border-gray-50 whitespace-nowrap">{fmtDate(row.INVOICE_DATE ?? "")}</td>
+                                                                    <td className="px-2 py-1.5 border-r border-gray-50 text-right font-mono">{fmt(row.AMMOUNT ?? 0)}</td>
+                                                                    <td className="px-2 py-1.5 border-r border-gray-50 text-right font-mono">{fmt(row.PAYMENTS ?? 0)}</td>
+                                                                    <td className="px-2 py-1.5 border-r border-gray-50 text-right font-mono">{fmt(row.CREDITS ?? 0)}</td>
+                                                                    <td className="px-2 py-1.5 border-r border-gray-50 text-right font-mono">{fmt(row.DEBITS ?? 0)}</td>
+                                                                    <td className={cn("px-2 py-1.5 border-r border-gray-50 text-right font-mono font-bold",
+                                                                        parseFloat(row.TOTAL_BALANCE ?? 0) > 0 ? "text-red-600" : "text-green-700")}>
+                                                                        {fmt(row.TOTAL_BALANCE ?? 0)}
+                                                                    </td>
+                                                                    <td className="px-2 py-1.5 border-r border-gray-50 whitespace-nowrap">{fmtDate(row.DUE_DATE ?? "")}</td>
                                                                     <td className={cn("px-2 py-1.5 text-right font-mono font-bold",
-                                                                        parseFloat(row.BALANCE ?? row.TOTAL_BALANCE ?? 0) > 0 ? "text-red-600" : "text-green-700")}>
-                                                                        {fmt(row.BALANCE ?? row.TOTAL_BALANCE ?? 0)}
+                                                                        parseFloat(row.ACCUMULATED ?? 0) > 0 ? "text-red-600" : "text-green-700")}>
+                                                                        {fmt(row.ACCUMULATED ?? 0)}
                                                                     </td>
                                                                 </tr>
                                                             ))}
