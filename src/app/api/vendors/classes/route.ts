@@ -7,12 +7,12 @@ export async function GET(req: NextRequest) {
     try {
         if (not_in) {
             const r = await executeProcedure("sp_flower_growers_class_not_in", {
-                grower_uq: grower_uq,
+                lcunico: grower_uq,
             });
             return NextResponse.json(r.recordset ?? []);
         } else {
             const r = await executeProcedure("sp_flower_growers_class_in", {
-                grower_uq: grower_uq,
+                lcunico: grower_uq,
             });
             return NextResponse.json(r.recordset ?? []);
         }

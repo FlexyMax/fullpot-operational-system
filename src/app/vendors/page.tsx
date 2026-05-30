@@ -8,6 +8,7 @@ import {
     ArrowLeft, Building2, RefreshCcw, Plus, Pencil, Trash2,
     Search, X, Save, ChevronRight, ChevronLeft,
     FileText, AlertCircle, Calendar, Check,
+    Download, Globe, Settings2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -225,6 +226,9 @@ export default function VendorsPage() {
     const [docSaving,  setDocSaving]  = useState(false);
     const [docError,   setDocError]   = useState<string | null>(null);
     const [selDocUq,   setSelDocUq]   = useState<string | null>(null);
+
+    // Web Settings modal
+    const [wsModal,    setWsModal]    = useState(false);
 
     // Groups modal
     const [grpModal,   setGrpModal]   = useState(false);
@@ -664,11 +668,6 @@ export default function VendorsPage() {
                     <span className="text-gray-400 text-[10px] font-bold hidden sm:block">
                         User: <span className="text-white">{session?.user?.name}</span>
                     </span>
-                    <button
-                        onClick={() => { setGrpForm({ unico: "", growertype: "" }); setGrpMode("add"); setSelGrpUq(null); setGrpError(null); setGrpModal(true); }}
-                        className="hidden md:flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white px-2 py-1 rounded text-[10px] font-black uppercase tracking-wide transition-colors">
-                        <Building2 size={12} /> Groups
-                    </button>
                 </div>
             </div>
 
@@ -775,19 +774,47 @@ export default function VendorsPage() {
                     mobilePanel === "detail" ? "flex flex-1" : "hidden md:flex"
                 )}>
                     {/* Tab bar */}
-                    <div className="h-10 bg-[#374151] flex items-end px-2 gap-0.5 shrink-0 overflow-x-auto scrollbar-none">
-                        {TABS.map(tab => (
-                            <button key={tab.key}
-                                onClick={() => { if (selectedUq) handleTabClick(tab.key); }}
-                                disabled={!selectedUq}
-                                className={cn(
-                                    "px-2 md:px-4 h-8 text-[9px] md:text-[10px] font-black uppercase tracking-wider rounded-t transition-all whitespace-nowrap shrink-0",
-                                    !selectedUq && "opacity-40 cursor-not-allowed",
-                                    activeTab === tab.key ? "bg-[#f4f6f8] text-[#FB7506]" : "text-gray-400 hover:text-white hover:bg-white/10"
-                                )}>
-                                {tab.label}
+                    <div className="h-10 bg-[#374151] flex items-center px-2 gap-0.5 shrink-0 overflow-x-auto scrollbar-none">
+                        <div className="flex items-end flex-1 gap-0.5 self-end">
+                            {TABS.map(tab => (
+                                <button key={tab.key}
+                                    onClick={() => { if (selectedUq) handleTabClick(tab.key); }}
+                                    disabled={!selectedUq}
+                                    className={cn(
+                                        "px-2 md:px-4 h-8 text-[9px] md:text-[10px] font-black uppercase tracking-wider rounded-t transition-all whitespace-nowrap shrink-0",
+                                        !selectedUq && "opacity-40 cursor-not-allowed",
+                                        activeTab === tab.key ? "bg-[#f4f6f8] text-[#FB7506]" : "text-gray-400 hover:text-white hover:bg-white/10"
+                                    )}>
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0 pb-1">
+                            <button onClick={() => { setWsModal(true); }} disabled={!selectedUq}
+                                className="flex items-center gap-1 bg-white/10 hover:bg-white/20 disabled:opacity-40 text-white px-2 py-1 rounded text-[10px] font-black uppercase tracking-wide transition-colors">
+                                <Globe size={12} /> Web
                             </button>
-                        ))}
+                            <button onClick={() => { setGrpForm({ unico: "", growertype: "" }); setGrpMode("add"); setSelGrpUq(null); setGrpError(null); setGrpModal(true); }}
+                                className="flex items-center gap-1 bg-white/10 hover:bg-white/20 text-white px-2 py-1 rounded text-[10px] font-black uppercase tracking-wide transition-colors">
+                                <Building2 size={12} /> Groups
+                            </button>
+                            <button onClick={() => {
+                                if (!filteredList.length) return;
+                                const headers = ["Code","Vendor","FOB","SalesRep","City","Country","Active","Phone","Fax","Email"];
+                                const rows2 = filteredList.map((r: any) => [
+                                    t(r.FARM), t(r.GROWER), t(r.FOB), t(r.SALES_PERSON), t(r.CITY), t(r.COUNTRY),
+                                    r.ACTIVE ? "Yes" : "No", t(r.PHONE_1), t(r.FAX_1), t(r.EMAIL_1)
+                                ]);
+                                const csv = [headers, ...rows2].map(row => row.map((v: string) => `"${v.replace(/"/g,'""')}"`).join(",")).join("\n");
+                                const blob = new Blob([csv], { type: "text/csv" });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement("a"); a.href = url; a.download = "vendors.csv"; a.click();
+                                URL.revokeObjectURL(url);
+                            }}
+                                className="flex items-center gap-1 bg-white/10 hover:bg-white/20 text-white px-2 py-1 rounded text-[10px] font-black uppercase tracking-wide transition-colors">
+                                <Download size={12} /> CSV
+                            </button>
+                        </div>
                     </div>
 
                     {/* Vendor name header */}
@@ -971,8 +998,8 @@ export default function VendorsPage() {
                                                             <tr key={i} onClick={() => setSelDocUq(sel ? null : uq)}
                                                                 className={cn("cursor-pointer transition-colors", sel ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50")}>
                                                                 <td className="px-2 py-1.5 border-r border-gray-50 truncate max-w-[240px]">{t(row.DOCUMENT)}</td>
-                                                                <td className="px-2 py-1.5 border-r border-gray-50 whitespace-nowrap">{fmtDate(row.LDFROM ?? row.DATE_FROM)}</td>
-                                                                <td className="px-2 py-1.5 whitespace-nowrap">{fmtDate(row.LDTO ?? row.DATE_TO)}</td>
+                                                                <td className="px-2 py-1.5 border-r border-gray-50 whitespace-nowrap">{fmtDate(row.DATE_FROM ?? row.LDFROM)}</td>
+                                                                <td className="px-2 py-1.5 whitespace-nowrap">{fmtDate(row.DATE_TO ?? row.LDTO)}</td>
                                                             </tr>
                                                         );
                                                     })}
@@ -988,8 +1015,8 @@ export default function VendorsPage() {
                                         <DualPanel
                                             assignedRows={assignedClasses as any[]}
                                             availableRows={availableClasses as any[]}
-                                            assignedCols={[{ key: "CLASS", label: "Class" }, { key: "DESCRIPTION", label: "Description" }]}
-                                            availableCols={[{ key: "CLASS", label: "Class" }, { key: "DESCRIPTION", label: "Description" }]}
+                                            assignedCols={[{ key: "CLASE", label: "Class" }]}
+                                            availableCols={[{ key: "CLASE", label: "Class" }]}
                                             onAdd={handleAddClass}
                                             onRemove={handleRemoveClass}
                                             loading={loadingClassA || loadingClassB}
@@ -1376,6 +1403,67 @@ export default function VendorsPage() {
             )}
 
             {/* ─── Groups Modal ─────────────────────────────────────────────────────── */}
+            {/* ─── Web Settings Modal ─────────────────────────────────────────── */}
+            {wsModal && selectedUq && (() => {
+                const rec = (vendorsList as any[]).find((r: any) => t(r.UNICO) === selectedUq) ?? {};
+                return (
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                        onClick={() => setWsModal(false)}>
+                        <div className="bg-white rounded-lg shadow-2xl w-full max-w-md flex flex-col overflow-hidden"
+                            onClick={e => e.stopPropagation()}>
+                            <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 rounded-t-lg shrink-0">
+                                <div className="flex items-center gap-2">
+                                    <Globe size={16} className="text-[#FB7506]" />
+                                    <span className="font-black text-[10px] text-white uppercase tracking-widest">
+                                        Web Settings — {t(rec.GROWER ?? "")}
+                                    </span>
+                                </div>
+                                <button onClick={() => setWsModal(false)} className="text-gray-400 hover:text-white transition-colors"><X size={16} /></button>
+                            </div>
+                            <div className="p-4 space-y-3 text-xs overflow-y-auto">
+                                <div className="bg-gray-50 rounded p-3 border border-gray-100 space-y-2">
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {[
+                                            { label: "Flower System",       field: "FLOWER_SYSTEM" },
+                                            { label: "Send File Warehouse", field: "SEND_FILE_WAREHOUSE" },
+                                            { label: "Web Confirm Boxes",   field: "WEB_CONFIRM_BOXES" },
+                                            { label: "Web Confirm Stems",   field: "WEB_CONFIRM_STEMS" },
+                                            { label: "Auto Packing",        field: "AUTO_PACKING" },
+                                            { label: "Special Contributor", field: "SPECIAL_CONTRIBUTOR" },
+                                            { label: "International",       field: "INTERNATIONAL" },
+                                        ].map(({ label, field }) => (
+                                            <div key={field} className="flex items-center justify-between gap-2">
+                                                <span className="text-[10px] font-black text-gray-500 uppercase tracking-wider">{label}</span>
+                                                <span className={cn("text-[10px] font-black", rec[field] ? "text-green-600" : "text-gray-300")}>
+                                                    {rec[field] ? "YES" : "NO"}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <div className="flex flex-col gap-0.5">
+                                        <span className="text-[10px] font-black text-gray-500 uppercase tracking-wider">WH Farm ID</span>
+                                        <span className="font-mono text-gray-800 text-xs">{t(rec.WHOUSE_FARM_ID ?? "") || "—"}</span>
+                                    </div>
+                                    <div className="flex flex-col gap-0.5 mt-1">
+                                        <span className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Password</span>
+                                        <span className="font-mono text-gray-800 text-xs">{t(rec.CLAVE ?? "") || "—"}</span>
+                                    </div>
+                                </div>
+                                <p className="text-[10px] text-gray-400 italic">To edit these settings, use the vendor Setup form (Edit button).</p>
+                            </div>
+                            <div className="flex justify-end px-4 py-3 bg-gray-50 border-t shrink-0">
+                                <button onClick={() => setWsModal(false)}
+                                    className="px-4 py-2 rounded border border-gray-200 text-xs font-black uppercase text-gray-600 hover:bg-gray-100 transition-colors">
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
+
             {grpModal && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
                     onClick={() => setGrpModal(false)}>
