@@ -861,9 +861,9 @@ export default function VendorsPage() {
                                                                 <tr><td colSpan={10} className="p-6 text-center text-gray-300 italic">No statement records</td></tr>
                                                             ) : stmtRows.map((row: any, i: number) => (
                                                                 <tr key={i} className="hover:bg-gray-50">
-                                                                    <td className="px-2 py-1.5 border-r border-gray-50 truncate max-w-[90px]">{t(row.INVOICE_NO ?? "")}</td>
-                                                                    <td className="px-2 py-1.5 border-r border-gray-50 truncate max-w-[70px]">{t(row.PORDER_NO ?? "")}</td>
-                                                                    <td className="px-2 py-1.5 border-r border-gray-50 whitespace-nowrap">{fmtDate(row.INVOICE_DATE ?? "")}</td>
+                                                                    <td className="px-2 py-1.5 border-r border-gray-50 font-mono truncate max-w-[90px]">{t(row.INVOICE_NO ?? "")}</td>
+                                                                    <td className="px-2 py-1.5 border-r border-gray-50 truncate max-w-[70px]">{row.PORDER_NO ? t(row.PORDER_NO) : ""}</td>
+                                                                    <td className="px-2 py-1.5 border-r border-gray-50 whitespace-nowrap">{fmtDate(row.DATE_ORDER ?? row.INVOICE_DATE ?? "")}</td>
                                                                     <td className="px-2 py-1.5 border-r border-gray-50 text-right font-mono">{fmt(row.AMMOUNT ?? 0)}</td>
                                                                     <td className="px-2 py-1.5 border-r border-gray-50 text-right font-mono">{fmt(row.PAYMENTS ?? 0)}</td>
                                                                     <td className="px-2 py-1.5 border-r border-gray-50 text-right font-mono">{fmt(row.CREDITS ?? 0)}</td>
@@ -872,7 +872,7 @@ export default function VendorsPage() {
                                                                         parseFloat(row.TOTAL_BALANCE ?? 0) > 0 ? "text-red-600" : "text-green-700")}>
                                                                         {fmt(row.TOTAL_BALANCE ?? 0)}
                                                                     </td>
-                                                                    <td className="px-2 py-1.5 border-r border-gray-50 whitespace-nowrap">{fmtDate(row.DUE_DATE ?? "")}</td>
+                                                                    <td className="px-2 py-1.5 border-r border-gray-50 whitespace-nowrap">{t(row.DUE_DATE ?? "")}</td>
                                                                     <td className={cn("px-2 py-1.5 text-right font-mono font-bold",
                                                                         parseFloat(row.ACCUMULATED ?? 0) > 0 ? "text-red-600" : "text-green-700")}>
                                                                         {fmt(row.ACCUMULATED ?? 0)}
@@ -895,7 +895,7 @@ export default function VendorsPage() {
                                                     <table className="min-w-full text-left">
                                                         <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
                                                             <tr>
-                                                                {["AP Date", "Invoice", "Boxes", "Stems", "Amount"].map(h => (
+                                                                {["Invoice", "Inv.Date", "Amount", "Payments", "Balance"].map(h => (
                                                                     <th key={h} className="px-2 py-1.5 font-black text-[10px] text-gray-600 uppercase tracking-wide whitespace-nowrap border-r border-gray-200 last:border-r-0">{h}</th>
                                                                 ))}
                                                             </tr>
@@ -907,11 +907,11 @@ export default function VendorsPage() {
                                                                 <tr><td colSpan={5} className="p-6 text-center text-gray-300 italic">No pending invoices</td></tr>
                                                             ) : pendingRows.map((row: any, i: number) => (
                                                                 <tr key={i} className="hover:bg-gray-50">
-                                                                    <td className="px-2 py-1.5 border-r border-gray-50 whitespace-nowrap">{fmtDate(row.AP_DATE ?? row.INVOICE_DATE ?? row.DATE ?? row.FECHA)}</td>
-                                                                    <td className="px-2 py-1.5 border-r border-gray-50 truncate max-w-[80px]">{t(row.AP_NUMBER ?? row.INVOICE_NO ?? row.INVOICE ?? row.REF ?? "")}</td>
-                                                                    <td className="px-2 py-1.5 border-r border-gray-50 text-right font-mono">{t(row.BOXES ?? row.TOTAL_BOXES ?? "")}</td>
-                                                                    <td className="px-2 py-1.5 border-r border-gray-50 text-right font-mono">{t(row.STEMS ?? row.TOTAL_STEMS ?? "")}</td>
-                                                                    <td className="px-2 py-1.5 text-right font-mono font-bold text-red-600">{fmt(row.AMOUNT ?? row.TOTAL_BALANCE ?? row.TOTAL ?? row.BALANCE ?? 0)}</td>
+                                                                    <td className="px-2 py-1.5 border-r border-gray-50 font-mono truncate max-w-[90px]">{t(row.INVOICE_NO ?? "")}</td>
+                                                                    <td className="px-2 py-1.5 border-r border-gray-50 whitespace-nowrap">{fmtDate(row.DATE_ORDER ?? row.INVOICE_DATE ?? "")}</td>
+                                                                    <td className="px-2 py-1.5 border-r border-gray-50 text-right font-mono">{fmt(row.AMMOUNT ?? 0)}</td>
+                                                                    <td className="px-2 py-1.5 border-r border-gray-50 text-right font-mono">{fmt(row.PAYMENTS ?? 0)}</td>
+                                                                    <td className={cn("px-2 py-1.5 text-right font-mono font-bold", parseFloat(row.TOTAL_BALANCE ?? 0) > 0 ? "text-red-600" : "text-green-700")}>{fmt(row.TOTAL_BALANCE ?? 0)}</td>
                                                                 </tr>
                                                             ))}
                                                         </tbody>
