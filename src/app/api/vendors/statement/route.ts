@@ -8,9 +8,9 @@ export async function GET(req: NextRequest) {
     try {
         const [r1, r2] = await Promise.all([
             executeProcedure("sp_flower_accounts_rec_statment_balance", {
-                lcunico: grower_uq,
-                ldfrom:  new Date(date_from || "2000-01-01"),
-                ldto:    new Date(date_to || new Date().toISOString().split("T")[0]),
+                Customer: grower_uq,
+                ldfrom:   new Date(date_from || "2000-01-01"),
+                ldto:     new Date(date_to || new Date().toISOString().split("T")[0]),
             }),
             executeProcedure("sp_flower_growers_pending_invoices_to_growers", {
                 lcgrower_uq: grower_uq,
