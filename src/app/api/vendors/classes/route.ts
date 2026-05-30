@@ -25,8 +25,8 @@ export async function POST(req: NextRequest) {
     const b = await req.json();
     try {
         const r = await executeProcedure("sp_flower_growers_class_insert", {
-            lcgrower_uq: String(b.grower_uq ?? ""),
-            lcclass_uq:  String(b.class_uq ?? ""),
+            grower_uq: String(b.grower_uq ?? ""),
+            class_uq:  String(b.class_uq ?? ""),
         });
         const row = r.recordset?.[0];
         if (row?.error === 1 || row?.Error === 1) return NextResponse.json({ success: false, error: row.message || row.Message }, { status: 400 });

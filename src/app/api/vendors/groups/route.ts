@@ -5,7 +5,7 @@ export async function GET(req: NextRequest) {
     const search = req.nextUrl.searchParams.get("search");
     try {
         const r = await executeProcedure("sp_flower_growers_types", {
-            lcsearch: search || "%",
+            lcgrowertype: search || "%",
         });
         return NextResponse.json(r.recordset ?? []);
     } catch (err: any) {
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     const b = await req.json();
     try {
         const r = await executeProcedure("sp_flower_growers_types_insert", {
-            lcgrowertype: String(b.growertype ?? ""),
+            lcgroup: String(b.growertype ?? ""),
         });
         const row = r.recordset?.[0];
         if (row?.error === 1 || row?.Error === 1) return NextResponse.json({ success: false, error: row.message || row.Message }, { status: 400 });

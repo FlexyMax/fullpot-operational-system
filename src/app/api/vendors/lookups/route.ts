@@ -5,9 +5,9 @@ export async function GET() {
     try {
         const r = await Promise.all([
             executeProcedure("sp_flower_terms", {}),
-            executeProcedure("sp_flower_cargo_agencies_list", { lcactive: "0" }),
-            executeProcedure("sp_flower_cities", { lcsearch: "%" }),
-            executeProcedure("sp_flower_growers_types", { lcsearch: "%" }),
+            executeProcedure("sp_flower_cargo_agencies_list", { llall: 1 }),
+            executeProcedure("sp_flower_cities", { lccity: "%" }),
+            executeProcedure("sp_flower_growers_types", { lcgrowertype: "%" }),
         ]);
         return NextResponse.json({
             terms:   r[0].recordset ?? [],

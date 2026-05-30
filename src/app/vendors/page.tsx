@@ -44,16 +44,17 @@ const EMPTY_FORM: any = {
     fob: "", city: "", country: "",
     phone_1: "", phone_2: "", fax_1: "", fax_2: "", celular: "",
     email_1: "", email_2: "", msn_yahoo: "",
-    manager: "", secretary: "", production: "", salesman: "",
-    ship_days: 0, old_code: 0, international: false,
+    manager: "", secretary: "", production: false, salesman: "",
+    ship_days: 0, old_code: "", international: false,
     bank: "", bank_account: "", change_password: false,
     chk_boxes: false, chk_stems: false, qb_flower: false, qb_freight: false,
-    apply_freight: false, flower_cost: false, auto_packing: false,
-    duties: false, broker: false,
+    apply_freight: false, auto_packing: false,
+    duties: false, broker: false, handling: false, ocharges: false,
     commission: 0, fuel_discount: 0, sales_factor: 0,
-    handling: 0, ocharges: 0, pack_disc: 0, pack_return: 0,
+    pack_disc: 0, pack_return: 0,
     whouse_farm_id: "", text_invoice: "", text_packing: "",
     flower_system: false, send_file_warehouse: false, special_contributor: false,
+    inventory_from_products: false,
     clave: "", terms_uq: "", agency_uq: "", group_uq: "",
 };
 
@@ -367,40 +368,40 @@ export default function VendorsPage() {
                 msn_yahoo:              t(fill.msn_yahoo),
                 manager:                t(fill.manager),
                 secretary:              t(fill.secretary),
-                production:             t(fill.production),
-                salesman:               t(fill.salesman),
+                production:             Boolean(fill.production),
+                salesman:               t(fill.sales_person ?? fill.salesman ?? ""),
                 ship_days:              parseInt(fill.ship_days ?? 0) || 0,
-                old_code:               parseInt(fill.old_code ?? 0) || 0,
+                old_code:               t(fill.edi_code ?? fill.old_code ?? ""),
                 international:          Boolean(fill.international),
-                bank:                   t(fill.bank),
+                bank:                   t(fill.bankname ?? fill.bank ?? ""),
                 bank_account:           t(fill.bank_account),
                 change_password:        Boolean(fill.change_password),
-                chk_boxes:              Boolean(fill.chk_boxes),
-                chk_stems:              Boolean(fill.chk_stems),
+                chk_boxes:              Boolean(fill.web_confirm_boxes ?? fill.chk_boxes),
+                chk_stems:              Boolean(fill.web_confirm_stems ?? fill.chk_stems),
                 qb_flower:              Boolean(fill.qb_flower),
                 qb_freight:             Boolean(fill.qb_freight),
                 apply_freight:          Boolean(fill.apply_freight),
-                flower_cost:            Boolean(fill.flower_cost),
                 auto_packing:           Boolean(fill.auto_packing),
                 duties:                 Boolean(fill.duties),
                 broker:                 Boolean(fill.broker),
-                commission:             parseFloat(fill.commission ?? 0) || 0,
-                fuel_discount:          parseFloat(fill.fuel_discount ?? 0) || 0,
+                handling:               Boolean(fill.handling),
+                ocharges:               Boolean(fill.ocharges),
+                commission:             parseFloat(fill.con_comi ?? fill.commission ?? 0) || 0,
+                fuel_discount:          parseFloat(fill.fuel ?? fill.fuel_discount ?? 0) || 0,
                 sales_factor:           parseFloat(fill.sales_factor ?? 0) || 0,
-                handling:               parseFloat(fill.handling ?? 0) || 0,
-                ocharges:               parseFloat(fill.ocharges ?? 0) || 0,
-                pack_disc:              parseFloat(fill.pack_disc ?? 0) || 0,
+                pack_disc:              parseFloat(fill.pack_p_ret ?? fill.pack_disc ?? 0) || 0,
                 pack_return:            parseFloat(fill.pack_return ?? 0) || 0,
                 whouse_farm_id:         t(fill.whouse_farm_id),
                 text_invoice:           t(fill.text_invoice),
-                text_packing:           t(fill.text_packing),
-                flower_system:          Boolean(fill.flower_system),
-                send_file_warehouse:    Boolean(fill.send_file_warehouse),
-                special_contributor:    Boolean(fill.special_contributor),
-                clave:                  t(fill.clave),
+                text_packing:           t(fill.text_label ?? fill.text_packing ?? ""),
+                flower_system:          Boolean(fill.flower_sys ?? fill.flower_system),
+                send_file_warehouse:    Boolean(fill.send_file ?? fill.send_file_warehouse),
+                special_contributor:    Boolean(fill.special_contributor ?? fill.special),
+                inventory_from_products: Boolean(fill.inventory_from_products),
+                clave:                  t(fill.password ?? fill.clave ?? ""),
                 terms_uq:               t(fill.terms_uq),
-                agency_uq:              t(fill.agency_uq),
-                group_uq:               t(fill.group_uq),
+                agency_uq:              t(fill.type_uq ?? fill.agency_uq ?? ""),
+                group_uq:               t(fill.cargo_uq ?? fill.group_uq ?? ""),
             });
             setFormError(null);
             setModalTab("main");
@@ -484,8 +485,8 @@ export default function VendorsPage() {
             setDocForm({
                 unico:     t(fill.unico),
                 document:  t(fill.document),
-                date_from: fill.ldfrom ? new Date(fill.ldfrom).toISOString().split("T")[0] : firstOfYear(),
-                date_to:   fill.ldto   ? new Date(fill.ldto).toISOString().split("T")[0]   : today(),
+                date_from: (fill.date_from ?? fill.ldfrom) ? String(fill.date_from ?? fill.ldfrom).match(/^(\d{4}-\d{2}-\d{2})/)?.[1] ?? firstOfYear() : firstOfYear(),
+                date_to:   (fill.date_to ?? fill.ldto)   ? String(fill.date_to ?? fill.ldto).match(/^(\d{4}-\d{2}-\d{2})/)?.[1] ?? today() : today(),
             });
             setDocError(null);
             setDocMode("edit");
@@ -1035,11 +1036,11 @@ export default function VendorsPage() {
             {modalOpen && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
                     onClick={() => setModalOpen(false)}>
-                    <div className="bg-white rounded-t-2xl sm:rounded-lg shadow-2xl w-full sm:max-w-5xl h-[95vh] sm:max-h-[92vh] flex flex-col overflow-hidden"
+                    <div className="bg-white rounded-t-2xl sm:rounded-lg shadow-2xl w-full sm:max-w-5xl sm:max-h-[80vh] flex flex-col overflow-hidden"
                         onClick={e => e.stopPropagation()}>
 
                         {/* Modal header */}
-                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 rounded-t-lg shrink-0">
+                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-3 rounded-t-lg shrink-0">
                             <div className="flex items-center gap-2">
                                 <Building2 size={16} className="text-[#FB7506]" />
                                 <span className="font-black text-[10px] text-white uppercase tracking-widest">
@@ -1051,17 +1052,9 @@ export default function VendorsPage() {
                                     </span>
                                 )}
                             </div>
-                            <div className="flex items-center gap-1.5 px-2">
-                                <button onClick={handleSave} disabled={saving}
-                                    className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all">
-                                    {saving ? <RefreshCcw size={14} className="animate-spin" /> : <Save size={14} />}
-                                    {saving ? "Saving..." : "Save"}
-                                </button>
-                                <button onClick={() => setModalOpen(false)}
-                                    className="flex items-center gap-1.5 bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all">
-                                    <X size={14} /> Cancel
-                                </button>
-                            </div>
+                            <button onClick={() => setModalOpen(false)} className="text-gray-400 hover:text-white transition-colors">
+                                <X size={16} />
+                            </button>
                         </div>
 
                         {/* Modal inner tabs */}
@@ -1083,7 +1076,7 @@ export default function VendorsPage() {
                         </div>
 
                         {/* Modal scrollable content */}
-                        <div className="flex-1 overflow-y-auto p-3 md:p-4">
+                        <div className="flex-1 overflow-y-auto p-3 md:p-4 min-h-0">
 
                             {/* ── Tab 1: Main Info ── */}
                             {modalTab === "main" && (
@@ -1143,8 +1136,8 @@ export default function VendorsPage() {
                                         <select value={t(form.terms_uq)} onChange={e => setField("terms_uq", e.target.value)} className={fInput}>
                                             <option value="">-- None --</option>
                                             {terms.map((r: any) => (
-                                                <option key={t(r.UNICO ?? r.TERMS_UQ)} value={t(r.UNICO ?? r.TERMS_UQ)}>
-                                                    {t(r.TERMS ?? r.DESCRIPTION ?? r.UNICO)}
+                                                <option key={t(r.UNICO)} value={t(r.UNICO)}>
+                                                    {t(r.CONDITION ?? r.TERMS ?? r.DESCRIPTION ?? r.UNICO)}
                                                 </option>
                                             ))}
                                         </select>
@@ -1153,8 +1146,8 @@ export default function VendorsPage() {
                                         <label className={fLabel}>Agency</label>
                                         <select value={t(form.agency_uq)} onChange={e => setField("agency_uq", e.target.value)} className={fInput}>
                                             <option value="">-- None --</option>
-                                            {agencies.map((r: any) => (
-                                                <option key={t(r.UNICO ?? r.AGENCY_UQ)} value={t(r.UNICO ?? r.AGENCY_UQ)}>
+                                            {agencies.filter((r: any) => t(r.UNICO) !== "%").map((r: any) => (
+                                                <option key={t(r.UNICO)} value={t(r.UNICO)}>
                                                     {t(r.AGENCY ?? r.DESCRIPTION ?? r.UNICO)}
                                                 </option>
                                             ))}
@@ -1165,7 +1158,7 @@ export default function VendorsPage() {
                                         <select value={t(form.group_uq)} onChange={e => setField("group_uq", e.target.value)} className={fInput}>
                                             <option value="">-- None --</option>
                                             {groups.map((r: any) => (
-                                                <option key={t(r.UNICO ?? r.GROUP_UQ)} value={t(r.UNICO ?? r.GROUP_UQ)}>
+                                                <option key={t(r.UNICO)} value={t(r.UNICO)}>
                                                     {t(r.GROWERTYPE ?? r.DESCRIPTION ?? r.UNICO)}
                                                 </option>
                                             ))}
@@ -1338,6 +1331,19 @@ export default function VendorsPage() {
                                     </div>
                                 </div>
                             )}
+                        </div>
+
+                        {/* Modal footer */}
+                        <div className="flex justify-end gap-2 px-4 py-3 bg-gray-50 border-t shrink-0">
+                            <button onClick={() => setModalOpen(false)}
+                                className="px-4 py-2 rounded border border-gray-200 text-xs font-black uppercase text-gray-600 hover:bg-gray-100 transition-colors">
+                                Cancel
+                            </button>
+                            <button onClick={handleSave} disabled={saving}
+                                className="flex items-center gap-2 px-5 py-2 rounded bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white text-xs font-black uppercase tracking-wider transition-all">
+                                {saving ? <RefreshCcw size={12} className="animate-spin" /> : <Save size={12} />}
+                                {saving ? "Saving..." : "Save"}
+                            </button>
                         </div>
                     </div>
                 </div>
