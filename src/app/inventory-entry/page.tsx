@@ -16,6 +16,19 @@ import { cn } from "@/lib/utils";
 import { GridMenu } from "@/components/GridMenu";
 import { usePagePermissions } from "@/lib/permissions";
 import { useAuditLog } from "@/lib/audit";
+import { ModalBoxMove }              from "@/components/inventory-entry/ModalBoxMove";
+import { ModalSelectPWarehouse }     from "@/components/inventory-entry/ModalSelectPWarehouse";
+import { ModalWhouseTotals }         from "@/components/inventory-entry/ModalWhouseTotals";
+import { ModalSendToWhouse }         from "@/components/inventory-entry/ModalSendToWhouse";
+import { ModalHeaderCopy }           from "@/components/inventory-entry/ModalHeaderCopy";
+import { ModalFilterGrowers }        from "@/components/inventory-entry/ModalFilterGrowers";
+import { ModalFilterCustomers }      from "@/components/inventory-entry/ModalFilterCustomers";
+import { ModalBoxPO }                from "@/components/inventory-entry/ModalBoxPO";
+import { ModalBoxWHControl }         from "@/components/inventory-entry/ModalBoxWHControl";
+import { ModalAWBSetup }             from "@/components/inventory-entry/ModalAWBSetup";
+import { ModalDeletePackingDetails } from "@/components/inventory-entry/ModalDeletePackingDetails";
+import { ModalHeader2 }              from "@/components/inventory-entry/ModalHeader2";
+import { ModalWarehouseTransfer }    from "@/components/inventory-entry/ModalWarehouseTransfer";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const t   = (v: any) => String(v ?? "").trim();
@@ -172,6 +185,25 @@ export default function InventoryEntryPage() {
     const [modalChgAwb, setModalChgAwb] = useState(false);
     const [chgAwbForm,  setChgAwbForm]  = useState({ awbcode: "", airline_uq: "", date_invo: today() });
     const [chgAwbSaving, setChgAwbSaving] = useState(false);
+
+    // ── New modals ────────────────────────────────────────────────────────────
+    const [modalBoxMove,     setModalBoxMove]     = useState(false);
+    const [modalSelectPWH,   setModalSelectPWH]   = useState(false);
+    const [modalWhTotals,    setModalWhTotals]    = useState(false);
+    const [modalSendWH,      setModalSendWH]      = useState(false);
+    const [modalCopy,        setModalCopy]        = useState(false);
+    const [modalFiltGrowers, setModalFiltGrowers] = useState(false);
+    const [modalFiltCust,    setModalFiltCust]    = useState(false);
+    const [modalBoxPO,       setModalBoxPO]       = useState(false);
+    const [modalBoxWHCtrl,   setModalBoxWHCtrl]   = useState(false);
+    const [modalAWBSetup,    setModalAWBSetup]    = useState(false);
+    const [modalDelDetails,  setModalDelDetails]  = useState(false);
+    const [modalHeader2,     setModalHeader2]     = useState(false);
+    const [modalTransfer,    setModalTransfer]    = useState(false);
+
+    // ── Filter state ──────────────────────────────────────────────────────────
+    const [filterGrowerUq,  setFilterGrowerUq]  = useState("");
+    const [filterCustomer,  setFilterCustomer]  = useState("");
 
     // ── Queries ───────────────────────────────────────────────────────────────
     const { data: lookups } = useQuery({
@@ -771,18 +803,24 @@ export default function InventoryEntryPage() {
                                     </div>
                                     <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
                                         {[
-                                            { label: "AWB Cust. PO", icon: FileText },
-                                            { label: "Label Laser", icon: FileText },
-                                            { label: "Packing", icon: Package },
-                                            { label: "Send to Whouse", icon: ArrowRight, active: true },
-                                            { label: "COff", icon: FileText },
-                                            { label: "PDF Label", icon: FileText },
-                                            { label: "Z300", icon: FileText },
-                                            { label: "Z 4M", icon: FileText },
-                                            { label: "RPK", icon: FileText },
-                                            { label: "Copy", icon: Copy },
+                                            { label: "AWB Cust. PO", icon: FileText, action: () => toast.info("AWB Cust. PO — coming soon.") },
+                                            { label: "Label Laser",  icon: FileText, action: () => toast.info("Label Laser — coming soon.") },
+                                            { label: "Packing",      icon: Package,  action: () => toast.info("Packing — coming soon.") },
+                                            { label: "Send to Whouse", icon: ArrowRight, active: true, action: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalSendWH(true); } },
+                                            { label: "WH Totals",    icon: BarChart2, action: () => setModalWhTotals(true) },
+                                            { label: "COff",         icon: FileText, action: () => toast.info("COff — coming soon.") },
+                                            { label: "PDF Label",    icon: FileText, action: () => toast.info("PDF Label — coming soon.") },
+                                            { label: "Z300",         icon: FileText, action: () => toast.info("Z300 — coming soon.") },
+                                            { label: "Z 4M",         icon: FileText, action: () => toast.info("Z 4M — coming soon.") },
+                                            { label: "RPK",          icon: FileText, action: () => toast.info("RPK — coming soon.") },
+                                            { label: "Copy",         icon: Copy,     action: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalCopy(true); } },
+                                            { label: "Del Details",  icon: Trash2,   action: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalDelDetails(true); } },
+                                            { label: "Header 2",     icon: FileText, action: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalHeader2(true); } },
+                                            { label: "Filter Grower",  icon: Flower2,       action: () => setModalFiltGrowers(true) },
+                                            { label: "Filter Cust.",   icon: ShoppingCart,  action: () => setModalFiltCust(true) },
+                                            { label: "AWB Setup",      icon: Plane,         action: () => setModalAWBSetup(true) },
                                         ].map((btn, idx) => (
-                                            <button key={idx} onClick={() => toast.info(`${btn.label} — coming soon.`)}
+                                            <button key={idx} onClick={btn.action}
                                                 className={cn(
                                                     "flex items-center gap-1 px-2 py-1 text-[10px] font-bold rounded border whitespace-nowrap shrink-0 transition-colors",
                                                     btn.active
@@ -793,6 +831,16 @@ export default function InventoryEntryPage() {
                                                 {btn.label}
                                             </button>
                                         ))}
+                                        {filterGrowerUq && (
+                                            <span className="text-[10px] text-blue-600 font-bold border border-blue-300 rounded px-1.5 py-0.5 bg-blue-50 shrink-0">
+                                                Grower ✓
+                                            </span>
+                                        )}
+                                        {filterCustomer && (
+                                            <span className="text-[10px] text-blue-600 font-bold border border-blue-300 rounded px-1.5 py-0.5 bg-blue-50 shrink-0">
+                                                Cust ✓
+                                            </span>
+                                        )}
                                         <span className="text-[10px] font-bold text-gray-400 ml-2 shrink-0">{(packingXAwb as any[]).length} records</span>
                                     </div>
                                 </div>
@@ -863,12 +911,15 @@ export default function InventoryEntryPage() {
                                         </span>
                                         <div className="w-px h-3 bg-gray-600 mx-1" />
                                         {[
-                                            { label: "Transform Inventory", icon: ArrowRight, color: "green" },
-                                            { label: "Change Prices", icon: Pencil, color: "gray" },
-                                            { label: "RePacking", icon: Package, color: "orange" },
-                                            { label: "WHControl", icon: Warehouse, color: "green" },
+                                            { label: "Transform Inventory", icon: ArrowRight, action: () => toast.info("Transform Inventory — coming soon.") },
+                                            { label: "Change Prices",       icon: Pencil,     action: () => toast.info("Change Prices — coming soon.") },
+                                            { label: "RePacking",           icon: Package,    action: () => toast.info("RePacking — coming soon.") },
+                                            { label: "WHControl",           icon: Warehouse,  action: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalBoxWHCtrl(true); } },
+                                            { label: "Move Box",            icon: ArrowRight, action: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalBoxMove(true); } },
+                                            { label: "WH Transfer",         icon: Warehouse,  action: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalTransfer(true); } },
+                                            { label: "Add from PO",         icon: ClipboardList, action: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalBoxPO(true); } },
                                         ].map((btn, idx) => (
-                                            <button key={idx} onClick={() => toast.info(`${btn.label} — coming soon.`)}
+                                            <button key={idx} onClick={btn.action}
                                                 className="flex items-center gap-1 px-2 py-1 text-[10px] font-bold rounded border bg-white text-gray-700 border-gray-200 hover:bg-gray-50 whitespace-nowrap shrink-0 transition-colors">
                                                 {btn.icon && <btn.icon size={10} />}
                                                 {btn.label}
@@ -1647,6 +1698,128 @@ export default function InventoryEntryPage() {
                     </div>
                 </div>
             )}
+
+            {/* ─── Box Move Modal ───────────────────────────────────────────────────── */}
+            <ModalBoxMove
+                open={modalBoxMove}
+                onClose={() => setModalBoxMove(false)}
+                boxUnico={lcpk_box_uq}
+                currentPackUq={lcpack_uq}
+                userId={(session?.user as any)?.id || ""}
+                onSuccess={() => { refetchBoxes(); logAction("Edit", lcpk_box_uq, AUDIT_MAP["move-box"].ext); }}
+            />
+
+            {/* ─── Select Physical Warehouse Modal ─────────────────────────────────── */}
+            <ModalSelectPWarehouse
+                open={modalSelectPWH}
+                onClose={() => setModalSelectPWH(false)}
+                warehouses={warehouses}
+                onSelect={w => toast.info(`Warehouse selected: ${t(w.WHOUSE ?? w.UNICO)}`)}
+            />
+
+            {/* ─── Warehouse Totals Modal ───────────────────────────────────────────── */}
+            <ModalWhouseTotals
+                open={modalWhTotals}
+                onClose={() => setModalWhTotals(false)}
+                lddate={lddate}
+            />
+
+            {/* ─── Send to Warehouse Modal ──────────────────────────────────────────── */}
+            <ModalSendToWhouse
+                open={modalSendWH}
+                onClose={() => setModalSendWH(false)}
+                packUq={lcpack_uq}
+                warehouses={warehouses}
+                userId={(session?.user as any)?.id || ""}
+                onSuccess={() => { handleRefresh(); logAction("Edit", lcpack_uq, AUDIT_MAP["to-whouse"].ext); }}
+            />
+
+            {/* ─── Header Copy Modal ────────────────────────────────────────────────── */}
+            <ModalHeaderCopy
+                open={modalCopy}
+                onClose={() => setModalCopy(false)}
+                packUq={lcpack_uq}
+                userId={(session?.user as any)?.id || ""}
+                onSuccess={(newUnico) => { handleRefresh(); if (newUnico) setLcpack_uq(newUnico); logAction("Insert", newUnico || lcpack_uq, AUDIT_MAP["copy-packing"].ext); }}
+            />
+
+            {/* ─── Filter Growers Modal ─────────────────────────────────────────────── */}
+            <ModalFilterGrowers
+                open={modalFiltGrowers}
+                onClose={() => setModalFiltGrowers(false)}
+                growers={growers}
+                currentGrowerUq={filterGrowerUq}
+                onApply={uq => setFilterGrowerUq(uq)}
+            />
+
+            {/* ─── Filter Customers Modal ───────────────────────────────────────────── */}
+            <ModalFilterCustomers
+                open={modalFiltCust}
+                onClose={() => setModalFiltCust(false)}
+                currentCustomer={filterCustomer}
+                onApply={c => setFilterCustomer(c)}
+            />
+
+            {/* ─── Add Box from PO Modal ────────────────────────────────────────────── */}
+            <ModalBoxPO
+                open={modalBoxPO}
+                onClose={() => setModalBoxPO(false)}
+                packUq={lcpack_uq}
+                ldship_date={lddate}
+                userId={(session?.user as any)?.id || ""}
+                onSuccess={() => { refetchBoxes(); logAction("Insert", lcpack_uq, AUDIT_MAP["insert-box"].ext); }}
+            />
+
+            {/* ─── Box WH Control Modal ─────────────────────────────────────────────── */}
+            <ModalBoxWHControl
+                open={modalBoxWHCtrl}
+                onClose={() => setModalBoxWHCtrl(false)}
+                boxUnico={lcpk_box_uq}
+                cases={cases}
+                userId={(session?.user as any)?.id || ""}
+                onSuccess={() => { refetchBoxes(); logAction("Edit", lcpk_box_uq, AUDIT_MAP["whcontrol"].ext); }}
+            />
+
+            {/* ─── AWB Setup Modal ──────────────────────────────────────────────────── */}
+            <ModalAWBSetup
+                open={modalAWBSetup}
+                onClose={() => setModalAWBSetup(false)}
+                airlines={airlines}
+                userId={(session?.user as any)?.id || ""}
+                defaultDate={lddate}
+                defaultAwbcode={lcawbcode}
+            />
+
+            {/* ─── Delete Packing Details Modal ─────────────────────────────────────── */}
+            <ModalDeletePackingDetails
+                open={modalDelDetails}
+                onClose={() => setModalDelDetails(false)}
+                packUq={lcpack_uq}
+                packingDetails={packingDetails}
+                userId={(session?.user as any)?.id || ""}
+                onSuccess={() => { refetchBoxes(); qc.invalidateQueries({ queryKey: ["ie-packing-details", lcpack_uq] }); }}
+            />
+
+            {/* ─── Header 2 Modal ───────────────────────────────────────────────────── */}
+            <ModalHeader2
+                open={modalHeader2}
+                onClose={() => setModalHeader2(false)}
+                packUq={lcpack_uq}
+                warehouses={warehouses}
+                airlines={airlines}
+                userId={(session?.user as any)?.id || ""}
+                onSuccess={() => { handleRefresh(); logAction("Edit", lcpack_uq, AUDIT_MAP["update-packing"].ext); }}
+            />
+
+            {/* ─── Warehouse Transfer Modal ─────────────────────────────────────────── */}
+            <ModalWarehouseTransfer
+                open={modalTransfer}
+                onClose={() => setModalTransfer(false)}
+                boxUnico={lcpk_box_uq}
+                warehouses={warehouses}
+                userId={(session?.user as any)?.id || ""}
+                onSuccess={() => { refetchBoxes(); logAction("Edit", lcpk_box_uq, AUDIT_MAP["transfer-box"].ext); }}
+            />
         </div>
     );
 }
