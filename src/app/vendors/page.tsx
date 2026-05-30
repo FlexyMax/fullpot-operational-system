@@ -25,8 +25,13 @@ const norm = (rows: any[]) => rows.map(r => {
 const fmt = (v: any) => parseFloat(v ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = (v: any) => {
     if (!v) return "";
-    const d = new Date(v);
-    return isNaN(d.getTime()) ? t(v) : d.toLocaleDateString("en-US");
+    const s = String(v).trim();
+    if (!s) return "";
+    // ISO date: parse date part only to avoid UTC→local timezone shift
+    const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (iso) return new Date(+iso[1], +iso[2] - 1, +iso[3]).toLocaleDateString("en-US");
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? s : d.toLocaleDateString("en-US");
 };
 const today = () => new Date().toISOString().split("T")[0];
 const firstOfYear = () => `${new Date().getFullYear()}-01-01`;
