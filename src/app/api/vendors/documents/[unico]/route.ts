@@ -18,10 +18,10 @@ export async function PUT(req: NextRequest, { params }: P) {
     const b = await req.json();
     try {
         const r = await executeProcedure("sp_flower_growers_documents_update", {
-            lcunico:    unico,
-            lcdocument: String(b.document ?? ""),
-            ldfrom:     new Date(b.date_from),
-            ldto:       new Date(b.date_to),
+            lcunico:       unico,
+            lcdocument:    String(b.document ?? ""),
+            ldpbdate_from: new Date(b.date_from),
+            ldpbdate_to:   new Date(b.date_to),
         });
         const row = r.recordset?.[0];
         if (row?.error === 1 || row?.Error === 1) return NextResponse.json({ success: false, error: row.message || row.Message }, { status: 400 });

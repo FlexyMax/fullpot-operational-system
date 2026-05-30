@@ -17,10 +17,10 @@ export async function POST(req: NextRequest) {
     const b = await req.json();
     try {
         const r = await executeProcedure("sp_flower_growers_documents_insert", {
-            lcgrower_uq: String(b.grower_uq ?? ""),
-            lcdocument:  String(b.document ?? ""),
-            ldfrom:      new Date(b.date_from),
-            ldto:        new Date(b.date_to),
+            lcgrower_uq:    String(b.grower_uq ?? ""),
+            lcdocument:     String(b.document ?? ""),
+            ldpbdate_from:  new Date(b.date_from),
+            ldpbdate_to:    new Date(b.date_to),
         });
         const row = r.recordset?.[0];
         if (row?.error === 1 || row?.Error === 1) return NextResponse.json({ success: false, error: row.message || row.Message }, { status: 400 });
