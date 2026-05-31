@@ -10,7 +10,8 @@ import {
     Lock, Trash2, Check, Calendar, Users,
     Package, BookOpen, ClipboardList,
     FilePen, Paperclip, StickyNote, RefreshCw,
-    UserCog, Scissors, Plus, Copy,
+    UserCog, Scissors, Plus, Copy, Printer, Minus,
+    FileX, Link2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -80,158 +81,256 @@ function TBtn({ icon: Icon, label, onClick, disabled, variant = "default" }: any
     );
 }
 
+// ─── Sub-header button for tab panels ─────────────────────────────────────────
+function SBtn({ icon: Icon, label, onClick, disabled }: any) {
+    return (
+        <button onClick={onClick} disabled={disabled}
+            className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest bg-white/10 hover:bg-white/20 text-white rounded border border-white/20 disabled:opacity-40 transition-all whitespace-nowrap"
+        >
+            {Icon && <Icon size={10} />}{label}
+        </button>
+    );
+}
+
 // ─── Bottom tab sub-components ─────────────────────────────────────────────────
 function InvoicedTab({ rows }: { rows: any[] }) {
     return (
-        <table className="min-w-full text-xs text-left">
-            <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
-                <tr>
-                    <Th>Lot</Th><Th>Invoice Date</Th><Th>Invoice</Th>
-                    <Th className="text-right">Boxes</Th><Th className="text-right">UxCase</Th>
-                    <Th className="text-right">Price</Th><Th className="text-right">Total Units</Th>
-                    <Th className="text-right">Value</Th><Th>Vendor</Th><Th>Warehouse</Th>
-                    <Th>Case</Th><Th className="text-right">Unit Cost</Th>
-                    <Th className="text-right">Days</Th><Th>Status</Th><Th>Sold Product</Th>
-                </tr>
-            </thead>
-            <tbody>
-                {rows.map((r, i) => (
-                    <tr key={i} className="border-b odd:bg-white even:bg-gray-50 hover:bg-blue-50 text-gray-600">
-                        <Td>{t(r.LOT)}</Td>
-                        <Td>{fmtDate(r.INVOICE_DATE ?? r.INV_DATE ?? r.LDINV_DATE)}</Td>
-                        <Td className="font-semibold text-blue-700">{t(r.INVOICE ?? r.INVOICE_NO)}</Td>
-                        <Td className="text-right">{fmtI(r.BOXES)}</Td>
-                        <Td className="text-right">{fmtI(r.UNITS_X_CASE ?? r.UXCASE ?? r.UNITS_X_BOX)}</Td>
-                        <Td className="text-right">{fmt(r.PRICE)}</Td>
-                        <Td className="text-right">{fmtI(r.TOTAL_UNITS)}</Td>
-                        <Td className="text-right font-semibold">{fmt(r.VALUE)}</Td>
-                        <Td>{t(r.VENDOR ?? r.GROWER)}</Td>
-                        <Td>{t(r.WAREHOUSE ?? r.WHOUSE)}</Td>
-                        <Td>{t(r.CASE_SH ?? r.CASE)}</Td>
-                        <Td className="text-right">{fmt(r.UNIT_COST)}</Td>
-                        <Td className="text-right">{fmtI(r.DAYS)}</Td>
-                        <Td>{t(r.STATUS)}</Td>
-                        <Td>{t(r.SOLD_PRODUCT)}</Td>
-                    </tr>
-                ))}
-                {rows.length === 0 && <tr><td colSpan={15} className="p-8 text-center text-gray-400 italic">No invoiced prebooks</td></tr>}
-            </tbody>
-        </table>
+        <div className="flex flex-col h-full">
+            <div className="flex items-center gap-2 px-3 py-1 bg-green-800 shrink-0">
+                <span className="font-black text-[10px] text-white uppercase tracking-widest">Invoiced Prebooks</span>
+                <SBtn icon={X}       label="Close"     onClick={() => {}} />
+                <SBtn icon={Printer} label="Invoice"   onClick={() => {}} />
+                <SBtn icon={Printer} label="Pick List" onClick={() => {}} />
+                <div className="ml-auto"><Lock size={11} className="text-white/60" /></div>
+            </div>
+            <div className="flex-1 overflow-auto">
+                <table className="min-w-full text-xs text-left">
+                    <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
+                        <tr>
+                            <Th>Lot</Th><Th>InvoiceDate</Th><Th>Invoice</Th>
+                            <Th className="text-right">Boxes</Th><Th className="text-right">UxCase</Th>
+                            <Th className="text-right">Price</Th><Th className="text-right">TotalUnits</Th>
+                            <Th className="text-right">Value</Th><Th>Vendor</Th><Th>Warehouse</Th>
+                            <Th>Case</Th><Th className="text-right">UnitCost</Th>
+                            <Th className="text-right">Days</Th><Th>Status</Th><Th>SoldProduct</Th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {rows.map((r, i) => (
+                            <tr key={i} className="border-b odd:bg-white even:bg-gray-50 hover:bg-blue-50 text-gray-600">
+                                <Td>{t(r.LOT)}</Td>
+                                <Td>{fmtDate(r.INVOICE_DATE ?? r.INV_DATE ?? r.LDINV_DATE)}</Td>
+                                <Td className="font-semibold text-blue-700">{t(r.INVOICE ?? r.INVOICE_NO)}</Td>
+                                <Td className="text-right">{fmt(r.BOXES)}</Td>
+                                <Td className="text-right">{fmtI(r.UNITS_X_CASE ?? r.UXCASE ?? r.UNITS_X_BOX)}</Td>
+                                <Td className="text-right">{fmt(r.PRICE)}</Td>
+                                <Td className="text-right">{fmt(r.TOTAL_UNITS)}</Td>
+                                <Td className="text-right font-semibold">{fmt(r.VALUE)}</Td>
+                                <Td>{t(r.VENDOR ?? r.GROWER)}</Td>
+                                <Td>{t(r.WAREHOUSE ?? r.WHOUSE)}</Td>
+                                <Td>{t(r.CASE_SH ?? r.CASE)}</Td>
+                                <Td className="text-right">{fmt(r.UNIT_COST)}</Td>
+                                <Td className="text-right">{fmtI(r.DAYS)}</Td>
+                                <Td>{t(r.STATUS)}</Td>
+                                <Td>{t(r.SOLD_PRODUCT)}</Td>
+                            </tr>
+                        ))}
+                        {rows.length === 0 && <tr><td colSpan={15} className="p-6 text-center text-gray-400 italic">No invoiced prebooks</td></tr>}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     );
 }
 
 function AssignedStockTab({ rows }: { rows: any[] }) {
     return (
-        <table className="min-w-full text-xs text-left">
-            <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
-                <tr>
-                    <Th>Lot</Th><Th>Product</Th><Th>Vendor</Th>
-                    <Th className="text-right">Boxes</Th><Th className="text-right">UxCase</Th>
-                    <Th>Warehouse</Th><Th>Status</Th>
-                </tr>
-            </thead>
-            <tbody>
-                {rows.map((r, i) => (
-                    <tr key={i} className="border-b odd:bg-white even:bg-gray-50 hover:bg-blue-50 text-gray-600">
-                        <Td>{t(r.LOT ?? r.PCCODE)}</Td>
-                        <Td>{t(r.PRODUCT ?? r.DESCRIPTION)}</Td>
-                        <Td>{t(r.VENDOR ?? r.GROWER)}</Td>
-                        <Td className="text-right">{fmtI(r.BOXES ?? r.QTY_BOXES)}</Td>
-                        <Td className="text-right">{fmtI(r.UNITS_X_CASE ?? r.UNITS_X_BOX)}</Td>
-                        <Td>{t(r.WAREHOUSE ?? r.WHOUSE)}</Td>
-                        <Td>{t(r.STATUS)}</Td>
-                    </tr>
-                ))}
-                {rows.length === 0 && <tr><td colSpan={7} className="p-8 text-center text-gray-400 italic">No assigned stock</td></tr>}
-            </tbody>
-        </table>
+        <div className="flex flex-col h-full">
+            <div className="flex items-center gap-2 px-3 py-1 bg-gray-900 shrink-0">
+                <span className="font-black text-[10px] text-white uppercase tracking-widest">Preassigned Stock</span>
+                <div className="ml-auto flex gap-2">
+                    <SBtn icon={Plus}  label="Assign to Prebook box" onClick={() => {}} />
+                    <SBtn icon={Minus} label="Unassign Lot"          onClick={() => {}} />
+                </div>
+            </div>
+            <div className="flex-1 overflow-auto">
+                <table className="min-w-full text-xs text-left">
+                    <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
+                        <tr>
+                            <Th>Customer</Th><Th>Warehouse</Th><Th>Vendor</Th>
+                            <Th className="text-right">Stock</Th><Th className="text-right">UxPack</Th>
+                            <Th className="text-right">PxCase</Th><Th className="text-right">UxCase</Th>
+                            <Th>Lote</Th><Th>Date</Th><Th className="text-right">Days</Th>
+                            <Th>Awb</Th><Th className="text-right">UnitPrice</Th>
+                            <Th className="text-right">BoxValue</Th><Th className="text-right">TotalValue</Th>
+                            <Th className="text-right">UnitCost</Th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {rows.map((r, i) => (
+                            <tr key={i} className="border-b odd:bg-white even:bg-gray-50 hover:bg-blue-50 text-gray-600">
+                                <Td>{t(r.CUSTOMER)}</Td>
+                                <Td>{t(r.WAREHOUSE ?? r.WHOUSE)}</Td>
+                                <Td>{t(r.VENDOR ?? r.GROWER)}</Td>
+                                <Td className="text-right">{fmtI(r.STOCK ?? r.BOXES ?? r.QTY_BOXES)}</Td>
+                                <Td className="text-right">{fmtI(r.UP_X_PACK ?? r.UXPACK)}</Td>
+                                <Td className="text-right">{fmtI(r.PACKS_X_CASE ?? r.PXCASE)}</Td>
+                                <Td className="text-right">{fmtI(r.UNITS_X_CASE ?? r.UNITS_X_BOX ?? r.UXCASE)}</Td>
+                                <Td>{t(r.LOTE ?? r.LOT ?? r.PCCODE)}</Td>
+                                <Td>{fmtDate(r.DATE ?? r.PACK_DATE)}</Td>
+                                <Td className="text-right">{fmtI(r.DAYS ?? r.AGE)}</Td>
+                                <Td>{t(r.AWB)}</Td>
+                                <Td className="text-right">{fmt(r.UNIT_PRICE ?? r.UNITPRICE)}</Td>
+                                <Td className="text-right">{fmt(r.BOX_VALUE ?? r.BOXVALUE)}</Td>
+                                <Td className="text-right font-semibold">{fmt(r.TOTAL_VALUE ?? r.TOTALVALUE)}</Td>
+                                <Td className="text-right">{fmt(r.UNIT_COST ?? r.UNITCOST)}</Td>
+                            </tr>
+                        ))}
+                        {rows.length === 0 && <tr><td colSpan={15} className="p-6 text-center text-gray-400 italic">No assigned stock</td></tr>}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     );
 }
 
 function PurchaseTab({ rows }: { rows: any[] }) {
     return (
-        <table className="min-w-full text-xs text-left">
-            <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
-                <tr>
-                    <Th>PO No.</Th><Th>Product</Th><Th>Vendor</Th>
-                    <Th className="text-right">Boxes</Th><Th className="text-right">UxCase</Th>
-                    <Th className="text-right">Cost</Th><Th>Status</Th>
-                </tr>
-            </thead>
-            <tbody>
-                {rows.map((r, i) => (
-                    <tr key={i} className="border-b odd:bg-white even:bg-gray-50 hover:bg-blue-50 text-gray-600">
-                        <Td className="font-semibold">{t(r.PO_NO ?? r.PURCHASE_NO ?? r.SORDER_NO)}</Td>
-                        <Td>{t(r.PRODUCT ?? r.DESCRIPTION)}</Td>
-                        <Td>{t(r.VENDOR ?? r.GROWER)}</Td>
-                        <Td className="text-right">{fmtI(r.BOXES ?? r.QTY_BOXES)}</Td>
-                        <Td className="text-right">{fmtI(r.UNITS_X_CASE ?? r.UNITS_X_BOX)}</Td>
-                        <Td className="text-right">{fmt(r.COST ?? r.UNIT_COST)}</Td>
-                        <Td>{t(r.STATUS)}</Td>
-                    </tr>
-                ))}
-                {rows.length === 0 && <tr><td colSpan={7} className="p-8 text-center text-gray-400 italic">No purchase records</td></tr>}
-            </tbody>
-        </table>
+        <div className="flex flex-col h-full">
+            <div className="flex items-center gap-2 px-3 py-1 bg-gray-700 shrink-0">
+                <span className="font-black text-[10px] text-white uppercase tracking-widest">Purchase by Prebook Box</span>
+            </div>
+            <div className="flex-1 overflow-auto">
+                <table className="min-w-full text-xs text-left">
+                    <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
+                        <tr>
+                            <Th>PO No.</Th><Th>Product</Th><Th>Vendor</Th>
+                            <Th className="text-right">Boxes</Th><Th className="text-right">UxCase</Th>
+                            <Th className="text-right">Cost</Th><Th>Status</Th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {rows.map((r, i) => (
+                            <tr key={i} className="border-b odd:bg-white even:bg-gray-50 hover:bg-blue-50 text-gray-600">
+                                <Td className="font-semibold">{t(r.PO_NO ?? r.PURCHASE_NO ?? r.SORDER_NO)}</Td>
+                                <Td>{t(r.PRODUCT ?? r.DESCRIPTION)}</Td>
+                                <Td>{t(r.VENDOR ?? r.GROWER)}</Td>
+                                <Td className="text-right">{fmtI(r.BOXES ?? r.QTY_BOXES)}</Td>
+                                <Td className="text-right">{fmtI(r.UNITS_X_CASE ?? r.UNITS_X_BOX)}</Td>
+                                <Td className="text-right">{fmt(r.COST ?? r.UNIT_COST)}</Td>
+                                <Td>{t(r.STATUS)}</Td>
+                            </tr>
+                        ))}
+                        {rows.length === 0 && <tr><td colSpan={7} className="p-6 text-center text-gray-400 italic">No purchase records</td></tr>}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     );
 }
 
 function StockOmTab({ rows, loading }: { rows: any[]; loading: boolean }) {
     return (
-        <table className="min-w-full text-xs text-left">
-            <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
-                <tr>
-                    <Th>Lot</Th><Th>Product</Th><Th>Vendor</Th>
-                    <Th className="text-right">Boxes</Th><Th className="text-right">UxCase</Th>
-                    <Th className="text-right">Cost</Th><Th>Warehouse</Th><Th className="text-right">Days</Th>
-                </tr>
-            </thead>
-            <tbody>
-                {loading && <tr><td colSpan={8} className="p-8 text-center text-gray-400 italic"><Loader2 size={14} className="animate-spin inline mr-2" />Loading stock...</td></tr>}
-                {!loading && rows.map((r, i) => (
-                    <tr key={i} className="border-b odd:bg-white even:bg-gray-50 hover:bg-blue-50 text-gray-600">
-                        <Td>{t(r.LOT ?? r.PCCODE)}</Td>
-                        <Td>{t(r.PRODUCT ?? r.DESCRIPTION)}</Td>
-                        <Td>{t(r.VENDOR ?? r.GROWER)}</Td>
-                        <Td className="text-right">{fmtI(r.BOXES ?? r.QTY_BOXES)}</Td>
-                        <Td className="text-right">{fmtI(r.UNITS_X_CASE ?? r.UNITS_X_BOX)}</Td>
-                        <Td className="text-right">{fmt(r.COST ?? r.UNIT_COST)}</Td>
-                        <Td>{t(r.WAREHOUSE ?? r.WHOUSE)}</Td>
-                        <Td className="text-right">{fmtI(r.DAYS ?? r.AGE)}</Td>
-                    </tr>
-                ))}
-                {!loading && rows.length === 0 && <tr><td colSpan={8} className="p-8 text-center text-gray-400 italic">Click Stock OM to load open market stock</td></tr>}
-            </tbody>
-        </table>
+        <div className="flex flex-col h-full">
+            <div className="flex items-center gap-2 px-3 py-1 bg-blue-700 shrink-0">
+                <span className="font-black text-[10px] text-white uppercase tracking-widest">Stock Open Market</span>
+                <div className="ml-auto">
+                    <SBtn icon={Plus} label="Assign to Prebook box" onClick={() => {}} />
+                </div>
+            </div>
+            <div className="flex-1 overflow-auto">
+                <table className="min-w-full text-xs text-left">
+                    <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
+                        <tr>
+                            <Th>Customer</Th><Th>Warehouse</Th><Th>Vendor</Th>
+                            <Th>Case</Th><Th className="text-right">UxPack</Th><Th className="text-right">PxCase</Th><Th className="text-right">UxCase</Th>
+                            <Th>Lote</Th><Th className="text-right">Days</Th><Th>Awb</Th>
+                            <Th className="text-right">Stock</Th><Th className="text-right">UnitPrice</Th>
+                            <Th className="text-right">BoxValue</Th><Th className="text-right">TotalValue</Th>
+                            <Th className="text-right">UnitCost</Th><Th>Date</Th>
+                            <Th className="text-right">GPM</Th><Th>BoxId</Th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {loading && <tr><td colSpan={18} className="p-6 text-center text-gray-400 italic"><Loader2 size={14} className="animate-spin inline mr-2" />Loading...</td></tr>}
+                        {!loading && rows.map((r, i) => (
+                            <tr key={i} className="border-b odd:bg-white even:bg-gray-50 hover:bg-blue-50 text-gray-600">
+                                <Td>{t(r.CUSTOMER)}</Td>
+                                <Td>{t(r.WAREHOUSE ?? r.WHOUSE)}</Td>
+                                <Td>{t(r.VENDOR ?? r.GROWER)}</Td>
+                                <Td>{t(r.CASE_SH ?? r.CASE)}</Td>
+                                <Td className="text-right">{fmtI(r.UP_X_PACK ?? r.UXPACK)}</Td>
+                                <Td className="text-right">{fmtI(r.PACKS_X_CASE ?? r.PXCASE)}</Td>
+                                <Td className="text-right">{fmtI(r.UNITS_X_CASE ?? r.UNITS_X_BOX)}</Td>
+                                <Td>{t(r.LOTE ?? r.LOT ?? r.PCCODE)}</Td>
+                                <Td className="text-right">{fmtI(r.DAYS ?? r.AGE)}</Td>
+                                <Td>{t(r.AWB)}</Td>
+                                <Td className="text-right">{fmtI(r.STOCK ?? r.BOXES)}</Td>
+                                <Td className="text-right">{fmt(r.UNIT_PRICE ?? r.UNITPRICE)}</Td>
+                                <Td className="text-right">{fmt(r.BOX_VALUE ?? r.BOXVALUE)}</Td>
+                                <Td className="text-right font-semibold">{fmt(r.TOTAL_VALUE ?? r.TOTALVALUE)}</Td>
+                                <Td className="text-right">{fmt(r.UNIT_COST ?? r.UNITCOST)}</Td>
+                                <Td>{fmtDate(r.DATE ?? r.PACK_DATE)}</Td>
+                                <Td className="text-right">{fmt(r.GPM ?? r.GP_M)}</Td>
+                                <Td>{t(r.BOX_ID ?? r.BOXID ?? r.PCCODE)}</Td>
+                            </tr>
+                        ))}
+                        {!loading && rows.length === 0 && <tr><td colSpan={18} className="p-6 text-center text-gray-400 italic">Click Stock OM to load open market stock</td></tr>}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     );
 }
 
 function SimilarTab({ rows }: { rows: any[] }) {
     return (
-        <table className="min-w-full text-xs text-left">
-            <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
-                <tr>
-                    <Th>Lot</Th><Th>Product</Th><Th>Vendor</Th>
-                    <Th className="text-right">Boxes</Th><Th className="text-right">UxCase</Th>
-                    <Th className="text-right">Cost</Th><Th>Warehouse</Th><Th className="text-right">Days</Th>
-                </tr>
-            </thead>
-            <tbody>
-                {rows.map((r, i) => (
-                    <tr key={i} className="border-b odd:bg-white even:bg-gray-50 hover:bg-blue-50 text-gray-600">
-                        <Td>{t(r.LOT ?? r.PCCODE)}</Td>
-                        <Td>{t(r.PRODUCT ?? r.DESCRIPTION)}</Td>
-                        <Td>{t(r.VENDOR ?? r.GROWER)}</Td>
-                        <Td className="text-right">{fmtI(r.BOXES ?? r.QTY_BOXES)}</Td>
-                        <Td className="text-right">{fmtI(r.UNITS_X_CASE ?? r.UNITS_X_BOX)}</Td>
-                        <Td className="text-right">{fmt(r.COST ?? r.UNIT_COST)}</Td>
-                        <Td>{t(r.WAREHOUSE ?? r.WHOUSE)}</Td>
-                        <Td className="text-right">{fmtI(r.DAYS ?? r.AGE)}</Td>
-                    </tr>
-                ))}
-                {rows.length === 0 && <tr><td colSpan={8} className="p-8 text-center text-gray-400 italic">No similar products</td></tr>}
-            </tbody>
-        </table>
+        <div className="flex flex-col h-full">
+            <div className="flex items-center gap-2 px-3 py-1 bg-red-700 shrink-0">
+                <span className="font-black text-[10px] text-white uppercase tracking-widest">Stock Open Market and Similar Products</span>
+                <div className="ml-auto">
+                    <SBtn icon={Plus} label="Assign to Prebook box" onClick={() => {}} />
+                </div>
+            </div>
+            <div className="flex-1 overflow-auto">
+                <table className="min-w-full text-xs text-left">
+                    <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
+                        <tr>
+                            <Th>Customer</Th><Th>Warehouse</Th><Th>Vendor</Th>
+                            <Th>Case</Th><Th className="text-right">UxPack</Th><Th className="text-right">PxCase</Th><Th className="text-right">UxCase</Th>
+                            <Th>lote</Th><Th className="text-right">Days</Th><Th>Awb</Th>
+                            <Th className="text-right">Stock</Th><Th className="text-right">UnitPrice</Th>
+                            <Th className="text-right">BoxValue</Th><Th className="text-right">TotalValue</Th>
+                            <Th>Description</Th><Th className="text-right">UnitCost</Th><Th className="text-right">G</Th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {rows.map((r, i) => (
+                            <tr key={i} className="border-b odd:bg-white even:bg-gray-50 hover:bg-blue-50 text-gray-600">
+                                <Td>{t(r.CUSTOMER)}</Td>
+                                <Td>{t(r.WAREHOUSE ?? r.WHOUSE)}</Td>
+                                <Td>{t(r.VENDOR ?? r.GROWER)}</Td>
+                                <Td>{t(r.CASE_SH ?? r.CASE)}</Td>
+                                <Td className="text-right">{fmtI(r.UP_X_PACK ?? r.UXPACK)}</Td>
+                                <Td className="text-right">{fmtI(r.PACKS_X_CASE ?? r.PXCASE)}</Td>
+                                <Td className="text-right">{fmtI(r.UNITS_X_CASE ?? r.UNITS_X_BOX)}</Td>
+                                <Td>{t(r.LOTE ?? r.LOT ?? r.PCCODE)}</Td>
+                                <Td className="text-right">{fmtI(r.DAYS ?? r.AGE)}</Td>
+                                <Td>{t(r.AWB)}</Td>
+                                <Td className="text-right">{fmtI(r.STOCK ?? r.BOXES)}</Td>
+                                <Td className="text-right">{fmt(r.UNIT_PRICE ?? r.UNITPRICE)}</Td>
+                                <Td className="text-right">{fmt(r.BOX_VALUE ?? r.BOXVALUE)}</Td>
+                                <Td className="text-right font-semibold">{fmt(r.TOTAL_VALUE ?? r.TOTALVALUE)}</Td>
+                                <Td className="max-w-[180px] truncate">{t(r.DESCRIPTION ?? r.PRODUCT)}</Td>
+                                <Td className="text-right">{fmt(r.UNIT_COST ?? r.UNITCOST)}</Td>
+                                <Td className="text-right">{fmt(r.G ?? r.GP_PCT)}</Td>
+                            </tr>
+                        ))}
+                        {rows.length === 0 && <tr><td colSpan={17} className="p-6 text-center text-gray-400 italic">No similar products</td></tr>}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     );
 }
 
@@ -558,6 +657,23 @@ export default function Pbook2InvoicePage() {
                             </span>
                             {loadingCustomers && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
                         </div>
+                        <div className="flex items-center gap-1.5">
+                            <button onClick={handleMakeInvoice} disabled={!selectedDate || working}
+                                className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest bg-red-600 hover:bg-red-500 text-white rounded disabled:opacity-40 transition-all whitespace-nowrap"
+                            >
+                                <Check size={10} /> Make Invoices
+                            </button>
+                            <button onClick={() => {}} disabled={!selectedDate}
+                                className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest bg-white/10 hover:bg-white/20 text-white rounded border border-white/20 disabled:opacity-40 transition-all whitespace-nowrap"
+                            >
+                                <Printer size={10} /> Without Invoice
+                            </button>
+                            <button onClick={() => {}} disabled={!selectedDate}
+                                className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest bg-white/10 hover:bg-white/20 text-white rounded border border-white/20 disabled:opacity-40 transition-all whitespace-nowrap"
+                            >
+                                <Link2 size={10} /> Invoices
+                            </button>
+                        </div>
                     </div>
                     <div className="overflow-auto flex-1">
                         <table className="min-w-full text-xs text-left">
@@ -778,7 +894,7 @@ export default function Pbook2InvoicePage() {
                             </span>
                         )}
                     </div>
-                    <div className="flex-1 overflow-auto bg-[#f4f6f8]">
+                    <div className="flex-1 overflow-hidden flex flex-col bg-[#f4f6f8]">
                         {activeTab === "invoiced"  && <InvoicedTab      rows={detail?.invoiced      ?? []} />}
                         {activeTab === "assigned"  && <AssignedStockTab rows={detail?.stockAssigned ?? []} />}
                         {activeTab === "purchase"  && <PurchaseTab      rows={detail?.purchase      ?? []} />}
