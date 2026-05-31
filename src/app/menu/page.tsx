@@ -45,6 +45,7 @@ function getRoute(appPage: string): string | null {
     if (p.includes('FLEXY2QB') || p.includes('QUICKBOOKS') || p.includes('QB')) return '/flexy2qb';
     if (p.includes('QUALITY') || p.includes('CALIDAD') || p.includes(' QC') || p === 'QC') return '/qc';
     if (p.includes('PBOOK2INV') || p.includes('PBOOK 2 INV') || p.includes('PREBOOK TO INV') || p.includes('PREBOOK2INV') || p.includes('PREBOOK_TO_INV') || p === 'PBOOK2INVOICE') return '/pbook2invoice';
+    if (p.includes('STANDING ORDER') || p.includes('STANDING_ORDER') || p.includes('VENTAS_ORDENES') || p.includes('S.O.') || p === 'SO' || p.includes('SORDER')) return '/standing-orders';
     return null;
 }
 
