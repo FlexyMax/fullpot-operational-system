@@ -9,6 +9,8 @@ import {
     Search, X, RotateCcw, Receipt, List, ShoppingCart,
     Lock, Trash2, Check, Calendar, Users,
     Package, BookOpen, ClipboardList,
+    FilePen, Paperclip, StickyNote, RefreshCw,
+    UserCog, Scissors, Plus, Copy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -460,9 +462,8 @@ export default function Pbook2InvoicePage() {
                 </div>
             </div>
 
-            {/* ── Toolbar ─────────────────────────────────────────────────── */}
-            <div className="h-10 bg-white border-b border-gray-200 flex items-center px-4 gap-2 shrink-0 shadow-sm">
-                {/* Date mode toggle */}
+            {/* ── Toolbar row 1: date mode + refresh ──────────────────────── */}
+            <div className="h-9 bg-white border-b border-gray-200 flex items-center px-4 gap-2 shrink-0">
                 <div className="flex items-center gap-1">
                     {(["delivery", "shipping"] as const).map(m => (
                         <button key={m} onClick={() => switchMode(m)}
@@ -478,20 +479,7 @@ export default function Pbook2InvoicePage() {
                     ))}
                 </div>
                 <div className="w-px h-5 bg-gray-200" />
-                <TBtn icon={RefreshCcw} label="Refresh"
-                    onClick={() => { setDatesKey(k => k + 1); setLinesKey(k => k + 1); }}
-                />
-                <div className="w-px h-5 bg-gray-200" />
-                <TBtn icon={RotateCcw} label="Reset Inv." onClick={handleResetInv} disabled={!selectedDate || working} variant="warning" />
-                <TBtn icon={Receipt}   label="Invoice"    onClick={() => {}} disabled={!selectedUnico} />
-                <TBtn icon={List}      label="Pick List"  onClick={() => {}} disabled={!selectedDate} />
-                <div className="w-px h-5 bg-gray-200" />
-                <TBtn icon={Trash2}    label="Void Line"  onClick={handleVoidLine} disabled={!selectedUnico || !canDelete || working} variant="danger" />
-                <div className="w-px h-5 bg-gray-200" />
-                <TBtn icon={ShoppingCart} label="Stock OM"
-                    onClick={() => { setActiveTab("stockom"); if (selectedUnico) fetchStockOm(); }}
-                    disabled={!selectedUnico}
-                />
+                <TBtn icon={RefreshCcw} label="Refresh" onClick={() => { setDatesKey(k => k + 1); setLinesKey(k => k + 1); }} />
                 <div className="ml-auto flex items-center gap-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                     {selectedLine && (
                         <>
@@ -502,6 +490,25 @@ export default function Pbook2InvoicePage() {
                         </>
                     )}
                 </div>
+            </div>
+
+            {/* ── Toolbar row 2: action buttons ───────────────────────────── */}
+            <div className="h-9 bg-white border-b border-gray-200 flex items-center px-4 gap-1 shrink-0 shadow-sm overflow-x-auto">
+                <TBtn icon={FilePen}      label="Change PO"      onClick={() => {}} disabled={!selectedUnico} />
+                <TBtn icon={Paperclip}    label="Attach Invoice"  onClick={() => {}} disabled={!selectedUnico} />
+                <div className="w-px h-5 bg-gray-200 mx-0.5" />
+                <TBtn icon={RotateCcw}    label="Reset Inv."      onClick={handleResetInv}   disabled={!selectedDate || working}                   variant="warning" />
+                <TBtn icon={Receipt}      label="Invoice"         onClick={() => {}}          disabled={!selectedUnico} />
+                <TBtn icon={List}         label="Pick List"       onClick={() => {}}          disabled={!selectedDate} />
+                <TBtn icon={StickyNote}   label="Notes"           onClick={() => {}}          disabled={!selectedUnico} />
+                <TBtn icon={ShoppingCart} label="Stock OM"        onClick={() => { setActiveTab("stockom"); if (selectedUnico) fetchStockOm(); }} disabled={!selectedUnico} />
+                <div className="w-px h-5 bg-gray-200 mx-0.5" />
+                <TBtn icon={Search}       label="Search"          onClick={() => {}} />
+                <TBtn icon={RefreshCw}    label="Update"          onClick={() => { setLinesKey(k => k + 1); }} disabled={!selectedDate} />
+                <TBtn icon={UserCog}      label="Change Cust."    onClick={() => {}} disabled={!selectedUnico} />
+                <div className="w-px h-5 bg-gray-200 mx-0.5" />
+                <TBtn icon={Trash2}       label="Void Line"       onClick={handleVoidLine}    disabled={!selectedUnico || !canDelete || working}    variant="danger" />
+                <TBtn icon={Scissors}     label="Partial Invoice" onClick={() => {}}          disabled={!selectedUnico} />
             </div>
 
             {/* ── Main layout ─────────────────────────────────────────────── */}
@@ -634,34 +641,48 @@ export default function Pbook2InvoicePage() {
 
                     {/* Prebook lines */}
                     <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-0">
-                        <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
+                        <div className="h-10 bg-[#FB7506] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
                             <div className="flex items-center gap-2">
-                                <Lock size={13} className="text-[#FB7506]" />
-                                <span className="font-black text-[10px] uppercase tracking-widest text-white">Closed Prebook Boxes</span>
-                                {loadingLines && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
+                                <Lock size={13} className="text-white" />
+                                <span className="font-black text-[10px] uppercase tracking-widest text-white">
+                                    Closed Prebook box by date and customer
+                                </span>
+                                {loadingLines && <RefreshCcw size={10} className="text-white/70 animate-spin" />}
                             </div>
                             <div className="flex items-center gap-2">
                                 {/* Search input */}
-                                <div className="flex items-center bg-white/10 border border-white/20 rounded px-2 py-0.5 gap-1">
+                                <div className="flex items-center bg-white border border-white/30 rounded px-2 py-0.5 gap-1 w-52">
                                     <Search size={11} className="text-gray-400 shrink-0" />
                                     <input
                                         value={productSearch}
                                         onChange={e => setProductSearch(e.target.value)}
                                         onKeyDown={e => { if (e.key === "Enter") setAppliedSearch(productSearch); }}
                                         placeholder="Search product..."
-                                        className="bg-transparent text-[11px] text-white placeholder-gray-400 outline-none w-36"
+                                        className="text-[11px] text-gray-700 placeholder-gray-400 outline-none flex-1 min-w-0 bg-transparent"
                                     />
                                     {productSearch && (
                                         <button onClick={() => { setProductSearch(""); setAppliedSearch(""); }}>
-                                            <X size={11} className="text-gray-400 hover:text-white" />
+                                            <X size={11} className="text-gray-400 hover:text-gray-700" />
                                         </button>
                                     )}
                                 </div>
-                                <span className="text-[9px] font-black text-gray-400 uppercase">{(lines as any[]).length} rows</span>
+                                <span className="text-[9px] font-black text-white/70 uppercase">{(lines as any[]).length} rows</span>
+                                <button
+                                    onClick={() => {}}
+                                    className="flex items-center gap-1.5 bg-gray-700 hover:bg-gray-600 text-white px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest transition-all"
+                                >
+                                    <Plus size={11} /> Prebook Line
+                                </button>
+                                <button
+                                    onClick={() => {}} disabled={!selectedDate}
+                                    className="flex items-center gap-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                                >
+                                    <Copy size={11} /> Gen. Invoices
+                                </button>
                                 <button
                                     onClick={handleMakeInvoice}
                                     disabled={!selectedUnico || !canEdit || working}
-                                    className="flex items-center gap-1.5 bg-green-500 hover:bg-green-400 text-white px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                                    className="flex items-center gap-1.5 bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                                 >
                                     <Check size={11} /> Make Invoice
                                 </button>
