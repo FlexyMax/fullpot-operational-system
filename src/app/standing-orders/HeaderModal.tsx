@@ -22,6 +22,7 @@ interface Lookups {
     warehouses:    any[];
     terms:         any[];
     cargoAgencies: any[];
+    carriers:      any[];
 }
 
 interface Props {
@@ -48,22 +49,26 @@ export function HeaderModal({ mode, header, lookups, onClose, onSaved }: Props) 
 
     const findUq = (list: any[], nameKey: string, nameVal: string, uqKey: string) => {
         const v = t(nameVal);
-        return t(list.find(x => t(x[nameKey]).startsWith(v) || t(x[nameKey]) === v)?.[uqKey] ?? "");
+        if (!v) return "";
+        return t(list.find(x => t(x[nameKey]) === v || t(x[nameKey]).startsWith(v))?.[uqKey] ?? "");
     };
 
-    const warehouseMap = new Map<string, any>();
-    for (const w of lookups.warehouses) if (!warehouseMap.has(w.whouse_uq)) warehouseMap.set(w.whouse_uq, w);
-    const uniqueWarehouses = Array.from(warehouseMap.values());
+    const uniqueWarehouses = (() => {
+        const m = new Map<string, any>();
+        for (const w of lookups.warehouses) if (!m.has(w.whouse_uq)) m.set(w.whouse_uq, w);
+        return Array.from(m.values());
+    })();
 
     const initForm = () => ({
         customer_uq:  isEdit ? t(header?.CUSTOMER_UQ ?? "") : "",
-        salesman_uq:  isEdit ? findUq(lookups.salesmen,      "salesman_name", header?.SALESMAN_NAME ?? "", "unico")    : "",
-        terms_uq:     isEdit ? findUq(lookups.terms,         "CONDITION",     header?.CONDITION     ?? "", "UNICO")    : "",
-        day:          isEdit ? t(header?.SO_DAY ?? "MONDAY").trim() || "MONDAY" : "MONDAY",
+        salesman_uq:  isEdit ? (t(header?.SALESMAN_UQ) || findUq(lookups.salesmen, "salesman_name", header?.SALESMAN_NAME ?? "", "unico")) : "",
+        terms_uq:     isEdit ? findUq(lookups.terms, "CONDITION", header?.CONDITION ?? "", "UNICO") : "",
+        day:          isEdit ? (t(header?.SO_DAY).trim() || "MONDAY") : "MONDAY",
         start_date:   isEdit ? toISODate(header?.SO_STDATE) : new Date().toISOString().slice(0, 10),
         end_date:     isEdit ? toISODate(header?.SO_ENDATE) : "2125-12-31",
-        cargo_uq:     isEdit ? findUq(lookups.cargoAgencies, "agency",         header?.AGENCY        ?? "", "unico")    : "",
-        whouse_uq:    isEdit ? findUq(uniqueWarehouses,      "warehouse",      header?.WAREHOUSE     ?? "", "whouse_uq"): "",
+        cargo_uq:     isEdit ? (t(header?.CARGO_UQ) || findUq(lookups.cargoAgencies, "agency", header?.AGENCY ?? "", "unico")) : "",
+        carrier_uq:   isEdit ? t(header?.CARRIER_UQ ?? "") : "",
+        whouse_uq:    isEdit ? (t(header?.WHOUSE_UQ) || findUq(uniqueWarehouses, "warehouse", header?.WAREHOUSE ?? "", "whouse_uq")) : "",
         factor:       isEdit ? String(header?.APPLYFOR ?? 1) : "1",
         cporder_no:   isEdit ? t(header?.CPORDER_NO) : "",
         instructions: isEdit ? t(header?.INSTRUCTIONS) : "",
@@ -75,21 +80,75 @@ export function HeaderModal({ mode, header, lookups, onClose, onSaved }: Props) 
         ship_phone:   isEdit ? t(header?.SHIP_PHONE) : "",
         ship_fax:     isEdit ? t(header?.SHIP_FAX) : "",
         active:       isEdit ? (header?.ACTIVE === true || header?.ACTIVE === 1) : true,
-        carrier_uq:   "",
-        shipto_uq:    "",
+        shipto_uq:    isEdit ? t(header?.SHIPTO_UQ ?? "") : "",
         weeks_no:     "0",
         grower_uq:    "",
         ship_day:     "",
     });
 
-    const [form,             setForm]             = useState(initForm);
-    const [customerSearch,   setCustomerSearch]   = useState(isEdit ? t(header?.CUSTOMER) : "");
-    const [showCustDrop,     setShowCustDrop]     = useState(false);
-    const [saving,           setSaving]           = useState(false);
+    const [form,           setForm]           = useState(initForm);
+    const [customerSearch, setCustomerSearch] = useState(isEdit ? t(header?.CUSTOMER) : "");
+    const [showCustDrop,   setShowCustDrop]   = useState(false);
+    const [shiptos,        setShiptos]        = useState<any[]>([]);
+    const [shiptoLoading,  setShiptoLoading]  = useState(false);
+    const [saving,         setSaving]         = useState(false);
     const custRef = useRef<HTMLDivElement>(null);
 
     const f = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
         setForm(p => ({ ...p, [k]: v }));
+
+    // Re-hydrate UQ fields when lookups arrive after initial render (edit mode)
+    useEffect(() => {
+        if (!isEdit) return;
+        setForm(prev => {
+            const wMap = new Map<string, any>();
+            for (const w of lookups.warehouses) if (!wMap.has(w.whouse_uq)) wMap.set(w.whouse_uq, w);
+            const uWh = Array.from(wMap.values());
+            return {
+                ...prev,
+                salesman_uq: prev.salesman_uq || (t(header?.SALESMAN_UQ) || findUq(lookups.salesmen, "salesman_name", header?.SALESMAN_NAME ?? "", "unico")),
+                cargo_uq:    prev.cargo_uq    || (t(header?.CARGO_UQ)    || findUq(lookups.cargoAgencies, "agency",    header?.AGENCY    ?? "", "unico")),
+                whouse_uq:   prev.whouse_uq   || (t(header?.WHOUSE_UQ)   || findUq(uWh, "warehouse", header?.WAREHOUSE ?? "", "whouse_uq")),
+            };
+        });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [lookups.salesmen.length, lookups.cargoAgencies.length, lookups.warehouses.length]);
+
+    // Load ship-to list when customer changes
+    useEffect(() => {
+        if (!form.customer_uq) { setShiptos([]); return; }
+        let active = true;
+        setShiptoLoading(true);
+        fetch(`/api/standing-orders/shiptos?customer_uq=${encodeURIComponent(form.customer_uq)}`)
+            .then(r => r.json())
+            .then(j => { if (active) setShiptos(Array.isArray(j) ? j : []); })
+            .catch(() => { if (active) setShiptos([]); })
+            .finally(() => { if (active) setShiptoLoading(false); });
+        return () => { active = false; };
+    }, [form.customer_uq]);
+
+    // Auto-select default ship-to when list loads (new order only)
+    useEffect(() => {
+        if (isEdit || shiptos.length === 0) return;
+        const def = shiptos.find(s => s.shipto_default === true || s.shipto_default === 1) ?? shiptos[0];
+        if (def) applyShipto(def);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [shiptos]);
+
+    const applyShipto = (s: any) => {
+        setForm(p => ({
+            ...p,
+            shipto_uq:    t(s.unico),
+            ship_name:    t(s.name),
+            ship_address: t(s.address1),
+            ship_city:    t(s.city),
+            ship_state:   t(s.state),
+            ship_zip:     t(s.zip),
+            ship_phone:   t(s.phone),
+            ship_fax:     t(s.fax),
+            carrier_uq:   t(s.carrier_uq ?? ""),
+        }));
+    };
 
     const filteredCusts = customerSearch.length >= 1
         ? lookups.customers
@@ -243,8 +302,8 @@ export function HeaderModal({ mode, header, lookups, onClose, onSaved }: Props) 
                         </LabelInput>
                     </div>
 
-                    {/* Warehouse / Cargo Agency */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Warehouse / Cargo Agency / Carrier */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <LabelInput label="Warehouse">
                             <select value={form.whouse_uq} onChange={e => f("whouse_uq", e.target.value)} className={inp}>
                                 <option value="">— select —</option>
@@ -261,6 +320,14 @@ export function HeaderModal({ mode, header, lookups, onClose, onSaved }: Props) 
                                 ))}
                             </select>
                         </LabelInput>
+                        <LabelInput label="Carrier">
+                            <select value={form.carrier_uq} onChange={e => f("carrier_uq", e.target.value)} className={inp}>
+                                <option value="">— select —</option>
+                                {lookups.carriers.map((c, i) => (
+                                    <option key={i} value={t(c.unico)}>{t(c.carrier)}</option>
+                                ))}
+                            </select>
+                        </LabelInput>
                     </div>
 
                     {/* Instructions */}
@@ -271,7 +338,32 @@ export function HeaderModal({ mode, header, lookups, onClose, onSaved }: Props) 
 
                     {/* Ship To */}
                     <div className="border border-gray-200 rounded p-3 space-y-2">
-                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Ship To</p>
+                        <div className="flex items-center justify-between">
+                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Ship To</p>
+                            {shiptoLoading && <Loader2 size={11} className="animate-spin text-gray-400" />}
+                        </div>
+
+                        {shiptos.length > 0 && (
+                            <LabelInput label="Select Ship-To">
+                                <select
+                                    value={form.shipto_uq}
+                                    onChange={e => {
+                                        const s = shiptos.find(x => t(x.unico) === e.target.value);
+                                        if (s) applyShipto(s);
+                                        else f("shipto_uq", e.target.value);
+                                    }}
+                                    className={inp}
+                                >
+                                    <option value="">— select ship-to —</option>
+                                    {shiptos.map((s, i) => (
+                                        <option key={i} value={t(s.unico)}>
+                                            {t(s.name)} {t(s.shipto) ? `(${t(s.shipto)})` : ""}
+                                        </option>
+                                    ))}
+                                </select>
+                            </LabelInput>
+                        )}
+
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <LabelInput label="Name">
                                 <input type="text" value={form.ship_name} onChange={e => f("ship_name", e.target.value)} className={inp} />

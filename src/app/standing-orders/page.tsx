@@ -13,9 +13,10 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { usePagePermissions } from "@/lib/permissions";
-import { HeaderModal }   from "./HeaderModal";
-import { LineModal }     from "./LineModal";
-import { SetWeeksModal } from "./SetWeeksModal";
+import { HeaderModal }          from "./HeaderModal";
+import { LineModal }            from "./LineModal";
+import { SetWeeksModal }        from "./SetWeeksModal";
+import { BoxCompositionModal }  from "./BoxCompositionModal";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const t    = (v: any) => String(v ?? "").trim();
@@ -92,6 +93,7 @@ export default function StandingOrdersPage() {
     const [headerModal,       setHeaderModal]        = useState<"closed" | "new" | "edit">("closed");
     const [lineModal,         setLineModal]          = useState<"closed" | "new" | "edit">("closed");
     const [weeksModal,        setWeeksModal]         = useState(false);
+    const [boxCompModal,      setBoxCompModal]       = useState(false);
 
     // ── Lookups (customers, salesmen, warehouses, terms, cases, cargo agencies, mySalesmanUq)
     const { data: lookups } = useQuery({
@@ -108,6 +110,7 @@ export default function StandingOrdersPage() {
                 terms:         j.terms         ?? [],
                 cases:         j.cases         ?? [],
                 cargoAgencies: j.cargoAgencies ?? [],
+                carriers:      j.carriers      ?? [],
                 mySalesmanUq:  j.mySalesmanUq  ?? "",
             };
         },
@@ -249,6 +252,7 @@ export default function StandingOrdersPage() {
         warehouses:    lookups?.warehouses    ?? [],
         terms:         lookups?.terms         ?? [],
         cargoAgencies: lookups?.cargoAgencies ?? [],
+        carriers:      lookups?.carriers      ?? [],
     };
     const casesLookup = lookups?.cases ?? [];
 
@@ -497,7 +501,10 @@ export default function StandingOrdersPage() {
                                         <span className="font-black text-[10px] text-white uppercase tracking-widest">S.O. Details</span>
                                     </div>
                                     <div className="flex items-center gap-1.5 flex-wrap">
-                                        <button className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest bg-red-600 hover:bg-red-500 text-white rounded transition-all whitespace-nowrap">
+                                        <button
+                                            onClick={() => setBoxCompModal(true)}
+                                            disabled={!selectedLineUnico}
+                                            className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest bg-red-600 hover:bg-red-500 text-white rounded transition-all whitespace-nowrap disabled:opacity-40">
                                             <Package size={10} /> Box Composition
                                         </button>
                                         <HBtn icon={ShoppingCart} label="Foods" onClick={() => {}} />
@@ -658,6 +665,14 @@ export default function StandingOrdersPage() {
                     header={h}
                     onClose={() => setWeeksModal(false)}
                     onSaved={() => setWeeksModal(false)}
+                />
+            )}
+            {boxCompModal && selectedLineUnico && selectedLine && (
+                <BoxCompositionModal
+                    lineUnico={selectedLineUnico}
+                    lineDesc={t(selectedLine.DESCRIPTION ?? selectedLine.DETAILS ?? "")}
+                    soPrice={parseFloat(selectedLine.SO_PRICE ?? 0)}
+                    onClose={() => setBoxCompModal(false)}
                 />
             )}
         </div>

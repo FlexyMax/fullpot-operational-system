@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
             lcupc:               b.upc               ?? "",
             llfood:              b.food              ?? false,
             llstem_pack:         b.stem_pack         ?? false,
-            lcfood_uq:           b.food_uq           ?? "",
+            lcfood_uq:           b.food_uq           || null,
             lcupc_text:          b.upc_text          ?? "",
             lnretail_price:      parseFloat(b.retail_price    ?? 0),
             lcboxcode2:          b.boxcode2          ?? "",
