@@ -17,6 +17,8 @@ import { HeaderModal }          from "./HeaderModal";
 import { LineModal }            from "./LineModal";
 import { SetWeeksModal }        from "./SetWeeksModal";
 import { BoxCompositionModal }  from "./BoxCompositionModal";
+import { ProductsListModal }    from "./ProductsListModal";
+import { FutureStockModal }     from "./FutureStockModal";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const t    = (v: any) => String(v ?? "").trim();
@@ -94,6 +96,8 @@ export default function StandingOrdersPage() {
     const [lineModal,         setLineModal]          = useState<"closed" | "new" | "edit">("closed");
     const [weeksModal,        setWeeksModal]         = useState(false);
     const [boxCompModal,      setBoxCompModal]       = useState(false);
+    const [productsModal,     setProductsModal]      = useState(false);
+    const [futureStockModal,  setFutureStockModal]   = useState(false);
 
     // ── Lookups (customers, salesmen, warehouses, terms, cases, cargo agencies, mySalesmanUq)
     const { data: lookups } = useQuery({
@@ -507,7 +511,12 @@ export default function StandingOrdersPage() {
                                             className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest bg-red-600 hover:bg-red-500 text-white rounded transition-all whitespace-nowrap disabled:opacity-40">
                                             <Package size={10} /> Box Composition
                                         </button>
-                                        <HBtn icon={ShoppingCart} label="Foods" onClick={() => {}} />
+                                        <HBtn icon={ShoppingCart} label="Products List"
+                                            onClick={() => setProductsModal(true)}
+                                            disabled={!selectedUnico} />
+                                        <HBtn icon={FileText} label="Future Stock"
+                                            onClick={() => setFutureStockModal(true)}
+                                            disabled={!selectedUnico} />
                                         <div className="w-px h-4 bg-white/20 shrink-0" />
                                         <HBtn icon={Plus}   label="Add Ord.Line"
                                             onClick={() => setLineModal("new")}
@@ -674,6 +683,17 @@ export default function StandingOrdersPage() {
                     soPrice={parseFloat(selectedLine.SO_PRICE ?? 0)}
                     onClose={() => setBoxCompModal(false)}
                 />
+            )}
+            {productsModal && selectedUnico && (
+                <ProductsListModal
+                    soUnico={selectedUnico}
+                    cases={casesLookup}
+                    onClose={() => setProductsModal(false)}
+                    onAdded={() => setDetailKey(k => k + 1)}
+                />
+            )}
+            {futureStockModal && (
+                <FutureStockModal onClose={() => setFutureStockModal(false)} />
             )}
         </div>
     );

@@ -62,13 +62,13 @@ export function HeaderModal({ mode, header, lookups, onClose, onSaved }: Props) 
     const initForm = () => ({
         customer_uq:  isEdit ? t(header?.CUSTOMER_UQ ?? "") : "",
         salesman_uq:  isEdit ? (t(header?.SALESMAN_UQ) || findUq(lookups.salesmen, "salesman_name", header?.SALESMAN_NAME ?? "", "unico")) : "",
-        terms_uq:     isEdit ? findUq(lookups.terms, "CONDITION", header?.CONDITION ?? "", "UNICO") : "",
+        terms_uq:     isEdit ? (t(header?.TERMS_UQ) || findUq(lookups.terms, "CONDITION", header?.CONDITION ?? "", "UNICO")) : "",
         day:          isEdit ? (t(header?.SO_DAY).trim() || "MONDAY") : "MONDAY",
         start_date:   isEdit ? toISODate(header?.SO_STDATE) : new Date().toISOString().slice(0, 10),
         end_date:     isEdit ? toISODate(header?.SO_ENDATE) : "2125-12-31",
-        cargo_uq:     isEdit ? (t(header?.CARGO_UQ) || findUq(lookups.cargoAgencies, "agency", header?.AGENCY ?? "", "unico")) : "",
+        cargo_uq:     isEdit ? t(header?.CARGO_UQ ?? "") : "",
         carrier_uq:   isEdit ? t(header?.CARRIER_UQ ?? "") : "",
-        whouse_uq:    isEdit ? (t(header?.WHOUSE_UQ) || findUq(uniqueWarehouses, "warehouse", header?.WAREHOUSE ?? "", "whouse_uq")) : "",
+        whouse_uq:    isEdit ? t(header?.WHOUSE_UQ ?? "") : "",
         factor:       isEdit ? String(header?.APPLYFOR ?? 1) : "1",
         cporder_no:   isEdit ? t(header?.CPORDER_NO) : "",
         instructions: isEdit ? t(header?.INSTRUCTIONS) : "",
@@ -97,22 +97,16 @@ export function HeaderModal({ mode, header, lookups, onClose, onSaved }: Props) 
     const f = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
         setForm(p => ({ ...p, [k]: v }));
 
-    // Re-hydrate UQ fields when lookups arrive after initial render (edit mode)
+    // Re-hydrate salesman_uq when lookups arrive (salesman lookup needed for name→uq matching)
     useEffect(() => {
         if (!isEdit) return;
-        setForm(prev => {
-            const wMap = new Map<string, any>();
-            for (const w of lookups.warehouses) if (!wMap.has(w.whouse_uq)) wMap.set(w.whouse_uq, w);
-            const uWh = Array.from(wMap.values());
-            return {
-                ...prev,
-                salesman_uq: prev.salesman_uq || (t(header?.SALESMAN_UQ) || findUq(lookups.salesmen, "salesman_name", header?.SALESMAN_NAME ?? "", "unico")),
-                cargo_uq:    prev.cargo_uq    || (t(header?.CARGO_UQ)    || findUq(lookups.cargoAgencies, "agency",    header?.AGENCY    ?? "", "unico")),
-                whouse_uq:   prev.whouse_uq   || (t(header?.WHOUSE_UQ)   || findUq(uWh, "warehouse", header?.WAREHOUSE ?? "", "whouse_uq")),
-            };
-        });
+        setForm(prev => ({
+            ...prev,
+            salesman_uq: prev.salesman_uq || (t(header?.SALESMAN_UQ) || findUq(lookups.salesmen, "salesman_name", header?.SALESMAN_NAME ?? "", "unico")),
+            terms_uq:    prev.terms_uq    || (t(header?.TERMS_UQ)    || findUq(lookups.terms,    "CONDITION",     header?.CONDITION     ?? "", "UNICO")),
+        }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [lookups.salesmen.length, lookups.cargoAgencies.length, lookups.warehouses.length]);
+    }, [lookups.salesmen.length, lookups.terms.length]);
 
     // Load ship-to list when customer changes
     useEffect(() => {

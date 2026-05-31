@@ -11,7 +11,8 @@ export async function GET(req: NextRequest) {
             lcshort:       "%",
             lcold_code:    "%",
         });
-        const rows = (r.recordset ?? []).slice(0, 60);
+        const limit = parseInt(searchParams.get("limit") ?? "60");
+        const rows = (r.recordset ?? []).slice(0, limit);
         return NextResponse.json(rows);
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });
