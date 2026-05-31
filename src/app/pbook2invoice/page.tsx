@@ -734,7 +734,7 @@ export default function Pbook2InvoicePage() {
             </div>
 
             {/* ── ACTION BUTTON BAR (below top panels, full width) ─────────── */}
-            <div className="h-9 bg-white border border-gray-200 flex items-center px-3 gap-1 shrink-0 shadow-sm overflow-x-auto mx-2 rounded-lg">
+            <div className="h-9 bg-white border border-gray-200 flex items-center px-3 gap-1 shrink-0 shadow-sm overflow-x-auto mx-2 rounded-lg mt-2">
                 <TBtn icon={FilePen}      label="Change PO"      onClick={() => {}} disabled={!selectedUnico} />
                 <TBtn icon={Paperclip}    label="Attach Invoice"  onClick={() => {}} disabled={!selectedUnico} />
                 <div className="w-px h-5 bg-gray-200 mx-0.5 shrink-0" />
@@ -800,7 +800,7 @@ export default function Pbook2InvoicePage() {
                 </div>
 
                 {/* Lines table */}
-                <div className="flex-1 overflow-auto bg-white border border-t-0 border-gray-200 shadow-sm min-h-0">
+                <div className="flex-1 overflow-auto bg-white border border-t-0 border-gray-200 shadow-sm min-h-0 rounded-b-lg">
                     <table className="min-w-full text-xs text-left">
                         <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
                             <tr>
