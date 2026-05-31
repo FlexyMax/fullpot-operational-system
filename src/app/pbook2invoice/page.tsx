@@ -568,10 +568,10 @@ export default function Pbook2InvoicePage() {
             </div>
 
             {/* ── TOP PANELS: Dates (left) + Customers (right) ────────────── */}
-            <div className="flex gap-2 px-2 pt-2 shrink-0 h-52">
+            <div className="flex gap-2 px-2 pt-2 shrink-0 h-64">
 
                 {/* Dates panel */}
-                <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden w-[420px] shrink-0">
+                <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden w-[540px] shrink-0">
                     <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
                         <div className="flex items-center gap-2">
                             <Calendar size={13} className="text-[#FB7506]" />
@@ -704,7 +704,7 @@ export default function Pbook2InvoicePage() {
                                     <td className="p-2 border-l border-gray-100" />
                                 </tr>
                                 {!selectedDate && <tr><td colSpan={10} className="p-4 text-center text-gray-400 italic">Select a date</td></tr>}
-                                {(customers as any[]).map((row: any, i: number) => {
+                                {(customers as any[]).filter((row: any) => t(row.CUSTOMER ?? row.CUSTOMER_NAME ?? "").toUpperCase() !== "ALL").map((row: any, i: number) => {
                                     const uq = t(row.CUSTOMER_UQ ?? row.UNICO ?? "");
                                     const sel = selectedCustUq === uq;
                                     const bg = vfpColor(row.BACK_COLOR ?? row.BACKCOLOR);
@@ -734,7 +734,7 @@ export default function Pbook2InvoicePage() {
             </div>
 
             {/* ── ACTION BUTTON BAR (below top panels, full width) ─────────── */}
-            <div className="h-9 bg-white border-y border-gray-200 flex items-center px-3 gap-1 shrink-0 shadow-sm overflow-x-auto">
+            <div className="h-9 bg-white border border-gray-200 flex items-center px-3 gap-1 shrink-0 shadow-sm overflow-x-auto mx-2 rounded-lg">
                 <TBtn icon={FilePen}      label="Change PO"      onClick={() => {}} disabled={!selectedUnico} />
                 <TBtn icon={Paperclip}    label="Attach Invoice"  onClick={() => {}} disabled={!selectedUnico} />
                 <div className="w-px h-5 bg-gray-200 mx-0.5 shrink-0" />
@@ -869,7 +869,7 @@ export default function Pbook2InvoicePage() {
                 </div>
 
                 {/* ── Bottom detail tabs ──────────────────────────────────── */}
-                <div className="flex flex-col bg-white rounded-b-lg border border-t-0 border-gray-200 shadow-sm overflow-hidden h-[190px] shrink-0">
+                <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden h-[230px] shrink-0 mt-1">
                     <div className="h-10 bg-[#374151] flex items-end px-2 shrink-0 gap-0.5">
                         {BOTTOM_TABS.map(tab => (
                             <button key={tab.id}
