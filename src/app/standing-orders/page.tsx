@@ -13,6 +13,8 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { usePagePermissions } from "@/lib/permissions";
+import { HeaderModal } from "./HeaderModal";
+import { LineModal }   from "./LineModal";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const t    = (v: any) => String(v ?? "").trim();
@@ -30,7 +32,6 @@ const fmtDate = (v: any) => {
 const bool = (v: any) => v === true || v === 1 || String(v).toLowerCase() === "true";
 
 const DAYS = ["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY","SUNDAY"];
-// Confirmed field names from DB inspection
 const WEEK_COLS: [string, string][] = [["MON","Mon"],["TUE","Tue"],["WED","Wed"],["THU","Thu"],["FRI","Fri"],["SAT","Sat"],["SUN","Sun"]];
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
@@ -54,7 +55,7 @@ function FieldRow({ label, value, className }: { label: string; value?: string; 
 }
 function OBar({ children, className }: { children: any; className?: string }) {
     return (
-        <div className={cn("h-9 bg-[#FB7506] flex items-center justify-between px-3 shrink-0", className)}>
+        <div className={cn("min-h-[36px] bg-[#FB7506] flex items-center justify-between px-3 shrink-0 flex-wrap gap-1 py-1", className)}>
             {children}
         </div>
     );
@@ -85,10 +86,29 @@ export default function StandingOrdersPage() {
     const [listKey,           setListKey]            = useState(0);
     const [detailKey,         setDetailKey]          = useState(0);
     const [working,           setWorking]            = useState(false);
+    const [headerModal,       setHeaderModal]        = useState<"closed" | "new" | "edit">("closed");
+    const [lineModal,         setLineModal]          = useState<"closed" | "new" | "edit">("closed");
+
+    // ── Lookups (customers, salesmen, warehouses, terms, cases, cargo agencies)
+    const { data: lookups } = useQuery({
+        queryKey: ["so-lookups"],
+        queryFn: async () => {
+            const r = await fetch("/api/standing-orders/lookups");
+            const j = await r.json();
+            if (!r.ok) throw new Error(j.error || "Failed");
+            return {
+                customers:     norm(j.customers     ?? []),
+                salesmen:      norm(j.salesmen      ?? []),
+                warehouses:    j.warehouses          ?? [],
+                terms:         norm(j.terms         ?? []),
+                cases:         norm(j.cases         ?? []),
+                cargoAgencies: norm(j.cargoAgencies ?? []),
+            };
+        },
+        staleTime: 10 * 60 * 1000,
+    });
 
     // ── Orders list ───────────────────────────────────────────────────────────
-    // sp_flower_standing_orders_header_by_customer returns:
-    // unico, sorder_no, customer, salesman_name, agency, so_day, so_stdate, so_endate, active
     const { data: ordersRaw = [], isFetching: loadingOrders } = useQuery({
         queryKey: ["so-orders", listKey],
         queryFn: async () => {
@@ -114,12 +134,7 @@ export default function StandingOrdersPage() {
         return f;
     }, [ordersRaw, dayFilter, textSearch]);
 
-    // ── Order detail: header + lines (sp_flower_standing_order_uq + sp_flower_sales_orders_details)
-    // Header fields confirmed: unico, sorder_no, customer, salesman_name, agency, warehouse,
-    //   so_stdate, so_endate, so_day, active, mon/tue/wed/thu/fri/sat/sun,
-    //   ship_name, ship_address, ship_city, ship_state, ship_zip, ship_phone, ship_fax, instructions
-    // Lines fields confirmed: unico, sorder_uq, description, case_sh, qty_sorder, qty_porder,
-    //   bunches_case, units_bunch, total_units, so_price, ext_price, pccode, upc, food, stem_pack, active
+    // ── Order detail (header + lines)
     const { data: detail, isFetching: loadingDetail } = useQuery({
         queryKey: ["so-detail", selectedUnico, detailKey],
         enabled:  !!selectedUnico,
@@ -134,9 +149,7 @@ export default function StandingOrdersPage() {
         },
     });
 
-    // ── Vendors for selected line (sp_flower_standing_orders_detail_growers)
-    // Returns: unico, sorder_d_uq, grower, farm, ship_day, ship_days,
-    //   qty_order, qty_confirmed, qty_diff, po_price, details
+    // ── Vendors for selected line
     const { data: vendors = [], isFetching: loadingVendors } = useQuery({
         queryKey: ["so-vendors", selectedLineUnico],
         enabled:  !!selectedLineUnico,
@@ -218,6 +231,19 @@ export default function StandingOrdersPage() {
     const h     = detail?.header;
     const lines = detail?.lines ?? [];
 
+    // Selected line object for edit
+    const selectedLine = selectedLineUnico ? lines.find((l: any) => t(l.UNICO) === selectedLineUnico) : null;
+
+    // Lookups for modals (fallback to empty arrays until loaded)
+    const modalLookups = {
+        customers:     lookups?.customers     ?? [],
+        salesmen:      lookups?.salesmen      ?? [],
+        warehouses:    lookups?.warehouses    ?? [],
+        terms:         lookups?.terms         ?? [],
+        cargoAgencies: lookups?.cargoAgencies ?? [],
+    };
+    const casesLookup = lookups?.cases ?? [];
+
     return (
         <div className="flex flex-col h-screen bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
 
@@ -234,7 +260,7 @@ export default function StandingOrdersPage() {
                     </div>
                     {(working || loadingDetail) && <Loader2 size={14} className="animate-spin text-[#FB7506] ml-2" />}
                 </div>
-                <div className="flex items-center gap-6 text-[10px] font-bold uppercase tracking-widest">
+                <div className="hidden sm:flex items-center gap-6 text-[10px] font-bold uppercase tracking-widest">
                     {h && <span className="text-gray-400">Order: <span className="text-[#FB7506]">{t(h.SORDER_NO)}</span></span>}
                     <div className="flex items-center gap-2">
                         <span className="text-gray-400">User:</span>
@@ -283,8 +309,10 @@ export default function StandingOrdersPage() {
                     <UserCog size={10} /> Change Salesman
                 </button>
                 <div className="w-px h-5 bg-gray-200 shrink-0" />
-                <button disabled={!canEdit}
-                    className="flex items-center gap-1 px-2 py-1 text-[10px] font-black uppercase tracking-widest bg-green-600 hover:bg-green-500 text-white rounded disabled:opacity-40 shrink-0"
+                <button
+                    disabled={!canEdit}
+                    onClick={() => setHeaderModal("new")}
+                    className="flex items-center gap-1 px-2 py-1 text-[10px] font-black uppercase tracking-widest bg-green-600 hover:bg-green-500 text-white rounded disabled:opacity-40 shrink-0 transition-colors"
                 >
                     <Plus size={10} /> Add Order
                 </button>
@@ -299,10 +327,10 @@ export default function StandingOrdersPage() {
             </div>
 
             {/* ── Main split ───────────────────────────────────────────────── */}
-            <div className="flex flex-1 overflow-hidden px-2 pb-2 pt-2 gap-2 min-h-0">
+            <div className="flex flex-col xl:flex-row flex-1 overflow-hidden px-2 pb-2 pt-2 gap-2 min-h-0">
 
                 {/* Left: Orders list */}
-                <div className="flex flex-col w-[480px] shrink-0 bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                <div className="flex flex-col xl:w-[480px] shrink-0 bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden xl:max-h-none max-h-[40vh]">
                     <div className="h-9 bg-[#374151] flex items-center px-3 gap-2 shrink-0 rounded-t-lg">
                         <ClipboardList size={13} className="text-[#FB7506]" />
                         <span className="font-black text-[10px] uppercase tracking-widest text-white">Orders List</span>
@@ -365,7 +393,7 @@ export default function StandingOrdersPage() {
 
                             {/* ── Customer bar ───────────────────────────────── */}
                             <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden shrink-0">
-                                <div className="bg-green-800 px-3 py-1.5 flex items-center justify-between">
+                                <div className="bg-green-800 px-3 py-1.5 flex items-center justify-between flex-wrap gap-1">
                                     <div className="flex items-center gap-2">
                                         <Users size={13} className="text-white/70" />
                                         <span className="text-[11px] font-black text-white uppercase tracking-widest">
@@ -377,7 +405,7 @@ export default function StandingOrdersPage() {
                                         <Search size={10} /> Customer Search
                                     </button>
                                 </div>
-                                <div className="grid grid-cols-5 gap-x-6 gap-y-1 px-4 py-2">
+                                <div className="grid grid-cols-2 sm:grid-cols-5 gap-x-6 gap-y-1 px-4 py-2">
                                     <FieldRow label="E-mail"  value={t(h?.EMAIL)}    className="col-span-2" />
                                     <FieldRow label="Phone"   value={t(h?.PHONE)}    />
                                     <FieldRow label="Fax"     value={t(h?.FAX)}      className="col-span-2" />
@@ -399,11 +427,18 @@ export default function StandingOrdersPage() {
                                     <div className="flex items-center gap-1.5 flex-wrap">
                                         <HBtn icon={Calendar} label="Set Weeks"    onClick={() => {}} />
                                         <HBtn icon={Printer}  label="Print"        onClick={() => {}} />
-                                        <div className="w-px h-4 bg-white/20" />
-                                        <HBtn icon={Plus}    label="New Order"    onClick={() => {}} disabled={!canEdit} />
-                                        <HBtn icon={Edit2}   label="Edit Order"   onClick={() => {}} disabled={!canEdit} />
-                                        <HBtn icon={Trash2}  label="Delete Order" onClick={handleDeleteOrder} disabled={!canDelete || working} variant="danger" />
-                                        <div className="w-px h-4 bg-white/20" />
+                                        <div className="w-px h-4 bg-white/20 shrink-0" />
+                                        <HBtn icon={Plus}    label="New Order"
+                                            onClick={() => setHeaderModal("new")}
+                                            disabled={!canEdit} />
+                                        <HBtn icon={Edit2}   label="Edit Order"
+                                            onClick={() => setHeaderModal("edit")}
+                                            disabled={!canEdit || !selectedUnico || loadingDetail} />
+                                        <HBtn icon={Trash2}  label="Delete Order"
+                                            onClick={handleDeleteOrder}
+                                            disabled={!canDelete || working}
+                                            variant="danger" />
+                                        <div className="w-px h-4 bg-white/20 shrink-0" />
                                         <button onClick={handleToFarm} disabled={working}
                                             className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest bg-red-600 hover:bg-red-500 text-white rounded disabled:opacity-40 transition-all whitespace-nowrap"
                                         >
@@ -413,7 +448,7 @@ export default function StandingOrdersPage() {
                                 </OBar>
                                 <div className="px-4 py-2 space-y-1.5 text-[11px]">
                                     {/* Row 1: order fields */}
-                                    <div className="flex items-center gap-6 pb-1.5 border-b border-gray-100">
+                                    <div className="flex items-center gap-6 pb-1.5 border-b border-gray-100 flex-wrap">
                                         <FieldRow label="Order No."  value={t(h?.SORDER_NO)} />
                                         <FieldRow label="Active"     value={bool(h?.ACTIVE) ? "Yes" : "No"} />
                                         <FieldRow label="Factor"     value={t(h?.APPLYFOR ?? h?.FACTOR ?? "1")} />
@@ -421,7 +456,7 @@ export default function StandingOrdersPage() {
                                         <FieldRow label="Salesman"   value={t(h?.SALESMAN_NAME)} />
                                     </div>
                                     {/* Week Day green bar */}
-                                    <div className="flex items-center gap-0 bg-green-800 rounded px-3 py-1">
+                                    <div className="flex items-center gap-0 bg-green-800 rounded px-3 py-1 flex-wrap">
                                         <span className="text-[10px] font-black text-white uppercase tracking-widest mr-3">Week Day:</span>
                                         {WEEK_COLS.map(([key, label]) => (
                                             <label key={key} className="flex items-center gap-1 mr-4">
@@ -431,7 +466,7 @@ export default function StandingOrdersPage() {
                                         ))}
                                     </div>
                                     {/* Terms + dates */}
-                                    <div className="grid grid-cols-4 gap-x-6 gap-y-1.5">
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-1.5">
                                         <FieldRow label="Terms"       value={t(h?.CONDITION ?? h?.TERMS)} className="col-span-1" />
                                         <FieldRow label="Start Date"  value={fmtDate(h?.SO_STDATE)} />
                                         <FieldRow label="End Date"    value={fmtDate(h?.SO_ENDATE)} />
@@ -455,15 +490,22 @@ export default function StandingOrdersPage() {
                                         <Lock size={12} className="text-white/70" />
                                         <span className="font-black text-[10px] text-white uppercase tracking-widest">S.O. Details</span>
                                     </div>
-                                    <div className="flex items-center gap-1.5">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
                                         <button className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest bg-red-600 hover:bg-red-500 text-white rounded transition-all whitespace-nowrap">
                                             <Package size={10} /> Box Composition
                                         </button>
                                         <HBtn icon={ShoppingCart} label="Foods" onClick={() => {}} />
-                                        <div className="w-px h-4 bg-white/20" />
-                                        <HBtn icon={Plus}   label="Add Ord.Line"    onClick={() => {}} disabled={!canEdit} />
-                                        <HBtn icon={Edit2}  label="Edit Ord.Line"   onClick={() => {}} disabled={!selectedLineUnico || !canEdit} />
-                                        <HBtn icon={Trash2} label="Delete Ord.Line" onClick={handleDeleteLine} disabled={!selectedLineUnico || !canDelete || working} variant="danger" />
+                                        <div className="w-px h-4 bg-white/20 shrink-0" />
+                                        <HBtn icon={Plus}   label="Add Ord.Line"
+                                            onClick={() => setLineModal("new")}
+                                            disabled={!canEdit || !selectedUnico} />
+                                        <HBtn icon={Edit2}  label="Edit Ord.Line"
+                                            onClick={() => setLineModal("edit")}
+                                            disabled={!selectedLineUnico || !canEdit} />
+                                        <HBtn icon={Trash2} label="Delete Ord.Line"
+                                            onClick={handleDeleteLine}
+                                            disabled={!selectedLineUnico || !canDelete || working}
+                                            variant="danger" />
                                     </div>
                                 </OBar>
                                 <div className="flex-1 overflow-auto">
@@ -571,6 +613,39 @@ export default function StandingOrdersPage() {
                     )}
                 </div>
             </div>
+
+            {/* ── Modals ──────────────────────────────────────────────────── */}
+            {headerModal !== "closed" && (
+                <HeaderModal
+                    mode={headerModal}
+                    header={headerModal === "edit" ? h : undefined}
+                    lookups={modalLookups}
+                    onClose={() => setHeaderModal("closed")}
+                    onSaved={(unico) => {
+                        setHeaderModal("closed");
+                        setListKey(k => k + 1);
+                        if (unico) {
+                            setSelectedUnico(unico);
+                            setDetailKey(k => k + 1);
+                        } else {
+                            setDetailKey(k => k + 1);
+                        }
+                    }}
+                />
+            )}
+            {lineModal !== "closed" && selectedUnico && (
+                <LineModal
+                    mode={lineModal}
+                    soUnico={selectedUnico}
+                    line={lineModal === "edit" ? selectedLine : undefined}
+                    cases={casesLookup}
+                    onClose={() => setLineModal("closed")}
+                    onSaved={() => {
+                        setLineModal("closed");
+                        setDetailKey(k => k + 1);
+                    }}
+                />
+            )}
         </div>
     );
 }
