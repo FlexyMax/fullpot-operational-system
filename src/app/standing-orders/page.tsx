@@ -13,8 +13,9 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { usePagePermissions } from "@/lib/permissions";
-import { HeaderModal } from "./HeaderModal";
-import { LineModal }   from "./LineModal";
+import { HeaderModal }   from "./HeaderModal";
+import { LineModal }     from "./LineModal";
+import { SetWeeksModal } from "./SetWeeksModal";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const t    = (v: any) => String(v ?? "").trim();
@@ -55,7 +56,7 @@ function FieldRow({ label, value, className }: { label: string; value?: string; 
 }
 function OBar({ children, className }: { children: any; className?: string }) {
     return (
-        <div className={cn("min-h-[36px] bg-[#FB7506] flex items-center justify-between px-3 shrink-0 flex-wrap gap-1 py-1", className)}>
+        <div className={cn("min-h-[36px] bg-[#FB7506] flex items-center justify-between px-3 shrink-0 flex-wrap gap-y-1 py-1", className)}>
             {children}
         </div>
     );
@@ -67,6 +68,7 @@ function HBtn({ icon: Icon, label, onClick, disabled, variant = "default" }: any
                 "flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest rounded border transition-all disabled:opacity-40 whitespace-nowrap",
                 variant === "danger"  && "bg-red-600 hover:bg-red-500 border-transparent text-white",
                 variant === "dark"    && "bg-gray-700 hover:bg-gray-600 border-transparent text-white",
+                variant === "green"   && "bg-green-600 hover:bg-green-500 border-transparent text-white",
                 variant === "default" && "bg-white hover:bg-gray-100 border-white/30 text-gray-800",
             )}
         >{Icon && <Icon size={10} />}{label}</button>
@@ -81,6 +83,7 @@ export default function StandingOrdersPage() {
 
     const [dayFilter,         setDayFilter]         = useState("%");
     const [textSearch,        setTextSearch]         = useState("");
+    const [myOrders,          setMyOrders]           = useState(false);
     const [selectedUnico,     setSelectedUnico]      = useState<string | null>(null);
     const [selectedLineUnico, setSelectedLineUnico]  = useState<string | null>(null);
     const [listKey,           setListKey]            = useState(0);
@@ -88,21 +91,24 @@ export default function StandingOrdersPage() {
     const [working,           setWorking]            = useState(false);
     const [headerModal,       setHeaderModal]        = useState<"closed" | "new" | "edit">("closed");
     const [lineModal,         setLineModal]          = useState<"closed" | "new" | "edit">("closed");
+    const [weeksModal,        setWeeksModal]         = useState(false);
 
-    // ── Lookups (customers, salesmen, warehouses, terms, cases, cargo agencies)
+    // ── Lookups (customers, salesmen, warehouses, terms, cases, cargo agencies, mySalesmanUq)
     const { data: lookups } = useQuery({
         queryKey: ["so-lookups"],
         queryFn: async () => {
             const r = await fetch("/api/standing-orders/lookups");
             const j = await r.json();
             if (!r.ok) throw new Error(j.error || "Failed");
+            // Do NOT normalize — SP returns natural casing that modals expect
             return {
-                customers:     norm(j.customers     ?? []),
-                salesmen:      norm(j.salesmen      ?? []),
-                warehouses:    j.warehouses          ?? [],
-                terms:         norm(j.terms         ?? []),
-                cases:         norm(j.cases         ?? []),
-                cargoAgencies: norm(j.cargoAgencies ?? []),
+                customers:     j.customers     ?? [],
+                salesmen:      j.salesmen      ?? [],
+                warehouses:    j.warehouses    ?? [],
+                terms:         j.terms         ?? [],
+                cases:         j.cases         ?? [],
+                cargoAgencies: j.cargoAgencies ?? [],
+                mySalesmanUq:  j.mySalesmanUq  ?? "",
             };
         },
         staleTime: 10 * 60 * 1000,
@@ -121,6 +127,10 @@ export default function StandingOrdersPage() {
 
     const orders = useMemo(() => {
         let f = ordersRaw as any[];
+        if (myOrders && lookups?.mySalesmanUq) {
+            const mySalesmanUqUpper = t(lookups.mySalesmanUq).toUpperCase();
+            f = f.filter((o: any) => t(o.SALESMAN_UQ ?? "").toUpperCase() === mySalesmanUqUpper);
+        }
         if (dayFilter !== "%")
             f = f.filter((o: any) => t(o.SO_DAY ?? "").toUpperCase().trim() === dayFilter);
         if (textSearch.trim()) {
@@ -132,7 +142,7 @@ export default function StandingOrdersPage() {
             );
         }
         return f;
-    }, [ordersRaw, dayFilter, textSearch]);
+    }, [ordersRaw, dayFilter, textSearch, myOrders, lookups?.mySalesmanUq]);
 
     // ── Order detail (header + lines)
     const { data: detail, isFetching: loadingDetail } = useQuery({
@@ -231,10 +241,8 @@ export default function StandingOrdersPage() {
     const h     = detail?.header;
     const lines = detail?.lines ?? [];
 
-    // Selected line object for edit
     const selectedLine = selectedLineUnico ? lines.find((l: any) => t(l.UNICO) === selectedLineUnico) : null;
 
-    // Lookups for modals (fallback to empty arrays until loaded)
     const modalLookups = {
         customers:     lookups?.customers     ?? [],
         salesmen:      lookups?.salesmen      ?? [],
@@ -273,12 +281,23 @@ export default function StandingOrdersPage() {
                 </div>
             </div>
 
-            {/* ── Filter / action bar ──────────────────────────────────────── */}
+            {/* ── Filter bar (search + day filter + refresh) ───────────────────── */}
             <div className="h-10 bg-white border border-gray-200 flex items-center px-3 gap-2 shrink-0 shadow-sm mx-2 mt-2 rounded-lg overflow-x-auto">
+                {/* All / My Orders toggle */}
                 <div className="flex items-center bg-gray-100 rounded p-0.5 shrink-0">
-                    <button className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest bg-[#FB7506] text-white shadow-sm">All Orders</button>
-                    <button className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-gray-800">My Orders</button>
+                    <button
+                        onClick={() => setMyOrders(false)}
+                        className={cn("px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest transition-all",
+                            !myOrders ? "bg-[#FB7506] text-white shadow-sm" : "text-gray-500 hover:text-gray-800")}
+                    >All Orders</button>
+                    <button
+                        onClick={() => setMyOrders(true)}
+                        className={cn("px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest transition-all",
+                            myOrders ? "bg-[#FB7506] text-white shadow-sm" : "text-gray-500 hover:text-gray-800")}
+                    >My Orders</button>
                 </div>
+
+                {/* Day filter */}
                 <div className="flex items-center gap-1 shrink-0">
                     <select value={dayFilter} onChange={e => setDayFilter(e.target.value)}
                         className="text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded px-2 py-1 bg-white text-gray-700 cursor-pointer"
@@ -288,7 +307,10 @@ export default function StandingOrdersPage() {
                     </select>
                     {dayFilter !== "%" && <button onClick={() => setDayFilter("%")} className="text-gray-400 hover:text-gray-600"><X size={12} /></button>}
                 </div>
+
                 <div className="w-px h-5 bg-gray-200 shrink-0" />
+
+                {/* Search */}
                 <div className="flex items-center bg-gray-100 rounded px-2 py-1 gap-1 w-44 shrink-0">
                     <Search size={11} className="text-gray-400 shrink-0" />
                     <input value={textSearch} onChange={e => setTextSearch(e.target.value)}
@@ -296,31 +318,13 @@ export default function StandingOrdersPage() {
                     />
                     {textSearch && <button onClick={() => setTextSearch("")}><X size={11} className="text-gray-400 hover:text-gray-600" /></button>}
                 </div>
+
                 <button onClick={() => setListKey(k => k + 1)} disabled={loadingOrders}
                     className="flex items-center gap-1 px-2 py-1 text-[10px] font-black uppercase tracking-widest bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-600 rounded transition-all shrink-0"
                 >
                     <RefreshCcw size={10} className={loadingOrders ? "animate-spin" : ""} /> Refresh
                 </button>
-                <div className="w-px h-5 bg-gray-200 shrink-0" />
-                <button className="flex items-center gap-1 px-2 py-1 text-[10px] font-black uppercase tracking-widest bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-600 rounded shrink-0">
-                    <UserCog size={10} /> Change Cust.
-                </button>
-                <button className="flex items-center gap-1 px-2 py-1 text-[10px] font-black uppercase tracking-widest bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-600 rounded shrink-0">
-                    <UserCog size={10} /> Change Salesman
-                </button>
-                <div className="w-px h-5 bg-gray-200 shrink-0" />
-                <button
-                    disabled={!canEdit}
-                    onClick={() => setHeaderModal("new")}
-                    className="flex items-center gap-1 px-2 py-1 text-[10px] font-black uppercase tracking-widest bg-green-600 hover:bg-green-500 text-white rounded disabled:opacity-40 shrink-0 transition-colors"
-                >
-                    <Plus size={10} /> Add Order
-                </button>
-                <button disabled={!selectedUnico}
-                    className="flex items-center gap-1 px-2 py-1 text-[10px] font-black uppercase tracking-widest bg-gray-700 hover:bg-gray-600 text-white rounded disabled:opacity-40 shrink-0"
-                >
-                    <FileText size={10} /> View Order
-                </button>
+
                 <span className="ml-auto text-[10px] text-gray-400 font-bold shrink-0">
                     {orders.length} / {(ordersRaw as any[]).length} orders
                 </span>
@@ -391,29 +395,25 @@ export default function StandingOrdersPage() {
                     ) : (
                         <div className="flex flex-col h-full overflow-hidden gap-1.5 min-h-0">
 
-                            {/* ── Customer bar ───────────────────────────────── */}
+                            {/* ── Customer / Order info bar ─────────────────── */}
                             <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden shrink-0">
-                                <div className="bg-green-800 px-3 py-1.5 flex items-center justify-between flex-wrap gap-1">
-                                    <div className="flex items-center gap-2">
-                                        <Users size={13} className="text-white/70" />
-                                        <span className="text-[11px] font-black text-white uppercase tracking-widest">
-                                            Customer — {t(h?.CUSTOMER ?? "Loading...")}
-                                        </span>
-                                        {loadingDetail && <Loader2 size={10} className="animate-spin text-white/50" />}
-                                    </div>
-                                    <button className="flex items-center gap-1 bg-white/10 hover:bg-white/20 px-2 py-0.5 rounded text-[10px] font-black text-white uppercase tracking-widest border border-white/20 transition-all">
-                                        <Search size={10} /> Customer Search
-                                    </button>
+                                <div className="bg-green-800 px-3 py-1.5 flex items-center gap-2">
+                                    <Users size={13} className="text-white/70 shrink-0" />
+                                    <span className="text-[11px] font-black text-white uppercase tracking-widest truncate">
+                                        {t(h?.CUSTOMER ?? "Loading...")}
+                                    </span>
+                                    {loadingDetail && <Loader2 size={10} className="animate-spin text-white/50 shrink-0" />}
                                 </div>
                                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-x-6 gap-y-1 px-4 py-2">
-                                    <FieldRow label="E-mail"  value={t(h?.EMAIL)}    className="col-span-2" />
-                                    <FieldRow label="Phone"   value={t(h?.PHONE)}    />
-                                    <FieldRow label="Fax"     value={t(h?.FAX)}      className="col-span-2" />
-                                    <FieldRow label="Contact" value={t(h?.CONTACT)}  className="col-span-2" />
-                                    <FieldRow label="Credit Hold"  value={bool(h?.CREDIT_HOLD) ? "YES" : "No"} />
-                                    <FieldRow label="Credit Limit" value={h?.CREDIT_LIMIT != null ? fmt(h.CREDIT_LIMIT) : undefined} className="col-span-2" />
-                                    <FieldRow label="Hold Rea."    value={t(h?.HOLD_REA)}   className="col-span-2" />
-                                    <FieldRow label="T. Bal."      value={h?.TOTAL_BAL != null ? fmt(h.TOTAL_BAL) : undefined} className="col-span-3" />
+                                    <FieldRow label="Salesman"    value={t(h?.SALESMAN_NAME)}           className="col-span-2" />
+                                    <FieldRow label="Terms"       value={t(h?.CONDITION)}               className="col-span-2" />
+                                    <FieldRow label="Day"         value={t(h?.SO_DAY).trim()} />
+                                    <FieldRow label="Warehouse"   value={t(h?.WAREHOUSE)}               className="col-span-2" />
+                                    <FieldRow label="Cargo"       value={t(h?.AGENCY)}                  className="col-span-2" />
+                                    <FieldRow label="Factor"      value={t(h?.APPLYFOR ?? "1")} />
+                                    <FieldRow label="FOB Miami"   value={bool(h?.FOBMIAMI) ? "Yes" : "No"} />
+                                    <FieldRow label="Active"      value={bool(h?.ACTIVE) ? "Yes" : "No"} />
+                                    <FieldRow label="Instructions" value={t(h?.INSTRUCTIONS)}           className="col-span-3" />
                                 </div>
                             </div>
 
@@ -424,13 +424,12 @@ export default function StandingOrdersPage() {
                                         <Lock size={12} className="text-white/70" />
                                         <span className="font-black text-[10px] text-white uppercase tracking-widest">S.O. Header</span>
                                     </div>
-                                    <div className="flex items-center gap-1.5 flex-wrap">
-                                        <HBtn icon={Calendar} label="Set Weeks"    onClick={() => {}} />
-                                        <HBtn icon={Printer}  label="Print"        onClick={() => {}} />
-                                        <div className="w-px h-4 bg-white/20 shrink-0" />
+                                    <div className="flex items-center gap-1 flex-wrap">
+                                        {/* Order actions */}
                                         <HBtn icon={Plus}    label="New Order"
                                             onClick={() => setHeaderModal("new")}
-                                            disabled={!canEdit} />
+                                            disabled={!canEdit}
+                                            variant="green" />
                                         <HBtn icon={Edit2}   label="Edit Order"
                                             onClick={() => setHeaderModal("edit")}
                                             disabled={!canEdit || !selectedUnico || loadingDetail} />
@@ -438,6 +437,17 @@ export default function StandingOrdersPage() {
                                             onClick={handleDeleteOrder}
                                             disabled={!canDelete || working}
                                             variant="danger" />
+                                        <div className="w-px h-4 bg-white/20 shrink-0" />
+                                        {/* Additional tools */}
+                                        <HBtn icon={Calendar} label="Set Weeks"
+                                            onClick={() => setWeeksModal(true)}
+                                            disabled={!selectedUnico} />
+                                        <HBtn icon={Printer}  label="Print"  onClick={() => {}} />
+                                        <div className="w-px h-4 bg-white/20 shrink-0" />
+                                        {/* Change / View */}
+                                        <HBtn icon={UserCog}  label="Change Cust."     onClick={() => {}} />
+                                        <HBtn icon={UserCog}  label="Change Salesman"  onClick={() => {}} />
+                                        <HBtn icon={FileText} label="View Order"       onClick={() => {}} disabled={!selectedUnico} />
                                         <div className="w-px h-4 bg-white/20 shrink-0" />
                                         <button onClick={handleToFarm} disabled={working}
                                             className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest bg-red-600 hover:bg-red-500 text-white rounded disabled:opacity-40 transition-all whitespace-nowrap"
@@ -450,10 +460,8 @@ export default function StandingOrdersPage() {
                                     {/* Row 1: order fields */}
                                     <div className="flex items-center gap-6 pb-1.5 border-b border-gray-100 flex-wrap">
                                         <FieldRow label="Order No."  value={t(h?.SORDER_NO)} />
-                                        <FieldRow label="Active"     value={bool(h?.ACTIVE) ? "Yes" : "No"} />
-                                        <FieldRow label="Factor"     value={t(h?.APPLYFOR ?? h?.FACTOR ?? "1")} />
+                                        <FieldRow label="CP Order"   value={t(h?.CPORDER_NO)} />
                                         <FieldRow label="Add Date"   value={fmtDate(h?.SO_DATE)} />
-                                        <FieldRow label="Salesman"   value={t(h?.SALESMAN_NAME)} />
                                     </div>
                                     {/* Week Day green bar */}
                                     <div className="flex items-center gap-0 bg-green-800 rounded px-3 py-1 flex-wrap">
@@ -465,11 +473,11 @@ export default function StandingOrdersPage() {
                                             </label>
                                         ))}
                                     </div>
-                                    {/* Terms + dates */}
+                                    {/* Ship info */}
                                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-1.5">
-                                        <FieldRow label="Terms"       value={t(h?.CONDITION ?? h?.TERMS)} className="col-span-1" />
                                         <FieldRow label="Start Date"  value={fmtDate(h?.SO_STDATE)} />
                                         <FieldRow label="End Date"    value={fmtDate(h?.SO_ENDATE)} />
+                                        <div />
                                         <div />
                                         <FieldRow label="Ship"        value={t(h?.SHIP_NAME)} className="col-span-2" />
                                         <FieldRow label="Address"     value={t(h?.SHIP_ADDRESS)} className="col-span-2" />
@@ -477,8 +485,6 @@ export default function StandingOrdersPage() {
                                         <FieldRow label="State"       value={t(h?.SHIP_STATE)} />
                                         <FieldRow label="Zip"         value={t(h?.SHIP_ZIP)} />
                                         <FieldRow label="Phone"       value={t(h?.SHIP_PHONE)} />
-                                        <FieldRow label="Warehouse"   value={t(h?.WAREHOUSE)} className="col-span-2" />
-                                        <FieldRow label="Cargo A."    value={t(h?.AGENCY)} className="col-span-2" />
                                     </div>
                                 </div>
                             </div>
@@ -644,6 +650,14 @@ export default function StandingOrdersPage() {
                         setLineModal("closed");
                         setDetailKey(k => k + 1);
                     }}
+                />
+            )}
+            {weeksModal && selectedUnico && h && (
+                <SetWeeksModal
+                    soUnico={selectedUnico}
+                    header={h}
+                    onClose={() => setWeeksModal(false)}
+                    onSaved={() => setWeeksModal(false)}
                 />
             )}
         </div>
