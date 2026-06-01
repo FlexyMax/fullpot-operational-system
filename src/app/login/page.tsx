@@ -247,18 +247,11 @@ export default function LoginPage() {
                 </main>
 
                 {/* ── Footer ───────────────────────────────────────────────── */}
-                <footer className="fixed bottom-0 z-50 w-full flex flex-col sm:flex-row items-center justify-between px-6 md:px-12 py-4 gap-3"
+                <footer className="fixed bottom-0 z-50 w-full flex items-center justify-center px-6 py-4"
                     style={{ background: 'rgba(34,31,31,0.5)', backdropFilter: 'blur(8px)', borderTop: '1px solid rgba(88,66,54,0.2)' }}>
                     <span className="text-[10px] font-bold text-[#584236] uppercase tracking-[0.12em]">
-                        © 2025 FullPot Of Flowers — FOS. All rights reserved.
+                        © 2026 FullPot Of Flowers — FOS. Flexymax ® All rights reserved.
                     </span>
-                    <div className="flex gap-6">
-                        {["Privacy Policy", "Terms of Service", "Security Standards"].map(l => (
-                            <span key={l} className="text-[10px] font-bold text-[#a78b7c] uppercase tracking-[0.08em] cursor-default hover:text-[#FB7506] transition-colors">
-                                {l}
-                            </span>
-                        ))}
-                    </div>
                 </footer>
             </div>
         </>
