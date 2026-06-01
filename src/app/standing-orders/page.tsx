@@ -200,16 +200,10 @@ export default function StandingOrdersPage() {
             </div>
 
             {/* ── Main area ────────────────────────────────────────────────── */}
-            <div className="flex flex-row flex-1 overflow-hidden px-2 pb-2 pt-2 gap-2 min-h-0">
+            <div className="flex flex-col xl:flex-row flex-1 overflow-hidden px-2 pb-2 pt-2 gap-2 min-h-0">
 
-                {/* Orders list */}
-                <div className={cn(
-                    "flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden shrink-0",
-                    // On mobile: full width. On desktop: fixed width, hide when no selection or show always
-                    selectedUnico && !showModal
-                        ? "hidden xl:flex xl:w-[420px]"
-                        : "flex-1 xl:flex xl:w-[420px]"
-                )}>
+                {/* Orders list — always visible on all screen sizes */}
+                <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 xl:flex-none xl:w-[420px] xl:shrink-0">
                     <div className="h-9 bg-[#374151] flex items-center px-3 gap-2 shrink-0 rounded-t-lg">
                         <ClipboardList size={13} className="text-[#FB7506]" />
                         <span className="font-black text-[10px] uppercase tracking-widest text-white">Orders List</span>
@@ -235,7 +229,7 @@ export default function StandingOrdersPage() {
                             <tbody>
                                 {orders.map((o: any, i: number) => {
                                     const uq  = t(o.UNICO ?? "");
-                                    const sel = selectedUnico === uq && !showModal;
+                                    const sel = selectedUnico === uq;
                                     return (
                                         <tr key={i}
                                             onClick={() => handleRowClick(uq, o)}
