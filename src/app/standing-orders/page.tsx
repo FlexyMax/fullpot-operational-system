@@ -1,33 +1,22 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo } from "react";
+import { useSession }        from "next-auth/react";
+import { useRouter }         from "next/navigation";
+import { useQuery }          from "@tanstack/react-query";
 import {
     ArrowLeft, RefreshCcw, Loader2, Search, X,
-    Users, FileText, Trash2, Check, Lock,
-    Printer, Plus, Edit2, Tractor, UserCog,
-    Calendar, Package, ShoppingCart, ClipboardList,
+    Check, Plus, ClipboardList,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { toast } from "sonner";
-import { usePagePermissions } from "@/lib/permissions";
-import { HeaderModal }          from "./HeaderModal";
-import { LineModal }            from "./LineModal";
-import { SetWeeksModal }        from "./SetWeeksModal";
-import { BoxCompositionModal }  from "./BoxCompositionModal";
-import { ProductsListModal }    from "./ProductsListModal";
-import { FutureStockModal }     from "./FutureStockModal";
-import { ChangeSalesmanModal }  from "./ChangeSalesmanModal";
-import { ChangeCustomerModal }  from "./ChangeCustomerModal";
+import { cn }                    from "@/lib/utils";
+import { usePagePermissions }    from "@/lib/permissions";
+import { HeaderModal }           from "./HeaderModal";
+import { OrderDetailModal }      from "./OrderDetailModal";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const t    = (v: any) => String(v ?? "").trim();
 const norm = (rows: any[]) => rows.map(r => { const n: any = {}; for (const [k, v] of Object.entries(r)) n[k.toUpperCase()] = v; return n; });
-const normOne = (r: any) => { if (!r) return null; const n: any = {}; for (const [k, v] of Object.entries(r)) n[k.toUpperCase()] = v; return n; };
-const fmt  = (v: any) => parseFloat(v ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const fmtI = (v: any) => { const n = parseInt(v ?? 0); return isNaN(n) ? "" : n.toLocaleString("en-US"); };
+const bool = (v: any) => v === true || v === 1 || String(v).toLowerCase() === "true";
 const fmtDate = (v: any) => {
     if (!v) return "";
     const s = String(v).trim();
@@ -35,82 +24,37 @@ const fmtDate = (v: any) => {
     if (iso) return new Date(+iso[1], +iso[2] - 1, +iso[3]).toLocaleDateString("en-US");
     const d = new Date(s); return isNaN(d.getTime()) ? s : d.toLocaleDateString("en-US");
 };
-const bool = (v: any) => v === true || v === 1 || String(v).toLowerCase() === "true";
 
 const DAYS = ["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY","SUNDAY"];
-const WEEK_COLS: [string, string][] = [["MON","Mon"],["TUE","Tue"],["WED","Wed"],["THU","Thu"],["FRI","Fri"],["SAT","Sat"],["SUN","Sun"]];
 
-// ─── Sub-components ────────────────────────────────────────────────────────────
 function Th({ children, className }: { children: any; className?: string }) {
-    return (
-        <th className={cn("p-2 text-left font-bold whitespace-nowrap text-gray-700 border-l border-gray-200 first:border-l-0 bg-gray-100 sticky top-0 z-10", className)}>
-            {children}
-        </th>
-    );
+    return <th className={cn("px-3 py-2 text-left font-bold whitespace-nowrap text-gray-600 border-b border-gray-200 bg-gray-50 sticky top-0 z-10 text-[11px]", className)}>{children}</th>;
 }
 function Td({ children, className }: { children: any; className?: string }) {
-    return <td className={cn("p-2 whitespace-nowrap border-l border-gray-100 first:border-l-0", className)}>{children}</td>;
-}
-function FieldRow({ label, value, className }: { label: string; value?: string; className?: string }) {
-    return (
-        <div className={cn("flex items-center gap-1 min-w-0", className)}>
-            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide shrink-0">{label}:</span>
-            <span className="text-[11px] text-gray-800 truncate">{value || "—"}</span>
-        </div>
-    );
-}
-function OBar({ children, className }: { children: any; className?: string }) {
-    return (
-        <div className={cn("min-h-[36px] bg-[#FB7506] flex items-center justify-between px-3 shrink-0 flex-wrap gap-y-1 py-1 overflow-x-auto", className)}>
-            {children}
-        </div>
-    );
-}
-function HBtn({ icon: Icon, label, onClick, disabled, variant = "default" }: any) {
-    return (
-        <button onClick={onClick} disabled={disabled}
-            className={cn(
-                "flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest rounded border transition-all disabled:opacity-40 whitespace-nowrap",
-                variant === "danger"  && "bg-red-600 hover:bg-red-500 border-transparent text-white",
-                variant === "dark"    && "bg-gray-700 hover:bg-gray-600 border-transparent text-white",
-                variant === "green"   && "bg-green-600 hover:bg-green-500 border-transparent text-white",
-                variant === "default" && "bg-white hover:bg-gray-100 border-white/30 text-gray-800",
-            )}
-        >{Icon && <Icon size={10} />}{label}</button>
-    );
+    return <td className={cn("px-3 py-2 whitespace-nowrap text-[12px]", className)}>{children}</td>;
 }
 
-// ─── Main page ─────────────────────────────────────────────────────────────────
+// ─── Main page ────────────────────────────────────────────────────────────────
 export default function StandingOrdersPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
     const { canEdit, canDelete } = usePagePermissions("standing-orders");
 
-    const [dayFilter,         setDayFilter]         = useState("%");
-    const [textSearch,        setTextSearch]         = useState("");
-    const [myOrders,          setMyOrders]           = useState(false);
-    const [selectedUnico,     setSelectedUnico]      = useState<string | null>(null);
-    const [selectedLineUnico, setSelectedLineUnico]  = useState<string | null>(null);
-    const [listKey,           setListKey]            = useState(0);
-    const [detailKey,         setDetailKey]          = useState(0);
-    const [working,           setWorking]            = useState(false);
-    const [headerModal,       setHeaderModal]        = useState<"closed" | "new" | "edit">("closed");
-    const [lineModal,         setLineModal]          = useState<"closed" | "new" | "edit">("closed");
-    const [weeksModal,        setWeeksModal]         = useState(false);
-    const [boxCompModal,      setBoxCompModal]       = useState(false);
-    const [productsModal,     setProductsModal]      = useState(false);
-    const [futureStockModal,  setFutureStockModal]   = useState(false);
-    const [changeSalesmanModal, setChangeSalesmanModal] = useState(false);
-    const [changeCustomerModal, setChangeCustomerModal] = useState(false);
+    const [dayFilter,     setDayFilter]    = useState("%");
+    const [textSearch,    setTextSearch]   = useState("");
+    const [myOrders,      setMyOrders]     = useState(false);
+    const [listKey,       setListKey]      = useState(0);
+    const [selectedUnico, setSelectedUnico] = useState<string | null>(null);
+    const [selectedRow,   setSelectedRow]  = useState<any>(null);
+    const [newOrderModal, setNewOrderModal] = useState(false);
 
-    // ── Lookups (customers, salesmen, warehouses, terms, cases, cargo agencies, mySalesmanUq)
+    // ── Lookups ───────────────────────────────────────────────────────────────
     const { data: lookups } = useQuery({
         queryKey: ["so-lookups"],
         queryFn: async () => {
             const r = await fetch("/api/standing-orders/lookups");
             const j = await r.json();
             if (!r.ok) throw new Error(j.error || "Failed");
-            // Do NOT normalize — SP returns natural casing that modals expect
             return {
                 customers:     j.customers     ?? [],
                 salesmen:      j.salesmen      ?? [],
@@ -139,8 +83,8 @@ export default function StandingOrdersPage() {
     const orders = useMemo(() => {
         let f = ordersRaw as any[];
         if (myOrders && lookups?.mySalesmanUq) {
-            const mySalesmanUqUpper = t(lookups.mySalesmanUq).toUpperCase();
-            f = f.filter((o: any) => t(o.SALESMAN_UQ ?? "").toUpperCase() === mySalesmanUqUpper);
+            const mySqUpper = t(lookups.mySalesmanUq).toUpperCase();
+            f = f.filter((o: any) => t(o.SALESMAN_UQ ?? "").toUpperCase() === mySqUpper);
         }
         if (dayFilter !== "%")
             f = f.filter((o: any) => t(o.SO_DAY ?? "").toUpperCase().trim() === dayFilter);
@@ -155,574 +99,184 @@ export default function StandingOrdersPage() {
         return f;
     }, [ordersRaw, dayFilter, textSearch, myOrders, lookups?.mySalesmanUq]);
 
-    // ── Order detail (header + lines)
-    const { data: detail, isFetching: loadingDetail } = useQuery({
-        queryKey: ["so-detail", selectedUnico, detailKey],
-        enabled:  !!selectedUnico,
-        queryFn: async () => {
-            const r = await fetch(`/api/standing-orders/detail/${selectedUnico}`);
-            const j = await r.json();
-            if (!r.ok) throw new Error(j.error || "Failed");
-            return {
-                header: normOne(j.header),
-                lines:  norm(j.lines ?? []),
-            };
-        },
-    });
-
-    // ── Vendors for selected line
-    const { data: vendors = [], isFetching: loadingVendors } = useQuery({
-        queryKey: ["so-vendors", selectedLineUnico],
-        enabled:  !!selectedLineUnico,
-        queryFn: async () => {
-            const r = await fetch(`/api/standing-orders/line-growers/${selectedLineUnico}`);
-            const j = await r.json();
-            if (!r.ok) throw new Error(j.error || "Failed");
-            return norm(Array.isArray(j) ? j : []);
-        },
-    });
-
-    // ── Actions ───────────────────────────────────────────────────────────────
-    const handleDeleteOrder = useCallback(() => {
-        if (!selectedUnico) return;
-        toast("Delete this standing order?", {
-            duration: 8000,
-            action: {
-                label: "Delete",
-                onClick: async () => {
-                    setWorking(true);
-                    try {
-                        const r = await fetch(`/api/standing-orders/header/${selectedUnico}`, { method: "DELETE" });
-                        const j = await r.json();
-                        if (!r.ok || !j.success) throw new Error(j.error || "Failed");
-                        toast.success("Order deleted");
-                        setSelectedUnico(null);
-                        setSelectedLineUnico(null);
-                        setListKey(k => k + 1);
-                    } catch (e: any) { toast.error(e.message); }
-                    finally { setWorking(false); }
-                },
-            },
-            cancel: { label: "Cancel", onClick: () => {} },
-        });
-    }, [selectedUnico]);
-
-    const handleToFarm = useCallback(async () => {
-        if (!selectedUnico) return;
-        setWorking(true);
-        try {
-            const r = await fetch("/api/standing-orders/to-farm", {
-                method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ unico: selectedUnico }),
-            });
-            const j = await r.json();
-            if (!r.ok || !j.success) throw new Error(j.error || "Failed");
-            toast.success("Sent to farm");
-            setDetailKey(k => k + 1);
-        } catch (e: any) { toast.error(e.message); }
-        finally { setWorking(false); }
-    }, [selectedUnico]);
-
-    const handleDeleteLine = useCallback(() => {
-        if (!selectedLineUnico) return;
-        toast("Delete this order line?", {
-            duration: 8000,
-            action: {
-                label: "Delete",
-                onClick: async () => {
-                    setWorking(true);
-                    try {
-                        const r = await fetch(`/api/standing-orders/line/${selectedLineUnico}`, { method: "DELETE" });
-                        const j = await r.json();
-                        if (!r.ok || !j.success) throw new Error(j.error || "Failed");
-                        toast.success("Line deleted");
-                        setSelectedLineUnico(null);
-                        setDetailKey(k => k + 1);
-                    } catch (e: any) { toast.error(e.message); }
-                    finally { setWorking(false); }
-                },
-            },
-            cancel: { label: "Cancel", onClick: () => {} },
-        });
-    }, [selectedLineUnico]);
-
-    if (status === "loading") return null;
-    if (status === "unauthenticated") { router.push("/login"); return null; }
-
-    const h     = detail?.header;
-    const lines = detail?.lines ?? [];
-
-    const selectedLine = selectedLineUnico ? lines.find((l: any) => t(l.UNICO) === selectedLineUnico) : null;
-
     const modalLookups = {
         customers:     lookups?.customers     ?? [],
         salesmen:      lookups?.salesmen      ?? [],
         warehouses:    lookups?.warehouses    ?? [],
         terms:         lookups?.terms         ?? [],
+        cases:         lookups?.cases         ?? [],
         cargoAgencies: lookups?.cargoAgencies ?? [],
         carriers:      lookups?.carriers      ?? [],
     };
-    const casesLookup = lookups?.cases ?? [];
+
+    if (status === "loading") return null;
+    if (status === "unauthenticated") { router.push("/login"); return null; }
 
     return (
         <div className="flex flex-col h-screen bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
 
-            {/* ── Dark header ─────────────────────────────────────────────── */}
+            {/* ── Dark top bar ─────────────────────────────────────────────── */}
             <div className="h-12 bg-[#374151] flex items-center justify-between px-4 shrink-0 text-white">
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                     <button onClick={() => router.push("/menu")} className="hover:bg-white/10 p-1.5 rounded transition-colors">
                         <ArrowLeft size={18} />
                     </button>
-                    <div className="flex items-center gap-2">
-                        <span className="font-black text-xs uppercase tracking-widest text-[#FB7506]">FOS</span>
-                        <div className="w-px h-4 bg-white/20 mx-2" />
-                        <span className="font-bold text-xs uppercase tracking-tight">Standing Orders</span>
-                    </div>
-                    {(working || loadingDetail) && <Loader2 size={14} className="animate-spin text-[#FB7506] ml-2" />}
+                    <span className="font-black text-xs uppercase tracking-widest text-[#FB7506]">FOS</span>
+                    <div className="w-px h-4 bg-white/20" />
+                    <span className="font-bold text-xs uppercase tracking-tight">Standing Orders</span>
                 </div>
-                <div className="hidden sm:flex items-center gap-6 text-[10px] font-bold uppercase tracking-widest">
-                    {h && <span className="text-gray-400">Order: <span className="text-[#FB7506]">{t(h.SORDER_NO)}</span></span>}
-                    <div className="flex items-center gap-2">
-                        <span className="text-gray-400">User:</span>
-                        <span>{session?.user?.name || "OPERATOR"}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span className="text-gray-400">Status:</span>
-                        <span className="text-green-500 font-black">Online</span>
-                    </div>
+                <div className="hidden sm:flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest">
+                    <span className="text-gray-400">User: <span className="text-white">{session?.user?.name || "OPERATOR"}</span></span>
+                    <span className="text-green-500">● Online</span>
                 </div>
             </div>
 
-            {/* ── Filter bar (search + day filter + refresh) ───────────────────── */}
-            <div className="h-10 bg-white border border-gray-200 flex items-center px-3 gap-2 shrink-0 shadow-sm mx-2 mt-2 rounded-lg overflow-x-auto">
-                {/* All / My Orders toggle */}
+            {/* ── Filter + New Order bar ────────────────────────────────────── */}
+            <div className="bg-white border-b border-gray-200 px-3 py-2 flex flex-wrap items-center gap-2 shrink-0 shadow-sm">
+                {/* All / My Orders */}
                 <div className="flex items-center bg-gray-100 rounded p-0.5 shrink-0">
-                    <button
-                        onClick={() => setMyOrders(false)}
-                        className={cn("px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest transition-all",
-                            !myOrders ? "bg-[#FB7506] text-white shadow-sm" : "text-gray-500 hover:text-gray-800")}
-                    >All Orders</button>
-                    <button
-                        onClick={() => setMyOrders(true)}
-                        className={cn("px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest transition-all",
-                            myOrders ? "bg-[#FB7506] text-white shadow-sm" : "text-gray-500 hover:text-gray-800")}
-                    >My Orders</button>
+                    <button onClick={() => setMyOrders(false)}
+                        className={cn("px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-widest transition-all",
+                            !myOrders ? "bg-[#FB7506] text-white shadow-sm" : "text-gray-500 hover:text-gray-800")}>
+                        All Orders
+                    </button>
+                    <button onClick={() => setMyOrders(true)}
+                        className={cn("px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-widest transition-all",
+                            myOrders ? "bg-[#FB7506] text-white shadow-sm" : "text-gray-500 hover:text-gray-800")}>
+                        My Orders
+                    </button>
                 </div>
 
                 {/* Day filter */}
                 <div className="flex items-center gap-1 shrink-0">
                     <select value={dayFilter} onChange={e => setDayFilter(e.target.value)}
-                        className="text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded px-2 py-1 bg-white text-gray-700 cursor-pointer"
-                    >
+                        className="text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded px-2 py-1.5 bg-white text-gray-700 cursor-pointer">
                         <option value="%">All Days</option>
                         {DAYS.map(d => <option key={d} value={d}>{d[0] + d.slice(1).toLowerCase()}</option>)}
                     </select>
-                    {dayFilter !== "%" && <button onClick={() => setDayFilter("%")} className="text-gray-400 hover:text-gray-600"><X size={12} /></button>}
+                    {dayFilter !== "%" && (
+                        <button onClick={() => setDayFilter("%")} className="text-gray-400 hover:text-gray-600">
+                            <X size={12} />
+                        </button>
+                    )}
                 </div>
-
-                <div className="w-px h-5 bg-gray-200 shrink-0" />
 
                 {/* Search */}
-                <div className="flex items-center bg-gray-100 rounded px-2 py-1 gap-1 w-44 shrink-0">
+                <div className="flex items-center bg-gray-100 rounded px-2 py-1.5 gap-1.5 flex-1 min-w-[140px] max-w-xs">
                     <Search size={11} className="text-gray-400 shrink-0" />
                     <input value={textSearch} onChange={e => setTextSearch(e.target.value)}
-                        placeholder="Search..." className="text-[11px] text-gray-700 placeholder-gray-400 outline-none flex-1 min-w-0 bg-transparent"
+                        placeholder="Customer, order #, salesman..."
+                        className="text-[11px] text-gray-700 placeholder-gray-400 outline-none flex-1 min-w-0 bg-transparent"
                     />
-                    {textSearch && <button onClick={() => setTextSearch("")}><X size={11} className="text-gray-400 hover:text-gray-600" /></button>}
+                    {textSearch && (
+                        <button onClick={() => setTextSearch("")}><X size={11} className="text-gray-400 hover:text-gray-600" /></button>
+                    )}
                 </div>
 
+                {/* Refresh + count */}
                 <button onClick={() => setListKey(k => k + 1)} disabled={loadingOrders}
-                    className="flex items-center gap-1 px-2 py-1 text-[10px] font-black uppercase tracking-widest bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-600 rounded transition-all shrink-0"
-                >
+                    className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-black uppercase tracking-widest bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-600 rounded transition-all shrink-0">
                     <RefreshCcw size={10} className={loadingOrders ? "animate-spin" : ""} /> Refresh
                 </button>
 
-                <span className="ml-auto text-[10px] text-gray-400 font-bold shrink-0">
-                    {orders.length} / {(ordersRaw as any[]).length} orders
+                <span className="text-[10px] text-gray-400 font-bold shrink-0 hidden sm:block">
+                    {orders.length} / {(ordersRaw as any[]).length}
                 </span>
+
+                {/* New Order button */}
+                {canEdit && (
+                    <button onClick={() => setNewOrderModal(true)}
+                        className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest bg-green-600 hover:bg-green-500 text-white rounded transition-all shrink-0">
+                        <Plus size={12} /> New Order
+                    </button>
+                )}
             </div>
 
-            {/* ── Main split ───────────────────────────────────────────────── */}
-            <div className="flex flex-col xl:flex-row flex-1 overflow-hidden px-2 pb-2 pt-2 gap-2 min-h-0">
-
-                {/* Left: Orders list */}
-                <div className="flex flex-col xl:w-[480px] shrink-0 bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden xl:max-h-none max-h-[40vh]">
+            {/* ── Orders list ────────────────────────────────────────────────── */}
+            <div className="flex-1 overflow-hidden px-2 pb-2 pt-2 min-h-0">
+                <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden h-full flex flex-col">
                     <div className="h-9 bg-[#374151] flex items-center px-3 gap-2 shrink-0 rounded-t-lg">
                         <ClipboardList size={13} className="text-[#FB7506]" />
                         <span className="font-black text-[10px] uppercase tracking-widest text-white">Orders List</span>
-                        {loadingOrders && <RefreshCcw size={10} className="animate-spin text-gray-400" />}
+                        {loadingOrders && <Loader2 size={10} className="animate-spin text-gray-400" />}
+                        <span className="ml-auto text-[10px] text-gray-400 font-bold sm:hidden">
+                            {orders.length}/{(ordersRaw as any[]).length}
+                        </span>
                     </div>
                     <div className="flex-1 overflow-auto">
-                        <table className="min-w-full text-xs text-left">
+                        <table className="min-w-full text-left">
                             <thead>
                                 <tr>
                                     <Th>Customer</Th>
-                                    <Th className="text-right">Order</Th>
+                                    <Th className="text-right">Order #</Th>
                                     <Th>Day</Th>
-                                    <Th>Start</Th>
-                                    <Th>End</Th>
-                                    <Th>Salesman</Th>
-                                    <Th>Cargo</Th>
-                                    <Th className="text-center">Act.</Th>
+                                    <Th className="hidden sm:table-cell">Start</Th>
+                                    <Th className="hidden sm:table-cell">End</Th>
+                                    <Th className="hidden md:table-cell">Salesman</Th>
+                                    <Th className="hidden md:table-cell">Cargo</Th>
+                                    <Th className="text-center">Active</Th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {orders.map((o: any, i: number) => {
-                                    const uq  = t(o.UNICO ?? "");
-                                    const sel = selectedUnico === uq;
+                                    const uq = t(o.UNICO ?? "");
                                     return (
-                                        <tr key={i} onClick={() => { setSelectedUnico(sel ? null : uq); setSelectedLineUnico(null); }}
-                                            className={cn("border-b cursor-pointer transition-colors text-gray-600",
-                                                sel ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50")}
+                                        <tr key={i}
+                                            onClick={() => { setSelectedUnico(uq); setSelectedRow(o); }}
+                                            className="border-b cursor-pointer transition-colors text-gray-700 odd:bg-white even:bg-gray-50 hover:bg-blue-50 active:bg-blue-100"
                                         >
-                                            <Td className="max-w-[140px] truncate font-medium">{t(o.CUSTOMER)}</Td>
-                                            <Td className="text-right font-semibold text-blue-700">{t(o.SORDER_NO)}</Td>
+                                            <Td className="font-medium max-w-[160px] truncate">{t(o.CUSTOMER)}</Td>
+                                            <Td className="text-right font-bold text-blue-700">{t(o.SORDER_NO)}</Td>
                                             <Td className="font-bold text-[#FB7506]">{t(o.SO_DAY).trim()}</Td>
-                                            <Td>{fmtDate(o.SO_STDATE)}</Td>
-                                            <Td>{fmtDate(o.SO_ENDATE)}</Td>
-                                            <Td className="max-w-[90px] truncate">{t(o.SALESMAN_NAME)}</Td>
-                                            <Td className="max-w-[80px] truncate">{t(o.AGENCY)}</Td>
-                                            <Td className="text-center">{bool(o.ACTIVE) ? <Check size={11} className="text-green-600 inline" /> : ""}</Td>
+                                            <Td className="hidden sm:table-cell text-gray-500">{fmtDate(o.SO_STDATE)}</Td>
+                                            <Td className="hidden sm:table-cell text-gray-500">{fmtDate(o.SO_ENDATE)}</Td>
+                                            <Td className="hidden md:table-cell max-w-[100px] truncate">{t(o.SALESMAN_NAME)}</Td>
+                                            <Td className="hidden md:table-cell max-w-[90px] truncate">{t(o.AGENCY)}</Td>
+                                            <Td className="text-center">{bool(o.ACTIVE) ? <Check size={12} className="text-green-500 inline" /> : <span className="text-red-400 text-[10px] font-bold">No</span>}</Td>
                                         </tr>
                                     );
                                 })}
                                 {!loadingOrders && orders.length === 0 && (
-                                    <tr><td colSpan={8} className="p-10 text-center text-gray-400 italic">No standing orders found</td></tr>
+                                    <tr><td colSpan={8} className="py-16 text-center text-gray-400 italic text-sm">
+                                        {textSearch || dayFilter !== "%" || myOrders ? "No orders match the current filters" : "No standing orders found"}
+                                    </td></tr>
                                 )}
                             </tbody>
                         </table>
                     </div>
                 </div>
-
-                {/* Right: Order detail */}
-                <div className="flex-1 flex flex-col overflow-hidden min-h-0 min-w-0">
-                    {!selectedUnico ? (
-                        <div className="flex-1 flex items-center justify-center bg-white rounded-lg border border-gray-200 shadow-sm">
-                            <div className="text-center text-gray-400">
-                                <ClipboardList size={36} className="mx-auto mb-3 opacity-30" />
-                                <p className="text-sm font-bold uppercase tracking-widest">Select an order</p>
-                                <p className="text-xs mt-1">Click a row on the left to view details</p>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col h-full overflow-y-auto xl:overflow-hidden gap-1.5 min-h-0">
-
-                            {/* ── Customer / Order info bar ─────────────────── */}
-                            <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden shrink-0">
-                                <div className="bg-green-800 px-3 py-1.5 flex items-center gap-2">
-                                    <Users size={13} className="text-white/70 shrink-0" />
-                                    <span className="text-[11px] font-black text-white uppercase tracking-widest truncate">
-                                        {t(h?.CUSTOMER ?? "Loading...")}
-                                    </span>
-                                    {loadingDetail && <Loader2 size={10} className="animate-spin text-white/50 shrink-0" />}
-                                </div>
-                                <div className="grid grid-cols-2 sm:grid-cols-5 gap-x-6 gap-y-1 px-4 py-2">
-                                    <FieldRow label="Salesman"    value={t(h?.SALESMAN_NAME)}           className="col-span-2" />
-                                    <FieldRow label="Terms"       value={t(h?.CONDITION)}               className="col-span-2" />
-                                    <FieldRow label="Day"         value={t(h?.SO_DAY).trim()} />
-                                    <FieldRow label="Warehouse"   value={t(h?.WAREHOUSE)}               className="col-span-2" />
-                                    <FieldRow label="Cargo"       value={t(h?.AGENCY)}                  className="col-span-2" />
-                                    <FieldRow label="Factor"      value={t(h?.APPLYFOR ?? "1")} />
-                                    <FieldRow label="FOB Miami"   value={bool(h?.FOBMIAMI) ? "Yes" : "No"} />
-                                    <FieldRow label="Active"      value={bool(h?.ACTIVE) ? "Yes" : "No"} />
-                                    <FieldRow label="Instructions" value={t(h?.INSTRUCTIONS)}           className="col-span-3" />
-                                </div>
-                            </div>
-
-                            {/* ── S.O. Header ─────────────────────────────────── */}
-                            <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden shrink-0">
-                                <OBar>
-                                    <div className="flex items-center gap-1.5">
-                                        <Lock size={12} className="text-white/70" />
-                                        <span className="font-black text-[10px] text-white uppercase tracking-widest">S.O. Header</span>
-                                    </div>
-                                    <div className="flex items-center gap-1 flex-wrap">
-                                        {/* Order actions */}
-                                        <HBtn icon={Plus}    label="New Order"
-                                            onClick={() => setHeaderModal("new")}
-                                            disabled={!canEdit}
-                                            variant="green" />
-                                        <HBtn icon={Edit2}   label="Edit Order"
-                                            onClick={() => setHeaderModal("edit")}
-                                            disabled={!canEdit || !selectedUnico || loadingDetail} />
-                                        <HBtn icon={Trash2}  label="Delete Order"
-                                            onClick={handleDeleteOrder}
-                                            disabled={!canDelete || working}
-                                            variant="danger" />
-                                        <div className="w-px h-4 bg-white/20 shrink-0" />
-                                        {/* Additional tools */}
-                                        <HBtn icon={Calendar} label="Set Weeks"
-                                            onClick={() => setWeeksModal(true)}
-                                            disabled={!selectedUnico} />
-                                        <HBtn icon={Printer}  label="Print"  onClick={() => {}} />
-                                        <div className="w-px h-4 bg-white/20 shrink-0" />
-                                        {/* Change / View */}
-                                        <HBtn icon={UserCog}  label="Change Cust."
-                                            onClick={() => setChangeCustomerModal(true)}
-                                            disabled={!selectedUnico} />
-                                        <HBtn icon={UserCog}  label="Change Salesman"
-                                            onClick={() => setChangeSalesmanModal(true)}
-                                            disabled={!selectedUnico} />
-                                        <HBtn icon={FileText} label="View Order"
-                                            onClick={() => setHeaderModal("edit")}
-                                            disabled={!selectedUnico || loadingDetail} />
-                                        <div className="w-px h-4 bg-white/20 shrink-0" />
-                                        <button onClick={handleToFarm} disabled={working}
-                                            className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest bg-red-600 hover:bg-red-500 text-white rounded disabled:opacity-40 transition-all whitespace-nowrap"
-                                        >
-                                            <Tractor size={10} /> SO to Farm
-                                        </button>
-                                    </div>
-                                </OBar>
-                                <div className="px-4 py-2 space-y-1.5 text-[11px]">
-                                    {/* Row 1: order fields */}
-                                    <div className="flex items-center gap-6 pb-1.5 border-b border-gray-100 flex-wrap">
-                                        <FieldRow label="Order No."  value={t(h?.SORDER_NO)} />
-                                        <FieldRow label="CP Order"   value={t(h?.CPORDER_NO)} />
-                                        <FieldRow label="Add Date"   value={fmtDate(h?.SO_DATE)} />
-                                    </div>
-                                    {/* Week Day green bar */}
-                                    <div className="flex items-center gap-0 bg-green-800 rounded px-3 py-1 flex-wrap">
-                                        <span className="text-[10px] font-black text-white uppercase tracking-widest mr-3">Week Day:</span>
-                                        {WEEK_COLS.map(([key, label]) => (
-                                            <label key={key} className="flex items-center gap-1 mr-4">
-                                                <div className={cn("w-3 h-3 rounded-sm border border-white/50 shrink-0", bool(h?.[key]) ? "bg-white" : "bg-transparent")} />
-                                                <span className="text-[10px] font-bold text-white">{label}:</span>
-                                            </label>
-                                        ))}
-                                    </div>
-                                    {/* Ship info */}
-                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-1.5">
-                                        <FieldRow label="Start Date"  value={fmtDate(h?.SO_STDATE)} />
-                                        <FieldRow label="End Date"    value={fmtDate(h?.SO_ENDATE)} />
-                                        <div />
-                                        <div />
-                                        <FieldRow label="Ship"        value={t(h?.SHIP_NAME)} className="col-span-2" />
-                                        <FieldRow label="Address"     value={t(h?.SHIP_ADDRESS)} className="col-span-2" />
-                                        <FieldRow label="City"        value={t(h?.SHIP_CITY)} />
-                                        <FieldRow label="State"       value={t(h?.SHIP_STATE)} />
-                                        <FieldRow label="Zip"         value={t(h?.SHIP_ZIP)} />
-                                        <FieldRow label="Phone"       value={t(h?.SHIP_PHONE)} />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* ── S.O. Details ─────────────────────────────────── */}
-                            <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex flex-col flex-1 min-h-[140px]">
-                                <OBar>
-                                    <div className="flex items-center gap-1.5">
-                                        <Lock size={12} className="text-white/70" />
-                                        <span className="font-black text-[10px] text-white uppercase tracking-widest">S.O. Details</span>
-                                    </div>
-                                    <div className="flex items-center gap-1.5 flex-wrap">
-                                        <button
-                                            onClick={() => setBoxCompModal(true)}
-                                            disabled={!selectedLineUnico}
-                                            className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest bg-red-600 hover:bg-red-500 text-white rounded transition-all whitespace-nowrap disabled:opacity-40">
-                                            <Package size={10} /> Box Composition
-                                        </button>
-                                        <HBtn icon={ShoppingCart} label="Products List"
-                                            onClick={() => setProductsModal(true)}
-                                            disabled={!selectedUnico} />
-                                        <HBtn icon={FileText} label="Future Stock"
-                                            onClick={() => setFutureStockModal(true)}
-                                            disabled={!selectedUnico} />
-                                        <div className="w-px h-4 bg-white/20 shrink-0" />
-                                        <HBtn icon={Plus}   label="Add Ord.Line"
-                                            onClick={() => setLineModal("new")}
-                                            disabled={!canEdit || !selectedUnico} />
-                                        <HBtn icon={Edit2}  label="Edit Ord.Line"
-                                            onClick={() => setLineModal("edit")}
-                                            disabled={!selectedLineUnico || !canEdit} />
-                                        <HBtn icon={Trash2} label="Delete Ord.Line"
-                                            onClick={handleDeleteLine}
-                                            disabled={!selectedLineUnico || !canDelete || working}
-                                            variant="danger" />
-                                    </div>
-                                </OBar>
-                                <div className="flex-1 overflow-auto">
-                                    <table className="min-w-full text-xs text-left">
-                                        <thead>
-                                            <tr>
-                                                <Th>Product</Th><Th>Case</Th>
-                                                <Th className="text-right">Box Qty</Th>
-                                                <Th className="text-right">Purchase</Th>
-                                                <Th className="text-right">BxCase</Th>
-                                                <Th className="text-right">UxBunch</Th>
-                                                <Th className="text-right">TotalUnits</Th>
-                                                <Th className="text-right">Price</Th>
-                                                <Th className="text-right">Ext.Price</Th>
-                                                <Th>BoxId</Th><Th>UPC</Th>
-                                                <Th className="text-center">Food</Th>
-                                                <Th className="text-center">Active</Th>
-                                                <Th className="text-center">PxStem</Th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {lines.map((l: any, i: number) => {
-                                                const uq  = t(l.UNICO ?? "");
-                                                const sel = selectedLineUnico === uq;
-                                                return (
-                                                    <tr key={i} onClick={() => setSelectedLineUnico(sel ? null : uq)}
-                                                        className={cn("border-b cursor-pointer transition-colors text-gray-600",
-                                                            sel ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50")}
-                                                    >
-                                                        <Td className="max-w-[200px] truncate font-medium">{t(l.DESCRIPTION ?? l.DETAILS)}</Td>
-                                                        <Td>{t(l.CASE_SH)}</Td>
-                                                        <Td className="text-right">{fmtI(l.QTY_SORDER)}</Td>
-                                                        <Td className="text-right">{fmtI(l.QTY_PORDER)}</Td>
-                                                        <Td className="text-right">{fmtI(l.BUNCHES_CASE)}</Td>
-                                                        <Td className="text-right">{fmtI(l.UNITS_BUNCH)}</Td>
-                                                        <Td className="text-right">{fmtI(l.TOTAL_UNITS)}</Td>
-                                                        <Td className="text-right font-semibold">{fmt(l.SO_PRICE)}</Td>
-                                                        <Td className="text-right font-semibold">{fmt(l.EXT_PRICE)}</Td>
-                                                        <Td>{t(l.PCCODE)}</Td>
-                                                        <Td>{t(l.UPC)}</Td>
-                                                        <Td className="text-center">{bool(l.FOOD) ? <Check size={10} className="text-green-600 inline" /> : ""}</Td>
-                                                        <Td className="text-center">{bool(l.ACTIVE) ? <Check size={10} className="text-green-600 inline" /> : ""}</Td>
-                                                        <Td className="text-center">{bool(l.STEM_PACK) ? <Check size={10} className="text-green-600 inline" /> : ""}</Td>
-                                                    </tr>
-                                                );
-                                            })}
-                                            {loadingDetail && <tr><td colSpan={14} className="p-6 text-center text-gray-400 italic"><Loader2 size={12} className="animate-spin inline mr-1" />Loading...</td></tr>}
-                                            {!loadingDetail && lines.length === 0 && (
-                                                <tr><td colSpan={14} className="p-6 text-center text-gray-400 italic">No order lines</td></tr>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-
-                            {/* ── Vendors Orders ───────────────────────────────── */}
-                            <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden shrink-0 h-[155px] flex flex-col">
-                                <OBar>
-                                    <div className="flex items-center gap-1.5">
-                                        <Lock size={12} className="text-white/70" />
-                                        <span className="font-black text-[10px] text-white uppercase tracking-widest">Vendors Orders</span>
-                                        {loadingVendors && <Loader2 size={10} className="animate-spin text-white/60" />}
-                                        {!selectedLineUnico && <span className="text-[9px] text-white/60 font-bold ml-2">— select a line above</span>}
-                                    </div>
-                                    <HBtn icon={Printer} label="Print" onClick={() => {}} />
-                                </OBar>
-                                <div className="flex-1 overflow-auto">
-                                    <table className="min-w-full text-xs text-left">
-                                        <thead>
-                                            <tr>
-                                                <Th>Vendor</Th>
-                                                <Th className="text-right">Qty Order</Th>
-                                                <Th className="text-right">Qty Conf.</Th>
-                                                <Th className="text-right">Diff</Th>
-                                                <Th className="text-right">Price</Th>
-                                                <Th>Ship Day</Th>
-                                                <Th className="text-right">ShipDays</Th>
-                                                <Th>Details</Th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {(vendors as any[]).map((v: any, i: number) => (
-                                                <tr key={i} className="border-b odd:bg-white even:bg-gray-50 hover:bg-blue-50 text-gray-600">
-                                                    <Td className="font-medium">{t(v.GROWER ?? v.VENDOR)}</Td>
-                                                    <Td className="text-right">{fmtI(v.QTY_ORDER)}</Td>
-                                                    <Td className="text-right">{fmtI(v.QTY_CONFIRMED)}</Td>
-                                                    <Td className={cn("text-right font-bold", parseInt(v.QTY_DIFF ?? 0) !== 0 ? "text-red-600" : "")}>{fmtI(v.QTY_DIFF)}</Td>
-                                                    <Td className="text-right">{fmt(v.PO_PRICE)}</Td>
-                                                    <Td className="font-bold text-[#FB7506]">{t(v.SHIP_DAY).trim()}</Td>
-                                                    <Td className="text-right">{fmtI(v.SHIP_DAYS)}</Td>
-                                                    <Td className="max-w-[200px] truncate">{t(v.DETAILS)}</Td>
-                                                </tr>
-                                            ))}
-                                            {!loadingVendors && (vendors as any[]).length === 0 && (
-                                                <tr><td colSpan={8} className="p-4 text-center text-gray-400 italic">
-                                                    {selectedLineUnico ? "No vendor orders for this line" : "Select a line to see vendor orders"}
-                                                </td></tr>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-
-                        </div>
-                    )}
-                </div>
             </div>
 
-            {/* ── Modals ──────────────────────────────────────────────────── */}
-            {headerModal !== "closed" && (
-                <HeaderModal
-                    mode={headerModal}
-                    header={headerModal === "edit" ? h : undefined}
+            {/* ── Order Detail Modal (opens on row click) ─────────────────── */}
+            {selectedUnico && selectedRow && lookups && (
+                <OrderDetailModal
+                    soUnico={selectedUnico}
+                    orderRow={selectedRow}
                     lookups={modalLookups}
-                    onClose={() => setHeaderModal("closed")}
+                    canEdit={canEdit}
+                    canDelete={canDelete}
+                    onClose={() => { setSelectedUnico(null); setSelectedRow(null); }}
+                    onRefreshList={() => setListKey(k => k + 1)}
+                />
+            )}
+
+            {/* ── New Order modal ─────────────────────────────────────────── */}
+            {newOrderModal && lookups && (
+                <HeaderModal
+                    mode="new"
+                    lookups={modalLookups}
+                    onClose={() => setNewOrderModal(false)}
                     onSaved={(unico) => {
-                        setHeaderModal("closed");
+                        setNewOrderModal(false);
                         setListKey(k => k + 1);
                         if (unico) {
-                            setSelectedUnico(unico);
-                            setDetailKey(k => k + 1);
-                        } else {
-                            setDetailKey(k => k + 1);
+                            // Find the new order in the refreshed list and open detail
+                            setTimeout(() => {
+                                setSelectedUnico(unico);
+                                setSelectedRow({ UNICO: unico, SORDER_NO: "", CUSTOMER: "" });
+                            }, 500);
                         }
                     }}
-                />
-            )}
-            {lineModal !== "closed" && selectedUnico && (
-                <LineModal
-                    mode={lineModal}
-                    soUnico={selectedUnico}
-                    line={lineModal === "edit" ? selectedLine : undefined}
-                    cases={casesLookup}
-                    onClose={() => setLineModal("closed")}
-                    onSaved={() => {
-                        setLineModal("closed");
-                        setDetailKey(k => k + 1);
-                    }}
-                />
-            )}
-            {weeksModal && selectedUnico && h && (
-                <SetWeeksModal
-                    soUnico={selectedUnico}
-                    header={h}
-                    onClose={() => setWeeksModal(false)}
-                    onSaved={() => setWeeksModal(false)}
-                />
-            )}
-            {boxCompModal && selectedLineUnico && selectedLine && (
-                <BoxCompositionModal
-                    lineUnico={selectedLineUnico}
-                    lineDesc={t(selectedLine.DESCRIPTION ?? selectedLine.DETAILS ?? "")}
-                    soPrice={parseFloat(selectedLine.SO_PRICE ?? 0)}
-                    onClose={() => setBoxCompModal(false)}
-                />
-            )}
-            {productsModal && selectedUnico && (
-                <ProductsListModal
-                    soUnico={selectedUnico}
-                    cases={casesLookup}
-                    onClose={() => setProductsModal(false)}
-                    onAdded={() => setDetailKey(k => k + 1)}
-                />
-            )}
-            {futureStockModal && (
-                <FutureStockModal onClose={() => setFutureStockModal(false)} />
-            )}
-            {changeSalesmanModal && selectedUnico && h && (
-                <ChangeSalesmanModal
-                    soUnico={selectedUnico}
-                    orderNo={t(h.SORDER_NO)}
-                    salesmen={lookups?.salesmen ?? []}
-                    currentUq={t(h.SALESMAN_UQ ?? "")}
-                    onClose={() => setChangeSalesmanModal(false)}
-                    onSaved={() => { setChangeSalesmanModal(false); setDetailKey(k => k + 1); setListKey(k => k + 1); }}
-                />
-            )}
-            {changeCustomerModal && selectedUnico && h && (
-                <ChangeCustomerModal
-                    soUnico={selectedUnico}
-                    orderNo={t(h.SORDER_NO)}
-                    customers={lookups?.customers ?? []}
-                    carriers={(lookups as any)?.carriers ?? []}
-                    onClose={() => setChangeCustomerModal(false)}
-                    onSaved={() => { setChangeCustomerModal(false); setDetailKey(k => k + 1); setListKey(k => k + 1); }}
                 />
             )}
         </div>
