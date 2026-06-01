@@ -94,14 +94,24 @@ export default function LoginPage() {
 
             <div className="min-h-screen bg-[#151313] flex flex-col overflow-hidden relative">
 
-                {/* ── Background grid overlay ──────────────────────────────── */}
-                <div className="fixed inset-0 login-grid-bg pointer-events-none" />
+                {/* ── Background image + overlays ─────────────────────────── */}
+                <div className="fixed inset-0 pointer-events-none">
+                    {/* Photo */}
+                    <img
+                        src="https://flexymax.nyc3.cdn.digitaloceanspaces.com/FlexyMaxApp/FlexyMaxImages/BackgroundFlexyLoginWarehouseArm.png"
+                        alt=""
+                        className="w-full h-full object-cover opacity-90"
+                    />
+                    {/* Left-to-right dark gradient so the panel stays legible */}
+                    <div className="absolute inset-0"
+                        style={{ background: 'linear-gradient(to right, rgba(21,19,19,0.55) 0%, rgba(21,19,19,0.15) 60%, transparent 100%)' }} />
+                    {/* Grid overlay on top */}
+                    <div className="absolute inset-0 login-grid-bg" />
+                </div>
 
-                {/* ── Ambient glows ────────────────────────────────────────── */}
-                <div className="fixed top-1/4 left-1/4 w-96 h-96 rounded-full pointer-events-none"
-                    style={{ background: 'rgba(251,117,6,0.04)', filter: 'blur(80px)' }} />
-                <div className="fixed bottom-1/3 right-1/4 w-64 h-64 rounded-full pointer-events-none"
-                    style={{ background: 'rgba(251,117,6,0.03)', filter: 'blur(60px)' }} />
+                {/* ── Ambient glow ─────────────────────────────────────────── */}
+                <div className="fixed top-1/3 right-1/3 w-80 h-80 rounded-full pointer-events-none"
+                    style={{ background: 'rgba(251,117,6,0.05)', filter: 'blur(80px)' }} />
 
                 {/* ── Header ───────────────────────────────────────────────── */}
                 <header className="fixed top-0 z-50 w-full flex items-center justify-between px-6 md:px-12 py-4">
