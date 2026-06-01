@@ -85,6 +85,27 @@ export default function PhysicalScanPage() {
     const [viewKey,        setViewKey]       = useState(0);
     const qc = useQueryClient();
 
+    // Sys ≠ Phy — paginated
+    const [sysNotPage,    setSysNotPage]    = useState(1);
+    const [sysNotRows,    setSysNotRows]    = useState<any[]>([]);
+    const [sysNotLoading, setSysNotLoading] = useState(false);
+    const [sysNotHasMore, setSysNotHasMore] = useState(true);
+    const sysNotSentinel = useRef<HTMLDivElement>(null);
+
+    // In Transit — paginated
+    const [transitPage,    setTransitPage]    = useState(1);
+    const [transitRows,    setTransitRows]    = useState<any[]>([]);
+    const [transitLoading, setTransitLoading] = useState(false);
+    const [transitHasMore, setTransitHasMore] = useState(true);
+    const transitSentinel = useRef<HTMLDivElement>(null);
+
+    // Scanned Boxes — paginated
+    const [scannedPage,    setScannedPage]    = useState(1);
+    const [scannedRows,    setScannedRows]    = useState<any[]>([]);
+    const [scannedLoading, setScannedLoading] = useState(false);
+    const [scannedHasMore, setScannedHasMore] = useState(true);
+    const scannedSentinel = useRef<HTMLDivElement>(null);
+
     // Global scanner overlay state
     const [scanBuffer,  setScanBuffer]  = useState("");
     const [manualActive, setManualActive] = useState(false);
@@ -121,6 +142,96 @@ export default function PhysicalScanPage() {
     }, []);
 
     useEffect(() => { loadPending(1, true); }, [loadPending, viewKey]);
+
+    // ── Sys ≠ Phy (paginated) ─────────────────────────────────────────────────
+    const loadSysNot = useCallback(async (page: number, reset: boolean) => {
+        setSysNotLoading(true);
+        try {
+            const r = await fetch(`/api/physical-scan/sys-not-physical?page=${page}&size=${PAGE_SIZE}`);
+            const j = await r.json();
+            const rows: any[] = j.rows ?? [];
+            setSysNotRows(prev => reset ? rows : [...prev, ...rows]);
+            setSysNotHasMore(rows.length === PAGE_SIZE);
+            setSysNotPage(page);
+        } catch { /* ignore */ }
+        finally { setSysNotLoading(false); }
+    }, []);
+
+    useEffect(() => {
+        if (activeTab === "sys-not") loadSysNot(1, true);
+    }, [activeTab, loadSysNot, viewKey]);
+
+    useEffect(() => {
+        if (activeTab !== "sys-not") return;
+        const el = sysNotSentinel.current;
+        if (!el) return;
+        const obs = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting && !sysNotLoading && sysNotHasMore)
+                loadSysNot(sysNotPage + 1, false);
+        }, { threshold: 0.1 });
+        obs.observe(el);
+        return () => obs.disconnect();
+    }, [activeTab, sysNotLoading, sysNotHasMore, sysNotPage, loadSysNot]);
+
+    // ── In Transit (paginated) ─────────────────────────────────────────────────
+    const loadTransit = useCallback(async (page: number, reset: boolean) => {
+        setTransitLoading(true);
+        try {
+            const r = await fetch(`/api/physical-scan/in-transit?page=${page}&size=${PAGE_SIZE}`);
+            const j = await r.json();
+            const rows: any[] = j.rows ?? [];
+            setTransitRows(prev => reset ? rows : [...prev, ...rows]);
+            setTransitHasMore(rows.length === PAGE_SIZE);
+            setTransitPage(page);
+        } catch { /* ignore */ }
+        finally { setTransitLoading(false); }
+    }, []);
+
+    useEffect(() => {
+        if (activeTab === "in-transit") loadTransit(1, true);
+    }, [activeTab, loadTransit, viewKey]);
+
+    useEffect(() => {
+        if (activeTab !== "in-transit") return;
+        const el = transitSentinel.current;
+        if (!el) return;
+        const obs = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting && !transitLoading && transitHasMore)
+                loadTransit(transitPage + 1, false);
+        }, { threshold: 0.1 });
+        obs.observe(el);
+        return () => obs.disconnect();
+    }, [activeTab, transitLoading, transitHasMore, transitPage, loadTransit]);
+
+    // ── Scanned Boxes (paginated) ──────────────────────────────────────────────
+    const loadScanned = useCallback(async (page: number, reset: boolean) => {
+        setScannedLoading(true);
+        try {
+            const r = await fetch(`/api/physical-scan/scanned-boxes?page=${page}&size=${PAGE_SIZE}`);
+            const j = await r.json();
+            const rows: any[] = j.rows ?? [];
+            setScannedRows(prev => reset ? rows : [...prev, ...rows]);
+            setScannedHasMore(rows.length === PAGE_SIZE);
+            setScannedPage(page);
+        } catch { /* ignore */ }
+        finally { setScannedLoading(false); }
+    }, []);
+
+    useEffect(() => {
+        if (activeTab === "scanned-bx") loadScanned(1, true);
+    }, [activeTab, loadScanned, viewKey]);
+
+    useEffect(() => {
+        if (activeTab !== "scanned-bx") return;
+        const el = scannedSentinel.current;
+        if (!el) return;
+        const obs = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting && !scannedLoading && scannedHasMore)
+                loadScanned(scannedPage + 1, false);
+        }, { threshold: 0.1 });
+        obs.observe(el);
+        return () => obs.disconnect();
+    }, [activeTab, scannedLoading, scannedHasMore, scannedPage, loadScanned]);
 
     useEffect(() => {
         if (activeTab !== "pending") return;
@@ -403,7 +514,11 @@ export default function PhysicalScanPage() {
                 ))}
                 {(activeTab !== "pending" && loadingView) && <Loader2 size={11} className="animate-spin text-gray-400 ml-2 shrink-0" />}
                 <span className="ml-auto text-[10px] text-gray-400 font-bold px-2 shrink-0">
-                    {activeTab === "pending" ? `${pendingRows.length}/${pendingTotal}` : `${viewRows.length}`}
+                    {activeTab === "pending"    ? `${pendingRows.length}/${pendingTotal}` :
+                     activeTab === "sys-not"    ? `${sysNotRows.length}${sysNotHasMore ? "+" : ""}` :
+                     activeTab === "in-transit" ? `${transitRows.length}${transitHasMore ? "+" : ""}` :
+                     activeTab === "scanned-bx" ? `${scannedRows.length}${scannedHasMore ? "+" : ""}` :
+                     `${viewRows.length}`}
                 </span>
             </div>
 
@@ -411,11 +526,11 @@ export default function PhysicalScanPage() {
             <div className="flex-1 overflow-hidden px-2 pb-2 pt-2 min-h-0">
                 <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden h-full flex flex-col">
                     <div className="flex-1 overflow-auto min-h-0">
-                        {activeTab === "pending"   && <PendingTable rows={pendingRows} loading={pendingLoading && pendingPage===1} sentinelRef={sentinelRef} hasMore={hasMore} loadingMore={pendingLoading && pendingPage>1} />}
-                        {activeTab === "in-transit" && <AwbTable rows={viewRows} />}
+                        {activeTab === "pending"    && <PendingTable rows={pendingRows} loading={pendingLoading && pendingPage===1} sentinelRef={sentinelRef} hasMore={hasMore} loadingMore={pendingLoading && pendingPage>1} />}
+                        {activeTab === "in-transit" && <AwbTable rows={transitRows} loading={transitLoading && transitPage===1} sentinelRef={transitSentinel} hasMore={transitHasMore} loadingMore={transitLoading && transitPage>1} />}
                         {activeTab === "scanned-eq" && <AwbTable rows={viewRows} />}
-                        {activeTab === "scanned-bx" && <ScannedBoxesTable rows={viewRows} />}
-                        {activeTab === "sys-not"    && <SysNotPhyTable rows={viewRows} />}
+                        {activeTab === "scanned-bx" && <ScannedBoxesTable rows={scannedRows} loading={scannedLoading && scannedPage===1} sentinelRef={scannedSentinel} hasMore={scannedHasMore} loadingMore={scannedLoading && scannedPage>1} />}
+                        {activeTab === "sys-not"    && <SysNotPhyTable rows={sysNotRows} loading={sysNotLoading && sysNotPage===1} sentinelRef={sysNotSentinel} hasMore={sysNotHasMore} loadingMore={sysNotLoading && sysNotPage>1} />}
                         {activeTab === "sys-less"   && <SysLessPhyTable rows={viewRows} />}
                         {activeTab === "sys-eq"     && <SysLessPhyTable rows={viewRows} />}
                     </div>
@@ -504,7 +619,7 @@ function PendingTable({ rows, loading, sentinelRef, hasMore, loadingMore }: any)
     );
 }
 
-function AwbTable({ rows }: { rows: any[] }) {
+function AwbTable({ rows, loading, sentinelRef, hasMore, loadingMore }: any) {
     return (
         <table className="min-w-full text-left">
             <thead>
@@ -521,7 +636,8 @@ function AwbTable({ rows }: { rows: any[] }) {
                 </tr>
             </thead>
             <tbody>
-                {rows.map((r: any, i: number) => (
+                {loading && <tr><td colSpan={13} className="p-8 text-center text-gray-400 italic"><Loader2 size={14} className="animate-spin inline mr-2" />Loading...</td></tr>}
+                {!loading && rows.map((r: any, i: number) => (
                     <tr key={i} className={cn("border-b transition-colors text-gray-600", i%2===0?"bg-white":"bg-gray-50","hover:bg-blue-50")}>
                         <Td className="font-mono font-bold text-gray-800">{t(r.barcode)}</Td>
                         <Td className="font-bold text-[#FB7506]">{t(r.farm)}</Td>
@@ -538,13 +654,17 @@ function AwbTable({ rows }: { rows: any[] }) {
                         <Td className="max-w-[200px] truncate">{t(r.description)}</Td>
                     </tr>
                 ))}
-                {rows.length === 0 && <tr><td colSpan={13} className="p-10 text-center text-gray-400 italic">No records</td></tr>}
+                {!loading && rows.length === 0 && <tr><td colSpan={13} className="p-10 text-center text-gray-400 italic">No records</td></tr>}
+                {sentinelRef && <tr><td colSpan={13}><div ref={sentinelRef} className="flex items-center justify-center py-3 text-[10px] text-gray-400">
+                    {loadingMore && <><Loader2 size={12} className="animate-spin mr-1" />Loading more...</>}
+                    {!loadingMore && !hasMore && rows.length > 0 && <span className="italic">All {rows.length} records loaded</span>}
+                </div></td></tr>}
             </tbody>
         </table>
     );
 }
 
-function ScannedBoxesTable({ rows }: { rows: any[] }) {
+function ScannedBoxesTable({ rows, loading, sentinelRef, hasMore, loadingMore }: any) {
     return (
         <table className="min-w-full text-left">
             <thead>
@@ -556,7 +676,8 @@ function ScannedBoxesTable({ rows }: { rows: any[] }) {
                 </tr>
             </thead>
             <tbody>
-                {rows.map((r: any, i: number) => (
+                {loading && <tr><td colSpan={9} className="p-8 text-center text-gray-400 italic"><Loader2 size={14} className="animate-spin inline mr-2" />Loading...</td></tr>}
+                {!loading && rows.map((r: any, i: number) => (
                     <tr key={i} className={cn("border-b text-gray-600", i%2===0?"bg-white":"bg-gray-50","hover:bg-blue-50")}>
                         <Td className="font-mono font-bold text-blue-700">{t(r.awbcode)}</Td>
                         <Td>{fmtDate(r.date_invo)}</Td>
@@ -569,13 +690,17 @@ function ScannedBoxesTable({ rows }: { rows: any[] }) {
                         <Td className="text-gray-400">{r.timestamp ? new Date(r.timestamp).toLocaleString("en-US") : "—"}</Td>
                     </tr>
                 ))}
-                {rows.length === 0 && <tr><td colSpan={9} className="p-10 text-center text-gray-400 italic">No scanned boxes</td></tr>}
+                {!loading && rows.length === 0 && <tr><td colSpan={9} className="p-10 text-center text-gray-400 italic">No scanned boxes</td></tr>}
+                <tr><td colSpan={9}><div ref={sentinelRef} className="flex items-center justify-center py-3 text-[10px] text-gray-400">
+                    {loadingMore && <><Loader2 size={12} className="animate-spin mr-1" />Loading more...</>}
+                    {!loadingMore && !hasMore && rows.length > 0 && <span className="italic">All {rows.length} records loaded</span>}
+                </div></td></tr>
             </tbody>
         </table>
     );
 }
 
-function SysNotPhyTable({ rows }: { rows: any[] }) {
+function SysNotPhyTable({ rows, loading, sentinelRef, hasMore, loadingMore }: any) {
     return (
         <table className="min-w-full text-left">
             <thead>
@@ -607,7 +732,12 @@ function SysNotPhyTable({ rows }: { rows: any[] }) {
                         <Td className="max-w-[200px] truncate">{t(r.description)}</Td>
                     </tr>
                 ))}
-                {rows.length === 0 && <tr><td colSpan={12} className="p-10 text-center text-gray-400 italic">No records</td></tr>}
+                {loading && <tr><td colSpan={12} className="p-8 text-center text-gray-400 italic"><Loader2 size={14} className="animate-spin inline mr-2" />Loading...</td></tr>}
+                {!loading && rows.length === 0 && <tr><td colSpan={12} className="p-10 text-center text-gray-400 italic">No records</td></tr>}
+                <tr><td colSpan={12}><div ref={sentinelRef} className="flex items-center justify-center py-3 text-[10px] text-gray-400">
+                    {loadingMore && <><Loader2 size={12} className="animate-spin mr-1" />Loading more...</>}
+                    {!loadingMore && !hasMore && rows.length > 0 && <span className="italic">All {rows.length} records loaded</span>}
+                </div></td></tr>
             </tbody>
         </table>
     );
