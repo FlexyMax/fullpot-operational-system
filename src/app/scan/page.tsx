@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useSession }       from "next-auth/react";
 import { useRouter }        from "next/navigation";
-import { useQuery }         from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     ArrowLeft, RefreshCcw, Loader2, Scan,
     Check, X, Trash2, Keyboard, MapPin,
@@ -83,6 +83,7 @@ export default function PhysicalScanPage() {
     const [pendingLoading, setPendingLoading]= useState(false);
     const [hasMore,        setHasMore]       = useState(true);
     const [viewKey,        setViewKey]       = useState(0);
+    const qc = useQueryClient();
 
     // Global scanner overlay state
     const [scanBuffer,  setScanBuffer]  = useState("");
@@ -145,6 +146,31 @@ export default function PhysicalScanPage() {
         },
     });
 
+    // ── Optimistic row update — no full grid reload ────────────────────────────
+    // Barcode format: farm(3) + lote(5 zero-padded) + box_no(3) = 11 chars
+    const applyOptimisticScan = useCallback((code: string) => {
+        if (code.length < 8) return;
+        const farm = code.slice(0, 3).toUpperCase();
+        const lote = parseInt(code.slice(3, 8), 10);
+
+        // Update the matching row: QPI +1, Diff recalculated
+        setPendingRows(prev => prev.map(row => {
+            if (t(row.farm).toUpperCase() === farm && Number(row.lote) === lote) {
+                const newQPI = Number(row.QPI ?? 0) + 1;
+                return { ...row, QPI: newQPI, Diff: Number(row.stock ?? 0) - newQPI };
+            }
+            return row;
+        }));
+
+        // Update totals cache: +1 box scanned, -1 box to read
+        qc.setQueryData(["scan-totals", viewKey], (old: any) => old ? {
+            ...old,
+            Total_QPI:     (old.Total_QPI     ?? 0) + 1,
+            Total_To_read: (old.Total_To_read  ?? 0) - 1,
+        } : old);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [qc, viewKey]);
+
     // ── Core scan logic ───────────────────────────────────────────────────────
     const processScan = useCallback(async (raw: string) => {
         const code = raw.trim().toUpperCase();
@@ -172,13 +198,14 @@ export default function PhysicalScanPage() {
                 setLastScan({ ok: false, msg });
                 toast.error(msg);
             } else if (j.warning) {
+                // Box already read — position updated, no QPI change
                 setLastScan({ ok: true, msg: j.warning, warn: true });
                 toast.warning(j.warning);
-                setViewKey(k => k + 1);
             } else {
+                // New scan — update only the affected row, no full reload
                 setLastScan({ ok: true, msg: `✓ ${code}` });
                 toast.success(`Scanned: ${code}`);
-                setViewKey(k => k + 1);
+                applyOptimisticScan(code);
             }
         } catch (e: any) {
             setLastScan({ ok: false, msg: e.message });
@@ -187,7 +214,7 @@ export default function PhysicalScanPage() {
             setScanning(false);
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentRack]);
+    }, [currentRack, applyOptimisticScan]);
 
     // ── Global keyboard capture ───────────────────────────────────────────────
     useEffect(() => {
