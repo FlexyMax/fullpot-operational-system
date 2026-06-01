@@ -15,6 +15,7 @@ import { usePagePermissions } from "@/lib/permissions";
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const t      = (v: any) => String(v ?? "").trim();
 const fmtN   = (v: any) => { const n = Number(v ?? 0); return isNaN(n) ? "—" : n.toLocaleString("en-US"); };
+const fmtLot = (v: any) => String(v ?? ""); // lot numbers are IDs — no thousands separator
 const fmtDate = (v: any) => {
     if (!v) return "";
     const s = t(v);
@@ -61,7 +62,7 @@ const TABS = [
     { id: "scanned-eq", label: "Scan = Physical", color: "text-green-600",  view: "scanned-equal" },
     { id: "scanned-bx", label: "Scanned Boxes",   color: "text-gray-700",   view: "scanned-boxes" },
     { id: "sys-not",    label: "Sys ≠ Phy",       color: "text-purple-600", view: "system-not-physical" },
-    { id: "sys-less",   label: "Sys > Phy",       color: "text-orange-600", view: "system-less-physical" },
+    { id: "sys-less",   label: "Sys < Phy",       color: "text-orange-600", view: "system-less-physical" },
     { id: "sys-eq",     label: "Sys = Phy",       color: "text-teal-600",   view: "system-equal-physical" },
 ] as const;
 type TabId = typeof TABS[number]["id"];
@@ -264,11 +265,17 @@ export default function PhysicalScanPage() {
         const farm = code.slice(0, 3).toUpperCase();
         const lote = parseInt(code.slice(3, 8), 10);
 
-        // Update the matching row: QPI +1, Diff recalculated
+        // Update the matching row: QPI +1, Diff recalculated, barcode filled if first scan
+        const lotStr = String(lote).padStart(5, "0");
         setPendingRows(prev => prev.map(row => {
             if (t(row.farm).toUpperCase() === farm && Number(row.lote) === lote) {
                 const newQPI = Number(row.QPI ?? 0) + 1;
-                return { ...row, QPI: newQPI, Diff: Number(row.stock ?? 0) - newQPI };
+                return {
+                    ...row,
+                    QPI:     newQPI,
+                    Diff:    Number(row.stock ?? 0) - newQPI,
+                    barcode: row.barcode || `${farm}${lotStr}`, // fill if first scan of this lot
+                };
             }
             return row;
         }));
@@ -503,12 +510,14 @@ export default function PhysicalScanPage() {
             )}
 
             {/* ── Tabs ─────────────────────────────────────────────────────── */}
-            <div className="bg-white border-b border-gray-200 px-3 flex items-center gap-0 overflow-x-auto shrink-0">
+            <div className="bg-gray-100 border-b border-gray-200 px-2 pt-1.5 flex items-end gap-1 overflow-x-auto shrink-0">
                 {TABS.map(tab => (
                     <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                         className={cn(
-                            "px-3 py-2 text-[10px] font-black uppercase tracking-widest whitespace-nowrap border-b-2 transition-all",
-                            activeTab === tab.id ? `border-[#FB7506] ${tab.color}` : "border-transparent text-gray-500 hover:text-gray-700"
+                            "px-3 py-1.5 text-[10px] font-black uppercase tracking-widest whitespace-nowrap rounded-t-md transition-all border border-b-0",
+                            activeTab === tab.id
+                                ? `bg-white border-gray-200 ${tab.color} shadow-sm`
+                                : "bg-transparent border-transparent text-gray-500 hover:bg-white/60 hover:text-gray-700"
                         )}
                     >{tab.label}</button>
                 ))}
@@ -593,7 +602,7 @@ function PendingTable({ rows, loading, sentinelRef, hasMore, loadingMore }: any)
                             <Td className="font-mono font-bold text-gray-800">{t(r.barcode)}</Td>
                             <Td className="font-bold text-[#FB7506]">{t(r.farm)}</Td>
                             <Td className="font-mono text-blue-700">{t(r.awbcode)}</Td>
-                            <Td className="text-right">{fmtN(r.lote)}</Td>
+                            <Td className="text-right">{fmtLot(r.lote)}</Td>
                             <Td className="text-right font-semibold">{fmtN(r.box_qty)}</Td>
                             <Td className="text-right">{fmtN(r.qty_sale)}</Td>
                             <Td className="text-right">{fmtN(r.stock)}</Td>
@@ -642,7 +651,7 @@ function AwbTable({ rows, loading, sentinelRef, hasMore, loadingMore }: any) {
                         <Td className="font-mono font-bold text-gray-800">{t(r.barcode)}</Td>
                         <Td className="font-bold text-[#FB7506]">{t(r.farm)}</Td>
                         <Td className="font-mono text-blue-700">{t(r.awbcode)}</Td>
-                        <Td className="text-right">{fmtN(r.lote)}</Td>
+                        <Td className="text-right">{fmtLot(r.lote)}</Td>
                         <Td className="text-right font-semibold">{fmtN(r.box_qty)}</Td>
                         <Td className="text-right">{fmtN(r.qty_sale)}</Td>
                         <Td className="text-right">{fmtN(r.stock)}</Td>
@@ -681,7 +690,7 @@ function ScannedBoxesTable({ rows, loading, sentinelRef, hasMore, loadingMore }:
                     <tr key={i} className={cn("border-b text-gray-600", i%2===0?"bg-white":"bg-gray-50","hover:bg-blue-50")}>
                         <Td className="font-mono font-bold text-blue-700">{t(r.awbcode)}</Td>
                         <Td>{fmtDate(r.date_invo)}</Td>
-                        <Td className="text-right">{fmtN(r.lote)}</Td>
+                        <Td className="text-right">{fmtLot(r.lote)}</Td>
                         <Td className="text-right font-bold">{fmtN(r.box_no)}</Td>
                         <Td className="font-mono text-[10px]">{t(r.ID)}</Td>
                         <Td className="font-mono font-bold text-[#FB7506]">{t(r.rack)}</Td>
@@ -720,7 +729,7 @@ function SysNotPhyTable({ rows, loading, sentinelRef, hasMore, loadingMore }: an
                     <tr key={i} className={cn("border-b text-gray-600", i%2===0?"bg-white":"bg-gray-50","hover:bg-blue-50")}>
                         <Td className="font-bold text-[#FB7506]">{t(r.farm)}</Td>
                         <Td className="font-mono text-blue-700">{t(r.awbcode)}</Td>
-                        <Td className="text-right">{fmtN(r.lote)}</Td>
+                        <Td className="text-right">{fmtLot(r.lote)}</Td>
                         <Td className="text-right font-semibold">{fmtN(r.box_qty)}</Td>
                         <Td className="text-right text-orange-600">{fmtN(r.qty_transit)}</Td>
                         <Td className="text-right">{fmtN(r.qty_sold)}</Td>
@@ -765,7 +774,7 @@ function SysLessPhyTable({ rows }: { rows: any[] }) {
                         <Td className="font-mono font-bold text-gray-800">{t(r.barcode)}</Td>
                         <Td className="font-bold text-[#FB7506]">{t(r.farm)}</Td>
                         <Td className="font-mono text-blue-700">{t(r.awbcode)}</Td>
-                        <Td className="text-right">{fmtN(r.lote)}</Td>
+                        <Td className="text-right">{fmtLot(r.lote)}</Td>
                         <Td>{fmtDate(r.box_date)}</Td>
                         <Td className="text-right font-semibold">{fmtN(r.box_qty)}</Td>
                         <Td className="text-right">{fmtN(r.qty_sale)}</Td>
