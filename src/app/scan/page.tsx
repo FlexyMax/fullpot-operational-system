@@ -153,7 +153,7 @@ export default function PhysicalScanPage() {
 
     // ── Scan action ──────────────────────────────────────────────────────────
     const handleScan = async () => {
-        const code = barcode.trim();
+        const code = barcode.trim().toUpperCase();
         if (!code) { barcodeRef.current?.focus(); return; }
         setScanning(true);
         setLastScan(null);
@@ -161,13 +161,18 @@ export default function PhysicalScanPage() {
             const r = await fetch("/api/physical-scan/scan", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ compuesto: code, rack: rack.trim() }),
+                body: JSON.stringify({ compuesto: code, rack: rack.trim() || "RACK" }),
             });
             const j = await r.json();
             if (!r.ok || !j.success) {
                 const msg = j.error || "Scan failed";
                 setLastScan({ ok: false, msg });
                 toast.error(msg);
+            } else if (j.warning) {
+                setLastScan({ ok: true, msg: `⚠ ${j.warning}` });
+                toast.warning(j.warning);
+                setBarcode("");
+                setViewKey(k => k + 1);
             } else {
                 setLastScan({ ok: true, msg: `✓ ${code} scanned` });
                 toast.success(`Scanned: ${code}`);
@@ -256,11 +261,12 @@ export default function PhysicalScanPage() {
                         <input
                             ref={barcodeRef}
                             value={barcode}
-                            onChange={e => setBarcode(e.target.value)}
+                            onChange={e => setBarcode(e.target.value.toUpperCase())}
                             onKeyDown={e => { if (e.key === "Enter") handleScan(); }}
-                            placeholder="Scan or type barcode..."
-                            className="flex-1 border border-gray-300 rounded px-2 py-1.5 text-[12px] font-mono font-bold focus:outline-none focus:ring-2 focus:ring-[#FB7506] uppercase"
+                            placeholder="e.g. FPA05665001"
+                            className="flex-1 border border-gray-300 rounded px-2 py-1.5 text-[12px] font-mono font-bold focus:outline-none focus:ring-2 focus:ring-[#FB7506]"
                             autoComplete="off"
+                            spellCheck={false}
                         />
                     </div>
 
@@ -286,11 +292,13 @@ export default function PhysicalScanPage() {
                     {/* Last scan result */}
                     {lastScan && (
                         <div className={cn(
-                            "flex items-center gap-1.5 px-3 py-1 rounded text-[11px] font-bold",
-                            lastScan.ok ? "bg-green-100 text-green-700 border border-green-200" : "bg-red-100 text-red-700 border border-red-200"
+                            "flex items-center gap-1.5 px-3 py-1 rounded text-[11px] font-bold max-w-xs truncate",
+                            lastScan.ok && !lastScan.msg.startsWith("⚠") ? "bg-green-100 text-green-700 border border-green-200" :
+                            lastScan.ok && lastScan.msg.startsWith("⚠")  ? "bg-orange-100 text-orange-700 border border-orange-200" :
+                            "bg-red-100 text-red-700 border border-red-200"
                         )}>
-                            {lastScan.ok ? <Check size={12} /> : <X size={12} />}
-                            {lastScan.msg}
+                            {!lastScan.ok ? <X size={12} className="shrink-0" /> : <Check size={12} className="shrink-0" />}
+                            <span className="truncate">{lastScan.msg}</span>
                         </div>
                     )}
 
