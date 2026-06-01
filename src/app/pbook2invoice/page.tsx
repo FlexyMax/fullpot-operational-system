@@ -568,7 +568,7 @@ export default function Pbook2InvoicePage() {
             </div>
 
             {/* ── TOP PANELS: Dates (left) + Customers (right) ────────────── */}
-            <div className="flex gap-2 px-2 pt-2 shrink-0 h-64">
+            <div className="flex gap-2 px-2 pt-2 shrink-0 h-80">
 
                 {/* Dates panel */}
                 <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden w-[540px] shrink-0">
@@ -620,25 +620,26 @@ export default function Pbook2InvoicePage() {
                                     <tr><td colSpan={9} className="p-6 text-center text-gray-400 italic">No dates available</td></tr>
                                 )}
                                 {dateRows.map((row: any, i: number) => {
-                                    const raw = t(row.PB_DATE ?? row.DELIVERY_DATE ?? row.SHIP_DATE ?? row.WHOUSE_DATE ?? "");
+                                    const raw = t(row.PB_DATE ?? row.WHOUSE_DATE ?? "");
                                     const dateKey = raw.substring(0, 10);
                                     const sel = selectedDate === dateKey;
-                                    const bg = vfpColor(row.BACK_COLOR ?? row.BACKCOLOR);
+                                    const bg = vfpColor(row.COLOR);
                                     return (
                                         <tr key={i} onClick={() => selectDate(dateKey)}
                                             className={cn("border-b cursor-pointer transition-colors",
                                                 sel ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50")}
                                             style={!sel && bg ? { backgroundColor: bg } : undefined}
+                                            title={t(row.TOOLTIP)}
                                         >
                                             <td className="p-2 font-medium">{fmtDate(raw)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100">{fmtI(row.PREBOOKS ?? row.PREBOOK_COUNT)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100">{fmtI(row.T_BOX ?? row.TOTAL_BOX)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100">{fmtI(row.T_PURCHASE ?? row.TOTAL_PURCHASE)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100">{fmtI(row.T_SHIP ?? row.TOTAL_SHIP)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100 font-semibold">{fmtI(row.INVOICE ?? row.INVOICED)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100">{fmt(row.EXT_PRICE ?? row.EXTPRICE)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100">{fmt(row.COST)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100">{fmt(row.G_PROFIT_PCT ?? row.GP_PCT)}%</td>
+                                            <td className="p-2 text-right border-l border-gray-100">{fmtI(row.RECORDS)}</td>
+                                            <td className="p-2 text-right border-l border-gray-100">{fmtI(row.QTY_ORDER)}</td>
+                                            <td className="p-2 text-right border-l border-gray-100">{fmtI(row.QTY_PORDER)}</td>
+                                            <td className="p-2 text-right border-l border-gray-100">{fmtI(row.QTY_SHIP)}</td>
+                                            <td className="p-2 text-right border-l border-gray-100 font-semibold">{fmtI(row.QTY_INVOICE)}</td>
+                                            <td className="p-2 text-right border-l border-gray-100">{fmt(row.TOTAL_SALE)}</td>
+                                            <td className="p-2 text-right border-l border-gray-100">{fmt(row.TOTAL_PURCHASE)}</td>
+                                            <td className="p-2 text-right border-l border-gray-100">{fmt(row.PROFIT)}%</td>
                                         </tr>
                                     );
                                 })}
@@ -704,26 +705,27 @@ export default function Pbook2InvoicePage() {
                                     <td className="p-2 border-l border-gray-100" />
                                 </tr>
                                 {!selectedDate && <tr><td colSpan={10} className="p-4 text-center text-gray-400 italic">Select a date</td></tr>}
-                                {(customers as any[]).filter((row: any) => t(row.CUSTOMER ?? row.CUSTOMER_NAME ?? "").toUpperCase() !== "ALL").map((row: any, i: number) => {
-                                    const uq = t(row.CUSTOMER_UQ ?? row.UNICO ?? "");
+                                {(customers as any[]).filter((row: any) => t(row.CUSTOMER_UQ ?? "") !== "%").map((row: any, i: number) => {
+                                    const uq = t(row.CUSTOMER_UQ ?? "");
                                     const sel = selectedCustUq === uq;
-                                    const bg = vfpColor(row.BACK_COLOR ?? row.BACKCOLOR);
+                                    const bg = vfpColor(row.COLOR);
                                     return (
                                         <tr key={i} onClick={() => selectCustomer(uq)}
                                             className={cn("border-b cursor-pointer transition-colors text-gray-600",
                                                 sel ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50")}
                                             style={!sel && bg ? { backgroundColor: bg } : undefined}
+                                            title={t(row.TOOLTIP)}
                                         >
-                                            <td className="p-2 font-medium">{t(row.CUSTOMER ?? row.CUSTOMER_NAME)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100">{fmtI(row.PREBOOKS ?? row.PREBOOK_COUNT)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100">{fmt(row.CR_LIMIT ?? row.CRLIMIT ?? 0)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100">{fmtI(row.T_BOX ?? row.TOTAL_BOX)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100">{fmtI(row.T_PURCHASE ?? row.TOTAL_PURCHASE)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100">{fmtI(row.T_SHIP ?? row.TOTAL_SHIP)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100 font-semibold">{fmtI(row.INVOICE ?? row.INVOICED)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100">{fmt(row.EXT_PRICE ?? row.EXTPRICE)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100">{fmt(row.COST)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100">{fmt(row.G_PROFIT_PCT ?? row.GP_PCT)}%</td>
+                                            <td className="p-2 font-medium">{t(row.CUSTOMER)}</td>
+                                            <td className="p-2 text-right border-l border-gray-100">{fmtI(row.RECORDS)}</td>
+                                            <td className="p-2 text-right border-l border-gray-100">{fmt(row.CREDIT_LIMIT)}</td>
+                                            <td className="p-2 text-right border-l border-gray-100">{fmtI(row.QTY_ORDER)}</td>
+                                            <td className="p-2 text-right border-l border-gray-100">{fmtI(row.QTY_PORDER)}</td>
+                                            <td className="p-2 text-right border-l border-gray-100">{fmtI(row.QTY_SHIP)}</td>
+                                            <td className="p-2 text-right border-l border-gray-100 font-semibold">{fmtI(row.QTY_INVOICE)}</td>
+                                            <td className="p-2 text-right border-l border-gray-100">{fmt(row.TOTAL_SALE)}</td>
+                                            <td className="p-2 text-right border-l border-gray-100">{fmt(row.TOTAL_PURCHASE)}</td>
+                                            <td className="p-2 text-right border-l border-gray-100">{fmt(row.PROFIT)}%</td>
                                         </tr>
                                     );
                                 })}
