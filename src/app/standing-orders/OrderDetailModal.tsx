@@ -70,11 +70,12 @@ interface Props {
     lookups:       Lookups;
     canEdit:       boolean;
     canDelete:     boolean;
+    mode?:         "modal" | "panel";  // modal = fixed overlay (mobile), panel = inline (desktop)
     onClose:       () => void;
     onRefreshList: () => void;
 }
 
-export function OrderDetailModal({ soUnico, orderRow, lookups, canEdit, canDelete, onClose, onRefreshList }: Props) {
+export function OrderDetailModal({ soUnico, orderRow, lookups, canEdit, canDelete, mode = "modal", onClose, onRefreshList }: Props) {
     const [detailKey,         setDetailKey]        = useState(0);
     const [selectedLineUnico, setSelectedLineUnico] = useState<string | null>(null);
     const [working,           setWorking]           = useState(false);
@@ -173,11 +174,13 @@ export function OrderDetailModal({ soUnico, orderRow, lookups, canEdit, canDelet
         });
     }, [selectedLineUnico]);
 
-    return (
-        <>
-        {/* Backdrop + modal */}
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-2 sm:p-4">
-            <div className="bg-white rounded-lg shadow-2xl w-full max-w-5xl max-h-[96vh] flex flex-col overflow-hidden">
+    const inner = (
+        <div className={cn(
+            "bg-white flex flex-col overflow-hidden",
+            mode === "modal"
+                ? "rounded-lg shadow-2xl w-full max-w-5xl max-h-[96vh]"
+                : "h-full rounded-lg border border-gray-200 shadow-sm"
+        )}>
 
                 {/* ── Dark header ─────────────────────────────────────── */}
                 <div className="bg-[#374151] px-4 py-2.5 flex items-center justify-between shrink-0 rounded-t-lg">
@@ -376,10 +379,12 @@ export function OrderDetailModal({ soUnico, orderRow, lookups, canEdit, canDelet
                         </div>
                     </div>
                 </div>{/* end scrollable content */}
-            </div>
         </div>
+    );
 
-        {/* ── Sub-modals (z-50 > z-40 of this modal) ────────────────────────── */}
+    const subModals = (
+        <>
+        {/* ── Sub-modals (z-50 > z-40 of this modal) ──────────────────────── */}
         {headerModal === "edit" && h && (
             <HeaderModal mode="edit" header={h} lookups={modalLookups}
                 onClose={() => setHeaderModal("closed")}
@@ -433,6 +438,19 @@ export function OrderDetailModal({ soUnico, orderRow, lookups, canEdit, canDelet
                 onSaved={() => { setChangeCustomerModal(false); setDetailKey(k=>k+1); onRefreshList(); }}
             />
         )}
+        </>
+    );
+
+    if (mode === "panel") {
+        return <>{inner}{subModals}</>;
+    }
+
+    return (
+        <>
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-2 sm:p-4">
+            {inner}
+        </div>
+        {subModals}
         </>
     );
 }

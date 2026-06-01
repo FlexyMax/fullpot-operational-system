@@ -40,13 +40,14 @@ export default function StandingOrdersPage() {
     const router = useRouter();
     const { canEdit, canDelete } = usePagePermissions("standing-orders");
 
-    const [dayFilter,     setDayFilter]    = useState("%");
-    const [textSearch,    setTextSearch]   = useState("");
-    const [myOrders,      setMyOrders]     = useState(false);
-    const [listKey,       setListKey]      = useState(0);
-    const [selectedUnico, setSelectedUnico] = useState<string | null>(null);
-    const [selectedRow,   setSelectedRow]  = useState<any>(null);
-    const [newOrderModal, setNewOrderModal] = useState(false);
+    const [dayFilter,      setDayFilter]    = useState("%");
+    const [textSearch,     setTextSearch]   = useState("");
+    const [myOrders,       setMyOrders]     = useState(false);
+    const [listKey,        setListKey]      = useState(0);
+    const [selectedUnico,  setSelectedUnico] = useState<string | null>(null);
+    const [selectedRow,    setSelectedRow]  = useState<any>(null);
+    const [showModal,      setShowModal]    = useState(false); // true = mobile modal, false = desktop panel
+    const [newOrderModal,  setNewOrderModal] = useState(false);
 
     // ── Lookups ───────────────────────────────────────────────────────────────
     const { data: lookups } = useQuery({
@@ -112,6 +113,20 @@ export default function StandingOrdersPage() {
     if (status === "loading") return null;
     if (status === "unauthenticated") { router.push("/login"); return null; }
 
+    const handleRowClick = (uq: string, row: any) => {
+        setSelectedUnico(uq);
+        setSelectedRow(row);
+        // On mobile (< 1280px) open as modal; on desktop show as inline panel
+        const isDesktop = typeof window !== "undefined" && window.innerWidth >= 1280;
+        setShowModal(!isDesktop);
+    };
+
+    const handleClose = () => {
+        setSelectedUnico(null);
+        setSelectedRow(null);
+        setShowModal(false);
+    };
+
     return (
         <div className="flex flex-col h-screen bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
 
@@ -154,11 +169,7 @@ export default function StandingOrdersPage() {
                         <option value="%">All Days</option>
                         {DAYS.map(d => <option key={d} value={d}>{d[0] + d.slice(1).toLowerCase()}</option>)}
                     </select>
-                    {dayFilter !== "%" && (
-                        <button onClick={() => setDayFilter("%")} className="text-gray-400 hover:text-gray-600">
-                            <X size={12} />
-                        </button>
-                    )}
+                    {dayFilter !== "%" && <button onClick={() => setDayFilter("%")} className="text-gray-400 hover:text-gray-600"><X size={12} /></button>}
                 </div>
 
                 {/* Search */}
@@ -168,12 +179,9 @@ export default function StandingOrdersPage() {
                         placeholder="Customer, order #, salesman..."
                         className="text-[11px] text-gray-700 placeholder-gray-400 outline-none flex-1 min-w-0 bg-transparent"
                     />
-                    {textSearch && (
-                        <button onClick={() => setTextSearch("")}><X size={11} className="text-gray-400 hover:text-gray-600" /></button>
-                    )}
+                    {textSearch && <button onClick={() => setTextSearch("")}><X size={11} className="text-gray-400 hover:text-gray-600" /></button>}
                 </div>
 
-                {/* Refresh + count */}
                 <button onClick={() => setListKey(k => k + 1)} disabled={loadingOrders}
                     className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-black uppercase tracking-widest bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-600 rounded transition-all shrink-0">
                     <RefreshCcw size={10} className={loadingOrders ? "animate-spin" : ""} /> Refresh
@@ -183,7 +191,6 @@ export default function StandingOrdersPage() {
                     {orders.length} / {(ordersRaw as any[]).length}
                 </span>
 
-                {/* New Order button */}
                 {canEdit && (
                     <button onClick={() => setNewOrderModal(true)}
                         className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest bg-green-600 hover:bg-green-500 text-white rounded transition-all shrink-0">
@@ -192,14 +199,22 @@ export default function StandingOrdersPage() {
                 )}
             </div>
 
-            {/* ── Orders list ────────────────────────────────────────────────── */}
-            <div className="flex-1 overflow-hidden px-2 pb-2 pt-2 min-h-0">
-                <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden h-full flex flex-col">
+            {/* ── Main area ────────────────────────────────────────────────── */}
+            <div className="flex flex-row flex-1 overflow-hidden px-2 pb-2 pt-2 gap-2 min-h-0">
+
+                {/* Orders list */}
+                <div className={cn(
+                    "flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden shrink-0",
+                    // On mobile: full width. On desktop: fixed width, hide when no selection or show always
+                    selectedUnico && !showModal
+                        ? "hidden xl:flex xl:w-[420px]"
+                        : "flex-1 xl:flex xl:w-[420px]"
+                )}>
                     <div className="h-9 bg-[#374151] flex items-center px-3 gap-2 shrink-0 rounded-t-lg">
                         <ClipboardList size={13} className="text-[#FB7506]" />
                         <span className="font-black text-[10px] uppercase tracking-widest text-white">Orders List</span>
                         {loadingOrders && <Loader2 size={10} className="animate-spin text-gray-400" />}
-                        <span className="ml-auto text-[10px] text-gray-400 font-bold sm:hidden">
+                        <span className="ml-auto text-[10px] text-gray-400 font-bold">
                             {orders.length}/{(ordersRaw as any[]).length}
                         </span>
                     </div>
@@ -212,55 +227,87 @@ export default function StandingOrdersPage() {
                                     <Th>Day</Th>
                                     <Th className="hidden sm:table-cell">Start</Th>
                                     <Th className="hidden sm:table-cell">End</Th>
-                                    <Th className="hidden md:table-cell">Salesman</Th>
-                                    <Th className="hidden md:table-cell">Cargo</Th>
-                                    <Th className="text-center">Active</Th>
+                                    <Th className="hidden xl:table-cell">Salesman</Th>
+                                    <Th className="hidden xl:table-cell">Cargo</Th>
+                                    <Th className="text-center">Act.</Th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {orders.map((o: any, i: number) => {
-                                    const uq = t(o.UNICO ?? "");
+                                    const uq  = t(o.UNICO ?? "");
+                                    const sel = selectedUnico === uq && !showModal;
                                     return (
                                         <tr key={i}
-                                            onClick={() => { setSelectedUnico(uq); setSelectedRow(o); }}
-                                            className="border-b cursor-pointer transition-colors text-gray-700 odd:bg-white even:bg-gray-50 hover:bg-blue-50 active:bg-blue-100"
+                                            onClick={() => handleRowClick(uq, o)}
+                                            className={cn(
+                                                "border-b cursor-pointer transition-colors text-gray-700",
+                                                sel ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50 active:bg-blue-100"
+                                            )}
                                         >
-                                            <Td className="font-medium max-w-[160px] truncate">{t(o.CUSTOMER)}</Td>
+                                            <Td className="font-medium max-w-[140px] truncate">{t(o.CUSTOMER)}</Td>
                                             <Td className="text-right font-bold text-blue-700">{t(o.SORDER_NO)}</Td>
                                             <Td className="font-bold text-[#FB7506]">{t(o.SO_DAY).trim()}</Td>
                                             <Td className="hidden sm:table-cell text-gray-500">{fmtDate(o.SO_STDATE)}</Td>
                                             <Td className="hidden sm:table-cell text-gray-500">{fmtDate(o.SO_ENDATE)}</Td>
-                                            <Td className="hidden md:table-cell max-w-[100px] truncate">{t(o.SALESMAN_NAME)}</Td>
-                                            <Td className="hidden md:table-cell max-w-[90px] truncate">{t(o.AGENCY)}</Td>
-                                            <Td className="text-center">{bool(o.ACTIVE) ? <Check size={12} className="text-green-500 inline" /> : <span className="text-red-400 text-[10px] font-bold">No</span>}</Td>
+                                            <Td className="hidden xl:table-cell max-w-[90px] truncate">{t(o.SALESMAN_NAME)}</Td>
+                                            <Td className="hidden xl:table-cell max-w-[80px] truncate">{t(o.AGENCY)}</Td>
+                                            <Td className="text-center">{bool(o.ACTIVE) ? <Check size={11} className="text-green-500 inline" /> : ""}</Td>
                                         </tr>
                                     );
                                 })}
                                 {!loadingOrders && orders.length === 0 && (
                                     <tr><td colSpan={8} className="py-16 text-center text-gray-400 italic text-sm">
-                                        {textSearch || dayFilter !== "%" || myOrders ? "No orders match the current filters" : "No standing orders found"}
+                                        {textSearch || dayFilter !== "%" || myOrders ? "No orders match filters" : "No standing orders found"}
                                     </td></tr>
                                 )}
                             </tbody>
                         </table>
                     </div>
                 </div>
+
+                {/* Desktop inline detail panel (xl+, panel mode) */}
+                {selectedUnico && selectedRow && lookups && !showModal && (
+                    <div className="hidden xl:flex flex-1 min-h-0 min-w-0">
+                        <OrderDetailModal
+                            mode="panel"
+                            soUnico={selectedUnico}
+                            orderRow={selectedRow}
+                            lookups={modalLookups}
+                            canEdit={canEdit}
+                            canDelete={canDelete}
+                            onClose={handleClose}
+                            onRefreshList={() => setListKey(k => k + 1)}
+                        />
+                    </div>
+                )}
+
+                {/* Desktop placeholder when no order selected */}
+                {(!selectedUnico || showModal) && (
+                    <div className="hidden xl:flex flex-1 items-center justify-center bg-white rounded-lg border border-gray-200 shadow-sm min-h-0">
+                        <div className="text-center text-gray-400">
+                            <ClipboardList size={36} className="mx-auto mb-3 opacity-30" />
+                            <p className="text-sm font-bold uppercase tracking-widest">Select an order</p>
+                            <p className="text-xs mt-1">Click a row to view details</p>
+                        </div>
+                    </div>
+                )}
             </div>
 
-            {/* ── Order Detail Modal (opens on row click) ─────────────────── */}
-            {selectedUnico && selectedRow && lookups && (
+            {/* Mobile modal (< xl) */}
+            {showModal && selectedUnico && selectedRow && lookups && (
                 <OrderDetailModal
+                    mode="modal"
                     soUnico={selectedUnico}
                     orderRow={selectedRow}
                     lookups={modalLookups}
                     canEdit={canEdit}
                     canDelete={canDelete}
-                    onClose={() => { setSelectedUnico(null); setSelectedRow(null); }}
+                    onClose={handleClose}
                     onRefreshList={() => setListKey(k => k + 1)}
                 />
             )}
 
-            {/* ── New Order modal ─────────────────────────────────────────── */}
+            {/* New Order modal */}
             {newOrderModal && lookups && (
                 <HeaderModal
                     mode="new"
@@ -270,11 +317,12 @@ export default function StandingOrdersPage() {
                         setNewOrderModal(false);
                         setListKey(k => k + 1);
                         if (unico) {
-                            // Find the new order in the refreshed list and open detail
                             setTimeout(() => {
+                                const isDesktop = typeof window !== "undefined" && window.innerWidth >= 1280;
                                 setSelectedUnico(unico);
                                 setSelectedRow({ UNICO: unico, SORDER_NO: "", CUSTOMER: "" });
-                            }, 500);
+                                setShowModal(!isDesktop);
+                            }, 400);
                         }
                     }}
                 />
