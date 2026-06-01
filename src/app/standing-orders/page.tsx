@@ -261,7 +261,7 @@ export default function StandingOrdersPage() {
 
                 {/* Desktop inline detail panel (xl+, panel mode) */}
                 {selectedUnico && selectedRow && lookups && !showModal && (
-                    <div className="hidden xl:flex flex-1 min-h-0 min-w-0">
+                    <div className="hidden xl:flex xl:flex-col flex-1 min-h-0 min-w-0">
                         <OrderDetailModal
                             mode="panel"
                             soUnico={selectedUnico}

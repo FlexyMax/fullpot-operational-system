@@ -179,7 +179,7 @@ export function OrderDetailModal({ soUnico, orderRow, lookups, canEdit, canDelet
             "bg-white flex flex-col overflow-hidden",
             mode === "modal"
                 ? "rounded-lg shadow-2xl w-full max-w-5xl max-h-[96vh]"
-                : "h-full rounded-lg border border-gray-200 shadow-sm"
+                : "w-full h-full rounded-lg border border-gray-200 shadow-sm"
         )}>
 
                 {/* ── Dark header ─────────────────────────────────────── */}
