@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -364,6 +364,26 @@ export default function Pbook2InvoicePage() {
     });
     const dateRows = (dateMode === "delivery" ? datesData?.delivery : datesData?.shipping) ?? [];
 
+    // ── Auto-select closest date to today on first load or after mode switch ──
+    useEffect(() => {
+        if (selectedDate || dateRows.length === 0) return;
+        const today = new Date().toISOString().slice(0, 10);
+        let bestKey = "";
+        let bestDiff = Infinity;
+        for (const row of dateRows) {
+            const key = t(row.PB_DATE ?? row.WHOUSE_DATE ?? "").substring(0, 10);
+            if (!key) continue;
+            const diff = Math.abs(new Date(key).getTime() - new Date(today).getTime());
+            if (diff < bestDiff) { bestDiff = diff; bestKey = key; }
+        }
+        if (bestKey) {
+            setSelectedDate(bestKey);
+            setSelectedCustUq("%");
+            setSelectedUnico(null);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [dateRows]);
+
     // ── Customers ─────────────────────────────────────────────────────────────
     const { data: customers = [], isFetching: loadingCustomers } = useQuery({
         queryKey: ["pb2inv-customers", selectedDate, dateMode],
@@ -568,10 +588,10 @@ export default function Pbook2InvoicePage() {
             </div>
 
             {/* ── TOP PANELS: Dates (left) + Customers (right) ────────────── */}
-            <div className="flex gap-2 px-2 pt-2 shrink-0 h-80">
+            <div className="flex gap-2 px-2 pt-2 shrink-0 h-96">
 
                 {/* Dates panel */}
-                <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden w-[540px] shrink-0">
+                <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden w-[700px] shrink-0">
                     <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
                         <div className="flex items-center gap-2">
                             <Calendar size={13} className="text-[#FB7506]" />
