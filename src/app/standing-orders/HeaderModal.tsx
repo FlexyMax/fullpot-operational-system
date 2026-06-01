@@ -337,26 +337,27 @@ export function HeaderModal({ mode, header, lookups, onClose, onSaved }: Props) 
                             {shiptoLoading && <Loader2 size={11} className="animate-spin text-gray-400" />}
                         </div>
 
-                        {shiptos.length > 0 && (
-                            <LabelInput label="Select Ship-To">
-                                <select
-                                    value={form.shipto_uq}
-                                    onChange={e => {
-                                        const s = shiptos.find(x => t(x.unico) === e.target.value);
-                                        if (s) applyShipto(s);
-                                        else f("shipto_uq", e.target.value);
-                                    }}
-                                    className={inp}
-                                >
-                                    <option value="">— select ship-to —</option>
-                                    {shiptos.map((s, i) => (
-                                        <option key={i} value={t(s.unico)}>
-                                            {t(s.name)} {t(s.shipto) ? `(${t(s.shipto)})` : ""}
-                                        </option>
-                                    ))}
-                                </select>
-                            </LabelInput>
-                        )}
+                        <LabelInput label="Select Ship-To">
+                            <select
+                                value={form.shipto_uq}
+                                onChange={e => {
+                                    const s = shiptos.find(x => t(x.unico) === e.target.value);
+                                    if (s) applyShipto(s);
+                                    else f("shipto_uq", e.target.value);
+                                }}
+                                disabled={!form.customer_uq}
+                                className={inp}
+                            >
+                                <option value="">
+                                    {shiptoLoading ? "Loading..." : form.customer_uq ? "— select ship-to —" : "— select customer first —"}
+                                </option>
+                                {shiptos.map((s, i) => (
+                                    <option key={i} value={t(s.unico)}>
+                                        {t(s.name)} {t(s.shipto) ? `(${t(s.shipto)})` : ""}
+                                    </option>
+                                ))}
+                            </select>
+                        </LabelInput>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <LabelInput label="Name">

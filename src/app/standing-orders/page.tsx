@@ -19,6 +19,8 @@ import { SetWeeksModal }        from "./SetWeeksModal";
 import { BoxCompositionModal }  from "./BoxCompositionModal";
 import { ProductsListModal }    from "./ProductsListModal";
 import { FutureStockModal }     from "./FutureStockModal";
+import { ChangeSalesmanModal }  from "./ChangeSalesmanModal";
+import { ChangeCustomerModal }  from "./ChangeCustomerModal";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const t    = (v: any) => String(v ?? "").trim();
@@ -59,7 +61,7 @@ function FieldRow({ label, value, className }: { label: string; value?: string; 
 }
 function OBar({ children, className }: { children: any; className?: string }) {
     return (
-        <div className={cn("min-h-[36px] bg-[#FB7506] flex items-center justify-between px-3 shrink-0 flex-wrap gap-y-1 py-1", className)}>
+        <div className={cn("min-h-[36px] bg-[#FB7506] flex items-center justify-between px-3 shrink-0 flex-wrap gap-y-1 py-1 overflow-x-auto", className)}>
             {children}
         </div>
     );
@@ -98,6 +100,8 @@ export default function StandingOrdersPage() {
     const [boxCompModal,      setBoxCompModal]       = useState(false);
     const [productsModal,     setProductsModal]      = useState(false);
     const [futureStockModal,  setFutureStockModal]   = useState(false);
+    const [changeSalesmanModal, setChangeSalesmanModal] = useState(false);
+    const [changeCustomerModal, setChangeCustomerModal] = useState(false);
 
     // ── Lookups (customers, salesmen, warehouses, terms, cases, cargo agencies, mySalesmanUq)
     const { data: lookups } = useQuery({
@@ -401,7 +405,7 @@ export default function StandingOrdersPage() {
                             </div>
                         </div>
                     ) : (
-                        <div className="flex flex-col h-full overflow-hidden gap-1.5 min-h-0">
+                        <div className="flex flex-col h-full overflow-y-auto xl:overflow-hidden gap-1.5 min-h-0">
 
                             {/* ── Customer / Order info bar ─────────────────── */}
                             <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden shrink-0">
@@ -453,9 +457,15 @@ export default function StandingOrdersPage() {
                                         <HBtn icon={Printer}  label="Print"  onClick={() => {}} />
                                         <div className="w-px h-4 bg-white/20 shrink-0" />
                                         {/* Change / View */}
-                                        <HBtn icon={UserCog}  label="Change Cust."     onClick={() => {}} />
-                                        <HBtn icon={UserCog}  label="Change Salesman"  onClick={() => {}} />
-                                        <HBtn icon={FileText} label="View Order"       onClick={() => {}} disabled={!selectedUnico} />
+                                        <HBtn icon={UserCog}  label="Change Cust."
+                                            onClick={() => setChangeCustomerModal(true)}
+                                            disabled={!selectedUnico} />
+                                        <HBtn icon={UserCog}  label="Change Salesman"
+                                            onClick={() => setChangeSalesmanModal(true)}
+                                            disabled={!selectedUnico} />
+                                        <HBtn icon={FileText} label="View Order"
+                                            onClick={() => setHeaderModal("edit")}
+                                            disabled={!selectedUnico || loadingDetail} />
                                         <div className="w-px h-4 bg-white/20 shrink-0" />
                                         <button onClick={handleToFarm} disabled={working}
                                             className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest bg-red-600 hover:bg-red-500 text-white rounded disabled:opacity-40 transition-all whitespace-nowrap"
@@ -694,6 +704,26 @@ export default function StandingOrdersPage() {
             )}
             {futureStockModal && (
                 <FutureStockModal onClose={() => setFutureStockModal(false)} />
+            )}
+            {changeSalesmanModal && selectedUnico && h && (
+                <ChangeSalesmanModal
+                    soUnico={selectedUnico}
+                    orderNo={t(h.SORDER_NO)}
+                    salesmen={lookups?.salesmen ?? []}
+                    currentUq={t(h.SALESMAN_UQ ?? "")}
+                    onClose={() => setChangeSalesmanModal(false)}
+                    onSaved={() => { setChangeSalesmanModal(false); setDetailKey(k => k + 1); setListKey(k => k + 1); }}
+                />
+            )}
+            {changeCustomerModal && selectedUnico && h && (
+                <ChangeCustomerModal
+                    soUnico={selectedUnico}
+                    orderNo={t(h.SORDER_NO)}
+                    customers={lookups?.customers ?? []}
+                    carriers={(lookups as any)?.carriers ?? []}
+                    onClose={() => setChangeCustomerModal(false)}
+                    onSaved={() => { setChangeCustomerModal(false); setDetailKey(k => k + 1); setListKey(k => k + 1); }}
+                />
             )}
         </div>
     );
