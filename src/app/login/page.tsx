@@ -3,43 +3,32 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Lock, User, AlertCircle, Loader2 } from "lucide-react";
+import { Lock, User, AlertCircle, Loader2, ShieldCheck, KeyRound } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
 
 export default function LoginPage() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
-    const router = useRouter();
+    const [error,    setError]    = useState("");
+    const [loading,  setLoading]  = useState(false);
+    const router  = useRouter();
     const setUser = useAuthStore((state) => state.setUser);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
         setLoading(true);
-
         try {
-            const result = await signIn("credentials", {
-                username,
-                password,
-                redirect: false,
-            });
-
+            const result = await signIn("credentials", { username, password, redirect: false });
             if (result?.error) {
-                // Error handling based on SP response standard
                 setError(result.error);
             } else {
-                // Fetch session to update store
-                const res = await fetch("/api/auth/session");
+                const res     = await fetch("/api/auth/session");
                 const session = await res.json();
-                if (session?.user) {
-                    setUser(session.user);
-                    router.push("/menu");
-                }
+                if (session?.user) { setUser(session.user); router.push("/menu"); }
             }
-        } catch (err: any) {
+        } catch {
             setError("Server connection failed. Please try again.");
         } finally {
             setLoading(false);
@@ -47,89 +36,215 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
-            <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
-                <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-20 h-20 bg-orange-500 rounded-2xl shadow-lg shadow-orange-500/20 mb-4 animate-in fade-in zoom-in duration-500">
-                        <Lock className="text-white w-10 h-10" strokeWidth={1.5} />
-                    </div>
-                    <h1 className="text-3xl font-black text-gray-800 tracking-tighter uppercase mb-1">
-                        FullPot <span className="text-orange-500">FOS</span>
-                    </h1>
-                    <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest">
-                        Operational System Gateway
-                    </p>
-                </div>
+        <>
+            {/* ── Global styles for this page ─────────────────────────────── */}
+            <style>{`
+                @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+                .login-grid-bg {
+                    background-image:
+                        linear-gradient(rgba(127,126,125,0.06) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(127,126,125,0.06) 1px, transparent 1px);
+                    background-size: 40px 40px;
+                }
+                .glass-panel {
+                    background: rgba(18,16,16,0.72);
+                    backdrop-filter: blur(24px);
+                    -webkit-backdrop-filter: blur(24px);
+                    border: 1px solid rgba(167,139,124,0.18);
+                }
+                .corner-tl::before {
+                    content: '';
+                    position: absolute;
+                    top: 0; left: 0;
+                    width: 22px; height: 22px;
+                    border-top: 2px solid #FB7506;
+                    border-left: 2px solid #FB7506;
+                }
+                .corner-br::after {
+                    content: '';
+                    position: absolute;
+                    bottom: 0; right: 0;
+                    width: 22px; height: 22px;
+                    border-bottom: 2px solid #FB7506;
+                    border-right: 2px solid #FB7506;
+                }
+                .dark-input {
+                    background: rgba(34,31,31,0.9);
+                    border: 1px solid rgba(88,66,54,0.35);
+                    color: #e8e1e0;
+                    font-family: 'JetBrains Mono', monospace;
+                    font-size: 14px;
+                    transition: border-color 0.2s, box-shadow 0.2s;
+                }
+                .dark-input::placeholder { color: rgba(167,139,124,0.5); }
+                .dark-input:focus {
+                    outline: none;
+                    border-color: #FB7506;
+                    box-shadow: 0 0 0 2px rgba(251,117,6,0.15);
+                }
+                .login-btn {
+                    background: #FB7506;
+                    transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+                    box-shadow: 0 8px 24px rgba(251,117,6,0.25);
+                }
+                .login-btn:hover:not(:disabled) { background: #e06a05; }
+                .login-btn:active:not(:disabled) { transform: scale(0.98); }
+                .login-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+            `}</style>
 
-                <form onSubmit={handleLogin} className="space-y-4">
-                    <div className="space-y-1">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">
-                            Username
-                        </label>
-                        <div className="relative group">
-                            <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors" size={18} />
-                            <input
-                                type="text"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-10 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
-                                placeholder="Enter username"
-                                required
-                            />
+            <div className="min-h-screen bg-[#151313] flex flex-col overflow-hidden relative">
+
+                {/* ── Background grid overlay ──────────────────────────────── */}
+                <div className="fixed inset-0 login-grid-bg pointer-events-none" />
+
+                {/* ── Ambient glows ────────────────────────────────────────── */}
+                <div className="fixed top-1/4 left-1/4 w-96 h-96 rounded-full pointer-events-none"
+                    style={{ background: 'rgba(251,117,6,0.04)', filter: 'blur(80px)' }} />
+                <div className="fixed bottom-1/3 right-1/4 w-64 h-64 rounded-full pointer-events-none"
+                    style={{ background: 'rgba(251,117,6,0.03)', filter: 'blur(60px)' }} />
+
+                {/* ── Header ───────────────────────────────────────────────── */}
+                <header className="fixed top-0 z-50 w-full flex items-center justify-between px-6 md:px-12 py-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded flex items-center justify-center"
+                            style={{ background: '#FB7506' }}>
+                            <span className="text-white font-black text-[11px] leading-none">FOS</span>
+                        </div>
+                        <div>
+                            <span className="font-black text-[#FB7506] text-xs uppercase tracking-widest">FullPot</span>
+                            <span className="font-bold text-[#e8e1e0]/60 text-xs uppercase tracking-widest ml-2">Operational System</span>
                         </div>
                     </div>
-
-                    <div className="space-y-1">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">
-                            Password
-                        </label>
-                        <div className="relative group">
-                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors" size={18} />
-                            <input
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-10 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
-                                placeholder="••••••••"
-                                required
-                            />
+                    <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+                            style={{ background: 'rgba(34,31,31,0.8)', border: '1px solid rgba(88,66,54,0.3)' }}>
+                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                            <span className="text-[10px] font-bold text-[#c8c6c5] uppercase tracking-widest">System Online</span>
                         </div>
                     </div>
+                </header>
 
-                    {error && (
-                        <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-100 rounded-xl animate-in slide-in-from-top-2">
-                            <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={16} />
-                            <p className="text-[11px] font-bold text-red-600 uppercase leading-tight">
-                                {error}
-                            </p>
+                {/* ── Main: right-aligned panel ────────────────────────────── */}
+                <main className="flex-1 flex items-center justify-center md:justify-end px-4 md:px-12 lg:px-20 pt-20 pb-24">
+                    <div className="w-full max-w-[440px] md:mr-4 lg:mr-16">
+
+                        {/* Glass card with corner brackets */}
+                        <div className="glass-panel corner-tl corner-br relative p-8 md:p-10 overflow-hidden">
+
+                            {/* Subtle top glow inside card */}
+                            <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full pointer-events-none"
+                                style={{ background: 'rgba(251,117,6,0.08)', filter: 'blur(50px)' }} />
+
+                            <div className="relative z-10 flex flex-col items-center">
+
+                                {/* Brand mark */}
+                                <div className="mb-6 flex flex-col items-center">
+                                    <div className="w-14 h-14 rounded-lg flex items-center justify-center mb-3"
+                                        style={{ background: 'linear-gradient(135deg,#FB7506,#e06a05)', boxShadow: '0 8px 24px rgba(251,117,6,0.3)' }}>
+                                        <Lock className="text-white" size={24} strokeWidth={1.5} />
+                                    </div>
+                                    <h1 className="font-black text-[#e8e1e0] text-xl uppercase tracking-tight">
+                                        Industrial OS Access
+                                    </h1>
+                                    <p className="text-[11px] font-bold text-[#a78b7c] uppercase tracking-[0.15em] mt-1">
+                                        Securely manage your operations
+                                    </p>
+                                </div>
+
+                                {/* Form */}
+                                <form onSubmit={handleLogin} className="w-full space-y-5">
+
+                                    {/* Username */}
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold text-[#a78b7c] uppercase tracking-[0.12em] ml-0.5">
+                                            Corporate ID
+                                        </label>
+                                        <div className="relative group">
+                                            <User className="absolute left-4 top-1/2 -translate-y-1/2 text-[#584236] group-focus-within:text-[#FB7506] transition-colors z-10" size={15} />
+                                            <input
+                                                type="text"
+                                                value={username}
+                                                onChange={e => setUsername(e.target.value)}
+                                                className="dark-input w-full pl-11 pr-4 py-3.5 rounded"
+                                                placeholder="Username"
+                                                required
+                                                autoComplete="username"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Password */}
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold text-[#a78b7c] uppercase tracking-[0.12em] ml-0.5">
+                                            Security Key
+                                        </label>
+                                        <div className="relative group">
+                                            <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-[#584236] group-focus-within:text-[#FB7506] transition-colors z-10" size={15} />
+                                            <input
+                                                type="password"
+                                                value={password}
+                                                onChange={e => setPassword(e.target.value)}
+                                                className="dark-input w-full pl-11 pr-4 py-3.5 rounded"
+                                                placeholder="••••••••"
+                                                required
+                                                autoComplete="current-password"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Error */}
+                                    {error && (
+                                        <div className="flex items-start gap-2 p-3 rounded"
+                                            style={{ background: 'rgba(147,0,10,0.2)', border: '1px solid rgba(255,180,171,0.2)' }}>
+                                            <AlertCircle className="text-red-400 shrink-0 mt-0.5" size={14} />
+                                            <p className="text-[11px] font-bold text-red-400 leading-tight">{error}</p>
+                                        </div>
+                                    )}
+
+                                    {/* Submit */}
+                                    <button type="submit" disabled={loading}
+                                        className="login-btn w-full py-3.5 text-white font-black text-xs uppercase tracking-[0.18em] rounded flex items-center justify-center gap-2.5 mt-2">
+                                        {loading ? (
+                                            <><Loader2 className="animate-spin" size={14} /> Verifying...</>
+                                        ) : (
+                                            <><Lock size={13} /> Authorize Access</>
+                                        )}
+                                    </button>
+                                </form>
+
+                                {/* Security badge */}
+                                <div className="mt-8 flex flex-col items-center gap-3">
+                                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full"
+                                        style={{ background: 'rgba(44,41,41,0.8)', border: '1px solid rgba(88,66,54,0.25)' }}>
+                                        <ShieldCheck size={13} className="text-[#efc054]" />
+                                        <span className="text-[10px] font-bold text-[#a78b7c] uppercase tracking-[0.12em]">
+                                            System Secured
+                                        </span>
+                                    </div>
+                                    <p className="text-[9px] font-bold text-[#584236] uppercase tracking-[0.2em]">
+                                        Authorized Personnel Only
+                                    </p>
+                                </div>
+                            </div>
                         </div>
-                    )}
+                    </div>
+                </main>
 
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className={cn(
-                            "w-full bg-[#FB7506] hover:bg-orange-600 text-white font-black py-4 rounded-xl shadow-lg shadow-orange-500/20 uppercase tracking-widest text-xs transition-all active:scale-[0.98] flex items-center justify-center gap-2",
-                            loading && "opacity-80 cursor-not-allowed"
-                        )}
-                    >
-                        {loading ? (
-                            <>
-                                <Loader2 className="animate-spin" size={16} />
-                                Verifying...
-                            </>
-                        ) : (
-                            "Login to System"
-                        )}
-                    </button>
-                </form>
-
-                <div className="mt-8 pt-6 border-t border-gray-50 text-center">
-                    <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">
-                        Internal Corporate Access Only
-                    </p>
-                </div>
+                {/* ── Footer ───────────────────────────────────────────────── */}
+                <footer className="fixed bottom-0 z-50 w-full flex flex-col sm:flex-row items-center justify-between px-6 md:px-12 py-4 gap-3"
+                    style={{ background: 'rgba(34,31,31,0.5)', backdropFilter: 'blur(8px)', borderTop: '1px solid rgba(88,66,54,0.2)' }}>
+                    <span className="text-[10px] font-bold text-[#584236] uppercase tracking-[0.12em]">
+                        © 2025 FullPot Of Flowers — FOS. All rights reserved.
+                    </span>
+                    <div className="flex gap-6">
+                        {["Privacy Policy", "Terms of Service", "Security Standards"].map(l => (
+                            <span key={l} className="text-[10px] font-bold text-[#a78b7c] uppercase tracking-[0.08em] cursor-default hover:text-[#FB7506] transition-colors">
+                                {l}
+                            </span>
+                        ))}
+                    </div>
+                </footer>
             </div>
-        </div>
+        </>
     );
 }
