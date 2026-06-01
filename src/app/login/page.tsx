@@ -96,22 +96,25 @@ export default function LoginPage() {
 
                 {/* ── Background image + overlays ─────────────────────────── */}
                 <div className="fixed inset-0 pointer-events-none">
-                    {/* Photo */}
+                    {/* Photo — full bleed */}
                     <img
                         src="https://flexymax.nyc3.cdn.digitaloceanspaces.com/FlexyMaxApp/FlexyMaxImages/BackgroundFlexyLoginWarehouseArm.png"
                         alt=""
-                        className="w-full h-full object-cover opacity-90"
+                        className="w-full h-full object-cover"
+                        style={{ objectPosition: 'center' }}
                     />
-                    {/* Left-to-right dark gradient so the panel stays legible */}
+                    {/* Global dark veil so the whole photo is moody */}
+                    <div className="absolute inset-0" style={{ background: 'rgba(10,8,8,0.45)' }} />
+                    {/* Right-side gradient → darkens where the panel sits */}
                     <div className="absolute inset-0"
-                        style={{ background: 'linear-gradient(to right, rgba(21,19,19,0.55) 0%, rgba(21,19,19,0.15) 60%, transparent 100%)' }} />
-                    {/* Grid overlay on top */}
+                        style={{ background: 'linear-gradient(to left, rgba(12,10,10,0.82) 0%, rgba(12,10,10,0.55) 35%, rgba(12,10,10,0.10) 65%, transparent 100%)' }} />
+                    {/* Grid overlay */}
                     <div className="absolute inset-0 login-grid-bg" />
                 </div>
 
-                {/* ── Ambient glow ─────────────────────────────────────────── */}
-                <div className="fixed top-1/3 right-1/3 w-80 h-80 rounded-full pointer-events-none"
-                    style={{ background: 'rgba(251,117,6,0.05)', filter: 'blur(80px)' }} />
+                {/* ── Ambient glow behind panel ─────────────────────────────── */}
+                <div className="fixed top-1/3 right-1/4 w-96 h-96 rounded-full pointer-events-none"
+                    style={{ background: 'rgba(251,117,6,0.07)', filter: 'blur(90px)' }} />
 
                 {/* ── Header ───────────────────────────────────────────────── */}
                 <header className="fixed top-0 z-50 w-full flex items-center justify-between px-6 md:px-12 py-4">
@@ -135,8 +138,8 @@ export default function LoginPage() {
                 </header>
 
                 {/* ── Main: right-aligned panel ────────────────────────────── */}
-                <main className="flex-1 flex items-center justify-center md:justify-end px-4 md:px-12 lg:px-20 pt-20 pb-24">
-                    <div className="w-full max-w-[440px] md:mr-4 lg:mr-16">
+                <main className="flex-1 flex items-center justify-center lg:justify-end px-4 lg:pr-20 xl:pr-32 pt-20 pb-24">
+                    <div className="w-full max-w-[420px]">
 
                         {/* Glass card with corner brackets */}
                         <div className="glass-panel corner-tl corner-br relative p-8 md:p-10 overflow-hidden">
@@ -147,18 +150,21 @@ export default function LoginPage() {
 
                             <div className="relative z-10 flex flex-col items-center">
 
-                                {/* Brand mark */}
-                                <div className="mb-6 flex flex-col items-center">
-                                    <div className="w-14 h-14 rounded-lg flex items-center justify-center mb-3"
-                                        style={{ background: 'linear-gradient(135deg,#FB7506,#e06a05)', boxShadow: '0 8px 24px rgba(251,117,6,0.3)' }}>
-                                        <Lock className="text-white" size={24} strokeWidth={1.5} />
+                                {/* FlexyMax logo / brand */}
+                                <div className="mb-7 flex flex-col items-center">
+                                    <div className="flex items-baseline gap-0 mb-2 leading-none">
+                                        <span className="font-black text-[#FB7506] uppercase tracking-tight"
+                                            style={{ fontSize: '34px', letterSpacing: '-0.02em' }}>Flexy</span>
+                                        <span className="font-black text-[#e8e1e0] uppercase tracking-tight"
+                                            style={{ fontSize: '34px', letterSpacing: '-0.02em' }}>Max</span>
                                     </div>
-                                    <h1 className="font-black text-[#e8e1e0] text-xl uppercase tracking-tight">
-                                        Industrial OS Access
-                                    </h1>
-                                    <p className="text-[11px] font-bold text-[#a78b7c] uppercase tracking-[0.15em] mt-1">
-                                        Securely manage your operations
-                                    </p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <div className="h-px w-8" style={{ background: 'rgba(167,139,124,0.4)' }} />
+                                        <p className="text-[9px] font-bold text-[#a78b7c] uppercase tracking-[0.22em]">
+                                            Flower Operational System
+                                        </p>
+                                        <div className="h-px w-8" style={{ background: 'rgba(167,139,124,0.4)' }} />
+                                    </div>
                                 </div>
 
                                 {/* Form */}
