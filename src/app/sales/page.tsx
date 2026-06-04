@@ -83,6 +83,7 @@ export default function SalesPage() {
     } = usePOSStore();
 
     const [activeTab,          setActiveTab]          = useState<"lines"|"stock"|"history">("lines");
+    const [myInvoices,         setMyInvoices]         = useState(true);
     const [stockSearch,        setStockSearch]        = useState("");
     const [appliedStockSearch, setAppliedStockSearch] = useState("");
     const [stockSortCol,       setStockSortCol]       = useState("");
@@ -150,11 +151,13 @@ export default function SalesPage() {
     if (status === "unauthenticated") { router.push("/login"); return null; }
 
     // ── Queries ───────────────────────────────────────────────────────────────
+    const listSalesmanUq = myInvoices ? salesmanUq : "%";
+
     const { data: invoiceList = [], isFetching: loadingList } = useQuery({
-        queryKey: ["pos-list", salesmanUq, userUq, invoiceDate, listKey],
+        queryKey: ["pos-list", listSalesmanUq, invoiceDate, listKey],
         enabled:  !!salesmanUq,
         queryFn:  async () => {
-            const r = await fetch(`/api/pos/invoices?date=${invoiceDate}&salesman_uq=${salesmanUq}`);
+            const r = await fetch(`/api/pos/invoices?date=${invoiceDate}&salesman_uq=${listSalesmanUq}`);
             const j = await r.json();
             return norm(Array.isArray(j) ? j : []);
         },
@@ -485,8 +488,20 @@ export default function SalesPage() {
                             />
                         </div>
                     </div>
-                    {/* New invoice button */}
-                    <div className="px-2 py-1.5 border-b border-gray-100 shrink-0">
+                    {/* My / All toggle + New Invoice */}
+                    <div className="px-2 py-1.5 border-b border-gray-100 shrink-0 flex flex-col gap-1.5">
+                        <div className="flex items-center bg-gray-100 rounded p-0.5">
+                            <button onClick={() => setMyInvoices(true)}
+                                className={cn("flex-1 py-1 rounded text-[10px] font-black uppercase tracking-widest transition-all",
+                                    myInvoices ? "bg-[#FB7506] text-white shadow-sm" : "text-gray-500 hover:text-gray-800")}>
+                                My Invoices
+                            </button>
+                            <button onClick={() => setMyInvoices(false)}
+                                className={cn("flex-1 py-1 rounded text-[10px] font-black uppercase tracking-widest transition-all",
+                                    !myInvoices ? "bg-[#FB7506] text-white shadow-sm" : "text-gray-500 hover:text-gray-800")}>
+                                All
+                            </button>
+                        </div>
                         <button onClick={openCcModal}
                             className="w-full flex items-center justify-center gap-1.5 py-1.5 text-[10px] font-black uppercase tracking-widest bg-green-600 hover:bg-green-500 text-white rounded transition-all">
                             <Plus size={11} /> New Invoice
