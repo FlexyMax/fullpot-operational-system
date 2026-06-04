@@ -1,32 +1,31 @@
-import { NextResponse } from "next/server";
-import { executeQuery } from "@/lib/db";
+import { NextRequest, NextResponse } from "next/server";
+import { executeProcedure } from "@/lib/db";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
-export async function GET(req: Request) {
+// GET /api/pos/history/invoices?customer_uq=XXX&start_date=YYYY-MM-DD&end_date=YYYY-MM-DD&salesman_uq=XXX
+// sp_flower_invoice_history(@lccustomer_uq, @ldfrom:datetime, @ldto:datetime, @lcsalesman_uq)
+export async function GET(req: NextRequest) {
+    const session = await getServerSession(authOptions);
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     try {
-        const session = await getServerSession(authOptions);
-        if (!session) {
-            return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
-        }
+        const customerUq  = req.nextUrl.searchParams.get("customer_uq")  || "%";
+        const startDate   = req.nextUrl.searchParams.get("start_date")   || "";
+        const endDate     = req.nextUrl.searchParams.get("end_date")     || "";
+        // Client passes the salesman's unico from sp_flower_salesman_uq
+        const salesmanUq  = req.nextUrl.searchParams.get("salesman_uq")  || "%";
 
-        const { searchParams } = new URL(req.url);
-        const customer_uq = searchParams.get("customer_uq") || "%";
-        const start_date = searchParams.get("start_date") || "";
-        const end_date = searchParams.get("end_date") || "";
-        let salesman_uq = searchParams.get("salesman_uq") || ((session.user as any).id);
+        const from = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 86400000);
+        const to   = endDate   ? new Date(endDate)   : new Date();
 
-        if (!salesman_uq || salesman_uq === 'undefined' || salesman_uq === 'null') {
-            salesman_uq = (session.user as any).id;
-        }
-
-        const query = `EXEC sp_flower_invoice_history '${customer_uq.replace(/'/g, "''")}', '${start_date.replace(/'/g, "''")}', '${end_date.replace(/'/g, "''")}', '${salesman_uq.replace(/'/g, "''")}'`;
-
-        const result = await executeQuery(query);
-
-        return NextResponse.json(result.recordset || []);
-    } catch (error: any) {
-        console.error("Invoice History error:", error);
-        return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+        const r = await executeProcedure("sp_flower_invoice_history", {
+            lccustomer_uq: customerUq,
+            ldfrom:        from,
+            ldto:          to,
+            lcsalesman_uq: salesmanUq,
+        });
+        return NextResponse.json(r.recordset ?? []);
+    } catch (err: any) {
+        return NextResponse.json({ error: err.message }, { status: 500 });
     }
 }

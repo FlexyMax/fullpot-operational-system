@@ -96,6 +96,7 @@ export default function SalesPage() {
     const [working,            setWorking]            = useState(false);
     const [listKey,            setListKey]            = useState(0);
     const [detailKey,          setDetailKey]          = useState(0);
+    const [listSearch,         setListSearch]         = useState("");
 
     // Customer Call List modal state
     const [ccModal,            setCcModal]            = useState(false);
@@ -183,11 +184,25 @@ export default function SalesPage() {
         },
     });
 
+    // When switching to history tab, auto-fill customer from active invoice header
+    useEffect(() => {
+        if (activeTab === "history" && h?.CUSTOMER_UQ && histCustUq === "%") {
+            setHistCustUq(t(h.CUSTOMER_UQ));
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeTab]);
+
     const { data: histInvoices = [], isFetching: loadingHistList } = useQuery({
         queryKey: ["pos-hist-list", histCustUq, histFrom, histTo, salesmanUq],
         enabled:  activeTab === "history" && !!salesmanUq,
         queryFn:  async () => {
-            const r = await fetch(`/api/pos/history/invoices?customer_uq=${histCustUq}&start_date=${histFrom}&end_date=${histTo}`);
+            const p = new URLSearchParams({
+                customer_uq:  histCustUq,
+                start_date:   histFrom,
+                end_date:     histTo,
+                salesman_uq:  salesmanUq,
+            });
+            const r = await fetch(`/api/pos/history/invoices?${p}`);
             const j = await r.json();
             return norm(Array.isArray(j) ? j : []);
         },
@@ -507,18 +522,38 @@ export default function SalesPage() {
                             <Plus size={11} /> New Invoice
                         </button>
                     </div>
+                    {/* Search */}
+                    <div className="px-2 py-1.5 border-b border-gray-100 shrink-0">
+                        <div className="flex items-center gap-1.5 bg-gray-100 rounded px-2 py-1">
+                            <Search size={11} className="text-gray-400 shrink-0" />
+                            <input
+                                value={listSearch} onChange={e => setListSearch(e.target.value)}
+                                placeholder="Customer or invoice #..."
+                                className="flex-1 text-[11px] bg-transparent focus:outline-none text-gray-700 placeholder-gray-400"
+                            />
+                            {listSearch && <button onClick={() => setListSearch("")}><X size={10} className="text-gray-400 hover:text-gray-600" /></button>}
+                        </div>
+                    </div>
+
                     {/* Invoice list */}
                     <div className="flex-1 overflow-auto min-h-0">
                         {(invoiceList as any[]).length === 0 && !loadingList && (
                             <div className="p-6 text-center text-gray-400 italic text-[11px]">No invoices for this date</div>
                         )}
-                        {(invoiceList as any[]).map((inv: any, i: number) => {
+                        {(invoiceList as any[])
+                          .filter((inv: any) => {
+                              if (!listSearch.trim()) return true;
+                              const q = listSearch.toLowerCase();
+                              return t(inv.CUSTOMER).toLowerCase().includes(q) ||
+                                     t(inv.INVOICE_NO).toString().includes(q);
+                          })
+                          .map((inv: any, i: number) => {
                             const sel  = t(inv.UNICO) === activeInvoiceUq;
                             const bg   = vfpColor(inv.BACK_COLOR ?? inv.BACKCOLOR);
                             const voi  = bool(inv.VOID);
                             const closed = bool(inv.PRINTED);
                             return (
-                                <div key={i} onClick={() => { setActiveInvoiceUq(t(inv.UNICO)); setDetailKey(k=>k+1); setActiveTab("lines"); }}
+                                <div key={i} onClick={() => { setActiveInvoiceUq(t(inv.UNICO)); setDetailKey(k=>k+1); setActiveTab("lines"); setHistCustUq(t(inv.CUSTOMER_UQ ?? "%")); setHistInvoiceUq(null); }}
                                     className={cn("px-3 py-2 border-b cursor-pointer transition-colors",
                                         sel ? "!bg-blue-100 border-l-4 border-l-[#FB7506]" : "hover:bg-blue-50 border-l-4 border-l-transparent")}
                                     style={!sel && bg ? { backgroundColor: bg } : undefined}
@@ -773,7 +808,7 @@ export default function SalesPage() {
                                                 <span className="text-[10px] font-bold text-gray-500">To:</span>
                                                 <input type="date" value={histTo}   onChange={e => setHistTo(e.target.value)}   className="text-[10px] border border-gray-200 rounded px-2 py-1 focus:outline-none" />
                                             </div>
-                                            <button onClick={() => qc.invalidateQueries({ queryKey: ["pos-hist-list"] })}
+                                            <button onClick={() => qc.invalidateQueries({ queryKey: ["pos-hist-list", histCustUq, histFrom, histTo, salesmanUq] })}
                                                 className="flex items-center gap-1 px-2 py-1 text-[10px] font-black bg-[#374151] text-white rounded hover:bg-gray-600">
                                                 <Search size={10} />Search
                                             </button>
