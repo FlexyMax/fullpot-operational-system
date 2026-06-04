@@ -1,25 +1,18 @@
-import { NextResponse } from "next/server";
-import { executeQuery } from "@/lib/db";
+import { NextRequest, NextResponse } from "next/server";
+import { executeProcedure } from "@/lib/db";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
-export async function GET(req: Request) {
+// GET /api/pos/history/credits?invoice_uq=XXX
+// sp_NC_invoice_box_credit(@lcinvoice_uq)
+export async function GET(req: NextRequest) {
+    const session = await getServerSession(authOptions);
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     try {
-        const session = await getServerSession(authOptions);
-        if (!session) {
-            return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
-        }
-
-        const { searchParams } = new URL(req.url);
-        const invoice_uq = searchParams.get("invoice_uq") || "";
-
-        const query = `EXEC sp_NC_invoice_box_credit '${invoice_uq.replace(/'/g, "''")}'`;
-
-        const result = await executeQuery(query);
-
-        return NextResponse.json(result.recordset || []);
-    } catch (error: any) {
-        console.error("History Credits error:", error);
-        return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+        const invoiceUq = req.nextUrl.searchParams.get("invoice_uq") || "";
+        const r = await executeProcedure("sp_NC_invoice_box_credit", { lcinvoice_uq: invoiceUq });
+        return NextResponse.json(r.recordset ?? []);
+    } catch (err: any) {
+        return NextResponse.json({ error: err.message }, { status: 500 });
     }
 }

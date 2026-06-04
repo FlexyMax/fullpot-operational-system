@@ -209,20 +209,21 @@ export default function SalesPage() {
     });
 
     const { data: histDetails = [] } = useQuery({
-        queryKey: ["pos-hist-detail", histInvoiceUq, histSubTab],
+        queryKey: ["pos-hist-detail", histInvoiceUq, histSubTab, histCustUq, salesmanUq],
         enabled:  !!histInvoiceUq && activeTab === "history",
         queryFn:  async () => {
             if (histSubTab === "details") {
-                const r = await fetch(`/api/pos/history/details?invoice_uq=${histInvoiceUq}`);
-                return norm(Array.isArray(await r.json()) ? await r.json() : []);
+                const p = new URLSearchParams({ invoice_uq: histInvoiceUq!, salesman_uq: salesmanUq });
+                const j = await fetch(`/api/pos/history/details?${p}`).then(r => r.json());
+                return norm(Array.isArray(j) ? j : []);
             }
             if (histSubTab === "credits") {
-                const r = await fetch(`/api/pos/history/credits?invoice_uq=${histInvoiceUq}`);
-                return norm(Array.isArray(await r.json()) ? await r.json() : []);
+                const j = await fetch(`/api/pos/history/credits?invoice_uq=${histInvoiceUq}`).then(r => r.json());
+                return norm(Array.isArray(j) ? j : []);
             }
             if (histSubTab === "statement") {
-                const r = await fetch(`/api/pos/history/statement?customer_uq=${histCustUq}`);
-                const j = await r.json();
+                const p = new URLSearchParams({ customer_uq: histCustUq, start_date: histFrom, end_date: histTo });
+                const j = await fetch(`/api/pos/history/statement?${p}`).then(r => r.json());
                 return Array.isArray(j) ? norm(j) : j ? [normOne(j)] : [];
             }
             return [];
@@ -853,14 +854,77 @@ export default function SalesPage() {
                                                 <div className="flex-1 overflow-auto min-h-0">
                                                     {!histInvoiceUq && <p className="p-6 text-center text-gray-400 italic text-[11px]">Select an invoice</p>}
                                                     {histInvoiceUq && (histDetails as any[]).length === 0 && <p className="p-6 text-center text-gray-400 italic text-[11px]">No data</p>}
-                                                    {histInvoiceUq && (histDetails as any[]).length > 0 && (
-                                                        <table className="min-w-full text-left text-[11px]">
+                                                    {histInvoiceUq && histSubTab === "details" && (histDetails as any[]).length > 0 && (
+                                                        <table className="min-w-full text-left">
+                                                            <thead><tr>
+                                                                <Th>Product</Th><Th>Farm</Th><Th>Vendor</Th>
+                                                                <Th className="text-right">BoxQty</Th><Th className="text-right">UxBox</Th>
+                                                                <Th className="text-right">Price</Th><Th className="text-right">T.Units</Th>
+                                                                <Th className="text-right">Ext.Price</Th><Th className="text-right">Credits</Th>
+                                                                <Th>Case</Th><Th>AWB</Th><Th>Lot</Th>
+                                                            </tr></thead>
                                                             <tbody>
-                                                                {(histDetails as any[]).map((row: any, i: number) => (
-                                                                    <tr key={i} className={cn("border-b", i%2===0?"bg-white":"bg-gray-50")}>
-                                                                        {Object.values(row).map((v: any, j) => (
-                                                                            <td key={j} className="px-2 py-1.5 text-[11px] whitespace-nowrap border-l border-gray-100 first:border-l-0">{t(v)}</td>
-                                                                        ))}
+                                                                {(histDetails as any[]).map((r: any, i: number) => (
+                                                                    <tr key={i} className={cn("border-b text-gray-600", i%2===0?"bg-white":"bg-gray-50")}>
+                                                                        <Td className="max-w-[200px] truncate font-medium">{t(r.DESCRIPTION)}</Td>
+                                                                        <Td className="font-bold text-[#FB7506]">{t(r.FARM)}</Td>
+                                                                        <Td className="max-w-[100px] truncate">{t(r.GROWER ?? r.VENDOR)}</Td>
+                                                                        <Td className="text-right">{fmtI(r.BOX_QTY)}</Td>
+                                                                        <Td className="text-right">{fmtI(r.UNITS_X_BOX)}</Td>
+                                                                        <Td className="text-right font-semibold">${fmt(r.PRICE ?? r.PRICE_X_U)}</Td>
+                                                                        <Td className="text-right">{fmtI(r.TOTAL_UNITS)}</Td>
+                                                                        <Td className="text-right font-bold text-green-700">${fmt(r.EXT_PRICE)}</Td>
+                                                                        <Td className="text-right text-red-600">{fmt(r.CREDITS)}</Td>
+                                                                        <Td>{t(r.CASE_SH ?? r.CASE_NAME)}</Td>
+                                                                        <Td className="font-mono text-blue-700">{t(r.AWBCODE ?? r.AWB)}</Td>
+                                                                        <Td>{t(r.LOTE ?? r.LOT)}</Td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    )}
+                                                    {histInvoiceUq && histSubTab === "credits" && (histDetails as any[]).length > 0 && (
+                                                        <table className="min-w-full text-left">
+                                                            <thead><tr>
+                                                                <Th>Product</Th><Th>Reason</Th>
+                                                                <Th className="text-right">Units</Th><Th className="text-right">Amount</Th>
+                                                                <Th>Details</Th>
+                                                            </tr></thead>
+                                                            <tbody>
+                                                                {(histDetails as any[]).map((r: any, i: number) => (
+                                                                    <tr key={i} className={cn("border-b text-gray-600", i%2===0?"bg-white":"bg-gray-50")}>
+                                                                        <Td className="max-w-[180px] truncate font-medium">{t(r.DESCRIPTION)}</Td>
+                                                                        <Td>{t(r.REASON)}</Td>
+                                                                        <Td className="text-right">{fmtI(r.CR_UNITS)}</Td>
+                                                                        <Td className="text-right font-bold text-red-600">${fmt(r.CR_REQUEST ?? r.AMOUNT)}</Td>
+                                                                        <Td className="max-w-[200px] truncate">{t(r.DETAILS)}</Td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    )}
+                                                    {histSubTab === "statement" && (histDetails as any[]).length > 0 && (
+                                                        <table className="min-w-full text-left">
+                                                            <thead><tr>
+                                                                <Th>Date</Th><Th>Type</Th><Th>Invoice</Th>
+                                                                <Th className="text-right">Debits</Th><Th className="text-right">Credits</Th>
+                                                                <Th className="text-right">Balance</Th>
+                                                                <Th className="text-right">0-30</Th><Th className="text-right">30-60</Th>
+                                                                <Th className="text-right">60-90</Th><Th className="text-right">90+</Th>
+                                                            </tr></thead>
+                                                            <tbody>
+                                                                {(histDetails as any[]).map((r: any, i: number) => (
+                                                                    <tr key={i} className={cn("border-b text-gray-600", i%2===0?"bg-white":"bg-gray-50")}>
+                                                                        <Td>{t(r.FECHA ?? r.DATE)}</Td>
+                                                                        <Td>{t(r.TYPE)}</Td>
+                                                                        <Td className="font-bold text-blue-700">{t(r.INVOICE_NO)}</Td>
+                                                                        <Td className="text-right">${fmt(r.DEBITS)}</Td>
+                                                                        <Td className="text-right text-green-700">${fmt(r.CREDITS)}</Td>
+                                                                        <Td className={cn("text-right font-bold", parseFloat(r.BALANCE ?? 0) > 0 ? "text-red-600" : "text-green-600")}>${fmt(r.BALANCE)}</Td>
+                                                                        <Td className="text-right">${fmt(r.T0_30)}</Td>
+                                                                        <Td className="text-right">${fmt(r.T30_60)}</Td>
+                                                                        <Td className="text-right">${fmt(r.T60_90)}</Td>
+                                                                        <Td className="text-right">${fmt(r.T90_120 ?? r.T120)}</Td>
                                                                     </tr>
                                                                 ))}
                                                             </tbody>
