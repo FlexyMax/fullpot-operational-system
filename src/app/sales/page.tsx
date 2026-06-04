@@ -77,8 +77,9 @@ export default function SalesPage() {
     const { canEdit, canDelete } = usePagePermissions("sales");
 
     const {
-        salesmanUq, salesmanName, activeInvoiceUq, invoiceDate,
-        setSalesmanUq, setSalesmanName, setActiveInvoiceUq, setInvoiceDate,
+        salesmanUq, salesmanName, userUq, physicalWarehouseUq,
+        activeInvoiceUq, invoiceDate,
+        setSalesmanInfo, setActiveInvoiceUq, setInvoiceDate,
     } = usePOSStore();
 
     const [activeTab,          setActiveTab]          = useState<"lines"|"stock"|"history">("lines");
@@ -128,24 +129,29 @@ export default function SalesPage() {
 
     const sentinelRef = useRef<HTMLDivElement>(null);
 
-    // ── Init: load salesman info ──────────────────────────────────────────────
+    // ── Init: load salesman info (unico, user_uq, wphysical_uq) ──────────────
     useEffect(() => {
         if (status !== "authenticated") return;
         if (salesmanUq) return; // already loaded
         fetch("/api/pos/salesman").then(r => r.json()).then(j => {
             if (j?.unico) {
-                setSalesmanUq(j.unico);
-                setSalesmanName(t(j.salesman_name ?? j.salesman_fname ?? ""));
+                setSalesmanInfo(
+                    t(j.unico),
+                    t(j.salesman_name ?? j.salesman_fname ?? ""),
+                    t(j.user_uq  ?? ""),
+                    t(j.wphysical_uq ?? "%"),
+                );
             }
         }).catch(() => {});
-    }, [status, salesmanUq, setSalesmanUq, setSalesmanName]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [status, salesmanUq]);
 
     if (status === "loading") return null;
     if (status === "unauthenticated") { router.push("/login"); return null; }
 
     // ── Queries ───────────────────────────────────────────────────────────────
     const { data: invoiceList = [], isFetching: loadingList } = useQuery({
-        queryKey: ["pos-list", salesmanUq, invoiceDate, listKey],
+        queryKey: ["pos-list", salesmanUq, userUq, invoiceDate, listKey],
         enabled:  !!salesmanUq,
         queryFn:  async () => {
             const r = await fetch(`/api/pos/invoices?date=${invoiceDate}&salesman_uq=${salesmanUq}`);
@@ -209,7 +215,12 @@ export default function SalesPage() {
     const loadStock = useCallback(async (page: number, search: string, sortCol: string, sortDir: string, reset: boolean) => {
         setStockLoading(true);
         try {
-            const p = new URLSearchParams({ page: String(page), size: "50", search, sort_col: sortCol, sort_dir: sortDir });
+            const p = new URLSearchParams({
+                page: String(page), size: "50", search,
+                sort_col: sortCol, sort_dir: sortDir,
+                salesman_uq:  salesmanUq          || "%",
+                physical_uq:  physicalWarehouseUq || "%",
+            });
             const r = await fetch(`/api/pos/stock?${p}`);
             const j = await r.json();
             const rows: any[] = norm(j.rows ?? []);
@@ -219,12 +230,13 @@ export default function SalesPage() {
             setStockPage(page);
         } catch { /* ignore */ }
         finally { setStockLoading(false); }
-    }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [salesmanUq, physicalWarehouseUq]);
 
     useEffect(() => {
         if (activeTab === "stock") loadStock(1, appliedStockSearch, stockSortCol, stockSortDir, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeTab, appliedStockSearch, stockSortCol, stockSortDir, detailKey]);
+    }, [activeTab, appliedStockSearch, stockSortCol, stockSortDir, detailKey, physicalWarehouseUq]);
 
     useEffect(() => {
         const el = sentinelRef.current;
@@ -365,7 +377,7 @@ export default function SalesPage() {
     const loadCcCustomers = useCallback(async (search: string, page = 1, append = false) => {
         setCcLoading(true);
         try {
-            const r = await fetch(`/api/pos/customers?page=${page}&size=50&search=${encodeURIComponent(search)}`);
+            const r = await fetch(`/api/pos/customers?page=${page}&size=50&search=${encodeURIComponent(search)}&user_uq=${encodeURIComponent(userUq || "")}`);
             const j = await r.json();
             const rows = norm(Array.isArray(j.rows) ? j.rows : []);
             setCcTotal(j.total ?? 0);

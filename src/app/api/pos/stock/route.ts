@@ -14,15 +14,17 @@ export async function GET(req: NextRequest) {
         const search      = req.nextUrl.searchParams.get("search")       || "";
         const sortCol     = req.nextUrl.searchParams.get("sort_col")     || "";
         const sortDir     = req.nextUrl.searchParams.get("sort_dir")     || "ASC";
-        const warehouseUq = req.nextUrl.searchParams.get("warehouse_uq") || "%";
-        const customerUq  = req.nextUrl.searchParams.get("customer_uq")  || "%";
-        const physicalUq  = req.nextUrl.searchParams.get("physical_uq")  || "%";
-        const userId      = (session.user as any).id ?? "";
+        const warehouseUq = req.nextUrl.searchParams.get("warehouse_uq")  || "%";
+        const customerUq  = req.nextUrl.searchParams.get("customer_uq")   || "%";
+        const physicalUq  = req.nextUrl.searchParams.get("physical_uq")   || "%";
+        // Client passes salesman_uq from sp_flower_salesman_uq → unico (salesman table)
+        // Falls back to session user id so the route still works without explicit salesman_uq
+        const salesmanUq  = req.nextUrl.searchParams.get("salesman_uq")   || (session.user as any).id || "%";
 
         const r = await executeProcedure("sp_flower_NC_stock_salesman_warehouse_with_customer", {
             lnPageNumber:  page,
             lnRowsOfPage:  size,
-            Salesman_uq:   userId,
+            Salesman_uq:   salesmanUq,
             descripcion:   search,
             lcSortColumn:  sortCol,
             lcSortOrder:   sortDir,

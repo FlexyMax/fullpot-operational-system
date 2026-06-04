@@ -12,7 +12,9 @@ export async function GET(req: NextRequest) {
         const page   = parseInt(req.nextUrl.searchParams.get("page")   || "1");
         const size   = parseInt(req.nextUrl.searchParams.get("size")   || "50");
         const search = req.nextUrl.searchParams.get("search") || "";
-        const userId = (session.user as any).id ?? "";
+        // Accept explicit user_uq from client (from sp_flower_salesman_uq → user_uq)
+        // so the SP sees the correct salesman's user identity, not just the auth token id
+        const userId = req.nextUrl.searchParams.get("user_uq") || (session.user as any).id || "";
         const r = await executeProcedure("sp_NC_customers_call_list", {
             lnPageNumber: page,
             lnRowsOfPage: size,

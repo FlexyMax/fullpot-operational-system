@@ -3,28 +3,31 @@ import { persist } from 'zustand/middleware';
 
 interface POSState {
     // Persisted across navigations
-    salesmanUq:      string;
-    salesmanName:    string;
-    activeInvoiceUq: string | null;
-    invoiceDate:     string; // YYYY-MM-DD
+    salesmanUq:          string;
+    salesmanName:        string;
+    userUq:              string;  // sp_flower_salesman_uq → user_uq (needed by several SPs)
+    physicalWarehouseUq: string;  // sp_flower_salesman_uq → wphysical_uq (default warehouse for stock)
+    activeInvoiceUq:     string | null;
+    invoiceDate:         string; // YYYY-MM-DD
 
-    setSalesmanUq:      (uq: string)      => void;
-    setSalesmanName:    (name: string)    => void;
+    setSalesmanInfo:    (uq: string, name: string, userUq: string, physicalUq: string) => void;
     setActiveInvoiceUq: (uq: string | null) => void;
-    setInvoiceDate:     (date: string)    => void;
+    setInvoiceDate:     (date: string)      => void;
     clearInvoice:       () => void;
 }
 
 export const usePOSStore = create<POSState>()(
     persist(
         (set) => ({
-            salesmanUq:      "",
-            salesmanName:    "",
-            activeInvoiceUq: null,
-            invoiceDate:     new Date().toISOString().split("T")[0],
+            salesmanUq:          "",
+            salesmanName:        "",
+            userUq:              "",
+            physicalWarehouseUq: "",
+            activeInvoiceUq:     null,
+            invoiceDate:         new Date().toISOString().split("T")[0],
 
-            setSalesmanUq:      (uq)   => set({ salesmanUq: uq }),
-            setSalesmanName:    (name) => set({ salesmanName: name }),
+            setSalesmanInfo:    (uq, name, userUq, physicalUq) =>
+                set({ salesmanUq: uq, salesmanName: name, userUq, physicalWarehouseUq: physicalUq }),
             setActiveInvoiceUq: (uq)   => set({ activeInvoiceUq: uq }),
             setInvoiceDate:     (date) => set({ invoiceDate: date }),
             clearInvoice:       ()     => set({ activeInvoiceUq: null }),
