@@ -117,14 +117,14 @@ export default function LoginPage() {
                     style={{ background: 'rgba(251,117,6,0.07)', filter: 'blur(90px)' }} />
 
                 {/* ── Header ───────────────────────────────────────────────── */}
-                <header className="fixed top-0 z-50 w-full h-16 bg-[#000000] flex items-center justify-between px-6 md:px-12">
-                    <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg flex items-center justify-center"
+                <header className="fixed top-0 z-50 w-full h-16 bg-[#000000] flex items-center justify-between px-4 md:px-6 lg:px-12">
+                    <div className="flex items-center gap-2 md:gap-3">
+                        <div className="w-8 h-8 md:w-9 md:h-9 rounded-lg flex items-center justify-center"
                             style={{ background: '#FB7506' }}>
-                            <span className="text-white font-black text-xs leading-none">FOS</span>
+                            <span className="text-white font-black text-[10px] md:text-xs leading-none">FOS</span>
                         </div>
-                        <div className="w-px h-5 bg-white/20" />
-                        <span className="font-bold text-white text-sm uppercase tracking-tight">FullPot Operational System</span>
+                        <div className="w-px h-4 md:h-5 bg-white/20" />
+                        <span className="font-bold text-white text-xs md:text-sm uppercase tracking-tight hidden md:inline">FullPot Operational System</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
@@ -136,7 +136,7 @@ export default function LoginPage() {
                 </header>
 
                 {/* ── Main: right-aligned panel ────────────────────────────── */}
-                <main className="flex-1 flex items-center justify-center lg:justify-end px-4 lg:pr-20 xl:pr-32 pt-20 pb-24">
+                <main className="flex-1 flex items-center justify-center lg:justify-end px-4 lg:pr-20 xl:pr-32 pt-16 pb-16 md:pt-20 md:pb-24">
                     <div className="w-full max-w-[420px]">
 
                         {/* Glass card with corner brackets */}

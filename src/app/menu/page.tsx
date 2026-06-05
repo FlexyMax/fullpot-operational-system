@@ -144,7 +144,7 @@ export default function MenuPage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#f4f6f8] flex flex-col font-sans text-[#333]">
+        <div className="h-screen bg-[#f4f6f8] flex flex-col font-sans text-[#333] overflow-hidden">
 
             {/* Header — FlexyMax black standard */}
             <header className="h-16 bg-[#000000] flex items-center justify-between px-3 md:px-6 shrink-0 text-white">
@@ -215,7 +215,7 @@ export default function MenuPage() {
             </div>
 
             {/* Main Content */}
-            <main className="flex-1 p-6 max-w-7xl mx-auto w-full">
+            <main className="flex-1 overflow-auto p-6 max-w-7xl mx-auto w-full">
 
                 {error && (
                     <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3 mb-6">
@@ -314,14 +314,14 @@ export default function MenuPage() {
             </main>
 
             {/* Footer — FlexyMax black standard */}
-            <footer className="h-10 bg-[#000000] px-6 flex items-center justify-between text-[11px] font-bold uppercase tracking-tight shrink-0">
-                <div className="flex items-center gap-4 text-white/60">
+            <footer className="h-10 bg-[#000000] px-4 md:px-6 flex items-center justify-center md:justify-between text-[11px] font-bold uppercase tracking-tight shrink-0">
+                <div className="hidden md:flex items-center gap-4 text-white/60">
                     <span>Server: Production</span>
                     <span className="text-white/20">|</span>
                     <span>Database: FullPot</span>
                 </div>
                 <span className="text-white/90 tracking-[0.14em]">FlexyMax ® {new Date().getFullYear()}</span>
-                <span className="text-[#FB7506]">FOS Operational System V.2.0.1</span>
+                <span className="hidden md:inline text-[#FB7506]">FOS Operational System V.2.0.1</span>
             </footer>
 
         </div>
