@@ -29,11 +29,19 @@ const fmtDate = (v: any) => {
     if (iso) return new Date(+iso[1], +iso[2]-1, +iso[3]).toLocaleDateString("en-US");
     const d = new Date(s); return isNaN(d.getTime()) ? s : d.toLocaleDateString("en-US");
 };
-const vfpColor = (c: any) => {
+// Convert VFP integer color → subtle row style: 3px left border + 6% background tint
+// Matches the inventory-entry approach so colors inform without overwhelming
+const vfpRowStyle = (c: any): React.CSSProperties | undefined => {
     const n = parseInt(c ?? 0);
     if (!n || n <= 0) return undefined;
     const r = n & 0xFF; const g = (n >> 8) & 0xFF; const b = (n >> 16) & 0xFF;
-    return `rgb(${r},${g},${b})`;
+    const rgb = `${r},${g},${b}`;
+    return {
+        borderLeftColor:  `rgb(${rgb})`,
+        borderLeftWidth:  "3px",
+        borderLeftStyle:  "solid",
+        backgroundColor:  `rgba(${rgb},0.06)`,
+    };
 };
 const bool = (v: any) => v === true || v === 1 || String(v).toLowerCase() === "true";
 
@@ -550,7 +558,7 @@ export default function SalesPage() {
                           })
                           .map((inv: any, i: number) => {
                             const sel  = t(inv.UNICO) === activeInvoiceUq;
-                            const bg   = vfpColor(inv.BACK_COLOR ?? inv.BACKCOLOR);
+                            const bg   = vfpRowStyle(inv.BACK_COLOR ?? inv.BACKCOLOR);
                             const voi  = bool(inv.VOID);
                             const closed = bool(inv.PRINTED);
                             return (
@@ -559,7 +567,7 @@ export default function SalesPage() {
                                         "px-3 py-3 border-b cursor-pointer transition-all border-l-4",
                                         sel ? "bg-blue-50 border-l-[#FB7506]" : "border-l-transparent hover:bg-gray-50 hover:border-l-gray-300"
                                     )}
-                                    style={!sel && bg ? { backgroundColor: bg } : undefined}
+                                    style={!sel && bg ? bg : undefined}
                                 >
                                     {/* Invoice # + status */}
                                     <div className="flex items-center justify-between gap-1 mb-1">
@@ -710,10 +718,10 @@ export default function SalesPage() {
                                                 {loadingLines && <tr><td colSpan={16} className="p-6 text-center text-gray-400 italic"><Loader2 size={13} className="animate-spin inline mr-1" />Loading...</td></tr>}
                                                 {!loadingLines && (invoiceLines as any[]).length === 0 && <tr><td colSpan={16} className="p-8 text-center text-gray-400 italic">No lines — add from Available Stock</td></tr>}
                                                 {(invoiceLines as any[]).map((l: any, i: number) => {
-                                                    const bg = vfpColor(l.BACK_COLOR ?? l.BACKCOLOR);
+                                                    const bg = vfpRowStyle(l.BACK_COLOR ?? l.BACKCOLOR);
                                                     return (
-                                                        <tr key={i} className={cn("border-b text-gray-600 hover:bg-blue-50 transition-colors", i%2===0?"bg-white":"bg-gray-50")}
-                                                            style={bg ? { backgroundColor: bg } : undefined}>
+                                                        <tr key={i} className={cn("border-b text-gray-600 hover:bg-blue-50 transition-colors", !bg && (i%2===0?"bg-white":"bg-gray-50"))}
+                                                            style={bg ?? undefined}>
                                                             <Td className="font-bold text-[#FB7506]">{t(l.FARM)}</Td>
                                                             <Td className="max-w-[200px] truncate font-medium">{t(l.DESCRIPTION)}</Td>
                                                             <Td className="max-w-[100px] truncate">{t(l.GROWER ?? l.VENDOR)}</Td>
@@ -779,10 +787,10 @@ export default function SalesPage() {
                                                 {stockLoading && stockRows.length === 0 && <tr><td colSpan={16} className="p-8 text-center text-gray-400 italic"><Loader2 size={13} className="animate-spin inline mr-1" />Loading...</td></tr>}
                                                 {!stockLoading && stockRows.length === 0 && <tr><td colSpan={16} className="p-8 text-center text-gray-400 italic">No stock available</td></tr>}
                                                 {stockRows.map((s: any, i: number) => {
-                                                    const bg = vfpColor(s.BACK_COLOR ?? s.BACKCOLOR);
+                                                    const bg = vfpRowStyle(s.BACK_COLOR ?? s.BACKCOLOR);
                                                     return (
-                                                        <tr key={i} className={cn("border-b text-gray-600 hover:bg-blue-50 transition-colors", i%2===0?"bg-white":"bg-gray-50")}
-                                                            style={bg ? { backgroundColor: bg } : undefined}>
+                                                        <tr key={i} className={cn("border-b text-gray-600 hover:bg-blue-50 transition-colors", !bg && (i%2===0?"bg-white":"bg-gray-50"))}
+                                                            style={bg ?? undefined}>
                                                             <Td>
                                                                 {isOpen && (
                                                                     <button onClick={() => handleAddLine(s)} disabled={working}
