@@ -5,10 +5,12 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-    ArrowLeft, Save, X, RefreshCcw, Truck, Plus, Pencil, Trash2,
+    Save, X, RefreshCcw, Truck, Plus, Pencil, Trash2,
     ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight,
     Mail, Check, AlertCircle, XCircle, Settings, Menu, Search
 } from "lucide-react";
+import { AppHeader } from "@/components/layout/AppHeader";
+import { AppFooter } from "@/components/layout/AppFooter";
 import { GridMenu } from "@/components/GridMenu";
 
 import { cn } from "@/lib/utils";
@@ -51,7 +53,7 @@ function F({ label, value, onChange, readOnly, type="text", span2=false, childre
 
 // â”€â”€â”€ Main Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function CarriersDefinitionPage() {
-    const { data: session, status } = useSession();
+    const { status } = useSession();
     const router = useRouter();
     const qc     = useQueryClient();
     const { logAction } = useAuditLog("carriers-definition", "flower_carriers");
@@ -223,17 +225,9 @@ export default function CarriersDefinitionPage() {
     if (status === "loading") return null;
 
     return (
-        <div className="flex flex-col h-screen bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
+        <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
 
-            {/* Header */}
-            <div className="h-10 bg-[#374151] flex items-center justify-between px-4 shrink-0 text-white">
-                <div className="flex items-center gap-3">
-                    <button onClick={() => router.push("/menu")} className="hover:bg-white/10 p-1 rounded transition-colors"><ArrowLeft size={16} /></button>
-                    <Truck size={14} className="text-[#FB7506]" />
-                    <span className="font-black text-xs uppercase tracking-widest">Carriers Definition</span>
-                </div>
-                <span className="text-gray-400 text-[10px] font-bold">User: <span className="text-white">{session?.user?.name}</span></span>
-            </div>
+            <AppHeader title="Carriers" />
 
             {/* Main layout */}
             <div className="flex flex-col lg:flex-row flex-1 gap-2 p-2 overflow-y-auto lg:overflow-hidden">
@@ -507,11 +501,7 @@ export default function CarriersDefinitionPage() {
                 <Truck size={24} />
             </button>
 
-            {/* Footer */}
-            <div className="h-8 bg-gray-100 border-t px-4 flex items-center justify-between text-[10px] font-bold text-gray-500 uppercase tracking-tight shrink-0">
-                <div className="flex gap-4"><span>Server: Production</span><span className="text-gray-300">|</span><span>Database: FullPot</span></div>
-                <span className="text-[#FB7506]">FOS Masters V.2.0.1</span>
-            </div>
+            <AppFooter areaLabel="Masters" />
 
             {/* â”€â”€ Mobile Carrier List Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             {mobileOpen && (

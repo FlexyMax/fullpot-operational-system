@@ -5,12 +5,13 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-    ArrowLeft, Package, RefreshCcw, Plus, Pencil, Trash2,
+    Package, RefreshCcw, Plus, Pencil, Trash2,
     Search, X, Save, ChevronDown, Calendar, FileText,
     AlertCircle, Check, Copy, ArrowRight, Warehouse,
     ClipboardList, Boxes, BarChart2, Plane,
     ShoppingCart, Flower2,
 } from "lucide-react";
+import { AppHeader } from "@/components/layout/AppHeader";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { GridMenu } from "@/components/GridMenu";
@@ -648,26 +649,9 @@ export default function InventoryEntryPage() {
     const fInput = "fos-input h-7 text-xs";
 
     return (
-        <div className="flex flex-col min-h-screen lg:h-screen bg-[#f4f6f8] lg:overflow-hidden font-sans text-[#333]">
+        <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
 
-            {/* ── Page Header ── */}
-            <div className="h-12 bg-[#374151] flex items-center justify-between px-4 shrink-0 text-white">
-                <div className="flex items-center gap-4">
-                    <button onClick={() => router.push("/menu")} className="hover:bg-white/10 p-1.5 rounded transition-colors">
-                        <ArrowLeft size={18} />
-                    </button>
-                    <div className="flex items-center gap-2">
-                        <Package size={16} className="text-[#FB7506]" />
-                        <span className="font-black text-xs uppercase tracking-widest">Inventory Entry</span>
-                    </div>
-                </div>
-                <div className="flex items-center gap-6 text-[10px] font-bold uppercase tracking-widest">
-                    <div className="flex items-center gap-2">
-                        <span className="text-gray-400">User:</span>
-                        <span>{session?.user?.name || "OPERATOR"}</span>
-                    </div>
-                </div>
-            </div>
+            <AppHeader title="Inventory Entry" />
 
             {/* ── Main Layout ── */}
             <div className="flex flex-col flex-1 gap-2 p-2 overflow-hidden">

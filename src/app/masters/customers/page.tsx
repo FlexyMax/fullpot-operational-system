@@ -5,10 +5,12 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-    ArrowLeft, Search, Plus, Pencil, Trash2, Save, X, RefreshCcw,
+    Search, Plus, Pencil, Trash2, Save, X, RefreshCcw,
     Download, Users, Truck, FileText, MessageSquare, Check,
     AlertCircle, Copy, Star, XCircle, ChevronRight
 } from "lucide-react";
+import { AppHeader } from "@/components/layout/AppHeader";
+import { AppFooter } from "@/components/layout/AppFooter";
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { AuditLogModal } from "@/components/AuditLogModal";
@@ -30,7 +32,7 @@ const EMPTY_WEBUSER = { fname:"", lname:"", username:"", password:"", active:tru
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function CustomersSetupPage() {
-    const { data: session, status } = useSession();
+    const { status } = useSession();
     const router = useRouter();
     const qc = useQueryClient();
     const { logAction } = useAuditLog("customers-setup", "flower_customers");
@@ -330,21 +332,9 @@ export default function CustomersSetupPage() {
     if (status === "loading") return null;
 
     return (
-        <div className="flex flex-col h-screen bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
+        <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
 
-            {/* Header */}
-            <div className="h-12 bg-[#374151] flex items-center justify-between px-4 shrink-0 text-white">
-                <div className="flex items-center gap-4">
-                    <button onClick={() => router.push("/menu")} className="hover:bg-white/10 p-1.5 rounded transition-colors"><ArrowLeft size={18} /></button>
-                    <div className="flex items-center gap-2">
-                        <span className="font-black text-xs uppercase tracking-widest text-[#FB7506]">FOS</span>
-                        <div className="w-px h-4 bg-white/20 mx-2" />
-                        <Users size={14} className="text-[#FB7506]" />
-                        <span className="font-bold text-xs uppercase tracking-tight">Customers Setup</span>
-                    </div>
-                </div>
-                <span className="text-gray-400 text-[10px] font-bold">User: <span className="text-white">{session?.user?.name}</span></span>
-            </div>
+            <AppHeader title="Customers" />
 
             {/* Search toolbar */}
             <div className="bg-white border-b border-gray-200 px-3 py-2 flex items-center gap-2 shrink-0 shadow-sm flex-wrap">
@@ -688,11 +678,7 @@ export default function CustomersSetupPage() {
                 </div>
             </div>
 
-            {/* Footer */}
-            <div className="h-8 bg-gray-100 border-t px-4 flex items-center justify-between text-[10px] font-bold text-gray-500 uppercase tracking-tight shrink-0">
-                <div className="flex gap-4"><span>Server: Production</span><span className="text-gray-300">|</span><span>Database: FullPot</span></div>
-                <span className="text-[#FB7506]">FOS Masters V.2.0.1</span>
-            </div>
+            <AppFooter areaLabel="Masters" />
 
             {/* ── CUSTOMER MODAL ─────────────────────────────────────────── */}
             {custModal && (

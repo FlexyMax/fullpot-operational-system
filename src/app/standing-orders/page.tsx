@@ -5,9 +5,10 @@ import { useSession }        from "next-auth/react";
 import { useRouter }         from "next/navigation";
 import { useQuery }          from "@tanstack/react-query";
 import {
-    ArrowLeft, RefreshCcw, Loader2, Search, X,
+    RefreshCcw, Loader2, Search, X,
     Check, Plus, ClipboardList,
 } from "lucide-react";
+import { AppHeader } from "@/components/layout/AppHeader";
 import { cn }                    from "@/lib/utils";
 import { usePagePermissions }    from "@/lib/permissions";
 import { HeaderModal }           from "./HeaderModal";
@@ -36,7 +37,7 @@ function Td({ children, className }: { children: any; className?: string }) {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function StandingOrdersPage() {
-    const { data: session, status } = useSession();
+    const { status } = useSession();
     const router = useRouter();
     const { canEdit, canDelete } = usePagePermissions("standing-orders");
 
@@ -128,23 +129,9 @@ export default function StandingOrdersPage() {
     };
 
     return (
-        <div className="flex flex-col h-screen bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
+        <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
 
-            {/* ── Dark top bar ─────────────────────────────────────────────── */}
-            <div className="h-12 bg-[#374151] flex items-center justify-between px-4 shrink-0 text-white">
-                <div className="flex items-center gap-3">
-                    <button onClick={() => router.push("/menu")} className="hover:bg-white/10 p-1.5 rounded transition-colors">
-                        <ArrowLeft size={18} />
-                    </button>
-                    <span className="font-black text-xs uppercase tracking-widest text-[#FB7506]">FOS</span>
-                    <div className="w-px h-4 bg-white/20" />
-                    <span className="font-bold text-xs uppercase tracking-tight">Standing Orders</span>
-                </div>
-                <div className="hidden sm:flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest">
-                    <span className="text-gray-400">User: <span className="text-white">{session?.user?.name || "OPERATOR"}</span></span>
-                    <span className="text-green-500">● Online</span>
-                </div>
-            </div>
+            <AppHeader title="Standing Orders" />
 
             {/* ── Filter + New Order bar ────────────────────────────────────── */}
             <div className="bg-white border-b border-gray-200 px-3 py-2 flex flex-wrap items-center gap-2 shrink-0 shadow-sm">
