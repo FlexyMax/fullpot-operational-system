@@ -408,10 +408,10 @@ export default function PhysicalScanPage() {
             {/* ── Top bar ──────────────────────────────────────────────────── */}
             <AppHeader title="Physical Inventory Scan" icon={Scan} />
 
-            {/* ── Stats bar ────────────────────────────────────────────────── */}
+            <main className="flex-1 overflow-hidden flex flex-col min-h-0">
 
-            {/* ── Stats bar ────────────────────────────────────────────────── */}
-            <div className="bg-white border-b border-gray-200 px-3 py-2 shrink-0 overflow-x-auto">
+                {/* ── Stats bar ────────────────────────────────────────────────── */}
+                <div className="bg-white border-b border-gray-200 px-3 py-2 shrink-0 overflow-x-auto">
                 <div className="flex items-center gap-2 min-w-max">
                     <StatBox label="Sys Stock"   value={totals?.Total_stock}       color="gray"   />
                     <StatBox label="Scanned Pcs" value={totals?.Total_stock_QPI}   color="green"  />
@@ -535,6 +535,7 @@ export default function PhysicalScanPage() {
                     </div>
                 </div>
             </div>
+            </main>
 
             <AppFooter areaLabel="Inventory" />
 

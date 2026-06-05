@@ -12,6 +12,7 @@ import {
     ShoppingCart, Flower2,
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
+import AppFooter from "@/components/layout/AppFooter";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { GridMenu } from "@/components/GridMenu";
@@ -1804,6 +1805,7 @@ export default function InventoryEntryPage() {
                 userId={(session?.user as any)?.id || ""}
                 onSuccess={() => { refetchBoxes(); logAction("Edit", lcpk_box_uq, AUDIT_MAP["transfer-box"].ext); }}
             />
+            <AppFooter areaLabel="Inventory" />
         </div>
     );
 }
