@@ -166,7 +166,7 @@ export default function MenuPage() {
                         <span className="text-white/50">User:</span>
                         <span className="text-white max-w-[220px] truncate">{session?.user?.name || 'OPERATOR'}</span>
                     </div>
-                    <div className="md:hidden w-7 h-7 rounded-full bg-[#FB7506] flex items-center justify-center text-[10px] font-black text-white" title={session?.user?.name || 'OPERATOR'}>
+                    <div className="md:hidden w-9 h-9 rounded-full bg-[#FB7506] flex items-center justify-center text-xs font-black text-white" title={session?.user?.name || 'OPERATOR'}>
                         {getInitials(session?.user?.name)}
                     </div>
                     <div className="flex items-center gap-1.5">
@@ -261,7 +261,8 @@ export default function MenuPage() {
             </div>
 
             {/* Main Content */}
-            <main className="flex-1 overflow-auto p-6 max-w-7xl mx-auto w-full">
+            <main className="flex-1 overflow-auto w-full">
+                <div className="p-6 max-w-7xl mx-auto w-full">
 
                 {error && (
                     <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3 mb-6">
@@ -357,6 +358,7 @@ export default function MenuPage() {
                         ))}
                     </div>
                 )}
+                </div>
             </main>
 
             {/* Footer — FlexyMax black standard */}

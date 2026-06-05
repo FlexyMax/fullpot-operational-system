@@ -271,7 +271,7 @@ export default function AccountsPayablePage() {
                         <span className="text-white/50">User:</span>
                         <span className="text-white max-w-[220px] truncate">{session?.user?.name || 'OPERATOR'}</span>
                     </div>
-                    <div className="md:hidden w-7 h-7 rounded-full bg-[#FB7506] flex items-center justify-center text-[10px] font-black text-white" title={session?.user?.name || 'OPERATOR'}>
+                    <div className="md:hidden w-9 h-9 rounded-full bg-[#FB7506] flex items-center justify-center text-xs font-black text-white" title={session?.user?.name || 'OPERATOR'}>
                         {getInitials(session?.user?.name)}
                     </div>
                     <div className="flex items-center gap-1.5">
