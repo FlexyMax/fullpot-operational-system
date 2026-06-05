@@ -117,22 +117,20 @@ export default function LoginPage() {
                     style={{ background: 'rgba(251,117,6,0.07)', filter: 'blur(90px)' }} />
 
                 {/* ── Header ───────────────────────────────────────────────── */}
-                <header className="fixed top-0 z-50 w-full flex items-center justify-between px-6 md:px-12 py-4">
+                <header className="fixed top-0 z-50 w-full h-16 bg-[#000000] flex items-center justify-between px-6 md:px-12">
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded flex items-center justify-center"
+                        <div className="w-9 h-9 rounded-lg flex items-center justify-center"
                             style={{ background: '#FB7506' }}>
-                            <span className="text-white font-black text-[11px] leading-none">FOS</span>
+                            <span className="text-white font-black text-xs leading-none">FOS</span>
                         </div>
-                        <div>
-                            <span className="font-black text-[#FB7506] text-xs uppercase tracking-widest">FullPot</span>
-                            <span className="font-bold text-[#e8e1e0]/60 text-xs uppercase tracking-widest ml-2">Operational System</span>
-                        </div>
+                        <div className="w-px h-5 bg-white/20" />
+                        <span className="font-bold text-white text-sm uppercase tracking-tight">FullPot Operational System</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
-                            style={{ background: 'rgba(34,31,31,0.8)', border: '1px solid rgba(88,66,54,0.3)' }}>
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
+                            style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
                             <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                            <span className="text-[10px] font-bold text-[#c8c6c5] uppercase tracking-widest">System Online</span>
+                            <span className="text-[10px] font-bold text-white/80 uppercase tracking-widest">System Online</span>
                         </div>
                     </div>
                 </header>
@@ -247,10 +245,9 @@ export default function LoginPage() {
                 </main>
 
                 {/* ── Footer ───────────────────────────────────────────────── */}
-                <footer className="fixed bottom-0 z-50 w-full flex items-center justify-center px-6 py-4"
-                    style={{ background: 'rgba(34,31,31,0.5)', backdropFilter: 'blur(8px)', borderTop: '1px solid rgba(88,66,54,0.2)' }}>
-                    <span className="text-[10px] font-bold text-[#584236] uppercase tracking-[0.12em]">
-                        © 2026 FullPot Of Flowers — FOS. Flexymax ® All rights reserved.
+                <footer className="fixed bottom-0 z-50 w-full h-10 bg-[#000000] flex items-center justify-center px-6">
+                    <span className="text-[11px] font-bold text-white/90 uppercase tracking-[0.14em]">
+                        FlexyMax ® {new Date().getFullYear()}
                     </span>
                 </footer>
             </div>

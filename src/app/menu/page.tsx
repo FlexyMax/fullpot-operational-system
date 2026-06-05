@@ -146,33 +146,39 @@ export default function MenuPage() {
     return (
         <div className="min-h-screen bg-[#f4f6f8] flex flex-col font-sans text-[#333]">
 
-            {/* Header — consistent with Sales & Billing */}
-            <header className="h-12 bg-[#374151] flex items-center justify-between px-6 shrink-0 text-white">
+            {/* Header — FlexyMax black standard */}
+            <header className="h-16 bg-[#000000] flex items-center justify-between px-6 shrink-0 text-white">
                 <div className="flex items-center gap-3">
-                    <span className="font-black text-xs uppercase tracking-widest text-[#FB7506]">FOS</span>
-                    <div className="w-px h-4 bg-white/20" />
-                    <span className="font-bold text-xs uppercase tracking-tight">FullPot Operational System</span>
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: '#FB7506' }}>
+                        <span className="text-white font-black text-xs leading-none">FOS</span>
+                    </div>
+                    <div className="w-px h-5 bg-white/20" />
+                    <span className="font-bold text-sm uppercase tracking-tight">FullPot Operational System</span>
                 </div>
 
                 <div className="flex items-center gap-4">
                     <div className="relative">
-                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={12} />
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/50" size={12} />
                         <input
                             type="text"
                             placeholder="Search modules..."
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
-                            className="bg-gray-700 text-white text-[11px] border-none outline-none rounded pl-8 pr-3 py-1.5 placeholder:text-gray-500 w-44 focus:ring-1 focus:ring-[#FB7506] transition-all"
+                            className="bg-white/10 text-white text-[11px] border border-white/10 outline-none rounded pl-8 pr-3 py-1.5 placeholder:text-white/50 w-44 focus:ring-1 focus:ring-[#FB7506] transition-all"
                         />
                     </div>
                     <div className="w-px h-4 bg-white/20" />
                     <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest">
-                        <span className="text-gray-400">User:</span>
-                        <span>{session?.user?.name || 'OPERATOR'}</span>
+                        <span className="text-white/50">User:</span>
+                        <span className="text-white">{session?.user?.name || 'OPERATOR'}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                        <span className="text-[10px] font-black text-green-500 uppercase tracking-widest">Online</span>
                     </div>
                     <button
                         onClick={() => signOut({ callbackUrl: '/login' })}
-                        className="flex items-center gap-2 bg-white/10 hover:bg-red-500/20 hover:text-red-400 px-3 py-1.5 rounded text-[10px] font-black uppercase tracking-widest transition-all"
+                        className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded text-[10px] font-black uppercase tracking-widest transition-all"
                     >
                         <LogOut size={12} />
                         Logout
@@ -307,13 +313,14 @@ export default function MenuPage() {
                 )}
             </main>
 
-            {/* Footer — consistent with Sales & Billing */}
-            <footer className="h-8 bg-gray-100 border-t border-gray-200 px-6 flex items-center justify-between text-[10px] font-bold text-gray-500 uppercase tracking-tight shrink-0">
-                <div className="flex items-center gap-4">
+            {/* Footer — FlexyMax black standard */}
+            <footer className="h-10 bg-[#000000] px-6 flex items-center justify-between text-[11px] font-bold uppercase tracking-tight shrink-0">
+                <div className="flex items-center gap-4 text-white/60">
                     <span>Server: Production</span>
-                    <span className="text-gray-300">|</span>
+                    <span className="text-white/20">|</span>
                     <span>Database: FullPot</span>
                 </div>
+                <span className="text-white/90 tracking-[0.14em]">FlexyMax ® {new Date().getFullYear()}</span>
                 <span className="text-[#FB7506]">FOS Operational System V.2.0.1</span>
             </footer>
 
