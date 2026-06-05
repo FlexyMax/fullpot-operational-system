@@ -11,6 +11,8 @@ import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { Flexy2QBProvider, useFlexy2QBContext } from "./context/Flexy2QBContext";
 import { cn } from "@/lib/utils";
+import { AppHeader } from "@/components/layout/AppHeader";
+import { AppFooter } from "@/components/layout/AppFooter";
 
 // Tabs
 import DashboardTab from "./components/tabs/DashboardTab";
@@ -75,30 +77,8 @@ function Flexy2QBPage() {
   );
 
   return (
-    <div className="flex flex-col min-h-screen lg:h-screen bg-[#f4f6f8] lg:overflow-hidden font-sans text-[#333]">
-      {/* ── Header ──────────────────────────────────────────────────── */}
-      <div className="h-12 bg-[#374151] flex items-center justify-between px-4 shrink-0 text-white">
-        <div className="flex items-center gap-4">
-          <button onClick={() => router.push("/menu")} className="hover:bg-white/10 p-1.5 rounded transition-colors">
-            <ArrowLeft size={18} />
-          </button>
-          <div className="flex items-center gap-2">
-            <span className="font-black text-xs uppercase tracking-widest text-[#FB7506]">FOS</span>
-            <div className="w-px h-4 bg-white/20 mx-2" />
-            <span className="font-bold text-xs uppercase tracking-tight">Flexy To QuickBooks</span>
-          </div>
-        </div>
-        <div className="flex items-center gap-6 text-[10px] font-bold uppercase tracking-widest">
-          <div className="flex items-center gap-2">
-            <span className="text-gray-400">User:</span>
-            <span>{session?.user?.name || "OPERATOR"}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-gray-400">Status:</span>
-            <span className="text-green-500 font-black">Online</span>
-          </div>
-        </div>
-      </div>
+    <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
+      <AppHeader title="Flexy To QuickBooks" />
 
       {/* ── Main Layout ─────────────────────────────────────────────── */}
       <div className="flex flex-col flex-1 gap-2 p-2 overflow-hidden">
@@ -136,6 +116,7 @@ function Flexy2QBPage() {
           </div>
         </div>
       </div>
+      <AppFooter areaLabel="Terminal" />
     </div>
   );
 }

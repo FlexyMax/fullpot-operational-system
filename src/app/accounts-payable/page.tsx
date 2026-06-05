@@ -15,6 +15,8 @@ import {
     BarChart2, Clock, Power
 } from "lucide-react";
 import { GridMenu } from "@/components/GridMenu";
+import { AppHeader } from "@/components/layout/AppHeader";
+import { AppFooter } from "@/components/layout/AppFooter";
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { AuditLogModal } from "@/components/AuditLogModal";
@@ -244,49 +246,12 @@ export default function AccountsPayablePage() {
         setSearchModal(false);
     };
 
-    const getInitials = (name?: string | null) => {
-        if (!name) return 'OP';
-        return name.split(' ').map(n => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
-    };
-
     if (status === "loading") return null;
 
     return (
         <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
 
-            {/* ── Header ──────────────────────────────────────────────────── */}
-            <header className="h-16 bg-[#000000] flex items-center justify-between px-3 md:px-6 shrink-0 text-white">
-                <div className="flex items-center gap-2 md:gap-3">
-                    <button onClick={() => router.push("/menu")} className="hover:bg-white/10 p-1.5 rounded transition-colors">
-                        <ArrowLeft size={18} />
-                    </button>
-                    <div className="w-8 h-8 md:w-9 md:h-9 rounded-lg flex items-center justify-center" style={{ background: '#FB7506' }}>
-                        <span className="text-white font-black text-[10px] md:text-xs leading-none">FOS</span>
-                    </div>
-                    <div className="w-px h-4 md:h-5 bg-white/20" />
-                    <span className="font-bold text-xs md:text-sm uppercase tracking-tight truncate max-w-[140px] sm:max-w-none">Accounts Payable</span>
-                </div>
-                <div className="flex items-center gap-2 md:gap-4">
-                    <div className="hidden md:flex items-center gap-2 text-xs font-bold uppercase tracking-widest">
-                        <span className="text-white/50">User:</span>
-                        <span className="text-white max-w-[220px] truncate">{session?.user?.name || 'OPERATOR'}</span>
-                    </div>
-                    <div className="md:hidden w-9 h-9 rounded-full bg-[#FB7506] flex items-center justify-center text-xs font-black text-white" title={session?.user?.name || 'OPERATOR'}>
-                        {getInitials(session?.user?.name)}
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                        <span className="text-[10px] font-black text-green-500 uppercase tracking-widest">Online</span>
-                    </div>
-                    <button
-                        onClick={() => signOut({ callbackUrl: '/login' })}
-                        title="Logout"
-                        className="w-8 h-8 rounded-full flex items-center justify-center bg-[#FB7506] hover:bg-[#ff8c2a] text-white transition-all shadow-sm hover:shadow-md"
-                    >
-                        <Power size={14} strokeWidth={2.5} />
-                    </button>
-                </div>
-            </header>
+            <AppHeader title="Accounts Payable" />
 
             {/* ── Toolbar ─────────────────────────────────────────────────── */}
             <div className="h-10 bg-white border-b border-gray-200 flex items-center px-4 gap-3 shrink-0 shadow-sm">
@@ -677,16 +642,7 @@ export default function AccountsPayablePage() {
                 </div>
             </div>
 
-            {/* Footer */}
-            <footer className="h-10 bg-[#000000] px-4 md:px-6 flex items-center justify-center md:justify-between text-[11px] font-bold uppercase tracking-tight shrink-0">
-                <div className="hidden md:flex items-center gap-4 text-white/60">
-                    <span>Server: Production</span>
-                    <span className="text-white/20">|</span>
-                    <span>Database: FullPot</span>
-                </div>
-                <span className="text-white/90 tracking-[0.14em]">FlexyMax ® {new Date().getFullYear()}</span>
-                <span className="hidden md:inline text-[#FB7506]">FOS Terminal V.2.0.1</span>
-            </footer>
+            <AppFooter areaLabel="Terminal" />
 
             {/* ── MODALS ──────────────────────────────────────────────────── */}
             {crdbModal?.open && (
