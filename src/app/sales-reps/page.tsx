@@ -5,10 +5,11 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-    ArrowLeft, Users, RefreshCcw, Plus, Pencil, Trash2,
+    Users, RefreshCcw, Plus, Pencil, Trash2,
     Search, X, Save, ChevronRight, ChevronLeft,
     FileText, AlertCircle, Check,
 } from "lucide-react";
+import { AppHeader } from "@/components/layout/AppHeader";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { GridMenu } from "@/components/GridMenu";
@@ -247,7 +248,7 @@ function DualPanel({
 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 export default function SalesRepsPage() {
-    const { data: session, status } = useSession();
+    const { status } = useSession();
     const router   = useRouter();
     const qc       = useQueryClient();
     const perms    = usePagePermissions("sales-reps");
@@ -691,34 +692,9 @@ export default function SalesRepsPage() {
     ];
 
     return (
-        <div className="flex flex-col h-screen bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
+        <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
 
-            {/* ── Page Header ── */}
-            <div className="h-10 bg-[#374151] flex items-center justify-between px-3 md:px-4 shrink-0 text-white">
-                <div className="flex items-center gap-2 md:gap-3">
-                    {/* Mobile: back to list when in detail */}
-                    {mobilePanel === "detail" ? (
-                        <button onClick={() => setMobilePanel("list")} className="md:hidden hover:bg-white/10 p-1 rounded transition-colors">
-                            <ArrowLeft size={16} />
-                        </button>
-                    ) : (
-                        <button onClick={() => router.push("/menu")} className="hover:bg-white/10 p-1 rounded transition-colors">
-                            <ArrowLeft size={16} />
-                        </button>
-                    )}
-                    {/* Desktop: always show menu back */}
-                    <button onClick={() => router.push("/menu")} className="hidden md:flex hover:bg-white/10 p-1 rounded transition-colors">
-                        <ArrowLeft size={16} />
-                    </button>
-                    <Users size={14} className="text-[#FB7506] hidden md:block" />
-                    <span className="font-black text-xs uppercase tracking-widest">
-                        {mobilePanel === "detail" && selectedUq ? (selName || "Sales Rep") : "Sales Reps"}
-                    </span>
-                </div>
-                <span className="text-gray-400 text-[10px] font-bold hidden sm:block">
-                    User: <span className="text-white">{session?.user?.name}</span>
-                </span>
-            </div>
+            <AppHeader title="Sales Reps" />
 
             {/* ── Main Layout ── */}
             <div className="flex flex-col md:flex-row flex-1 gap-2 p-2 overflow-hidden min-h-0">

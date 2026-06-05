@@ -5,11 +5,14 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-    ArrowLeft, Building2, RefreshCcw, Plus, Pencil, Trash2,
+    Building2, RefreshCcw, Plus, Pencil, Trash2,
     Search, X, Save, ChevronRight, ChevronLeft,
     FileText, AlertCircle, Calendar, Check,
     Download, Globe, Settings2,
 } from "lucide-react";
+import { AppHeader } from "@/components/layout/AppHeader";
+import { AppFooter } from "@/components/layout/AppFooter";
+
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { GridMenu } from "@/components/GridMenu";
@@ -194,7 +197,7 @@ function DualPanel({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function VendorsPage() {
-    const { data: session, status } = useSession();
+    const { status } = useSession();
     const router = useRouter();
     const qc     = useQueryClient();
     const perms  = usePagePermissions("vendors");
@@ -643,34 +646,9 @@ export default function VendorsPage() {
     const fLabel = "text-[10px] font-black text-gray-500 uppercase tracking-wider";
 
     return (
-        <div className="flex flex-col h-screen bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
+        <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
 
-            {/* ── Page Header ── */}
-            <div className="h-10 bg-[#374151] flex items-center justify-between px-3 md:px-4 shrink-0 text-white">
-                <div className="flex items-center gap-2 md:gap-3">
-                    {mobilePanel === "detail" ? (
-                        <button onClick={() => setMobilePanel("list")} className="md:hidden hover:bg-white/10 p-1 rounded transition-colors">
-                            <ArrowLeft size={16} />
-                        </button>
-                    ) : (
-                        <button onClick={() => router.push("/menu")} className="hover:bg-white/10 p-1 rounded transition-colors">
-                            <ArrowLeft size={16} />
-                        </button>
-                    )}
-                    <button onClick={() => router.push("/menu")} className="hidden md:flex hover:bg-white/10 p-1 rounded transition-colors">
-                        <ArrowLeft size={16} />
-                    </button>
-                    <Building2 size={14} className="text-[#FB7506] hidden md:block" />
-                    <span className="font-black text-xs uppercase tracking-widest">
-                        {mobilePanel === "detail" && selectedUq ? (selName || "Vendor") : "Vendors / Growers"}
-                    </span>
-                </div>
-                <div className="flex items-center gap-3">
-                    <span className="text-gray-400 text-[10px] font-bold hidden sm:block">
-                        User: <span className="text-white">{session?.user?.name}</span>
-                    </span>
-                </div>
-            </div>
+            <AppHeader title="Vendors" />
 
             {/* ── Main Layout ── */}
             <div className="flex flex-col md:flex-row flex-1 gap-2 p-2 overflow-hidden min-h-0">

@@ -5,10 +5,14 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-    ArrowLeft, Search, Plus, Trash2, Pencil, Save, X,
+    Search, Plus, Trash2, Pencil, Save, X,
     RefreshCcw, Users, Camera, Check, AlertCircle,
     Calendar, Filter, ChevronRight, UserCircle2, XCircle, Menu
 } from "lucide-react";
+import { AppHeader } from "@/components/layout/AppHeader";
+import { AppFooter } from "@/components/layout/AppFooter";
+
+
 import { GridMenu } from "@/components/GridMenu";
 
 import { useAuditLog } from "@/lib/audit";
@@ -47,7 +51,7 @@ const generateUsername = (nombres: string, apellidos: string) => {
 
 // â”€â”€â”€ Main Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function UsersDefinitionPage() {
-    const { data: session, status } = useSession();
+    const { status } = useSession();
     const router = useRouter();
     const qc     = useQueryClient();
     const { logAction } = useAuditLog("users-definition", "usuarios");
@@ -256,26 +260,9 @@ export default function UsersDefinitionPage() {
     if (status === "loading") return null;
 
     return (
-        <div className="flex flex-col min-h-screen lg:h-screen bg-[#f4f6f8] lg:overflow-hidden font-sans text-[#333]">
+        <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
 
-            {/* Header */}
-            <div className="h-12 bg-[#374151] flex items-center justify-between px-4 shrink-0 text-white">
-                <div className="flex items-center gap-4">
-                    <button onClick={() => router.push("/menu")} className="hover:bg-white/10 p-1.5 rounded transition-colors">
-                        <ArrowLeft size={18} />
-                    </button>
-                    <div className="flex items-center gap-2">
-                        <span className="font-black text-xs uppercase tracking-widest text-[#FB7506]">FOS</span>
-                        <div className="w-px h-4 bg-white/20 mx-2" />
-                        <Users size={14} className="text-[#FB7506]" />
-                        <span className="font-bold text-xs uppercase tracking-tight">User Setup</span>
-                    </div>
-                </div>
-                <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest">
-                    <span className="text-gray-400">User: <span className="text-white">{session?.user?.name}</span></span>
-                    <span className="text-green-500 font-black">â— Online</span>
-                </div>
-            </div>
+            <AppHeader title="Users" />
 
             {/* Main layout */}
             <div className="flex flex-col lg:flex-row flex-1 gap-2 p-2 overflow-y-auto lg:overflow-hidden">
@@ -555,15 +542,7 @@ export default function UsersDefinitionPage() {
                 </div>
             </div>
 
-            {/* Footer */}
-            <div className="h-8 bg-gray-100 border-t px-4 flex items-center justify-between text-[10px] font-bold text-gray-500 uppercase tracking-tight shrink-0">
-                <div className="flex items-center gap-4">
-                    <span>Server: Production</span>
-                    <span className="text-gray-300">|</span>
-                    <span>Database: Sistema</span>
-                </div>
-                <span className="text-[#FB7506]">FOS User Management V.2.0.1</span>
-            </div>
+            <AppFooter areaLabel="System Management" database="Sistema" />
 
             {/* Mobile floating button */}
             <button onClick={() => setMobileOpen(true)}

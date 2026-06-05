@@ -5,13 +5,15 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-    ArrowLeft, Plus, Pencil, Trash2, Save, X, RefreshCcw,
+    Plus, Pencil, Trash2, Save, X, RefreshCcw,
     Copy, Zap, Building2, Cloud, MapPin, Check, AlertCircle,
     XCircle, Search, ChevronLeft, Menu
 } from "lucide-react";
+import { AppHeader } from "@/components/layout/AppHeader";
 import { GridMenu } from "@/components/GridMenu";
 
 import { cn } from "@/lib/utils";
+import { AppFooter } from "@/components/layout/AppFooter";
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { AuditLogModal } from "@/components/AuditLogModal";
@@ -112,7 +114,7 @@ function MiniTable({ cols, rows, selUnico, onSelect, onDblClick, empty }: any) {
 
 // â”€â”€â”€ Main Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function FreightsSetupPage() {
-    const { data: session, status } = useSession();
+    const { status } = useSession();
     const router = useRouter();
     const qc     = useQueryClient();
     const { logAction } = useAuditLog("freights-setup", "flower_warehouses_physical");
@@ -428,23 +430,9 @@ export default function FreightsSetupPage() {
     if (status === "loading") return null;
 
     return (
-        <div className="flex flex-col h-screen bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
+        <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
 
-            {/* Header */}
-            <div className="h-12 bg-[#374151] flex items-center justify-between px-3 sm:px-4 shrink-0 text-white">
-                <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-                    <button onClick={() => router.push("/menu")} className="hover:bg-white/10 p-1.5 rounded transition-colors shrink-0"><ArrowLeft size={18} /></button>
-                    <div className="flex items-center gap-2 min-w-0">
-                        <span className="font-black text-xs uppercase tracking-widest text-[#FB7506] shrink-0">FOS</span>
-                        <div className="w-px h-4 bg-white/20 mx-1 sm:mx-2 shrink-0" />
-                        <Building2 size={14} className="text-[#FB7506] shrink-0" />
-                        <span className="font-bold text-xs uppercase tracking-tight truncate hidden sm:inline">Freights & Handling Setup</span>
-                    </div>
-                </div>
-                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                    <span className="text-gray-400 text-[10px] sm:text-xs font-bold">User: <span className="text-white">{session?.user?.name}</span></span>
-                </div>
-            </div>
+            <AppHeader title="Freights" />
 
             {error && (
                 <div className="bg-amber-50 border-b border-amber-200 px-4 py-1.5 flex items-center gap-2 shrink-0">

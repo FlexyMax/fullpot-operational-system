@@ -3,14 +3,15 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Package } from "lucide-react";
+import { AppHeader } from "@/components/layout/AppHeader";
+import { AppFooter } from "@/components/layout/AppFooter";
 import { cn } from "@/lib/utils";
 import Tab1 from "./Tab1";
 import Tab2 from "./Tab2";
 import Tab3 from "./Tab3";
 
 export default function ItemsSetupPage() {
-    const { data: session, status } = useSession();
+    const { status } = useSession();
     const router = useRouter();
 
     const [activeTab,    setActiveTab]    = useState<1|2|3>(1);
@@ -24,19 +25,9 @@ export default function ItemsSetupPage() {
     if (status === "loading") return null;
 
     return (
-        <div className="flex flex-col h-screen bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
+        <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
 
-            {/* Header */}
-            <div className="h-10 bg-[#374151] flex items-center justify-between px-4 shrink-0 text-white">
-                <div className="flex items-center gap-3">
-                    <button onClick={() => router.push("/menu")} className="hover:bg-white/10 p-1 rounded">
-                        <ArrowLeft size={15}/>
-                    </button>
-                    <Package size={13} className="text-[#FB7506]"/>
-                    <span className="font-black text-xs uppercase tracking-widest">Items Setup</span>
-                </div>
-                <span className="text-gray-400 text-[10px]">User: <span className="text-white">{session?.user?.name}</span></span>
-            </div>
+            <AppHeader title="Items" />
 
             {/* Tab bar — below header */}
             <div className="h-10 bg-[#374151] flex items-end px-2 gap-0.5 shrink-0">
@@ -69,15 +60,7 @@ export default function ItemsSetupPage() {
                 />
             )}
 
-            {/* Footer */}
-            <div className="h-7 bg-gray-100 border-t px-4 flex items-center justify-between text-[9px] font-bold text-gray-500 uppercase tracking-tight shrink-0">
-                <div className="flex gap-4">
-                    <span>Server: Production</span>
-                    <span className="text-gray-300">|</span>
-                    <span>Database: FullPot</span>
-                </div>
-                <span className="text-[#FB7506]">FOS Masters V.2.0.1</span>
-            </div>
+            <AppFooter areaLabel="Masters" />
         </div>
     );
 }
