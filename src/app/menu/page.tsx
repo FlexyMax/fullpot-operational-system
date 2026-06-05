@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import {
-    ShoppingCart, Package, Users, LogOut, Search, Loader2,
+    ShoppingCart, Package, Users, Power, Search, Loader2,
     AlertCircle, Store, Settings, BarChart2, Receipt, DollarSign,
     Truck, ClipboardList, ScanLine, Building2, Grid3x3,
     ChevronRight, Landmark, Calendar, Plane
@@ -178,10 +178,10 @@ export default function MenuPage() {
                     </div>
                     <button
                         onClick={() => signOut({ callbackUrl: '/login' })}
-                        className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded text-[10px] font-black uppercase tracking-widest transition-all"
+                        title="Logout"
+                        className="w-8 h-8 rounded-full flex items-center justify-center bg-[#FB7506] hover:bg-[#ff8c2a] text-white transition-all shadow-sm hover:shadow-md"
                     >
-                        <LogOut size={12} />
-                        Logout
+                        <Power size={14} strokeWidth={2.5} />
                     </button>
                 </div>
             </header>
