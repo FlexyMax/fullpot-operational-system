@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-    ArrowLeft, RefreshCcw, FileText, Loader2,
+    RefreshCcw, FileText, Loader2,
     Search, X, RotateCcw, Receipt, List, ShoppingCart,
     Lock, Trash2, Check, Calendar, Users,
     Package, BookOpen, ClipboardList,
@@ -17,6 +17,8 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { usePagePermissions } from "@/lib/permissions";
 import { GridMenu } from "@/components/GridMenu";
+import AppHeader from "@/components/layout/AppHeader";
+import AppFooter from "@/components/layout/AppFooter";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const t       = (v: any) => String(v ?? "").trim();
@@ -139,6 +141,7 @@ function InvoicedTab({ rows }: { rows: any[] }) {
                     </tbody>
                 </table>
             </div>
+            <AppFooter areaLabel="Prebook to Invoice" />
         </div>
     );
 }
@@ -554,38 +557,10 @@ export default function Pbook2InvoicePage() {
     const selectedLine = (lines as any[]).find((l: any) => t(l.UNICO ?? l.PBOOK_BOX_UQ) === selectedUnico);
 
     return (
-        <div className="flex flex-col h-screen bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
+        <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
 
             {/* ── Dark header ─────────────────────────────────────────────── */}
-            <div className="h-12 bg-[#374151] flex items-center justify-between px-4 shrink-0 text-white">
-                <div className="flex items-center gap-4">
-                    <button onClick={() => router.push("/menu")} className="hover:bg-white/10 p-1.5 rounded transition-colors">
-                        <ArrowLeft size={18} />
-                    </button>
-                    <div className="flex items-center gap-2">
-                        <span className="font-black text-xs uppercase tracking-widest text-[#FB7506]">FOS</span>
-                        <div className="w-px h-4 bg-white/20 mx-2" />
-                        <span className="font-bold text-xs uppercase tracking-tight">Prebook to Invoice</span>
-                    </div>
-                    {working && <Loader2 size={14} className="animate-spin text-[#FB7506] ml-2" />}
-                </div>
-                <div className="flex items-center gap-6 text-[10px] font-bold uppercase tracking-widest">
-                    {selectedLine && (
-                        <>
-                            <span className="text-gray-400">Customer: <span className="text-white">{t(selectedLine.CUSTOMER)}</span></span>
-                            <span className="text-gray-400">PO: <span className="text-[#FB7506]">{t(selectedLine.SORDER_NO ?? selectedLine.PO_NO)}</span></span>
-                        </>
-                    )}
-                    <div className="flex items-center gap-2">
-                        <span className="text-gray-400">User:</span>
-                        <span>{session?.user?.name || "OPERATOR"}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span className="text-gray-400">Status:</span>
-                        <span className="text-green-500 font-black">Online</span>
-                    </div>
-                </div>
-            </div>
+            <AppHeader title="Prebook to Invoice" extraRight={working ? <Loader2 size={14} className="animate-spin text-white/60" /> : undefined} />
 
             {/* ── TOP PANELS: Dates (left) + Customers (right) ────────────── */}
             <div className="flex gap-2 px-2 pt-2 shrink-0 h-96">

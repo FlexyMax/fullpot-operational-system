@@ -5,12 +5,14 @@ import { useSession }       from "next-auth/react";
 import { useRouter }        from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-    ArrowLeft, RefreshCcw, Loader2, Scan,
+    RefreshCcw, Loader2, Scan,
     Check, X, Trash2, Keyboard, MapPin,
 } from "lucide-react";
 import { cn }    from "@/lib/utils";
 import { toast } from "sonner";
 import { usePagePermissions } from "@/lib/permissions";
+import AppHeader from "@/components/layout/AppHeader";
+import AppFooter from "@/components/layout/AppFooter";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const t      = (v: any) => String(v ?? "").trim();
@@ -401,24 +403,12 @@ export default function PhysicalScanPage() {
     const bufferIsRack = scanBuffer.length > 0 && isRack(scanBuffer);
 
     return (
-        <div className="flex flex-col h-screen bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
+        <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
 
             {/* ── Top bar ──────────────────────────────────────────────────── */}
-            <div className="h-12 bg-[#374151] flex items-center justify-between px-4 shrink-0 text-white">
-                <div className="flex items-center gap-3">
-                    <button onClick={() => router.push("/menu")} className="hover:bg-white/10 p-1.5 rounded">
-                        <ArrowLeft size={18} />
-                    </button>
-                    <span className="font-black text-xs uppercase tracking-widest text-[#FB7506]">FOS</span>
-                    <div className="w-px h-4 bg-white/20" />
-                    <Scan size={14} className="text-[#FB7506]" />
-                    <span className="font-bold text-xs uppercase tracking-tight">Physical Inventory Scan</span>
-                </div>
-                <div className="hidden sm:flex items-center gap-3 text-[10px] font-bold uppercase">
-                    <span className="text-gray-400">User: <span className="text-white">{session?.user?.name}</span></span>
-                    <span className="text-green-500">● Online</span>
-                </div>
-            </div>
+            <AppHeader title="Physical Inventory Scan" icon={Scan} />
+
+            {/* ── Stats bar ────────────────────────────────────────────────── */}
 
             {/* ── Stats bar ────────────────────────────────────────────────── */}
             <div className="bg-white border-b border-gray-200 px-3 py-2 shrink-0 overflow-x-auto">
@@ -545,6 +535,8 @@ export default function PhysicalScanPage() {
                     </div>
                 </div>
             </div>
+
+            <AppFooter areaLabel="Inventory" />
 
             {/* ── Global scan overlay (appears when scanner/keyboard sends chars) ── */}
             {scanBuffer && (

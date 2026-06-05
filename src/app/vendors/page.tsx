@@ -11,7 +11,6 @@ import {
     Download, Globe, Settings2,
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
-import { AppFooter } from "@/components/layout/AppFooter";
 
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";

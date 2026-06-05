@@ -8,9 +8,11 @@ import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { QCProvider, useQCContext } from "./context/QCContext";
 import { cn } from "@/lib/utils";
 import {
-    ArrowLeft, Package, Truck,
+    Package, Truck,
     XCircle, Award, History, Loader2
 } from "lucide-react";
+import AppHeader from "@/components/layout/AppHeader";
+import AppFooter from "@/components/layout/AppFooter";
 
 // Tabs (Dashboard removed — starts from Stock List)
 import StockListTab        from "./components/tabs/StockListTab";
@@ -103,28 +105,12 @@ function QCPage() {
     };
 
     return (
-        <div className="flex flex-col min-h-screen lg:h-screen bg-[#f4f6f8] font-sans text-[#333]">
+        <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] font-sans text-[#333] overflow-hidden">
 
             {/* ── Header ──────────────────────────────────────────────── */}
-            <div className="h-12 bg-[#374151] flex items-center justify-between px-4 shrink-0 text-white">
-                <div className="flex items-center gap-4">
-                    <button onClick={() => router.push("/menu")} className="hover:bg-white/10 p-1.5 rounded transition-colors">
-                        <ArrowLeft size={18}/>
-                    </button>
-                    <div className="flex items-center gap-2">
-                        <span className="font-black text-xs uppercase tracking-widest text-[#FB7506]">FOS</span>
-                        <div className="w-px h-4 bg-white/20 mx-2"/>
-                        <span className="font-bold text-xs uppercase tracking-tight">Quality Control</span>
-                    </div>
-                </div>
-                <div className="flex items-center gap-6 text-[10px] font-bold uppercase tracking-widest">
-                    <div className="flex items-center gap-2">
-                        <span className="text-gray-400">User:</span>
-                        <span>{(session?.user as any)?.name || "OPERATOR"}</span>
-                    </div>
-                    {perms.loading && <Loader2 size={11} className="animate-spin text-gray-400"/>}
-                </div>
-            </div>
+            <AppHeader title="Quality Control" extraRight={perms.loading ? <Loader2 size={14} className="animate-spin text-white/60"/> : undefined} />
+
+            {/* ── Main area ─────────────────────────────────────────── */}
 
             {/* ── Main area ─────────────────────────────────────────── */}
             <div className="flex flex-col flex-1 p-2 gap-2 overflow-hidden">
@@ -156,6 +142,8 @@ function QCPage() {
                     </div>
                 </div>
             </div>
+
+            <AppFooter areaLabel="Quality Control" />
 
             {/* ── Modals ────────────────────────────────────────────── */}
             {qcModal && (

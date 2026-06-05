@@ -9,6 +9,7 @@ interface AppHeaderProps {
   icon?: LucideIcon;
   showBack?: boolean;
   backHref?: string;
+  useBack?: boolean;
   extraRight?: React.ReactNode;
 }
 
@@ -28,6 +29,7 @@ export function AppHeader({
   icon: Icon,
   showBack = true,
   backHref = "/menu",
+  useBack = false,
   extraRight,
 }: AppHeaderProps) {
   const { data: session } = useSession();
@@ -38,7 +40,7 @@ export function AppHeader({
       <div className="flex items-center gap-2 md:gap-3">
         {showBack && (
           <button
-            onClick={() => router.push(backHref)}
+            onClick={() => useBack ? router.back() : router.push(backHref)}
             className="hover:bg-white/10 p-1.5 rounded transition-colors"
           >
             <ArrowLeft size={18} />
@@ -93,3 +95,5 @@ export function AppHeader({
     </header>
   );
 }
+
+export default AppHeader;

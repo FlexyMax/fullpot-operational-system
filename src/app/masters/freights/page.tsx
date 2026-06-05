@@ -566,11 +566,7 @@ export default function FreightsSetupPage() {
             </div>
         </div>
 
-        {/* Footer */}
-            <div className="h-8 bg-gray-100 border-t px-3 sm:px-4 flex items-center justify-between text-[10px] font-bold text-gray-500 uppercase tracking-tight shrink-0">
-                <div className="flex gap-2 sm:gap-4"><span>Server: Production</span><span className="text-gray-300 hidden sm:inline">|</span><span className="hidden sm:inline">Database: FullPot</span></div>
-                <span className="text-[#FB7506]">FOS Masters V.2.0.1</span>
-            </div>
+            <AppFooter areaLabel="Masters" />
 
             {/* â”€â”€ Warehouse Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             {whModal && (

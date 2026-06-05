@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-    ArrowLeft, RefreshCcw, Search, Check, XCircle, Save, X, Trash2,
+    RefreshCcw, Search, Check, XCircle, Save, X, Trash2,
     Plus, Pencil, AlertCircle, Users, FileText, CreditCard,
     ChevronRight, Printer, Mail, BarChart2, DollarSign, CheckCircle,
     Bell, Banknote, Calendar, RotateCcw
@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import { useAuditLog } from "@/lib/audit";
 import { AuditLogModal } from "@/components/AuditLogModal";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
+import AppHeader from "@/components/layout/AppHeader";
+import AppFooter from "@/components/layout/AppFooter";
 
 const t   = (v: any) => String(v ?? "").trim();
 const fmt = (v: any) => parseFloat(v ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -1086,26 +1088,28 @@ export default function CustomerPaymentsPage() {
     if (status === "loading") return null;
 
     return (
-        <div className="flex flex-col h-screen bg-[#f4f6f8] overflow-hidden font-sans">
+        <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] overflow-hidden font-sans">
 
             {/* Header */}
-            <div className="h-10 bg-[#374151] flex items-center justify-between px-4 shrink-0 text-white">
-                <div className="flex items-center gap-3">
-                    <button onClick={() => router.push("/menu")} className="hover:bg-white/10 p-1 rounded"><ArrowLeft size={15}/></button>
-                    <CreditCard size={13} className="text-[#FB7506]"/>
-                    <span className="font-black text-xs uppercase tracking-widest">Customer Payments</span>
-                    {selCustomer && <span className="text-[#FB7506] font-bold text-xs ml-2">— {t(selCustomer.customer)}</span>}
-                </div>
-                <div className="flex items-center gap-2">
-                    {/* Approve Credits button with badge */}
-                    <button onClick={()=>creditCount>0&&setCreditModal(true)} disabled={creditCount===0}
-                        className="relative flex items-center gap-1.5 px-3 py-1.5 bg-green-700 hover:bg-green-600 disabled:opacity-40 text-white text-xs font-black uppercase rounded transition-colors">
-                        <Bell size={12}/>Approve Credits
-                        {creditCount > 0 && <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center">{creditCount}</span>}
+            <AppHeader
+                title="Customer Payments"
+                icon={CreditCard}
+                extraRight={
+                    <button
+                        onClick={() => creditCount > 0 && setCreditModal(true)}
+                        disabled={creditCount === 0}
+                        className="relative flex items-center gap-1.5 px-2 sm:px-3 py-1.5 bg-green-700 hover:bg-green-600 disabled:opacity-40 text-white text-[10px] sm:text-xs font-black uppercase rounded transition-colors shrink-0"
+                    >
+                        <Bell size={12} />
+                        <span className="hidden sm:inline">Approve Credits</span>
+                        {creditCount > 0 && (
+                            <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center">
+                                {creditCount}
+                            </span>
+                        )}
                     </button>
-                    <span className="text-gray-400 text-[10px]">User: <span className="text-white">{session?.user?.name}</span></span>
-                </div>
-            </div>
+                }
+            />
 
             {/* Tab bar — scrollable on mobile */}
             <div className="h-10 bg-[#374151] flex items-end px-2 gap-0.5 shrink-0 overflow-x-auto scrollbar-none">
@@ -1793,6 +1797,7 @@ export default function CustomerPaymentsPage() {
                     onClose={()=>setCorpInvModal(false)}
                     onSaved={(unico:string)=>{ logAction("Insert", unico); refetchCorpInv(); refetchCorpInc(); }}/>
             )}
+            <AppFooter areaLabel="Accounts Receivable" />
         </div>
     );
 }

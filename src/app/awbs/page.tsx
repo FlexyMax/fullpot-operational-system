@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-    ArrowLeft, RefreshCcw, Search, XCircle, Save, Trash2,
+    RefreshCcw, Search, XCircle, Save, Trash2,
     Plus, Pencil, Printer, BarChart2, Calendar, Plane, FileText,
     Package, DollarSign, Loader2
 } from "lucide-react";
@@ -14,6 +14,8 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
+import AppHeader from "@/components/layout/AppHeader";
+import AppFooter from "@/components/layout/AppFooter";
 
 const t       = (v: any) => String(v ?? "").trim();
 const fmt     = (v: any) => parseFloat(v ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -904,15 +906,10 @@ export default function AwbsPage() {
 
     // ── 7. Render ─────────────────────────────────────────────────────────────
     return (
-        <div className="flex flex-col h-screen bg-gray-50">
+        <div className="flex flex-col h-[100dvh] bg-gray-50 overflow-hidden">
 
             {/* Header */}
-            <div className="bg-[#374151] px-4 py-2 flex items-center gap-3 shrink-0">
-                <button onClick={() => router.back()} className="text-gray-400 hover:text-white"><ArrowLeft size={18}/></button>
-                <Plane size={18} className="text-[#FB7506]"/>
-                <span className="fos-grid-header-text text-sm">AWBs — Air Waybill Costs</span>
-                {perms.loading && <Loader2 size={13} className="animate-spin text-gray-400 ml-auto"/>}
-            </div>
+            <AppHeader title="AWBs — Air Waybill Costs" icon={Plane} useBack extraRight={perms.loading ? <Loader2 size={14} className="animate-spin text-white/60"/> : undefined} />
 
             {/* Filter bar */}
             <div className="bg-white border-b px-4 py-2 flex flex-wrap items-center gap-3 shrink-0">
@@ -1337,6 +1334,7 @@ export default function AwbsPage() {
             {reportModal && (
                 <ReportModal title={reportModal.title} records={reportModal.records} onClose={() => setReportModal(null)}/>
             )}
+            <AppFooter areaLabel="Logistics" />
         </div>
     );
 }

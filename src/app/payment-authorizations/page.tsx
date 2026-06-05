@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-    ArrowLeft, RefreshCcw, XCircle, Loader2,
+    RefreshCcw, XCircle, Loader2,
     DollarSign, FileText, Users, CreditCard,
     Plus, Pencil, Trash2, Check, CheckCheck,
     Printer, BarChart2, Calendar, Building2,
@@ -17,6 +17,8 @@ import { toast } from "sonner";
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { usePaymentAuthorizationsStore } from "@/store/usePaymentAuthorizationsStore";
+import AppHeader from "@/components/layout/AppHeader";
+import AppFooter from "@/components/layout/AppFooter";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const t       = (v: any) => String(v ?? "").trim();
@@ -641,19 +643,15 @@ export default function PaymentAuthorizationsPage() {
     }
 
     return (
-        <div className="flex flex-col h-screen bg-gray-50 overflow-hidden">
+        <div className="flex flex-col h-[100dvh] bg-gray-50 overflow-hidden">
 
             {/* ── Page Header ───────────────────────────────────────────────── */}
-            <div className="h-10 bg-[#374151] flex items-center gap-3 px-4 shrink-0">
-                <button onClick={() => router.back()} className="text-gray-400 hover:text-white transition-colors">
-                    <ArrowLeft size={16}/>
-                </button>
-                <DollarSign size={15} className="text-[#FB7506]"/>
-                <span className="fos-grid-header-text">Payment Authorizations — Vendor AP</span>
-                {store.lcgrower && (
-                    <span className="text-xs text-gray-300 ml-2">{store.lcgrower}</span>
-                )}
-            </div>
+            <AppHeader
+                title="Payment Authorizations"
+                icon={DollarSign}
+                useBack
+                extraRight={store.lcgrower ? <span className="text-xs text-white/70 hidden sm:inline">{store.lcgrower}</span> : undefined}
+            />
 
             {/* ── Tabs ──────────────────────────────────────────────────────── */}
             <div className="flex gap-0 border-b bg-white shrink-0">
@@ -1270,6 +1268,7 @@ export default function PaymentAuthorizationsPage() {
                     }}
                 />
             )}
+            <AppFooter areaLabel="Vendor AP" />
         </div>
     );
 }
