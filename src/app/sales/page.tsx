@@ -555,16 +555,44 @@ export default function SalesPage() {
                             const closed = bool(inv.PRINTED);
                             return (
                                 <div key={i} onClick={() => { setActiveInvoiceUq(t(inv.UNICO)); setDetailKey(k=>k+1); setActiveTab("lines"); setHistCustUq(t(inv.CUSTOMER_UQ ?? "%")); setHistInvoiceUq(null); }}
-                                    className={cn("px-3 py-2 border-b cursor-pointer transition-colors",
-                                        sel ? "!bg-blue-100 border-l-4 border-l-[#FB7506]" : "hover:bg-blue-50 border-l-4 border-l-transparent")}
+                                    className={cn(
+                                        "px-3 py-3 border-b cursor-pointer transition-all border-l-4",
+                                        sel ? "bg-blue-50 border-l-[#FB7506]" : "border-l-transparent hover:bg-gray-50 hover:border-l-gray-300"
+                                    )}
                                     style={!sel && bg ? { backgroundColor: bg } : undefined}
                                 >
-                                    <div className="flex items-center justify-between gap-1">
-                                        <span className="font-black text-[12px] text-blue-700">#{t(inv.INVOICE_NO ?? inv.INVOICE_NO)}</span>
+                                    {/* Invoice # + status */}
+                                    <div className="flex items-center justify-between gap-1 mb-1">
+                                        <span className={cn("font-black text-[14px]", sel ? "text-[#FB7506]" : "text-blue-700")}>
+                                            #{t(inv.INVOICE_NO)}
+                                        </span>
                                         <StatusBadge printed={closed} voided={voi} />
                                     </div>
-                                    <p className="text-[11px] font-medium text-gray-700 truncate mt-0.5">{t(inv.CUSTOMER)}</p>
-                                    <p className="text-[10px] text-gray-400">{fmtDate(inv.INVOICE_DATE ?? inv.SHIP_DATE)}</p>
+                                    {/* Customer */}
+                                    <p className="text-[12px] font-semibold text-gray-800 truncate leading-snug">{t(inv.CUSTOMER)}</p>
+                                    {/* Date */}
+                                    <p className="text-[10px] text-gray-400 mt-0.5">{fmtDate(inv.INVOICE_DATE ?? inv.SHIP_DATE)}</p>
+                                    {/* Cases + Total + Balance — from header when selected */}
+                                    {sel && h && (
+                                        <div className="flex items-center gap-3 mt-2 pt-2 border-t border-blue-200 flex-wrap">
+                                            <div className="flex flex-col items-center leading-none">
+                                                <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wide">Cases</span>
+                                                <span className="text-[13px] font-black text-gray-800 mt-0.5">{fmtI(h.TOTAL_CASES)}</span>
+                                            </div>
+                                            <div className="w-px h-6 bg-gray-200" />
+                                            <div className="flex flex-col items-center leading-none">
+                                                <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wide">Total</span>
+                                                <span className="text-[13px] font-black text-green-700 mt-0.5">${fmt(h.TOTAL_INVOICE)}</span>
+                                            </div>
+                                            {parseFloat(h.INVOICE_BALANCE ?? 0) > 0 && <>
+                                                <div className="w-px h-6 bg-gray-200" />
+                                                <div className="flex flex-col items-center leading-none">
+                                                    <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wide">Balance</span>
+                                                    <span className="text-[13px] font-black text-red-600 mt-0.5">${fmt(h.INVOICE_BALANCE)}</span>
+                                                </div>
+                                            </>}
+                                        </div>
+                                    )}
                                 </div>
                             );
                         })}
