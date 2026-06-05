@@ -542,20 +542,9 @@ export default function SalesPage() {
                 title="P.O.S."
                 icon={ShoppingCart}
                 extraRight={
-                    <>
-                        {(working || loadingHeader || loadingLines) && (
-                            <Loader2 size={13} className="animate-spin text-[#FB7506]" />
-                        )}
-                        <span className="hidden md:flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest">
-                            <span className="text-white/50">Rep:</span>
-                            <span className="text-white">{salesmanName || session?.user?.name}</span>
-                        </span>
-                        {h && (
-                            <span className="hidden md:inline text-[#FB7506] text-[10px] font-black uppercase tracking-widest">
-                                Invoice #{t(h.INVOICE_NO)}
-                            </span>
-                        )}
-                    </>
+                    (working || loadingHeader || loadingLines) ? (
+                        <Loader2 size={13} className="animate-spin text-[#FB7506]" />
+                    ) : null
                 }
             />
 
