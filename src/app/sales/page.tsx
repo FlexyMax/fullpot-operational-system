@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, type CSSProperties } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -20,7 +20,9 @@ import { usePOSStore } from "@/store/usePOSStore";
 const t       = (v: any) => String(v ?? "").trim();
 const norm    = (rows: any[]) => rows.map(r => { const n: any = {}; for (const [k,v] of Object.entries(r)) n[k.toUpperCase()] = v; return n; });
 const normOne = (r: any) => { if (!r) return null; const n: any = {}; for (const [k,v] of Object.entries(r)) n[k.toUpperCase()] = v; return n; };
-const fmt     = (v: any) => parseFloat(v ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+// SP returns prices as dollar-formatted strings like "$1.89" — strip $ before parsing
+const parseMoney = (v: any) => parseFloat(String(v ?? "0").replace(/[$,\s]/g, "")) || 0;
+const fmt        = (v: any) => parseMoney(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtI    = (v: any) => { const n = parseInt(v ?? 0); return isNaN(n) ? "" : n.toLocaleString("en-US"); };
 const fmtDate = (v: any) => {
     if (!v) return "";
@@ -29,9 +31,11 @@ const fmtDate = (v: any) => {
     if (iso) return new Date(+iso[1], +iso[2]-1, +iso[3]).toLocaleDateString("en-US");
     const d = new Date(s); return isNaN(d.getTime()) ? s : d.toLocaleDateString("en-US");
 };
+const DEFAULT_THUMB = "https://flexymax.nyc3.digitaloceanspaces.com/FlexyMaxApp/FlexyMaxImages/NoImageAvailable2.png";
+
 // Convert VFP integer color → subtle row style: 3px left border + 6% background tint
 // Matches the inventory-entry approach so colors inform without overwhelming
-const vfpRowStyle = (c: any): React.CSSProperties | undefined => {
+const vfpRowStyle = (c: any): CSSProperties | undefined => {
     const n = parseInt(c ?? 0);
     if (!n || n <= 0) return undefined;
     const r = n & 0xFF; const g = (n >> 8) & 0xFF; const b = (n >> 16) & 0xFF;
@@ -139,6 +143,15 @@ export default function SalesPage() {
 
     const sentinelRef = useRef<HTMLDivElement>(null);
 
+    // Edit line modal
+    const [editLineModal,  setEditLineModal]  = useState(false);
+    const [editLine,       setEditLine]       = useState<any>(null);
+    const [editLineForm,   setEditLineForm]   = useState({ box_qty: "1", units_x_box: "1", price: "0" });
+    const [savingLine,     setSavingLine]     = useState(false);
+
+    // Product images cache: product_uq → signed URL
+    const [productImages,  setProductImages]  = useState<Record<string, string>>({});
+
     // ── Init: load salesman info (unico, user_uq, wphysical_uq) ──────────────
     useEffect(() => {
         if (status !== "authenticated") return;
@@ -155,6 +168,39 @@ export default function SalesPage() {
         }).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [status, salesmanUq]);
+
+    const openEditLine = (line: any) => {
+        setEditLine(line);
+        setEditLineForm({
+            box_qty:    String(line.BOX_QTY   ?? 1),
+            units_x_box:String(line.UNITS_X_BOX ?? 1),
+            price:      String(parseMoney(line.PRICE ?? line.PRICE_X_U ?? 0)),
+        });
+        setEditLineModal(true);
+    };
+
+    const handleSaveLine = async () => {
+        if (!editLine) return;
+        setSavingLine(true);
+        try {
+            const r = await fetch("/api/pos/invoice/line/update", {
+                method: "PUT", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    inv_box_uq:  t(editLine.UNICO),
+                    box_qty:     parseInt(editLineForm.box_qty)    || 1,
+                    units_x_box: parseInt(editLineForm.units_x_box) || 1,
+                    price:       parseFloat(editLineForm.price)    || 0,
+                    approved:    false,
+                }),
+            });
+            const j = await r.json();
+            if (!r.ok || !j.success) throw new Error(j.error || "Failed");
+            toast.success("Line updated");
+            setEditLineModal(false);
+            setDetailKey(k => k + 1);
+        } catch (e: any) { toast.error(e.message); }
+        finally { setSavingLine(false); }
+    };
 
     if (status === "loading") return null;
     if (status === "unauthenticated") { router.push("/login"); return null; }
@@ -237,6 +283,21 @@ export default function SalesPage() {
             return [];
         },
     });
+
+    // ── Load product images whenever lines or stock change ────────────────────
+    useEffect(() => {
+        const lines   = (invoiceLines as any[]).map((l: any) => t(l.PRODUCT_UQ));
+        const stocks  = stockRows.map((s: any) => t(s.PRODUCT_UQ ?? s.BOX_PACK_UQ ?? ""));
+        const missing = [...new Set([...lines, ...stocks])].filter(u => u && !productImages[u]);
+        if (!missing.length) return;
+        fetch("/api/products/images", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ productUqs: missing }),
+        }).then(r => r.json()).then(j => {
+            if (j.images) setProductImages(prev => ({ ...prev, ...j.images }));
+        }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [invoiceLines, stockRows]);
 
     // ── Stock (manual paginated fetch, infinite scroll) ───────────────────────
     const loadStock = useCallback(async (page: number, search: string, sortCol: string, sortDir: string, reset: boolean) => {
@@ -700,6 +761,7 @@ export default function SalesPage() {
                                         <table className="min-w-full text-left">
                                             <thead>
                                                 <tr>
+                                                    <Th>{" "}</Th>
                                                     <Th>Farm</Th><Th>Description</Th><Th>Vendor</Th>
                                                     <Th className="text-right">BoxQty</Th>
                                                     <Th className="text-right">UxBox</Th>
@@ -722,26 +784,40 @@ export default function SalesPage() {
                                                     return (
                                                         <tr key={i} className={cn("border-b text-gray-600 hover:bg-blue-50 transition-colors", !bg && (i%2===0?"bg-white":"bg-gray-50"))}
                                                             style={bg ?? undefined}>
+                                                            <Td>
+                                                                <img
+                                                                    src={productImages[t(l.PRODUCT_UQ)] || DEFAULT_THUMB}
+                                                                    alt="" width={32} height={32}
+                                                                    className="w-8 h-8 object-cover rounded border border-gray-200 shrink-0"
+                                                                    onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }}
+                                                                />
+                                                            </Td>
                                                             <Td className="font-bold text-[#FB7506]">{t(l.FARM)}</Td>
                                                             <Td className="max-w-[200px] truncate font-medium">{t(l.DESCRIPTION)}</Td>
-                                                            <Td className="max-w-[100px] truncate">{t(l.GROWER ?? l.VENDOR)}</Td>
+                                                            <Td className="max-w-[100px] truncate">{t(l.GROWER)}</Td>
                                                             <Td className="text-right font-semibold">{fmtI(l.BOX_QTY)}</Td>
                                                             <Td className="text-right">{fmtI(l.UNITS_X_BOX)}</Td>
-                                                            <Td className="text-right font-semibold">{fmt(l.PRICE ?? l.PRICE_X_U)}</Td>
+                                                            <Td className="text-right font-semibold">${fmt(l.PRICE)}</Td>
                                                             <Td className="text-right">{fmtI(l.TOTAL_UNITS)}</Td>
-                                                            <Td className="text-right font-bold text-green-700">${fmt(l.EXT_PRICE)}</Td>
-                                                            <Td className={cn("text-right font-bold", parseFloat(l.GPM ?? 0) < 0 ? "text-red-600" : "text-gray-700")}>{fmt(l.GPM)}%</Td>
+                                                            <Td className="text-right font-bold text-green-700">{t(l.EXT_PRICE)}</Td>
+                                                            <Td className={cn("text-right font-bold", parseMoney(l.GPM) < 0 ? "text-red-600" : "text-gray-700")}>{fmt(l.GPM)}%</Td>
                                                             <Td>{t(l.CASE_NAME ?? l.CASE_SH)}</Td>
-                                                            <Td>{t(l.LOTE ?? l.LOT)}</Td>
-                                                            <Td className="font-mono text-blue-700">{t(l.AWBCODE ?? l.AWB)}</Td>
+                                                            <Td>{t(l.LOTE)}</Td>
+                                                            <Td className="font-mono text-blue-700">{t(l.AWBCODE)}</Td>
                                                             <Td>{fmtI(l.DAYS)}</Td>
-                                                            <Td className="text-center">{bool(l.READY_TRAN ?? l.READY) ? <Check size={11} className="text-green-600 inline" /> : ""}</Td>
+                                                            <Td className="text-center">{bool(l.READY_TRAN) ? <Check size={11} className="text-green-600 inline" /> : ""}</Td>
                                                             <Td className="text-center">{bool(l.APPROVED) ? <CheckCircle size={11} className="text-green-600 inline" /> : <AlertCircle size={11} className="text-amber-500 inline" />}</Td>
                                                             {isOpen && <Td>
-                                                                <button onClick={() => handleDeleteLine(t(l.UNICO))} disabled={working}
-                                                                    className="text-red-400 hover:text-red-600 disabled:opacity-40 p-0.5">
-                                                                    <Trash2 size={11} />
-                                                                </button>
+                                                                <div className="flex items-center gap-1">
+                                                                    <button onClick={() => openEditLine(l)} disabled={working}
+                                                                        className="text-blue-400 hover:text-blue-600 disabled:opacity-40 p-0.5" title="Edit line">
+                                                                        <Edit2 size={11} />
+                                                                    </button>
+                                                                    <button onClick={() => handleDeleteLine(t(l.UNICO))} disabled={working}
+                                                                        className="text-red-400 hover:text-red-600 disabled:opacity-40 p-0.5" title="Delete line">
+                                                                        <Trash2 size={11} />
+                                                                    </button>
+                                                                </div>
                                                             </Td>}
                                                         </tr>
                                                     );
@@ -758,6 +834,7 @@ export default function SalesPage() {
                                             <thead>
                                                 <tr>
                                                     {[
+                                                        { col: "", label: "" },
                                                         { col: "", label: isOpen ? "Add" : "" },
                                                         { col: "description", label: "Description" },
                                                         { col: "farm",        label: "Farm" },
@@ -791,6 +868,14 @@ export default function SalesPage() {
                                                     return (
                                                         <tr key={i} className={cn("border-b text-gray-600 hover:bg-blue-50 transition-colors", !bg && (i%2===0?"bg-white":"bg-gray-50"))}
                                                             style={bg ?? undefined}>
+                                                            <Td>
+                                                                <img
+                                                                    src={productImages[t(s.PRODUCT_UQ ?? s.BOX_PACK_UQ ?? "")] || DEFAULT_THUMB}
+                                                                    alt="" width={32} height={32}
+                                                                    className="w-8 h-8 object-cover rounded border border-gray-200 shrink-0"
+                                                                    onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }}
+                                                                />
+                                                            </Td>
                                                             <Td>
                                                                 {isOpen && (
                                                                     <button onClick={() => handleAddLine(s)} disabled={working}
@@ -1147,6 +1232,42 @@ export default function SalesPage() {
                                     </div>
                                 ))}
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Edit Line Modal ───────────────────────────────────────── */}
+            {editLineModal && editLine && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+                    <div className="bg-white rounded-lg shadow-2xl w-full max-w-sm flex flex-col overflow-hidden">
+                        <div className="bg-[#374151] px-4 py-2.5 flex items-center justify-between shrink-0 rounded-t-lg">
+                            <span className="font-black text-[11px] text-white uppercase tracking-widest">Edit Line</span>
+                            <button onClick={() => setEditLineModal(false)} className="text-white/60 hover:text-white"><X size={14} /></button>
+                        </div>
+                        <div className="p-4 space-y-3">
+                            <p className="text-[11px] font-bold text-gray-700 truncate">{t(editLine.DESCRIPTION)}</p>
+                            {[
+                                { label: "Box Qty",   key: "box_qty",     type: "number" },
+                                { label: "Units/Box", key: "units_x_box", type: "number" },
+                                { label: "Price",     key: "price",       type: "number", step: "0.01" },
+                            ].map(({ label, key, type, step }) => (
+                                <div key={key}>
+                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">{label}</label>
+                                    <input type={type} step={step} value={(editLineForm as any)[key]}
+                                        onChange={e => setEditLineForm(p => ({ ...p, [key]: e.target.value }))}
+                                        className="w-full border border-gray-300 rounded px-2 py-1.5 text-[12px] focus:outline-none focus:ring-2 focus:ring-[#FB7506]"
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                        <div className="h-11 border-t border-gray-200 flex items-center justify-end px-4 gap-2 shrink-0">
+                            <button onClick={() => setEditLineModal(false)} className="px-3 py-1.5 text-[11px] font-bold text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">Cancel</button>
+                            <button onClick={handleSaveLine} disabled={savingLine}
+                                className="px-4 py-1.5 text-[11px] font-black text-white bg-[#FB7506] hover:bg-orange-500 rounded disabled:opacity-40 flex items-center gap-1">
+                                {savingLine ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />}
+                                Save
+                            </button>
                         </div>
                     </div>
                 </div>
