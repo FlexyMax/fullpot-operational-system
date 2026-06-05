@@ -147,30 +147,19 @@ export default function MenuPage() {
         <div className="min-h-screen bg-[#f4f6f8] flex flex-col font-sans text-[#333]">
 
             {/* Header — FlexyMax black standard */}
-            <header className="h-16 bg-[#000000] flex items-center justify-between px-6 shrink-0 text-white">
-                <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: '#FB7506' }}>
-                        <span className="text-white font-black text-xs leading-none">FOS</span>
+            <header className="h-16 bg-[#000000] flex items-center justify-between px-3 md:px-6 shrink-0 text-white">
+                <div className="flex items-center gap-2 md:gap-3">
+                    <div className="w-8 h-8 md:w-9 md:h-9 rounded-lg flex items-center justify-center" style={{ background: '#FB7506' }}>
+                        <span className="text-white font-black text-[10px] md:text-xs leading-none">FOS</span>
                     </div>
-                    <div className="w-px h-5 bg-white/20" />
-                    <span className="font-bold text-sm uppercase tracking-tight">FullPot Operational System</span>
+                    <div className="w-px h-4 md:h-5 bg-white/20" />
+                    <span className="font-bold text-xs md:text-sm uppercase tracking-tight hidden md:inline">FullPot Operational System</span>
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <div className="relative">
-                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/50" size={12} />
-                        <input
-                            type="text"
-                            placeholder="Search modules..."
-                            value={searchTerm}
-                            onChange={e => setSearchTerm(e.target.value)}
-                            className="bg-white/10 text-white text-[11px] border border-white/10 outline-none rounded pl-8 pr-3 py-1.5 placeholder:text-white/50 w-44 focus:ring-1 focus:ring-[#FB7506] transition-all"
-                        />
-                    </div>
-                    <div className="w-px h-4 bg-white/20" />
-                    <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest">
+                <div className="flex items-center gap-2 md:gap-4">
+                    <div className="hidden md:flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest">
                         <span className="text-white/50">User:</span>
-                        <span className="text-white">{session?.user?.name || 'OPERATOR'}</span>
+                        <span className="text-white max-w-[140px] truncate">{session?.user?.name || 'OPERATOR'}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                         <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
@@ -187,7 +176,7 @@ export default function MenuPage() {
             </header>
 
             {/* Info Bar */}
-            <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between shrink-0 shadow-sm">
+            <div className="bg-white border-b border-gray-200 px-4 md:px-6 py-3 flex flex-col md:flex-row md:items-center md:justify-between shrink-0 shadow-sm gap-3">
                 <div>
                     <p className="font-black text-sm text-gray-800">
                         {getGreeting()},{' '}
@@ -201,7 +190,18 @@ export default function MenuPage() {
                     </p>
                 </div>
 
-                <div className="flex items-center gap-5">
+                <div className="relative w-full md:w-auto order-last md:order-none">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={12} />
+                    <input
+                        type="text"
+                        placeholder="Search modules..."
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                        className="bg-gray-100 text-gray-800 text-[11px] border border-gray-200 outline-none rounded pl-8 pr-3 py-2 placeholder:text-gray-500 w-full md:w-64 focus:ring-1 focus:ring-[#FB7506] transition-all"
+                    />
+                </div>
+
+                <div className="flex items-center gap-5 shrink-0">
                     <div className="flex flex-col items-end">
                         <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Total Modules</span>
                         <span className="text-xl font-black text-gray-700 leading-tight">{totalModules}</span>
