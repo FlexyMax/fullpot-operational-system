@@ -144,7 +144,7 @@ export default function MenuPage() {
     }
 
     return (
-        <div className="h-screen bg-[#f4f6f8] flex flex-col font-sans text-[#333] overflow-hidden">
+        <div className="h-[100dvh] bg-[#f4f6f8] flex flex-col font-sans text-[#333] overflow-hidden">
 
             {/* Header — FlexyMax black standard */}
             <header className="h-16 bg-[#000000] flex items-center justify-between px-3 md:px-6 shrink-0 text-white">
@@ -176,40 +176,78 @@ export default function MenuPage() {
             </header>
 
             {/* Info Bar */}
-            <div className="bg-white border-b border-gray-200 px-4 md:px-6 py-3 flex flex-col md:flex-row md:items-center md:justify-between shrink-0 shadow-sm gap-3">
-                <div>
-                    <p className="font-black text-sm text-gray-800">
-                        {getGreeting()},{' '}
-                        <span className="text-[#FB7506]">
-                            {(session?.user?.name || 'User').split(' ')[0]}
-                        </span>
-                    </p>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-0.5 flex items-center gap-1.5">
-                        <Calendar size={10} />
-                        {today}
-                    </p>
+            <div className="bg-white border-b border-gray-200 px-4 md:px-6 py-3 flex flex-col shrink-0 shadow-sm gap-3">
+                {/* Mobile layout */}
+                <div className="flex items-start justify-between md:hidden">
+                    <div>
+                        <p className="font-black text-sm text-gray-800">
+                            {getGreeting()},{' '}
+                            <span className="text-[#FB7506]">
+                                {(session?.user?.name || 'User').split(' ')[0]}
+                            </span>
+                        </p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-0.5 flex items-center gap-1.5">
+                            <Calendar size={10} />
+                            {today}
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                        <div className="flex flex-col items-end">
+                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Total</span>
+                            <span className="text-lg font-black text-gray-700 leading-tight">{totalModules}</span>
+                        </div>
+                        <div className="w-px h-7 bg-gray-100" />
+                        <div className="flex flex-col items-end">
+                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Avail</span>
+                            <span className="text-lg font-black text-[#FB7506] leading-tight">{availableModules}</span>
+                        </div>
+                    </div>
                 </div>
-
-                <div className="relative w-full md:w-auto order-last md:order-none">
+                <div className="relative w-full md:hidden">
                     <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={12} />
                     <input
                         type="text"
                         placeholder="Search modules..."
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
-                        className="bg-gray-100 text-gray-800 text-[11px] border border-gray-200 outline-none rounded pl-8 pr-3 py-2 placeholder:text-gray-500 w-full md:w-64 focus:ring-1 focus:ring-[#FB7506] transition-all"
+                        className="bg-gray-100 text-gray-800 text-[11px] border border-gray-200 outline-none rounded pl-8 pr-3 py-2 placeholder:text-gray-500 w-full focus:ring-1 focus:ring-[#FB7506] transition-all"
                     />
                 </div>
 
-                <div className="flex items-center gap-5 shrink-0">
-                    <div className="flex flex-col items-end">
-                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Total Modules</span>
-                        <span className="text-xl font-black text-gray-700 leading-tight">{totalModules}</span>
+                {/* Desktop layout */}
+                <div className="hidden md:flex md:items-center md:justify-between w-full gap-4">
+                    <div>
+                        <p className="font-black text-sm text-gray-800">
+                            {getGreeting()},{' '}
+                            <span className="text-[#FB7506]">
+                                {(session?.user?.name || 'User').split(' ')[0]}
+                            </span>
+                        </p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-0.5 flex items-center gap-1.5">
+                            <Calendar size={10} />
+                            {today}
+                        </p>
                     </div>
-                    <div className="w-px h-8 bg-gray-100" />
-                    <div className="flex flex-col items-end">
-                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Available</span>
-                        <span className="text-xl font-black text-[#FB7506] leading-tight">{availableModules}</span>
+                    <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={12} />
+                        <input
+                            type="text"
+                            placeholder="Search modules..."
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                            className="bg-gray-100 text-gray-800 text-[11px] border border-gray-200 outline-none rounded pl-8 pr-3 py-2 placeholder:text-gray-500 w-64 focus:ring-1 focus:ring-[#FB7506] transition-all"
+                        />
+                    </div>
+                    <div className="flex items-center gap-5 shrink-0">
+                        <div className="flex flex-col items-end">
+                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Total Modules</span>
+                            <span className="text-xl font-black text-gray-700 leading-tight">{totalModules}</span>
+                        </div>
+                        <div className="w-px h-8 bg-gray-100" />
+                        <div className="flex flex-col items-end">
+                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Available</span>
+                            <span className="text-xl font-black text-[#FB7506] leading-tight">{availableModules}</span>
+                        </div>
                     </div>
                 </div>
             </div>
