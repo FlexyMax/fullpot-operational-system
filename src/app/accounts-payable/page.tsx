@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -12,7 +12,7 @@ import {
     FileText, CreditCard, ClipboardList, BookOpen, Plus,
     Pencil, Trash2, Check, XCircle, X, AlertCircle, CheckCircle,
     ChevronRight, ChevronLeft, Search, Download, Printer,
-    BarChart2, Clock
+    BarChart2, Clock, Power
 } from "lucide-react";
 import { GridMenu } from "@/components/GridMenu";
 import { useAuditLog } from "@/lib/audit";
@@ -247,31 +247,38 @@ export default function AccountsPayablePage() {
     if (status === "loading") return null;
 
     return (
-        <div className="flex flex-col min-h-screen lg:h-screen bg-[#f4f6f8] lg:overflow-hidden font-sans text-[#333]">
+        <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
 
             {/* ── Header ──────────────────────────────────────────────────── */}
-            <div className="h-12 bg-[#374151] flex items-center justify-between px-4 shrink-0 text-white">
-                <div className="flex items-center gap-4">
+            <header className="h-16 bg-[#000000] flex items-center justify-between px-3 md:px-6 shrink-0 text-white">
+                <div className="flex items-center gap-2 md:gap-3">
                     <button onClick={() => router.push("/menu")} className="hover:bg-white/10 p-1.5 rounded transition-colors">
                         <ArrowLeft size={18} />
                     </button>
-                    <div className="flex items-center gap-2">
-                        <span className="font-black text-xs uppercase tracking-widest text-[#FB7506]">FOS</span>
-                        <div className="w-px h-4 bg-white/20 mx-2" />
-                        <span className="font-bold text-xs uppercase tracking-tight">Accounts Payable</span>
+                    <div className="w-8 h-8 md:w-9 md:h-9 rounded-lg flex items-center justify-center" style={{ background: '#FB7506' }}>
+                        <span className="text-white font-black text-[10px] md:text-xs leading-none">FOS</span>
                     </div>
+                    <div className="w-px h-4 md:h-5 bg-white/20" />
+                    <span className="font-bold text-[10px] sm:text-xs md:text-sm uppercase tracking-tight truncate max-w-[90px] sm:max-w-none">Accounts Payable</span>
                 </div>
-                <div className="flex items-center gap-6 text-[10px] font-bold uppercase tracking-widest">
-                    <div className="flex items-center gap-2">
-                        <span className="text-gray-400">User:</span>
-                        <span>{session?.user?.name || "OPERATOR"}</span>
+                <div className="flex items-center gap-2 md:gap-4">
+                    <div className="hidden md:flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest">
+                        <span className="text-white/50">User:</span>
+                        <span className="text-white max-w-[140px] truncate">{session?.user?.name || 'OPERATOR'}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <span className="text-gray-400">Status:</span>
-                        <span className="text-green-500 font-black">Online</span>
+                    <div className="flex items-center gap-1.5">
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                        <span className="text-[10px] font-black text-green-500 uppercase tracking-widest">Online</span>
                     </div>
+                    <button
+                        onClick={() => signOut({ callbackUrl: '/login' })}
+                        title="Logout"
+                        className="w-8 h-8 rounded-full flex items-center justify-center bg-[#FB7506] hover:bg-[#ff8c2a] text-white transition-all shadow-sm hover:shadow-md"
+                    >
+                        <Power size={14} strokeWidth={2.5} />
+                    </button>
                 </div>
-            </div>
+            </header>
 
             {/* ── Toolbar ─────────────────────────────────────────────────── */}
             <div className="h-10 bg-white border-b border-gray-200 flex items-center px-4 gap-3 shrink-0 shadow-sm">
@@ -326,7 +333,7 @@ export default function AccountsPayablePage() {
             </div>
 
             {/* ── Main Layout ─────────────────────────────────────────────── */}
-            <div className="flex flex-col lg:flex-row flex-1 gap-2 p-2 overflow-y-auto lg:overflow-hidden">
+            <div className="flex flex-col lg:flex-row flex-1 gap-2 p-2 overflow-auto">
 
                 {/* ── LEFT: Date Panel (desktop only) ─────────────────────── */}
                 <div className="hidden lg:flex w-[280px] shrink-0 flex-col gap-2">
@@ -663,14 +670,15 @@ export default function AccountsPayablePage() {
             </div>
 
             {/* Footer */}
-            <div className="h-8 bg-gray-100 border-t px-4 flex items-center justify-between text-[10px] font-bold text-gray-500 uppercase tracking-tight shrink-0">
-                <div className="flex items-center gap-4">
+            <footer className="h-10 bg-[#000000] px-4 md:px-6 flex items-center justify-center md:justify-between text-[11px] font-bold uppercase tracking-tight shrink-0">
+                <div className="hidden md:flex items-center gap-4 text-white/60">
                     <span>Server: Production</span>
-                    <span className="text-gray-300">|</span>
+                    <span className="text-white/20">|</span>
                     <span>Database: FullPot</span>
                 </div>
-                <span className="text-[#FB7506]">FOS Terminal V.2.0.1</span>
-            </div>
+                <span className="text-white/90 tracking-[0.14em]">FlexyMax ® {new Date().getFullYear()}</span>
+                <span className="hidden md:inline text-[#FB7506]">FOS Terminal V.2.0.1</span>
+            </footer>
 
             {/* ── MODALS ──────────────────────────────────────────────────── */}
             {crdbModal?.open && (

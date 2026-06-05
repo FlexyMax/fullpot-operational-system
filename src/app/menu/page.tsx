@@ -153,7 +153,7 @@ export default function MenuPage() {
                         <span className="text-white font-black text-[10px] md:text-xs leading-none">FOS</span>
                     </div>
                     <div className="w-px h-4 md:h-5 bg-white/20" />
-                    <span className="font-bold text-xs md:text-sm uppercase tracking-tight hidden md:inline">FullPot Operational System</span>
+                    <span className="font-bold text-[10px] sm:text-xs md:text-sm uppercase tracking-tight truncate max-w-[90px] sm:max-w-none">FullPot Operational System</span>
                 </div>
 
                 <div className="flex items-center gap-2 md:gap-4">
@@ -180,26 +180,26 @@ export default function MenuPage() {
                 {/* Mobile layout */}
                 <div className="flex items-start justify-between md:hidden">
                     <div>
-                        <p className="font-black text-sm text-gray-800">
+                        <p className="font-black text-base text-gray-800">
                             {getGreeting()},{' '}
                             <span className="text-[#FB7506]">
                                 {(session?.user?.name || 'User').split(' ')[0]}
                             </span>
                         </p>
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-0.5 flex items-center gap-1.5">
-                            <Calendar size={10} />
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mt-0.5 flex items-center gap-1.5">
+                            <Calendar size={12} />
                             {today}
                         </p>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
                         <div className="flex flex-col items-end">
-                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Total</span>
-                            <span className="text-lg font-black text-gray-700 leading-tight">{totalModules}</span>
+                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total</span>
+                            <span className="text-xl font-black text-gray-700 leading-tight">{totalModules}</span>
                         </div>
                         <div className="w-px h-7 bg-gray-100" />
                         <div className="flex flex-col items-end">
-                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Avail</span>
-                            <span className="text-lg font-black text-[#FB7506] leading-tight">{availableModules}</span>
+                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Avail</span>
+                            <span className="text-xl font-black text-[#FB7506] leading-tight">{availableModules}</span>
                         </div>
                     </div>
                 </div>
@@ -217,14 +217,14 @@ export default function MenuPage() {
                 {/* Desktop layout */}
                 <div className="hidden md:flex md:items-center md:justify-between w-full gap-4">
                     <div>
-                        <p className="font-black text-sm text-gray-800">
+                        <p className="font-black text-base text-gray-800">
                             {getGreeting()},{' '}
                             <span className="text-[#FB7506]">
                                 {(session?.user?.name || 'User').split(' ')[0]}
                             </span>
                         </p>
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-0.5 flex items-center gap-1.5">
-                            <Calendar size={10} />
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mt-0.5 flex items-center gap-1.5">
+                            <Calendar size={12} />
                             {today}
                         </p>
                     </div>
