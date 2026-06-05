@@ -12,6 +12,8 @@ import {
     ShoppingCart, History,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AppHeader } from "@/components/layout/AppHeader";
+import { AppFooter } from "@/components/layout/AppFooter";
 import { toast } from "sonner";
 import { usePagePermissions } from "@/lib/permissions";
 import { usePOSStore } from "@/store/usePOSStore";
@@ -534,26 +536,28 @@ export default function SalesPage() {
 
     // ─────────────────────────────────────────────────────────────────────────
     return (
-        <div className="flex flex-col h-screen bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
+        <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
 
-            {/* ── Dark header ──────────────────────────────────────────── */}
-            <div className="h-12 bg-[#374151] flex items-center justify-between px-4 shrink-0 text-white">
-                <div className="flex items-center gap-3">
-                    <button onClick={() => router.push("/menu")} className="hover:bg-white/10 p-1.5 rounded">
-                        <ArrowLeft size={18} />
-                    </button>
-                    <span className="font-black text-xs uppercase tracking-widest text-[#FB7506]">FOS</span>
-                    <div className="w-px h-4 bg-white/20" />
-                    <ShoppingCart size={14} className="text-[#FB7506]" />
-                    <span className="font-bold text-xs uppercase tracking-tight">P.O.S.</span>
-                    {(working || loadingHeader || loadingLines) && <Loader2 size={13} className="animate-spin text-[#FB7506] ml-1" />}
-                </div>
-                <div className="hidden sm:flex items-center gap-4 text-[10px] font-bold uppercase">
-                    <span className="text-gray-400">Rep: <span className="text-white">{salesmanName || session?.user?.name}</span></span>
-                    {h && <span className="text-[#FB7506]">Invoice #{t(h.INVOICE_NO)}</span>}
-                    <span className="text-green-500">● Online</span>
-                </div>
-            </div>
+            <AppHeader
+                title="P.O.S."
+                icon={ShoppingCart}
+                extraRight={
+                    <>
+                        {(working || loadingHeader || loadingLines) && (
+                            <Loader2 size={13} className="animate-spin text-[#FB7506]" />
+                        )}
+                        <span className="hidden md:flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest">
+                            <span className="text-white/50">Rep:</span>
+                            <span className="text-white">{salesmanName || session?.user?.name}</span>
+                        </span>
+                        {h && (
+                            <span className="hidden md:inline text-[#FB7506] text-[10px] font-black uppercase tracking-widest">
+                                Invoice #{t(h.INVOICE_NO)}
+                            </span>
+                        )}
+                    </>
+                }
+            />
 
             {/* ── Main split ───────────────────────────────────────────── */}
             <div className="flex flex-col xl:flex-row flex-1 overflow-hidden px-2 pb-2 pt-2 gap-2 min-h-0">
@@ -1272,6 +1276,7 @@ export default function SalesPage() {
                     </div>
                 </div>
             )}
+            <AppFooter areaLabel="Terminal" />
         </div>
     );
 }
