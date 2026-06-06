@@ -158,6 +158,8 @@ export default function SalesPage() {
     const [stockImageModal, setStockImageModal] = useState<{ row: any; source: "stock" | "lines" } | null>(null);
     const [stockImageForm,  setStockImageForm]  = useState({ box_qty: "1", price: "0.00" });
     const [liveStockRow,    setLiveStockRow]    = useState<any>(null);
+    const [modalImages,     setModalImages]     = useState<string[]>([]);
+    const [modalImgIdx,     setModalImgIdx]     = useState(0);
 
     // ── Init: load salesman info (unico, user_uq, wphysical_uq) ──────────────
     useEffect(() => {
@@ -444,13 +446,22 @@ export default function SalesPage() {
         return source === "stock" ? t(row.UNICO) : t(row.PK_STO_UQ ?? "");
     }, []);
 
-    // Opens the product detail modal and immediately fetches live stock
+    // Opens the product detail modal: fetches live stock + all product images
     const openStockModal = useCallback((row: any, source: "stock" | "lines", form: { box_qty: string; price: string }) => {
         setLiveStockRow(null);
+        setModalImages([]);
+        setModalImgIdx(0);
         setStockImageModal({ row, source });
         setStockImageForm(form);
-        const stockUq = resolveStockUq(row, source);
+        const stockUq  = resolveStockUq(row, source);
         if (stockUq) fetchLiveStock(stockUq);
+        const productUq = t(row.PRODUCT_UQ ?? row.BOX_PACK_UQ ?? "");
+        if (productUq) {
+            fetch(`/api/products/images/product?uq=${encodeURIComponent(productUq)}`)
+                .then(r => r.json())
+                .then(j => { if (j.images?.length) setModalImages(j.images); })
+                .catch(() => {});
+        }
     }, [resolveStockUq, fetchLiveStock]);
 
     const handleAddLineFromModal = useCallback(async () => {
@@ -1365,7 +1376,7 @@ export default function SalesPage() {
                 const s        = stockImageModal.row;
                 const isLines  = stockImageModal.source === "lines";
                 const uq       = t(s.PRODUCT_UQ ?? s.BOX_PACK_UQ ?? "");
-                const img      = productImages[uq] || DEFAULT_THUMB;
+                const img      = modalImages[modalImgIdx] || productImages[uq] || DEFAULT_THUMB;
                 const qtyNum   = parseInt(stockImageForm.box_qty) || 0;
                 // liveStockRow is fetched fresh from sp_inventory_stock_uq when modal opens
                 const liveWh   = liveStockRow ? parseInt(liveStockRow.WH_STOCK ?? liveStockRow.wh_stock ?? 0) : null;
@@ -1393,12 +1404,25 @@ export default function SalesPage() {
                                 <button onClick={() => setStockImageModal(null)}
                                     className="text-white/50 hover:text-white text-lg font-light leading-none">—</button>
                             </div>
-                            {/* Image */}
-                            <div className="w-full bg-gray-50" style={{ aspectRatio: "4/3" }}>
+                            {/* Main image */}
+                            <div className="w-full bg-gray-50 shrink-0" style={{ aspectRatio: "4/3" }}>
                                 <img src={img} alt={t(s.DESCRIPTION)}
                                      className="w-full h-full object-contain"
                                      onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }} />
                             </div>
+                            {/* Thumbnail strip — shown only when multiple images */}
+                            {modalImages.length > 1 && (
+                                <div className="flex gap-2 px-3 py-2 overflow-x-auto shrink-0 bg-gray-50 border-t border-gray-100">
+                                    {modalImages.map((url, i) => (
+                                        <button key={i} onClick={() => setModalImgIdx(i)}
+                                            className={cn("shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition-all",
+                                                modalImgIdx === i ? "border-[#FB7506] ring-1 ring-[#FB7506]" : "border-gray-200 hover:border-gray-400")}>
+                                            <img src={url} alt="" className="w-full h-full object-cover"
+                                                 onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }} />
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                             {/* Info */}
                             <div className="px-4 pt-3 pb-0">
                                 <h2 className="font-black text-[15px] text-gray-900 leading-snug">{t(s.DESCRIPTION)}</h2>
