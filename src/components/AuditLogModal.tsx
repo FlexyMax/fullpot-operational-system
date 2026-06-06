@@ -4,6 +4,7 @@ import { useState } from "react";
 import { RotateCcw, XCircle, RefreshCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fetchRecordAudit } from "@/lib/audit";
+import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
 
 interface Props {
     recordId: string | null | undefined;
@@ -85,20 +86,18 @@ export function AuditLogModal({ recordId, disabled, size = "sm", bareButton = fa
                                     No log records found for this entry.
                                 </div>
                             ) : (
-                                <table className="min-w-full text-xs text-left">
-                                    <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
-                                        <tr>
-                                            <th className="p-2 whitespace-nowrap border-r border-gray-200">Event</th>
-                                            <th className="p-2 whitespace-nowrap border-r border-gray-200">Event Date</th>
-                                            <th className="p-2 whitespace-nowrap border-r border-gray-200">Ext-Event</th>
-                                            <th className="p-2 whitespace-nowrap border-r border-gray-200">User Name</th>
-                                            <th className="p-2 whitespace-nowrap">App Table</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
+                                <PanelGridTable>
+                                    <PanelGridThead>
+                                        <PanelGridTh>Event</PanelGridTh>
+                                        <PanelGridTh>Event Date</PanelGridTh>
+                                        <PanelGridTh>Ext-Event</PanelGridTh>
+                                        <PanelGridTh>User Name</PanelGridTh>
+                                        <PanelGridTh>App Table</PanelGridTh>
+                                    </PanelGridThead>
+                                    <PanelGridTbody>
                                         {rows.map((r: any, i: number) => (
-                                            <tr key={i} className="border-b odd:bg-white even:bg-gray-50 hover:bg-blue-50 transition-colors text-gray-700">
-                                                <td className="p-2 border-r border-gray-100">
+                                            <PanelGridTr key={i}>
+                                                <PanelGridTd>
                                                     <span className={cn(
                                                         "px-1.5 py-0.5 rounded text-[9px] font-black uppercase",
                                                         String(r.Event).trim() === "Insert"   ? "bg-green-100 text-green-700" :
@@ -110,23 +109,23 @@ export function AuditLogModal({ recordId, disabled, size = "sm", bareButton = fa
                                                     )}>
                                                         {String(r.Event ?? "").trim()}
                                                     </span>
-                                                </td>
-                                                <td className="p-2 border-r border-gray-100 font-mono text-[10px] whitespace-nowrap">
+                                                </PanelGridTd>
+                                                <PanelGridTd className="font-mono whitespace-nowrap">
                                                     {String(r.Event_Date ?? "").trim()}
-                                                </td>
-                                                <td className="p-2 border-r border-gray-100 truncate max-w-[220px]">
+                                                </PanelGridTd>
+                                                <PanelGridTd className="truncate max-w-[220px]">
                                                     {String(r.Ext_Event ?? "").trim()}
-                                                </td>
-                                                <td className="p-2 border-r border-gray-100 font-medium whitespace-nowrap">
+                                                </PanelGridTd>
+                                                <PanelGridTd className="font-medium whitespace-nowrap">
                                                     {String(r.UserName ?? "").trim()}
-                                                </td>
-                                                <td className="p-2 text-gray-400 text-[10px]">
+                                                </PanelGridTd>
+                                                <PanelGridTd className="text-gray-400">
                                                     {String(r.App_Table ?? "").trim()}
-                                                </td>
-                                            </tr>
+                                                </PanelGridTd>
+                                            </PanelGridTr>
                                         ))}
-                                    </tbody>
-                                </table>
+                                    </PanelGridTbody>
+                                </PanelGridTable>
                             )}
                         </div>
 
