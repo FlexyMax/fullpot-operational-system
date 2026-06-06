@@ -155,7 +155,8 @@ export default function SalesPage() {
     const [productImages,  setProductImages]  = useState<Record<string, string>>({});
 
     // Stock image/detail modal
-    const [stockImageModal, setStockImageModal] = useState<any>(null);
+    const [stockImageModal, setStockImageModal] = useState<{ row: any; source: "stock" | "inventory" } | null>(null);
+    const [stockImageForm,  setStockImageForm]  = useState({ box_qty: "1", price: "0.00" });
 
     // ── Init: load salesman info (unico, user_uq, wphysical_uq) ──────────────
     useEffect(() => {
@@ -420,6 +421,36 @@ export default function SalesPage() {
         } catch(e: any) { toast.error(e.message); }
         finally { setWorking(false); }
     }, [activeInvoiceUq, isOpen]);
+
+    const handleAddLineFromModal = useCallback(async () => {
+        const s = stockImageModal?.row;
+        if (!s) return;
+        if (!activeInvoiceUq) { toast.error("Select an invoice first"); return; }
+        if (!isOpen) { toast.error("Invoice is closed or voided"); return; }
+        const qty = parseInt(stockImageForm.box_qty) || 1;
+        const price = parseFloat(stockImageForm.price) || 0;
+        setWorking(true);
+        try {
+            const r = await fetch("/api/pos/invoice/line", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    invoice_uq: activeInvoiceUq,
+                    pk_sto_uq:  t(s.UNICO),
+                    product_uq: t(s.PRODUCT_UQ ?? s.BOX_PACK_UQ ?? ""),
+                    box_qty:    qty,
+                    price,
+                }),
+            });
+            const j = await r.json();
+            if (!r.ok || !j.success) throw new Error(j.error || "Failed");
+            toast.success("Line added");
+            setDetailKey(k => k+1);
+            setActiveTab("lines");
+            setStockImageModal(null);
+        } catch(e: any) { toast.error(e.message); }
+        finally { setWorking(false); }
+    }, [stockImageModal, stockImageForm, activeInvoiceUq, isOpen]);
 
     const handleDeleteLine = useCallback((lineUnico: string) => {
         toast("Delete this line?", { duration: 8000,
@@ -870,7 +901,7 @@ export default function SalesPage() {
                                                                     alt="" width={32} height={32}
                                                                     className="w-8 h-8 object-cover rounded border border-gray-200 shrink-0 cursor-pointer hover:opacity-80 hover:ring-2 hover:ring-[#FB7506] transition-all"
                                                                     onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }}
-                                                                    onClick={() => setStockImageModal(s)}
+                                                                    onClick={() => { setStockImageModal({ row: s, source: "stock" }); setStockImageForm({ box_qty: "1", price: fmt(s.PRICE_X_UNIT ?? 0) }); }}
                                                                 />
                                                             </Td>
                                                             <Td>
@@ -1271,66 +1302,102 @@ export default function SalesPage() {
             )}
             {/* ── Stock Product Detail Modal ────────────────────────────────── */}
             {stockImageModal && (() => {
-                const s   = stockImageModal;
-                const uq  = t(s.PRODUCT_UQ ?? s.BOX_PACK_UQ ?? "");
-                const img = productImages[uq] || DEFAULT_THUMB;
-                const fields: { label: string; value: string; accent?: boolean }[] = [
-                    { label: "Farm",        value: t(s.FARM),                         accent: true },
-                    { label: "Grower",      value: t(s.GROWER) },
-                    { label: "Date",        value: fmtDate(s.BOX_DATE) },
-                    { label: "Days",        value: fmtI(s.DAYS) },
-                    { label: "AWB",         value: t(s.AWBCODE) },
-                    { label: "Bch/Case",    value: fmtI(s.BUNCHES_CASE) },
-                    { label: "Units/Bch",   value: fmtI(s.UNITS_BUNCH) },
-                    { label: "T.Units",     value: fmtI(s.TUNITS_X_BOX) },
-                    { label: "Total Units", value: fmtI(s.TOTAL_UNITS) },
-                    { label: "Price",       value: `$${fmt(s.PRICE_X_UNIT)}`,          accent: true },
-                    { label: "Stock",       value: fmtI(s.WH_STOCK) },
-                    { label: "Case",        value: t(s.CASE_SH ?? s.CASE_NAME) },
-                    { label: "GPM%",        value: `${fmt(s.GPROFIT)}%` },
-                    { label: "Box ID",      value: t(s.BOX_ID) },
-                ];
+                const s      = stockImageModal.row;
+                const uq     = t(s.PRODUCT_UQ ?? s.BOX_PACK_UQ ?? "");
+                const img    = productImages[uq] || DEFAULT_THUMB;
+                const qtyNum = parseInt(stockImageForm.box_qty) || 0;
                 return (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
                          onClick={() => setStockImageModal(null)}>
-                        <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden"
+                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col"
                              onClick={e => e.stopPropagation()}>
                             {/* Header */}
-                            <div className="bg-[#374151] px-4 py-2.5 flex items-center justify-between">
-                                <div className="flex items-center gap-2 min-w-0">
-                                    <Package size={13} className="text-[#FB7506] shrink-0" />
-                                    <span className="font-black text-[11px] text-white uppercase tracking-widest truncate">{t(s.DESCRIPTION)}</span>
+                            <div className="bg-[#0d1b2a] px-4 py-3 flex items-center justify-between shrink-0">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="w-8 h-8 bg-[#FB7506] rounded-lg flex items-center justify-center shrink-0">
+                                        <Package size={15} className="text-white" />
+                                    </div>
+                                    <span className="font-black text-[12px] text-white uppercase tracking-widest">Product Detail</span>
                                 </div>
-                                <button onClick={() => setStockImageModal(null)} className="text-white/60 hover:text-white ml-2 shrink-0"><X size={14} /></button>
-                            </div>
-                            {/* Body */}
-                            <div className="flex gap-4 p-4">
-                                {/* Image */}
-                                <div className="shrink-0 w-44 h-44 rounded-lg border border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center">
-                                    <img src={img} alt={t(s.DESCRIPTION)}
-                                         className="w-full h-full object-contain"
-                                         onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }} />
-                                </div>
-                                {/* Info grid */}
-                                <div className="flex-1 grid grid-cols-2 gap-x-4 gap-y-1.5 content-start">
-                                    {fields.map(f => (
-                                        <div key={f.label}>
-                                            <div className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">{f.label}</div>
-                                            <div className={cn("text-[12px] font-semibold truncate", f.accent ? "text-[#FB7506]" : "text-gray-800")}>{f.value || "—"}</div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                            {/* Footer */}
-                            <div className="border-t border-gray-100 px-4 py-2.5 flex items-center justify-end gap-2">
                                 <button onClick={() => setStockImageModal(null)}
-                                    className="px-3 py-1.5 text-[11px] font-bold text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">
-                                    Close
-                                </button>
-                                {isOpen && (
-                                    <button onClick={() => { handleAddLine(s); setStockImageModal(null); }} disabled={working}
-                                        className="flex items-center gap-1 px-4 py-1.5 text-[11px] font-black text-white bg-[#FB7506] hover:bg-orange-500 rounded disabled:opacity-40">
-                                        <Plus size={11} />Add to Invoice
+                                    className="text-white/50 hover:text-white text-lg font-light leading-none">—</button>
+                            </div>
+                            {/* Image */}
+                            <div className="w-full bg-gray-50" style={{ aspectRatio: "4/3" }}>
+                                <img src={img} alt={t(s.DESCRIPTION)}
+                                     className="w-full h-full object-contain"
+                                     onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }} />
+                            </div>
+                            {/* Info */}
+                            <div className="px-4 pt-3 pb-0">
+                                <h2 className="font-black text-[15px] text-gray-900 leading-snug">{t(s.DESCRIPTION)}</h2>
+                                <p className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide mt-0.5">
+                                    {t(s.FARM)}{t(s.GROWER) ? ` / ${t(s.GROWER)}` : ""}
+                                </p>
+                                {/* Price display */}
+                                <div className="mt-2 mb-2">
+                                    <span className="text-[30px] font-black text-[#FB7506] leading-none">${stockImageForm.price}</span>
+                                </div>
+                                {/* Badges row */}
+                                <div className="flex flex-wrap gap-1.5 mb-3">
+                                    <span className="px-2.5 py-0.5 text-[10px] font-black text-green-700 bg-green-100 rounded-full border border-green-200">
+                                        STOCK: {fmtI(s.WH_STOCK)}
+                                    </span>
+                                    <span className="px-2.5 py-0.5 text-[10px] font-black text-gray-600 bg-gray-100 rounded-full border border-gray-200">
+                                        PACK: {fmtI(s.TUNITS_X_BOX)}
+                                    </span>
+                                    <span className="px-2.5 py-0.5 text-[10px] font-black text-blue-600 bg-blue-50 rounded-full border border-blue-200">
+                                        {fmtI(s.DAYS)}d · {fmtDate(s.BOX_DATE)}
+                                    </span>
+                                    {t(s.AWBCODE) && (
+                                        <span className="px-2.5 py-0.5 text-[10px] font-black text-purple-600 bg-purple-50 rounded-full border border-purple-200">
+                                            AWB {t(s.AWBCODE)}
+                                        </span>
+                                    )}
+                                    {t(s.CASE_SH ?? s.CASE_NAME) && (
+                                        <span className="px-2.5 py-0.5 text-[10px] font-black text-amber-700 bg-amber-50 rounded-full border border-amber-200">
+                                            {t(s.CASE_SH ?? s.CASE_NAME)}
+                                        </span>
+                                    )}
+                                    <span className={cn("px-2.5 py-0.5 text-[10px] font-black rounded-full border",
+                                        parseFloat(s.GPROFIT ?? 0) < 0
+                                            ? "text-red-600 bg-red-50 border-red-200"
+                                            : "text-gray-600 bg-gray-100 border-gray-200")}>
+                                        GPM {fmt(s.GPROFIT)}%
+                                    </span>
+                                </div>
+                                {/* Qty + Price inputs */}
+                                <div className="border-t border-gray-100 pt-3 flex gap-3 mb-3">
+                                    <div className="flex-1">
+                                        <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Box Qty</label>
+                                        <select value={stockImageForm.box_qty}
+                                            onChange={e => setStockImageForm(p => ({ ...p, box_qty: e.target.value }))}
+                                            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[14px] font-bold focus:outline-none focus:ring-2 focus:ring-[#FB7506] bg-gray-50 appearance-none text-center">
+                                            {Array.from({ length: 51 }, (_, i) => (
+                                                <option key={i} value={String(i)}>{i}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="flex-1">
+                                        <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Price / Unit</label>
+                                        <input type="number" step="0.01" min="0" value={stockImageForm.price}
+                                            onChange={e => setStockImageForm(p => ({ ...p, price: e.target.value }))}
+                                            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[14px] font-bold focus:outline-none focus:ring-2 focus:ring-[#FB7506] bg-gray-50 text-center" />
+                                    </div>
+                                </div>
+                            </div>
+                            {/* Action button */}
+                            <div className="px-4 pb-4 shrink-0">
+                                {isOpen ? (
+                                    <button onClick={handleAddLineFromModal} disabled={working || qtyNum < 1}
+                                        className="w-full flex items-center justify-center gap-2 py-3.5 text-[14px] font-black text-white bg-[#22c55e] hover:bg-green-400 active:bg-green-600 rounded-xl disabled:opacity-40 transition-colors">
+                                        {working ? <Loader2 size={16} className="animate-spin" /> : <ShoppingCart size={16} />}
+                                        Add to Invoice
+                                    </button>
+                                ) : (
+                                    <button onClick={() => setStockImageModal(null)}
+                                        className="w-full flex items-center justify-center gap-2 py-3.5 text-[14px] font-black text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors">
+                                        Close
                                     </button>
                                 )}
                             </div>
