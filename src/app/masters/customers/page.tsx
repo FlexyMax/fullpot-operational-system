@@ -344,20 +344,8 @@ export default function CustomersSetupPage() {
                     <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input type="text" value={search} onChange={e => setSearch(e.target.value)}
                         onKeyDown={e => e.key === "Enter" && refetchList()}
-                        placeholder="Search customers..." className="pl-7 pr-3 py-1.5 text-xs border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506] w-52" />
+                        placeholder="Search customers..." className="pl-7 pr-3 py-1.5 text-xs border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506] w-80" />
                 </div>
-                <button onClick={() => refetchList()} className="flex items-center gap-1 bg-gray-100 hover:bg-gray-200 border border-gray-200 px-2.5 py-1 rounded text-[10px] font-black uppercase transition-all">
-                    <RefreshCcw size={10} className={loadingList ? "animate-spin" : ""} /> Refresh
-                </button>
-                <button onClick={exportCSV} disabled={!perms.canReport} className="flex items-center gap-1 bg-gray-100 hover:bg-gray-200 border border-gray-200 px-2.5 py-1 rounded text-[10px] font-black uppercase transition-all disabled:opacity-40">
-                    <Download size={10} /> CSV
-                </button>
-                <GridMenu items={[
-                    { label: "Add", icon: Plus, color: "green", onClick: () => { setCustForm({...EMPTY_CUST}); setFormError(null); setCustModalTab("general"); setCustModal({ mode:"add" }); }, disabled: !perms.canCreate },
-                    { label: "Edit", icon: Pencil, color: "orange", onClick: () => { if (!selCust) return; const c = selCust; setCustForm({ old_code:c.old_code||"", edi_code:t(c.edi_code), fobmiami:!!c.fobmiami, inventory_from_invoice:!!c.inventory_from_invoice, dex:!!c.dex, auto_charge:!!c.auto_charge, credithold:!!c.credithold, internal_customer:!!c.internal_customer, active:!!c.active, customer:t(c.customer), dba:t(c.dba), contact:t(c.contact), purchaser:t(c.purchaser), address1:t(c.address1), address2:t(c.address2), city:t(c.city), state:t(c.state), zip:t(c.zip), country:t(c.country), phone_1:t(c.phone_1), phone_2:t(c.phone_2), fax_1:t(c.fax_1), fax_2:t(c.fax_2), email:t(c.email), terms_uq:t(c.terms_uq||c.terms), calls:t(c.calls)||"NNNNNN", subregion_uq:t(c.subregion_uq), salesman_uq:t(c.salesman_uq), group_uq:t(c.group_uq), rc_uq:t(c.rc_uq), pickremark:t(c.pickremark), julian_from:t(c.julian_from), reasonhold:t(c.reasonhold), credit_limit:c.credit_limit||0, insurance_for:c.insurance_for||0, price_margin:c.price_margin||0, dry_discount:c.dry_discount||0, sales_web_uq:t(c.sales_web_uq), custsince:c.custsince?normalizeToISODate(c.custsince):"", ap_contact:t(c.ap_contact), ap_email:t(c.ap_email), ap_msn:t(c.ap_msn), ap_phone:t(c.ap_phone), ap_fax:t(c.ap_fax), website:t(c.website), statement_print:!!c.statement_print, inspection:!!c.inspection, gpm:c.gpm||0, availability_by:t(c.availability_by)||"NONE", availability_to:t(c.availability_to), invoice_by:t(c.invoice_by)||"EMAIL", extension:c.extension||0, commission_days:c.commission_days||0, resale_tax:c.resale_tax||0, ccard_name:t(c.ccard_name), ccard_on_file:t(c.ccard_on_file), ccard_expiration_month:t(c.ccard_expiration_month), ccard_expiration_year:t(c.ccard_expiration_year), tax_id:t(c.tax_id), international:!!c.international, collection:!!c.collection, check_price_override:!!c.check_price_override }); setFormError(null); setCustModalTab("general"); setCustModal({ mode:"edit" }); }, disabled: !selCust || !perms.canEdit },
-                    { label: "Delete", icon: Trash2, color: "red", onClick: () => { if (selCust) { setFormError(null); setCustModal({ mode:"delete" }); } }, disabled: !selCust || !perms.canDelete },
-                ]} />
-                <AuditLogModal recordId={selCust?.unico} disabled={!selCust?.unico} />
                 {formError && <span className="text-amber-600 text-[10px] font-bold flex items-center gap-1 ml-2"><AlertCircle size={11} />{formError}</span>}
             </div>
 
@@ -376,7 +364,7 @@ export default function CustomersSetupPage() {
                     { separator: true },
                     { label: "Export CSV", icon: Download, color: "gray", onClick: exportCSV, disabled: !perms.canReport },
                 ]}
-                className="shrink-0"
+                className="shrink-0 mx-2 mt-2"
             >
                 <div className="overflow-auto" style={{ height: "140px" }} onScroll={handleCustScroll}>
                     <PanelGridTable>
@@ -430,7 +418,7 @@ export default function CustomersSetupPage() {
             {/* Tabs area */}
             <div className="flex flex-col flex-1 overflow-hidden">
                 {/* Tab bar */}
-                <div className="bg-[#374151] flex items-end px-2 gap-0.5 shrink-0 h-9">
+                <div className="bg-white border-b border-gray-200 flex items-end px-3 gap-1 shrink-0 h-9">
                     {([
                         { id:"shipto",    label:"Ship-to Detail", icon:Truck },
                         { id:"statement", label:"Statement",       icon:FileText },
@@ -438,8 +426,8 @@ export default function CustomersSetupPage() {
                         { id:"messages",  label:"Messages",        icon:MessageSquare },
                     ] as const).map(tab => (
                         <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                            className={cn("flex items-center gap-1.5 px-4 h-7 text-[10px] font-black uppercase tracking-wider rounded-t transition-all",
-                                activeTab === tab.id ? "bg-[#f4f6f8] text-[#FB7506]" : "text-gray-400 hover:text-white hover:bg-white/10")}>
+                            className={cn("flex items-center gap-1.5 px-4 h-8 text-[10px] font-black uppercase tracking-wider transition-all border-b-2",
+                                activeTab === tab.id ? "border-[#FB7506] text-[#FB7506]" : "border-transparent text-gray-400 hover:text-gray-600")}>
                             <tab.icon size={11} />{tab.label}
                         </button>
                     ))}
