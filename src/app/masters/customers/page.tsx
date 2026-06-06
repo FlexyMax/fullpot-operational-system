@@ -7,7 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     Search, Plus, Pencil, Trash2, Save, X, RefreshCcw,
     Download, Users, Truck, FileText, MessageSquare, Check,
-    AlertCircle, Copy, Star, XCircle, ChevronRight
+    AlertCircle, Copy, Star, XCircle
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { AppFooter } from "@/components/layout/AppFooter";
@@ -55,7 +55,7 @@ export default function CustomersSetupPage() {
     const [selCarrier,     setSelCarrier]     = useState<any>(null);
     const [selWebUser,     setSelWebUser]     = useState<any>(null);
     const [selMessage,     setSelMessage]     = useState<any>(null);
-    const [activeTab,      setActiveTab]      = useState<"statement"|"webusers"|"messages">("statement");
+    const [activeExpTab,   setActiveExpTab]   = useState<"shipto"|"statement"|"webusers"|"messages">("shipto");
     const [custModal,      setCustModal]      = useState<{ mode:"add"|"edit"|"delete" } | null>(null);
     const [shiptoModal,    setShiptoModal]    = useState<{ mode:"add"|"edit"|"delete" } | null>(null);
     const [carrierModal,   setCarrierModal]   = useState<{ mode:"add"|"edit"|"delete" } | null>(null);
@@ -138,13 +138,13 @@ export default function CustomersSetupPage() {
     const { data: webUsers = [], isFetching: loadingWebUsers, refetch: refetchWebUsers } = useQuery({
         queryKey: ["cust-webusers", selCust?.unico],
         queryFn:  () => apiFetch(`/api/masters/customers/${selCust.unico}/web-users`),
-        enabled:  !!selCust?.unico && activeTab === "webusers",
+        enabled:  !!selCust?.unico && expandedCustUnico !== null && activeExpTab === "webusers",
     });
 
     const { data: messages = [], isFetching: loadingMsgs, refetch: refetchMsgs } = useQuery({
         queryKey: ["cust-msgs", selCust?.unico],
         queryFn:  () => apiFetch(`/api/masters/customers/${selCust.unico}/messages`),
-        enabled:  !!selCust?.unico && activeTab === "messages",
+        enabled:  !!selCust?.unico && expandedCustUnico !== null && activeExpTab === "messages",
     });
 
     const { data: lookups } = useQuery({
@@ -172,7 +172,7 @@ export default function CustomersSetupPage() {
         else setSelWebUser(null);
     }, [webUsers]);
 
-    const selectCustomer = (c: any) => { setSelCust(c); setSelShipto(null); setSelCarrier(null); setSelWebUser(null); setFormError(null); setExpandedShiptoUnico(null); };
+    const selectCustomer = (c: any) => { setSelCust(c); setSelShipto(null); setSelCarrier(null); setSelWebUser(null); setFormError(null); setExpandedShiptoUnico(null); setActiveExpTab("shipto"); };
 
     // ── Export CSV ────────────────────────────────────────────────────────────
     const exportCSV = () => {
@@ -399,7 +399,7 @@ export default function CustomersSetupPage() {
                                             <PanelGridTd className="w-6 pl-1 pr-0">
                                                 <button onClick={e => { e.stopPropagation(); if (isExp) { setExpandedCustUnico(null); } else { selectCustomer(c); setExpandedCustUnico(c.unico); } }}
                                                     className="p-0.5 rounded hover:bg-gray-200 transition-colors">
-                                                    <ChevronRight size={11} className={cn("text-gray-400 transition-transform duration-150", isExp && "rotate-90 text-[#FB7506]")} />
+                                                    {isExp ? <X size={11} className="text-[#FB7506]" /> : <Plus size={11} className="text-gray-400" />}
                                                 </button>
                                             </PanelGridTd>
                                             <PanelGridTd className="font-mono text-[10px]">{t(c.old_code)}</PanelGridTd>
@@ -422,136 +422,307 @@ export default function CustomersSetupPage() {
                                         {isExp && (
                                             <tr>
                                                 <td colSpan={17} className="p-0 border-b border-gray-200">
-                                                    <div className="pl-6 pr-2 py-2 bg-gray-50 flex flex-col gap-2">
-                                                        {/* \u2500\u2500 Ship-to grid \u2500\u2500 */}
-                                                        <PanelGrid
-                                                            title="Ship-to Addresses"
-                                                            icon={Truck}
-                                                            recordCount={(shiptos as any[]).length}
-                                                            onRefresh={() => { if (selCust) refetchShiptos(); }}
-                                                            refreshing={loadingShiptos}
-                                                            headerRight={<AuditLogModal recordId={selShipto?.unico} disabled={!selShipto?.unico} bareButton />}
-                                                            menuItems={[
-                                                                { label: "Add Address", icon: Plus, color: "green", onClick: () => { setShiptoForm({...EMPTY_SHIPTO}); setFormError(null); setShiptoModal({ mode:"add" }); }, disabled: !selCust || !perms.canCreate },
-                                                                { label: "Edit Address", icon: Pencil, color: "orange", onClick: () => { if(!selShipto) return; setShiptoForm({...selShipto, dc_uq:t(selShipto.dc_uq), route_uq:t(selShipto.route_uq)}); setFormError(null); setShiptoModal({ mode:"edit" }); }, disabled: !selShipto || !perms.canEdit },
-                                                                { label: "Delete Address", icon: Trash2, color: "orange", onClick: () => { if(selShipto) { setFormError(null); setShiptoModal({ mode:"delete" }); } }, disabled: !selShipto || !perms.canDelete },
-                                                                { separator: true },
-                                                                { label: "Copy from Billing", icon: Copy, color: "gray", onClick: copyFromBilling, disabled: !selCust },
-                                                            ]}
-                                                        >
-                                                            <PanelGridTable>
-                                                                <PanelGridThead>
-                                                                    <PanelGridTh className="w-6">{""}</PanelGridTh>
-                                                                    <PanelGridTh>#</PanelGridTh>
-                                                                    <PanelGridTh>Name</PanelGridTh>
-                                                                    <PanelGridTh className="hidden sm:table-cell">Address</PanelGridTh>
-                                                                    <PanelGridTh>City</PanelGridTh>
-                                                                    <PanelGridTh className="hidden md:table-cell">State</PanelGridTh>
-                                                                    <PanelGridTh className="hidden md:table-cell">Zip</PanelGridTh>
-                                                                    <PanelGridTh className="hidden lg:table-cell">Country</PanelGridTh>
-                                                                    <PanelGridTh className="hidden lg:table-cell">Contact</PanelGridTh>
-                                                                    <PanelGridTh className="hidden xl:table-cell">Phone</PanelGridTh>
-                                                                    <PanelGridTh>Zone</PanelGridTh>
-                                                                    <PanelGridTh className="hidden sm:table-cell">Route</PanelGridTh>
-                                                                    <PanelGridTh align="center">24h</PanelGridTh>
-                                                                    <PanelGridTh align="center">Truck</PanelGridTh>
-                                                                </PanelGridThead>
-                                                                <PanelGridTbody>
-                                                                    {(shiptos as any[]).length === 0
-                                                                        ? <tr><td colSpan={14} className="p-6 text-center text-gray-300 text-xs">{loadingShiptos ? "Loading..." : "No ship-to addresses"}</td></tr>
-                                                                        : (shiptos as any[]).map((s: any) => {
-                                                                            const isShiptoSel = selShipto?.unico === s.unico;
-                                                                            const isShiptoExp = expandedShiptoUnico === s.unico;
-                                                                            return (
-                                                                                <Fragment key={s.unico}>
-                                                                                    <PanelGridTr selected={isShiptoSel} onClick={() => setSelShipto(s)}>
-                                                                                        <PanelGridTd className="w-6 pl-1 pr-0">
-                                                                                            <button onClick={e => { e.stopPropagation(); if (isShiptoExp) { setExpandedShiptoUnico(null); } else { setSelShipto(s); setExpandedShiptoUnico(s.unico); } }}
-                                                                                                className="p-0.5 rounded hover:bg-gray-200 transition-colors">
-                                                                                                <ChevronRight size={11} className={cn("text-gray-400 transition-transform duration-150", isShiptoExp && "rotate-90 text-[#FB7506]")} />
-                                                                                            </button>
-                                                                                        </PanelGridTd>
-                                                                                        <PanelGridTd className="font-mono">{s.shipto}</PanelGridTd>
-                                                                                        <PanelGridTd className="font-medium max-w-[140px] truncate">{t(s.name)}</PanelGridTd>
-                                                                                        <PanelGridTd className="hidden sm:table-cell max-w-[140px] truncate">{t(s.address1)}</PanelGridTd>
-                                                                                        <PanelGridTd>{t(s.city)}</PanelGridTd>
-                                                                                        <PanelGridTd className="hidden md:table-cell">{t(s.state)}</PanelGridTd>
-                                                                                        <PanelGridTd className="hidden md:table-cell">{t(s.zip)}</PanelGridTd>
-                                                                                        <PanelGridTd className="hidden lg:table-cell">{t(s.country)}</PanelGridTd>
-                                                                                        <PanelGridTd className="hidden lg:table-cell max-w-[100px] truncate">{t(s.contact)}</PanelGridTd>
-                                                                                        <PanelGridTd className="hidden xl:table-cell whitespace-nowrap">{t(s.phone)}</PanelGridTd>
-                                                                                        <PanelGridTd>{t(s.zone)}</PanelGridTd>
-                                                                                        <PanelGridTd className="hidden sm:table-cell">{t(s.route)}</PanelGridTd>
-                                                                                        <PanelGridTd align="center">{s.hours24 ? <Check size={10} className="text-green-500 mx-auto" /> : "\u2014"}</PanelGridTd>
-                                                                                        <PanelGridTd align="center">{s.truck_days||0}</PanelGridTd>
-                                                                                    </PanelGridTr>
-                                                                                    {isShiptoExp && (
-                                                                                        <tr>
-                                                                                            <td colSpan={14} className="p-0 border-b border-gray-200">
-                                                                                                <div className="pl-6 pr-2 py-2 bg-gray-100">
-                                                                                                    {/* \u2500\u2500 Carriers grid \u2500\u2500 */}
-                                                                                                    <PanelGrid
-                                                                                                        title="Carriers by Ship-to"
-                                                                                                        icon={Truck}
-                                                                                                        recordCount={(carriers as any[]).length}
-                                                                                                        headerRight={<AuditLogModal recordId={selCarrier?.unico} disabled={!selCarrier?.unico} bareButton />}
-                                                                                                        menuItems={[
-                                                                                                            { label: "Add Carrier", icon: Plus, color: "green", onClick: () => { setCarrierForm({...EMPTY_CARRIER}); setFormError(null); setCarrierModal({ mode:"add" }); }, disabled: !selCust || !perms.canCreate },
-                                                                                                            { label: "Edit Carrier", icon: Pencil, color: "orange", onClick: () => { if(!selCarrier) return; setCarrierForm({carrier_uq:t(selCarrier.carrier_uq), account:t(selCarrier.account), zone:t(selCarrier.zone), mon:!!selCarrier.mon, tue:!!selCarrier.tue, wed:!!selCarrier.wed, thu:!!selCarrier.thu, fri:!!selCarrier.fri, sat:!!selCarrier.sat, sun:!!selCarrier.sun}); setFormError(null); setCarrierModal({ mode:"edit" }); }, disabled: !selCarrier || !perms.canEdit },
-                                                                                                            { label: "Delete Carrier", icon: Trash2, color: "orange", onClick: () => { if(selCarrier) { setFormError(null); setCarrierModal({ mode:"delete" }); } }, disabled: !selCarrier || !perms.canDelete },
-                                                                                                            { separator: true },
-                                                                                                            { label: "Set Default", icon: Star, color: "gray", onClick: setDefaultCarrier, disabled: !selCarrier },
-                                                                                                        ]}
-                                                                                                    >
-                                                                                                        <PanelGridTable>
-                                                                                                            <PanelGridThead>
-                                                                                                                <PanelGridTh>Carrier</PanelGridTh>
-                                                                                                                <PanelGridTh>Account</PanelGridTh>
-                                                                                                                <PanelGridTh className="hidden sm:table-cell">Ship-to</PanelGridTh>
-                                                                                                                <PanelGridTh align="center">Zone</PanelGridTh>
-                                                                                                                <PanelGridTh align="center">Default</PanelGridTh>
-                                                                                                                <PanelGridTh align="center">Mon</PanelGridTh>
-                                                                                                                <PanelGridTh align="center">Tue</PanelGridTh>
-                                                                                                                <PanelGridTh align="center">Wed</PanelGridTh>
-                                                                                                                <PanelGridTh align="center">Thu</PanelGridTh>
-                                                                                                                <PanelGridTh align="center">Fri</PanelGridTh>
-                                                                                                                <PanelGridTh align="center">Sat</PanelGridTh>
-                                                                                                                <PanelGridTh align="center">Sun</PanelGridTh>
-                                                                                                            </PanelGridThead>
-                                                                                                            <PanelGridTbody>
-                                                                                                                {(carriers as any[]).length === 0
-                                                                                                                    ? <tr><td colSpan={12} className="p-6 text-center text-gray-300 text-xs">{loadingCarriers ? "Loading..." : "No carriers"}</td></tr>
-                                                                                                                    : (carriers as any[]).map((car: any) => {
-                                                                                                                        const isCarSel = selCarrier?.unico === car.unico;
-                                                                                                                        return (
-                                                                                                                            <PanelGridTr key={car.unico} selected={isCarSel} onClick={() => setSelCarrier(car)}>
-                                                                                                                                <PanelGridTd className="font-medium">{t(car.carrier)}</PanelGridTd>
-                                                                                                                                <PanelGridTd>{t(car.account)}</PanelGridTd>
-                                                                                                                                <PanelGridTd className="hidden sm:table-cell max-w-[100px] truncate">{t(car.ship_name)}</PanelGridTd>
-                                                                                                                                <PanelGridTd align="center">{t(car.zone)}</PanelGridTd>
-                                                                                                                                {["defa_carrier","mon","tue","wed","thu","fri","sat","sun"].map(d => (
-                                                                                                                                    <PanelGridTd key={d} align="center">
-                                                                                                                                        {car[d] ? <Check size={10} className={d==="defa_carrier"?"text-amber-500 mx-auto":"text-green-500 mx-auto"} /> : <span className="text-gray-200">{"\u2014"}</span>}
-                                                                                                                                    </PanelGridTd>
-                                                                                                                                ))}
-                                                                                                                            </PanelGridTr>
-                                                                                                                        );
-                                                                                                                    })
-                                                                                                                }
-                                                                                                            </PanelGridTbody>
-                                                                                                        </PanelGridTable>
-                                                                                                    </PanelGrid>
-                                                                                                </div>
-                                                                                            </td>
-                                                                                        </tr>
-                                                                                    )}
-                                                                                </Fragment>
-                                                                            );
-                                                                        })
+                                                    <div className="bg-gray-50">
+                                                        {/* ── Tab bar ── */}
+                                                        <div className="flex items-end px-4 pt-1.5 gap-1 border-b border-gray-200">
+                                                            {([
+                                                                { id:"shipto",    label:"Ship-to",   icon:Truck },
+                                                                { id:"statement", label:"Statement", icon:FileText },
+                                                                { id:"webusers",  label:"Web Users", icon:Users },
+                                                                { id:"messages",  label:"Messages",  icon:MessageSquare },
+                                                            ] as const).map(tab => (
+                                                                <button key={tab.id} onClick={e => { e.stopPropagation(); setActiveExpTab(tab.id); }}
+                                                                    className={cn("flex items-center gap-1.5 px-3 h-7 text-[10px] font-black uppercase tracking-wider transition-all border-b-2",
+                                                                        activeExpTab === tab.id ? "border-[#FB7506] text-[#FB7506]" : "border-transparent text-gray-400 hover:text-gray-600")}>
+                                                                    <tab.icon size={10} />{tab.label}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                        {/* ── Ship-to tab ── */}
+                                                        {activeExpTab === "shipto" && (
+                                                            <div className="pl-4 pr-2 py-2 flex flex-col gap-2">
+                                                                <PanelGrid
+                                                                    title="Ship-to Addresses"
+                                                                    icon={Truck}
+                                                                    recordCount={(shiptos as any[]).length}
+                                                                    onRefresh={() => { if (selCust) refetchShiptos(); }}
+                                                                    refreshing={loadingShiptos}
+                                                                    headerRight={<AuditLogModal recordId={selShipto?.unico} disabled={!selShipto?.unico} bareButton />}
+                                                                    menuItems={[
+                                                                        { label: "Add Address", icon: Plus, color: "green", onClick: () => { setShiptoForm({...EMPTY_SHIPTO}); setFormError(null); setShiptoModal({ mode:"add" }); }, disabled: !selCust || !perms.canCreate },
+                                                                        { label: "Edit Address", icon: Pencil, color: "orange", onClick: () => { if(!selShipto) return; setShiptoForm({...selShipto, dc_uq:t(selShipto.dc_uq), route_uq:t(selShipto.route_uq)}); setFormError(null); setShiptoModal({ mode:"edit" }); }, disabled: !selShipto || !perms.canEdit },
+                                                                        { label: "Delete Address", icon: Trash2, color: "orange", onClick: () => { if(selShipto) { setFormError(null); setShiptoModal({ mode:"delete" }); } }, disabled: !selShipto || !perms.canDelete },
+                                                                        { separator: true },
+                                                                        { label: "Copy from Billing", icon: Copy, color: "gray", onClick: copyFromBilling, disabled: !selCust },
+                                                                    ]}
+                                                                >
+                                                                    <PanelGridTable>
+                                                                        <PanelGridThead>
+                                                                            <PanelGridTh className="w-6">{""}</PanelGridTh>
+                                                                            <PanelGridTh>#</PanelGridTh>
+                                                                            <PanelGridTh>Name</PanelGridTh>
+                                                                            <PanelGridTh className="hidden sm:table-cell">Address</PanelGridTh>
+                                                                            <PanelGridTh>City</PanelGridTh>
+                                                                            <PanelGridTh className="hidden md:table-cell">State</PanelGridTh>
+                                                                            <PanelGridTh className="hidden md:table-cell">Zip</PanelGridTh>
+                                                                            <PanelGridTh className="hidden lg:table-cell">Country</PanelGridTh>
+                                                                            <PanelGridTh className="hidden lg:table-cell">Contact</PanelGridTh>
+                                                                            <PanelGridTh className="hidden xl:table-cell">Phone</PanelGridTh>
+                                                                            <PanelGridTh>Zone</PanelGridTh>
+                                                                            <PanelGridTh className="hidden sm:table-cell">Route</PanelGridTh>
+                                                                            <PanelGridTh align="center">24h</PanelGridTh>
+                                                                            <PanelGridTh align="center">Truck</PanelGridTh>
+                                                                        </PanelGridThead>
+                                                                        <PanelGridTbody>
+                                                                            {(shiptos as any[]).length === 0
+                                                                                ? <tr><td colSpan={14} className="p-6 text-center text-gray-300 text-xs">{loadingShiptos ? "Loading..." : "No ship-to addresses"}</td></tr>
+                                                                                : (shiptos as any[]).map((s: any) => {
+                                                                                    const isShiptoSel = selShipto?.unico === s.unico;
+                                                                                    const isShiptoExp = expandedShiptoUnico === s.unico;
+                                                                                    return (
+                                                                                        <Fragment key={s.unico}>
+                                                                                            <PanelGridTr selected={isShiptoSel} onClick={() => setSelShipto(s)}>
+                                                                                                <PanelGridTd className="w-6 pl-1 pr-0">
+                                                                                                    <button onClick={e => { e.stopPropagation(); if (isShiptoExp) { setExpandedShiptoUnico(null); } else { setSelShipto(s); setExpandedShiptoUnico(s.unico); } }}
+                                                                                                        className="p-0.5 rounded hover:bg-gray-200 transition-colors">
+                                                                                                        {isShiptoExp ? <X size={11} className="text-[#FB7506]" /> : <Plus size={11} className="text-gray-400" />}
+                                                                                                    </button>
+                                                                                                </PanelGridTd>
+                                                                                                <PanelGridTd className="font-mono">{s.shipto}</PanelGridTd>
+                                                                                                <PanelGridTd className="font-medium max-w-[140px] truncate">{t(s.name)}</PanelGridTd>
+                                                                                                <PanelGridTd className="hidden sm:table-cell max-w-[140px] truncate">{t(s.address1)}</PanelGridTd>
+                                                                                                <PanelGridTd>{t(s.city)}</PanelGridTd>
+                                                                                                <PanelGridTd className="hidden md:table-cell">{t(s.state)}</PanelGridTd>
+                                                                                                <PanelGridTd className="hidden md:table-cell">{t(s.zip)}</PanelGridTd>
+                                                                                                <PanelGridTd className="hidden lg:table-cell">{t(s.country)}</PanelGridTd>
+                                                                                                <PanelGridTd className="hidden lg:table-cell max-w-[100px] truncate">{t(s.contact)}</PanelGridTd>
+                                                                                                <PanelGridTd className="hidden xl:table-cell whitespace-nowrap">{t(s.phone)}</PanelGridTd>
+                                                                                                <PanelGridTd>{t(s.zone)}</PanelGridTd>
+                                                                                                <PanelGridTd className="hidden sm:table-cell">{t(s.route)}</PanelGridTd>
+                                                                                                <PanelGridTd align="center">{s.hours24 ? <Check size={10} className="text-green-500 mx-auto" /> : "—"}</PanelGridTd>
+                                                                                                <PanelGridTd align="center">{s.truck_days||0}</PanelGridTd>
+                                                                                            </PanelGridTr>
+                                                                                            {isShiptoExp && (
+                                                                                                <tr>
+                                                                                                    <td colSpan={14} className="p-0 border-b border-gray-200">
+                                                                                                        <div className="pl-6 pr-2 py-2 bg-gray-100">
+                                                                                                            <PanelGrid
+                                                                                                                title="Carriers by Ship-to"
+                                                                                                                icon={Truck}
+                                                                                                                recordCount={(carriers as any[]).length}
+                                                                                                                headerRight={<AuditLogModal recordId={selCarrier?.unico} disabled={!selCarrier?.unico} bareButton />}
+                                                                                                                menuItems={[
+                                                                                                                    { label: "Add Carrier", icon: Plus, color: "green", onClick: () => { setCarrierForm({...EMPTY_CARRIER}); setFormError(null); setCarrierModal({ mode:"add" }); }, disabled: !selCust || !perms.canCreate },
+                                                                                                                    { label: "Edit Carrier", icon: Pencil, color: "orange", onClick: () => { if(!selCarrier) return; setCarrierForm({carrier_uq:t(selCarrier.carrier_uq), account:t(selCarrier.account), zone:t(selCarrier.zone), mon:!!selCarrier.mon, tue:!!selCarrier.tue, wed:!!selCarrier.wed, thu:!!selCarrier.thu, fri:!!selCarrier.fri, sat:!!selCarrier.sat, sun:!!selCarrier.sun}); setFormError(null); setCarrierModal({ mode:"edit" }); }, disabled: !selCarrier || !perms.canEdit },
+                                                                                                                    { label: "Delete Carrier", icon: Trash2, color: "orange", onClick: () => { if(selCarrier) { setFormError(null); setCarrierModal({ mode:"delete" }); } }, disabled: !selCarrier || !perms.canDelete },
+                                                                                                                    { separator: true },
+                                                                                                                    { label: "Set Default", icon: Star, color: "gray", onClick: setDefaultCarrier, disabled: !selCarrier },
+                                                                                                                ]}
+                                                                                                            >
+                                                                                                                <PanelGridTable>
+                                                                                                                    <PanelGridThead>
+                                                                                                                        <PanelGridTh>Carrier</PanelGridTh>
+                                                                                                                        <PanelGridTh>Account</PanelGridTh>
+                                                                                                                        <PanelGridTh className="hidden sm:table-cell">Ship-to</PanelGridTh>
+                                                                                                                        <PanelGridTh align="center">Zone</PanelGridTh>
+                                                                                                                        <PanelGridTh align="center">Default</PanelGridTh>
+                                                                                                                        <PanelGridTh align="center">Mon</PanelGridTh>
+                                                                                                                        <PanelGridTh align="center">Tue</PanelGridTh>
+                                                                                                                        <PanelGridTh align="center">Wed</PanelGridTh>
+                                                                                                                        <PanelGridTh align="center">Thu</PanelGridTh>
+                                                                                                                        <PanelGridTh align="center">Fri</PanelGridTh>
+                                                                                                                        <PanelGridTh align="center">Sat</PanelGridTh>
+                                                                                                                        <PanelGridTh align="center">Sun</PanelGridTh>
+                                                                                                                    </PanelGridThead>
+                                                                                                                    <PanelGridTbody>
+                                                                                                                        {(carriers as any[]).length === 0
+                                                                                                                            ? <tr><td colSpan={12} className="p-6 text-center text-gray-300 text-xs">{loadingCarriers ? "Loading..." : "No carriers"}</td></tr>
+                                                                                                                            : (carriers as any[]).map((car: any) => {
+                                                                                                                                const isCarSel = selCarrier?.unico === car.unico;
+                                                                                                                                return (
+                                                                                                                                    <PanelGridTr key={car.unico} selected={isCarSel} onClick={() => setSelCarrier(car)}>
+                                                                                                                                        <PanelGridTd className="font-medium">{t(car.carrier)}</PanelGridTd>
+                                                                                                                                        <PanelGridTd>{t(car.account)}</PanelGridTd>
+                                                                                                                                        <PanelGridTd className="hidden sm:table-cell max-w-[100px] truncate">{t(car.ship_name)}</PanelGridTd>
+                                                                                                                                        <PanelGridTd align="center">{t(car.zone)}</PanelGridTd>
+                                                                                                                                        {["defa_carrier","mon","tue","wed","thu","fri","sat","sun"].map(d => (
+                                                                                                                                            <PanelGridTd key={d} align="center">
+                                                                                                                                                {car[d] ? <Check size={10} className={d==="defa_carrier"?"text-amber-500 mx-auto":"text-green-500 mx-auto"} /> : <span className="text-gray-200">{"—"}</span>}
+                                                                                                                                            </PanelGridTd>
+                                                                                                                                        ))}
+                                                                                                                                    </PanelGridTr>
+                                                                                                                                );
+                                                                                                                            })
+                                                                                                                        }
+                                                                                                                    </PanelGridTbody>
+                                                                                                                </PanelGridTable>
+                                                                                                            </PanelGrid>
+                                                                                                        </div>
+                                                                                                    </td>
+                                                                                                </tr>
+                                                                                            )}
+                                                                                        </Fragment>
+                                                                                    );
+                                                                                })
+                                                                            }
+                                                                        </PanelGridTbody>
+                                                                    </PanelGridTable>
+                                                                </PanelGrid>
+                                                            </div>
+                                                        )}
+                                                        {/* ── Statement tab ── */}
+                                                        {activeExpTab === "statement" && (
+                                                            <div className="px-4 py-2 flex flex-col gap-2">
+                                                                <PanelGrid
+                                                                    title="Account Statement"
+                                                                    icon={FileText}
+                                                                    recordCount={(statement as any[]).length}
+                                                                    onRefresh={() => { setStmtEnabled(true); refetchStmt(); }}
+                                                                    refreshing={loadingStmt}
+                                                                    headerRight={
+                                                                        <div className="flex items-center gap-2">
+                                                                            <input type="date" value={stmtFrom} onChange={e => setStmtFrom(e.target.value)} className="bg-gray-700 text-white text-[9px] border-none outline-none rounded px-1.5 py-0.5 w-28" />
+                                                                            <span className="text-gray-400 text-[9px]">{"→"}</span>
+                                                                            <input type="date" value={stmtTo} onChange={e => setStmtTo(e.target.value)} className="bg-gray-700 text-white text-[9px] border-none outline-none rounded px-1.5 py-0.5 w-28" />
+                                                                        </div>
                                                                     }
-                                                                </PanelGridTbody>
-                                                            </PanelGridTable>
-                                                        </PanelGrid>
+                                                                >
+                                                                    <div className="overflow-auto">
+                                                                        {!stmtEnabled ? <div className="h-32 flex items-center justify-center text-gray-300 text-xs font-bold uppercase">Select date range and click Load</div>
+                                                                        : (statement as any[]).length === 0 ? <div className="h-32 flex items-center justify-center text-gray-400 text-xs italic">{loadingStmt ? "Loading..." : "No statement records"}</div>
+                                                                        : (
+                                                                            <PanelGridTable>
+                                                                                <PanelGridThead>
+                                                                                    <PanelGridTh>Type</PanelGridTh>
+                                                                                    <PanelGridTh>Doc No.</PanelGridTh>
+                                                                                    <PanelGridTh>Date</PanelGridTh>
+                                                                                    <PanelGridTh>Due Date</PanelGridTh>
+                                                                                    <PanelGridTh align="right">Amount</PanelGridTh>
+                                                                                    <PanelGridTh align="right">Payments</PanelGridTh>
+                                                                                    <PanelGridTh align="right">Debits</PanelGridTh>
+                                                                                    <PanelGridTh align="right">Credits</PanelGridTh>
+                                                                                    <PanelGridTh align="right">Balance</PanelGridTh>
+                                                                                </PanelGridThead>
+                                                                                <PanelGridTbody>
+                                                                                    {(statement as any[]).map((row: any, i: number) => (
+                                                                                        <PanelGridTr key={i}>
+                                                                                            <PanelGridTd className="font-medium">{t(row.type)}</PanelGridTd>
+                                                                                            <PanelGridTd className="font-mono">{t(row.invoice_no)}</PanelGridTd>
+                                                                                            <PanelGridTd className="whitespace-nowrap text-gray-500">{formatDateEST(normalizeToISODate(row.fecha||row.date))}</PanelGridTd>
+                                                                                            <PanelGridTd className="whitespace-nowrap text-gray-500">{formatDateEST(normalizeToISODate(row.due_date))}</PanelGridTd>
+                                                                                            <PanelGridTd align="right" className="text-blue-700">{formatMoney(row.ammount)}</PanelGridTd>
+                                                                                            <PanelGridTd align="right" className="text-green-600">{formatMoney(row.payments)}</PanelGridTd>
+                                                                                            <PanelGridTd align="right" className="text-red-500">{formatMoney(row.debits)}</PanelGridTd>
+                                                                                            <PanelGridTd align="right" className="text-blue-600">{formatMoney(row.credits)}</PanelGridTd>
+                                                                                            <PanelGridTd align="right" className="font-semibold text-[#FB7506]">{formatMoney(row.balance)}</PanelGridTd>
+                                                                                        </PanelGridTr>
+                                                                                    ))}
+                                                                                </PanelGridTbody>
+                                                                            </PanelGridTable>
+                                                                        )}
+                                                                    </div>
+                                                                </PanelGrid>
+                                                            </div>
+                                                        )}
+                                                        {/* ── Web Users tab ── */}
+                                                        {activeExpTab === "webusers" && (
+                                                            <div className="px-4 py-2 flex flex-col gap-2">
+                                                                <PanelGrid
+                                                                    title="Web Users / Portal"
+                                                                    icon={Users}
+                                                                    recordCount={(webUsers as any[]).length}
+                                                                    headerRight={<AuditLogModal recordId={selWebUser?.unico} disabled={!selWebUser?.unico} bareButton />}
+                                                                    menuItems={[
+                                                                        { label: "Add User", icon: Plus, color: "green", onClick: () => { setWebUserForm({...EMPTY_WEBUSER}); setFormError(null); setWebUserModal({ mode:"add" }); }, disabled: !selCust || !perms.canCreate },
+                                                                        { label: "Edit User", icon: Pencil, color: "orange", onClick: () => { if(!selWebUser) return; setWebUserForm({fname:t(selWebUser.fname),lname:t(selWebUser.lname),username:t(selWebUser.username),password:t(selWebUser.password),active:!!selWebUser.active,makeinvoice:!!selWebUser.makeinvoice,makeprebook:!!selWebUser.makeprebook,makecredit:!!selWebUser.makecredit,viewaccount:!!selWebUser.viewaccount,viewproducts:!!selWebUser.viewproducts,viewhistory:!!selWebUser.viewhistory,email:t(selWebUser.email),phone:t(selWebUser.phone)}); setFormError(null); setWebUserModal({ mode:"edit" }); }, disabled: !selWebUser || !perms.canEdit },
+                                                                        { label: "Delete User", icon: Trash2, color: "orange", onClick: () => { if(selWebUser) { setFormError(null); setWebUserModal({ mode:"delete" }); } }, disabled: !selWebUser || !perms.canDelete },
+                                                                    ]}
+                                                                >
+                                                                    <div className="overflow-auto">
+                                                                        {(webUsers as any[]).length === 0 ? <div className="h-32 flex items-center justify-center text-gray-400 text-xs italic">{loadingWebUsers ? "Loading..." : "No web users"}</div> : (
+                                                                            <PanelGridTable>
+                                                                                <PanelGridThead>
+                                                                                    <PanelGridTh>User</PanelGridTh>
+                                                                                    <PanelGridTh>Login</PanelGridTh>
+                                                                                    <PanelGridTh align="center">Active</PanelGridTh>
+                                                                                    <PanelGridTh align="center">Invoices</PanelGridTh>
+                                                                                    <PanelGridTh align="center">Prebooks</PanelGridTh>
+                                                                                    <PanelGridTh align="center">Credits</PanelGridTh>
+                                                                                    <PanelGridTh align="center">Accounts</PanelGridTh>
+                                                                                    <PanelGridTh align="center">Products</PanelGridTh>
+                                                                                    <PanelGridTh align="center">History</PanelGridTh>
+                                                                                    <PanelGridTh className="hidden md:table-cell">Phone</PanelGridTh>
+                                                                                    <PanelGridTh className="hidden md:table-cell">Email</PanelGridTh>
+                                                                                </PanelGridThead>
+                                                                                <PanelGridTbody>
+                                                                                    {(webUsers as any[]).map((u: any) => {
+                                                                                        const isSel = selWebUser?.unico === u.unico;
+                                                                                        const yn = (v: any) => v ? <Check size={10} className="text-green-500" /> : <span className="text-gray-200">{"—"}</span>;
+                                                                                        return (
+                                                                                            <PanelGridTr key={u.unico} selected={isSel} onClick={() => setSelWebUser(u)}>
+                                                                                                <PanelGridTd className="font-medium">{t(u.fullname)}</PanelGridTd>
+                                                                                                <PanelGridTd className="font-mono text-[10px]">{t(u.username)}</PanelGridTd>
+                                                                                                <PanelGridTd align="center">{yn(u.active)}</PanelGridTd>
+                                                                                                <PanelGridTd align="center">{yn(u.makeinvoice)}</PanelGridTd>
+                                                                                                <PanelGridTd align="center">{yn(u.makeprebook)}</PanelGridTd>
+                                                                                                <PanelGridTd align="center">{yn(u.makecredit)}</PanelGridTd>
+                                                                                                <PanelGridTd align="center">{yn(u.viewaccount)}</PanelGridTd>
+                                                                                                <PanelGridTd align="center">{yn(u.viewproducts)}</PanelGridTd>
+                                                                                                <PanelGridTd align="center">{yn(u.viewhistory)}</PanelGridTd>
+                                                                                                <PanelGridTd className="hidden md:table-cell">{t(u.phone)}</PanelGridTd>
+                                                                                                <PanelGridTd className="hidden md:table-cell text-gray-400 truncate max-w-[140px]">{t(u.email)}</PanelGridTd>
+                                                                                            </PanelGridTr>
+                                                                                        );
+                                                                                    })}
+                                                                                </PanelGridTbody>
+                                                                            </PanelGridTable>
+                                                                        )}
+                                                                    </div>
+                                                                </PanelGrid>
+                                                            </div>
+                                                        )}
+                                                        {/* ── Messages tab ── */}
+                                                        {activeExpTab === "messages" && (
+                                                            <div className="px-4 py-2 flex flex-col gap-2">
+                                                                <PanelGrid
+                                                                    title="Messages & Comments"
+                                                                    icon={MessageSquare}
+                                                                    recordCount={(messages as any[]).length}
+                                                                    headerRight={<AuditLogModal recordId={selMessage?.unico} disabled={!selMessage?.unico} bareButton />}
+                                                                    menuItems={[
+                                                                        { label: "Add Message", icon: Plus, color: "green", onClick: () => { setMsgForm({ comments:"", deadline:"", user_to:"" }); setFormError(null); setMsgModal(true); }, disabled: !selCust || !perms.canCreate },
+                                                                    ]}
+                                                                >
+                                                                    <div className="overflow-auto">
+                                                                        {(messages as any[]).length === 0 ? <div className="h-32 flex items-center justify-center text-gray-400 text-xs italic">{loadingMsgs ? "Loading..." : "No messages"}</div> : (
+                                                                            <PanelGridTable>
+                                                                                <PanelGridThead>
+                                                                                    <PanelGridTh>Message</PanelGridTh>
+                                                                                    <PanelGridTh>Date</PanelGridTh>
+                                                                                    <PanelGridTh>Deadline</PanelGridTh>
+                                                                                    <PanelGridTh>Taken By</PanelGridTh>
+                                                                                    <PanelGridTh>To</PanelGridTh>
+                                                                                </PanelGridThead>
+                                                                                <PanelGridTbody>
+                                                                                    {(messages as any[]).map((m: any, i: number) => {
+                                                                                        const isSel = selMessage?.unico === m.unico;
+                                                                                        return (
+                                                                                            <PanelGridTr key={m.unico||i} selected={isSel} onClick={() => setSelMessage(m)}>
+                                                                                                <PanelGridTd className="truncate max-w-[300px]">{t(m.grid_message)}</PanelGridTd>
+                                                                                                <PanelGridTd className="whitespace-nowrap text-gray-500">{formatDateEST(normalizeToISODate(m.add_date))}</PanelGridTd>
+                                                                                                <PanelGridTd className="whitespace-nowrap text-gray-500">{formatDateEST(normalizeToISODate(m.deadline))}</PanelGridTd>
+                                                                                                <PanelGridTd>{t(m.taken_by)}</PanelGridTd>
+                                                                                                <PanelGridTd>{t(m.user_destination)}</PanelGridTd>
+                                                                                            </PanelGridTr>
+                                                                                        );
+                                                                                    })}
+                                                                                </PanelGridTbody>
+                                                                            </PanelGridTable>
+                                                                        )}
+                                                                    </div>
+                                                                </PanelGrid>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>
@@ -564,180 +735,6 @@ export default function CustomersSetupPage() {
                 </div>
             </PanelGrid>
 
-            {/* Tabs area */}
-            <div className="flex flex-col flex-1 overflow-hidden">
-                {/* Tab bar */}
-                <div className="bg-white border-b border-gray-200 flex items-end px-3 gap-1 shrink-0 h-9">
-                    {([
-                        { id:"statement", label:"Statement",  icon:FileText },
-                        { id:"webusers",  label:"Web Users",  icon:Users },
-                        { id:"messages",  label:"Messages",   icon:MessageSquare },
-                    ] as const).map(tab => (
-                        <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                            className={cn("flex items-center gap-1.5 px-4 h-8 text-[10px] font-black uppercase tracking-wider transition-all border-b-2",
-                                activeTab === tab.id ? "border-[#FB7506] text-[#FB7506]" : "border-transparent text-gray-400 hover:text-gray-600")}>
-                            <tab.icon size={11} />{tab.label}
-                        </button>
-                    ))}
-                </div>
-
-                {/* Tab content */}
-                <div className="flex-1 overflow-hidden bg-[#f4f6f8] p-2 flex flex-col gap-2">
-
-                    {/* ── STATEMENT TAB ─────────────────────────────────────── */}
-                    {activeTab === "statement" && (
-                        <PanelGrid
-                            title="Account Statement"
-                            icon={FileText}
-                            recordCount={(statement as any[]).length}
-                            onRefresh={() => { setStmtEnabled(true); refetchStmt(); }}
-                            refreshing={loadingStmt}
-                            headerRight={
-                                <div className="flex items-center gap-2">
-                                    <input type="date" value={stmtFrom} onChange={e => setStmtFrom(e.target.value)} className="bg-gray-700 text-white text-[9px] border-none outline-none rounded px-1.5 py-0.5 w-28" />
-                                    <span className="text-gray-400 text-[9px]">{"\u2192"}</span>
-                                    <input type="date" value={stmtTo} onChange={e => setStmtTo(e.target.value)} className="bg-gray-700 text-white text-[9px] border-none outline-none rounded px-1.5 py-0.5 w-28" />
-                                </div>
-                            }
-                            className="flex-1 flex flex-col min-h-0"
-                        >
-                            <div className="overflow-auto flex-1">
-                                {!stmtEnabled ? <div className="h-32 flex items-center justify-center text-gray-300 text-xs font-bold uppercase">Select date range and click Load</div>
-                                : (statement as any[]).length === 0 ? <div className="h-32 flex items-center justify-center text-gray-400 text-xs italic">{loadingStmt ? "Loading..." : "No statement records"}</div>
-                                : (
-                                    <PanelGridTable>
-                                        <PanelGridThead>
-                                            <PanelGridTh>Type</PanelGridTh>
-                                            <PanelGridTh>Doc No.</PanelGridTh>
-                                            <PanelGridTh>Date</PanelGridTh>
-                                            <PanelGridTh>Due Date</PanelGridTh>
-                                            <PanelGridTh align="right">Amount</PanelGridTh>
-                                            <PanelGridTh align="right">Payments</PanelGridTh>
-                                            <PanelGridTh align="right">Debits</PanelGridTh>
-                                            <PanelGridTh align="right">Credits</PanelGridTh>
-                                            <PanelGridTh align="right">Balance</PanelGridTh>
-                                        </PanelGridThead>
-                                        <PanelGridTbody>
-                                            {(statement as any[]).map((row: any, i: number) => (
-                                                <PanelGridTr key={i}>
-                                                    <PanelGridTd className="font-medium">{t(row.type)}</PanelGridTd>
-                                                    <PanelGridTd className="font-mono">{t(row.invoice_no)}</PanelGridTd>
-                                                    <PanelGridTd className="whitespace-nowrap text-gray-500">{formatDateEST(normalizeToISODate(row.fecha||row.date))}</PanelGridTd>
-                                                    <PanelGridTd className="whitespace-nowrap text-gray-500">{formatDateEST(normalizeToISODate(row.due_date))}</PanelGridTd>
-                                                    <PanelGridTd align="right" className="text-blue-700">{formatMoney(row.ammount)}</PanelGridTd>
-                                                    <PanelGridTd align="right" className="text-green-600">{formatMoney(row.payments)}</PanelGridTd>
-                                                    <PanelGridTd align="right" className="text-red-500">{formatMoney(row.debits)}</PanelGridTd>
-                                                    <PanelGridTd align="right" className="text-blue-600">{formatMoney(row.credits)}</PanelGridTd>
-                                                    <PanelGridTd align="right" className="font-semibold text-[#FB7506]">{formatMoney(row.balance)}</PanelGridTd>
-                                                </PanelGridTr>
-                                            ))}
-                                        </PanelGridTbody>
-                                    </PanelGridTable>
-                                )}
-                            </div>
-                        </PanelGrid>
-                    )}
-
-                    {/* ── WEB USERS TAB ────────────────────────────────────── */}
-                    {activeTab === "webusers" && (
-                        <PanelGrid
-                            title="Web Users / Portal"
-                            icon={Users}
-                            recordCount={(webUsers as any[]).length}
-                            headerRight={<AuditLogModal recordId={selWebUser?.unico} disabled={!selWebUser?.unico} bareButton />}
-                            menuItems={[
-                                { label: "Add User", icon: Plus, color: "green", onClick: () => { setWebUserForm({...EMPTY_WEBUSER}); setFormError(null); setWebUserModal({ mode:"add" }); }, disabled: !selCust || !perms.canCreate },
-                                { label: "Edit User", icon: Pencil, color: "orange", onClick: () => { if(!selWebUser) return; setWebUserForm({fname:t(selWebUser.fname),lname:t(selWebUser.lname),username:t(selWebUser.username),password:t(selWebUser.password),active:!!selWebUser.active,makeinvoice:!!selWebUser.makeinvoice,makeprebook:!!selWebUser.makeprebook,makecredit:!!selWebUser.makecredit,viewaccount:!!selWebUser.viewaccount,viewproducts:!!selWebUser.viewproducts,viewhistory:!!selWebUser.viewhistory,email:t(selWebUser.email),phone:t(selWebUser.phone)}); setFormError(null); setWebUserModal({ mode:"edit" }); }, disabled: !selWebUser || !perms.canEdit },
-                                { label: "Delete User", icon: Trash2, color: "orange", onClick: () => { if(selWebUser) { setFormError(null); setWebUserModal({ mode:"delete" }); } }, disabled: !selWebUser || !perms.canDelete },
-                            ]}
-                            className="flex-1 flex flex-col min-h-0"
-                        >
-                            <div className="overflow-auto flex-1">
-                                {(webUsers as any[]).length === 0 ? <div className="h-32 flex items-center justify-center text-gray-400 text-xs italic">{loadingWebUsers ? "Loading..." : "No web users"}</div> : (
-                                    <PanelGridTable>
-                                        <PanelGridThead>
-                                            <PanelGridTh>User</PanelGridTh>
-                                            <PanelGridTh>Login</PanelGridTh>
-                                            <PanelGridTh align="center">Active</PanelGridTh>
-                                            <PanelGridTh align="center">Invoices</PanelGridTh>
-                                            <PanelGridTh align="center">Prebooks</PanelGridTh>
-                                            <PanelGridTh align="center">Credits</PanelGridTh>
-                                            <PanelGridTh align="center">Accounts</PanelGridTh>
-                                            <PanelGridTh align="center">Products</PanelGridTh>
-                                            <PanelGridTh align="center">History</PanelGridTh>
-                                            <PanelGridTh className="hidden md:table-cell">Phone</PanelGridTh>
-                                            <PanelGridTh className="hidden md:table-cell">Email</PanelGridTh>
-                                        </PanelGridThead>
-                                        <PanelGridTbody>
-                                            {(webUsers as any[]).map((u: any) => {
-                                                const isSel = selWebUser?.unico === u.unico;
-                                                const yn = (v: any) => v ? <Check size={10} className="text-green-500" /> : <span className="text-gray-200">{"\u2014"}</span>;
-                                                return (
-                                                    <PanelGridTr key={u.unico} selected={isSel} onClick={() => setSelWebUser(u)}>
-                                                        <PanelGridTd className="font-medium">{t(u.fullname)}</PanelGridTd>
-                                                        <PanelGridTd className="font-mono text-[10px]">{t(u.username)}</PanelGridTd>
-                                                        <PanelGridTd align="center">{yn(u.active)}</PanelGridTd>
-                                                        <PanelGridTd align="center">{yn(u.makeinvoice)}</PanelGridTd>
-                                                        <PanelGridTd align="center">{yn(u.makeprebook)}</PanelGridTd>
-                                                        <PanelGridTd align="center">{yn(u.makecredit)}</PanelGridTd>
-                                                        <PanelGridTd align="center">{yn(u.viewaccount)}</PanelGridTd>
-                                                        <PanelGridTd align="center">{yn(u.viewproducts)}</PanelGridTd>
-                                                        <PanelGridTd align="center">{yn(u.viewhistory)}</PanelGridTd>
-                                                        <PanelGridTd className="hidden md:table-cell">{t(u.phone)}</PanelGridTd>
-                                                        <PanelGridTd className="hidden md:table-cell text-gray-400 truncate max-w-[140px]">{t(u.email)}</PanelGridTd>
-                                                    </PanelGridTr>
-                                                );
-                                            })}
-                                        </PanelGridTbody>
-                                    </PanelGridTable>
-                                )}
-                            </div>
-                        </PanelGrid>
-                    )}
-
-                    {/* ── MESSAGES TAB ─────────────────────────────────────── */}
-                    {activeTab === "messages" && (
-                        <PanelGrid
-                            title="Messages & Comments"
-                            icon={MessageSquare}
-                            recordCount={(messages as any[]).length}
-                            headerRight={<AuditLogModal recordId={selMessage?.unico} disabled={!selMessage?.unico} bareButton />}
-                            menuItems={[
-                                { label: "Add Message", icon: Plus, color: "green", onClick: () => { setMsgForm({ comments:"", deadline:"", user_to:"" }); setFormError(null); setMsgModal(true); }, disabled: !selCust || !perms.canCreate },
-                            ]}
-                            className="flex-1 flex flex-col min-h-0"
-                        >
-                            <div className="overflow-auto flex-1">
-                                {(messages as any[]).length === 0 ? <div className="h-32 flex items-center justify-center text-gray-400 text-xs italic">{loadingMsgs ? "Loading..." : "No messages"}</div> : (
-                                    <PanelGridTable>
-                                        <PanelGridThead>
-                                            <PanelGridTh>Message</PanelGridTh>
-                                            <PanelGridTh>Date</PanelGridTh>
-                                            <PanelGridTh>Deadline</PanelGridTh>
-                                            <PanelGridTh>Taken By</PanelGridTh>
-                                            <PanelGridTh>To</PanelGridTh>
-                                        </PanelGridThead>
-                                        <PanelGridTbody>
-                                            {(messages as any[]).map((m: any, i: number) => {
-                                                const isSel = selMessage?.unico === m.unico;
-                                                return (
-                                                    <PanelGridTr key={m.unico||i} selected={isSel} onClick={() => setSelMessage(m)}>
-                                                        <PanelGridTd className="truncate max-w-[300px]">{t(m.grid_message)}</PanelGridTd>
-                                                        <PanelGridTd className="whitespace-nowrap text-gray-500">{formatDateEST(normalizeToISODate(m.add_date))}</PanelGridTd>
-                                                        <PanelGridTd className="whitespace-nowrap text-gray-500">{formatDateEST(normalizeToISODate(m.deadline))}</PanelGridTd>
-                                                        <PanelGridTd>{t(m.taken_by)}</PanelGridTd>
-                                                        <PanelGridTd>{t(m.user_destination)}</PanelGridTd>
-                                                    </PanelGridTr>
-                                                );
-                                            })}
-                                        </PanelGridTbody>
-                                    </PanelGridTable>
-                                )}
-                            </div>
-                        </PanelGrid>
-                    )}
-                </div>
-            </div>
 
             <AppFooter areaLabel="Masters" />
 
