@@ -366,9 +366,9 @@ export default function CustomersSetupPage() {
                     { separator: true },
                     { label: "Export CSV", icon: Download, color: "gray", onClick: exportCSV, disabled: !perms.canReport },
                 ]}
-                className="mx-2 mt-2"
+                className="mx-2 mt-2 flex-1 flex flex-col min-h-0"
             >
-                <div className="overflow-auto" style={{ maxHeight: "45vh" }} onScroll={handleCustScroll}>
+                <div className="overflow-auto flex-1" onScroll={handleCustScroll}>
                     <PanelGridTable>
                         <PanelGridThead>
                             <PanelGridTh className="w-6">{""}</PanelGridTh>
