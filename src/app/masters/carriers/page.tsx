@@ -344,7 +344,7 @@ export default function CarriersDefinitionPage() {
             {/* ─── Form Modal ──────────────────────────────────────────────────── */}
             {formModal && (
                 <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
-                    <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden">
+                    <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden">
                         <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 shrink-0">
                             <div className="flex items-center gap-2 min-w-0">
                                 <Truck size={16} className="text-[#FB7506]" />
@@ -364,7 +364,7 @@ export default function CarriersDefinitionPage() {
                         </div>
 
                         <div className="p-3 overflow-y-auto flex-1">
-                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                            <div className="grid grid-cols-2 gap-2.5">
                                 {mode !== "add" && (
                                     <div className="flex flex-col gap-0.5">
                                         <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Unique</label>
@@ -436,7 +436,7 @@ export default function CarriersDefinitionPage() {
                                 <F label="Web User" value={form.username} onChange={(v: string) => setForm((p: any) => ({ ...p, username: v }))} />
                                 <F label="Password"  value={form.password}  type="password" onChange={(v: string) => setForm((p: any) => ({ ...p, password: v }))} />
 
-                                <div className="col-span-2 sm:col-span-3 lg:col-span-6 flex flex-wrap items-center gap-4 pt-1 border-t border-gray-100">
+                                <div className="col-span-2 flex flex-wrap items-center gap-4 pt-1 border-t border-gray-100">
                                     {mode !== "add" && (
                                         <label className="flex items-center gap-1.5 cursor-pointer">
                                             <input type="checkbox" checked={Boolean(form.active)} onChange={e => setForm((p: any) => ({ ...p, active: e.target.checked }))} className="w-4 h-4 accent-[#FB7506]" />
