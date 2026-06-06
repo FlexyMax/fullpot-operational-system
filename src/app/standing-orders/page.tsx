@@ -200,7 +200,7 @@ export default function StandingOrdersPage() {
                     recordCount={orders.length}
                     onRefresh={() => setListKey(k => k + 1)}
                     refreshing={loadingOrders}
-                    headerRight={<AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} />}
+                    headerRight={<AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} bareButton />}
                     className="flex-1 xl:flex-none xl:w-[420px] xl:shrink-0"
                 >
                     <PanelGridTable>

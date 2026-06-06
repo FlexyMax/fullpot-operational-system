@@ -10,9 +10,11 @@ interface Props {
     disabled?: boolean;
     /** Size variant: 'sm' for grid toolbars, 'md' for standalone (default) */
     size?: "sm" | "md";
+    /** Bare icon style: no background, white→orange hover (matches PanelGrid icons) */
+    bareButton?: boolean;
 }
 
-export function AuditLogModal({ recordId, disabled, size = "sm" }: Props) {
+export function AuditLogModal({ recordId, disabled, size = "sm", bareButton = false }: Props) {
     const iconSize = size === "sm" ? 16 : 18;
     const [open,    setOpen]    = useState(false);
     const [rows,    setRows]    = useState<any[]>([]);
@@ -42,10 +44,12 @@ export function AuditLogModal({ recordId, disabled, size = "sm" }: Props) {
                 disabled={!!disabled}
                 title="View audit history"
                 className={cn(
-                    "flex items-center justify-center rounded transition-all",
-                    size === "sm"
-                        ? "p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-700"
-                        : "p-1.5 text-gray-300 hover:text-white hover:bg-white/10",
+                    "flex items-center justify-center transition-all",
+                    bareButton
+                        ? "p-1 text-white hover:text-[#FB7506]"
+                        : size === "sm"
+                            ? "p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-700 rounded"
+                            : "p-1.5 text-gray-300 hover:text-white hover:bg-white/10 rounded",
                     disabled && "opacity-40 cursor-not-allowed"
                 )}
             >
@@ -57,7 +61,7 @@ export function AuditLogModal({ recordId, disabled, size = "sm" }: Props) {
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
                     <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col">
                         {/* Header */}
-                        <div className="h-10 bg-[#374151] rounded-t-xl flex items-center justify-between px-4 shrink-0">
+                        <div className="h-10 bg-[#333030] rounded-t-xl flex items-center justify-between px-4 shrink-0">
                             <div className="flex items-center gap-2">
                                 <RotateCcw size={14} className="text-[#FB7506]" />
                                 <span className="font-black text-[11px] uppercase tracking-widest text-white">
