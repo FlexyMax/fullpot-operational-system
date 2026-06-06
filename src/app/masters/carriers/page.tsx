@@ -358,17 +358,9 @@ export default function CarriersDefinitionPage() {
                                     </span>
                                 )}
                             </div>
-                            <div className="flex items-center gap-1.5 px-2 shrink-0">
-                                <button onClick={handleSave} disabled={saving}
-                                    className="flex items-center gap-1.5 bg-[#FB7506] hover:bg-orange-600 disabled:opacity-50 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all">
-                                    {saving ? <RefreshCcw size={13} className="animate-spin" /> : <Save size={13} />}
-                                    {saving ? "Saving..." : "Save"}
-                                </button>
-                                <button onClick={() => { setFormModal(false); setFormError(null); }}
-                                    className="flex items-center gap-1 px-2.5 py-1.5 bg-gray-600 hover:bg-gray-700 text-white rounded text-xs font-black uppercase tracking-wider">
-                                    <X size={13} /> Cancel
-                                </button>
-                            </div>
+                            <button onClick={() => { setFormModal(false); setFormError(null); }} className="w-8 h-10 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+                                <X size={16} />
+                            </button>
                         </div>
 
                         <div className="p-3 overflow-y-auto flex-1">
@@ -465,6 +457,16 @@ export default function CarriersDefinitionPage() {
                                     </label>
                                 </div>
                             </div>
+                        </div>
+                        <div className="flex justify-end gap-3 px-4 py-3 bg-white border-t border-gray-100 shrink-0">
+                            <button onClick={() => { setFormModal(false); setFormError(null); }} className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors">
+                                Cancel
+                            </button>
+                            <button onClick={handleSave} disabled={saving}
+                                className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#FB7506] hover:bg-orange-600 disabled:opacity-50 text-white text-sm font-black uppercase tracking-wider transition-all">
+                                {saving ? <RefreshCcw size={14} className="animate-spin" /> : <Save size={14} />}
+                                {saving ? "Saving..." : "Save"}
+                            </button>
                         </div>
                     </div>
                 </div>
