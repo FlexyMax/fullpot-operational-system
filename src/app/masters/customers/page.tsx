@@ -154,6 +154,29 @@ export default function CustomersSetupPage() {
         staleTime: 1000 * 60 * 10,
     });
 
+    useEffect(() => {
+        if (!custModal || custModal.mode === "add" || !selCust) return;
+        const c = selCust;
+        let updates: any = {};
+        
+        if (!custForm.salesman_uq && c.salesman && lookups?.webSalesmen?.length) {
+            const m = lookups.webSalesmen.find((s:any) => String(s.salesman||"").trim() === String(c.salesman||"").trim());
+            if (m && String(m.unico) !== String(custForm.salesman_uq)) updates.salesman_uq = String(m.unico);
+        }
+        if (!custForm.terms_uq && c.terms && lookups?.terms?.length) {
+            const m = lookups.terms.find((tt:any) => String(tt.TERMS||"").trim() === String(c.terms||"").trim());
+            if (m && String(m.unico) !== String(custForm.terms_uq)) updates.terms_uq = String(m.unico);
+        }
+        if (!custForm.rc_uq && c.rc && lookups?.companies?.length) {
+            const m = lookups.companies.find((comp:any) => String(comp.Company||"").trim() === String(c.rc||"").trim());
+            if (m && String(m.unico) !== String(custForm.rc_uq)) updates.rc_uq = String(m.unico);
+        }
+        
+        if (Object.keys(updates).length > 0) {
+            setCustForm((p:any) => ({...p, ...updates}));
+        }
+    }, [custModal, selCust, lookups, custForm.salesman_uq, custForm.terms_uq, custForm.rc_uq]);
+
     // ── Cascade auto-selection: customer → shipto → carrier ──────────────────
     // Auto-select first ship-to when shiptos load for selected customer
     useEffect(() => {
@@ -898,21 +921,20 @@ function CustomerModal({ mode, form, setForm, error, saving, activeTab, setActiv
                             <div className="col-span-6 sm:col-span-2">
                                 {F("EDI Code","edi_code")}
                             </div>
-                        </div>
-                        <div className="grid grid-cols-12 gap-3 items-end">
-                            <div className="col-span-6">
+                        <div className="flex flex-col gap-3">
+                            <div className="grid grid-cols-1 gap-3">
                                 {F("Contact","contact")}
-                            </div>
-                            <div className="col-span-6">
                                 {F("Purchaser","purchaser")}
                             </div>
-                            <div className="col-span-12 flex flex-wrap items-center gap-x-4 gap-y-2 pt-2 pb-1.5 justify-end">
-                                {Cb("FOB Miami","fobmiami")}
-                                {Cb("Credit Hold","credithold")}
-                                {Cb("Active","active", mode==="add")}
-                                {Cb("Auto Charge","auto_charge")}
-                                {Cb("Inventory","inventory_from_invoice")}
-                                {Cb("Internal","internal_customer")}
+                            <div className="grid grid-cols-1 flex-wrap items-center gap-x-4 gap-y-2 pt-2 pb-1.5 justify-end">
+                                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 justify-end">
+                                    {Cb("FOB Miami","fobmiami")}
+                                    {Cb("Credit Hold","credithold")}
+                                    {Cb("Active","active", mode==="add")}
+                                    {Cb("Auto Charge","auto_charge")}
+                                    {Cb("Inventory","inventory_from_invoice")}
+                                    {Cb("Internal","internal_customer")}
+                                </div>
                             </div>
                         </div>
                     </div>
