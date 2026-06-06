@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-    Search, Plus, Pencil, Trash2, Save, X, RefreshCcw,
+    Search, Plus, Minus, Pencil, Trash2, Save, X, RefreshCcw,
     Download, Users, Truck, FileText, MessageSquare, Check,
     AlertCircle, Copy, Star, XCircle
 } from "lucide-react";
@@ -399,7 +399,7 @@ export default function CustomersSetupPage() {
                                             <PanelGridTd className="w-6 pl-1 pr-0">
                                                 <button onClick={e => { e.stopPropagation(); if (isExp) { setExpandedCustUnico(null); } else { selectCustomer(c); setExpandedCustUnico(c.unico); } }}
                                                     className="p-0.5 rounded hover:bg-gray-200 transition-colors">
-                                                    {isExp ? <X size={11} className="text-[#FB7506]" /> : <Plus size={11} className="text-gray-400" />}
+                                                    {isExp ? <Minus size={11} className="text-[#FB7506]" /> : <Plus size={11} className="text-gray-400" />}
                                                 </button>
                                             </PanelGridTd>
                                             <PanelGridTd className="font-mono text-[10px]">{t(c.old_code)}</PanelGridTd>
@@ -485,7 +485,7 @@ export default function CustomersSetupPage() {
                                                                                                 <PanelGridTd className="w-6 pl-1 pr-0">
                                                                                                     <button onClick={e => { e.stopPropagation(); if (isShiptoExp) { setExpandedShiptoUnico(null); } else { setSelShipto(s); setExpandedShiptoUnico(s.unico); } }}
                                                                                                         className="p-0.5 rounded hover:bg-gray-200 transition-colors">
-                                                                                                        {isShiptoExp ? <X size={11} className="text-[#FB7506]" /> : <Plus size={11} className="text-gray-400" />}
+                                                                                                        {isShiptoExp ? <Minus size={11} className="text-[#FB7506]" /> : <Plus size={11} className="text-gray-400" />}
                                                                                                     </button>
                                                                                                 </PanelGridTd>
                                                                                                 <PanelGridTd className="font-mono">{s.shipto}</PanelGridTd>
