@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
@@ -11,7 +11,8 @@ import {
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { AppFooter } from "@/components/layout/AppFooter";
-
+import PanelGrid from "@/components/ui/PanelGrid";
+import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
 
 import { GridMenu } from "@/components/GridMenu";
 
@@ -21,7 +22,7 @@ import { AuditLogModal } from "@/components/AuditLogModal";
 import { cn } from "@/lib/utils";
 import { todayEST, formatDateEST, normalizeToISODate } from "@/lib/dates";
 
-// â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Constants ────────────────────────────────────────────────────────────────
 const LEVELS = ["ADMINISTRADOR", "DIGITADOR 1", "DIGITADOR 2", "VISITANTE"];
 
 const EMPTY_FORM = {
@@ -46,10 +47,10 @@ const generateUsername = (nombres: string, apellidos: string) => {
     return first + last;
 };
 
-// â”€â”€â”€ GridMenu (Appsmith style) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── GridMenu (Appsmith style) ────────────────────────────────────────────────
 
 
-// â”€â”€â”€ Main Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function UsersDefinitionPage() {
     const { status } = useSession();
     const router = useRouter();
@@ -79,7 +80,7 @@ export default function UsersDefinitionPage() {
         if (status === "unauthenticated") router.push("/login");
     }, [status, router]);
 
-    // â”€â”€ Queries â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Queries ───────────────────────────────────────────────────────────────
     const { data: users = [], isFetching: loadingUsers } = useQuery({
         queryKey: ["sys-users-list"],
         queryFn:  () => sysFetch("/api/system/users"),
@@ -92,14 +93,14 @@ export default function UsersDefinitionPage() {
         retry:    false,
     });
 
-    // â”€â”€ Auto-select first user â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Auto-select first user ─────────────────────────────────────────────────
     useEffect(() => {
         if ((users as any[]).length > 0 && !selectedUnico) {
             handleSelectUser((users as any[])[0].unico);
         }
     }, [users]);
 
-    // â”€â”€ Select user â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Select user ───────────────────────────────────────────────────────────
     const handleSelectUser = (unico: string) => {
         if (mode !== "view") return;
         const u = (users as any[]).find(x => x.unico === unico);
@@ -127,7 +128,7 @@ export default function UsersDefinitionPage() {
         setMobileOpen(false);
     };
 
-    // â”€â”€ Mode handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Mode handlers ─────────────────────────────────────────────────────────
     const handleAdd = () => {
         setForm({ ...EMPTY_FORM });
         setPhotoPreview(null); setPhotoFile(null);
@@ -149,7 +150,7 @@ export default function UsersDefinitionPage() {
         setMode("view"); setFormError(null); setPhotoFile(null); setPhotoPreview(null);
     };
 
-    // â”€â”€ Validation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Validation ────────────────────────────────────────────────────────────
     const validate = (): string | null => {
         if (!form.nombres.trim())   return "First name is required.";
         if (!form.apellidos.trim()) return "Last name is required.";
@@ -160,7 +161,7 @@ export default function UsersDefinitionPage() {
         return null;
     };
 
-    // â”€â”€ Save â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Save ──────────────────────────────────────────────────────────────────
     const handleSave = async () => {
         const err = validate();
         if (err) { setFormError(err); return; }
@@ -206,7 +207,7 @@ export default function UsersDefinitionPage() {
         }
     };
 
-    // â”€â”€ Delete â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Delete ────────────────────────────────────────────────────────────────
     const handleDelete = async () => {
         if (!selectedUnico) return;
         setSaving(true);
@@ -229,7 +230,7 @@ export default function UsersDefinitionPage() {
         }
     };
 
-    // â”€â”€ Photo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Photo ─────────────────────────────────────────────────────────────────
     const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -237,7 +238,7 @@ export default function UsersDefinitionPage() {
         setPhotoPreview(URL.createObjectURL(file));
     };
 
-    // â”€â”€ Filtered users â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Filtered users ────────────────────────────────────────────────────────
     const filteredUsers = useMemo(() => {
         if (!searchTerm.trim()) return users as any[];
         const q = searchTerm.toLowerCase();
@@ -250,7 +251,7 @@ export default function UsersDefinitionPage() {
 
     const isEditing = mode === "edit" || mode === "add";
 
-    // â”€â”€ Photo URL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Photo URL ─────────────────────────────────────────────────────────────
     const photoSrc = photoPreview
         ? photoPreview
         : selectedUnico
@@ -267,63 +268,49 @@ export default function UsersDefinitionPage() {
             {/* Main layout */}
             <div className="flex flex-col lg:flex-row flex-1 gap-2 p-2 overflow-y-auto lg:overflow-hidden">
 
-                {/* â”€â”€ Left: User List (desktop) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-                <div className="hidden lg:flex w-[240px] shrink-0 flex-col gap-2">
-                    <div className="flex flex-col flex-1 bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 border-b border-black/10 shrink-0 rounded-t-lg">
-                            <div className="flex items-center gap-2">
-                                <Users size={16} className="text-[#FB7506]" />
-                                <span className="fos-grid-header-text">Users</span>
-                            </div>
-                            {loadingUsers && <RefreshCcw size={16} className="text-gray-400 animate-spin" />}
-                        </div>
-                        <div className="p-2 border-b border-gray-100 shrink-0">
-                            <div className="relative">
-                                <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
-                                <input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-                                    placeholder="Search users..." className="w-full pl-7 pr-2 h-9 text-sm border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506]" />
-                            </div>
-                        </div>
-                        <div className="text-[10px] font-black text-gray-400 uppercase tracking-wider px-2 py-0.5 bg-gray-50 border-b text-right">
-                            {filteredUsers.length} users
-                        </div>
-                        <div className="overflow-y-auto flex-1">
-                            {filteredUsers.map((u: any) => {
-                                const isSelected = selectedUnico === u.unico;
-                                return (
-                                    <div key={u.unico} onClick={() => handleSelectUser(u.unico)}
-                                        className={cn(
-                                            "px-3 py-2 border-b border-gray-50 flex items-center gap-2 transition-colors",
-                                            isEditing ? "cursor-not-allowed opacity-60" : "cursor-pointer",
-                                            isSelected ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "hover:bg-blue-50"
-                                        )}>
-                                        <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", u.activo ? "bg-green-400" : "bg-gray-300")} />
-                                        <div className="min-w-0">
-                                            <p className="text-xs font-semibold text-gray-800 truncate">
-                                                {String(u.apellidos || "").trim()}, {String(u.nombres || "").trim()}
-                                            </p>
-                                            <p className="text-[9px] text-gray-400 truncate">{String(u.username || "").trim()} Â· {String(u.nivel || "").trim()}</p>
-                                        </div>
+                {/* ── Left: User List (desktop) ────────────────────────────── */}
+                <PanelGrid
+                    title="Users"
+                    icon={Users}
+                    recordCount={filteredUsers.length}
+                    refreshing={loadingUsers}
+                    searchValue={searchTerm}
+                    onSearchChange={setSearchTerm}
+                    searchPlaceholder="Search users..."
+                    className="hidden lg:flex w-[240px] shrink-0"
+                >
+                    <div className="overflow-y-auto flex-1">
+                        {filteredUsers.map((u: any) => {
+                            const isSelected = selectedUnico === u.unico;
+                            return (
+                                <div key={u.unico} onClick={() => handleSelectUser(u.unico)}
+                                    className={cn(
+                                        "px-3 py-2 border-b border-gray-50 flex items-center gap-2 transition-colors",
+                                        isEditing ? "cursor-not-allowed opacity-60" : "cursor-pointer",
+                                        isSelected ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "hover:bg-blue-50"
+                                    )}>
+                                    <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", u.activo ? "bg-green-400" : "bg-gray-300")} />
+                                    <div className="min-w-0">
+                                        <p className="text-xs font-semibold text-gray-800 truncate">
+                                            {String(u.apellidos || "").trim()}, {String(u.nombres || "").trim()}
+                                        </p>
+                                        <p className="text-[9px] text-gray-400 truncate">{String(u.username || "").trim()} · {String(u.nivel || "").trim()}</p>
                                     </div>
-                                );
-                            })}
-                        </div>
+                                </div>
+                            );
+                        })}
                     </div>
-                </div>
+                </PanelGrid>
 
-                {/* â”€â”€ Right: Form + Log â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+                {/* ── Right: Form + Log ─────────────────────────────────────── */}
                 <div className="flex-1 flex flex-col gap-2 min-w-0 lg:overflow-hidden">
 
-                    {/* User Form Card */}
-                    <div className="bg-white rounded-lg border border-gray-200 shadow-sm shrink-0">
-                        {/* Form header bar */}
-                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 border-b border-black/10 rounded-t-lg">
-                            <div className="flex items-center gap-2">
-                                <Users size={16} className="text-[#FB7506]" />
-                                <span className="fos-grid-header-text">
-                                    {mode === "add" ? "New User" : "User Information"}
-                                </span>
-                                <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} />
+                    <PanelGrid
+                        title={mode === "add" ? "New User" : "User Information"}
+                        icon={Users}
+                        headerRight={
+                            <>
+                                <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} bareButton />
                                 {mode === "view" && form.unico && (
                                     <span className={cn(
                                         "text-[10px] font-black uppercase px-2 py-0.5 rounded",
@@ -342,18 +329,7 @@ export default function UsersDefinitionPage() {
                                         <Check size={12} />{saveMsg}
                                     </span>
                                 )}
-                            </div>
-                            {/* Action buttons */}
-                            <div className="flex items-center gap-1.5">
-                                {mode === "view" ? (
-                                    <GridMenu
-                                        items={[
-                                            { label: "Add Record", icon: Plus, color: "green", onClick: handleAdd, disabled: !perms.canCreate },
-                                            { label: "Edit Selected", icon: Pencil, color: "orange", onClick: handleEdit, disabled: !selectedUnico || !perms.canEdit },
-                                            { label: "Delete Selected", icon: Trash2, color: "red", onClick: () => { if (selectedUnico) setDeleteDialog(true); }, disabled: !selectedUnico || !perms.canDelete },
-                                        ]}
-                                    />
-                                ) : (
+                                {mode !== "view" && (
                                     <>
                                         <button onClick={handleSave} disabled={saving}
                                             className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all">
@@ -366,8 +342,15 @@ export default function UsersDefinitionPage() {
                                         </button>
                                     </>
                                 )}
-                            </div>
-                        </div>
+                            </>
+                        }
+                        menuItems={mode === "view" ? [
+                            { label: "Add Record", icon: Plus, color: "green", onClick: handleAdd, disabled: !perms.canCreate },
+                            { label: "Edit Selected", icon: Pencil, color: "orange", onClick: handleEdit, disabled: !selectedUnico || !perms.canEdit },
+                            { label: "Delete Selected", icon: Trash2, color: "red", onClick: () => { if (selectedUnico) setDeleteDialog(true); }, disabled: !selectedUnico || !perms.canDelete },
+                        ] : []}
+                        className="shrink-0"
+                    >
 
                         {/* Form body */}
                         <div className="p-3 flex gap-4">
@@ -396,7 +379,7 @@ export default function UsersDefinitionPage() {
                             <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-2 text-xs">
                                 {[
                                     { label: "Code",       key: "unico",    readonly: true },
-                                    { label: "ID / CÃ©dula",key: "cedula",   readonly: false },
+                                    { label: "ID / Cédula",key: "cedula",   readonly: false },
                                     { label: "First Name", key: "nombres",  readonly: false },
                                     { label: "Last Name",  key: "apellidos",readonly: false },
                                     { label: "Username",   key: "username", readonly: false },
@@ -441,7 +424,7 @@ export default function UsersDefinitionPage() {
                                         <select value={form.nivel}
                                             onChange={e => setForm(prev => ({ ...prev, nivel: e.target.value }))}
                                             className="fos-input h-10 text-sm">
-                                            <option value="">â€” Select â€”</option>
+                                            <option value="">— Select —</option>
                                             {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
                                         </select>
                                     ) : (
@@ -463,32 +446,32 @@ export default function UsersDefinitionPage() {
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </PanelGrid>
 
-                    {/* Activity Log */}
-                    <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-[200px] lg:min-h-0">
-                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 border-b border-black/10 shrink-0 rounded-t-lg">
-                            <div className="flex items-center gap-2">
-                                <Calendar size={16} className="text-[#FB7506]" />
-                                <span className="fos-grid-header-text">User Activity Log</span>
-                                <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} />
-                                {loadingLog && <RefreshCcw size={16} className="text-gray-400 animate-spin" />}
-                            </div>
-                            {/* Date filters â€” view mode only */}
-                            {mode === "view" && (
-                                <div className="flex items-center gap-2 pr-2">
-                                    <input type="date" value={logFrom} onChange={e => setLogFrom(e.target.value)}
-                                        className="bg-gray-600 text-white text-xs border-none outline-none rounded px-2 h-8 w-32" />
-                                    <span className="text-gray-400 text-xs">â†’</span>
-                                    <input type="date" value={logTo} onChange={e => setLogTo(e.target.value)}
-                                        className="bg-gray-600 text-white text-xs border-none outline-none rounded px-2 h-8 w-32" />
-                                    <button onClick={() => { setLogEnabled(true); refetchLog(); }}
-                                        className="flex items-center gap-1.5 bg-[#FB7506] hover:bg-orange-600 text-white px-3 h-8 rounded text-xs font-black uppercase tracking-wider transition-all">
-                                        <Filter size={14} /> Filter
-                                    </button>
-                                </div>
-                            )}
-                        </div>
+                    <PanelGrid
+                        title="User Activity Log"
+                        icon={Calendar}
+                        refreshing={loadingLog}
+                        headerRight={
+                            <>
+                                <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} bareButton />
+                                {mode === "view" && (
+                                    <div className="flex items-center gap-2">
+                                        <input type="date" value={logFrom} onChange={e => setLogFrom(e.target.value)}
+                                            className="bg-gray-600 text-white text-xs border-none outline-none rounded px-2 h-8 w-32" />
+                                        <span className="text-gray-400 text-xs">→</span>
+                                        <input type="date" value={logTo} onChange={e => setLogTo(e.target.value)}
+                                            className="bg-gray-600 text-white text-xs border-none outline-none rounded px-2 h-8 w-32" />
+                                        <button onClick={() => { setLogEnabled(true); refetchLog(); }}
+                                            className="flex items-center gap-1.5 bg-[#FB7506] hover:bg-orange-600 text-white px-3 h-8 rounded text-xs font-black uppercase tracking-wider transition-all">
+                                            <Filter size={14} /> Filter
+                                        </button>
+                                    </div>
+                                )}
+                            </>
+                        }
+                        className="flex-1 min-h-[200px] lg:min-h-0"
+                    >
 
                         <div className="overflow-auto max-h-[400px]">
                             {!logEnabled ? (
@@ -501,44 +484,42 @@ export default function UsersDefinitionPage() {
                                     {loadingLog ? "Loading activity..." : "No activity found for selected dates"}
                                 </div>
                             ) : (
-                                <table className="min-w-full text-xs text-left">
-                                    <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
-                                        <tr>
-                                            <th className="p-2 whitespace-nowrap">Date</th>
-                                            <th className="p-2 border-l border-gray-200 whitespace-nowrap">Action</th>
-                                            <th className="p-2 border-l border-gray-200 whitespace-nowrap">Screen</th>
-                                            <th className="p-2 border-l border-gray-200 whitespace-nowrap">Module</th>
-                                            <th className="p-2 border-l border-gray-200 whitespace-nowrap">Company</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
+                                <PanelGridTable>
+                                    <PanelGridThead>
+                                        <PanelGridTh>Date</PanelGridTh>
+                                        <PanelGridTh>Action</PanelGridTh>
+                                        <PanelGridTh>Screen</PanelGridTh>
+                                        <PanelGridTh>Module</PanelGridTh>
+                                        <PanelGridTh>Company</PanelGridTh>
+                                    </PanelGridThead>
+                                    <PanelGridTbody>
                                         {(logData as any[]).map((row: any, i: number) => (
-                                            <tr key={i} className="border-b odd:bg-white even:bg-gray-50 hover:bg-blue-50 transition-colors">
-                                                <td className="p-2 whitespace-nowrap text-gray-600">
+                                            <PanelGridTr key={i}>
+                                                <PanelGridTd className="text-gray-600">
                                                     {row.fecha ? new Date(row.fecha).toLocaleString("en-US", { timeZone: "America/New_York" }) : ""}
-                                                </td>
-                                                <td className="p-2 border-l border-gray-100 font-semibold text-blue-700 whitespace-nowrap">
+                                                </PanelGridTd>
+                                                <PanelGridTd className="font-semibold text-blue-700">
                                                     {String(row.accion || "").trim()}
-                                                </td>
-                                                <td className="p-2 border-l border-gray-100 truncate max-w-[180px]">
+                                                </PanelGridTd>
+                                                <PanelGridTd className="truncate max-w-[180px]">
                                                     {String(row.pantalla || "").trim()}
-                                                </td>
-                                                <td className="p-2 border-l border-gray-100 truncate max-w-[140px] text-gray-500">
+                                                </PanelGridTd>
+                                                <PanelGridTd className="truncate max-w-[140px] text-gray-500">
                                                     {String(row.modulo || "").trim()}
-                                                </td>
-                                                <td className="p-2 border-l border-gray-100 text-gray-400">
+                                                </PanelGridTd>
+                                                <PanelGridTd className="text-gray-400">
                                                     {String(row.empresa || "").trim()}
-                                                </td>
-                                            </tr>
+                                                </PanelGridTd>
+                                            </PanelGridTr>
                                         ))}
-                                    </tbody>
-                                </table>
+                                    </PanelGridTbody>
+                                </PanelGridTable>
                             )}
                         </div>
                         <div className="px-3 py-1.5 bg-gray-50 border-t text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">
                             {logEnabled ? `${(logData as any[]).length} records` : ""}
                         </div>
-                    </div>
+                    </PanelGrid>
                 </div>
             </div>
 

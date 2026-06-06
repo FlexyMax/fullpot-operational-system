@@ -15,6 +15,7 @@ import { AppFooter } from "@/components/layout/AppFooter";
 
 
 import { GridMenu } from "@/components/GridMenu";
+import PanelGrid from "@/components/ui/PanelGrid";
 
 import { cn } from "@/lib/utils";
 import { useAuditLog } from "@/lib/audit";
@@ -165,14 +166,12 @@ export default function CompaniesDefinitionPage() {
             <div className="flex flex-1 overflow-hidden gap-2 p-2">
 
                 {/* â”€â”€ Left: Company List â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-                <div className="w-56 shrink-0 flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-                    <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
-                        <div className="flex items-center gap-2">
-                            <Building2 size={12} className="text-[#FB7506]" />
-                            <span className="font-black text-[10px] uppercase tracking-widest text-white">Companies</span>
-                        </div>
-                        {loadingList && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
-                    </div>
+                <PanelGrid
+                    title="Companies"
+                    icon={Building2}
+                    refreshing={loadingList}
+                    className="w-56 shrink-0"
+                >
                     <div className="overflow-y-auto flex-1 divide-y divide-gray-50">
                         {list.map((c: any, i: number) => (
                             <div key={c.unico} onClick={() => { if (!isEditing) loadCompany(i); }}
@@ -184,24 +183,17 @@ export default function CompaniesDefinitionPage() {
                             </div>
                         ))}
                     </div>
-                </div>
+                </PanelGrid>
 
                 {/* â”€â”€ Right: Form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-                <div className="flex-1 flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden min-w-0">
-
-                    {/* Form header bar */}
-                    <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 shrink-0 rounded-t-lg">
-                        <div className="flex items-center gap-2 min-w-0">
-                            <Building2 size={14} className="text-[#FB7506]" />
-                            <span className="font-black text-[11px] uppercase tracking-widest text-white truncate">
-                                {mode === "add" ? "New Company" : t(form.nombre) || "Company Details"}
-                            </span>
-                            <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} />
-                            {formError && <span className="flex items-center gap-1 text-amber-400 text-[9px] font-bold ml-2 truncate"><AlertCircle size={10} />{formError}</span>}
-                            {saveMsg   && <span className="flex items-center gap-1 text-green-400 text-[9px] font-bold ml-2"><Check size={10} />{saveMsg}</span>}
-                        </div>
-                        <div className="flex items-center">
-                            {/* Navigation buttons (view mode only) */}
+                <PanelGrid
+                    title={mode === "add" ? "New Company" : t(form.nombre) || "Company Details"}
+                    icon={Building2}
+                    headerRight={
+                        <>
+                            <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} bareButton />
+                            {formError && <span className="flex items-center gap-1 text-amber-400 text-[9px] font-bold ml-1 truncate"><AlertCircle size={10} />{formError}</span>}
+                            {saveMsg   && <span className="flex items-center gap-1 text-green-400 text-[9px] font-bold ml-1"><Check size={10} />{saveMsg}</span>}
                             {!isEditing && (
                                 <div className="flex items-center border-r border-white/20">
                                     {[
@@ -218,7 +210,6 @@ export default function CompaniesDefinitionPage() {
                                     <span className="text-[9px] text-gray-400 font-bold px-2">{list.length > 0 ? `${currentIdx + 1} / ${list.length}` : "0"}</span>
                                 </div>
                             )}
-                            {/* Save / Cancel in edit mode */}
                             {isEditing && (
                                 <div className="flex items-center gap-1 px-2 border-r border-white/20">
                                     <button onClick={handleSave} disabled={saving}
@@ -231,14 +222,15 @@ export default function CompaniesDefinitionPage() {
                                     </button>
                                 </div>
                             )}
-                            {/* MENU button */}
-                            <GridMenu items={[
-                                { label: "Add Company",   icon: Plus,   color: "green", onClick: () => { setForm({...EMPTY}); setLogoPreview(null); setLogoFile(null); setMode("add"); setFormError(null); }, disabled: !perms.canCreate },
-                                { label: "Edit Company",  icon: Pencil, color: "blue",  onClick: () => { if (list[currentIdx]) setMode("edit"); }, disabled: !selectedUnico || isEditing || !perms.canEdit },
-                                { label: "Delete",        icon: Trash2, color: "gray",  onClick: () => setFormError("Instruction isn't enabled. / InstrucciÃ³n no disponible."), disabled: true },
-                            ]} />
-                        </div>
-                    </div>
+                        </>
+                    }
+                    menuItems={mode === "view" ? [
+                        { label: "Add Company",   icon: Plus,   color: "green", onClick: () => { setForm({...EMPTY}); setLogoPreview(null); setLogoFile(null); setMode("add"); setFormError(null); }, disabled: !perms.canCreate },
+                        { label: "Edit Company",  icon: Pencil, color: "orange", onClick: () => { if (list[currentIdx]) setMode("edit"); }, disabled: !selectedUnico || isEditing || !perms.canEdit },
+                        { label: "Delete",        icon: Trash2, color: "red",  onClick: () => setFormError("Instruction isn't enabled."), disabled: true },
+                    ] : []}
+                    className="flex-1 min-w-0"
+                >
 
                     {/* Form body */}
                     <div className="overflow-auto flex-1 p-4">
@@ -341,7 +333,7 @@ export default function CompaniesDefinitionPage() {
                             </div>
                         </div>
                     </div>
-                </div>
+                </PanelGrid>
             </div>
 
             <AppFooter areaLabel="System Management" database="Sistema" />
