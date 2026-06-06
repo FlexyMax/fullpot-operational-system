@@ -176,12 +176,12 @@ export default function PanelGrid({
   return (
     <div
       className={cn(
-        "flex flex-col rounded-md bg-white border-2 border-[#3A3A3A] overflow-hidden",
+        "flex flex-col rounded-md bg-white border border-black overflow-hidden",
         className
       )}
     >
       {/* Header */}
-      <div className="h-10 bg-[#5A5A5A] flex items-center justify-between px-3 shrink-0 border-b border-black/10">
+      <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 border-b border-black/10">
         <div className="flex items-center gap-2 min-w-0">
           <Icon size={16} className="text-[#FB7506] shrink-0" />
           <span className="text-white text-[13px] font-bold uppercase tracking-[0.1em] truncate">
@@ -259,20 +259,20 @@ export default function PanelGrid({
               >
                 <span
                   className={cn(
-                    "block w-5 h-[2px] bg-[#FB7506] rounded-full transition-all duration-300 origin-center",
-                    menuOpen && "rotate-45 translate-y-[7px]"
+                    "block h-5 w-[2px] bg-[#FB7506] rounded-full transition-all duration-300",
+                    menuOpen && "rotate-90 translate-x-[7px]"
                   )}
                 />
                 <span
                   className={cn(
-                    "block w-5 h-[2px] bg-[#FB7506] rounded-full transition-all duration-300",
-                    menuOpen && "opacity-0 scale-x-0"
+                    "block h-5 w-[2px] bg-[#FB7506] rounded-full transition-all duration-300",
+                    menuOpen && "opacity-0 scale-y-0"
                   )}
                 />
                 <span
                   className={cn(
-                    "block w-5 h-[2px] bg-[#FB7506] rounded-full transition-all duration-300 origin-center",
-                    menuOpen && "-rotate-45 -translate-y-[7px]"
+                    "block h-5 w-[2px] bg-[#FB7506] rounded-full transition-all duration-300",
+                    menuOpen && "-rotate-90 -translate-x-[7px]"
                   )}
                 />
               </button>
