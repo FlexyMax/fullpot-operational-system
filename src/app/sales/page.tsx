@@ -452,6 +452,30 @@ export default function SalesPage() {
         finally { setWorking(false); }
     }, [stockImageModal, stockImageForm, activeInvoiceUq, isOpen]);
 
+    const handleUpdateLineFromModal = useCallback(async () => {
+        const l = stockImageModal?.row;
+        if (!l) return;
+        setSavingLine(true);
+        try {
+            const r = await fetch("/api/pos/invoice/line/update", {
+                method: "PUT", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    inv_box_uq:  t(l.UNICO),
+                    box_qty:     parseInt(stockImageForm.box_qty) || 1,
+                    units_x_box: parseInt(l.UNITS_X_BOX) || 1,
+                    price:       parseFloat(stockImageForm.price) || 0,
+                    approved:    false,
+                }),
+            });
+            const j = await r.json();
+            if (!r.ok || !j.success) throw new Error(j.error || "Failed");
+            toast.success("Line updated");
+            setDetailKey(k => k + 1);
+            setStockImageModal(null);
+        } catch(e: any) { toast.error(e.message); }
+        finally { setSavingLine(false); }
+    }, [stockImageModal, stockImageForm]);
+
     const handleDeleteLine = useCallback((lineUnico: string) => {
         toast("Delete this line?", { duration: 8000,
             action: { label: "Delete", onClick: async () => {
@@ -815,8 +839,9 @@ export default function SalesPage() {
                                                                 <img
                                                                     src={productImages[t(l.PRODUCT_UQ)] || DEFAULT_THUMB}
                                                                     alt="" width={32} height={32}
-                                                                    className="w-8 h-8 object-cover rounded border border-gray-200 shrink-0"
+                                                                    className={cn("w-8 h-8 object-cover rounded border border-gray-200 shrink-0 transition-all", isOpen && "cursor-pointer hover:opacity-80 hover:ring-2 hover:ring-[#FB7506]")}
                                                                     onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }}
+                                                                    onClick={isOpen ? () => { setStockImageModal({ row: l, source: "lines" }); setStockImageForm({ box_qty: String(l.BOX_QTY ?? 1), price: String(parseMoney(l.PRICE ?? 0)) }); } : undefined}
                                                                 />
                                                             </Td>
                                                             <Td className="font-bold text-[#FB7506]">{t(l.FARM)}</Td>
@@ -1300,12 +1325,24 @@ export default function SalesPage() {
                     </div>
                 </div>
             )}
-            {/* ── Stock Product Detail Modal ────────────────────────────────── */}
+            {/* ── Stock / Line Product Detail Modal ────────────────────────── */}
             {stockImageModal && (() => {
-                const s      = stockImageModal.row;
-                const uq     = t(s.PRODUCT_UQ ?? s.BOX_PACK_UQ ?? "");
-                const img    = productImages[uq] || DEFAULT_THUMB;
-                const qtyNum = parseInt(stockImageForm.box_qty) || 0;
+                const s        = stockImageModal.row;
+                const isLines  = stockImageModal.source === "lines";
+                const uq       = t(s.PRODUCT_UQ ?? s.BOX_PACK_UQ ?? "");
+                const img      = productImages[uq] || DEFAULT_THUMB;
+                const qtyNum   = parseInt(stockImageForm.box_qty) || 0;
+                // For stock mode: dropdown 0..WH_STOCK. For lines mode: 0..BOX_QTY+WH_STOCK (lookup from stockRows) or simple input
+                const whStock  = isLines
+                    ? (stockRows.find((sr: any) => t(sr.PRODUCT_UQ ?? sr.BOX_PACK_UQ) === uq)?.WH_STOCK ?? null)
+                    : parseInt(s.WH_STOCK ?? 0);
+                const maxQty   = isLines
+                    ? (whStock !== null ? parseInt(whStock) + parseInt(s.BOX_QTY || 0) : null)
+                    : (parseInt(s.WH_STOCK ?? 0));
+                const currentBoxQty = isLines ? parseInt(s.BOX_QTY || 0) : 0;
+                const awb      = t(s.AWBCODE);
+                const caseName = t(s.CASE_SH ?? s.CASE_NAME ?? s.CASE_NAME);
+                const gprofit  = parseFloat(s.GPROFIT ?? s.GPM ?? 0);
                 return (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
                          onClick={() => setStockImageModal(null)}>
@@ -1340,55 +1377,79 @@ export default function SalesPage() {
                                 </div>
                                 {/* Badges row */}
                                 <div className="flex flex-wrap gap-1.5 mb-3">
-                                    <span className="px-2.5 py-0.5 text-[10px] font-black text-green-700 bg-green-100 rounded-full border border-green-200">
-                                        STOCK: {fmtI(s.WH_STOCK)}
-                                    </span>
-                                    <span className="px-2.5 py-0.5 text-[10px] font-black text-gray-600 bg-gray-100 rounded-full border border-gray-200">
-                                        PACK: {fmtI(s.TUNITS_X_BOX)}
-                                    </span>
-                                    <span className="px-2.5 py-0.5 text-[10px] font-black text-blue-600 bg-blue-50 rounded-full border border-blue-200">
-                                        {fmtI(s.DAYS)}d · {fmtDate(s.BOX_DATE)}
-                                    </span>
-                                    {t(s.AWBCODE) && (
-                                        <span className="px-2.5 py-0.5 text-[10px] font-black text-purple-600 bg-purple-50 rounded-full border border-purple-200">
-                                            AWB {t(s.AWBCODE)}
+                                    {!isLines && (
+                                        <span className="px-2.5 py-0.5 text-[10px] font-black text-green-700 bg-green-100 rounded-full border border-green-200">
+                                            STOCK: {fmtI(s.WH_STOCK)}
                                         </span>
                                     )}
-                                    {t(s.CASE_SH ?? s.CASE_NAME) && (
+                                    {isLines && whStock !== null && (
+                                        <span className="px-2.5 py-0.5 text-[10px] font-black text-green-700 bg-green-100 rounded-full border border-green-200">
+                                            AVAIL: {fmtI(whStock)}
+                                        </span>
+                                    )}
+                                    <span className="px-2.5 py-0.5 text-[10px] font-black text-gray-600 bg-gray-100 rounded-full border border-gray-200">
+                                        PACK: {fmtI(s.TUNITS_X_BOX ?? s.UNITS_X_BOX)}
+                                    </span>
+                                    {(s.DAYS || s.BOX_DATE) && (
+                                        <span className="px-2.5 py-0.5 text-[10px] font-black text-blue-600 bg-blue-50 rounded-full border border-blue-200">
+                                            {fmtI(s.DAYS)}d · {fmtDate(s.BOX_DATE)}
+                                        </span>
+                                    )}
+                                    {awb && (
+                                        <span className="px-2.5 py-0.5 text-[10px] font-black text-purple-600 bg-purple-50 rounded-full border border-purple-200">
+                                            AWB {awb}
+                                        </span>
+                                    )}
+                                    {caseName && (
                                         <span className="px-2.5 py-0.5 text-[10px] font-black text-amber-700 bg-amber-50 rounded-full border border-amber-200">
-                                            {t(s.CASE_SH ?? s.CASE_NAME)}
+                                            {caseName}
                                         </span>
                                     )}
                                     <span className={cn("px-2.5 py-0.5 text-[10px] font-black rounded-full border",
-                                        parseFloat(s.GPROFIT ?? 0) < 0
-                                            ? "text-red-600 bg-red-50 border-red-200"
-                                            : "text-gray-600 bg-gray-100 border-gray-200")}>
-                                        GPM {fmt(s.GPROFIT)}%
+                                        gprofit < 0 ? "text-red-600 bg-red-50 border-red-200" : "text-gray-600 bg-gray-100 border-gray-200")}>
+                                        GPM {fmt(gprofit)}%
                                     </span>
                                 </div>
                                 {/* Qty + Price inputs */}
                                 <div className="border-t border-gray-100 pt-3 flex gap-3 mb-3">
                                     <div className="flex-1">
                                         <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Box Qty</label>
-                                        <select value={stockImageForm.box_qty}
-                                            onChange={e => setStockImageForm(p => ({ ...p, box_qty: e.target.value }))}
-                                            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[14px] font-bold focus:outline-none focus:ring-2 focus:ring-[#FB7506] bg-gray-50 appearance-none text-center">
-                                            {Array.from({ length: 51 }, (_, i) => (
-                                                <option key={i} value={String(i)}>{i}</option>
-                                            ))}
-                                        </select>
+                                        {maxQty !== null ? (
+                                            <select value={stockImageForm.box_qty}
+                                                onChange={e => setStockImageForm(p => ({ ...p, box_qty: e.target.value }))}
+                                                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[14px] font-bold focus:outline-none focus:ring-2 focus:ring-[#FB7506] bg-gray-50 text-center">
+                                                {Array.from({ length: maxQty + 1 }, (_, i) => (
+                                                    <option key={i} value={String(i)}
+                                                        className={i === currentBoxQty ? "font-black" : ""}>
+                                                        {i}{i === currentBoxQty && isLines ? " (current)" : ""}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        ) : (
+                                            <input type="number" min="0" value={stockImageForm.box_qty}
+                                                onChange={e => setStockImageForm(p => ({ ...p, box_qty: e.target.value }))}
+                                                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[14px] font-bold focus:outline-none focus:ring-2 focus:ring-[#FB7506] bg-gray-50 text-center" />
+                                        )}
                                     </div>
                                     <div className="flex-1">
                                         <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Price / Unit</label>
                                         <input type="number" step="0.01" min="0" value={stockImageForm.price}
                                             onChange={e => setStockImageForm(p => ({ ...p, price: e.target.value }))}
-                                            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[14px] font-bold focus:outline-none focus:ring-2 focus:ring-[#FB7506] bg-gray-50 text-center" />
+                                            readOnly={!isOpen}
+                                            className={cn("w-full border rounded-xl px-3 py-2.5 text-[14px] font-bold focus:outline-none focus:ring-2 focus:ring-[#FB7506] text-center",
+                                                isOpen ? "border-gray-200 bg-gray-50" : "border-gray-100 bg-gray-100 text-gray-400 cursor-default")} />
                                     </div>
                                 </div>
                             </div>
                             {/* Action button */}
                             <div className="px-4 pb-4 shrink-0">
-                                {isOpen ? (
+                                {isLines ? (
+                                    <button onClick={handleUpdateLineFromModal} disabled={savingLine || qtyNum < 1}
+                                        className="w-full flex items-center justify-center gap-2 py-3.5 text-[14px] font-black text-white bg-[#FB7506] hover:bg-orange-500 active:bg-orange-600 rounded-xl disabled:opacity-40 transition-colors">
+                                        {savingLine ? <Loader2 size={16} className="animate-spin" /> : <Edit2 size={16} />}
+                                        Update Line
+                                    </button>
+                                ) : isOpen ? (
                                     <button onClick={handleAddLineFromModal} disabled={working || qtyNum < 1}
                                         className="w-full flex items-center justify-center gap-2 py-3.5 text-[14px] font-black text-white bg-[#22c55e] hover:bg-green-400 active:bg-green-600 rounded-xl disabled:opacity-40 transition-colors">
                                         {working ? <Loader2 size={16} className="animate-spin" /> : <ShoppingCart size={16} />}
