@@ -439,24 +439,19 @@ export default function SalesPage() {
         } catch { return null; }
     }, []);
 
-    // Resolves the stock UNICO for a given row (stock mode: UNICO directly; lines mode: match via PRODUCT_UQ)
+    // Resolves the stock UNICO for a given row (stock mode: UNICO directly; lines mode: PK_STO_UQ)
     const resolveStockUq = useCallback((row: any, source: "stock" | "lines"): string => {
-        if (source === "stock") return t(row.UNICO);
-        const productUq = t(row.PRODUCT_UQ ?? row.BOX_PACK_UQ ?? "");
-        const match = (stockRows as any[]).find((sr: any) => t(sr.PRODUCT_UQ ?? sr.BOX_PACK_UQ) === productUq);
-        return match ? t(match.UNICO) : "";
-    }, [stockRows]);
+        return source === "stock" ? t(row.UNICO) : t(row.PK_STO_UQ ?? "");
+    }, []);
 
     // Opens the product detail modal and immediately fetches live stock
     const openStockModal = useCallback((row: any, source: "stock" | "lines", form: { box_qty: string; price: string }) => {
         setLiveStockRow(null);
         setStockImageModal({ row, source });
         setStockImageForm(form);
-        const stockUq = source === "stock"
-            ? t(row.UNICO)
-            : t((stockRows as any[]).find((sr: any) => t(sr.PRODUCT_UQ ?? sr.BOX_PACK_UQ) === t(row.PRODUCT_UQ ?? row.BOX_PACK_UQ ?? ""))?.UNICO ?? "");
+        const stockUq = resolveStockUq(row, source);
         if (stockUq) fetchLiveStock(stockUq);
-    }, [stockRows, fetchLiveStock]);
+    }, [resolveStockUq, fetchLiveStock]);
 
     const handleAddLineFromModal = useCallback(async () => {
         const s = stockImageModal?.row;
@@ -1373,13 +1368,11 @@ export default function SalesPage() {
                 const img      = productImages[uq] || DEFAULT_THUMB;
                 const qtyNum   = parseInt(stockImageForm.box_qty) || 0;
                 // liveStockRow is fetched fresh from sp_inventory_stock_uq when modal opens
-                const liveWh   = liveStockRow ? parseInt(liveStockRow.WH_STOCK ?? 0) : null;
-                const whStock  = liveWh ?? (isLines
-                    ? (stockRows.find((sr: any) => t(sr.PRODUCT_UQ ?? sr.BOX_PACK_UQ) === uq)?.WH_STOCK ?? null)
-                    : parseInt(s.WH_STOCK ?? 0));
+                const liveWh   = liveStockRow ? parseInt(liveStockRow.WH_STOCK ?? liveStockRow.wh_stock ?? 0) : null;
+                const whStock  = liveWh ?? (isLines ? null : parseInt(s.WH_STOCK ?? 0));
                 const maxQty   = isLines
-                    ? (whStock !== null ? parseInt(String(whStock)) + parseInt(s.BOX_QTY || 0) : Math.max(parseInt(s.BOX_QTY || 0) + 20, 50))
-                    : (whStock !== null ? parseInt(String(whStock)) : 0);
+                    ? (whStock !== null ? whStock + parseInt(s.BOX_QTY || 0) : Math.max(parseInt(s.BOX_QTY || 0) + 5, 10))
+                    : (whStock ?? 0);
                 const currentBoxQty = isLines ? parseInt(s.BOX_QTY || 0) : 0;
                 const awb      = t(s.AWBCODE);
                 const caseName = t(s.CASE_SH ?? s.CASE_NAME ?? s.CASE_NAME);
