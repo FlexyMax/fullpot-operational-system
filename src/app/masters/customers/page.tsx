@@ -381,9 +381,9 @@ export default function CustomersSetupPage() {
                         if (!selCust) return; 
                         const c = selCust; 
                         
-                        const s_uq = c.salesman_uq ? t(c.salesman_uq) : (lookups?.salesmen?.find((s:any) => t(s.salesman) === t(c.salesman))?.unico || "");
-                        const t_uq = c.terms_uq ? t(c.terms_uq) : (lookups?.terms?.find((tt:any) => t(tt.TERMS) === t(c.terms))?.unico || "");
-                        const r_uq = c.rc_uq ? t(c.rc_uq) : (lookups?.companies?.find((comp:any) => t(comp.Company) === t(c.rc))?.unico || "");
+                        const s_uq = (c.salesman_uq && String(c.salesman_uq)!=="0") ? String(c.salesman_uq) : (lookups?.salesmen?.find((s:any) => String(s.salesman||"").trim() === String(c.salesman||"").trim())?.unico || "");
+                        const t_uq = (c.terms_uq && String(c.terms_uq)!=="0") ? String(c.terms_uq) : (lookups?.terms?.find((tt:any) => String(tt.TERMS||"").trim() === String(c.terms||"").trim())?.unico || "");
+                        const r_uq = (c.rc_uq && String(c.rc_uq)!=="0") ? String(c.rc_uq) : (lookups?.companies?.find((comp:any) => String(comp.Company||"").trim() === String(c.rc||"").trim())?.unico || "");
                         
                         setCustForm({ old_code:c.old_code||"", edi_code:t(c.edi_code), fobmiami:!!c.fobmiami, inventory_from_invoice:!!c.inventory_from_invoice, dex:!!c.dex, auto_charge:!!c.auto_charge, credithold:!!c.credithold, internal_customer:!!c.internal_customer, active:!!c.active, customer:t(c.customer), dba:t(c.dba), contact:t(c.contact), purchaser:t(c.purchaser), address1:t(c.address1), address2:t(c.address2), city:t(c.city), state:t(c.state), zip:t(c.zip), country:t(c.country), phone_1:t(c.phone_1), phone_2:t(c.phone_2), fax_1:t(c.fax_1), fax_2:t(c.fax_2), email:t(c.email), terms_uq:t_uq, calls:t(c.calls)||"NNNNNN", subregion_uq:t(c.subregion_uq), salesman_uq:s_uq, group_uq:t(c.group_uq), rc_uq:r_uq, pickremark:t(c.pickremark), julian_from:t(c.julian_from), reasonhold:t(c.reasonhold), credit_limit:c.credit_limit||0, insurance_for:c.insurance_for||0, price_margin:c.price_margin||0, dry_discount:c.dry_discount||0, sales_web_uq:t(c.sales_web_uq), custsince:c.custsince?normalizeToISODate(c.custsince):"", ap_contact:t(c.ap_contact), ap_email:t(c.ap_email), ap_msn:t(c.ap_msn), ap_phone:t(c.ap_phone), ap_fax:t(c.ap_fax), website:t(c.website), statement_print:!!c.statement_print, inspection:!!c.inspection, gpm:c.gpm||0, availability_by:t(c.availability_by)||"NONE", availability_to:t(c.availability_to), invoice_by:t(c.invoice_by)||"EMAIL", extension:c.extension||0, commission_days:c.commission_days||0, resale_tax:c.resale_tax||0, ccard_name:t(c.ccard_name), ccard_on_file:t(c.ccard_on_file), ccard_expiration_month:t(c.ccard_expiration_month), ccard_expiration_year:t(c.ccard_expiration_year), tax_id:t(c.tax_id), international:!!c.international, collection:!!c.collection, check_price_override:!!c.check_price_override }); 
                         setFormError(null); 
@@ -856,9 +856,9 @@ function CustomerModal({ mode, form, setForm, error, saving, activeTab, setActiv
     const Sel = (label: string, key: string, items: any[], valKey: string, labelKey: string) => (
         <div className="flex flex-col gap-0.5">
             <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{label}</label>
-            <select value={form[key]||""} onChange={e => setForm((p:any)=>({...p,[key]:e.target.value}))} className="fos-input text-xs py-1">
+            <select value={String(form[key]||"")} onChange={e => setForm((p:any)=>({...p,[key]:e.target.value}))} className="fos-input text-xs py-1">
                 <option value="">— Select —</option>
-                {(items||[]).map((it:any) => <option key={it[valKey]} value={it[valKey]}>{t(it[labelKey])}</option>)}
+                {(items||[]).map((it:any) => <option key={it[valKey]} value={String(it[valKey])}>{t(it[labelKey])}</option>)}
             </select>
         </div>
     );
@@ -930,7 +930,7 @@ function CustomerModal({ mode, form, setForm, error, saving, activeTab, setActiv
 
                     {activeTab === "general" && (
                         <div className="flex flex-col gap-3">
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 gap-3">
                                 {F("Address 1 *","address1")} {F("Address 2","address2")}
                             </div>
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -939,7 +939,7 @@ function CustomerModal({ mode, form, setForm, error, saving, activeTab, setActiv
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                 {F("Phone 1 *","phone_1")} {F("Phone 2","phone_2")} {F("Fax 1 *","fax_1")} {F("Fax 2","fax_2")}
                             </div>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 gap-3">
                                 {F("Email","email")} {F("Website","website")}
                             </div>
                             <div className="grid grid-cols-1">
@@ -979,7 +979,7 @@ function CustomerModal({ mode, form, setForm, error, saving, activeTab, setActiv
 
                     {activeTab === "financial" && (
                         <div className="flex flex-col gap-3">
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 gap-3">
                                 {F("AP Contact","ap_contact")} {F("AP Email","ap_email")}
                             </div>
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
