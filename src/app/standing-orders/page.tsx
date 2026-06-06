@@ -13,7 +13,7 @@ import { cn }                    from "@/lib/utils";
 import { usePagePermissions }    from "@/lib/permissions";
 import { HeaderModal }           from "./HeaderModal";
 import { OrderDetailModal }      from "./OrderDetailModal";
-import PanelGrid, { type PanelMenuItem } from "@/components/ui/PanelGrid";
+import PanelGrid from "@/components/ui/PanelGrid";
 import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -196,16 +196,8 @@ export default function StandingOrdersPage() {
                     title="Orders List"
                     icon={ClipboardList}
                     recordCount={orders.length}
-                    searchPlaceholder="Search orders..."
-                    searchValue={textSearch}
-                    onSearchChange={setTextSearch}
                     onRefresh={() => setListKey(k => k + 1)}
                     refreshing={loadingOrders}
-                    menuItems={[
-                        ...(canEdit ? [{ label: "New Order", icon: Plus, color: "green" as const, onClick: () => setNewOrderModal(true) }] : []),
-                        { separator: true } as PanelMenuItem,
-                        { label: "Refresh", icon: RefreshCcw, color: "gray" as const, onClick: () => setListKey(k => k + 1) },
-                    ]}
                     className="flex-1 xl:flex-none xl:w-[420px] xl:shrink-0"
                 >
                     <PanelGridTable>

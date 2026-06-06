@@ -8,7 +8,6 @@ import {
   RefreshCcw,
   History,
   Menu,
-  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -36,6 +35,12 @@ export interface PanelGridProps {
   menuItems?: PanelMenuItem[];
   children: React.ReactNode;
   className?: string;
+}
+
+/* ─── Helpers ───────────────────────────────────────────────────────────── */
+
+function isRealItem(item: PanelMenuItem) {
+  return !item.separator;
 }
 
 /* ─── Menu Dropdown (portal) ────────────────────────────────────────────── */
@@ -111,7 +116,7 @@ function MenuDropdown({
                 "w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-bold transition-colors text-left",
                 item.disabled
                   ? "opacity-40 cursor-not-allowed text-gray-400"
-                  : "hover:bg-gray-50 text-gray-700"
+                  : "hover:bg-[#FB7506]/10 text-gray-700"
               )}
             >
               {Icon && (
@@ -126,7 +131,6 @@ function MenuDropdown({
               <span className={cn(item.disabled ? "text-gray-400" : colorClass)}>
                 {item.label}
               </span>
-              <ChevronRight size={12} className="ml-auto text-gray-300 shrink-0" />
             </button>
           );
         })}
@@ -154,6 +158,19 @@ export default function PanelGrid({
 }: PanelGridProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuBtnRef = useRef<HTMLButtonElement>(null);
+
+  // Filter out real (non-separator) items
+  const realItems = menuItems?.filter(isRealItem) ?? [];
+  const hasMenu = realItems.length > 1;
+  const singleItem = realItems.length === 1 ? realItems[0] : null;
+
+  const btnBgMap: Record<string, string> = {
+    gray: "bg-gray-500 hover:bg-gray-400",
+    green: "bg-[#009B4D] hover:bg-green-600",
+    orange: "bg-[#FB7506] hover:bg-orange-500",
+    blue: "bg-blue-600 hover:bg-blue-500",
+    red: "bg-red-500 hover:bg-red-400",
+  };
 
   return (
     <div
@@ -211,19 +228,41 @@ export default function PanelGrid({
             </button>
           )}
 
-          {/* Menu */}
-          {menuItems && menuItems.length > 0 && (
+          {/* Single action button (no menu) */}
+          {singleItem && !hasMenu && (
+            <button
+              onClick={singleItem.onClick}
+              disabled={singleItem.disabled}
+              className={cn(
+                "px-3 h-7 rounded-md font-black text-[10px] flex items-center gap-1.5 text-white transition-all shrink-0 uppercase",
+                btnBgMap[singleItem.color || "orange"],
+                singleItem.disabled && "opacity-40 cursor-not-allowed"
+              )}
+            >
+              {singleItem.icon && <singleItem.icon size={14} />}
+              <span>{singleItem.label}</span>
+            </button>
+          )}
+
+          {/* Menu hamburger */}
+          {hasMenu && (
             <div className="relative">
               <button
                 ref={menuBtnRef}
                 onClick={() => setMenuOpen((v) => !v)}
                 className="h-10 bg-[#FB7506] hover:bg-orange-600 text-white w-14 flex items-center justify-center transition-colors"
               >
-                <Menu size={20} />
+                <Menu
+                  size={20}
+                  className={cn(
+                    "transition-transform duration-300",
+                    menuOpen && "rotate-90"
+                  )}
+                />
               </button>
               {menuOpen && (
                 <MenuDropdown
-                  items={menuItems}
+                  items={menuItems!}
                   onClose={() => setMenuOpen(false)}
                   triggerRef={menuBtnRef}
                 />
