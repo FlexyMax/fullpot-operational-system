@@ -155,7 +155,7 @@ export default function SalesPage() {
     const [productImages,  setProductImages]  = useState<Record<string, string>>({});
 
     // Stock image/detail modal
-    const [stockImageModal, setStockImageModal] = useState<{ row: any; source: "stock" | "inventory" } | null>(null);
+    const [stockImageModal, setStockImageModal] = useState<{ row: any; source: "stock" | "lines" } | null>(null);
     const [stockImageForm,  setStockImageForm]  = useState({ box_qty: "1", price: "0.00" });
 
     // ── Init: load salesman info (unico, user_uq, wphysical_uq) ──────────────
