@@ -841,17 +841,32 @@ function ProductsModalTab2({ mode, form, setForm, lookups, onSave, onClose, savi
 }
 
 // ─── ImageModal ───────────────────────────────────────────────────────────────
-function ImageModal({ product, currentUrl, onClose, onUploaded }: {
-    product: any; currentUrl: string;
+function ImageModal({ product, onClose, onFirstImageChanged }: {
+    product: any;
     onClose: () => void;
-    onUploaded: (uq: string, url: string) => void;
+    onFirstImageChanged: (uq: string, url: string) => void;
 }) {
+    const [images,    setImages]    = useState<string[]>([]);
+    const [selIdx,    setSelIdx]    = useState(0);
+    const [loading,   setLoading]   = useState(true);
     const [file,      setFile]      = useState<File|null>(null);
     const [preview,   setPreview]   = useState<string|null>(null);
     const [uploading, setUploading] = useState(false);
     const [error,     setError]     = useState<string|null>(null);
     const [dragging,  setDragging]  = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
+
+    const uq = t(product.unico);
+
+    // Load all images for this product
+    useEffect(() => {
+        setLoading(true);
+        fetch(`/api/products/images/product?uq=${encodeURIComponent(uq)}`)
+            .then(r => r.json())
+            .then(j => { setImages(j.images ?? []); setSelIdx(0); })
+            .catch(() => setImages([]))
+            .finally(() => setLoading(false));
+    }, [uq]);
 
     const pickFile = (f: File) => {
         setFile(f); setError(null);
@@ -865,21 +880,27 @@ function ImageModal({ product, currentUrl, onClose, onUploaded }: {
         setUploading(true); setError(null);
         const fd = new FormData();
         fd.append("file", file);
-        fd.append("product_uq", t(product.unico));
+        fd.append("product_uq", uq);
         try {
             const r = await fetch("/api/products/images/upload", { method: "POST", body: fd });
             const j = await r.json();
             if (!r.ok || !j.url) throw new Error(j.error || "Upload failed");
-            onUploaded(t(product.unico), j.url + `?t=${Date.now()}`);
-            onClose();
+            const newImages = [...images, j.url];
+            setImages(newImages);
+            setSelIdx(newImages.length - 1);
+            setFile(null); setPreview(null);
+            if (newImages.length === 1 || j.number === 1)
+                onFirstImageChanged(uq, j.url);
         } catch(e: any) { setError(e.message); }
         finally { setUploading(false); }
     };
 
+    const displayed = preview || images[selIdx] || DEFAULT_THUMB;
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
              onClick={onClose}>
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col"
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col max-h-[90vh]"
                  onClick={e => e.stopPropagation()}>
                 {/* Header */}
                 <div className="bg-[#0d1b2a] px-4 py-3 flex items-center justify-between shrink-0">
@@ -888,42 +909,65 @@ function ImageModal({ product, currentUrl, onClose, onUploaded }: {
                             <ImageIcon size={15} className="text-white" />
                         </div>
                         <div>
-                            <span className="font-black text-[12px] text-white uppercase tracking-widest">Product Image</span>
+                            <span className="font-black text-[12px] text-white uppercase tracking-widest">Product Images</span>
                             <p className="text-[10px] text-white/50 truncate max-w-[200px]">{t(product.description)}</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="text-white/50 hover:text-white text-lg font-light leading-none">—</button>
+                    <div className="flex items-center gap-2">
+                        {!loading && <span className="text-[10px] text-white/40">{images.length} photo{images.length !== 1 ? "s" : ""}</span>}
+                        <button onClick={onClose} className="text-white/50 hover:text-white text-lg font-light leading-none">—</button>
+                    </div>
                 </div>
-                {/* Current image */}
-                <div className="w-full bg-gray-50" style={{ aspectRatio: "4/3" }}>
-                    <img src={preview || currentUrl}
-                         alt={t(product.description)}
-                         className="w-full h-full object-contain"
-                         onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }} />
+
+                {/* Main image */}
+                <div className="w-full bg-gray-50 shrink-0" style={{ aspectRatio: "4/3" }}>
+                    {loading
+                        ? <div className="w-full h-full flex items-center justify-center"><RefreshCcw size={20} className="animate-spin text-gray-300" /></div>
+                        : <img src={displayed} alt={t(product.description)}
+                               className="w-full h-full object-contain"
+                               onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }} />
+                    }
                 </div>
+
+                {/* Thumbnail strip */}
+                {images.length > 0 && (
+                    <div className="flex gap-2 px-3 py-2 overflow-x-auto shrink-0 bg-gray-50 border-t border-gray-100">
+                        {images.map((url, i) => (
+                            <button key={i} onClick={() => { setSelIdx(i); setPreview(null); setFile(null); }}
+                                className={cn("shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition-all",
+                                    selIdx === i && !preview ? "border-[#FB7506] ring-1 ring-[#FB7506]" : "border-gray-200 hover:border-gray-400")}>
+                                <img src={url} alt="" className="w-full h-full object-cover"
+                                     onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }} />
+                            </button>
+                        ))}
+                    </div>
+                )}
+
                 {/* Upload area */}
-                <div className="px-4 py-4">
+                <div className="px-4 py-3 flex-1 overflow-y-auto">
+                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Add New Image</p>
                     <div
-                        className={cn("border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-colors",
+                        className={cn("border-2 border-dashed rounded-xl p-3 text-center cursor-pointer transition-colors",
                             dragging ? "border-[#FB7506] bg-orange-50" : "border-gray-200 hover:border-[#FB7506] hover:bg-orange-50/40")}
                         onClick={() => inputRef.current?.click()}
                         onDragOver={e => { e.preventDefault(); setDragging(true); }}
                         onDragLeave={() => setDragging(false)}
                         onDrop={e => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f) pickFile(f); }}>
-                        <Upload size={18} className="mx-auto text-gray-400 mb-1.5" />
-                        <p className="text-[11px] font-bold text-gray-500">{file ? file.name : "Click or drag image here"}</p>
-                        <p className="text-[9px] text-gray-400 mt-0.5">JPG · PNG · WEBP — will be set as public</p>
+                        <Upload size={16} className="mx-auto text-gray-400 mb-1" />
+                        <p className="text-[10px] font-bold text-gray-500">{file ? file.name : "Click or drag image here"}</p>
+                        <p className="text-[9px] text-gray-400 mt-0.5">JPG · PNG · WEBP — public-read · auto-numbered</p>
                         <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
                                onChange={e => { const f = e.target.files?.[0]; if (f) pickFile(f); }} />
                     </div>
                     {error && <p className="text-red-500 text-[10px] font-bold mt-2">{error}</p>}
                 </div>
+
                 {/* Footer */}
                 <div className="px-4 pb-4 shrink-0">
                     <button onClick={upload} disabled={!file || uploading}
                         className="w-full flex items-center justify-center gap-2 py-3 text-[13px] font-black text-white bg-[#FB7506] hover:bg-orange-500 active:bg-orange-600 rounded-xl disabled:opacity-40 transition-colors">
                         {uploading ? <RefreshCcw size={15} className="animate-spin" /> : <Upload size={15} />}
-                        {uploading ? "Uploading…" : "Upload Image"}
+                        {uploading ? "Uploading…" : `Upload as image #${images.length + 1}`}
                     </button>
                 </div>
             </div>
@@ -1272,9 +1316,8 @@ export default function Tab2() {
             {imageModal && (
                 <ImageModal
                     product={imageModal}
-                    currentUrl={productImages[t(imageModal.unico)] || DEFAULT_THUMB}
                     onClose={() => setImageModal(null)}
-                    onUploaded={(uq, url) => setProductImages(prev => ({ ...prev, [uq]: url }))}
+                    onFirstImageChanged={(uq, url) => setProductImages(prev => ({ ...prev, [uq]: url }))}
                 />
             )}
         </div>
