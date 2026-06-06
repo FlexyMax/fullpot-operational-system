@@ -10,7 +10,7 @@ const genUq = () => crypto.randomBytes(4).toString("hex").toUpperCase();
 export async function GET() {
     try {
         const r = await executeQuery(
-            "SELECT unico, carrier, carriercode, active FROM flower_carriers ORDER BY carrier"
+            "SELECT unico, carrier, carriercode, active, contact, phone_1, fax_1, city, country, isairline FROM flower_carriers ORDER BY carrier"
         );
         return NextResponse.json(r.recordset);
     } catch (err: any) {
