@@ -1337,7 +1337,7 @@ export default function SalesPage() {
                     ? (stockRows.find((sr: any) => t(sr.PRODUCT_UQ ?? sr.BOX_PACK_UQ) === uq)?.WH_STOCK ?? null)
                     : parseInt(s.WH_STOCK ?? 0);
                 const maxQty   = isLines
-                    ? (whStock !== null ? parseInt(whStock) + parseInt(s.BOX_QTY || 0) : null)
+                    ? (whStock !== null ? parseInt(whStock) + parseInt(s.BOX_QTY || 0) : Math.max(parseInt(s.BOX_QTY || 0) + 20, 50))
                     : (parseInt(s.WH_STOCK ?? 0));
                 const currentBoxQty = isLines ? parseInt(s.BOX_QTY || 0) : 0;
                 const awb      = t(s.AWBCODE);
@@ -1414,22 +1414,18 @@ export default function SalesPage() {
                                 <div className="border-t border-gray-100 pt-3 flex gap-3 mb-3">
                                     <div className="flex-1">
                                         <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Box Qty</label>
-                                        {maxQty !== null ? (
-                                            <select value={stockImageForm.box_qty}
-                                                onChange={e => setStockImageForm(p => ({ ...p, box_qty: e.target.value }))}
-                                                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[14px] font-bold focus:outline-none focus:ring-2 focus:ring-[#FB7506] bg-gray-50 text-center">
-                                                {Array.from({ length: maxQty + 1 }, (_, i) => (
-                                                    <option key={i} value={String(i)}
-                                                        className={i === currentBoxQty ? "font-black" : ""}>
-                                                        {i}{i === currentBoxQty && isLines ? " (current)" : ""}
+                                        <select value={stockImageForm.box_qty}
+                                            onChange={e => setStockImageForm(p => ({ ...p, box_qty: e.target.value }))}
+                                            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[14px] font-bold focus:outline-none focus:ring-2 focus:ring-[#FB7506] bg-gray-50 text-center">
+                                            {Array.from({ length: maxQty - (isLines ? 0 : 1) + 1 }, (_, i) => {
+                                                const v = i + (isLines ? 0 : 1);
+                                                return (
+                                                    <option key={v} value={String(v)}>
+                                                        {v}{v === currentBoxQty && isLines ? " (current)" : ""}
                                                     </option>
-                                                ))}
-                                            </select>
-                                        ) : (
-                                            <input type="number" min="0" value={stockImageForm.box_qty}
-                                                onChange={e => setStockImageForm(p => ({ ...p, box_qty: e.target.value }))}
-                                                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[14px] font-bold focus:outline-none focus:ring-2 focus:ring-[#FB7506] bg-gray-50 text-center" />
-                                        )}
+                                                );
+                                            })}
+                                        </select>
                                     </div>
                                     <div className="flex-1">
                                         <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Price / Unit</label>
@@ -1444,7 +1440,7 @@ export default function SalesPage() {
                             {/* Action button */}
                             <div className="px-4 pb-4 shrink-0">
                                 {isLines ? (
-                                    <button onClick={handleUpdateLineFromModal} disabled={savingLine || qtyNum < 1}
+                                    <button onClick={handleUpdateLineFromModal} disabled={savingLine}
                                         className="w-full flex items-center justify-center gap-2 py-3.5 text-[14px] font-black text-white bg-[#FB7506] hover:bg-orange-500 active:bg-orange-600 rounded-xl disabled:opacity-40 transition-colors">
                                         {savingLine ? <Loader2 size={16} className="animate-spin" /> : <Edit2 size={16} />}
                                         Update Line
