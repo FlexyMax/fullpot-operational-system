@@ -9,12 +9,14 @@ import {
     Check, Plus, ClipboardList,
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
+import AppFooter from "@/components/layout/AppFooter";
 import { cn }                    from "@/lib/utils";
 import { usePagePermissions }    from "@/lib/permissions";
 import { HeaderModal }           from "./HeaderModal";
 import { OrderDetailModal }      from "./OrderDetailModal";
 import PanelGrid from "@/components/ui/PanelGrid";
 import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
+import { AuditLogModal } from "@/components/AuditLogModal";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const t    = (v: any) => String(v ?? "").trim();
@@ -198,6 +200,7 @@ export default function StandingOrdersPage() {
                     recordCount={orders.length}
                     onRefresh={() => setListKey(k => k + 1)}
                     refreshing={loadingOrders}
+                    headerRight={<AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} />}
                     className="flex-1 xl:flex-none xl:w-[420px] xl:shrink-0"
                 >
                     <PanelGridTable>
@@ -302,6 +305,7 @@ export default function StandingOrdersPage() {
                     }}
                 />
             )}
+            <AppFooter areaLabel="Standing Orders" />
         </div>
     );
 }

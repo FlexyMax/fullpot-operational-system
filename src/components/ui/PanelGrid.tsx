@@ -33,6 +33,7 @@ export interface PanelGridProps {
   refreshing?: boolean;
   onLog?: () => void;
   menuItems?: PanelMenuItem[];
+  headerRight?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
 }
@@ -153,6 +154,7 @@ export default function PanelGrid({
   refreshing = false,
   onLog,
   menuItems,
+  headerRight,
   children,
   className,
 }: PanelGridProps) {
@@ -243,6 +245,9 @@ export default function PanelGrid({
               <span>{singleItem.label}</span>
             </button>
           )}
+
+          {/* Custom extra node (e.g. AuditLogModal) */}
+          {headerRight}
 
           {/* Menu hamburger */}
           {hasMenu && (
