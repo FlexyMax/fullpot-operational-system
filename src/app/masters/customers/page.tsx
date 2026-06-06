@@ -750,6 +750,7 @@ export default function CustomersSetupPage() {
             {msgModal && (
                 <MsgModal form={msgForm} setForm={setMsgForm} error={formError} saving={saving}
                     users={[]} onSave={saveMsg} onClose={() => { setMsgModal(false); setFormError(null); }} />
+            )}
             {/* ── STATEMENT MODAL ───────────────────────────────────────── */}
             {stmtModal && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
