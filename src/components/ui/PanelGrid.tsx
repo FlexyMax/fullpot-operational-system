@@ -257,24 +257,19 @@ export default function PanelGrid({
                 className="h-10 w-10 flex flex-col items-center justify-center gap-[5px] hover:bg-white/10 transition-colors"
                 title="Menu"
               >
-                <span
-                  className={cn(
-                    "block w-5 h-[2px] bg-[#FB7506] rounded-full transition-all duration-300",
-                    menuOpen && "translate-y-[7px] rotate-90"
-                  )}
-                />
-                <span
-                  className={cn(
-                    "block w-5 h-[2px] bg-[#FB7506] rounded-full transition-all duration-300",
-                    menuOpen && "opacity-0 scale-x-0"
-                  )}
-                />
-                <span
-                  className={cn(
-                    "block w-5 h-[2px] bg-[#FB7506] rounded-full transition-all duration-300",
-                    menuOpen && "-translate-y-[7px] -rotate-90"
-                  )}
-                />
+                {menuOpen ? (
+                  <>
+                    <span className="block h-5 w-[2px] bg-[#FB7506] rounded-full -ml-[5px]" />
+                    <span className="block h-5 w-[2px] bg-[#FB7506] rounded-full" />
+                    <span className="block h-5 w-[2px] bg-[#FB7506] rounded-full ml-[5px]" />
+                  </>
+                ) : (
+                  <>
+                    <span className="block w-5 h-[2px] bg-[#FB7506] rounded-full" />
+                    <span className="block w-5 h-[2px] bg-[#FB7506] rounded-full" />
+                    <span className="block w-5 h-[2px] bg-[#FB7506] rounded-full" />
+                  </>
+                )}
               </button>
               {menuOpen && (
                 <MenuDropdown
