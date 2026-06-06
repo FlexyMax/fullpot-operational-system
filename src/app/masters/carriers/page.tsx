@@ -68,6 +68,8 @@ export default function CarriersDefinitionPage() {
     const [othersModal, setOthersModal] = useState(false);
     const [otherForm,   setOtherForm]   = useState({ internal_delivery: false });
     const [carrSearch,  setCarrSearch]  = useState("");
+    const [invDateIni,  setInvDateIni]  = useState(() => { const d = new Date(); d.setDate(d.getDate() - 30); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; });
+    const [invDateEnd,  setInvDateEnd]  = useState(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; });
 
     useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
 
@@ -96,8 +98,8 @@ export default function CarriersDefinitionPage() {
     const selUnico = list[currentIdx]?.unico ?? null;
 
     const { data: invoices  = [], isFetching: loadingInv  } = useQuery({
-        queryKey: ["carr-inv",  selUnico],
-        queryFn:  () => sF(`/api/masters/carriers/${selUnico}/invoices`),
+        queryKey: ["carr-inv",  selUnico, invDateIni, invDateEnd],
+        queryFn:  () => sF(`/api/masters/carriers/${selUnico}/invoices?date_ini=${invDateIni}&date_end=${invDateEnd}`),
         enabled:  !!selUnico && invModal,
         retry: false,
     });
@@ -478,9 +480,16 @@ export default function CarriersDefinitionPage() {
                                 <span className="fos-grid-header-text">Invoices — {t(form.carrier)}</span>
                                 {loadingInv && <RefreshCcw size={12} className="text-gray-400 animate-spin ml-1" />}
                             </div>
-                            <button onClick={() => setInvModal(false)} className="w-8 h-10 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
-                                <X size={16} />
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1.5 mr-2">
+                                    <input type="date" value={invDateIni} onChange={e => setInvDateIni(e.target.value)} className="fos-input h-7 text-xs w-[110px]" />
+                                    <span className="text-gray-400 text-[10px] font-bold uppercase">to</span>
+                                    <input type="date" value={invDateEnd} onChange={e => setInvDateEnd(e.target.value)} className="fos-input h-7 text-xs w-[110px]" />
+                                </div>
+                                <button onClick={() => setInvModal(false)} className="w-8 h-10 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+                                    <X size={16} />
+                                </button>
+                            </div>
                         </div>
                         <div className="overflow-auto flex-1">
                             <table className="min-w-full text-left">
