@@ -259,20 +259,20 @@ export default function PanelGrid({
               >
                 <span
                   className={cn(
-                    "block h-5 w-[2px] bg-[#FB7506] rounded-full transition-all duration-300",
-                    menuOpen && "rotate-90 translate-x-[7px]"
+                    "block w-5 h-[2px] bg-[#FB7506] rounded-full transition-all duration-300",
+                    menuOpen && "translate-y-[7px] rotate-90"
                   )}
                 />
                 <span
                   className={cn(
-                    "block h-5 w-[2px] bg-[#FB7506] rounded-full transition-all duration-300",
-                    menuOpen && "opacity-0 scale-y-0"
+                    "block w-5 h-[2px] bg-[#FB7506] rounded-full transition-all duration-300",
+                    menuOpen && "opacity-0 scale-x-0"
                   )}
                 />
                 <span
                   className={cn(
-                    "block h-5 w-[2px] bg-[#FB7506] rounded-full transition-all duration-300",
-                    menuOpen && "-rotate-90 -translate-x-[7px]"
+                    "block w-5 h-[2px] bg-[#FB7506] rounded-full transition-all duration-300",
+                    menuOpen && "-translate-y-[7px] -rotate-90"
                   )}
                 />
               </button>
