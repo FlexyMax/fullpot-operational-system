@@ -7,7 +7,6 @@ import {
   Search,
   RefreshCcw,
   History,
-  Menu,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -177,12 +176,12 @@ export default function PanelGrid({
   return (
     <div
       className={cn(
-        "flex flex-col rounded-md bg-white border border-black overflow-hidden",
+        "flex flex-col rounded-md bg-white border-2 border-[#3A3A3A] overflow-hidden",
         className
       )}
     >
       {/* Header */}
-      <div className="h-10 bg-[#4F4F4F] flex items-center justify-between px-3 shrink-0 border-b border-black/10">
+      <div className="h-10 bg-[#5A5A5A] flex items-center justify-between px-3 shrink-0 border-b border-black/10">
         <div className="flex items-center gap-2 min-w-0">
           <Icon size={16} className="text-[#FB7506] shrink-0" />
           <span className="text-white text-[13px] font-bold uppercase tracking-[0.1em] truncate">
@@ -249,19 +248,31 @@ export default function PanelGrid({
           {/* Custom extra node (e.g. AuditLogModal) */}
           {headerRight}
 
-          {/* Menu hamburger */}
+          {/* Menu hamburger — orange lines only */}
           {hasMenu && (
             <div className="relative">
               <button
                 ref={menuBtnRef}
                 onClick={() => setMenuOpen((v) => !v)}
-                className="h-10 bg-[#FB7506] hover:bg-orange-600 text-white w-14 flex items-center justify-center transition-colors"
+                className="h-10 w-10 flex flex-col items-center justify-center gap-[5px] hover:bg-white/10 transition-colors"
+                title="Menu"
               >
-                <Menu
-                  size={20}
+                <span
                   className={cn(
-                    "transition-transform duration-300",
-                    menuOpen && "rotate-90"
+                    "block w-5 h-[2px] bg-[#FB7506] rounded-full transition-all duration-300 origin-center",
+                    menuOpen && "rotate-45 translate-y-[7px]"
+                  )}
+                />
+                <span
+                  className={cn(
+                    "block w-5 h-[2px] bg-[#FB7506] rounded-full transition-all duration-300",
+                    menuOpen && "opacity-0 scale-x-0"
+                  )}
+                />
+                <span
+                  className={cn(
+                    "block w-5 h-[2px] bg-[#FB7506] rounded-full transition-all duration-300 origin-center",
+                    menuOpen && "-rotate-45 -translate-y-[7px]"
                   )}
                 />
               </button>
