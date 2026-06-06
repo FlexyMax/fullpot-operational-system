@@ -157,6 +157,7 @@ export default function SalesPage() {
     // Stock image/detail modal
     const [stockImageModal, setStockImageModal] = useState<{ row: any; source: "stock" | "lines" } | null>(null);
     const [stockImageForm,  setStockImageForm]  = useState({ box_qty: "1", price: "0.00" });
+    const [liveStockRow,    setLiveStockRow]    = useState<any>(null);
 
     // ── Init: load salesman info (unico, user_uq, wphysical_uq) ──────────────
     useEffect(() => {
@@ -422,6 +423,41 @@ export default function SalesPage() {
         finally { setWorking(false); }
     }, [activeInvoiceUq, isOpen]);
 
+    // Fetches fresh stock row for one UNICO and patches stockRows in place
+    const fetchLiveStock = useCallback(async (stockUq: string) => {
+        try {
+            const r = await fetch(`/api/pos/stock/uq?stock_uq=${encodeURIComponent(stockUq)}`);
+            if (!r.ok) return null;
+            const j = await r.json();
+            const fresh = j.row;
+            if (!fresh) return null;
+            setLiveStockRow(fresh);
+            setStockRows((prev: any[]) =>
+                prev.map((row: any) => t(row.UNICO) === stockUq ? { ...row, ...fresh } : row)
+            );
+            return fresh;
+        } catch { return null; }
+    }, []);
+
+    // Resolves the stock UNICO for a given row (stock mode: UNICO directly; lines mode: match via PRODUCT_UQ)
+    const resolveStockUq = useCallback((row: any, source: "stock" | "lines"): string => {
+        if (source === "stock") return t(row.UNICO);
+        const productUq = t(row.PRODUCT_UQ ?? row.BOX_PACK_UQ ?? "");
+        const match = (stockRows as any[]).find((sr: any) => t(sr.PRODUCT_UQ ?? sr.BOX_PACK_UQ) === productUq);
+        return match ? t(match.UNICO) : "";
+    }, [stockRows]);
+
+    // Opens the product detail modal and immediately fetches live stock
+    const openStockModal = useCallback((row: any, source: "stock" | "lines", form: { box_qty: string; price: string }) => {
+        setLiveStockRow(null);
+        setStockImageModal({ row, source });
+        setStockImageForm(form);
+        const stockUq = source === "stock"
+            ? t(row.UNICO)
+            : t((stockRows as any[]).find((sr: any) => t(sr.PRODUCT_UQ ?? sr.BOX_PACK_UQ) === t(row.PRODUCT_UQ ?? row.BOX_PACK_UQ ?? ""))?.UNICO ?? "");
+        if (stockUq) fetchLiveStock(stockUq);
+    }, [stockRows, fetchLiveStock]);
+
     const handleAddLineFromModal = useCallback(async () => {
         const s = stockImageModal?.row;
         if (!s) return;
@@ -447,10 +483,12 @@ export default function SalesPage() {
             toast.success("Line added");
             setDetailKey(k => k+1);
             setActiveTab("lines");
+            const stockUq = resolveStockUq(s, "stock");
+            if (stockUq) fetchLiveStock(stockUq);
             setStockImageModal(null);
         } catch(e: any) { toast.error(e.message); }
         finally { setWorking(false); }
-    }, [stockImageModal, stockImageForm, activeInvoiceUq, isOpen]);
+    }, [stockImageModal, stockImageForm, activeInvoiceUq, isOpen, resolveStockUq, fetchLiveStock]);
 
     const handleUpdateLineFromModal = useCallback(async () => {
         const l = stockImageModal?.row;
@@ -471,10 +509,12 @@ export default function SalesPage() {
             if (!r.ok || !j.success) throw new Error(j.error || "Failed");
             toast.success("Line updated");
             setDetailKey(k => k + 1);
+            const stockUq = resolveStockUq(l, "lines");
+            if (stockUq) fetchLiveStock(stockUq);
             setStockImageModal(null);
         } catch(e: any) { toast.error(e.message); }
         finally { setSavingLine(false); }
-    }, [stockImageModal, stockImageForm]);
+    }, [stockImageModal, stockImageForm, resolveStockUq, fetchLiveStock]);
 
     const handleDeleteLine = useCallback((lineUnico: string) => {
         toast("Delete this line?", { duration: 8000,
@@ -841,7 +881,7 @@ export default function SalesPage() {
                                                                     alt="" width={32} height={32}
                                                                     className={cn("w-8 h-8 object-cover rounded border border-gray-200 shrink-0 transition-all", isOpen && "cursor-pointer hover:opacity-80 hover:ring-2 hover:ring-[#FB7506]")}
                                                                     onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }}
-                                                                    onClick={isOpen ? () => { setStockImageModal({ row: l, source: "lines" }); setStockImageForm({ box_qty: String(l.BOX_QTY ?? 1), price: String(parseMoney(l.PRICE ?? 0)) }); } : undefined}
+                                                                    onClick={isOpen ? () => openStockModal(l, "lines", { box_qty: String(l.BOX_QTY ?? 1), price: String(parseMoney(l.PRICE ?? 0)) }) : undefined}
                                                                 />
                                                             </Td>
                                                             <Td className="font-bold text-[#FB7506]">{t(l.FARM)}</Td>
@@ -926,7 +966,7 @@ export default function SalesPage() {
                                                                     alt="" width={32} height={32}
                                                                     className="w-8 h-8 object-cover rounded border border-gray-200 shrink-0 cursor-pointer hover:opacity-80 hover:ring-2 hover:ring-[#FB7506] transition-all"
                                                                     onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }}
-                                                                    onClick={() => { setStockImageModal({ row: s, source: "stock" }); setStockImageForm({ box_qty: "1", price: fmt(s.PRICE_X_UNIT ?? 0) }); }}
+                                                                    onClick={() => openStockModal(s, "stock", { box_qty: "1", price: fmt(s.PRICE_X_UNIT ?? 0) })}
                                                                 />
                                                             </Td>
                                                             <Td>
@@ -1332,13 +1372,14 @@ export default function SalesPage() {
                 const uq       = t(s.PRODUCT_UQ ?? s.BOX_PACK_UQ ?? "");
                 const img      = productImages[uq] || DEFAULT_THUMB;
                 const qtyNum   = parseInt(stockImageForm.box_qty) || 0;
-                // For stock mode: dropdown 0..WH_STOCK. For lines mode: 0..BOX_QTY+WH_STOCK (lookup from stockRows) or simple input
-                const whStock  = isLines
+                // liveStockRow is fetched fresh from sp_inventory_stock_uq when modal opens
+                const liveWh   = liveStockRow ? parseInt(liveStockRow.WH_STOCK ?? 0) : null;
+                const whStock  = liveWh ?? (isLines
                     ? (stockRows.find((sr: any) => t(sr.PRODUCT_UQ ?? sr.BOX_PACK_UQ) === uq)?.WH_STOCK ?? null)
-                    : parseInt(s.WH_STOCK ?? 0);
+                    : parseInt(s.WH_STOCK ?? 0));
                 const maxQty   = isLines
-                    ? (whStock !== null ? parseInt(whStock) + parseInt(s.BOX_QTY || 0) : Math.max(parseInt(s.BOX_QTY || 0) + 20, 50))
-                    : (parseInt(s.WH_STOCK ?? 0));
+                    ? (whStock !== null ? parseInt(String(whStock)) + parseInt(s.BOX_QTY || 0) : Math.max(parseInt(s.BOX_QTY || 0) + 20, 50))
+                    : (whStock !== null ? parseInt(String(whStock)) : 0);
                 const currentBoxQty = isLines ? parseInt(s.BOX_QTY || 0) : 0;
                 const awb      = t(s.AWBCODE);
                 const caseName = t(s.CASE_SH ?? s.CASE_NAME ?? s.CASE_NAME);
@@ -1377,16 +1418,9 @@ export default function SalesPage() {
                                 </div>
                                 {/* Badges row */}
                                 <div className="flex flex-wrap gap-1.5 mb-3">
-                                    {!isLines && (
-                                        <span className="px-2.5 py-0.5 text-[10px] font-black text-green-700 bg-green-100 rounded-full border border-green-200">
-                                            STOCK: {fmtI(s.WH_STOCK)}
-                                        </span>
-                                    )}
-                                    {isLines && whStock !== null && (
-                                        <span className="px-2.5 py-0.5 text-[10px] font-black text-green-700 bg-green-100 rounded-full border border-green-200">
-                                            AVAIL: {fmtI(whStock)}
-                                        </span>
-                                    )}
+                                    <span className="px-2.5 py-0.5 text-[10px] font-black text-green-700 bg-green-100 rounded-full border border-green-200">
+                                        AVAIL: {whStock !== null ? fmtI(whStock) : "…"}
+                                    </span>
                                     <span className="px-2.5 py-0.5 text-[10px] font-black text-gray-600 bg-gray-100 rounded-full border border-gray-200">
                                         PACK: {fmtI(s.TUNITS_X_BOX ?? s.UNITS_X_BOX)}
                                     </span>
