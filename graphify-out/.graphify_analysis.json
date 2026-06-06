@@ -1,0 +1,2477 @@
+{
+  "communities": {
+    "0": [
+      "add_route_post",
+      "delete_route_delete",
+      "enter_route_getempresauq",
+      "enter_route_post",
+      "exit_route_getempresauq",
+      "exit_route_post",
+      "lib_db_baseconfig",
+      "lib_db_fullpotconfig",
+      "lib_db_sistemaconfig",
+      "log_route_getempresauq",
+      "log_route_post",
+      "nextauth_route_authoptions",
+      "nextauth_route_handler",
+      "open_route_post",
+      "physical_route_get",
+      "src_app_api_audit_enter_route_ts",
+      "src_app_api_audit_exit_route_ts",
+      "src_app_api_audit_log_route_ts",
+      "src_app_api_auth_nextauth_route_ts",
+      "src_app_api_customer_payments_credit_approve_unico_route_ts",
+      "src_app_api_customer_payments_credit_approve_unico_route_ts_unico_route_p",
+      "src_app_api_customer_payments_statement_customer_uq_route_ts",
+      "src_app_api_customer_payments_statement_customer_uq_route_ts_customer_uq_route_get",
+      "src_app_api_customer_payments_statement_customer_uq_route_ts_customer_uq_route_p",
+      "src_app_api_customers_search_route_ts",
+      "src_app_api_customers_search_route_ts_search_route_get",
+      "src_app_api_flexy2qb_tab_action_route_ts",
+      "src_app_api_flexy2qb_tab_action_route_ts_action_route_post",
+      "src_app_api_pos_history_credits_route_ts",
+      "src_app_api_pos_history_details_route_ts",
+      "src_app_api_pos_history_invoices_route_ts",
+      "src_app_api_pos_history_po_route_ts",
+      "src_app_api_pos_history_returns_route_ts",
+      "src_app_api_pos_history_statement_route_ts",
+      "src_app_api_qc_tab_action_route_ts",
+      "src_app_api_qc_tab_action_route_ts_action_route_post",
+      "src_app_api_sales_cart_add_route_ts",
+      "src_app_api_sales_cart_delete_route_ts",
+      "src_app_api_sales_cart_update_route_ts",
+      "src_app_api_sales_dates_route_ts",
+      "src_app_api_sales_invoice_details_route_ts",
+      "src_app_api_sales_invoice_details_route_ts_details_route_get",
+      "src_app_api_sales_invoice_open_route_ts",
+      "src_app_api_sales_orders_route_ts",
+      "src_app_api_sales_stock_route_ts",
+      "src_app_api_sales_warehouses_physical_route_ts",
+      "src_app_api_sales_warehouses_virtual_route_ts",
+      "src_app_api_system_permissions_route_ts",
+      "src_lib_db_ts",
+      "stock_route_get",
+      "unico_route_post",
+      "update_route_put",
+      "virtual_route_get"
+    ],
+    "1": [
+      "column_route_allowed",
+      "column_route_put",
+      "export_route_txt",
+      "id_route_get",
+      "lib_db_executequery",
+      "lib_db_getfullpotpool",
+      "orders_route_get",
+      "permissions_route_put",
+      "po_route_get",
+      "reports_route_get",
+      "returns_route_get",
+      "src_app_api_audit_record_id_route_ts",
+      "src_app_api_customer_payments_lookups_salesmen_route_ts",
+      "src_app_api_customer_payments_lookups_salesmen_route_ts_salesmen_route_get",
+      "src_app_api_inventory_entry_debug_route_ts",
+      "src_app_api_inventory_entry_debug_route_ts_debug_route_get",
+      "src_app_api_inventory_entry_debug_route_ts_debug_route_sps",
+      "src_app_api_masters_items_lookups_route_ts",
+      "src_app_api_masters_items_lookups_route_ts_lookups_route_get",
+      "src_app_api_masters_items_lookups_salesmen_route_ts",
+      "src_app_api_masters_items_lookups_salesmen_route_ts_salesmen_route_get",
+      "src_app_api_masters_items_subclass_bogo_unico_route_ts",
+      "src_app_api_masters_items_subclass_bogo_unico_route_ts_unico_route_get",
+      "src_app_api_masters_items_subclass_bogo_unico_route_ts_unico_route_put",
+      "src_app_api_pos_history_credits_route_ts_credits_route_get",
+      "src_app_api_pos_history_details_route_ts_details_route_get",
+      "src_app_api_pos_history_invoices_route_ts_invoices_route_get",
+      "src_app_api_pos_history_statement_route_ts_statement_route_get",
+      "src_app_api_sales_dates_route_ts_dates_route_get",
+      "src_app_api_sales_reps_debug_route_ts",
+      "src_app_api_sales_reps_debug_route_ts_debug_route_get",
+      "src_app_api_sales_reps_debug_route_ts_debug_route_sps",
+      "src_app_api_system_access_column_route_ts",
+      "src_app_api_system_access_permissions_route_ts",
+      "src_app_api_system_access_permissions_route_ts_permissions_route_get",
+      "src_app_api_system_access_user_route_ts",
+      "src_app_api_system_modules_export_route_ts",
+      "src_app_api_system_modules_export_route_ts_export_route_get",
+      "src_app_api_system_modules_unico_export_route_ts",
+      "src_app_api_system_modules_unico_export_route_ts_export_route_get",
+      "src_app_api_system_permissions_route_ts_permissions_route_get",
+      "src_app_api_system_screens_unico_reports_route_ts",
+      "src_app_api_system_screens_unico_reports_route_ts_reports_route_txt",
+      "src_app_api_vendors_debug_route_ts",
+      "src_app_api_vendors_debug_route_ts_debug_route_get",
+      "src_app_api_vendors_debug_route_ts_debug_route_sps",
+      "user_route_get"
+    ],
+    "2": [
+      "access_page_copyaccessmodal",
+      "access_page_perm_fields",
+      "access_page_perm_labels",
+      "access_page_permfield",
+      "access_page_sysfetch",
+      "access_page_systemaccesspage",
+      "carriers_page_carriersdefinitionpage",
+      "carriers_page_empty",
+      "carriers_page_f",
+      "carriers_page_mode",
+      "carriers_page_sf",
+      "carriers_page_t",
+      "components_gridmenu_gridmenu",
+      "components_gridmenu_gridmenuitem",
+      "components_gridmenu_item_colors",
+      "lib_permissions_full_access",
+      "lib_permissions_pagepermissions",
+      "lib_permissions_permission_msgs",
+      "lib_permissions_screen_panta",
+      "lib_permissions_usepagepermissions",
+      "modals_boxtransfermodal_boxtransfermodal",
+      "modals_boxtransfermodal_fmt",
+      "modals_boxtransfermodal_qcpost",
+      "qc_page_qcpagewrapper",
+      "qc_page_tabid",
+      "qc_page_tabs",
+      "src_app_masters_carriers_page_tsx",
+      "src_app_qc_page_tsx",
+      "src_app_system_access_page_tsx",
+      "src_app_system_users_page_tsx",
+      "src_components_gridmenu_tsx",
+      "src_lib_permissions_ts",
+      "users_page_empty_form",
+      "users_page_generateusername",
+      "users_page_levels",
+      "users_page_mode",
+      "users_page_sysfetch",
+      "users_page_userform",
+      "users_page_usersdefinitionpage"
+    ],
+    "3": [
+      "crdb_reasons_route_get",
+      "grower_route_delete",
+      "grower_route_post",
+      "invoice_route_delete",
+      "invoice_route_get",
+      "invoice_route_post",
+      "invoice_route_put",
+      "lib_db_executeprocedure",
+      "mpf_route_put",
+      "no_scan_route_get",
+      "payment_single_route_get",
+      "src_app_api_accounts_payable_invoice_route_ts",
+      "src_app_api_accounts_payable_search_route_ts",
+      "src_app_api_accounts_payable_search_route_ts_search_route_get",
+      "src_app_api_awbs_lookups_suppliers_route_ts",
+      "src_app_api_awbs_varieties_mpf_route_ts",
+      "src_app_api_customer_payments_lookups_crdb_reasons_route_ts",
+      "src_app_api_masters_customers_lookups_route_ts",
+      "src_app_api_masters_customers_lookups_route_ts_lookups_route_get",
+      "src_app_api_masters_customers_unico_web_users_route_ts",
+      "src_app_api_masters_items_po_prices_unico_route_ts",
+      "src_app_api_masters_items_po_prices_unico_route_ts_unico_route_delete",
+      "src_app_api_masters_items_po_prices_unico_route_ts_unico_route_put",
+      "src_app_api_masters_items_products_quota_grower_route_ts",
+      "src_app_api_masters_items_warehouses_bogo_subclass_unico_route_ts",
+      "src_app_api_masters_items_warehouses_bogo_subclass_unico_route_ts_unico_route_delete",
+      "src_app_api_payment_authorizations_invoices_route_ts",
+      "src_app_api_payment_authorizations_invoices_route_ts_invoices_route_get",
+      "src_app_api_payment_authorizations_reports_no_scan_route_ts",
+      "src_app_api_payment_authorizations_reports_payment_single_route_ts",
+      "src_app_api_system_access_companies_route_ts",
+      "src_app_api_system_access_companies_route_ts_companies_route_get",
+      "src_app_api_system_access_users_route_ts",
+      "src_app_api_system_access_users_route_ts_users_route_get",
+      "src_app_api_vendors_lookups_route_ts",
+      "src_app_api_vendors_lookups_route_ts_lookups_route_get",
+      "suppliers_route_get",
+      "web_users_route_get"
+    ],
+    "4": [
+      "context_qccontext_qccontext",
+      "context_qccontext_qcprovider",
+      "context_qccontext_qcstate",
+      "context_qccontext_useqccontext",
+      "freights_page_gridheader",
+      "qc_page_qcpage",
+      "src_app_qc_context_qccontext_tsx",
+      "tabs_qchistorytab_actionmenu",
+      "tabs_qchistorytab_fmtdate",
+      "tabs_qchistorytab_fmtusd",
+      "tabs_qchistorytab_props",
+      "tabs_qchistorytab_qchistorytab",
+      "tabs_qchistorytab_qcpost",
+      "tabs_qchistorytab_t",
+      "tabs_qchistorytab_toastconfirm",
+      "tabs_qualitycreditstab_actionmenu",
+      "tabs_qualitycreditstab_colornum",
+      "tabs_qualitycreditstab_fmtdate",
+      "tabs_qualitycreditstab_fmtusd",
+      "tabs_qualitycreditstab_props",
+      "tabs_qualitycreditstab_qcpost",
+      "tabs_qualitycreditstab_qualitycreditstab",
+      "tabs_qualitycreditstab_t",
+      "tabs_qualitycreditstab_toastconfirm",
+      "tabs_stocklisttab_fmt",
+      "tabs_stocklisttab_gridtoolbar",
+      "tabs_stocklisttab_helpicon",
+      "tabs_stocklisttab_props",
+      "tabs_stocklisttab_qcpost",
+      "tabs_stocklisttab_scanpanel",
+      "tabs_stocklisttab_stocklisttab",
+      "tabs_stocklisttab_subtab",
+      "tabs_stocklisttab_t",
+      "tabs_stocklisttab_toastconfirm",
+      "tabs_stocklisttab_today"
+    ],
+    "5": [
+      "components_entityformmodal_checkfield",
+      "components_entityformmodal_entityformmodalprops",
+      "components_entityformmodal_formfield",
+      "freights_page_empty_al",
+      "freights_page_empty_at",
+      "freights_page_empty_ci",
+      "freights_page_empty_fr",
+      "freights_page_empty_ha",
+      "freights_page_empty_se",
+      "freights_page_empty_wh",
+      "freights_page_ff",
+      "freights_page_ffield",
+      "freights_page_freightssetuppage",
+      "freights_page_gbtn",
+      "freights_page_item_colors",
+      "freights_page_menudropdown",
+      "freights_page_minitable",
+      "freights_page_setupmodal",
+      "freights_page_simplemodal",
+      "freights_page_t",
+      "lib_utils_cn",
+      "login_page_loginpage",
+      "modals_viewbalancemodal_props",
+      "modals_viewbalancemodal_viewbalancemodal",
+      "modals_viewinvoicemodal_props",
+      "modals_viewinvoicemodal_viewinvoicemodal",
+      "src_app_login_page_tsx",
+      "src_app_masters_freights_page_tsx",
+      "src_components_entityformmodal_tsx",
+      "src_components_entitylistmodal_tsx",
+      "src_store_useauthstore_ts",
+      "store_useauthstore_authstate"
+    ],
+    "6": [
+      "fullpot_operational_system_package_dependencies",
+      "fullpot_operational_system_package_dependencies_axios",
+      "fullpot_operational_system_package_dependencies_clsx",
+      "fullpot_operational_system_package_dependencies_date_fns",
+      "fullpot_operational_system_package_dependencies_date_fns_tz",
+      "fullpot_operational_system_package_dependencies_framer_motion",
+      "fullpot_operational_system_package_dependencies_hookform_resolvers",
+      "fullpot_operational_system_package_dependencies_lucide_react",
+      "fullpot_operational_system_package_dependencies_mssql",
+      "fullpot_operational_system_package_dependencies_next",
+      "fullpot_operational_system_package_dependencies_next_auth",
+      "fullpot_operational_system_package_dependencies_radix_ui_react_dialog",
+      "fullpot_operational_system_package_dependencies_radix_ui_react_dropdown_menu",
+      "fullpot_operational_system_package_dependencies_radix_ui_react_label",
+      "fullpot_operational_system_package_dependencies_radix_ui_react_scroll_area",
+      "fullpot_operational_system_package_dependencies_radix_ui_react_select",
+      "fullpot_operational_system_package_dependencies_radix_ui_react_slot",
+      "fullpot_operational_system_package_dependencies_radix_ui_react_tabs",
+      "fullpot_operational_system_package_dependencies_radix_ui_react_tooltip",
+      "fullpot_operational_system_package_dependencies_react",
+      "fullpot_operational_system_package_dependencies_react_dom",
+      "fullpot_operational_system_package_dependencies_react_hook_form",
+      "fullpot_operational_system_package_dependencies_react_hot_toast",
+      "fullpot_operational_system_package_dependencies_recharts",
+      "fullpot_operational_system_package_dependencies_sonner",
+      "fullpot_operational_system_package_dependencies_tailwind_merge",
+      "fullpot_operational_system_package_dependencies_tanstack_react_query",
+      "fullpot_operational_system_package_dependencies_tinycolor2",
+      "fullpot_operational_system_package_dependencies_types_tinycolor2",
+      "fullpot_operational_system_package_dependencies_zod",
+      "fullpot_operational_system_package_dependencies_zustand"
+    ],
+    "7": [
+      "components_tabtable_column",
+      "components_tabtable_downloadexcel",
+      "components_tabtable_tabtable",
+      "components_tabtable_tabtableprops",
+      "components_topactionbar_actionitem",
+      "components_topactionbar_topactionbar",
+      "context_flexy2qbcontext_flexy2qbcontext",
+      "context_flexy2qbcontext_flexy2qbprovider",
+      "context_flexy2qbcontext_flexy2qbstate",
+      "context_flexy2qbcontext_useflexy2qbcontext",
+      "flexy2qb_page_flexy2qbpage",
+      "flexy2qb_page_flexy2qbpagewrapper",
+      "flexy2qb_page_tabs",
+      "lib_utils_formatcurrency",
+      "lib_utils_formatdate",
+      "src_app_flexy2qb_components_tabs_sales2qbtab_tsx",
+      "src_app_flexy2qb_components_tabtable_tsx",
+      "src_app_flexy2qb_components_topactionbar_tsx",
+      "src_app_flexy2qb_page_tsx",
+      "src_lib_utils_ts",
+      "tabs_customerpaymentstab_customerpaymentstab",
+      "tabs_purchases2qbtab_purchases2qbtab",
+      "tabs_purchasescreditstab_purchasescreditstab",
+      "tabs_purchasesochargestab_purchasesochargestab",
+      "tabs_sales2qbtab_sales2qbtab",
+      "tabs_salescosts2qbtab_salescosts2qbtab",
+      "tabs_salescreditstab_salescreditstab"
+    ],
+    "8": [
+      "customer_payments_page_applypaymentmodal",
+      "customer_payments_page_approvecreditmodal",
+      "customer_payments_page_btn",
+      "customer_payments_page_cashbackmodal",
+      "customer_payments_page_corpinvoicemodal",
+      "customer_payments_page_corppaymentmodal",
+      "customer_payments_page_cpfetch",
+      "customer_payments_page_crdbmodal",
+      "customer_payments_page_crdbreportmodal",
+      "customer_payments_page_customereditmodal",
+      "customer_payments_page_customerpaymentspage",
+      "customer_payments_page_cutdatemodal",
+      "customer_payments_page_fmt",
+      "customer_payments_page_fmtdate",
+      "customer_payments_page_invoicesearchmodal",
+      "customer_payments_page_modal",
+      "customer_payments_page_newpaymentmodal",
+      "customer_payments_page_pendinginvoicesreportmodal",
+      "customer_payments_page_salesmanselectormodal",
+      "customer_payments_page_statementpreviewmodal",
+      "customer_payments_page_t",
+      "customer_payments_page_toastconfirm",
+      "customer_payments_page_today",
+      "src_app_sales_customer_payments_page_tsx"
+    ],
+    "9": [
+      "companies_page_companiesdefinitionpage",
+      "companies_page_empty",
+      "companies_page_f",
+      "companies_page_mode",
+      "companies_page_sf",
+      "companies_page_t",
+      "components_auditlogmodal_props",
+      "lib_audit_auditenter",
+      "lib_audit_auditexit",
+      "lib_audit_auditlog",
+      "lib_audit_fetchrecordaudit",
+      "lib_audit_panta",
+      "lib_audit_useauditlog",
+      "sales_page_customersearchmodal",
+      "sales_page_salespage",
+      "src_app_sales_page_tsx",
+      "src_app_system_companies_page_tsx",
+      "src_components_auditlogmodal_tsx",
+      "src_lib_audit_ts",
+      "src_store_useposstore_ts",
+      "store_useposstore_cartitem",
+      "store_useposstore_invoiceinfo",
+      "store_useposstore_posstate"
+    ],
+    "10": [
+      "accounts_payable_page_apfetch",
+      "accounts_payable_page_apsearchmodal",
+      "accounts_payable_page_crdbform",
+      "accounts_payable_page_crdbschema",
+      "accounts_payable_page_days",
+      "accounts_payable_page_deletedialog",
+      "accounts_payable_page_formfield",
+      "accounts_payable_page_invoiceform",
+      "accounts_payable_page_invoiceschema",
+      "accounts_payable_page_months",
+      "accounts_payable_page_pendingapmodal",
+      "accounts_payable_page_pobform",
+      "accounts_payable_page_pobschema",
+      "accounts_payable_page_pomodal",
+      "accounts_payable_page_printreport",
+      "accounts_payable_page_reportfilterbar",
+      "accounts_payable_page_tabtable",
+      "accounts_payable_page_vendorcombobox",
+      "accounts_payable_page_vendorsummarymodal",
+      "lib_dates_currentyearest",
+      "lib_dates_formatmoney",
+      "src_app_accounts_payable_page_tsx"
+    ],
+    "11": [
+      "fullpot_operational_system_tsconfig_compileroptions",
+      "fullpot_operational_system_tsconfig_compileroptions_allowjs",
+      "fullpot_operational_system_tsconfig_compileroptions_esmoduleinterop",
+      "fullpot_operational_system_tsconfig_compileroptions_incremental",
+      "fullpot_operational_system_tsconfig_compileroptions_isolatedmodules",
+      "fullpot_operational_system_tsconfig_compileroptions_jsx",
+      "fullpot_operational_system_tsconfig_compileroptions_lib",
+      "fullpot_operational_system_tsconfig_compileroptions_module",
+      "fullpot_operational_system_tsconfig_compileroptions_moduleresolution",
+      "fullpot_operational_system_tsconfig_compileroptions_noemit",
+      "fullpot_operational_system_tsconfig_compileroptions_paths",
+      "fullpot_operational_system_tsconfig_compileroptions_plugins",
+      "fullpot_operational_system_tsconfig_compileroptions_resolvejsonmodule",
+      "fullpot_operational_system_tsconfig_compileroptions_skiplibcheck",
+      "fullpot_operational_system_tsconfig_compileroptions_strict",
+      "fullpot_operational_system_tsconfig_compileroptions_target",
+      "fullpot_operational_system_tsconfig_exclude",
+      "fullpot_operational_system_tsconfig_include",
+      "fullpot_operational_system_tsconfig_paths",
+      "tsconfig_json"
+    ],
+    "12": [
+      "lib_db_getsistemapool",
+      "logo_route_extractjpeg",
+      "logo_route_get",
+      "logo_route_post",
+      "logo_route_txt",
+      "photo_route_extractjpeg",
+      "photo_route_get",
+      "photo_route_post",
+      "photo_route_txt",
+      "ping_route_get",
+      "src_app_api_db_ping_route_ts",
+      "src_app_api_system_companies_unico_logo_route_ts",
+      "src_app_api_system_users_route_ts",
+      "src_app_api_system_users_route_ts_users_route_get",
+      "src_app_api_system_users_unico_photo_route_ts",
+      "users_route_bit",
+      "users_route_genunico",
+      "users_route_post",
+      "users_route_txt"
+    ],
+    "13": [
+      "awbs_page_awbfetch",
+      "awbs_page_awbsboxesmodal",
+      "awbs_page_awbschargesmodal",
+      "awbs_page_awbsfreightsmodal",
+      "awbs_page_awbsinvoicechargesmodal",
+      "awbs_page_awbspage",
+      "awbs_page_awbsvarietiesmpfmodal",
+      "awbs_page_btn",
+      "awbs_page_changedatemodal",
+      "awbs_page_fmt",
+      "awbs_page_fmtdate",
+      "awbs_page_modal",
+      "awbs_page_norm",
+      "awbs_page_reportmodal",
+      "awbs_page_t",
+      "awbs_page_tabid",
+      "awbs_page_toastconfirm",
+      "awbs_page_today",
+      "src_app_awbs_page_tsx"
+    ],
+    "14": [
+      "payment_authorizations_page_btn",
+      "payment_authorizations_page_fmt",
+      "payment_authorizations_page_fmtdate",
+      "payment_authorizations_page_modal",
+      "payment_authorizations_page_modaladdpayment",
+      "payment_authorizations_page_modaldatetohistory",
+      "payment_authorizations_page_modalpaymentdate",
+      "payment_authorizations_page_modalpaymentsreport",
+      "payment_authorizations_page_modalreports",
+      "payment_authorizations_page_norm",
+      "payment_authorizations_page_pafetch",
+      "payment_authorizations_page_paymentauthorizationspage",
+      "payment_authorizations_page_t",
+      "payment_authorizations_page_toastconfirm",
+      "payment_authorizations_page_today",
+      "src_app_payment_authorizations_page_tsx",
+      "src_store_usepaymentauthorizationsstore_ts",
+      "store_usepaymentauthorizationsstore_defaults",
+      "store_usepaymentauthorizationsstore_paymentauthorizationsstate"
+    ],
+    "15": [
+      "items_tab2_btn",
+      "items_tab2_buyersquotasmodal",
+      "items_tab2_duallistmodal",
+      "items_tab2_empty_prod2",
+      "items_tab2_empty_quota",
+      "items_tab2_getpages",
+      "items_tab2_gettotal",
+      "items_tab2_n2",
+      "items_tab2_nextpage",
+      "items_tab2_popricesmodal",
+      "items_tab2_prebookdatemodal",
+      "items_tab2_productsmodaltab2",
+      "items_tab2_sf",
+      "items_tab2_t",
+      "items_tab2_tab2",
+      "items_tab2_updatestockmodal",
+      "items_tab2_usesentinel",
+      "src_app_masters_items_tab2_tsx"
+    ],
+    "16": [
+      "customers_page_apifetch",
+      "customers_page_avail_opts",
+      "customers_page_call_opts",
+      "customers_page_carriermodal",
+      "customers_page_confirmdlg",
+      "customers_page_customermodal",
+      "customers_page_customerssetuppage",
+      "customers_page_empty_carrier",
+      "customers_page_empty_cust",
+      "customers_page_empty_shipto",
+      "customers_page_empty_webuser",
+      "customers_page_inv_opts",
+      "customers_page_msgmodal",
+      "customers_page_shiptomodal",
+      "customers_page_t",
+      "customers_page_webusermodal",
+      "src_app_masters_customers_page_tsx"
+    ],
+    "17": [
+      "items_tab3_btn",
+      "items_tab3_empty_vd",
+      "items_tab3_getpages",
+      "items_tab3_gettotal",
+      "items_tab3_minigrid",
+      "items_tab3_n2",
+      "items_tab3_nextpage",
+      "items_tab3_prebookdatemodal",
+      "items_tab3_sf",
+      "items_tab3_subclassbogomodal",
+      "items_tab3_t",
+      "items_tab3_tab3",
+      "items_tab3_tab3props",
+      "items_tab3_usesentinel",
+      "items_tab3_varietydefinitionmodal",
+      "items_tab3_warehousebogomodal",
+      "src_app_masters_items_tab3_tsx"
+    ],
+    "18": [
+      "items_page_itemssetuppage",
+      "items_tab1_crudmodal",
+      "items_tab1_empty_case",
+      "items_tab1_empty_class",
+      "items_tab1_empty_color",
+      "items_tab1_empty_grade",
+      "items_tab1_empty_subclass",
+      "items_tab1_empty_variety",
+      "items_tab1_producteditmodal",
+      "items_tab1_rightcard",
+      "items_tab1_sf",
+      "items_tab1_t",
+      "items_tab1_tab1",
+      "items_tab1_tab1props",
+      "src_app_masters_items_page_tsx",
+      "src_app_masters_items_tab1_tsx"
+    ],
+    "19": [
+      "inventory_entry_page_audit_map",
+      "inventory_entry_page_calcbox",
+      "inventory_entry_page_colorfromint",
+      "inventory_entry_page_empty_box",
+      "inventory_entry_page_empty_packing",
+      "inventory_entry_page_fmt2",
+      "inventory_entry_page_fmt4",
+      "inventory_entry_page_fmtdate",
+      "inventory_entry_page_inventoryentrypage",
+      "inventory_entry_page_lefttab",
+      "inventory_entry_page_norm",
+      "inventory_entry_page_subtlecolorfromint",
+      "inventory_entry_page_t",
+      "inventory_entry_page_today",
+      "src_app_inventory_entry_page_tsx"
+    ],
+    "20": [
+      "modules_page_classes",
+      "modules_page_confirmdelete",
+      "modules_page_empty_mod",
+      "modules_page_empty_report",
+      "modules_page_empty_screen",
+      "modules_page_modform",
+      "modules_page_moduleformmodal",
+      "modules_page_modulescreensetuppage",
+      "modules_page_reportform",
+      "modules_page_reportformmodal",
+      "modules_page_screenform",
+      "modules_page_screenformmodal",
+      "modules_page_sysfetch",
+      "modules_page_t",
+      "src_app_system_modules_page_tsx"
+    ],
+    "21": [
+      "modals_qcmodal_blankform",
+      "modals_qcmodal_calcqc",
+      "modals_qcmodal_cbrow",
+      "modals_qcmodal_field",
+      "modals_qcmodal_fromcredit",
+      "modals_qcmodal_inforow",
+      "modals_qcmodal_input",
+      "modals_qcmodal_qcform",
+      "modals_qcmodal_qcmodal",
+      "modals_qcmodal_qcmodalprops",
+      "modals_qcmodal_qcpost",
+      "modals_qcmodal_todatestr",
+      "modals_qcmodal_today",
+      "src_app_qc_components_modals_qcmodal_tsx"
+    ],
+    "22": [
+      "src_app_vendors_page_tsx",
+      "vendors_page_activetab",
+      "vendors_page_dualpanel",
+      "vendors_page_empty_doc",
+      "vendors_page_empty_form",
+      "vendors_page_firstofyear",
+      "vendors_page_fmt",
+      "vendors_page_fmtdate",
+      "vendors_page_modalvendortab",
+      "vendors_page_norm",
+      "vendors_page_t",
+      "vendors_page_today",
+      "vendors_page_vendorspage"
+    ],
+    "23": [
+      "eslint_config_mjs",
+      "fullpot_operational_system_package_devdependencies",
+      "fullpot_operational_system_package_devdependencies_dotenv",
+      "fullpot_operational_system_package_devdependencies_eslint",
+      "fullpot_operational_system_package_devdependencies_tailwindcss",
+      "fullpot_operational_system_package_devdependencies_tailwindcss_postcss",
+      "fullpot_operational_system_package_devdependencies_types_mssql",
+      "fullpot_operational_system_package_devdependencies_types_node",
+      "fullpot_operational_system_package_devdependencies_types_react",
+      "fullpot_operational_system_package_devdependencies_typescript"
+    ],
+    "24": [
+      "sales_reps_page_activetab",
+      "sales_reps_page_dualpanel",
+      "sales_reps_page_empty_form",
+      "sales_reps_page_fmt",
+      "sales_reps_page_fmtdate",
+      "sales_reps_page_norm",
+      "sales_reps_page_perm_labels",
+      "sales_reps_page_salesrepspage",
+      "sales_reps_page_t",
+      "src_app_sales_reps_page_tsx"
+    ],
+    "25": [
+      "fullpot_operational_system_package_name",
+      "fullpot_operational_system_package_private",
+      "fullpot_operational_system_package_scripts",
+      "fullpot_operational_system_package_scripts_build",
+      "fullpot_operational_system_package_scripts_dev",
+      "fullpot_operational_system_package_scripts_lint",
+      "fullpot_operational_system_package_scripts_start",
+      "fullpot_operational_system_package_version",
+      "package_json"
+    ],
+    "26": [
+      "src_app_api_freights_seasons_unico_route_ts",
+      "src_app_api_freights_seasons_unico_route_ts_unico_route_bit",
+      "src_app_api_freights_seasons_unico_route_ts_unico_route_delete",
+      "src_app_api_freights_seasons_unico_route_ts_unico_route_get",
+      "src_app_api_freights_seasons_unico_route_ts_unico_route_num",
+      "src_app_api_freights_seasons_unico_route_ts_unico_route_p",
+      "src_app_api_freights_seasons_unico_route_ts_unico_route_put",
+      "src_app_api_freights_seasons_unico_route_ts_unico_route_txt",
+      "unico_route_dt"
+    ],
+    "27": [
+      "src_app_api_inventory_entry_boxes_unico_route_ts",
+      "src_app_api_inventory_entry_boxes_unico_route_ts_unico_route_bit",
+      "src_app_api_inventory_entry_boxes_unico_route_ts_unico_route_delete",
+      "src_app_api_inventory_entry_boxes_unico_route_ts_unico_route_get",
+      "src_app_api_inventory_entry_boxes_unico_route_ts_unico_route_int",
+      "src_app_api_inventory_entry_boxes_unico_route_ts_unico_route_num",
+      "src_app_api_inventory_entry_boxes_unico_route_ts_unico_route_p",
+      "src_app_api_inventory_entry_boxes_unico_route_ts_unico_route_put",
+      "src_app_api_inventory_entry_boxes_unico_route_ts_unico_route_str"
+    ],
+    "28": [
+      "src_app_api_masters_customers_unico_route_ts",
+      "src_app_api_masters_customers_unico_route_ts_unico_route_bit",
+      "src_app_api_masters_customers_unico_route_ts_unico_route_delete",
+      "src_app_api_masters_customers_unico_route_ts_unico_route_get",
+      "src_app_api_masters_customers_unico_route_ts_unico_route_int",
+      "src_app_api_masters_customers_unico_route_ts_unico_route_num",
+      "src_app_api_masters_customers_unico_route_ts_unico_route_p",
+      "src_app_api_masters_customers_unico_route_ts_unico_route_put",
+      "src_app_api_masters_customers_unico_route_ts_unico_route_txt"
+    ],
+    "29": [
+      "src_app_api_masters_items_cases_unico_route_ts",
+      "src_app_api_masters_items_cases_unico_route_ts_unico_route_bit",
+      "src_app_api_masters_items_cases_unico_route_ts_unico_route_delete",
+      "src_app_api_masters_items_cases_unico_route_ts_unico_route_get",
+      "src_app_api_masters_items_cases_unico_route_ts_unico_route_int",
+      "src_app_api_masters_items_cases_unico_route_ts_unico_route_num",
+      "src_app_api_masters_items_cases_unico_route_ts_unico_route_p",
+      "src_app_api_masters_items_cases_unico_route_ts_unico_route_put",
+      "src_app_api_masters_items_cases_unico_route_ts_unico_route_txt"
+    ],
+    "30": [
+      "src_app_api_masters_items_classes_unico_route_ts",
+      "src_app_api_masters_items_classes_unico_route_ts_unico_route_bit",
+      "src_app_api_masters_items_classes_unico_route_ts_unico_route_delete",
+      "src_app_api_masters_items_classes_unico_route_ts_unico_route_get",
+      "src_app_api_masters_items_classes_unico_route_ts_unico_route_int",
+      "src_app_api_masters_items_classes_unico_route_ts_unico_route_num",
+      "src_app_api_masters_items_classes_unico_route_ts_unico_route_p",
+      "src_app_api_masters_items_classes_unico_route_ts_unico_route_put",
+      "src_app_api_masters_items_classes_unico_route_ts_unico_route_txt"
+    ],
+    "31": [
+      "src_app_api_masters_items_products_unico_route_ts",
+      "src_app_api_masters_items_products_unico_route_ts_unico_route_bit",
+      "src_app_api_masters_items_products_unico_route_ts_unico_route_delete",
+      "src_app_api_masters_items_products_unico_route_ts_unico_route_get",
+      "src_app_api_masters_items_products_unico_route_ts_unico_route_int",
+      "src_app_api_masters_items_products_unico_route_ts_unico_route_num",
+      "src_app_api_masters_items_products_unico_route_ts_unico_route_p",
+      "src_app_api_masters_items_products_unico_route_ts_unico_route_put",
+      "src_app_api_masters_items_products_unico_route_ts_unico_route_txt"
+    ],
+    "32": [
+      "src_app_api_masters_items_subclasses_unico_route_ts",
+      "src_app_api_masters_items_subclasses_unico_route_ts_unico_route_bit",
+      "src_app_api_masters_items_subclasses_unico_route_ts_unico_route_delete",
+      "src_app_api_masters_items_subclasses_unico_route_ts_unico_route_get",
+      "src_app_api_masters_items_subclasses_unico_route_ts_unico_route_int",
+      "src_app_api_masters_items_subclasses_unico_route_ts_unico_route_num",
+      "src_app_api_masters_items_subclasses_unico_route_ts_unico_route_p",
+      "src_app_api_masters_items_subclasses_unico_route_ts_unico_route_put",
+      "src_app_api_masters_items_subclasses_unico_route_ts_unico_route_txt"
+    ],
+    "33": [
+      "src_app_api_sales_reps_unico_route_ts",
+      "src_app_api_sales_reps_unico_route_ts_unico_route_bit",
+      "src_app_api_sales_reps_unico_route_ts_unico_route_delete",
+      "src_app_api_sales_reps_unico_route_ts_unico_route_get",
+      "src_app_api_sales_reps_unico_route_ts_unico_route_int",
+      "src_app_api_sales_reps_unico_route_ts_unico_route_num",
+      "src_app_api_sales_reps_unico_route_ts_unico_route_p",
+      "src_app_api_sales_reps_unico_route_ts_unico_route_put",
+      "src_app_api_sales_reps_unico_route_ts_unico_route_str"
+    ],
+    "34": [
+      "src_app_api_vendors_unico_route_ts",
+      "src_app_api_vendors_unico_route_ts_unico_route_bit",
+      "src_app_api_vendors_unico_route_ts_unico_route_delete",
+      "src_app_api_vendors_unico_route_ts_unico_route_get",
+      "src_app_api_vendors_unico_route_ts_unico_route_int",
+      "src_app_api_vendors_unico_route_ts_unico_route_num",
+      "src_app_api_vendors_unico_route_ts_unico_route_p",
+      "src_app_api_vendors_unico_route_ts_unico_route_put",
+      "src_app_api_vendors_unico_route_ts_unico_route_str"
+    ],
+    "35": [
+      "src_app_flexy2qb_components_tabs_dashboardtab_tsx_tabs_dashboardtab_fmt",
+      "src_app_qc_components_tabs_dashboardtab_tsx",
+      "src_app_qc_components_tabs_dashboardtab_tsx_tabs_dashboardtab_dashboardtab",
+      "src_app_qc_components_tabs_dashboardtab_tsx_tabs_dashboardtab_fmt",
+      "tabs_dashboardtab_classes",
+      "tabs_dashboardtab_customer_types",
+      "tabs_dashboardtab_qcfetch",
+      "tabs_dashboardtab_sub_tabs",
+      "tabs_dashboardtab_subtab"
+    ],
+    "36": [
+      "seasons_route_bit",
+      "seasons_route_dt",
+      "seasons_route_genuq",
+      "seasons_route_num",
+      "seasons_route_post",
+      "seasons_route_txt",
+      "src_app_api_freights_seasons_route_ts",
+      "src_app_api_freights_seasons_route_ts_seasons_route_get"
+    ],
+    "37": [
+      "src_app_api_masters_customers_shipto_unico_route_ts",
+      "src_app_api_masters_customers_shipto_unico_route_ts_unico_route_bit",
+      "src_app_api_masters_customers_shipto_unico_route_ts_unico_route_delete",
+      "src_app_api_masters_customers_shipto_unico_route_ts_unico_route_int",
+      "src_app_api_masters_customers_shipto_unico_route_ts_unico_route_num",
+      "src_app_api_masters_customers_shipto_unico_route_ts_unico_route_p",
+      "src_app_api_masters_customers_shipto_unico_route_ts_unico_route_put",
+      "src_app_api_masters_customers_shipto_unico_route_ts_unico_route_txt"
+    ],
+    "38": [
+      "reps_route_get",
+      "sales_reps_route_bit",
+      "sales_reps_route_get",
+      "sales_reps_route_int",
+      "sales_reps_route_num",
+      "sales_reps_route_post",
+      "sales_reps_route_str",
+      "src_app_api_sales_reps_route_ts_src_app_api_sales_reps_route_ts"
+    ],
+    "39": [
+      "src_app_api_freights_warehouse_unico_route_ts",
+      "src_app_api_freights_warehouse_unico_route_ts_unico_route_bit",
+      "src_app_api_freights_warehouse_unico_route_ts_unico_route_delete",
+      "src_app_api_freights_warehouse_unico_route_ts_unico_route_get",
+      "src_app_api_freights_warehouse_unico_route_ts_unico_route_num",
+      "src_app_api_freights_warehouse_unico_route_ts_unico_route_p",
+      "src_app_api_freights_warehouse_unico_route_ts_unico_route_put",
+      "src_app_api_freights_warehouse_unico_route_ts_unico_route_txt"
+    ],
+    "40": [
+      "pack_uq_route_bit",
+      "pack_uq_route_delete",
+      "pack_uq_route_get",
+      "pack_uq_route_int",
+      "pack_uq_route_p",
+      "pack_uq_route_put",
+      "pack_uq_route_str",
+      "src_app_api_inventory_entry_packings_pack_uq_route_ts"
+    ],
+    "41": [
+      "src_app_api_masters_carriers_unico_route_ts",
+      "src_app_api_masters_carriers_unico_route_ts_unico_route_bit",
+      "src_app_api_masters_carriers_unico_route_ts_unico_route_delete",
+      "src_app_api_masters_carriers_unico_route_ts_unico_route_get",
+      "src_app_api_masters_carriers_unico_route_ts_unico_route_num",
+      "src_app_api_masters_carriers_unico_route_ts_unico_route_p",
+      "src_app_api_masters_carriers_unico_route_ts_unico_route_put",
+      "src_app_api_masters_carriers_unico_route_ts_unico_route_txt"
+    ],
+    "42": [
+      "cases_route_bit",
+      "cases_route_get",
+      "cases_route_int",
+      "cases_route_num",
+      "cases_route_post",
+      "cases_route_txt",
+      "src_app_api_masters_items_cases_route_ts"
+    ],
+    "43": [
+      "lib_dates_dateinputtoest",
+      "lib_dates_formatdateest",
+      "lib_dates_formatdatelongest",
+      "lib_dates_nowest",
+      "lib_dates_startofyearest",
+      "lib_dates_toisodateest",
+      "src_lib_dates_ts"
+    ],
+    "44": [
+      "accountspayable_datepickerpanel",
+      "accountspayable_invoicelist",
+      "accountspayable_page",
+      "lib_audit",
+      "lib_permissions",
+      "src_store_useapstore_ts",
+      "store_useapstore_apstate"
+    ],
+    "45": [
+      "carriers_route_bit",
+      "carriers_route_genuq",
+      "carriers_route_get",
+      "carriers_route_num",
+      "carriers_route_post",
+      "carriers_route_txt",
+      "src_app_api_masters_carriers_route_ts"
+    ],
+    "46": [
+      "src_app_api_system_companies_unico_route_ts",
+      "src_app_api_system_companies_unico_route_ts_unico_route_bit",
+      "src_app_api_system_companies_unico_route_ts_unico_route_delete",
+      "src_app_api_system_companies_unico_route_ts_unico_route_get",
+      "src_app_api_system_companies_unico_route_ts_unico_route_p",
+      "src_app_api_system_companies_unico_route_ts_unico_route_put",
+      "src_app_api_system_companies_unico_route_ts_unico_route_txt"
+    ],
+    "47": [
+      "src_app_api_system_modules_unico_route_ts",
+      "src_app_api_system_modules_unico_route_ts_unico_route_bit",
+      "src_app_api_system_modules_unico_route_ts_unico_route_delete",
+      "src_app_api_system_modules_unico_route_ts_unico_route_get",
+      "src_app_api_system_modules_unico_route_ts_unico_route_p",
+      "src_app_api_system_modules_unico_route_ts_unico_route_put",
+      "src_app_api_system_modules_unico_route_ts_unico_route_txt"
+    ],
+    "48": [
+      "src_app_api_system_screens_unico_route_ts",
+      "src_app_api_system_screens_unico_route_ts_unico_route_bit",
+      "src_app_api_system_screens_unico_route_ts_unico_route_delete",
+      "src_app_api_system_screens_unico_route_ts_unico_route_get",
+      "src_app_api_system_screens_unico_route_ts_unico_route_p",
+      "src_app_api_system_screens_unico_route_ts_unico_route_put",
+      "src_app_api_system_screens_unico_route_ts_unico_route_txt"
+    ],
+    "49": [
+      "products_route_bit",
+      "products_route_int",
+      "products_route_num",
+      "products_route_post",
+      "products_route_txt",
+      "src_app_api_masters_items_products_route_ts",
+      "src_app_api_masters_items_products_route_ts_products_route_get"
+    ],
+    "50": [
+      "src_app_api_masters_items_subclasses_route_ts",
+      "src_app_api_masters_items_subclasses_route_ts_subclasses_route_get",
+      "subclasses_route_bit",
+      "subclasses_route_int",
+      "subclasses_route_num",
+      "subclasses_route_post",
+      "subclasses_route_txt"
+    ],
+    "51": [
+      "action_route_p",
+      "action_route_str",
+      "copy_route_txt",
+      "src_app_api_freights_rates_copy_route_ts",
+      "src_app_api_freights_rates_copy_route_ts_copy_route_post",
+      "src_app_api_inventory_entry_packings_pack_uq_action_route_ts",
+      "src_app_api_inventory_entry_packings_pack_uq_action_route_ts_action_route_post"
+    ],
+    "52": [
+      "src_app_api_freights_atpda_unico_route_ts",
+      "src_app_api_freights_atpda_unico_route_ts_unico_route_delete",
+      "src_app_api_freights_atpda_unico_route_ts_unico_route_get",
+      "src_app_api_freights_atpda_unico_route_ts_unico_route_num",
+      "src_app_api_freights_atpda_unico_route_ts_unico_route_p",
+      "src_app_api_freights_atpda_unico_route_ts_unico_route_put",
+      "src_app_api_freights_atpda_unico_route_ts_unico_route_txt"
+    ],
+    "53": [
+      "src_app_api_freights_handling_unico_route_ts",
+      "src_app_api_freights_handling_unico_route_ts_unico_route_delete",
+      "src_app_api_freights_handling_unico_route_ts_unico_route_get",
+      "src_app_api_freights_handling_unico_route_ts_unico_route_num",
+      "src_app_api_freights_handling_unico_route_ts_unico_route_p",
+      "src_app_api_freights_handling_unico_route_ts_unico_route_put",
+      "src_app_api_freights_handling_unico_route_ts_unico_route_txt"
+    ],
+    "54": [
+      "src_app_api_freights_rates_unico_route_ts",
+      "src_app_api_freights_rates_unico_route_ts_unico_route_delete",
+      "src_app_api_freights_rates_unico_route_ts_unico_route_get",
+      "src_app_api_freights_rates_unico_route_ts_unico_route_num",
+      "src_app_api_freights_rates_unico_route_ts_unico_route_p",
+      "src_app_api_freights_rates_unico_route_ts_unico_route_put",
+      "src_app_api_freights_rates_unico_route_ts_unico_route_txt"
+    ],
+    "55": [
+      "src_app_api_vendors_route_ts",
+      "src_app_api_vendors_route_ts_vendors_route_get",
+      "src_app_api_vendors_route_ts_vendors_route_post",
+      "vendors_route_bit",
+      "vendors_route_int",
+      "vendors_route_num",
+      "vendors_route_str"
+    ],
+    "56": [
+      "boxes_route_bit",
+      "boxes_route_int",
+      "boxes_route_num",
+      "boxes_route_post",
+      "boxes_route_str",
+      "src_app_api_inventory_entry_boxes_route_ts"
+    ],
+    "57": [
+      "create_route_bit",
+      "create_route_int",
+      "create_route_num",
+      "create_route_post",
+      "create_route_txt",
+      "src_app_api_masters_customers_create_route_ts"
+    ],
+    "58": [
+      "accounts_payable_page_invoicemodal",
+      "accountspayable_creditdebitmodal",
+      "accountspayable_invoicedetailtabs",
+      "accountspayable_pomodal",
+      "lib_dates_normalizetoisodate",
+      "lib_dates_parsemoney"
+    ],
+    "59": [
+      "accounts_payable_page_apcalendar",
+      "lib_dates_todayest",
+      "log_route_get",
+      "src_app_api_masters_customers_unico_statement_route_ts",
+      "src_app_api_masters_customers_unico_statement_route_ts_statement_route_get",
+      "src_app_api_system_users_unico_log_route_ts"
+    ],
+    "60": [
+      "menu_page_getgreeting",
+      "menu_page_geticon",
+      "menu_page_getroute",
+      "menu_page_menuitem",
+      "menu_page_menupage",
+      "src_app_menu_page_tsx"
+    ],
+    "61": [
+      "colors_route_bit",
+      "colors_route_genuq",
+      "colors_route_get",
+      "colors_route_post",
+      "colors_route_txt",
+      "src_app_api_masters_items_colors_route_ts"
+    ],
+    "62": [
+      "grades_route_bit",
+      "grades_route_genuq",
+      "grades_route_get",
+      "grades_route_post",
+      "grades_route_txt",
+      "src_app_api_masters_items_grades_route_ts"
+    ],
+    "63": [
+      "modules_route_bit",
+      "modules_route_genuq",
+      "modules_route_post",
+      "modules_route_txt",
+      "src_app_api_system_modules_route_ts",
+      "src_app_api_system_modules_route_ts_modules_route_get"
+    ],
+    "64": [
+      "crdb_route_delete",
+      "crdb_route_get",
+      "crdb_route_put",
+      "crdb_route_txt",
+      "src_app_api_accounts_payable_crdb_route_ts",
+      "src_app_api_accounts_payable_crdb_route_ts_crdb_route_post"
+    ],
+    "65": [
+      "src_app_api_masters_customers_web_user_unico_route_ts",
+      "src_app_api_masters_customers_web_user_unico_route_ts_unico_route_bit",
+      "src_app_api_masters_customers_web_user_unico_route_ts_unico_route_delete",
+      "src_app_api_masters_customers_web_user_unico_route_ts_unico_route_p",
+      "src_app_api_masters_customers_web_user_unico_route_ts_unico_route_put",
+      "src_app_api_masters_customers_web_user_unico_route_ts_unico_route_txt"
+    ],
+    "66": [
+      "src_app_api_masters_items_colors_unico_route_ts",
+      "src_app_api_masters_items_colors_unico_route_ts_unico_route_bit",
+      "src_app_api_masters_items_colors_unico_route_ts_unico_route_delete",
+      "src_app_api_masters_items_colors_unico_route_ts_unico_route_p",
+      "src_app_api_masters_items_colors_unico_route_ts_unico_route_put",
+      "src_app_api_masters_items_colors_unico_route_ts_unico_route_txt"
+    ],
+    "67": [
+      "src_app_api_masters_items_grades_unico_route_ts",
+      "src_app_api_masters_items_grades_unico_route_ts_unico_route_bit",
+      "src_app_api_masters_items_grades_unico_route_ts_unico_route_delete",
+      "src_app_api_masters_items_grades_unico_route_ts_unico_route_p",
+      "src_app_api_masters_items_grades_unico_route_ts_unico_route_put",
+      "src_app_api_masters_items_grades_unico_route_ts_unico_route_txt"
+    ],
+    "68": [
+      "src_app_api_system_reports_unico_route_ts",
+      "src_app_api_system_reports_unico_route_ts_unico_route_bit",
+      "src_app_api_system_reports_unico_route_ts_unico_route_delete",
+      "src_app_api_system_reports_unico_route_ts_unico_route_p",
+      "src_app_api_system_reports_unico_route_ts_unico_route_put",
+      "src_app_api_system_reports_unico_route_ts_unico_route_txt"
+    ],
+    "69": [
+      "src_app_api_system_users_unico_route_ts",
+      "src_app_api_system_users_unico_route_ts_unico_route_bit",
+      "src_app_api_system_users_unico_route_ts_unico_route_delete",
+      "src_app_api_system_users_unico_route_ts_unico_route_get",
+      "src_app_api_system_users_unico_route_ts_unico_route_put",
+      "src_app_api_system_users_unico_route_ts_unico_route_txt"
+    ],
+    "70": [
+      "shipto_route_bit",
+      "shipto_route_int",
+      "shipto_route_num",
+      "shipto_route_post",
+      "shipto_route_txt",
+      "src_app_api_masters_customers_shipto_route_ts"
+    ],
+    "71": [
+      "packings_route_bit",
+      "packings_route_int",
+      "packings_route_num",
+      "packings_route_post",
+      "packings_route_str",
+      "src_app_api_inventory_entry_packings_route_ts"
+    ],
+    "72": [
+      "src_app_api_masters_customers_carrier_unico_route_ts",
+      "src_app_api_masters_customers_carrier_unico_route_ts_unico_route_bit",
+      "src_app_api_masters_customers_carrier_unico_route_ts_unico_route_delete",
+      "src_app_api_masters_customers_carrier_unico_route_ts_unico_route_p",
+      "src_app_api_masters_customers_carrier_unico_route_ts_unico_route_put",
+      "src_app_api_masters_customers_carrier_unico_route_ts_unico_route_txt"
+    ],
+    "73": [
+      "src_app_api_masters_items_varieties_unico_route_ts",
+      "src_app_api_masters_items_varieties_unico_route_ts_unico_route_delete",
+      "src_app_api_masters_items_varieties_unico_route_ts_unico_route_get",
+      "src_app_api_masters_items_varieties_unico_route_ts_unico_route_p",
+      "src_app_api_masters_items_varieties_unico_route_ts_unico_route_put",
+      "src_app_api_masters_items_varieties_unico_route_ts_unico_route_txt"
+    ],
+    "74": [
+      "app_layout_geistmono",
+      "app_layout_geistsans",
+      "app_layout_metadata",
+      "app_layout_rootlayout",
+      "src_app_layout_tsx",
+      "src_components_providers_tsx"
+    ],
+    "75": [
+      "carrier_route_bit",
+      "carrier_route_get",
+      "carrier_route_post",
+      "carrier_route_txt",
+      "src_app_api_masters_customers_carrier_route_ts"
+    ],
+    "76": [
+      "fullpot_operational_system_get_sp_defs_config",
+      "fullpot_operational_system_get_sp_defs_main",
+      "fullpot_operational_system_get_sp_defs_sps",
+      "fullpot_operational_system_get_sp_defs_sql",
+      "get_sp_defs_js"
+    ],
+    "77": [
+      "handling_route_get",
+      "handling_route_num",
+      "handling_route_post",
+      "handling_route_txt",
+      "src_app_api_freights_handling_route_ts"
+    ],
+    "78": [
+      "companies_route_genuq",
+      "companies_route_post",
+      "companies_route_txt",
+      "src_app_api_system_companies_route_ts",
+      "src_app_api_system_companies_route_ts_companies_route_get"
+    ],
+    "79": [
+      "messages_route_genuq",
+      "messages_route_get",
+      "messages_route_post",
+      "messages_route_txt",
+      "src_app_api_masters_customers_unico_messages_route_ts"
+    ],
+    "80": [
+      "screens_route_bit",
+      "screens_route_genuq",
+      "screens_route_post",
+      "screens_route_txt",
+      "src_app_api_system_screens_route_ts"
+    ],
+    "81": [
+      "airlines_route_genuq",
+      "airlines_route_post",
+      "airlines_route_txt",
+      "src_app_api_freights_airlines_route_ts",
+      "src_app_api_freights_airlines_route_ts_airlines_route_get"
+    ],
+    "82": [
+      "src_app_api_freights_airlines_unico_route_ts",
+      "src_app_api_freights_airlines_unico_route_ts_unico_route_delete",
+      "src_app_api_freights_airlines_unico_route_ts_unico_route_p",
+      "src_app_api_freights_airlines_unico_route_ts_unico_route_put",
+      "src_app_api_freights_airlines_unico_route_ts_unico_route_txt"
+    ],
+    "83": [
+      "cities_route_genuq",
+      "cities_route_txt",
+      "src_app_api_freights_cities_route_ts",
+      "src_app_api_freights_cities_route_ts_cities_route_get",
+      "src_app_api_freights_cities_route_ts_cities_route_post"
+    ],
+    "84": [
+      "src_app_api_freights_cities_unico_route_ts",
+      "src_app_api_freights_cities_unico_route_ts_unico_route_delete",
+      "src_app_api_freights_cities_unico_route_ts_unico_route_p",
+      "src_app_api_freights_cities_unico_route_ts_unico_route_put",
+      "src_app_api_freights_cities_unico_route_ts_unico_route_txt"
+    ],
+    "85": [
+      "src_app_api_masters_customers_message_unico_route_ts",
+      "src_app_api_masters_customers_message_unico_route_ts_unico_route_delete",
+      "src_app_api_masters_customers_message_unico_route_ts_unico_route_p",
+      "src_app_api_masters_customers_message_unico_route_ts_unico_route_put",
+      "src_app_api_masters_customers_message_unico_route_ts_unico_route_txt"
+    ],
+    "86": [
+      "import_route_bit",
+      "import_route_num",
+      "import_route_post",
+      "import_route_txt",
+      "src_app_api_system_modules_import_route_ts"
+    ],
+    "87": [
+      "src_app_api_masters_customers_web_user_route_ts",
+      "web_user_route_bit",
+      "web_user_route_genuq",
+      "web_user_route_post",
+      "web_user_route_txt"
+    ],
+    "88": [
+      "rates_route_get",
+      "rates_route_num",
+      "rates_route_post",
+      "rates_route_txt",
+      "src_app_api_freights_rates_route_ts"
+    ],
+    "89": [
+      "reports_route_bit",
+      "reports_route_genuq",
+      "reports_route_post",
+      "src_app_api_system_reports_route_ts",
+      "src_app_api_system_reports_route_ts_reports_route_txt"
+    ],
+    "90": [
+      "atpda_route_get",
+      "atpda_route_num",
+      "atpda_route_post",
+      "atpda_route_txt",
+      "src_app_api_freights_atpda_route_ts"
+    ],
+    "91": [
+      "src_app_api_customer_payments_crdb_unico_route_ts",
+      "src_app_api_customer_payments_crdb_unico_route_ts_unico_route_delete",
+      "src_app_api_customer_payments_crdb_unico_route_ts_unico_route_get",
+      "src_app_api_customer_payments_crdb_unico_route_ts_unico_route_p",
+      "src_app_api_customer_payments_crdb_unico_route_ts_unico_route_put"
+    ],
+    "92": [
+      "pob_route_delete",
+      "pob_route_get",
+      "pob_route_post",
+      "pob_route_put",
+      "src_app_api_accounts_payable_pob_route_ts"
+    ],
+    "93": [
+      "src_app_api_customer_payments_income_unico_route_ts",
+      "src_app_api_customer_payments_income_unico_route_ts_unico_route_delete",
+      "src_app_api_customer_payments_income_unico_route_ts_unico_route_get",
+      "src_app_api_customer_payments_income_unico_route_ts_unico_route_p",
+      "src_app_api_customer_payments_income_unico_route_ts_unico_route_put"
+    ],
+    "94": [
+      "src_app_api_inventory_entry_packings_pack_uq_to_whouse_route_ts",
+      "to_whouse_route_get",
+      "to_whouse_route_p",
+      "to_whouse_route_post",
+      "to_whouse_route_str"
+    ],
+    "95": [
+      "outcome_details_route_delete",
+      "outcome_details_route_get",
+      "outcome_details_route_post",
+      "outcome_details_route_put",
+      "src_app_api_payment_authorizations_outcome_details_route_ts"
+    ],
+    "96": [
+      "src_app_api_vendors_documents_unico_route_ts",
+      "src_app_api_vendors_documents_unico_route_ts_unico_route_delete",
+      "src_app_api_vendors_documents_unico_route_ts_unico_route_get",
+      "src_app_api_vendors_documents_unico_route_ts_unico_route_p",
+      "src_app_api_vendors_documents_unico_route_ts_unico_route_put"
+    ],
+    "97": [
+      "src_app_qc_components_tabs_transitboxestab_tsx",
+      "tabs_transitboxestab_colorval",
+      "tabs_transitboxestab_qcpost",
+      "tabs_transitboxestab_t",
+      "tabs_transitboxestab_transitboxestab"
+    ],
+    "98": [
+      "src_app_api_freights_warehouse_route_ts",
+      "warehouse_route_bit",
+      "warehouse_route_num",
+      "warehouse_route_post",
+      "warehouse_route_txt"
+    ],
+    "99": [
+      "fullpot_operational_system_get_alt_sp_config",
+      "fullpot_operational_system_get_alt_sp_main",
+      "fullpot_operational_system_get_alt_sp_sql",
+      "get_alt_sp_js"
+    ],
+    "100": [
+      "fullpot_operational_system_get_prod_sp_config",
+      "fullpot_operational_system_get_prod_sp_main",
+      "fullpot_operational_system_get_prod_sp_sql",
+      "get_prod_sp_js"
+    ],
+    "101": [
+      "fullpot_operational_system_get_sp_def2_config",
+      "fullpot_operational_system_get_sp_def2_main",
+      "fullpot_operational_system_get_sp_def2_sql",
+      "get_sp_def2_js"
+    ],
+    "102": [
+      "fullpot_operational_system_get_sp_def_config",
+      "fullpot_operational_system_get_sp_def_main",
+      "fullpot_operational_system_get_sp_def_sql",
+      "get_sp_def_js"
+    ],
+    "103": [
+      "customer_uq_route_txt",
+      "src_app_api_customer_payments_payment_history_customer_uq_route_ts",
+      "src_app_api_customer_payments_payment_history_customer_uq_route_ts_customer_uq_route_get",
+      "src_app_api_customer_payments_payment_history_customer_uq_route_ts_customer_uq_route_p"
+    ],
+    "104": [
+      "product_classes_route_delete",
+      "product_classes_route_get",
+      "product_classes_route_post",
+      "src_app_api_sales_reps_product_classes_route_ts"
+    ],
+    "105": [
+      "src_app_api_customer_payments_corporate_income_unico_route_ts",
+      "src_app_api_customer_payments_corporate_income_unico_route_ts_unico_route_delete",
+      "src_app_api_customer_payments_corporate_income_unico_route_ts_unico_route_p",
+      "src_app_api_customer_payments_corporate_income_unico_route_ts_unico_route_put"
+    ],
+    "106": [
+      "src_app_api_sales_reps_vendors_route_ts",
+      "src_app_api_sales_reps_vendors_route_ts_vendors_route_get",
+      "src_app_api_sales_reps_vendors_route_ts_vendors_route_post",
+      "vendors_route_delete"
+    ],
+    "107": [
+      "src_app_api_customer_payments_apply_unico_route_ts",
+      "src_app_api_customer_payments_apply_unico_route_ts_unico_route_delete",
+      "src_app_api_customer_payments_apply_unico_route_ts_unico_route_p",
+      "src_app_api_customer_payments_apply_unico_route_ts_unico_route_put"
+    ],
+    "108": [
+      "src_app_api_customer_payments_customers_unico_route_ts",
+      "src_app_api_customer_payments_customers_unico_route_ts_unico_route_get",
+      "src_app_api_customer_payments_customers_unico_route_ts_unico_route_p",
+      "src_app_api_customer_payments_customers_unico_route_ts_unico_route_put"
+    ],
+    "109": [
+      "src_app_api_masters_items_products_quota_unico_route_ts",
+      "src_app_api_masters_items_products_quota_unico_route_ts_unico_route_delete",
+      "src_app_api_masters_items_products_quota_unico_route_ts_unico_route_get",
+      "src_app_api_masters_items_products_quota_unico_route_ts_unico_route_put"
+    ],
+    "110": [
+      "cities_route_delete",
+      "src_app_api_sales_reps_cities_route_ts",
+      "src_app_api_sales_reps_cities_route_ts_cities_route_get",
+      "src_app_api_sales_reps_cities_route_ts_cities_route_post"
+    ],
+    "111": [
+      "salesmen_links_route_delete",
+      "salesmen_links_route_get",
+      "salesmen_links_route_post",
+      "src_app_api_sales_reps_salesmen_links_route_ts"
+    ],
+    "112": [
+      "src_app_api_sales_reps_warehouses_route_ts",
+      "src_app_api_sales_reps_warehouses_route_ts_warehouses_route_get",
+      "warehouses_route_delete",
+      "warehouses_route_post"
+    ],
+    "113": [
+      "classes_route_delete",
+      "src_app_api_vendors_classes_route_ts",
+      "src_app_api_vendors_classes_route_ts_classes_route_get",
+      "src_app_api_vendors_classes_route_ts_classes_route_post"
+    ],
+    "114": [
+      "src_app_api_vendors_groups_unico_route_ts",
+      "src_app_api_vendors_groups_unico_route_ts_unico_route_delete",
+      "src_app_api_vendors_groups_unico_route_ts_unico_route_p",
+      "src_app_api_vendors_groups_unico_route_ts_unico_route_put"
+    ],
+    "115": [
+      "change_awb_route_p",
+      "change_awb_route_post",
+      "change_awb_route_str",
+      "src_app_api_inventory_entry_packings_pack_uq_change_awb_route_ts"
+    ],
+    "116": [
+      "tabs_cancelledpurchasestab_cancelledpurchasestab",
+      "tabs_cancelledpurchasestab_fmtdate",
+      "tabs_cancelledpurchasestab_qcpost",
+      "tabs_cancelledpurchasestab_t"
+    ],
+    "117": [
+      "fullpot_operational_system_vercel_buildcommand",
+      "fullpot_operational_system_vercel_framework",
+      "fullpot_operational_system_vercel_installcommand",
+      "vercel_json"
+    ],
+    "118": [
+      "fullpot_operational_system_verify_alt_sp_config",
+      "fullpot_operational_system_verify_alt_sp_main",
+      "fullpot_operational_system_verify_alt_sp_sql",
+      "verify_alt_sp_js"
+    ],
+    "119": [
+      "claude_settings_hooks",
+      "claude_settings_hooks_pretooluse",
+      "claude_settings_json"
+    ],
+    "120": [
+      "charges_by_date_route_get",
+      "charges_by_date_route_post",
+      "src_app_api_awbs_charges_by_date_route_ts"
+    ],
+    "121": [
+      "cor_pay_uq_route_get",
+      "cor_pay_uq_route_p",
+      "src_app_api_customer_payments_corporate_invoices_cor_pay_uq_route_ts"
+    ],
+    "122": [
+      "customers_route_put",
+      "src_app_api_sales_reps_customers_route_ts",
+      "src_app_api_sales_reps_customers_route_ts_customers_route_get"
+    ],
+    "123": [
+      "discounts_route_delete",
+      "discounts_route_post",
+      "src_app_api_customer_payments_discounts_route_ts"
+    ],
+    "124": [
+      "documents_route_get",
+      "documents_route_post",
+      "src_app_api_vendors_documents_route_ts"
+    ],
+    "125": [
+      "groups_route_get",
+      "groups_route_post",
+      "src_app_api_vendors_groups_route_ts"
+    ],
+    "126": [
+      "in_corp_uq_route_get",
+      "in_corp_uq_route_p",
+      "src_app_api_customer_payments_corporate_payments_in_corp_uq_route_ts"
+    ],
+    "127": [
+      "income_uq_route_get",
+      "income_uq_route_p",
+      "src_app_api_customer_payments_payment_invoices_income_uq_route_ts"
+    ],
+    "128": [
+      "invoice_charges_route_get",
+      "invoice_charges_route_post",
+      "src_app_api_awbs_invoice_charges_route_ts"
+    ],
+    "129": [
+      "quotas_route_get",
+      "quotas_route_post",
+      "src_app_api_masters_items_products_unico_quotas_route_ts"
+    ],
+    "130": [
+      "src_app_api_masters_items_warehouses_bogo_route_ts",
+      "warehouses_bogo_route_get",
+      "warehouses_bogo_route_post"
+    ],
+    "131": [
+      "src_app_api_awbs_charges_by_date_unico_route_ts",
+      "src_app_api_awbs_charges_by_date_unico_route_ts_unico_route_delete",
+      "src_app_api_awbs_charges_by_date_unico_route_ts_unico_route_put"
+    ],
+    "132": [
+      "src_app_api_awbs_charges_unico_route_ts",
+      "src_app_api_awbs_charges_unico_route_ts_unico_route_delete",
+      "src_app_api_awbs_charges_unico_route_ts_unico_route_put"
+    ],
+    "133": [
+      "src_app_api_awbs_invoice_charges_unico_route_ts",
+      "src_app_api_awbs_invoice_charges_unico_route_ts_unico_route_delete",
+      "src_app_api_awbs_invoice_charges_unico_route_ts_unico_route_put"
+    ],
+    "134": [
+      "invoice_uq_route_get",
+      "invoice_uq_route_p",
+      "src_app_api_customer_payments_applied_invoice_uq_route_ts"
+    ],
+    "135": [
+      "src_app_api_customer_payments_crdb_dates_customer_uq_route_ts",
+      "src_app_api_customer_payments_crdb_dates_customer_uq_route_ts_customer_uq_route_get",
+      "src_app_api_customer_payments_crdb_dates_customer_uq_route_ts_customer_uq_route_p"
+    ],
+    "136": [
+      "src_app_api_customer_payments_crdb_history_customer_uq_route_ts",
+      "src_app_api_customer_payments_crdb_history_customer_uq_route_ts_customer_uq_route_get",
+      "src_app_api_customer_payments_crdb_history_customer_uq_route_ts_customer_uq_route_p"
+    ],
+    "137": [
+      "salesman_uq_route_get",
+      "salesman_uq_route_p",
+      "src_app_api_customer_payments_customers_by_salesman_salesman_uq_route_ts"
+    ],
+    "138": [
+      "src_app_api_customer_payments_incomes_customer_uq_route_ts",
+      "src_app_api_customer_payments_incomes_customer_uq_route_ts_customer_uq_route_get",
+      "src_app_api_customer_payments_incomes_customer_uq_route_ts_customer_uq_route_p"
+    ],
+    "139": [
+      "invoice_no_route_get",
+      "invoice_no_route_p",
+      "src_app_api_customer_payments_invoice_by_number_invoice_no_route_ts"
+    ],
+    "140": [
+      "src_app_api_customer_payments_invoices_customer_uq_route_ts",
+      "src_app_api_customer_payments_invoices_customer_uq_route_ts_customer_uq_route_get",
+      "src_app_api_customer_payments_invoices_customer_uq_route_ts_customer_uq_route_p"
+    ],
+    "141": [
+      "report_route_get",
+      "report_route_p",
+      "src_app_api_customer_payments_payment_unico_report_route_ts"
+    ],
+    "142": [
+      "src_app_api_customer_payments_reports_html_statement_balance_customer_uq_route_ts",
+      "src_app_api_customer_payments_reports_html_statement_balance_customer_uq_route_ts_customer_uq_route_get",
+      "src_app_api_customer_payments_reports_html_statement_balance_customer_uq_route_ts_customer_uq_route_p"
+    ],
+    "143": [
+      "src_app_api_customer_payments_statement_balance_customer_uq_route_ts",
+      "src_app_api_customer_payments_statement_balance_customer_uq_route_ts_customer_uq_route_get",
+      "src_app_api_customer_payments_statement_balance_customer_uq_route_ts_customer_uq_route_p"
+    ],
+    "144": [
+      "details_route_p",
+      "src_app_api_inventory_entry_packings_pack_uq_details_route_ts",
+      "src_app_api_inventory_entry_packings_pack_uq_details_route_ts_details_route_get"
+    ],
+    "145": [
+      "src_app_api_masters_items_classes_route_ts",
+      "src_app_api_masters_items_classes_route_ts_classes_route_get",
+      "src_app_api_masters_items_classes_route_ts_classes_route_post"
+    ],
+    "146": [
+      "src_app_api_masters_items_varieties_route_ts",
+      "src_app_api_masters_items_varieties_route_ts_varieties_route_get",
+      "src_app_api_masters_items_varieties_route_ts_varieties_route_post"
+    ],
+    "147": [
+      "src_app_api_customer_payments_payment_unico_void_route_ts",
+      "void_route_p",
+      "void_route_put"
+    ],
+    "148": [
+      "awbcode_route_delete",
+      "awbcode_route_put",
+      "src_app_api_awbs_awbcode_route_ts"
+    ],
+    "149": [
+      "app_page_rootpage",
+      "src_app_page_tsx"
+    ],
+    "150": [
+      "awbcode_route_get",
+      "src_app_api_awbs_template_awbcode_route_ts"
+    ],
+    "151": [
+      "fullpot_operational_system_postcss_config_config",
+      "postcss_config_mjs"
+    ],
+    "152": [
+      "send_statement_email_route_post",
+      "src_app_api_customer_payments_reports_send_statement_email_route_ts"
+    ],
+    "153": [
+      "accountspayable_api",
+      "sql_sp_flower_accounts_pay_years"
+    ],
+    "154": [
+      "all_route_get",
+      "src_app_api_masters_items_products_all_route_ts"
+    ],
+    "155": [
+      "awb_dates_route_get",
+      "src_app_api_inventory_entry_awb_dates_route_ts"
+    ],
+    "156": [
+      "awb_search_route_get",
+      "src_app_api_inventory_entry_awb_search_route_ts"
+    ],
+    "157": [
+      "close_route_post",
+      "src_app_api_payment_authorizations_outcomes_close_route_ts"
+    ],
+    "158": [
+      "corporate_income_route_post",
+      "src_app_api_customer_payments_corporate_income_route_ts"
+    ],
+    "159": [
+      "corporate_invoice_route_post",
+      "src_app_api_customer_payments_corporate_invoice_route_ts"
+    ],
+    "160": [
+      "credit_requests_route_get",
+      "src_app_api_customer_payments_credit_requests_route_ts"
+    ],
+    "161": [
+      "grower_terms_route_get",
+      "src_app_api_accounts_payable_grower_terms_route_ts"
+    ],
+    "162": [
+      "income_route_post",
+      "src_app_api_customer_payments_income_route_ts"
+    ],
+    "163": [
+      "initialize_route_post",
+      "src_app_api_system_access_initialize_route_ts"
+    ],
+    "164": [
+      "invoice_search_route_get",
+      "src_app_api_customer_payments_invoice_search_route_ts"
+    ],
+    "165": [
+      "packing_x_awb_route_get",
+      "src_app_api_inventory_entry_packing_x_awb_route_ts"
+    ],
+    "166": [
+      "payments_resume_route_get",
+      "src_app_api_payment_authorizations_reports_payments_resume_route_ts"
+    ],
+    "167": [
+      "payments_route_get",
+      "src_app_api_payment_authorizations_reports_payments_route_ts"
+    ],
+    "168": [
+      "purchase_orders_route_get",
+      "src_app_api_inventory_entry_purchase_orders_route_ts"
+    ],
+    "169": [
+      "recipe_route_post",
+      "src_app_api_masters_items_products_recipe_route_ts"
+    ],
+    "170": [
+      "search_route_post",
+      "src_app_api_pos_invoice_search_route_ts"
+    ],
+    "171": [
+      "shipto_copy_route_post",
+      "src_app_api_masters_customers_unico_shipto_copy_route_ts"
+    ],
+    "172": [
+      "src_app_api_accounts_payable_dates_route_ts",
+      "src_app_api_accounts_payable_dates_route_ts_dates_route_get"
+    ],
+    "173": [
+      "src_app_api_accounts_payable_details_route_ts",
+      "src_app_api_accounts_payable_details_route_ts_details_route_get"
+    ],
+    "174": [
+      "src_app_api_accounts_payable_growers_route_ts",
+      "src_app_api_accounts_payable_growers_route_ts_growers_route_get"
+    ],
+    "175": [
+      "ap_types_route_get",
+      "src_app_api_accounts_payable_ap_types_route_ts"
+    ],
+    "176": [
+      "balance_route_get",
+      "src_app_api_accounts_payable_reports_balance_route_ts"
+    ],
+    "177": [
+      "cashback_route_post",
+      "src_app_api_customer_payments_cashback_route_ts"
+    ],
+    "178": [
+      "charges_route_post",
+      "src_app_api_awbs_charges_route_ts"
+    ],
+    "179": [
+      "corporate_incomes_route_get",
+      "src_app_api_customer_payments_corporate_incomes_route_ts"
+    ],
+    "180": [
+      "list_route_get",
+      "src_app_api_awbs_list_route_ts"
+    ],
+    "181": [
+      "menu_route_get",
+      "src_app_api_user_menu_route_ts"
+    ],
+    "182": [
+      "others_route_put",
+      "src_app_api_masters_carriers_unico_others_route_ts"
+    ],
+    "183": [
+      "packing_box_by_awb_route_get",
+      "src_app_api_inventory_entry_packing_box_by_awb_route_ts"
+    ],
+    "184": [
+      "packing_route_get",
+      "src_app_api_awbs_awbcode_packing_route_ts"
+    ],
+    "185": [
+      "packing_status_route_get",
+      "src_app_api_payment_authorizations_reports_packing_status_route_ts"
+    ],
+    "186": [
+      "recipes_route_get",
+      "src_app_api_masters_items_products_unico_recipes_route_ts"
+    ],
+    "187": [
+      "shiptos_route_get",
+      "src_app_api_masters_customers_unico_shiptos_route_ts"
+    ],
+    "188": [
+      "src_app_api_accounts_payable_credits_route_ts",
+      "src_app_api_accounts_payable_credits_route_ts_credits_route_get"
+    ],
+    "189": [
+      "src_app_api_accounts_payable_invoices_route_ts",
+      "src_app_api_accounts_payable_invoices_route_ts_invoices_route_get"
+    ],
+    "190": [
+      "pobs_route_get",
+      "src_app_api_accounts_payable_pobs_route_ts"
+    ],
+    "191": [
+      "prebooks_route_get",
+      "src_app_api_accounts_payable_prebooks_route_ts"
+    ],
+    "192": [
+      "src_app_api_accounts_payable_reports_summary_route_ts",
+      "src_app_api_accounts_payable_reports_summary_route_ts_summary_route_get"
+    ],
+    "193": [
+      "src_app_api_awbs_awbcode_varieties_route_ts",
+      "src_app_api_awbs_awbcode_varieties_route_ts_varieties_route_get"
+    ],
+    "194": [
+      "account_resume_route_get",
+      "src_app_api_customer_payments_account_resume_route_ts"
+    ],
+    "195": [
+      "income_types_route_get",
+      "src_app_api_customer_payments_lookups_income_types_route_ts"
+    ],
+    "196": [
+      "pay_all_route_post",
+      "src_app_api_customer_payments_pay_all_route_ts"
+    ],
+    "197": [
+      "all_statements_route_get",
+      "src_app_api_customer_payments_reports_all_statements_route_ts"
+    ],
+    "198": [
+      "awb_by_date_route_get",
+      "src_app_api_inventory_entry_awb_by_date_route_ts"
+    ],
+    "199": [
+      "src_app_api_inventory_entry_lookups_route_ts",
+      "src_app_api_inventory_entry_lookups_route_ts_lookups_route_get"
+    ],
+    "200": [
+      "pl_control_route_get",
+      "src_app_api_inventory_entry_pl_control_route_ts"
+    ],
+    "201": [
+      "src_app_api_masters_carriers_unico_customers_route_ts",
+      "src_app_api_masters_carriers_unico_customers_route_ts_customers_route_get"
+    ],
+    "202": [
+      "default_route_put",
+      "src_app_api_masters_customers_carrier_unico_default_route_ts"
+    ],
+    "203": [
+      "countries_route_get",
+      "src_app_api_masters_items_lookups_countries_route_ts"
+    ],
+    "204": [
+      "src_app_api_masters_items_lookups_seasons_route_ts",
+      "src_app_api_masters_items_lookups_seasons_route_ts_seasons_route_get"
+    ],
+    "205": [
+      "src_app_api_masters_items_po_prices_available_route_ts",
+      "src_app_api_masters_items_po_prices_available_route_ts_available_route_get"
+    ],
+    "206": [
+      "po_prices_route_post",
+      "src_app_api_masters_items_po_prices_route_ts"
+    ],
+    "207": [
+      "alternative_route_post",
+      "src_app_api_masters_items_products_alternative_route_ts"
+    ],
+    "208": [
+      "src_app_api_masters_items_products_alternative_unico_route_ts",
+      "src_app_api_masters_items_products_alternative_unico_route_ts_unico_route_delete"
+    ],
+    "209": [
+      "src_app_api_masters_items_products_recipe_unico_route_ts",
+      "src_app_api_masters_items_products_recipe_unico_route_ts_unico_route_delete"
+    ],
+    "210": [
+      "src_app_api_masters_items_warehouses_bogo_available_route_ts",
+      "src_app_api_masters_items_warehouses_bogo_available_route_ts_available_route_get"
+    ],
+    "211": [
+      "src_app_api_masters_items_warehouses_bogo_unico_subclasses_route_ts",
+      "src_app_api_masters_items_warehouses_bogo_unico_subclasses_route_ts_subclasses_route_get"
+    ],
+    "212": [
+      "src_app_api_payment_authorizations_growers_route_ts",
+      "src_app_api_payment_authorizations_growers_route_ts_growers_route_get"
+    ],
+    "213": [
+      "insert_route_post",
+      "src_app_api_payment_authorizations_outcomes_insert_route_ts"
+    ],
+    "214": [
+      "src_app_api_sales_reps_search_route_ts",
+      "src_app_api_sales_reps_search_route_ts_search_route_get"
+    ],
+    "215": [
+      "src_app_api_system_access_copy_route_ts",
+      "src_app_api_system_access_copy_route_ts_copy_route_post"
+    ],
+    "216": [
+      "src_app_api_system_access_modules_route_ts",
+      "src_app_api_system_access_modules_route_ts_modules_route_get"
+    ],
+    "217": [
+      "screens_route_get",
+      "src_app_api_system_modules_unico_screens_route_ts"
+    ],
+    "218": [
+      "src_app_api_accounts_payable_terms_route_ts",
+      "terms_route_get"
+    ],
+    "219": [
+      "src_app_api_accounts_payable_pob_approve_route_ts",
+      "src_app_api_accounts_payable_pob_approve_route_ts_approve_route_post"
+    ],
+    "220": [
+      "src_app_api_accounts_payable_pob_search_route_ts",
+      "src_app_api_accounts_payable_pob_search_route_ts_search_route_get"
+    ],
+    "221": [
+      "reasons_route_get",
+      "src_app_api_accounts_payable_reasons_route_ts"
+    ],
+    "222": [
+      "src_app_api_accounts_payable_reports_pending_route_ts",
+      "src_app_api_accounts_payable_reports_pending_route_ts_pending_route_get"
+    ],
+    "223": [
+      "src_app_api_awbs_airlines_route_ts",
+      "src_app_api_awbs_airlines_route_ts_airlines_route_get"
+    ],
+    "224": [
+      "boxes_route_get",
+      "src_app_api_awbs_awbcode_boxes_route_ts"
+    ],
+    "225": [
+      "charges_route_get",
+      "src_app_api_awbs_awbcode_charges_route_ts"
+    ],
+    "226": [
+      "src_app_api_awbs_boxes_unico_route_ts",
+      "src_app_api_awbs_boxes_unico_route_ts_unico_route_put"
+    ],
+    "227": [
+      "charge_types_date_route_get",
+      "src_app_api_awbs_lookups_charge_types_date_route_ts"
+    ],
+    "228": [
+      "charge_types_route_get",
+      "src_app_api_awbs_lookups_charge_types_route_ts"
+    ],
+    "229": [
+      "src_app_api_awbs_reports_products_route_ts",
+      "src_app_api_awbs_reports_products_route_ts_products_route_get"
+    ],
+    "230": [
+      "src_app_api_awbs_search_route_ts",
+      "src_app_api_awbs_search_route_ts_search_route_get"
+    ],
+    "231": [
+      "src_app_api_awbs_varieties_route_ts",
+      "src_app_api_awbs_varieties_route_ts_varieties_route_post"
+    ],
+    "232": [
+      "src_app_api_awbs_varieties_unico_route_ts",
+      "src_app_api_awbs_varieties_unico_route_ts_unico_route_delete"
+    ],
+    "233": [
+      "apply_route_post",
+      "src_app_api_customer_payments_apply_route_ts"
+    ],
+    "234": [
+      "src_app_api_customer_payments_crdb_route_ts",
+      "src_app_api_customer_payments_crdb_route_ts_crdb_route_post"
+    ],
+    "235": [
+      "customers_for_statement_route_get",
+      "src_app_api_customer_payments_customers_for_statement_route_ts"
+    ],
+    "236": [
+      "src_app_api_customer_payments_customers_route_ts",
+      "src_app_api_customer_payments_customers_route_ts_customers_route_get"
+    ],
+    "237": [
+      "src_app_api_customer_payments_lookups_banks_route_ts",
+      "src_app_api_customer_payments_lookups_banks_route_ts_banks_route_get"
+    ],
+    "238": [
+      "src_app_api_customer_payments_reports_crdb_route_ts",
+      "src_app_api_customer_payments_reports_crdb_route_ts_crdb_route_post"
+    ],
+    "239": [
+      "pending_invoices_route_post",
+      "src_app_api_customer_payments_reports_pending_invoices_route_ts"
+    ],
+    "240": [
+      "src_app_api_freights_lookups_route_ts",
+      "src_app_api_freights_lookups_route_ts_lookups_route_get"
+    ],
+    "241": [
+      "src_app_api_freights_warehouses_route_ts",
+      "src_app_api_freights_warehouses_route_ts_warehouses_route_get"
+    ],
+    "242": [
+      "src_app_api_inventory_entry_products_route_ts",
+      "src_app_api_inventory_entry_products_route_ts_products_route_get"
+    ],
+    "243": [
+      "src_app_api_inventory_entry_warehouse_route_ts",
+      "warehouse_route_get"
+    ],
+    "244": [
+      "src_app_api_masters_carriers_lookups_route_ts",
+      "src_app_api_masters_carriers_lookups_route_ts_lookups_route_get"
+    ],
+    "245": [
+      "src_app_api_masters_carriers_unico_invoices_route_ts",
+      "src_app_api_masters_carriers_unico_invoices_route_ts_invoices_route_get"
+    ],
+    "246": [
+      "src_app_api_masters_customers_route_ts",
+      "src_app_api_masters_customers_route_ts_customers_route_get"
+    ],
+    "247": [
+      "components_route_get",
+      "src_app_api_masters_items_components_route_ts"
+    ],
+    "248": [
+      "src_app_api_masters_items_lookups_cities_route_ts",
+      "src_app_api_masters_items_lookups_cities_route_ts_cities_route_get"
+    ],
+    "249": [
+      "src_app_api_masters_items_lookups_customers_route_ts",
+      "src_app_api_masters_items_lookups_customers_route_ts_customers_route_get"
+    ],
+    "250": [
+      "assigned_route_get",
+      "src_app_api_masters_items_po_prices_assigned_route_ts"
+    ],
+    "251": [
+      "src_app_api_masters_items_products_alternatives_available_route_ts",
+      "src_app_api_masters_items_products_alternatives_available_route_ts_available_route_get"
+    ],
+    "252": [
+      "quota_uq_route_get",
+      "src_app_api_masters_items_products_quota_growers_in_quota_uq_route_ts"
+    ],
+    "253": [
+      "src_app_api_masters_items_products_quota_growers_route_ts",
+      "src_app_api_masters_items_products_quota_growers_route_ts_growers_route_get"
+    ],
+    "254": [
+      "src_app_api_masters_items_products_recipes_available_route_ts",
+      "src_app_api_masters_items_products_recipes_available_route_ts_available_route_get"
+    ],
+    "255": [
+      "alternatives_route_get",
+      "src_app_api_masters_items_products_unico_alternatives_route_ts"
+    ],
+    "256": [
+      "print_composition_route_get",
+      "src_app_api_masters_items_products_unico_print_composition_route_ts"
+    ],
+    "257": [
+      "src_app_api_masters_items_products_update_stock_route_ts",
+      "update_stock_route_get"
+    ],
+    "258": [
+      "src_app_api_masters_items_products_update_stock_unico_route_ts",
+      "src_app_api_masters_items_products_update_stock_unico_route_ts_unico_route_put"
+    ],
+    "259": [
+      "clean_all_route_put",
+      "src_app_api_masters_items_subclass_bogo_clean_all_route_ts"
+    ],
+    "260": [
+      "src_app_api_masters_items_warehouses_bogo_unico_route_ts",
+      "src_app_api_masters_items_warehouses_bogo_unico_route_ts_unico_route_delete"
+    ],
+    "261": [
+      "src_app_api_payment_authorizations_approve_route_ts",
+      "src_app_api_payment_authorizations_approve_route_ts_approve_route_post"
+    ],
+    "262": [
+      "src_app_api_payment_authorizations_banks_route_ts",
+      "src_app_api_payment_authorizations_banks_route_ts_banks_route_get"
+    ],
+    "263": [
+      "by_bank_route_get",
+      "src_app_api_payment_authorizations_outcomes_by_bank_route_ts"
+    ],
+    "264": [
+      "outcomes_route_get",
+      "src_app_api_payment_authorizations_outcomes_route_ts"
+    ],
+    "265": [
+      "payment_invoices_route_get",
+      "src_app_api_payment_authorizations_payment_invoices_route_ts"
+    ],
+    "266": [
+      "src_app_api_payment_authorizations_reports_pending_route_ts",
+      "src_app_api_payment_authorizations_reports_pending_route_ts_pending_route_get"
+    ],
+    "267": [
+      "src_app_api_payment_authorizations_reports_summary_route_ts",
+      "src_app_api_payment_authorizations_reports_summary_route_ts_summary_route_get"
+    ],
+    "268": [
+      "src_app_api_payment_authorizations_vendors_route_ts",
+      "src_app_api_payment_authorizations_vendors_route_ts_vendors_route_get"
+    ],
+    "269": [
+      "src_app_api_payment_authorizations_vendors_summary_route_ts",
+      "vendors_summary_route_get"
+    ],
+    "270": [
+      "src_app_api_pos_products_route_ts",
+      "src_app_api_pos_products_route_ts_products_route_get"
+    ],
+    "271": [
+      "physical_warehouses_route_get",
+      "src_app_api_sales_reps_physical_warehouses_route_ts"
+    ],
+    "272": [
+      "src_app_api_sales_reps_system_users_route_ts",
+      "system_users_route_get"
+    ],
+    "273": [
+      "src_app_api_vendors_statement_route_ts",
+      "src_app_api_vendors_statement_route_ts_statement_route_get"
+    ],
+    "274": [
+      "src_app_api_freights_rates_unico_update_awb_route_ts",
+      "update_awb_route_put"
+    ],
+    "275": [
+      "src_app_api_payment_authorizations_outcomes_uq_route_ts",
+      "uq_route_get"
+    ],
+    "276": [
+      "src_app_api_payment_authorizations_vendors_summary_detail_route_ts",
+      "vendors_summary_detail_route_get"
+    ],
+    "277": [
+      "src_app_api_accounts_payable_years_route_ts",
+      "years_route_get"
+    ],
+    "278": [
+      "duties_route_get",
+      "src_app_api_awbs_reports_duties_route_ts"
+    ],
+    "279": [
+      "hold_no_sales_route_post",
+      "src_app_api_customer_payments_hold_no_sales_route_ts"
+    ],
+    "280": [
+      "src_app_api_customer_payments_reports_statement_cut_route_ts",
+      "statement_cut_route_post"
+    ],
+    "281": [
+      "src_app_under_construction_page_tsx",
+      "under_construction_page_underconstructionpage"
+    ],
+    "282": [
+      "next_config_ts"
+    ]
+  },
+  "cohesion": {
+    "0": 0.07329462989840348,
+    "1": 0.05735430157261795,
+    "2": 0.07422402159244265,
+    "3": 0.08250355618776671,
+    "4": 0.06554621848739496,
+    "5": 0.07862903225806452,
+    "6": 0.06451612903225806,
+    "7": 0.22507122507122507,
+    "8": 0.17391304347826086,
+    "9": 0.11857707509881422,
+    "10": 0.11255411255411256,
+    "11": 0.1,
+    "12": 0.15789473684210525,
+    "13": 0.16374269005847952,
+    "14": 0.15204678362573099,
+    "15": 0.20261437908496732,
+    "16": 0.125,
+    "17": 0.16176470588235295,
+    "18": 0.13333333333333333,
+    "19": 0.18095238095238095,
+    "20": 0.14285714285714285,
+    "21": 0.17582417582417584,
+    "22": 0.21794871794871795,
+    "23": 0.2,
+    "24": 0.24444444444444444,
+    "25": 0.2222222222222222,
+    "26": 0.3888888888888889,
+    "27": 0.2777777777777778,
+    "28": 0.3333333333333333,
+    "29": 0.3333333333333333,
+    "30": 0.3333333333333333,
+    "31": 0.3333333333333333,
+    "32": 0.3333333333333333,
+    "33": 0.2777777777777778,
+    "34": 0.2777777777777778,
+    "35": 0.2222222222222222,
+    "36": 0.42857142857142855,
+    "37": 0.39285714285714285,
+    "38": 0.32142857142857145,
+    "39": 0.39285714285714285,
+    "40": 0.2857142857142857,
+    "41": 0.42857142857142855,
+    "42": 0.42857142857142855,
+    "43": 0.2857142857142857,
+    "44": 0.3333333333333333,
+    "45": 0.47619047619047616,
+    "46": 0.42857142857142855,
+    "47": 0.47619047619047616,
+    "48": 0.47619047619047616,
+    "49": 0.42857142857142855,
+    "50": 0.42857142857142855,
+    "51": 0.2857142857142857,
+    "52": 0.42857142857142855,
+    "53": 0.42857142857142855,
+    "54": 0.42857142857142855,
+    "55": 0.38095238095238093,
+    "56": 0.4666666666666667,
+    "57": 0.5333333333333333,
+    "58": 0.4,
+    "59": 0.4666666666666667,
+    "60": 0.4,
+    "61": 0.5333333333333333,
+    "62": 0.5333333333333333,
+    "63": 0.5333333333333333,
+    "64": 0.5333333333333333,
+    "65": 0.5333333333333333,
+    "66": 0.5333333333333333,
+    "67": 0.5333333333333333,
+    "68": 0.5333333333333333,
+    "69": 0.6,
+    "70": 0.5333333333333333,
+    "71": 0.4,
+    "72": 0.4666666666666667,
+    "73": 0.4,
+    "74": 0.3333333333333333,
+    "75": 0.6,
+    "76": 0.4,
+    "77": 0.6,
+    "78": 0.6,
+    "79": 0.6,
+    "80": 0.7,
+    "81": 0.6,
+    "82": 0.6,
+    "83": 0.6,
+    "84": 0.6,
+    "85": 0.6,
+    "86": 0.7,
+    "87": 0.7,
+    "88": 0.6,
+    "89": 0.7,
+    "90": 0.6,
+    "91": 0.4,
+    "92": 0.4,
+    "93": 0.4,
+    "94": 0.4,
+    "95": 0.4,
+    "96": 0.4,
+    "97": 0.4,
+    "98": 0.7,
+    "99": 0.5,
+    "100": 0.5,
+    "101": 0.5,
+    "102": 0.5,
+    "103": 0.6666666666666666,
+    "104": 0.5,
+    "105": 0.5,
+    "106": 0.5,
+    "107": 0.5,
+    "108": 0.5,
+    "109": 0.5,
+    "110": 0.5,
+    "111": 0.5,
+    "112": 0.5,
+    "113": 0.5,
+    "114": 0.5,
+    "115": 0.5,
+    "116": 0.6666666666666666,
+    "117": 0.5,
+    "118": 0.5,
+    "119": 0.6666666666666666,
+    "120": 0.6666666666666666,
+    "121": 0.6666666666666666,
+    "122": 0.6666666666666666,
+    "123": 0.6666666666666666,
+    "124": 0.6666666666666666,
+    "125": 0.6666666666666666,
+    "126": 0.6666666666666666,
+    "127": 0.6666666666666666,
+    "128": 0.6666666666666666,
+    "129": 0.6666666666666666,
+    "130": 0.6666666666666666,
+    "131": 0.6666666666666666,
+    "132": 0.6666666666666666,
+    "133": 0.6666666666666666,
+    "134": 0.6666666666666666,
+    "135": 0.6666666666666666,
+    "136": 0.6666666666666666,
+    "137": 0.6666666666666666,
+    "138": 0.6666666666666666,
+    "139": 0.6666666666666666,
+    "140": 0.6666666666666666,
+    "141": 0.6666666666666666,
+    "142": 0.6666666666666666,
+    "143": 0.6666666666666666,
+    "144": 0.6666666666666666,
+    "145": 0.6666666666666666,
+    "146": 0.6666666666666666,
+    "147": 0.6666666666666666,
+    "148": 0.6666666666666666,
+    "149": 1.0,
+    "150": 1.0,
+    "151": 1.0,
+    "152": 1.0,
+    "153": 1.0,
+    "154": 1.0,
+    "155": 1.0,
+    "156": 1.0,
+    "157": 1.0,
+    "158": 1.0,
+    "159": 1.0,
+    "160": 1.0,
+    "161": 1.0,
+    "162": 1.0,
+    "163": 1.0,
+    "164": 1.0,
+    "165": 1.0,
+    "166": 1.0,
+    "167": 1.0,
+    "168": 1.0,
+    "169": 1.0,
+    "170": 1.0,
+    "171": 1.0,
+    "172": 1.0,
+    "173": 1.0,
+    "174": 1.0,
+    "175": 1.0,
+    "176": 1.0,
+    "177": 1.0,
+    "178": 1.0,
+    "179": 1.0,
+    "180": 1.0,
+    "181": 1.0,
+    "182": 1.0,
+    "183": 1.0,
+    "184": 1.0,
+    "185": 1.0,
+    "186": 1.0,
+    "187": 1.0,
+    "188": 1.0,
+    "189": 1.0,
+    "190": 1.0,
+    "191": 1.0,
+    "192": 1.0,
+    "193": 1.0,
+    "194": 1.0,
+    "195": 1.0,
+    "196": 1.0,
+    "197": 1.0,
+    "198": 1.0,
+    "199": 1.0,
+    "200": 1.0,
+    "201": 1.0,
+    "202": 1.0,
+    "203": 1.0,
+    "204": 1.0,
+    "205": 1.0,
+    "206": 1.0,
+    "207": 1.0,
+    "208": 1.0,
+    "209": 1.0,
+    "210": 1.0,
+    "211": 1.0,
+    "212": 1.0,
+    "213": 1.0,
+    "214": 1.0,
+    "215": 1.0,
+    "216": 1.0,
+    "217": 1.0,
+    "218": 1.0,
+    "219": 1.0,
+    "220": 1.0,
+    "221": 1.0,
+    "222": 1.0,
+    "223": 1.0,
+    "224": 1.0,
+    "225": 1.0,
+    "226": 1.0,
+    "227": 1.0,
+    "228": 1.0,
+    "229": 1.0,
+    "230": 1.0,
+    "231": 1.0,
+    "232": 1.0,
+    "233": 1.0,
+    "234": 1.0,
+    "235": 1.0,
+    "236": 1.0,
+    "237": 1.0,
+    "238": 1.0,
+    "239": 1.0,
+    "240": 1.0,
+    "241": 1.0,
+    "242": 1.0,
+    "243": 1.0,
+    "244": 1.0,
+    "245": 1.0,
+    "246": 1.0,
+    "247": 1.0,
+    "248": 1.0,
+    "249": 1.0,
+    "250": 1.0,
+    "251": 1.0,
+    "252": 1.0,
+    "253": 1.0,
+    "254": 1.0,
+    "255": 1.0,
+    "256": 1.0,
+    "257": 1.0,
+    "258": 1.0,
+    "259": 1.0,
+    "260": 1.0,
+    "261": 1.0,
+    "262": 1.0,
+    "263": 1.0,
+    "264": 1.0,
+    "265": 1.0,
+    "266": 1.0,
+    "267": 1.0,
+    "268": 1.0,
+    "269": 1.0,
+    "270": 1.0,
+    "271": 1.0,
+    "272": 1.0,
+    "273": 1.0,
+    "274": 1.0,
+    "275": 1.0,
+    "276": 1.0,
+    "277": 1.0,
+    "278": 1.0,
+    "279": 1.0,
+    "280": 1.0,
+    "281": 1.0,
+    "282": 1.0
+  },
+  "gods": [
+    {
+      "id": "lib_db_executeprocedure",
+      "label": "executeProcedure()",
+      "degree": 580
+    },
+    {
+      "id": "lib_db_executequery",
+      "label": "executeQuery()",
+      "degree": 162
+    },
+    {
+      "id": "lib_utils_cn",
+      "label": "cn()",
+      "degree": 76
+    },
+    {
+      "id": "lib_audit_useauditlog",
+      "label": "useAuditLog()",
+      "degree": 41
+    },
+    {
+      "id": "lib_permissions_usepagepermissions",
+      "label": "usePagePermissions()",
+      "degree": 39
+    },
+    {
+      "id": "nextauth_route_authoptions",
+      "label": "authOptions",
+      "degree": 25
+    },
+    {
+      "id": "components_gridmenu_gridmenu",
+      "label": "GridMenu()",
+      "degree": 17
+    },
+    {
+      "id": "lib_permissions_permission_msgs",
+      "label": "PERMISSION_MSGS",
+      "degree": 17
+    },
+    {
+      "id": "fullpot_operational_system_tsconfig_compileroptions",
+      "label": "compilerOptions",
+      "degree": 16
+    },
+    {
+      "id": "tabs_stocklisttab_stocklisttab",
+      "label": "StockListTab()",
+      "degree": 16
+    }
+  ],
+  "surprises": [
+    {
+      "source": "Accounts Payable API Routes",
+      "target": "sp_flower_accounts_pay_years",
+      "source_files": [
+        "api/routes/accountsPayable.js",
+        "AccountsPayable.md"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "crosses file types (code \u2194 doc); connects across different repos/directories"
+    },
+    {
+      "source": "GET()",
+      "target": "executeQuery()",
+      "source_files": [
+        "src/app/api/sales/reps/route.ts",
+        "src/lib/db.ts"
+      ],
+      "confidence": "INFERRED",
+      "relation": "calls",
+      "why": "inferred connection - not explicitly stated in source; bridges separate communities; peripheral node `GET()` unexpectedly reaches hub `executeQuery()`"
+    },
+    {
+      "source": "GET()",
+      "target": "executeQuery()",
+      "source_files": [
+        "src/app/api/sales-reps/route.ts",
+        "src/lib/db.ts"
+      ],
+      "confidence": "INFERRED",
+      "relation": "calls",
+      "why": "inferred connection - not explicitly stated in source; bridges separate communities; peripheral node `GET()` unexpectedly reaches hub `executeQuery()`"
+    },
+    {
+      "source": "VendorCombobox()",
+      "target": "cn()",
+      "source_files": [
+        "src/app/accounts-payable/page.tsx",
+        "src/lib/utils.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "bridges separate communities; peripheral node `VendorCombobox()` unexpectedly reaches hub `cn()`"
+    },
+    {
+      "source": "GET()",
+      "target": "executeProcedure()",
+      "source_files": [
+        "src/app/api/accounts-payable/ap-types/route.ts",
+        "src/lib/db.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "bridges separate communities; peripheral node `GET()` unexpectedly reaches hub `executeProcedure()`"
+    }
+  ],
+  "tokens": {
+    "input": 27195,
+    "output": 2372
+  }
+}

@@ -4,14 +4,16 @@ import { useState } from "react";
 import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export interface GridMenuItem {
-  label: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
-  color: "green" | "orange" | "red" | "blue" | "gray" | "amber" | "purple";
-  onClick: () => void;
-  disabled?: boolean;
-  separator?: boolean;
-}
+export type GridMenuItem =
+  | {
+      label: string;
+      icon: React.ComponentType<{ size?: number; className?: string }>;
+      color: "green" | "orange" | "red" | "blue" | "gray" | "amber" | "purple";
+      onClick: () => void;
+      disabled?: boolean;
+      separator?: never;
+    }
+  | { separator: true };
 
 const ITEM_COLORS: Record<string, { icon: string; text: string }> = {
   green:  { icon: "text-green-600",  text: "text-green-700" },

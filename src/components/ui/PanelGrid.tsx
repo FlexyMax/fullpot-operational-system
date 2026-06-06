@@ -33,7 +33,7 @@ export interface PanelGridProps {
   onLog?: () => void;
   menuItems?: PanelMenuItem[];
   headerRight?: React.ReactNode;
-  children: React.ReactNode;
+  children?: React.ReactNode;
   className?: string;
 }
 

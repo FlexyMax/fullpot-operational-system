@@ -91,13 +91,16 @@ export function PanelGridTd({
   children,
   className,
   align = "left",
+  colSpan,
 }: {
   children: React.ReactNode;
   className?: string;
   align?: "left" | "right" | "center";
+  colSpan?: number;
 }) {
   return (
     <td
+      colSpan={colSpan}
       className={cn(
         "px-2 py-1 text-[11px] text-gray-700 whitespace-nowrap",
         align === "right" && "text-right",
