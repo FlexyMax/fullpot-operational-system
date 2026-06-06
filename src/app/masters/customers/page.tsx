@@ -383,8 +383,9 @@ export default function CustomersSetupPage() {
                     { label: "Export CSV", icon: Download, color: "gray", onClick: exportCSV, disabled: !perms.canReport },
                 ]}
                 className="mx-2 mt-2 flex-1 flex flex-col min-h-0"
+                onScroll={handleCustScroll}
             >
-                <div className="overflow-auto flex-1" onScroll={handleCustScroll}>
+                <div>
                     <PanelGridTable>
                         <PanelGridThead>
                             <PanelGridTh className="w-6">{""}</PanelGridTh>
@@ -870,20 +871,36 @@ function CustomerModal({ mode, form, setForm, error, saving, activeTab, setActiv
 
                 <div className="overflow-y-auto flex-1 p-4 space-y-4">
                     {/* Header row */}
-                    <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-7 gap-3 pb-3 border-b border-gray-100">
-                        {F("Customer Name *","customer")}
-                        {F("DBA","dba")}
-                        {F("Account No.","old_code",{type:"number"})}
-                        {F("EDI Code","edi_code")}
-                        {F("Contact","contact")}
-                        {F("Purchaser","purchaser")}
-                        <div className="flex flex-col gap-1.5 justify-end">
-                            {Cb("FOB Miami","fobmiami")}
-                            {Cb("Credit Hold","credithold")}
-                            {Cb("Active","active", mode==="add")}
-                            {Cb("Auto Charge","auto_charge")}
-                            {Cb("Inventory","inventory_from_invoice")}
-                            {Cb("Internal","internal_customer")}
+                    <div className="flex flex-col gap-3 pb-3 border-b border-gray-100">
+                        <div className="grid grid-cols-12 gap-3">
+                            <div className="col-span-12 sm:col-span-5">
+                                {F("Customer Name *","customer")}
+                            </div>
+                            <div className="col-span-12 sm:col-span-3">
+                                {F("DBA","dba")}
+                            </div>
+                            <div className="col-span-6 sm:col-span-2">
+                                {F("Account No.","old_code",{type:"number"})}
+                            </div>
+                            <div className="col-span-6 sm:col-span-2">
+                                {F("EDI Code","edi_code")}
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-12 gap-3 items-end">
+                            <div className="col-span-6 sm:col-span-3">
+                                {F("Contact","contact")}
+                            </div>
+                            <div className="col-span-6 sm:col-span-3">
+                                {F("Purchaser","purchaser")}
+                            </div>
+                            <div className="col-span-12 sm:col-span-6 flex flex-wrap items-center gap-x-4 gap-y-2 pb-1.5 sm:justify-end">
+                                {Cb("FOB Miami","fobmiami")}
+                                {Cb("Credit Hold","credithold")}
+                                {Cb("Active","active", mode==="add")}
+                                {Cb("Auto Charge","auto_charge")}
+                                {Cb("Inventory","inventory_from_invoice")}
+                                {Cb("Internal","internal_customer")}
+                            </div>
                         </div>
                     </div>
 

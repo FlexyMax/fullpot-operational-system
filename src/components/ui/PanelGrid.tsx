@@ -35,6 +35,7 @@ export interface PanelGridProps {
   headerRight?: React.ReactNode;
   children?: React.ReactNode;
   className?: string;
+  onScroll?: (e: React.UIEvent<HTMLDivElement>) => void;
 }
 
 /* ─── Helpers ───────────────────────────────────────────────────────────── */
@@ -156,6 +157,7 @@ export default function PanelGrid({
   headerRight,
   children,
   className,
+  onScroll,
 }: PanelGridProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuBtnRef = useRef<HTMLButtonElement>(null);
@@ -294,7 +296,7 @@ export default function PanelGrid({
       )}
 
       {/* Content (table) */}
-      <div className="flex-1 overflow-auto min-h-0">{children}</div>
+      <div className="flex-1 overflow-auto min-h-0" onScroll={onScroll}>{children}</div>
     </div>
   );
 }
