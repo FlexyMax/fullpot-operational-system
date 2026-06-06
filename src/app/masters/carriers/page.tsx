@@ -494,29 +494,32 @@ export default function CarriersDefinitionPage() {
                             </div>
                         </div>
                         <div className="overflow-auto flex-1">
-                            <table className="min-w-full text-left">
-                                <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
-                                    <tr>
-                                        {["Customer", "Invoice", "Date", "Amount", "Credits", "Debits"].map(h => (
-                                            <th key={h} className="px-3 py-2 text-[10px] font-black uppercase tracking-wider text-gray-500 whitespace-nowrap border-r border-gray-100 last:border-r-0">{h}</th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-50">
+                            <PanelGridTable>
+                                <PanelGridThead>
+                                    <PanelGridTh>Customer</PanelGridTh>
+                                    <PanelGridTh>Invoice</PanelGridTh>
+                                    <PanelGridTh>Date</PanelGridTh>
+                                    <PanelGridTh align="right">Amount</PanelGridTh>
+                                    <PanelGridTh align="right">Credits</PanelGridTh>
+                                    <PanelGridTh align="right">Debits</PanelGridTh>
+                                </PanelGridThead>
+                                <PanelGridTbody>
                                     {(invoices as any[]).length === 0 ? (
-                                        <tr><td colSpan={6} className="p-8 text-center text-gray-300 italic text-sm">No invoices</td></tr>
+                                        <PanelGridTr className="pointer-events-none">
+                                            <PanelGridTd colSpan={6} align="center" className="py-8 text-gray-300 italic text-sm">No invoices</PanelGridTd>
+                                        </PanelGridTr>
                                     ) : (invoices as any[]).map((r: any, i: number) => (
-                                        <tr key={i} className="hover:bg-gray-50/80 text-[11px] text-gray-700">
-                                            <td className="px-3 py-1.5 border-r border-gray-50 truncate max-w-[160px]">{t(r.customer)}</td>
-                                            <td className="px-3 py-1.5 border-r border-gray-50 font-mono">{t(r.invoice_no)}</td>
-                                            <td className="px-3 py-1.5 border-r border-gray-50 whitespace-nowrap">{formatDateEST(normalizeToISODate(r.invoice_date))}</td>
-                                            <td className="px-3 py-1.5 border-r border-gray-50 text-right">{formatMoney(r.total_invoice)}</td>
-                                            <td className="px-3 py-1.5 border-r border-gray-50 text-right text-green-600">{formatMoney(r.total_credits)}</td>
-                                            <td className="px-3 py-1.5 text-right text-red-500">{formatMoney(r.total_debits)}</td>
-                                        </tr>
+                                        <PanelGridTr key={i}>
+                                            <PanelGridTd className="truncate max-w-[160px]">{t(r.customer)}</PanelGridTd>
+                                            <PanelGridTd className="font-mono">{t(r.invoice_no)}</PanelGridTd>
+                                            <PanelGridTd className="whitespace-nowrap">{formatDateEST(normalizeToISODate(r.invoice_date))}</PanelGridTd>
+                                            <PanelGridTd align="right">{formatMoney(r.total_invoice)}</PanelGridTd>
+                                            <PanelGridTd align="right" className="text-green-600">{formatMoney(r.total_credits)}</PanelGridTd>
+                                            <PanelGridTd align="right" className="text-red-500">{formatMoney(r.total_debits)}</PanelGridTd>
+                                        </PanelGridTr>
                                     ))}
-                                </tbody>
-                            </table>
+                                </PanelGridTbody>
+                            </PanelGridTable>
                         </div>
                     </div>
                 </div>
@@ -537,30 +540,34 @@ export default function CarriersDefinitionPage() {
                             </button>
                         </div>
                         <div className="overflow-auto flex-1">
-                            <table className="min-w-full text-left">
-                                <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
-                                    <tr>
-                                        {["Customer", "Shipto", "Address", "City", "State", "Zip", "Account"].map(h => (
-                                            <th key={h} className="px-3 py-2 text-[10px] font-black uppercase tracking-wider text-gray-500 whitespace-nowrap border-r border-gray-100 last:border-r-0">{h}</th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-50">
+                            <PanelGridTable>
+                                <PanelGridThead>
+                                    <PanelGridTh>Customer</PanelGridTh>
+                                    <PanelGridTh>Shipto</PanelGridTh>
+                                    <PanelGridTh>Address</PanelGridTh>
+                                    <PanelGridTh>City</PanelGridTh>
+                                    <PanelGridTh>State</PanelGridTh>
+                                    <PanelGridTh>Zip</PanelGridTh>
+                                    <PanelGridTh>Account</PanelGridTh>
+                                </PanelGridThead>
+                                <PanelGridTbody>
                                     {(customers as any[]).length === 0 ? (
-                                        <tr><td colSpan={7} className="p-8 text-center text-gray-300 italic text-sm">No customers</td></tr>
+                                        <PanelGridTr className="pointer-events-none">
+                                            <PanelGridTd colSpan={7} align="center" className="py-8 text-gray-300 italic text-sm">No customers</PanelGridTd>
+                                        </PanelGridTr>
                                     ) : (customers as any[]).map((r: any, i: number) => (
-                                        <tr key={i} className="hover:bg-gray-50/80 text-[11px] text-gray-700">
-                                            <td className="px-3 py-1.5 border-r border-gray-50 truncate max-w-[140px]">{t(r.customer)}</td>
-                                            <td className="px-3 py-1.5 border-r border-gray-50 truncate max-w-[120px]">{t(r.name)}</td>
-                                            <td className="px-3 py-1.5 border-r border-gray-50 truncate max-w-[140px]">{t(r.address1)}</td>
-                                            <td className="px-3 py-1.5 border-r border-gray-50">{t(r.city)}</td>
-                                            <td className="px-3 py-1.5 border-r border-gray-50">{t(r.state)}</td>
-                                            <td className="px-3 py-1.5 border-r border-gray-50">{t(r.zip)}</td>
-                                            <td className="px-3 py-1.5">{t(r.account)}</td>
-                                        </tr>
+                                        <PanelGridTr key={i}>
+                                            <PanelGridTd className="truncate max-w-[140px]">{t(r.customer)}</PanelGridTd>
+                                            <PanelGridTd className="truncate max-w-[120px]">{t(r.name)}</PanelGridTd>
+                                            <PanelGridTd className="truncate max-w-[140px]">{t(r.address1)}</PanelGridTd>
+                                            <PanelGridTd>{t(r.city)}</PanelGridTd>
+                                            <PanelGridTd>{t(r.state)}</PanelGridTd>
+                                            <PanelGridTd>{t(r.zip)}</PanelGridTd>
+                                            <PanelGridTd>{t(r.account)}</PanelGridTd>
+                                        </PanelGridTr>
                                     ))}
-                                </tbody>
-                            </table>
+                                </PanelGridTbody>
+                            </PanelGridTable>
                         </div>
                     </div>
                 </div>
