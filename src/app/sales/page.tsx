@@ -154,6 +154,9 @@ export default function SalesPage() {
     // Product images cache: product_uq → signed URL
     const [productImages,  setProductImages]  = useState<Record<string, string>>({});
 
+    // Stock image/detail modal
+    const [stockImageModal, setStockImageModal] = useState<any>(null);
+
     // ── Init: load salesman info (unico, user_uq, wphysical_uq) ──────────────
     useEffect(() => {
         if (status !== "authenticated") return;
@@ -865,8 +868,9 @@ export default function SalesPage() {
                                                                 <img
                                                                     src={productImages[t(s.PRODUCT_UQ ?? s.BOX_PACK_UQ ?? "")] || DEFAULT_THUMB}
                                                                     alt="" width={32} height={32}
-                                                                    className="w-8 h-8 object-cover rounded border border-gray-200 shrink-0"
+                                                                    className="w-8 h-8 object-cover rounded border border-gray-200 shrink-0 cursor-pointer hover:opacity-80 hover:ring-2 hover:ring-[#FB7506] transition-all"
                                                                     onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }}
+                                                                    onClick={() => setStockImageModal(s)}
                                                                 />
                                                             </Td>
                                                             <Td>
@@ -1265,6 +1269,76 @@ export default function SalesPage() {
                     </div>
                 </div>
             )}
+            {/* ── Stock Product Detail Modal ────────────────────────────────── */}
+            {stockImageModal && (() => {
+                const s   = stockImageModal;
+                const uq  = t(s.PRODUCT_UQ ?? s.BOX_PACK_UQ ?? "");
+                const img = productImages[uq] || DEFAULT_THUMB;
+                const fields: { label: string; value: string; accent?: boolean }[] = [
+                    { label: "Farm",        value: t(s.FARM),                         accent: true },
+                    { label: "Grower",      value: t(s.GROWER) },
+                    { label: "Date",        value: fmtDate(s.BOX_DATE) },
+                    { label: "Days",        value: fmtI(s.DAYS) },
+                    { label: "AWB",         value: t(s.AWBCODE) },
+                    { label: "Bch/Case",    value: fmtI(s.BUNCHES_CASE) },
+                    { label: "Units/Bch",   value: fmtI(s.UNITS_BUNCH) },
+                    { label: "T.Units",     value: fmtI(s.TUNITS_X_BOX) },
+                    { label: "Total Units", value: fmtI(s.TOTAL_UNITS) },
+                    { label: "Price",       value: `$${fmt(s.PRICE_X_UNIT)}`,          accent: true },
+                    { label: "Stock",       value: fmtI(s.WH_STOCK) },
+                    { label: "Case",        value: t(s.CASE_SH ?? s.CASE_NAME) },
+                    { label: "GPM%",        value: `${fmt(s.GPROFIT)}%` },
+                    { label: "Box ID",      value: t(s.BOX_ID) },
+                ];
+                return (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+                         onClick={() => setStockImageModal(null)}>
+                        <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden"
+                             onClick={e => e.stopPropagation()}>
+                            {/* Header */}
+                            <div className="bg-[#374151] px-4 py-2.5 flex items-center justify-between">
+                                <div className="flex items-center gap-2 min-w-0">
+                                    <Package size={13} className="text-[#FB7506] shrink-0" />
+                                    <span className="font-black text-[11px] text-white uppercase tracking-widest truncate">{t(s.DESCRIPTION)}</span>
+                                </div>
+                                <button onClick={() => setStockImageModal(null)} className="text-white/60 hover:text-white ml-2 shrink-0"><X size={14} /></button>
+                            </div>
+                            {/* Body */}
+                            <div className="flex gap-4 p-4">
+                                {/* Image */}
+                                <div className="shrink-0 w-44 h-44 rounded-lg border border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center">
+                                    <img src={img} alt={t(s.DESCRIPTION)}
+                                         className="w-full h-full object-contain"
+                                         onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }} />
+                                </div>
+                                {/* Info grid */}
+                                <div className="flex-1 grid grid-cols-2 gap-x-4 gap-y-1.5 content-start">
+                                    {fields.map(f => (
+                                        <div key={f.label}>
+                                            <div className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">{f.label}</div>
+                                            <div className={cn("text-[12px] font-semibold truncate", f.accent ? "text-[#FB7506]" : "text-gray-800")}>{f.value || "—"}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            {/* Footer */}
+                            <div className="border-t border-gray-100 px-4 py-2.5 flex items-center justify-end gap-2">
+                                <button onClick={() => setStockImageModal(null)}
+                                    className="px-3 py-1.5 text-[11px] font-bold text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">
+                                    Close
+                                </button>
+                                {isOpen && (
+                                    <button onClick={() => { handleAddLine(s); setStockImageModal(null); }} disabled={working}
+                                        className="flex items-center gap-1 px-4 py-1.5 text-[11px] font-black text-white bg-[#FB7506] hover:bg-orange-500 rounded disabled:opacity-40">
+                                        <Plus size={11} />Add to Invoice
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
+
             <AppFooter areaLabel="Terminal" />
         </div>
     );

@@ -13,6 +13,8 @@ import { cn }                    from "@/lib/utils";
 import { usePagePermissions }    from "@/lib/permissions";
 import { HeaderModal }           from "./HeaderModal";
 import { OrderDetailModal }      from "./OrderDetailModal";
+import PanelGrid, { type PanelMenuItem } from "@/components/ui/PanelGrid";
+import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const t    = (v: any) => String(v ?? "").trim();
@@ -190,61 +192,61 @@ export default function StandingOrdersPage() {
             <div className="flex flex-col xl:flex-row flex-1 overflow-hidden px-2 pb-2 pt-2 gap-2 min-h-0">
 
                 {/* Orders list — always visible on all screen sizes */}
-                <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 xl:flex-none xl:w-[420px] xl:shrink-0">
-                    <div className="h-9 bg-[#374151] flex items-center px-3 gap-2 shrink-0 rounded-t-lg">
-                        <ClipboardList size={13} className="text-[#FB7506]" />
-                        <span className="font-black text-[10px] uppercase tracking-widest text-white">Orders List</span>
-                        {loadingOrders && <Loader2 size={10} className="animate-spin text-gray-400" />}
-                        <span className="ml-auto text-[10px] text-gray-400 font-bold">
-                            {orders.length}/{(ordersRaw as any[]).length}
-                        </span>
-                    </div>
-                    <div className="flex-1 overflow-auto">
-                        <table className="min-w-full text-left">
-                            <thead>
-                                <tr>
-                                    <Th>Customer</Th>
-                                    <Th className="text-right">Order #</Th>
-                                    <Th>Day</Th>
-                                    <Th className="hidden sm:table-cell">Start</Th>
-                                    <Th className="hidden sm:table-cell">End</Th>
-                                    <Th className="hidden xl:table-cell">Salesman</Th>
-                                    <Th className="hidden xl:table-cell">Cargo</Th>
-                                    <Th className="text-center">Act.</Th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {orders.map((o: any, i: number) => {
-                                    const uq  = t(o.UNICO ?? "");
-                                    const sel = selectedUnico === uq;
-                                    return (
-                                        <tr key={i}
-                                            onClick={() => handleRowClick(uq, o)}
-                                            className={cn(
-                                                "border-b cursor-pointer transition-colors text-gray-700",
-                                                sel ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50 active:bg-blue-100"
-                                            )}
-                                        >
-                                            <Td className="font-medium max-w-[140px] truncate">{t(o.CUSTOMER)}</Td>
-                                            <Td className="text-right font-bold text-blue-700">{t(o.SORDER_NO)}</Td>
-                                            <Td className="font-bold text-[#FB7506]">{t(o.SO_DAY).trim()}</Td>
-                                            <Td className="hidden sm:table-cell text-gray-500">{fmtDate(o.SO_STDATE)}</Td>
-                                            <Td className="hidden sm:table-cell text-gray-500">{fmtDate(o.SO_ENDATE)}</Td>
-                                            <Td className="hidden xl:table-cell max-w-[90px] truncate">{t(o.SALESMAN_NAME)}</Td>
-                                            <Td className="hidden xl:table-cell max-w-[80px] truncate">{t(o.AGENCY)}</Td>
-                                            <Td className="text-center">{bool(o.ACTIVE) ? <Check size={11} className="text-green-500 inline" /> : ""}</Td>
-                                        </tr>
-                                    );
-                                })}
-                                {!loadingOrders && orders.length === 0 && (
-                                    <tr><td colSpan={8} className="py-16 text-center text-gray-400 italic text-sm">
-                                        {textSearch || dayFilter !== "%" || myOrders ? "No orders match filters" : "No standing orders found"}
-                                    </td></tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                <PanelGrid
+                    title="Orders List"
+                    icon={ClipboardList}
+                    recordCount={orders.length}
+                    searchPlaceholder="Search orders..."
+                    searchValue={textSearch}
+                    onSearchChange={setTextSearch}
+                    onRefresh={() => setListKey(k => k + 1)}
+                    refreshing={loadingOrders}
+                    menuItems={[
+                        ...(canEdit ? [{ label: "New Order", icon: Plus, color: "green" as const, onClick: () => setNewOrderModal(true) }] : []),
+                        { separator: true } as PanelMenuItem,
+                        { label: "Refresh", icon: RefreshCcw, color: "gray" as const, onClick: () => setListKey(k => k + 1) },
+                    ]}
+                    className="flex-1 xl:flex-none xl:w-[420px] xl:shrink-0"
+                >
+                    <PanelGridTable>
+                        <PanelGridThead>
+                            <PanelGridTh>Customer</PanelGridTh>
+                            <PanelGridTh align="right">Order #</PanelGridTh>
+                            <PanelGridTh>Day</PanelGridTh>
+                            <PanelGridTh className="hidden sm:table-cell">Start</PanelGridTh>
+                            <PanelGridTh className="hidden sm:table-cell">End</PanelGridTh>
+                            <PanelGridTh className="hidden xl:table-cell">Salesman</PanelGridTh>
+                            <PanelGridTh className="hidden xl:table-cell">Cargo</PanelGridTh>
+                            <PanelGridTh align="center">Act.</PanelGridTh>
+                        </PanelGridThead>
+                        <PanelGridTbody>
+                            {orders.map((o: any, i: number) => {
+                                const uq  = t(o.UNICO ?? "");
+                                const sel = selectedUnico === uq;
+                                return (
+                                    <PanelGridTr key={i}
+                                        selected={sel}
+                                        onClick={() => handleRowClick(uq, o)}
+                                    >
+                                        <PanelGridTd className="font-medium max-w-[140px] truncate">{t(o.CUSTOMER)}</PanelGridTd>
+                                        <PanelGridTd align="right" className="font-bold text-blue-700">{t(o.SORDER_NO)}</PanelGridTd>
+                                        <PanelGridTd className="font-bold text-[#FB7506]">{t(o.SO_DAY).trim()}</PanelGridTd>
+                                        <PanelGridTd className="hidden sm:table-cell text-gray-500">{fmtDate(o.SO_STDATE)}</PanelGridTd>
+                                        <PanelGridTd className="hidden sm:table-cell text-gray-500">{fmtDate(o.SO_ENDATE)}</PanelGridTd>
+                                        <PanelGridTd className="hidden xl:table-cell max-w-[90px] truncate">{t(o.SALESMAN_NAME)}</PanelGridTd>
+                                        <PanelGridTd className="hidden xl:table-cell max-w-[80px] truncate">{t(o.AGENCY)}</PanelGridTd>
+                                        <PanelGridTd align="center">{bool(o.ACTIVE) ? <Check size={11} className="text-green-500 inline" /> : ""}</PanelGridTd>
+                                    </PanelGridTr>
+                                );
+                            })}
+                            {!loadingOrders && orders.length === 0 && (
+                                <tr><td colSpan={8} className="py-16 text-center text-gray-400 italic text-sm">
+                                    {textSearch || dayFilter !== "%" || myOrders ? "No orders match filters" : "No standing orders found"}
+                                </td></tr>
+                            )}
+                        </PanelGridTbody>
+                    </PanelGridTable>
+                </PanelGrid>
 
                 {/* Desktop inline detail panel (xl+, panel mode) */}
                 {selectedUnico && selectedRow && lookups && !showModal && (
