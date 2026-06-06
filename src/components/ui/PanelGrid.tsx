@@ -254,7 +254,10 @@ export default function PanelGrid({
               <button
                 ref={menuBtnRef}
                 onClick={() => setMenuOpen((v) => !v)}
-                className="h-10 w-10 flex flex-col items-center justify-center gap-[5px] hover:bg-white/10 transition-colors"
+                className={cn(
+                  "h-10 w-10 flex items-center justify-center hover:bg-white/10 transition-colors",
+                  menuOpen ? "flex-row gap-[5px]" : "flex-col gap-[5px]"
+                )}
                 title="Menu"
               >
                 {menuOpen ? (
