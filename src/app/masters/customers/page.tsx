@@ -61,6 +61,7 @@ export default function CustomersSetupPage() {
     const [carrierModal,   setCarrierModal]   = useState<{ mode:"add"|"edit"|"delete" } | null>(null);
     const [webUserModal,   setWebUserModal]   = useState<{ mode:"add"|"edit"|"delete" } | null>(null);
     const [msgModal,       setMsgModal]       = useState(false);
+    const [stmtModal,      setStmtModal]      = useState(false);
     const [custForm,       setCustForm]       = useState<any>(EMPTY_CUST);
     const [shiptoForm,     setShiptoForm]     = useState<any>(EMPTY_SHIPTO);
     const [carrierForm,    setCarrierForm]    = useState<any>(EMPTY_CARRIER);
@@ -358,7 +359,22 @@ export default function CustomersSetupPage() {
                 recordCount={totalRecords > 0 ? totalRecords : custList.length}
                 onRefresh={refetchList}
                 refreshing={loadingList}
-                headerRight={<AuditLogModal recordId={selCust?.unico} disabled={!selCust?.unico} bareButton />}
+                headerRight={
+                    <div className="flex items-center gap-2">
+                        <button 
+                            onClick={() => { setStmtEnabled(false); setStmtModal(true); }}
+                            disabled={!selCust}
+                            className={cn(
+                                "flex items-center gap-1.5 px-2 py-1 text-xs font-bold transition-all rounded",
+                                selCust ? "text-gray-300 hover:text-white hover:bg-white/10" : "text-gray-500 opacity-40 cursor-not-allowed"
+                            )}
+                            title="View Statement"
+                        >
+                            <FileText size={14} /> Statement
+                        </button>
+                        <AuditLogModal recordId={selCust?.unico} disabled={!selCust?.unico} bareButton />
+                    </div>
+                }
                 menuItems={[
                     { label: "Add Customer", icon: Plus, color: "green", onClick: () => { setCustForm({...EMPTY_CUST}); setFormError(null); setCustModalTab("general"); setCustModal({ mode:"add" }); }, disabled: !perms.canCreate },
                     { label: "Edit Customer", icon: Pencil, color: "orange", onClick: () => { if (!selCust) return; const c = selCust; setCustForm({ old_code:c.old_code||"", edi_code:t(c.edi_code), fobmiami:!!c.fobmiami, inventory_from_invoice:!!c.inventory_from_invoice, dex:!!c.dex, auto_charge:!!c.auto_charge, credithold:!!c.credithold, internal_customer:!!c.internal_customer, active:!!c.active, customer:t(c.customer), dba:t(c.dba), contact:t(c.contact), purchaser:t(c.purchaser), address1:t(c.address1), address2:t(c.address2), city:t(c.city), state:t(c.state), zip:t(c.zip), country:t(c.country), phone_1:t(c.phone_1), phone_2:t(c.phone_2), fax_1:t(c.fax_1), fax_2:t(c.fax_2), email:t(c.email), terms_uq:t(c.terms_uq||c.terms), calls:t(c.calls)||"NNNNNN", subregion_uq:t(c.subregion_uq), salesman_uq:t(c.salesman_uq), group_uq:t(c.group_uq), rc_uq:t(c.rc_uq), pickremark:t(c.pickremark), julian_from:t(c.julian_from), reasonhold:t(c.reasonhold), credit_limit:c.credit_limit||0, insurance_for:c.insurance_for||0, price_margin:c.price_margin||0, dry_discount:c.dry_discount||0, sales_web_uq:t(c.sales_web_uq), custsince:c.custsince?normalizeToISODate(c.custsince):"", ap_contact:t(c.ap_contact), ap_email:t(c.ap_email), ap_msn:t(c.ap_msn), ap_phone:t(c.ap_phone), ap_fax:t(c.ap_fax), website:t(c.website), statement_print:!!c.statement_print, inspection:!!c.inspection, gpm:c.gpm||0, availability_by:t(c.availability_by)||"NONE", availability_to:t(c.availability_to), invoice_by:t(c.invoice_by)||"EMAIL", extension:c.extension||0, commission_days:c.commission_days||0, resale_tax:c.resale_tax||0, ccard_name:t(c.ccard_name), ccard_on_file:t(c.ccard_on_file), ccard_expiration_month:t(c.ccard_expiration_month), ccard_expiration_year:t(c.ccard_expiration_year), tax_id:t(c.tax_id), international:!!c.international, collection:!!c.collection, check_price_override:!!c.check_price_override }); setFormError(null); setCustModalTab("general"); setCustModal({ mode:"edit" }); }, disabled: !selCust || !perms.canEdit },
@@ -427,7 +443,6 @@ export default function CustomersSetupPage() {
                                                         <div className="flex items-end px-4 pt-1.5 gap-1 border-b border-gray-200">
                                                             {([
                                                                 { id:"shipto",    label:"Ship-to",   icon:Truck },
-                                                                { id:"statement", label:"Statement", icon:FileText },
                                                                 { id:"webusers",  label:"Web Users", icon:Users },
                                                                 { id:"messages",  label:"Messages",  icon:MessageSquare },
                                                             ] as const).map(tab => (
@@ -570,60 +585,7 @@ export default function CustomersSetupPage() {
                                                                 </PanelGrid>
                                                             </div>
                                                         )}
-                                                        {/* ── Statement tab ── */}
-                                                        {activeExpTab === "statement" && (
-                                                            <div className="px-4 py-2 flex flex-col gap-2">
-                                                                <PanelGrid
-                                                                    title="Account Statement"
-                                                                    icon={FileText}
-                                                                    recordCount={(statement as any[]).length}
-                                                                    onRefresh={() => { setStmtEnabled(true); refetchStmt(); }}
-                                                                    refreshing={loadingStmt}
-                                                                    headerRight={
-                                                                        <div className="flex items-center gap-2">
-                                                                            <input type="date" value={stmtFrom} onChange={e => setStmtFrom(e.target.value)} className="bg-gray-700 text-white text-[9px] border-none outline-none rounded px-1.5 py-0.5 w-28" />
-                                                                            <span className="text-gray-400 text-[9px]">{"→"}</span>
-                                                                            <input type="date" value={stmtTo} onChange={e => setStmtTo(e.target.value)} className="bg-gray-700 text-white text-[9px] border-none outline-none rounded px-1.5 py-0.5 w-28" />
-                                                                        </div>
-                                                                    }
-                                                                >
-                                                                    <div className="overflow-auto">
-                                                                        {!stmtEnabled ? <div className="h-32 flex items-center justify-center text-gray-300 text-xs font-bold uppercase">Select date range and click Load</div>
-                                                                        : (statement as any[]).length === 0 ? <div className="h-32 flex items-center justify-center text-gray-400 text-xs italic">{loadingStmt ? "Loading..." : "No statement records"}</div>
-                                                                        : (
-                                                                            <PanelGridTable>
-                                                                                <PanelGridThead>
-                                                                                    <PanelGridTh>Type</PanelGridTh>
-                                                                                    <PanelGridTh>Doc No.</PanelGridTh>
-                                                                                    <PanelGridTh>Date</PanelGridTh>
-                                                                                    <PanelGridTh>Due Date</PanelGridTh>
-                                                                                    <PanelGridTh align="right">Amount</PanelGridTh>
-                                                                                    <PanelGridTh align="right">Payments</PanelGridTh>
-                                                                                    <PanelGridTh align="right">Debits</PanelGridTh>
-                                                                                    <PanelGridTh align="right">Credits</PanelGridTh>
-                                                                                    <PanelGridTh align="right">Balance</PanelGridTh>
-                                                                                </PanelGridThead>
-                                                                                <PanelGridTbody>
-                                                                                    {(statement as any[]).map((row: any, i: number) => (
-                                                                                        <PanelGridTr key={i}>
-                                                                                            <PanelGridTd className="font-medium">{t(row.type)}</PanelGridTd>
-                                                                                            <PanelGridTd className="font-mono">{t(row.invoice_no)}</PanelGridTd>
-                                                                                            <PanelGridTd className="whitespace-nowrap text-gray-500">{formatDateEST(normalizeToISODate(row.fecha||row.date))}</PanelGridTd>
-                                                                                            <PanelGridTd className="whitespace-nowrap text-gray-500">{formatDateEST(normalizeToISODate(row.due_date))}</PanelGridTd>
-                                                                                            <PanelGridTd align="right" className="text-blue-700">{formatMoney(row.ammount)}</PanelGridTd>
-                                                                                            <PanelGridTd align="right" className="text-green-600">{formatMoney(row.payments)}</PanelGridTd>
-                                                                                            <PanelGridTd align="right" className="text-red-500">{formatMoney(row.debits)}</PanelGridTd>
-                                                                                            <PanelGridTd align="right" className="text-blue-600">{formatMoney(row.credits)}</PanelGridTd>
-                                                                                            <PanelGridTd align="right" className="font-semibold text-[#FB7506]">{formatMoney(row.balance)}</PanelGridTd>
-                                                                                        </PanelGridTr>
-                                                                                    ))}
-                                                                                </PanelGridTbody>
-                                                                            </PanelGridTable>
-                                                                        )}
-                                                                    </div>
-                                                                </PanelGrid>
-                                                            </div>
-                                                        )}
+
                                                         {/* ── Web Users tab ── */}
                                                         {activeExpTab === "webusers" && (
                                                             <div className="px-4 py-2 flex flex-col gap-2">
@@ -787,6 +749,66 @@ export default function CustomersSetupPage() {
             {msgModal && (
                 <MsgModal form={msgForm} setForm={setMsgForm} error={formError} saving={saving}
                     users={[]} onSave={saveMsg} onClose={() => { setMsgModal(false); setFormError(null); }} />
+            {/* ── STATEMENT MODAL ───────────────────────────────────────── */}
+            {stmtModal && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden">
+                        <div className="h-12 bg-[#374151] flex items-center justify-between pl-4 pr-3 shrink-0">
+                            <div className="flex items-center gap-2 min-w-0">
+                                <FileText size={18} className="text-[#FB7506]" />
+                                <span className="font-black text-xs uppercase tracking-widest text-white truncate">
+                                    Statement — {t(selCust?.customer)}
+                                </span>
+                                {loadingStmt && <RefreshCcw size={14} className="text-gray-400 animate-spin ml-2" />}
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2">
+                                    <input type="date" value={stmtFrom} onChange={e => setStmtFrom(e.target.value)} className="bg-gray-700 border-none outline-none text-white text-xs rounded px-2 h-7" />
+                                    <span className="text-gray-400 text-[10px] font-bold uppercase">to</span>
+                                    <input type="date" value={stmtTo} onChange={e => setStmtTo(e.target.value)} className="bg-gray-700 border-none outline-none text-white text-xs rounded px-2 h-7" />
+                                    <button onClick={() => { setStmtEnabled(true); refetchStmt(); }} className="h-7 px-3 bg-[#FB7506] hover:bg-orange-600 text-white rounded text-xs font-bold transition-colors">Load</button>
+                                </div>
+                                <button onClick={() => setStmtModal(false)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+                                    <X size={18} />
+                                </button>
+                            </div>
+                        </div>
+                        <div className="overflow-auto flex-1 bg-white">
+                            {!stmtEnabled ? <div className="h-40 flex items-center justify-center text-gray-400 text-sm font-bold uppercase">Select date range and click Load</div>
+                            : (statement as any[]).length === 0 ? <div className="h-40 flex items-center justify-center text-gray-400 text-sm italic">{loadingStmt ? "Loading..." : "No statement records"}</div>
+                            : (
+                                <PanelGridTable>
+                                    <PanelGridThead>
+                                        <PanelGridTh>Type</PanelGridTh>
+                                        <PanelGridTh>Doc No.</PanelGridTh>
+                                        <PanelGridTh>Date</PanelGridTh>
+                                        <PanelGridTh>Due Date</PanelGridTh>
+                                        <PanelGridTh align="right">Amount</PanelGridTh>
+                                        <PanelGridTh align="right">Payments</PanelGridTh>
+                                        <PanelGridTh align="right">Debits</PanelGridTh>
+                                        <PanelGridTh align="right">Credits</PanelGridTh>
+                                        <PanelGridTh align="right">Balance</PanelGridTh>
+                                    </PanelGridThead>
+                                    <PanelGridTbody>
+                                        {(statement as any[]).map((row: any, i: number) => (
+                                            <PanelGridTr key={i}>
+                                                <PanelGridTd className="font-medium">{t(row.type)}</PanelGridTd>
+                                                <PanelGridTd className="font-mono">{t(row.invoice_no)}</PanelGridTd>
+                                                <PanelGridTd className="whitespace-nowrap text-gray-500">{formatDateEST(normalizeToISODate(row.fecha||row.date))}</PanelGridTd>
+                                                <PanelGridTd className="whitespace-nowrap text-gray-500">{formatDateEST(normalizeToISODate(row.due_date))}</PanelGridTd>
+                                                <PanelGridTd align="right" className="text-blue-700">{formatMoney(row.ammount)}</PanelGridTd>
+                                                <PanelGridTd align="right" className="text-green-600">{formatMoney(row.payments)}</PanelGridTd>
+                                                <PanelGridTd align="right" className="text-red-500">{formatMoney(row.debits)}</PanelGridTd>
+                                                <PanelGridTd align="right" className="text-blue-600">{formatMoney(row.credits)}</PanelGridTd>
+                                                <PanelGridTd align="right" className="font-semibold text-[#FB7506]">{formatMoney(row.balance)}</PanelGridTd>
+                                            </PanelGridTr>
+                                        ))}
+                                    </PanelGridTbody>
+                                </PanelGridTable>
+                            )}
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
