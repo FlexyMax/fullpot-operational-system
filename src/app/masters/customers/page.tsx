@@ -377,7 +377,19 @@ export default function CustomersSetupPage() {
                 }
                 menuItems={[
                     { label: "Add Customer", icon: Plus, color: "green", onClick: () => { setCustForm({...EMPTY_CUST}); setFormError(null); setCustModalTab("general"); setCustModal({ mode:"add" }); }, disabled: !perms.canCreate },
-                    { label: "Edit Customer", icon: Pencil, color: "orange", onClick: () => { if (!selCust) return; const c = selCust; setCustForm({ old_code:c.old_code||"", edi_code:t(c.edi_code), fobmiami:!!c.fobmiami, inventory_from_invoice:!!c.inventory_from_invoice, dex:!!c.dex, auto_charge:!!c.auto_charge, credithold:!!c.credithold, internal_customer:!!c.internal_customer, active:!!c.active, customer:t(c.customer), dba:t(c.dba), contact:t(c.contact), purchaser:t(c.purchaser), address1:t(c.address1), address2:t(c.address2), city:t(c.city), state:t(c.state), zip:t(c.zip), country:t(c.country), phone_1:t(c.phone_1), phone_2:t(c.phone_2), fax_1:t(c.fax_1), fax_2:t(c.fax_2), email:t(c.email), terms_uq:t(c.terms_uq||c.terms), calls:t(c.calls)||"NNNNNN", subregion_uq:t(c.subregion_uq), salesman_uq:t(c.salesman_uq), group_uq:t(c.group_uq), rc_uq:t(c.rc_uq), pickremark:t(c.pickremark), julian_from:t(c.julian_from), reasonhold:t(c.reasonhold), credit_limit:c.credit_limit||0, insurance_for:c.insurance_for||0, price_margin:c.price_margin||0, dry_discount:c.dry_discount||0, sales_web_uq:t(c.sales_web_uq), custsince:c.custsince?normalizeToISODate(c.custsince):"", ap_contact:t(c.ap_contact), ap_email:t(c.ap_email), ap_msn:t(c.ap_msn), ap_phone:t(c.ap_phone), ap_fax:t(c.ap_fax), website:t(c.website), statement_print:!!c.statement_print, inspection:!!c.inspection, gpm:c.gpm||0, availability_by:t(c.availability_by)||"NONE", availability_to:t(c.availability_to), invoice_by:t(c.invoice_by)||"EMAIL", extension:c.extension||0, commission_days:c.commission_days||0, resale_tax:c.resale_tax||0, ccard_name:t(c.ccard_name), ccard_on_file:t(c.ccard_on_file), ccard_expiration_month:t(c.ccard_expiration_month), ccard_expiration_year:t(c.ccard_expiration_year), tax_id:t(c.tax_id), international:!!c.international, collection:!!c.collection, check_price_override:!!c.check_price_override }); setFormError(null); setCustModalTab("general"); setCustModal({ mode:"edit" }); }, disabled: !selCust || !perms.canEdit },
+                    { label: "Edit Customer", icon: Pencil, color: "orange", onClick: () => { 
+                        if (!selCust) return; 
+                        const c = selCust; 
+                        
+                        const s_uq = c.salesman_uq ? t(c.salesman_uq) : (lookups?.salesmen?.find((s:any) => t(s.salesman) === t(c.salesman))?.unico || "");
+                        const t_uq = c.terms_uq ? t(c.terms_uq) : (lookups?.terms?.find((tt:any) => t(tt.TERMS) === t(c.terms))?.unico || "");
+                        const r_uq = c.rc_uq ? t(c.rc_uq) : (lookups?.companies?.find((comp:any) => t(comp.Company) === t(c.rc))?.unico || "");
+                        
+                        setCustForm({ old_code:c.old_code||"", edi_code:t(c.edi_code), fobmiami:!!c.fobmiami, inventory_from_invoice:!!c.inventory_from_invoice, dex:!!c.dex, auto_charge:!!c.auto_charge, credithold:!!c.credithold, internal_customer:!!c.internal_customer, active:!!c.active, customer:t(c.customer), dba:t(c.dba), contact:t(c.contact), purchaser:t(c.purchaser), address1:t(c.address1), address2:t(c.address2), city:t(c.city), state:t(c.state), zip:t(c.zip), country:t(c.country), phone_1:t(c.phone_1), phone_2:t(c.phone_2), fax_1:t(c.fax_1), fax_2:t(c.fax_2), email:t(c.email), terms_uq:t_uq, calls:t(c.calls)||"NNNNNN", subregion_uq:t(c.subregion_uq), salesman_uq:s_uq, group_uq:t(c.group_uq), rc_uq:r_uq, pickremark:t(c.pickremark), julian_from:t(c.julian_from), reasonhold:t(c.reasonhold), credit_limit:c.credit_limit||0, insurance_for:c.insurance_for||0, price_margin:c.price_margin||0, dry_discount:c.dry_discount||0, sales_web_uq:t(c.sales_web_uq), custsince:c.custsince?normalizeToISODate(c.custsince):"", ap_contact:t(c.ap_contact), ap_email:t(c.ap_email), ap_msn:t(c.ap_msn), ap_phone:t(c.ap_phone), ap_fax:t(c.ap_fax), website:t(c.website), statement_print:!!c.statement_print, inspection:!!c.inspection, gpm:c.gpm||0, availability_by:t(c.availability_by)||"NONE", availability_to:t(c.availability_to), invoice_by:t(c.invoice_by)||"EMAIL", extension:c.extension||0, commission_days:c.commission_days||0, resale_tax:c.resale_tax||0, ccard_name:t(c.ccard_name), ccard_on_file:t(c.ccard_on_file), ccard_expiration_month:t(c.ccard_expiration_month), ccard_expiration_year:t(c.ccard_expiration_year), tax_id:t(c.tax_id), international:!!c.international, collection:!!c.collection, check_price_override:!!c.check_price_override }); 
+                        setFormError(null); 
+                        setCustModalTab("general"); 
+                        setCustModal({ mode:"edit" }); 
+                    }, disabled: !selCust || !perms.canEdit },
                     { label: "Delete Customer", icon: Trash2, color: "orange", onClick: () => { if (selCust) { setFormError(null); setCustModal({ mode:"delete" }); } }, disabled: !selCust || !perms.canDelete },
                     { separator: true },
                     { label: "Export CSV", icon: Download, color: "gray", onClick: exportCSV, disabled: !perms.canReport },
@@ -917,49 +929,66 @@ function CustomerModal({ mode, form, setForm, error, saving, activeTab, setActiv
                     </div>
 
                     {activeTab === "general" && (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                            {F("Address 1 *","address1")} {F("Address 2","address2")} {F("City *","city")}
-                            {F("State *","state",{placeholder:"FL"})} {F("Zip *","zip")} {F("Country *","country")}
-                            {F("Phone 1 *","phone_1")} {F("Phone 2","phone_2")} {F("Fax 1 *","fax_1")}
-                            {F("Fax 2","fax_2")} {F("Email","email")} {F("Website","website")}
-                            {Sel("Salesman *","salesman_uq",lookups.salesmen||[],"unico","salesman_name")}
-                            {Sel("Web Salesman","sales_web_uq",lookups.webSalesmen||[],"unico","salesman_name")}
-                            {Sel("Group *","group_uq",lookups.groups||[],"unico","groupname")}
-                            {Sel("Customer For *","rc_uq",lookups.companies||[],"unico","company")}
-                            {Sel("Subregion","subregion_uq",lookups.subregions||[],"unico","subregion")}
-                            {Sel("Terms *","terms_uq",lookups.terms||[],"unico","CONDITION")}
-                            {F("Customer Since","custsince",{type:"date"})}
-                            {F("Reason Hold","reasonhold")} {F("Pick Remark","pickremark")}
-                            <div className="grid grid-cols-2 gap-2">
-                                {F("Credit Limit","credit_limit",{type:"number"})} {F("GPM%","gpm",{type:"number"})}
+                        <div className="flex flex-col gap-3">
+                            <div className="grid grid-cols-2 gap-3">
+                                {F("Address 1 *","address1")} {F("Address 2","address2")}
                             </div>
-                            {/* Calls (Mon-Sat) */}
-                            <div className="col-span-2 sm:col-span-3 flex flex-col gap-1">
-                                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Call Days (Mon–Sat)</label>
-                                <div className="flex gap-2">
-                                    {["Mon","Tue","Wed","Thu","Fri","Sat"].map((day,i) => (
-                                        <div key={day} className="flex flex-col items-center gap-0.5">
-                                            <span className="text-[8px] text-gray-400 font-bold">{day}</span>
-                                            <select value={calls[i]||"N"} onChange={e=>setCall(i,e.target.value)} className="fos-input text-xs py-0.5 w-10 text-center">
-                                                {["N","Y","M","A","T"].map(o=><option key={o} value={o}>{o}</option>)}
-                                            </select>
-                                        </div>
-                                    ))}
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                {F("City *","city")} {F("State *","state",{placeholder:"FL"})} {F("Zip *","zip")} {F("Country *","country")}
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                {F("Phone 1 *","phone_1")} {F("Phone 2","phone_2")} {F("Fax 1 *","fax_1")} {F("Fax 2","fax_2")}
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                {F("Email","email")} {F("Website","website")}
+                            </div>
+                            <div className="grid grid-cols-1">
+                                {F("Pick Remark","pickremark")}
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                {Sel("Salesman *","salesman_uq",lookups.salesmen||[],"unico","salesman_name")}
+                                {Sel("Web Salesman","sales_web_uq",lookups.webSalesmen||[],"unico","salesman_name")}
+                                {Sel("Group *","group_uq",lookups.groups||[],"unico","groupname")}
+                                {Sel("Customer For *","rc_uq",lookups.companies||[],"unico","company")}
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                {Sel("Subregion","subregion_uq",lookups.subregions||[],"unico","subregion")}
+                                {Sel("Terms *","terms_uq",lookups.terms||[],"unico","CONDITION")}
+                                {F("Customer Since","custsince",{type:"date"})}
+                                {F("Reason Hold","reasonhold")}
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 items-end">
+                                {F("Credit Limit","credit_limit",{type:"number"})} {F("GPM%","gpm",{type:"number"})}
+                                {/* Calls (Mon-Sat) */}
+                                <div className="col-span-2 flex flex-col gap-1 pl-2">
+                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Call Days (Mon–Sat)</label>
+                                    <div className="flex gap-2">
+                                        {["Mon","Tue","Wed","Thu","Fri","Sat"].map((day,i) => (
+                                            <div key={day} className="flex flex-col items-center gap-0.5">
+                                                <span className="text-[8px] text-gray-400 font-bold">{day}</span>
+                                                <select value={calls[i]||"N"} onChange={e=>setCall(i,e.target.value)} className="fos-input text-xs py-0.5 w-10 text-center">
+                                                    {["N","Y","M","A","T"].map(o=><option key={o} value={o}>{o}</option>)}
+                                                </select>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     )}
 
                     {activeTab === "financial" && (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                            {F("AP Contact","ap_contact")} {F("AP Email","ap_email")} {F("AP Phone","ap_phone")}
-                            {F("AP Fax","ap_fax")} {F("AP MSN","ap_msn")} {F("Tax ID","tax_id")}
-                            {F("CC Name","ccard_name")} {F("CC On File","ccard_on_file")}
-                            {F("CC Exp Month","ccard_expiration_month")} {F("CC Exp Year","ccard_expiration_year")}
-                            {F("Resale Tax","resale_tax",{type:"number"})} {F("Commission Days","commission_days",{type:"number"})}
-                            {F("Ins. For","insurance_for",{type:"number"})} {F("Price Margin%","price_margin",{type:"number"})}
-                            {F("Dry Discount%","dry_discount",{type:"number"})} {F("Extension","extension")}
-                            <div className="flex flex-wrap gap-3 col-span-2 sm:col-span-3 pt-1">
+                        <div className="flex flex-col gap-3">
+                            <div className="grid grid-cols-2 gap-3">
+                                {F("AP Contact","ap_contact")} {F("AP Email","ap_email")}
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                {F("AP Phone","ap_phone")} {F("AP Fax","ap_fax")} {F("AP MSN","ap_msn")} {F("Tax ID","tax_id")}
+                                {F("CC Name","ccard_name")} {F("CC On File","ccard_on_file")} {F("CC Exp Month","ccard_expiration_month")} {F("CC Exp Year","ccard_expiration_year")}
+                                {F("Resale Tax","resale_tax",{type:"number"})} {F("Commission Days","commission_days",{type:"number"})} {F("Ins. For","insurance_for",{type:"number"})} {F("Price Margin%","price_margin",{type:"number"})}
+                                {F("Dry Discount%","dry_discount",{type:"number"})} {F("Extension","extension")}
+                            </div>
+                            <div className="flex flex-wrap gap-x-6 gap-y-2 pt-2 pb-1 border-t border-gray-100">
                                 {Cb("Statement Print","statement_print")} {Cb("Inspection","inspection")}
                                 {Cb("International","international")} {Cb("Collection","collection")}
                                 {Cb("Check Price Override","check_price_override")} {Cb("DEX","dex")}
@@ -968,11 +997,19 @@ function CustomerModal({ mode, form, setForm, error, saving, activeTab, setActiv
                     )}
 
                     {activeTab === "delivery" && (
-                        <div className="grid grid-cols-2 gap-3">
-                            {F("Availability By","availability_by",{options:["NONE","EMAIL","FAX","PHONE"]})}
-                            {F("Availability To (Email/Fax)","availability_to")}
-                            {F("Invoice By","invoice_by",{options:["EMAIL","FAX","MAIL","NONE"]})}
-                            {F("Fax 2","fax_2")}
+                        <div className="grid grid-cols-12 gap-3">
+                            <div className="col-span-4 sm:col-span-3">
+                                {F("Availability By","availability_by",{options:["NONE","EMAIL","FAX","PHONE"]})}
+                            </div>
+                            <div className="col-span-8 sm:col-span-9">
+                                {F("Availability To (Email/Fax)","availability_to")}
+                            </div>
+                            <div className="col-span-4 sm:col-span-3">
+                                {F("Invoice By","invoice_by",{options:["EMAIL","FAX","MAIL","NONE"]})}
+                            </div>
+                            <div className="col-span-8 sm:col-span-9">
+                                {F("Fax 2","fax_2")}
+                            </div>
                         </div>
                     )}
                 </div>
