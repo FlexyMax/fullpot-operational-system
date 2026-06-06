@@ -5,7 +5,7 @@ import { useQuery, useInfiniteQuery, useQueryClient } from "@tanstack/react-quer
 import {
     Plus, Pencil, Trash2, Save, X, RefreshCcw, Search, Check, XCircle,
     Copy, Layers, Box, Shuffle, BookOpen, Users, Calendar, BarChart2,
-    ClipboardList, Printer, Menu, ChevronDown, Package
+    ClipboardList, Printer, Menu, ChevronDown, Package, Upload, ImageIcon
 } from "lucide-react";
 import { GridMenu } from "@/components/GridMenu";
 import { cn } from "@/lib/utils";
@@ -14,6 +14,7 @@ import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 
 const t  = (v: any) => String(v ?? "").trim();
 const n2 = (v: any) => parseFloat(v ?? 0).toFixed(2);
+const DEFAULT_THUMB = "https://flexymax.nyc3.digitaloceanspaces.com/FlexyMaxApp/FlexyMaxImages/NoImageAvailable2.png";
 const sF = async (url: string) => { const r = await fetch(url); const j = await r.json(); if (!r.ok) throw new Error(j?.error || `HTTP ${r.status}`); return j; };
 const NO_PROD = "There isn't a selected product. / No hay producto seleccionado.";
 const PAGE_SIZE = 50;
@@ -839,6 +840,97 @@ function ProductsModalTab2({ mode, form, setForm, lookups, onSave, onClose, savi
     );
 }
 
+// ─── ImageModal ───────────────────────────────────────────────────────────────
+function ImageModal({ product, currentUrl, onClose, onUploaded }: {
+    product: any; currentUrl: string;
+    onClose: () => void;
+    onUploaded: (uq: string, url: string) => void;
+}) {
+    const [file,      setFile]      = useState<File|null>(null);
+    const [preview,   setPreview]   = useState<string|null>(null);
+    const [uploading, setUploading] = useState(false);
+    const [error,     setError]     = useState<string|null>(null);
+    const [dragging,  setDragging]  = useState(false);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    const pickFile = (f: File) => {
+        setFile(f); setError(null);
+        const reader = new FileReader();
+        reader.onload = e => setPreview(e.target?.result as string);
+        reader.readAsDataURL(f);
+    };
+
+    const upload = async () => {
+        if (!file) return;
+        setUploading(true); setError(null);
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("product_uq", t(product.unico));
+        try {
+            const r = await fetch("/api/products/images/upload", { method: "POST", body: fd });
+            const j = await r.json();
+            if (!r.ok || !j.url) throw new Error(j.error || "Upload failed");
+            onUploaded(t(product.unico), j.url + `?t=${Date.now()}`);
+            onClose();
+        } catch(e: any) { setError(e.message); }
+        finally { setUploading(false); }
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+             onClick={onClose}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col"
+                 onClick={e => e.stopPropagation()}>
+                {/* Header */}
+                <div className="bg-[#0d1b2a] px-4 py-3 flex items-center justify-between shrink-0">
+                    <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 bg-[#FB7506] rounded-lg flex items-center justify-center shrink-0">
+                            <ImageIcon size={15} className="text-white" />
+                        </div>
+                        <div>
+                            <span className="font-black text-[12px] text-white uppercase tracking-widest">Product Image</span>
+                            <p className="text-[10px] text-white/50 truncate max-w-[200px]">{t(product.description)}</p>
+                        </div>
+                    </div>
+                    <button onClick={onClose} className="text-white/50 hover:text-white text-lg font-light leading-none">—</button>
+                </div>
+                {/* Current image */}
+                <div className="w-full bg-gray-50" style={{ aspectRatio: "4/3" }}>
+                    <img src={preview || currentUrl}
+                         alt={t(product.description)}
+                         className="w-full h-full object-contain"
+                         onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }} />
+                </div>
+                {/* Upload area */}
+                <div className="px-4 py-4">
+                    <div
+                        className={cn("border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-colors",
+                            dragging ? "border-[#FB7506] bg-orange-50" : "border-gray-200 hover:border-[#FB7506] hover:bg-orange-50/40")}
+                        onClick={() => inputRef.current?.click()}
+                        onDragOver={e => { e.preventDefault(); setDragging(true); }}
+                        onDragLeave={() => setDragging(false)}
+                        onDrop={e => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f) pickFile(f); }}>
+                        <Upload size={18} className="mx-auto text-gray-400 mb-1.5" />
+                        <p className="text-[11px] font-bold text-gray-500">{file ? file.name : "Click or drag image here"}</p>
+                        <p className="text-[9px] text-gray-400 mt-0.5">JPG · PNG · WEBP — will be set as public</p>
+                        <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
+                               onChange={e => { const f = e.target.files?.[0]; if (f) pickFile(f); }} />
+                    </div>
+                    {error && <p className="text-red-500 text-[10px] font-bold mt-2">{error}</p>}
+                </div>
+                {/* Footer */}
+                <div className="px-4 pb-4 shrink-0">
+                    <button onClick={upload} disabled={!file || uploading}
+                        className="w-full flex items-center justify-center gap-2 py-3 text-[13px] font-black text-white bg-[#FB7506] hover:bg-orange-500 active:bg-orange-600 rounded-xl disabled:opacity-40 transition-colors">
+                        {uploading ? <RefreshCcw size={15} className="animate-spin" /> : <Upload size={15} />}
+                        {uploading ? "Uploading…" : "Upload Image"}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 // ─── Tab 2 Main ───────────────────────────────────────────────────────────────
 export default function Tab2() {
     const qc = useQueryClient();
@@ -848,6 +940,8 @@ export default function Tab2() {
     const [selProduct,   setSelProduct]   = useState<any>(null);
     const [searchText,   setSearchText]   = useState("");
     const [debSearch,    setDebSearch]    = useState("");
+    const [productImages, setProductImages] = useState<Record<string, string>>({});
+    const [imageModal,    setImageModal]    = useState<any>(null);
     const [productModal, setProductModal] = useState<{mode:"add"|"edit"|"copy"|"delete"}|null>(null);
     const [productForm,  setProductForm]  = useState<any>({...EMPTY_PROD2});
     const [saving,       setSaving]       = useState(false);
@@ -874,6 +968,20 @@ export default function Tab2() {
     const products     = getPages(prodPages);
     const totalRecords = getTotal(prodPages);
     const prodSentinel = useSentinel(() => fetchMoreProds(), !!(hasMoreProds && !fetchingMoreProds));
+
+    // Batch-load images for visible products
+    useEffect(() => {
+        if (products.length === 0) return;
+        const missing = products.map((p: any) => t(p.unico) as string).filter((uq: string) => uq && !productImages[uq]);
+        if (missing.length === 0) return;
+        fetch("/api/products/images", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ productUqs: missing }),
+        }).then(r => r.json()).then(j => {
+            if (j.images) setProductImages(prev => ({ ...prev, ...j.images }));
+        }).catch(() => {});
+    }, [products]);
 
     // Auto-select first on page change
     useEffect(() => {
@@ -1034,6 +1142,7 @@ export default function Tab2() {
                 <table className="min-w-full text-left">
                     <thead className="bg-gray-100 border-b border-gray-200 text-gray-700 sticky top-0 z-10">
                         <tr className="fos-grid-thead">
+                            <th className="px-2 py-2 whitespace-nowrap border-r border-gray-200 text-center w-10">Img</th>
                             <th className="px-3 py-2 whitespace-nowrap border-r border-gray-200 sticky left-0 bg-gray-100 min-w-[220px]">Description</th>
                             <th className="px-3 py-2 whitespace-nowrap border-r border-gray-200 text-center w-16">PriceStem</th>
                             <th className="px-3 py-2 whitespace-nowrap border-r border-gray-200 text-right w-16">Packs</th>
@@ -1058,6 +1167,15 @@ export default function Tab2() {
                             return (
                                 <tr key={p.unico} onClick={()=>setSelProduct(p)} onDoubleClick={()=>openModal("edit")}
                                     className={cn("cursor-pointer transition-colors", isSel ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50/80")}>
+                                    <td className="px-2 py-1 border-r border-gray-100 text-center w-10" onClick={e => e.stopPropagation()}>
+                                        <img
+                                            src={productImages[t(p.unico)] || DEFAULT_THUMB}
+                                            alt="" width={28} height={28}
+                                            className="w-7 h-7 object-cover rounded border border-gray-200 cursor-pointer hover:opacity-80 hover:ring-2 hover:ring-[#FB7506] transition-all inline-block"
+                                            onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }}
+                                            onClick={() => setImageModal(p)}
+                                        />
+                                    </td>
                                     <td className={cn("px-3 py-2 border-r border-gray-100 font-medium truncate max-w-[220px] sticky left-0", isSel ? "bg-blue-50" : "bg-white")} title={t(p.description_uq||p.description)}>{t(p.description)}</td>
                                     <td className="px-3 py-2 border-r border-gray-100 text-center">{p.stem_pack ? <Check size={11} className="text-green-500 mx-auto"/> : "—"}</td>
                                     <td className="px-3 py-2 border-r border-gray-100 text-right">{t(p.up_x_case)}</td>
@@ -1078,12 +1196,12 @@ export default function Tab2() {
                             );
                         })}
                         <tr ref={prodSentinel}>
-                            <td colSpan={16} className="h-1 py-0">
+                            <td colSpan={17} className="h-1 py-0">
                                 {fetchingMoreProds && <div className="text-center py-1.5 text-[9px] text-gray-400"><RefreshCcw size={9} className="inline animate-spin mr-1"/>Loading more...</div>}
                             </td>
                         </tr>
                         {!loadingP && products.length === 0 && (
-                            <tr><td colSpan={16} className="p-4 text-center text-gray-300 italic">No products found</td></tr>
+                            <tr><td colSpan={17} className="p-4 text-center text-gray-300 italic">No products found</td></tr>
                         )}
                     </tbody>
                 </table>
@@ -1149,6 +1267,15 @@ export default function Tab2() {
                     showChangeCase={showPrebook==="recipe"}
                     onConfirm={(data)=>handlePrebook(showPrebook, data)}
                     onClose={()=>setShowPrebook(null)}/>
+            )}
+
+            {imageModal && (
+                <ImageModal
+                    product={imageModal}
+                    currentUrl={productImages[t(imageModal.unico)] || DEFAULT_THUMB}
+                    onClose={() => setImageModal(null)}
+                    onUploaded={(uq, url) => setProductImages(prev => ({ ...prev, [uq]: url }))}
+                />
             )}
         </div>
     );
