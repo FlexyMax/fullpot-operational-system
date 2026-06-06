@@ -262,9 +262,9 @@ export default function PanelGrid({
               >
                 {menuOpen ? (
                   <>
-                    <span className="block h-5 w-[2px] bg-[#FB7506] rounded-full -ml-[5px]" />
                     <span className="block h-5 w-[2px] bg-[#FB7506] rounded-full" />
-                    <span className="block h-5 w-[2px] bg-[#FB7506] rounded-full ml-[5px]" />
+                    <span className="block h-5 w-[2px] bg-[#FB7506] rounded-full" />
+                    <span className="block h-5 w-[2px] bg-[#FB7506] rounded-full" />
                   </>
                 ) : (
                   <>
