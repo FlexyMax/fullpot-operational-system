@@ -87,10 +87,10 @@ import {
 ## Lista de páginas a migrar
 
 ### Fase 1 — Listas simples (1 tabla, fácil)
-- [ ] `masters/customers` — Customer list (línea ~367)
-- [ ] `masters/items` — Items list (tablas en Tab2/Tab3)
-- [ ] `sales-reps` — Sales Reps list (línea ~700, usa divs en vez de table → convertir a table)
-- [ ] `vendors` — Vendors list (línea ~660)
+- [x] `masters/customers` — Customer list + 5 sub-grids (Ship-to, Carriers, Statement, Web Users, Messages) ✅
+- [ ] `masters/items` — Items list (tabs en componentes separados Tab1/Tab2/Tab3 — muchos grids)
+- [x] `sales-reps` — Sales Reps list (grid principal migrado a PanelGrid) ✅
+- [ ] `vendors` — Vendors list (dual panel, múltiples grids)
 - [ ] `system/users` — Users list
 - [ ] `system/companies` — Companies list
 - [ ] `system/modules` — Modules list

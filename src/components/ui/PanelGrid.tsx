@@ -14,10 +14,10 @@ import { cn } from "@/lib/utils";
 /* ─── Types ─────────────────────────────────────────────────────────────── */
 
 export type PanelMenuItem = {
-  label: string;
+  label?: string;
   icon?: LucideIcon;
   color?: "gray" | "green" | "orange" | "blue" | "red";
-  onClick: () => void;
+  onClick?: () => void;
   disabled?: boolean;
   separator?: boolean;
 };
@@ -107,7 +107,7 @@ function MenuDropdown({
             <button
               key={`${item.label}-${i}`}
               onClick={() => {
-                if (!item.disabled) {
+                if (!item.disabled && item.onClick) {
                   item.onClick();
                   onClose();
                 }

@@ -13,6 +13,8 @@ import { AppHeader } from "@/components/layout/AppHeader";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { GridMenu } from "@/components/GridMenu";
+import PanelGrid from "@/components/ui/PanelGrid";
+import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
 import { usePagePermissions } from "@/lib/permissions";
 import { useAuditLog } from "@/lib/audit";
 
@@ -706,41 +708,22 @@ export default function SalesRepsPage() {
                     "md:w-[32%] md:shrink-0 md:flex",
                     mobilePanel === "list" ? "flex flex-1" : "hidden md:flex"
                 )}>
-                    {/* List header */}
-                    <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
-                        <div className="flex items-center gap-2">
-                            <Users size={16} className="text-[#FB7506]" />
-                            <span className="font-black text-[10px] text-gray-100 uppercase tracking-widest">Sales Reps</span>
-                            {loadingList && <RefreshCcw size={12} className="animate-spin text-gray-400" />}
-                        </div>
-                        <GridMenu items={[
-                            {
-                                label: "Add", icon: Plus, color: "green",
-                                onClick: handleAdd,
-                                disabled: !perms.canCreate,
-                            },
-                            {
-                                label: "Edit", icon: Pencil, color: "orange",
-                                onClick: handleEdit,
-                                disabled: !selectedUq || !perms.canEdit,
-                            },
-                            {
-                                label: "Delete", icon: Trash2, color: "red",
-                                onClick: handleDelete,
-                                disabled: !selectedUq || !perms.canDelete,
-                            },
-                            { separator: true } as any,
-                            {
-                                label: "Refresh", icon: RefreshCcw, color: "gray",
-                                onClick: () => refetchList(),
-                            },
-                            {
-                                label: "Reports", icon: FileText, color: "blue",
-                                onClick: () => toast.info("Reports coming soon."),
-                                disabled: !perms.canReport,
-                            },
-                        ]} />
-                    </div>
+                    {/* List header — PanelGrid */}
+                    <PanelGrid
+                        title="Sales Reps"
+                        icon={Users}
+                        recordCount={filteredList.length}
+                        onRefresh={() => refetchList()}
+                        refreshing={loadingList}
+                        menuItems={[
+                            { label: "Add Rep", icon: Plus, color: "green", onClick: handleAdd, disabled: !perms.canCreate },
+                            { label: "Edit Rep", icon: Pencil, color: "orange", onClick: handleEdit, disabled: !selectedUq || !perms.canEdit },
+                            { label: "Delete Rep", icon: Trash2, color: "orange", onClick: handleDelete, disabled: !selectedUq || !perms.canDelete },
+                            { separator: true },
+                            { label: "Reports", icon: FileText, color: "gray", onClick: () => toast.info("Reports coming soon."), disabled: !perms.canReport },
+                        ]}
+                        className="flex-1 min-h-0 flex flex-col"
+                    >
 
                     {/* Search */}
                     <div className="p-2 border-b border-gray-100 shrink-0">
@@ -754,59 +737,38 @@ export default function SalesRepsPage() {
                         </div>
                     </div>
 
-                    {/* Grid header */}
-                    <div className="bg-gray-100 border-b border-gray-200 shrink-0">
-                        {/* Mobile: 2 cols */}
-                        <div className="grid grid-cols-[1fr_40px] px-2 py-1.5 md:hidden">
-                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Salesman</span>
-                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide text-center">Act.</span>
-                        </div>
-                        {/* Desktop: full cols */}
-                        <div className="hidden md:grid px-2 py-1.5 overflow-x-auto"
-                            style={{ gridTemplateColumns: "1fr 90px 80px 1fr 48px" }}>
-                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Salesman</span>
-                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Phone</span>
-                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Whouse</span>
-                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Email</span>
-                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide text-center">Act.</span>
-                        </div>
-                    </div>
-
                     {/* List rows */}
-                    <div className="overflow-y-auto flex-1 divide-y divide-gray-50 text-gray-800">
-                        {filteredList.length === 0 && !loadingList ? (
-                            <div className="p-6 text-center text-gray-300 text-xs italic">
-                                {search ? "No results" : "No sales reps found"}
-                            </div>
-                        ) : filteredList.map((row: any, i: number) => {
-                            const uq = t(row.UNICO);
-                            const selected = selectedUq === uq;
-                            const rowBase = cn("cursor-pointer transition-colors text-xs px-2 py-1.5",
-                                selected ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50");
-                            const nameCol = cn("truncate font-semibold", selected ? "text-blue-800" : "text-gray-800");
-                            return (
-                                <div key={uq || i} onClick={() => handleSelectRow(row)}>
-                                    {/* Mobile row */}
-                                    <div className={cn(rowBase, "grid grid-cols-[1fr_40px] md:hidden")}>
-                                        <div className="min-w-0">
-                                            <p className={cn(nameCol, "text-xs")}>{`${t(row.FIRST_NAME)} ${t(row.LAST_NAME)}`.trim()}</p>
-                                            <p className="text-[10px] text-gray-400 truncate">{t(row.EMAIL_1)}</p>
-                                        </div>
-                                        <span className="text-center self-center">{Boolean(row.ACTIVE) ? <span className="text-green-600 font-black text-[10px]">✓</span> : <span className="text-gray-300 text-[10px]">—</span>}</span>
-                                    </div>
-                                    {/* Desktop row */}
-                                    <div className={cn(rowBase, "hidden md:grid")}
-                                        style={{ gridTemplateColumns: "1fr 90px 80px 1fr 48px" }}>
-                                        <span className={cn(nameCol, "truncate pr-1")}>{`${t(row.FIRST_NAME)} ${t(row.LAST_NAME)}`.trim()}</span>
-                                        <span className="truncate text-gray-500 text-[11px]">{t(row.PHONE_1)}</span>
-                                        <span className="truncate text-gray-500 text-[11px]">{t(row.WPHYSICAL_UQ ?? row.WAREHOUSE ?? "")}</span>
-                                        <span className="truncate text-gray-500 text-[11px]">{t(row.EMAIL_1)}</span>
-                                        <span className="text-center">{Boolean(row.ACTIVE) ? <span className="text-green-600 font-black text-[10px]">YES</span> : <span className="text-gray-400 text-[10px]">—</span>}</span>
-                                    </div>
-                                </div>
-                            );
-                        })}
+                    <div className="overflow-y-auto flex-1">
+                        <PanelGridTable>
+                            <PanelGridThead>
+                                <PanelGridTh>Salesman</PanelGridTh>
+                                <PanelGridTh className="hidden md:table-cell">Phone</PanelGridTh>
+                                <PanelGridTh className="hidden md:table-cell">Whouse</PanelGridTh>
+                                <PanelGridTh className="hidden md:table-cell">Email</PanelGridTh>
+                                <PanelGridTh align="center">Act.</PanelGridTh>
+                            </PanelGridThead>
+                            <PanelGridTbody>
+                                {filteredList.length === 0 && !loadingList ? (
+                                    <tr><td colSpan={5} className="p-6 text-center text-gray-300 text-xs italic">
+                                        {search ? "No results" : "No sales reps found"}
+                                    </td></tr>
+                                ) : filteredList.map((row: any, i: number) => {
+                                    const uq = t(row.UNICO);
+                                    const selected = selectedUq === uq;
+                                    return (
+                                        <PanelGridTr key={uq || i} selected={selected} onClick={() => handleSelectRow(row)}>
+                                            <PanelGridTd className="font-semibold">{`${t(row.FIRST_NAME)} ${t(row.LAST_NAME)}`.trim()}</PanelGridTd>
+                                            <PanelGridTd className="hidden md:table-cell text-gray-500">{t(row.PHONE_1)}</PanelGridTd>
+                                            <PanelGridTd className="hidden md:table-cell text-gray-500">{t(row.WPHYSICAL_UQ ?? row.WAREHOUSE ?? "")}</PanelGridTd>
+                                            <PanelGridTd className="hidden md:table-cell text-gray-400 truncate max-w-[120px]">{t(row.EMAIL_1)}</PanelGridTd>
+                                            <PanelGridTd align="center">{Boolean(row.ACTIVE) ? <Check size={10} className="text-green-500 mx-auto" /> : <span className="text-gray-300">{"\u2014"}</span>}</PanelGridTd>
+                                        </PanelGridTr>
+                                    );
+                                })}
+                            </PanelGridTbody>
+                        </PanelGridTable>
                     </div>
+                    </PanelGrid>
                     <div className="px-3 py-1.5 border-t border-gray-100 shrink-0 bg-gray-50">
                         <span className="text-[10px] text-gray-400 font-bold">{filteredList.length} record{filteredList.length !== 1 ? "s" : ""}</span>
                     </div>
