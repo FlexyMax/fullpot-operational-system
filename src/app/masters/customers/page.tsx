@@ -900,13 +900,13 @@ function CustomerModal({ mode, form, setForm, error, saving, activeTab, setActiv
                             </div>
                         </div>
                         <div className="grid grid-cols-12 gap-3 items-end">
-                            <div className="col-span-6 sm:col-span-3">
+                            <div className="col-span-6">
                                 {F("Contact","contact")}
                             </div>
-                            <div className="col-span-6 sm:col-span-3">
+                            <div className="col-span-6">
                                 {F("Purchaser","purchaser")}
                             </div>
-                            <div className="col-span-12 sm:col-span-6 flex flex-wrap items-center gap-x-4 gap-y-2 pb-1.5 sm:justify-end">
+                            <div className="col-span-12 flex flex-wrap items-center gap-x-4 gap-y-2 pt-2 pb-1.5 justify-end">
                                 {Cb("FOB Miami","fobmiami")}
                                 {Cb("Credit Hold","credithold")}
                                 {Cb("Active","active", mode==="add")}
