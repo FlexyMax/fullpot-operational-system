@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef, useCallback } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback, Fragment } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -55,7 +55,7 @@ export default function CustomersSetupPage() {
     const [selCarrier,     setSelCarrier]     = useState<any>(null);
     const [selWebUser,     setSelWebUser]     = useState<any>(null);
     const [selMessage,     setSelMessage]     = useState<any>(null);
-    const [activeTab,      setActiveTab]      = useState<"shipto"|"statement"|"webusers"|"messages">("shipto");
+    const [activeTab,      setActiveTab]      = useState<"statement"|"webusers"|"messages">("statement");
     const [custModal,      setCustModal]      = useState<{ mode:"add"|"edit"|"delete" } | null>(null);
     const [shiptoModal,    setShiptoModal]    = useState<{ mode:"add"|"edit"|"delete" } | null>(null);
     const [carrierModal,   setCarrierModal]   = useState<{ mode:"add"|"edit"|"delete" } | null>(null);
@@ -71,7 +71,9 @@ export default function CustomersSetupPage() {
     const [stmtFrom,       setStmtFrom]       = useState(todayEST());
     const [stmtTo,         setStmtTo]         = useState(todayEST());
     const [stmtEnabled,    setStmtEnabled]    = useState(false);
-    const [custModalTab,   setCustModalTab]   = useState<"general"|"financial"|"delivery">("general");
+    const [custModalTab,       setCustModalTab]       = useState<"general"|"financial"|"delivery">("general");
+    const [expandedCustUnico,  setExpandedCustUnico]  = useState<string | null>(null);
+    const [expandedShiptoUnico,setExpandedShiptoUnico]= useState<string | null>(null);
 
     useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
 
@@ -170,7 +172,7 @@ export default function CustomersSetupPage() {
         else setSelWebUser(null);
     }, [webUsers]);
 
-    const selectCustomer = (c: any) => { setSelCust(c); setSelShipto(null); setSelCarrier(null); setSelWebUser(null); setFormError(null); };
+    const selectCustomer = (c: any) => { setSelCust(c); setSelShipto(null); setSelCarrier(null); setSelWebUser(null); setFormError(null); setExpandedShiptoUnico(null); };
 
     // ── Export CSV ────────────────────────────────────────────────────────────
     const exportCSV = () => {
@@ -364,11 +366,12 @@ export default function CustomersSetupPage() {
                     { separator: true },
                     { label: "Export CSV", icon: Download, color: "gray", onClick: exportCSV, disabled: !perms.canReport },
                 ]}
-                className="shrink-0 mx-2 mt-2"
+                className="mx-2 mt-2"
             >
-                <div className="overflow-auto" style={{ height: "140px" }} onScroll={handleCustScroll}>
+                <div className="overflow-auto" style={{ maxHeight: "45vh" }} onScroll={handleCustScroll}>
                     <PanelGridTable>
                         <PanelGridThead>
+                            <PanelGridTh className="w-6">{""}</PanelGridTh>
                             <PanelGridTh>Code</PanelGridTh>
                             <PanelGridTh>Customer</PanelGridTh>
                             <PanelGridTh align="center">Active</PanelGridTh>
@@ -389,25 +392,171 @@ export default function CustomersSetupPage() {
                         <PanelGridTbody>
                             {custList.map((c: any) => {
                                 const isSel = selCust?.unico === c.unico;
+                                const isExp = expandedCustUnico === c.unico;
                                 return (
-                                    <PanelGridTr key={c.unico} selected={isSel} onClick={() => selectCustomer(c)}>
-                                        <PanelGridTd className="font-mono text-[10px]">{t(c.old_code)}</PanelGridTd>
-                                        <PanelGridTd className="font-semibold max-w-[180px] truncate">{t(c.customer)}</PanelGridTd>
-                                        <PanelGridTd align="center">{(c.active==="Yes"||c.active===true) ? <Check size={10} className="text-green-500 mx-auto" /> : <X size={10} className="text-gray-300 mx-auto" />}</PanelGridTd>
-                                        <PanelGridTd align="center">{(c.credithold==="Yes"||c.credithold===true) ? <span className="text-red-500 font-black text-[9px]">HOLD</span> : "\u2014"}</PanelGridTd>
-                                        <PanelGridTd className="max-w-[120px] truncate text-gray-500">{t(c.salesman_name)}</PanelGridTd>
-                                        <PanelGridTd className="hidden md:table-cell max-w-[140px] truncate">{t(c.address1)}</PanelGridTd>
-                                        <PanelGridTd className="hidden md:table-cell">{t(c.city)}</PanelGridTd>
-                                        <PanelGridTd className="hidden lg:table-cell">{t(c.state)}</PanelGridTd>
-                                        <PanelGridTd className="hidden lg:table-cell">{t(c.country)}</PanelGridTd>
-                                        <PanelGridTd className="hidden xl:table-cell whitespace-nowrap">{t(c.phone_1)}</PanelGridTd>
-                                        <PanelGridTd className="hidden xl:table-cell whitespace-nowrap text-gray-400">{t(c.fax_1)}</PanelGridTd>
-                                        <PanelGridTd className="hidden xl:table-cell max-w-[140px] truncate text-gray-400">{t(c.email)}</PanelGridTd>
-                                        <PanelGridTd className="hidden xl:table-cell max-w-[100px] truncate">{t(c.contact)}</PanelGridTd>
-                                        <PanelGridTd className="hidden xl:table-cell text-gray-400">{t(c.groupname)}</PanelGridTd>
-                                        <PanelGridTd className="hidden xl:table-cell whitespace-nowrap text-gray-400">{t(c.custsince)?.split("T")[0]}</PanelGridTd>
-                                        <PanelGridTd className="text-gray-400 whitespace-nowrap">{t(c.terms)}</PanelGridTd>
-                                    </PanelGridTr>
+                                    <Fragment key={c.unico}>
+                                        <PanelGridTr selected={isSel} onClick={() => selectCustomer(c)}>
+                                            <PanelGridTd className="w-6 pl-1 pr-0">
+                                                <button onClick={e => { e.stopPropagation(); if (isExp) { setExpandedCustUnico(null); } else { selectCustomer(c); setExpandedCustUnico(c.unico); } }}
+                                                    className="p-0.5 rounded hover:bg-gray-200 transition-colors">
+                                                    <ChevronRight size={11} className={cn("text-gray-400 transition-transform duration-150", isExp && "rotate-90 text-[#FB7506]")} />
+                                                </button>
+                                            </PanelGridTd>
+                                            <PanelGridTd className="font-mono text-[10px]">{t(c.old_code)}</PanelGridTd>
+                                            <PanelGridTd className="font-semibold max-w-[180px] truncate">{t(c.customer)}</PanelGridTd>
+                                            <PanelGridTd align="center">{(c.active==="Yes"||c.active===true) ? <Check size={10} className="text-green-500 mx-auto" /> : <X size={10} className="text-gray-300 mx-auto" />}</PanelGridTd>
+                                            <PanelGridTd align="center">{(c.credithold==="Yes"||c.credithold===true) ? <span className="text-red-500 font-black text-[9px]">HOLD</span> : "\u2014"}</PanelGridTd>
+                                            <PanelGridTd className="max-w-[120px] truncate text-gray-500">{t(c.salesman_name)}</PanelGridTd>
+                                            <PanelGridTd className="hidden md:table-cell max-w-[140px] truncate">{t(c.address1)}</PanelGridTd>
+                                            <PanelGridTd className="hidden md:table-cell">{t(c.city)}</PanelGridTd>
+                                            <PanelGridTd className="hidden lg:table-cell">{t(c.state)}</PanelGridTd>
+                                            <PanelGridTd className="hidden lg:table-cell">{t(c.country)}</PanelGridTd>
+                                            <PanelGridTd className="hidden xl:table-cell whitespace-nowrap">{t(c.phone_1)}</PanelGridTd>
+                                            <PanelGridTd className="hidden xl:table-cell whitespace-nowrap text-gray-400">{t(c.fax_1)}</PanelGridTd>
+                                            <PanelGridTd className="hidden xl:table-cell max-w-[140px] truncate text-gray-400">{t(c.email)}</PanelGridTd>
+                                            <PanelGridTd className="hidden xl:table-cell max-w-[100px] truncate">{t(c.contact)}</PanelGridTd>
+                                            <PanelGridTd className="hidden xl:table-cell text-gray-400">{t(c.groupname)}</PanelGridTd>
+                                            <PanelGridTd className="hidden xl:table-cell whitespace-nowrap text-gray-400">{t(c.custsince)?.split("T")[0]}</PanelGridTd>
+                                            <PanelGridTd className="text-gray-400 whitespace-nowrap">{t(c.terms)}</PanelGridTd>
+                                        </PanelGridTr>
+                                        {isExp && (
+                                            <tr>
+                                                <td colSpan={17} className="p-0 border-b border-gray-200">
+                                                    <div className="pl-6 pr-2 py-2 bg-gray-50 flex flex-col gap-2">
+                                                        {/* \u2500\u2500 Ship-to grid \u2500\u2500 */}
+                                                        <PanelGrid
+                                                            title="Ship-to Addresses"
+                                                            icon={Truck}
+                                                            recordCount={(shiptos as any[]).length}
+                                                            onRefresh={() => { if (selCust) refetchShiptos(); }}
+                                                            refreshing={loadingShiptos}
+                                                            headerRight={<AuditLogModal recordId={selShipto?.unico} disabled={!selShipto?.unico} bareButton />}
+                                                            menuItems={[
+                                                                { label: "Add Address", icon: Plus, color: "green", onClick: () => { setShiptoForm({...EMPTY_SHIPTO}); setFormError(null); setShiptoModal({ mode:"add" }); }, disabled: !selCust || !perms.canCreate },
+                                                                { label: "Edit Address", icon: Pencil, color: "orange", onClick: () => { if(!selShipto) return; setShiptoForm({...selShipto, dc_uq:t(selShipto.dc_uq), route_uq:t(selShipto.route_uq)}); setFormError(null); setShiptoModal({ mode:"edit" }); }, disabled: !selShipto || !perms.canEdit },
+                                                                { label: "Delete Address", icon: Trash2, color: "orange", onClick: () => { if(selShipto) { setFormError(null); setShiptoModal({ mode:"delete" }); } }, disabled: !selShipto || !perms.canDelete },
+                                                                { separator: true },
+                                                                { label: "Copy from Billing", icon: Copy, color: "gray", onClick: copyFromBilling, disabled: !selCust },
+                                                            ]}
+                                                        >
+                                                            <PanelGridTable>
+                                                                <PanelGridThead>
+                                                                    <PanelGridTh className="w-6">{""}</PanelGridTh>
+                                                                    <PanelGridTh>#</PanelGridTh>
+                                                                    <PanelGridTh>Name</PanelGridTh>
+                                                                    <PanelGridTh className="hidden sm:table-cell">Address</PanelGridTh>
+                                                                    <PanelGridTh>City</PanelGridTh>
+                                                                    <PanelGridTh className="hidden md:table-cell">State</PanelGridTh>
+                                                                    <PanelGridTh className="hidden md:table-cell">Zip</PanelGridTh>
+                                                                    <PanelGridTh className="hidden lg:table-cell">Country</PanelGridTh>
+                                                                    <PanelGridTh className="hidden lg:table-cell">Contact</PanelGridTh>
+                                                                    <PanelGridTh className="hidden xl:table-cell">Phone</PanelGridTh>
+                                                                    <PanelGridTh>Zone</PanelGridTh>
+                                                                    <PanelGridTh className="hidden sm:table-cell">Route</PanelGridTh>
+                                                                    <PanelGridTh align="center">24h</PanelGridTh>
+                                                                    <PanelGridTh align="center">Truck</PanelGridTh>
+                                                                </PanelGridThead>
+                                                                <PanelGridTbody>
+                                                                    {(shiptos as any[]).length === 0
+                                                                        ? <tr><td colSpan={14} className="p-6 text-center text-gray-300 text-xs">{loadingShiptos ? "Loading..." : "No ship-to addresses"}</td></tr>
+                                                                        : (shiptos as any[]).map((s: any) => {
+                                                                            const isShiptoSel = selShipto?.unico === s.unico;
+                                                                            const isShiptoExp = expandedShiptoUnico === s.unico;
+                                                                            return (
+                                                                                <Fragment key={s.unico}>
+                                                                                    <PanelGridTr selected={isShiptoSel} onClick={() => setSelShipto(s)}>
+                                                                                        <PanelGridTd className="w-6 pl-1 pr-0">
+                                                                                            <button onClick={e => { e.stopPropagation(); if (isShiptoExp) { setExpandedShiptoUnico(null); } else { setSelShipto(s); setExpandedShiptoUnico(s.unico); } }}
+                                                                                                className="p-0.5 rounded hover:bg-gray-200 transition-colors">
+                                                                                                <ChevronRight size={11} className={cn("text-gray-400 transition-transform duration-150", isShiptoExp && "rotate-90 text-[#FB7506]")} />
+                                                                                            </button>
+                                                                                        </PanelGridTd>
+                                                                                        <PanelGridTd className="font-mono">{s.shipto}</PanelGridTd>
+                                                                                        <PanelGridTd className="font-medium max-w-[140px] truncate">{t(s.name)}</PanelGridTd>
+                                                                                        <PanelGridTd className="hidden sm:table-cell max-w-[140px] truncate">{t(s.address1)}</PanelGridTd>
+                                                                                        <PanelGridTd>{t(s.city)}</PanelGridTd>
+                                                                                        <PanelGridTd className="hidden md:table-cell">{t(s.state)}</PanelGridTd>
+                                                                                        <PanelGridTd className="hidden md:table-cell">{t(s.zip)}</PanelGridTd>
+                                                                                        <PanelGridTd className="hidden lg:table-cell">{t(s.country)}</PanelGridTd>
+                                                                                        <PanelGridTd className="hidden lg:table-cell max-w-[100px] truncate">{t(s.contact)}</PanelGridTd>
+                                                                                        <PanelGridTd className="hidden xl:table-cell whitespace-nowrap">{t(s.phone)}</PanelGridTd>
+                                                                                        <PanelGridTd>{t(s.zone)}</PanelGridTd>
+                                                                                        <PanelGridTd className="hidden sm:table-cell">{t(s.route)}</PanelGridTd>
+                                                                                        <PanelGridTd align="center">{s.hours24 ? <Check size={10} className="text-green-500 mx-auto" /> : "\u2014"}</PanelGridTd>
+                                                                                        <PanelGridTd align="center">{s.truck_days||0}</PanelGridTd>
+                                                                                    </PanelGridTr>
+                                                                                    {isShiptoExp && (
+                                                                                        <tr>
+                                                                                            <td colSpan={14} className="p-0 border-b border-gray-200">
+                                                                                                <div className="pl-6 pr-2 py-2 bg-gray-100">
+                                                                                                    {/* \u2500\u2500 Carriers grid \u2500\u2500 */}
+                                                                                                    <PanelGrid
+                                                                                                        title="Carriers by Ship-to"
+                                                                                                        icon={Truck}
+                                                                                                        recordCount={(carriers as any[]).length}
+                                                                                                        headerRight={<AuditLogModal recordId={selCarrier?.unico} disabled={!selCarrier?.unico} bareButton />}
+                                                                                                        menuItems={[
+                                                                                                            { label: "Add Carrier", icon: Plus, color: "green", onClick: () => { setCarrierForm({...EMPTY_CARRIER}); setFormError(null); setCarrierModal({ mode:"add" }); }, disabled: !selCust || !perms.canCreate },
+                                                                                                            { label: "Edit Carrier", icon: Pencil, color: "orange", onClick: () => { if(!selCarrier) return; setCarrierForm({carrier_uq:t(selCarrier.carrier_uq), account:t(selCarrier.account), zone:t(selCarrier.zone), mon:!!selCarrier.mon, tue:!!selCarrier.tue, wed:!!selCarrier.wed, thu:!!selCarrier.thu, fri:!!selCarrier.fri, sat:!!selCarrier.sat, sun:!!selCarrier.sun}); setFormError(null); setCarrierModal({ mode:"edit" }); }, disabled: !selCarrier || !perms.canEdit },
+                                                                                                            { label: "Delete Carrier", icon: Trash2, color: "orange", onClick: () => { if(selCarrier) { setFormError(null); setCarrierModal({ mode:"delete" }); } }, disabled: !selCarrier || !perms.canDelete },
+                                                                                                            { separator: true },
+                                                                                                            { label: "Set Default", icon: Star, color: "gray", onClick: setDefaultCarrier, disabled: !selCarrier },
+                                                                                                        ]}
+                                                                                                    >
+                                                                                                        <PanelGridTable>
+                                                                                                            <PanelGridThead>
+                                                                                                                <PanelGridTh>Carrier</PanelGridTh>
+                                                                                                                <PanelGridTh>Account</PanelGridTh>
+                                                                                                                <PanelGridTh className="hidden sm:table-cell">Ship-to</PanelGridTh>
+                                                                                                                <PanelGridTh align="center">Zone</PanelGridTh>
+                                                                                                                <PanelGridTh align="center">Default</PanelGridTh>
+                                                                                                                <PanelGridTh align="center">Mon</PanelGridTh>
+                                                                                                                <PanelGridTh align="center">Tue</PanelGridTh>
+                                                                                                                <PanelGridTh align="center">Wed</PanelGridTh>
+                                                                                                                <PanelGridTh align="center">Thu</PanelGridTh>
+                                                                                                                <PanelGridTh align="center">Fri</PanelGridTh>
+                                                                                                                <PanelGridTh align="center">Sat</PanelGridTh>
+                                                                                                                <PanelGridTh align="center">Sun</PanelGridTh>
+                                                                                                            </PanelGridThead>
+                                                                                                            <PanelGridTbody>
+                                                                                                                {(carriers as any[]).length === 0
+                                                                                                                    ? <tr><td colSpan={12} className="p-6 text-center text-gray-300 text-xs">{loadingCarriers ? "Loading..." : "No carriers"}</td></tr>
+                                                                                                                    : (carriers as any[]).map((car: any) => {
+                                                                                                                        const isCarSel = selCarrier?.unico === car.unico;
+                                                                                                                        return (
+                                                                                                                            <PanelGridTr key={car.unico} selected={isCarSel} onClick={() => setSelCarrier(car)}>
+                                                                                                                                <PanelGridTd className="font-medium">{t(car.carrier)}</PanelGridTd>
+                                                                                                                                <PanelGridTd>{t(car.account)}</PanelGridTd>
+                                                                                                                                <PanelGridTd className="hidden sm:table-cell max-w-[100px] truncate">{t(car.ship_name)}</PanelGridTd>
+                                                                                                                                <PanelGridTd align="center">{t(car.zone)}</PanelGridTd>
+                                                                                                                                {["defa_carrier","mon","tue","wed","thu","fri","sat","sun"].map(d => (
+                                                                                                                                    <PanelGridTd key={d} align="center">
+                                                                                                                                        {car[d] ? <Check size={10} className={d==="defa_carrier"?"text-amber-500 mx-auto":"text-green-500 mx-auto"} /> : <span className="text-gray-200">{"\u2014"}</span>}
+                                                                                                                                    </PanelGridTd>
+                                                                                                                                ))}
+                                                                                                                            </PanelGridTr>
+                                                                                                                        );
+                                                                                                                    })
+                                                                                                                }
+                                                                                                            </PanelGridTbody>
+                                                                                                        </PanelGridTable>
+                                                                                                    </PanelGrid>
+                                                                                                </div>
+                                                                                            </td>
+                                                                                        </tr>
+                                                                                    )}
+                                                                                </Fragment>
+                                                                            );
+                                                                        })
+                                                                    }
+                                                                </PanelGridTbody>
+                                                            </PanelGridTable>
+                                                        </PanelGrid>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </Fragment>
                                 );
                             })}
                         </PanelGridTbody>
@@ -420,10 +569,9 @@ export default function CustomersSetupPage() {
                 {/* Tab bar */}
                 <div className="bg-white border-b border-gray-200 flex items-end px-3 gap-1 shrink-0 h-9">
                     {([
-                        { id:"shipto",    label:"Ship-to Detail", icon:Truck },
-                        { id:"statement", label:"Statement",       icon:FileText },
-                        { id:"webusers",  label:"Web Users",       icon:Users },
-                        { id:"messages",  label:"Messages",        icon:MessageSquare },
+                        { id:"statement", label:"Statement",  icon:FileText },
+                        { id:"webusers",  label:"Web Users",  icon:Users },
+                        { id:"messages",  label:"Messages",   icon:MessageSquare },
                     ] as const).map(tab => (
                         <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                             className={cn("flex items-center gap-1.5 px-4 h-8 text-[10px] font-black uppercase tracking-wider transition-all border-b-2",
@@ -435,125 +583,6 @@ export default function CustomersSetupPage() {
 
                 {/* Tab content */}
                 <div className="flex-1 overflow-hidden bg-[#f4f6f8] p-2 flex flex-col gap-2">
-
-                    {/* ── SHIP-TO TAB ───────────────────────────────────────── */}
-                    {activeTab === "shipto" && (
-                        <>
-                            {/* Ship-to grid */}
-                            <PanelGrid
-                                title="Ship-to Addresses"
-                                icon={Truck}
-                                recordCount={(shiptos as any[]).length}
-                                onRefresh={() => { if (selCust) refetchShiptos(); }}
-                                refreshing={loadingShiptos}
-                                headerRight={<AuditLogModal recordId={selShipto?.unico} disabled={!selShipto?.unico} bareButton />}
-                                menuItems={[
-                                    { label: "Add Address", icon: Plus, color: "green", onClick: () => { setShiptoForm({...EMPTY_SHIPTO}); setFormError(null); setShiptoModal({ mode:"add" }); }, disabled: !selCust || !perms.canCreate },
-                                    { label: "Edit Address", icon: Pencil, color: "orange", onClick: () => { if(!selShipto) return; setShiptoForm({...selShipto, dc_uq:t(selShipto.dc_uq), route_uq:t(selShipto.route_uq)}); setFormError(null); setShiptoModal({ mode:"edit" }); }, disabled: !selShipto || !perms.canEdit },
-                                    { label: "Delete Address", icon: Trash2, color: "orange", onClick: () => { if(selShipto) { setFormError(null); setShiptoModal({ mode:"delete" }); } }, disabled: !selShipto || !perms.canDelete },
-                                    { separator: true },
-                                    { label: "Copy from Billing", icon: Copy, color: "gray", onClick: copyFromBilling, disabled: !selCust },
-                                ]}
-                                className="flex-1 min-h-0 flex flex-col"
-                            >
-                                <div className="overflow-auto flex-1">
-                                    <PanelGridTable>
-                                        <PanelGridThead>
-                                            <PanelGridTh>#</PanelGridTh>
-                                            <PanelGridTh>Name</PanelGridTh>
-                                            <PanelGridTh className="hidden sm:table-cell">Address</PanelGridTh>
-                                            <PanelGridTh>City</PanelGridTh>
-                                            <PanelGridTh className="hidden md:table-cell">State</PanelGridTh>
-                                            <PanelGridTh className="hidden md:table-cell">Zip</PanelGridTh>
-                                            <PanelGridTh className="hidden lg:table-cell">Country</PanelGridTh>
-                                            <PanelGridTh className="hidden lg:table-cell">Contact</PanelGridTh>
-                                            <PanelGridTh className="hidden xl:table-cell">Phone</PanelGridTh>
-                                            <PanelGridTh>Zone</PanelGridTh>
-                                            <PanelGridTh className="hidden sm:table-cell">Route</PanelGridTh>
-                                            <PanelGridTh align="center">24h</PanelGridTh>
-                                            <PanelGridTh align="center">Truck</PanelGridTh>
-                                        </PanelGridThead>
-                                        <PanelGridTbody>
-                                            {!selCust ? <tr><td colSpan={13} className="p-6 text-center text-gray-300 text-xs">Select a customer</td></tr>
-                                            : (shiptos as any[]).map((s: any) => {
-                                                const isSel = selShipto?.unico === s.unico;
-                                                return (
-                                                    <PanelGridTr key={s.unico} selected={isSel} onClick={() => setSelShipto(s)}>
-                                                        <PanelGridTd className="font-mono">{s.shipto}</PanelGridTd>
-                                                        <PanelGridTd className="font-medium max-w-[140px] truncate">{t(s.name)}</PanelGridTd>
-                                                        <PanelGridTd className="hidden sm:table-cell max-w-[140px] truncate">{t(s.address1)}</PanelGridTd>
-                                                        <PanelGridTd>{t(s.city)}</PanelGridTd>
-                                                        <PanelGridTd className="hidden md:table-cell">{t(s.state)}</PanelGridTd>
-                                                        <PanelGridTd className="hidden md:table-cell">{t(s.zip)}</PanelGridTd>
-                                                        <PanelGridTd className="hidden lg:table-cell">{t(s.country)}</PanelGridTd>
-                                                        <PanelGridTd className="hidden lg:table-cell max-w-[100px] truncate">{t(s.contact)}</PanelGridTd>
-                                                        <PanelGridTd className="hidden xl:table-cell whitespace-nowrap">{t(s.phone)}</PanelGridTd>
-                                                        <PanelGridTd>{t(s.zone)}</PanelGridTd>
-                                                        <PanelGridTd className="hidden sm:table-cell">{t(s.route)}</PanelGridTd>
-                                                        <PanelGridTd align="center">{s.hours24 ? <Check size={10} className="text-green-500 mx-auto" /> : "\u2014"}</PanelGridTd>
-                                                        <PanelGridTd align="center">{s.truck_days||0}</PanelGridTd>
-                                                    </PanelGridTr>
-                                                );
-                                            })}
-                                        </PanelGridTbody>
-                                    </PanelGridTable>
-                                </div>
-                            </PanelGrid>
-
-                            {/* Carriers grid */}
-                            <PanelGrid
-                                title="Carriers by Ship-to"
-                                icon={Truck}
-                                recordCount={(carriers as any[]).length}
-                                headerRight={<AuditLogModal recordId={selCarrier?.unico} disabled={!selCarrier?.unico} bareButton />}
-                                menuItems={[
-                                    { label: "Add Carrier", icon: Plus, color: "green", onClick: () => { setCarrierForm({...EMPTY_CARRIER}); setFormError(null); setCarrierModal({ mode:"add" }); }, disabled: !selCust || !perms.canCreate },
-                                    { label: "Edit Carrier", icon: Pencil, color: "orange", onClick: () => { if(!selCarrier) return; setCarrierForm({carrier_uq:t(selCarrier.carrier_uq), account:t(selCarrier.account), zone:t(selCarrier.zone), mon:!!selCarrier.mon, tue:!!selCarrier.tue, wed:!!selCarrier.wed, thu:!!selCarrier.thu, fri:!!selCarrier.fri, sat:!!selCarrier.sat, sun:!!selCarrier.sun}); setFormError(null); setCarrierModal({ mode:"edit" }); }, disabled: !selCarrier || !perms.canEdit },
-                                    { label: "Delete Carrier", icon: Trash2, color: "orange", onClick: () => { if(selCarrier) { setFormError(null); setCarrierModal({ mode:"delete" }); } }, disabled: !selCarrier || !perms.canDelete },
-                                    { separator: true },
-                                    { label: "Set Default", icon: Star, color: "gray", onClick: setDefaultCarrier, disabled: !selCarrier },
-                                ]}
-                                className="flex-1 min-h-0 flex flex-col"
-                            >
-                                <div className="overflow-auto flex-1">
-                                    <PanelGridTable>
-                                        <PanelGridThead>
-                                            <PanelGridTh>Carrier</PanelGridTh>
-                                            <PanelGridTh>Account</PanelGridTh>
-                                            <PanelGridTh className="hidden sm:table-cell">Ship-to</PanelGridTh>
-                                            <PanelGridTh align="center">Zone</PanelGridTh>
-                                            <PanelGridTh align="center">Default</PanelGridTh>
-                                            <PanelGridTh align="center">Mon</PanelGridTh>
-                                            <PanelGridTh align="center">Tue</PanelGridTh>
-                                            <PanelGridTh align="center">Wed</PanelGridTh>
-                                            <PanelGridTh align="center">Thu</PanelGridTh>
-                                            <PanelGridTh align="center">Fri</PanelGridTh>
-                                            <PanelGridTh align="center">Sat</PanelGridTh>
-                                            <PanelGridTh align="center">Sun</PanelGridTh>
-                                        </PanelGridThead>
-                                        <PanelGridTbody>
-                                            {(carriers as any[]).map((c: any) => {
-                                                const isSel = selCarrier?.unico === c.unico;
-                                                return (
-                                                    <PanelGridTr key={c.unico} selected={isSel} onClick={() => setSelCarrier(c)}>
-                                                        <PanelGridTd className="font-medium">{t(c.carrier)}</PanelGridTd>
-                                                        <PanelGridTd>{t(c.account)}</PanelGridTd>
-                                                        <PanelGridTd className="hidden sm:table-cell max-w-[100px] truncate">{t(c.ship_name)}</PanelGridTd>
-                                                        <PanelGridTd align="center">{t(c.zone)}</PanelGridTd>
-                                                        {["defa_carrier","mon","tue","wed","thu","fri","sat","sun"].map(d => (
-                                                            <PanelGridTd key={d} align="center">
-                                                                {c[d] ? <Check size={10} className={d==="defa_carrier"?"text-amber-500 mx-auto":"text-green-500 mx-auto"} /> : <span className="text-gray-200">{"\u2014"}</span>}
-                                                            </PanelGridTd>
-                                                        ))}
-                                                    </PanelGridTr>
-                                                );
-                                            })}
-                                        </PanelGridTbody>
-                                    </PanelGridTable>
-                                </div>
-                            </PanelGrid>
-                        </>
-                    )}
 
                     {/* ── STATEMENT TAB ─────────────────────────────────────── */}
                     {activeTab === "statement" && (
