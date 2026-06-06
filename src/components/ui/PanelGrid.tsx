@@ -182,7 +182,7 @@ export default function PanelGrid({
       )}
     >
       {/* Header */}
-      <div className="h-10 bg-[#333030] flex items-center justify-between px-3 shrink-0 border-b border-black/10">
+      <div className="h-10 bg-[#4F4F4F] flex items-center justify-between px-3 shrink-0 border-b border-black/10">
         <div className="flex items-center gap-2 min-w-0">
           <Icon size={16} className="text-[#FB7506] shrink-0" />
           <span className="text-white text-[13px] font-bold uppercase tracking-[0.1em] truncate">
