@@ -379,7 +379,7 @@ export default function CustomersSetupPage() {
             <PanelGrid
                 title="Customers"
                 icon={Users}
-                recordCount={totalRecords > 0 ? totalRecords : custList.length}
+                recordCount={`${custList.length} / ${totalRecords > 0 ? totalRecords : custList.length}`}
                 onRefresh={refetchList}
                 refreshing={loadingList}
                 headerRight={

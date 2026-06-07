@@ -24,7 +24,7 @@ export type PanelMenuItem = {
 export interface PanelGridProps {
   title: string;
   icon: LucideIcon;
-  recordCount?: number;
+  recordCount?: number | string;
   searchPlaceholder?: string;
   searchValue?: string;
   onSearchChange?: (value: string) => void;

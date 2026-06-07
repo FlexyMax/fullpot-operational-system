@@ -691,7 +691,7 @@ export default function VendorsPage() {
                 <PanelGrid
                     icon={Building2}
                     title="Vendors"
-                    recordCount={totalVendors}
+                    recordCount={`${vendorsList.length} / ${totalVendors}`}
                     onScroll={handleVendorScroll}
                     refreshing={loadingList}
                     onRefresh={refetchList}
