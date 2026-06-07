@@ -705,7 +705,7 @@ export default function VendorsPage() {
                     <PanelGridTable>
                         <PanelGridThead>
                             <tr>
-                                <PanelGridTh className="w-8 text-center"></PanelGridTh>
+                                <PanelGridTh className="w-8 text-center">&nbsp;</PanelGridTh>
                                 <PanelGridTh>Code</PanelGridTh>
                                 <PanelGridTh>Vendor</PanelGridTh>
                                 <PanelGridTh>FOB</PanelGridTh>
