@@ -37,6 +37,13 @@ export async function GET(req: NextRequest) {
             data = r.recordset ?? [];
         }
         
+        // Use QueryTotalRecords if available
+        if (total === 0 && data.length > 0 && data[0].QueryTotalRecords !== undefined) {
+            total = data[0].QueryTotalRecords;
+        } else if (total === 0) {
+            total = data.length;
+        }
+        
         return NextResponse.json({ data, totalCount: total });
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });
