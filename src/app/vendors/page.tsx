@@ -783,8 +783,8 @@ export default function VendorsPage() {
                                             </PanelGridTd>
                                             <PanelGridTd className="font-mono">{t(row.FARM)}</PanelGridTd>
                                             <PanelGridTd className="font-bold">{t(row.GROWER)}</PanelGridTd>
-                                            <PanelGridTd>{t(row.COMPANY)}</PanelGridTd>
-                                            <PanelGridTd>{t(row.ADDRESS1)}</PanelGridTd>
+                                            <PanelGridTd>{t(row.SOURCE)}</PanelGridTd>
+                                            <PanelGridTd>{t(row.OFFICEADD1)}</PanelGridTd>
                                             <PanelGridTd>{t(row.CITY)}</PanelGridTd>
                                             <PanelGridTd>{t(row.COUNTRY)}</PanelGridTd>
                                             <PanelGridTd className="text-center">
