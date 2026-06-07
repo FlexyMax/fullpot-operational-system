@@ -417,7 +417,7 @@ export default function CustomersSetupPage() {
                     { separator: true },
                     { label: "Export CSV", icon: Download, color: "gray", onClick: exportCSV, disabled: !perms.canReport },
                 ]}
-                className="mx-2 mt-2 flex-1 flex flex-col min-h-0"
+                className="mx-2 mt-2 mb-3 flex-1 flex flex-col min-h-0"
                 onScroll={handleCustScroll}
             >
                 <div>
@@ -456,8 +456,8 @@ export default function CustomersSetupPage() {
                                             </PanelGridTd>
                                             <PanelGridTd className="font-mono text-[10px]">{t(c.old_code)}</PanelGridTd>
                                             <PanelGridTd className="font-semibold max-w-[180px] truncate">{t(c.customer)}</PanelGridTd>
-                                            <PanelGridTd align="center">{(c.active==="Yes"||c.active===true) ? <Check size={10} className="text-green-500 mx-auto" /> : <X size={10} className="text-gray-300 mx-auto" />}</PanelGridTd>
-                                            <PanelGridTd align="center">{(c.credithold==="Yes"||c.credithold===true) ? <span className="text-red-500 font-black text-[9px]">HOLD</span> : "\u2014"}</PanelGridTd>
+                                            <PanelGridTd align="center">{(String(c.active||"").trim().toLowerCase() === "yes" || c.active === true || c.active === 1) ? <Check size={10} className="text-green-500 mx-auto" /> : <X size={10} className="text-gray-300 mx-auto" />}</PanelGridTd>
+                                            <PanelGridTd align="center">{(String(c.credithold||"").trim().toLowerCase() === "yes" || c.credithold === true || c.credithold === 1) ? <span className="text-red-500 font-black text-[9px]">HOLD</span> : "\u2014"}</PanelGridTd>
                                             <PanelGridTd className="max-w-[120px] truncate text-gray-500">{t(c.salesman_name)}</PanelGridTd>
                                             <PanelGridTd className="hidden md:table-cell max-w-[140px] truncate">{t(c.address1)}</PanelGridTd>
                                             <PanelGridTd className="hidden md:table-cell">{t(c.city)}</PanelGridTd>
