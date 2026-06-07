@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, Fragment } from "react";
+import { useEffect, useState, useMemo, useCallback, Fragment } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -249,11 +249,49 @@ export default function VendorsPage() {
     const [selGrpUq,   setSelGrpUq]   = useState<string | null>(null);
 
     // ── Queries ───────────────────────────────────────────────────────────────
-    const { data: vendorsList = [], isFetching: loadingList, refetch: refetchList } = useQuery({
-        queryKey: ["vendors-list"],
-        queryFn:  () => fetch("/api/vendors").then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
-        staleTime: 0,
-    });
+    const [vendorsPage, setVendorsPage] = useState(1);
+    const [vendorsList, setVendorsList] = useState<any[]>([]);
+    const [hasMoreVendors, setHasMoreVendors] = useState(true);
+    const [loadingList, setLoadingList] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [totalVendors, setTotalVendors] = useState(0);
+
+    const fetchVendors = useCallback(async (page: number, q: string, append: boolean) => {
+        if (page === 1) setLoadingList(true); else setLoadingMore(true);
+        try {
+            const param = q.trim() ? q.trim() : "%";
+            const res  = await fetch(`/api/vendors?search=${encodeURIComponent(param)}&page=${page}&limit=100`);
+            const json = await res.json();
+            const rows = norm(Array.isArray(json) ? json : (json.data ?? []));
+            if (append) {
+                setVendorsList(prev => [...prev, ...rows]);
+            } else {
+                setVendorsList(rows);
+                if (rows.length > 0) setSelectedUq(t(rows[0].UNICO));
+                else setSelectedUq(null);
+            }
+            setVendorsPage(page);
+            setHasMoreVendors(rows.length === 100);
+            setTotalVendors(json.totalCount || rows.length);
+        } catch { /* silent */ }
+        finally { setLoadingList(false); setLoadingMore(false); }
+    }, []);
+
+    // Reset & reload when search changes
+    useEffect(() => {
+        setVendorsList([]); setVendorsPage(1); setHasMoreVendors(true);
+        fetchVendors(1, search, false);
+    }, [search, fetchVendors]);
+
+    const refetchList = () => { setVendorsList([]); fetchVendors(1, search, false); };
+
+    // Infinite scroll handler
+    const handleVendorScroll = (e: React.UIEvent<HTMLDivElement>) => {
+        const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+        if (scrollHeight - scrollTop <= clientHeight + 80 && !loadingMore && hasMoreVendors) {
+            fetchVendors(vendorsPage + 1, search, true);
+        }
+    };
 
     const { data: lookups } = useQuery({
         queryKey: ["vendors-lookups"],
@@ -284,7 +322,6 @@ export default function VendorsPage() {
         enabled:  !!selectedUq && expandedVendorUnico === selectedUq,
         staleTime: 0,
     });
-
     // Classes
     const { data: assignedClasses = [], isFetching: loadingClassA, refetch: refetchClassA } = useQuery({
         queryKey: ["vendors-classes-assigned", selectedUq],
@@ -654,7 +691,8 @@ export default function VendorsPage() {
                 <PanelGrid
                     icon={Building2}
                     title="Vendors"
-                    recordCount={filteredList.length}
+                    recordCount={totalVendors}
+                    onScroll={handleVendorScroll}
                     refreshing={loadingList}
                     onRefresh={refetchList}
                     searchValue={search}
@@ -713,13 +751,13 @@ export default function VendorsPage() {
                                 <PanelGridTh className="text-center">Act.</PanelGridTh>
                         </PanelGridThead>
                         <PanelGridTbody>
-                            {filteredList.length === 0 && !loadingList ? (
+                            {vendorsList.length === 0 && !loadingList ? (
                                 <tr>
                                     <PanelGridTd colSpan={8} className="text-center italic text-gray-400">
                                         {search ? "No results" : "No vendors found"}
                                     </PanelGridTd>
                                 </tr>
-                            ) : filteredList.map((row: any, i: number) => {
+                            ) : vendorsList.map((row: any, i: number) => {
                                 const uq = t(row.UNICO);
                                 const selected = selectedUq === uq;
                                 const isExp = expandedVendorUnico === uq;
@@ -817,9 +855,9 @@ export default function VendorsPage() {
                         <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
                             <div className="flex items-center gap-2">
                                 <FileText size={16} className="text-[#FB7506]" />
-                                <span className="font-black text-[10px] text-white uppercase tracking-widest">
-                                    Statement — {(filteredList as any[]).find((r: any) => t(r.UNICO) === selectedUq)?.GROWER}
-                                </span>
+                                <span className="font-black text-[11px] uppercase tracking-widest text-white">
+                                Statement — {(vendorsList as any[]).find((r: any) => t(r.UNICO) === selectedUq)?.GROWER}
+                            </span>
                             </div>
                             <button onClick={() => setStmtModal(false)} className="text-gray-400 hover:text-white transition-colors"><X size={16} /></button>
                         </div>
@@ -895,9 +933,9 @@ export default function VendorsPage() {
                         <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
                             <div className="flex items-center gap-2">
                                 <AlertCircle size={16} className="text-[#FB7506]" />
-                                <span className="font-black text-[10px] text-white uppercase tracking-widest">
-                                    Pending Invoices — {(filteredList as any[]).find((r: any) => t(r.UNICO) === selectedUq)?.GROWER}
-                                </span>
+                                <span className="font-black text-[11px] uppercase tracking-widest text-white">
+                                Pending Invoices — {(vendorsList as any[]).find((r: any) => t(r.UNICO) === selectedUq)?.GROWER}
+                            </span>
                             </div>
                             <button onClick={() => setPendingModal(false)} className="text-gray-400 hover:text-white transition-colors"><X size={16} /></button>
                         </div>
@@ -944,9 +982,9 @@ export default function VendorsPage() {
                         <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
                             <div className="flex items-center gap-2">
                                 <Settings2 size={16} className="text-[#FB7506]" />
-                                <span className="font-black text-[10px] text-white uppercase tracking-widest">
-                                    Classes — {(filteredList as any[]).find((r: any) => t(r.UNICO) === selectedUq)?.GROWER}
-                                </span>
+                                <span className="font-black text-[11px] uppercase tracking-widest text-white">
+                                Vendor Classes — {(vendorsList as any[]).find((r: any) => t(r.UNICO) === selectedUq)?.GROWER}
+                            </span>
                             </div>
                             <button onClick={() => setClassesModal(false)} className="text-gray-400 hover:text-white transition-colors"><X size={16} /></button>
                         </div>
@@ -993,7 +1031,7 @@ export default function VendorsPage() {
                         </div>
 
                         {/* Modal inner tabs */}
-                        <div className="bg-[#374151] flex items-end px-2 gap-0.5 shrink-0 overflow-x-auto scrollbar-none">
+                        <div className="flex border-b border-gray-200 px-2 pt-2 bg-gray-50 shrink-0 overflow-x-auto scrollbar-none">
                             {([
                                 { key: "main",     label: "Main Info" },
                                 { key: "contacts", label: "Contacts" },
@@ -1002,8 +1040,8 @@ export default function VendorsPage() {
                             ] as { key: ModalVendorTab; label: string }[]).map(tab => (
                                 <button key={tab.key} onClick={() => setModalTab(tab.key)}
                                     className={cn(
-                                        "px-3 h-7 text-[10px] font-black uppercase tracking-wider rounded-t transition-all whitespace-nowrap shrink-0",
-                                        modalTab === tab.key ? "bg-white text-[#FB7506]" : "text-gray-400 hover:text-white hover:bg-white/10"
+                                        "px-4 py-2 text-[10px] font-black uppercase tracking-widest border-b-2 transition-colors whitespace-nowrap shrink-0",
+                                        modalTab === tab.key ? "border-[#FB7506] text-[#FB7506] bg-white" : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
                                     )}>
                                     {tab.label}
                                 </button>

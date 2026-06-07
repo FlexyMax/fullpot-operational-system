@@ -37,8 +37,7 @@ export async function GET(req: NextRequest) {
             data = r.recordset ?? [];
         }
         
-        // Return standard array for backward compatibility if page/limit not explicitly used by client
-        return NextResponse.json(data);
+        return NextResponse.json({ data, totalCount: total });
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });
     }
