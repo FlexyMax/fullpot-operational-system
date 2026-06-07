@@ -705,7 +705,7 @@ export default function VendorsPage() {
                     <PanelGridTable>
                         <PanelGridThead>
                             <tr>
-                                <PanelGridTh className="w-8 text-center">&nbsp;</PanelGridTh>
+                                <PanelGridTh className="w-6">{""}</PanelGridTh>
                                 <PanelGridTh>Code</PanelGridTh>
                                 <PanelGridTh>Vendor</PanelGridTh>
                                 <PanelGridTh>FOB</PanelGridTh>
@@ -730,16 +730,20 @@ export default function VendorsPage() {
                                 return (
                                     <Fragment key={uq || i}>
                                         <PanelGridTr selected={selected} onClick={() => handleSelectRow(row)}>
-                                            <PanelGridTd className="text-center w-8">
+                                            <PanelGridTd className="w-6 pl-1 pr-0">
                                                 <button 
-                                                    className={cn("p-0.5 rounded transition-colors cursor-pointer text-gray-400 hover:text-[#FB7506] hover:bg-orange-50")}
+                                                    className="p-0.5 rounded hover:bg-gray-200 transition-colors"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        handleSelectRow(row);
-                                                        setExpandedVendorUnico(isExp ? null : uq);
+                                                        if (isExp) {
+                                                            setExpandedVendorUnico(null);
+                                                        } else {
+                                                            handleSelectRow(row);
+                                                            setExpandedVendorUnico(uq);
+                                                        }
                                                     }}
                                                 >
-                                                    <ChevronRight size={14} className={cn("transition-transform duration-200", isExp && "rotate-90 text-[#FB7506]")} />
+                                                    {isExp ? <Minus size={11} className="text-[#FB7506]" /> : <Plus size={11} className="text-gray-400" />}
                                                 </button>
                                             </PanelGridTd>
                                             <PanelGridTd className="font-mono">{t(row.FARM)}</PanelGridTd>
@@ -754,38 +758,29 @@ export default function VendorsPage() {
                                         </PanelGridTr>
                                         
                                         {isExp && (
-                                            <tr className="bg-gray-50/80 border-b border-gray-100 relative">
-                                                {/* Connecting line */}
-                                                <td className="relative p-0">
-                                                    <div className="absolute left-1/2 top-0 bottom-4 w-px bg-gray-200 -translate-x-1/2"></div>
-                                                    <div className="absolute left-1/2 bottom-4 w-4 h-px bg-gray-200"></div>
-                                                </td>
-                                                <td colSpan={7} className="p-3 pl-0 pr-4">
-                                                    <div className="bg-white rounded-md border border-gray-200 shadow-sm overflow-hidden flex flex-col" style={{ minHeight: "150px" }}>
-                                                        <div className="h-8 bg-gray-100 border-b border-gray-200 flex items-center justify-between pl-2 pr-0 shrink-0">
-                                                            <div className="flex items-center gap-1.5">
-                                                                <FileText size={12} className="text-[#FB7506]" />
-                                                                <span className="font-black text-[9px] text-gray-600 uppercase tracking-widest">Documents ({(docsList as any[]).length})</span>
-                                                                {loadingDocs && <RefreshCcw size={10} className="animate-spin text-gray-400" />}
-                                                            </div>
-                                                            <GridMenu items={[
-                                                                { label: "Add",    icon: Plus,   color: "green",  onClick: handleOpenAddDoc },
-                                                                { label: "Edit",   icon: Pencil, color: "orange", onClick: handleOpenEditDoc, disabled: !selDocUq },
-                                                                { label: "Delete", icon: Trash2, color: "red",    onClick: handleDeleteDoc,   disabled: !selDocUq },
-                                                            ]} />
-                                                        </div>
-                                                        <div className="flex-1 overflow-auto bg-white">
-                                                            <table className="min-w-full text-left border-collapse">
-                                                                <thead className="sticky top-0 z-10 bg-white">
+                                            <tr>
+                                                <td colSpan={8} className="p-0 border-b border-gray-200">
+                                                    <div className="pl-6 pr-2 py-2 bg-gray-100">
+                                                        <PanelGrid
+                                                            title="Documents"
+                                                            icon={FileText}
+                                                            recordCount={(docsList as any[]).length}
+                                                            refreshing={loadingDocs}
+                                                            menuItems={[
+                                                                { label: "Add Document", icon: Plus, color: "green", onClick: handleOpenAddDoc },
+                                                                { label: "Edit Document", icon: Pencil, color: "orange", onClick: handleOpenEditDoc, disabled: !selDocUq },
+                                                                { label: "Delete Document", icon: Trash2, color: "red", onClick: handleDeleteDoc, disabled: !selDocUq },
+                                                            ]}
+                                                        >
+                                                            <PanelGridTable>
+                                                                <PanelGridThead>
                                                                     <tr>
-                                                                        {["Document", "Date From", "Date To"].map(h => (
-                                                                            <th key={h} className="px-2 py-1 border-b border-r border-gray-100 last:border-r-0 font-black text-[9px] text-gray-400 uppercase tracking-wider bg-white">
-                                                                                {h}
-                                                                            </th>
-                                                                        ))}
+                                                                        <PanelGridTh>Document</PanelGridTh>
+                                                                        <PanelGridTh>Date From</PanelGridTh>
+                                                                        <PanelGridTh>Date To</PanelGridTh>
                                                                     </tr>
-                                                                </thead>
-                                                                <tbody className="divide-y divide-gray-50">
+                                                                </PanelGridThead>
+                                                                <PanelGridTbody>
                                                                     {loadingDocs ? (
                                                                         <tr><td colSpan={3} className="p-4 text-center"><RefreshCcw size={14} className="animate-spin mx-auto text-gray-400" /></td></tr>
                                                                     ) : (docsList as any[]).length === 0 ? (
@@ -794,17 +789,16 @@ export default function VendorsPage() {
                                                                         const duq = t(doc.UNICO);
                                                                         const dsel = selDocUq === duq;
                                                                         return (
-                                                                            <tr key={j} onClick={() => setSelDocUq(dsel ? null : duq)}
-                                                                                className={cn("cursor-pointer transition-colors text-[10px]", dsel ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50")}>
-                                                                                <td className="px-2 py-1.5 border-r border-gray-50 truncate max-w-[200px] font-semibold text-gray-700">{t(doc.DOCUMENT)}</td>
-                                                                                <td className="px-2 py-1.5 border-r border-gray-50">{fmtDate(doc.DATE_FROM ?? doc.LDFROM)}</td>
-                                                                                <td className="px-2 py-1.5">{fmtDate(doc.DATE_TO ?? doc.LDTO)}</td>
-                                                                            </tr>
+                                                                            <PanelGridTr key={j} selected={dsel} onClick={() => setSelDocUq(dsel ? null : duq)}>
+                                                                                <PanelGridTd className="max-w-[200px] truncate font-semibold text-gray-700">{t(doc.DOCUMENT)}</PanelGridTd>
+                                                                                <PanelGridTd>{fmtDate(doc.DATE_FROM ?? doc.LDFROM)}</PanelGridTd>
+                                                                                <PanelGridTd>{fmtDate(doc.DATE_TO ?? doc.LDTO)}</PanelGridTd>
+                                                                            </PanelGridTr>
                                                                         );
                                                                     })}
-                                                                </tbody>
-                                                            </table>
-                                                        </div>
+                                                                </PanelGridTbody>
+                                                            </PanelGridTable>
+                                                        </PanelGrid>
                                                     </div>
                                                 </td>
                                             </tr>
