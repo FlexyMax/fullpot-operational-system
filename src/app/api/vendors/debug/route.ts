@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { executeQuery } from "@/lib/db";
 
 const SPS = [
-    "sp_flower_growers_list_for_growers",
+    "sp_NC_growers_list_for_growers",
     "sp_flower_growers_uq",
     "sp_flower_growers_insert",
     "sp_flower_growers_update",

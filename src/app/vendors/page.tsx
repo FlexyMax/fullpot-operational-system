@@ -105,58 +105,7 @@ function DualPanel({
 
     return (
         <div className="flex flex-col md:flex-row gap-2 h-full min-h-0">
-            <div className="flex-1 flex flex-col min-h-0 min-w-0" style={{ minHeight: "200px" }}>
-                <div className="bg-gray-100 border-b border-gray-200 px-2 py-1">
-                    <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Assigned ({assignedRows.length})</span>
-                </div>
-                <div className="flex-1 overflow-auto">
-                    <table className="min-w-full text-left">
-                        <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
-                            <tr>
-                                {assignedCols.map(c => (
-                                    <th key={c.key} className="px-2 py-1.5 font-black text-[10px] text-gray-600 uppercase tracking-wide whitespace-nowrap border-r border-gray-200 last:border-r-0">
-                                        {c.label}
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-50">
-                            {loading ? (
-                                <tr><td colSpan={assignedCols.length} className="p-4 text-center"><RefreshCcw size={14} className="animate-spin mx-auto text-gray-400" /></td></tr>
-                            ) : assignedRows.length === 0 ? (
-                                <tr><td colSpan={assignedCols.length} className="p-4 text-center text-gray-300 text-xs italic">None assigned</td></tr>
-                            ) : assignedRows.map((row, i) => {
-                                const rowKey = t(row[assignedKey]);
-                                const selected = selAssigned === rowKey;
-                                return (
-                                    <tr key={i} onClick={() => setSelAssigned(selected ? null : rowKey)}
-                                        className={cn("cursor-pointer text-xs transition-colors", selected ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50")}>
-                                        {assignedCols.map(c => (
-                                            <td key={c.key} className="px-2 py-1.5 border-r border-gray-50 last:border-r-0 truncate max-w-[160px]">{t(row[c.key.toUpperCase()] ?? row[c.key])}</td>
-                                        ))}
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div className="flex md:flex-col flex-row items-center justify-center gap-2 shrink-0 px-1 py-1 md:py-0">
-                <button onClick={handleAdd} disabled={!selAvailable || busy}
-                    className="flex items-center gap-1 px-2 py-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors">
-                    <ChevronLeft size={12} className="hidden md:block" /><ChevronLeft size={12} className="hidden md:block" />
-                    <span className="md:hidden"><ChevronLeft size={12} /></span>
-                    Add
-                </button>
-                <button onClick={handleRemove} disabled={!selAssigned || busy}
-                    className="flex items-center gap-1 px-2 py-1.5 bg-red-500 hover:bg-red-600 disabled:opacity-40 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors">
-                    Remove
-                    <ChevronRight size={12} className="hidden md:block" /><ChevronRight size={12} className="hidden md:block" />
-                    <span className="md:hidden"><ChevronRight size={12} /></span>
-                </button>
-            </div>
-
+            {/* Available Panel (Left) */}
             <div className="flex-1 flex flex-col min-h-0 min-w-0" style={{ minHeight: "200px" }}>
                 <div className="bg-gray-100 border-b border-gray-200 px-2 py-1">
                     <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Available ({availableRows.length})</span>
@@ -184,6 +133,56 @@ function DualPanel({
                                     <tr key={i} onClick={() => setSelAvailable(selected ? null : rowKey)}
                                         className={cn("cursor-pointer text-xs transition-colors", selected ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50")}>
                                         {availableCols.map(c => (
+                                            <td key={c.key} className="px-2 py-1.5 border-r border-gray-50 last:border-r-0 truncate max-w-[160px]">{t(row[c.key.toUpperCase()] ?? row[c.key])}</td>
+                                        ))}
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {/* Action Buttons (Center) */}
+            <div className="flex md:flex-col flex-row items-center justify-center gap-2 shrink-0 px-1 py-1 md:py-0 w-24">
+                <button onClick={handleAdd} disabled={!selAvailable || busy}
+                    className="w-full flex items-center justify-center gap-1 px-2 py-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors">
+                    Add <ChevronRight size={12} className="hidden md:block" />
+                </button>
+                <button onClick={handleRemove} disabled={!selAssigned || busy}
+                    className="w-full flex items-center justify-center gap-1 px-2 py-1.5 bg-red-500 hover:bg-red-600 disabled:opacity-40 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors">
+                    <ChevronLeft size={12} className="hidden md:block" /> Remove
+                </button>
+            </div>
+
+            {/* Assigned Panel (Right) */}
+            <div className="flex-1 flex flex-col min-h-0 min-w-0" style={{ minHeight: "200px" }}>
+                <div className="bg-gray-100 border-b border-gray-200 px-2 py-1">
+                    <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Assigned ({assignedRows.length})</span>
+                </div>
+                <div className="flex-1 overflow-auto">
+                    <table className="min-w-full text-left">
+                        <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
+                            <tr>
+                                {assignedCols.map(c => (
+                                    <th key={c.key} className="px-2 py-1.5 font-black text-[10px] text-gray-600 uppercase tracking-wide whitespace-nowrap border-r border-gray-200 last:border-r-0">
+                                        {c.label}
+                                    </th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                            {loading ? (
+                                <tr><td colSpan={assignedCols.length} className="p-4 text-center"><RefreshCcw size={14} className="animate-spin mx-auto text-gray-400" /></td></tr>
+                            ) : assignedRows.length === 0 ? (
+                                <tr><td colSpan={assignedCols.length} className="p-4 text-center text-gray-300 text-xs italic">None assigned</td></tr>
+                            ) : assignedRows.map((row, i) => {
+                                const rowKey = t(row[assignedKey]);
+                                const selected = selAssigned === rowKey;
+                                return (
+                                    <tr key={i} onClick={() => setSelAssigned(selected ? null : rowKey)}
+                                        className={cn("cursor-pointer text-xs transition-colors", selected ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50")}>
+                                        {assignedCols.map(c => (
                                             <td key={c.key} className="px-2 py-1.5 border-r border-gray-50 last:border-r-0 truncate max-w-[160px]">{t(row[c.key.toUpperCase()] ?? row[c.key])}</td>
                                         ))}
                                     </tr>

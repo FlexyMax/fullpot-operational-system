@@ -7,12 +7,38 @@ const int = (v: any) => { const n = parseInt(String(v ?? 0), 10); return isNaN(n
 const str = (v: any, len = 255) => String(v ?? "").trim().substring(0, len);
 
 export async function GET(req: NextRequest) {
-    const search = req.nextUrl.searchParams.get("search");
+    const search = req.nextUrl.searchParams.get("search") || "%";
+    const page = parseInt(req.nextUrl.searchParams.get("page") || "1", 10);
+    const limit = parseInt(req.nextUrl.searchParams.get("limit") || "1000", 10);
     try {
-        const r = await executeProcedure("sp_flower_growers_list_for_growers", {
-            lcgrower: search || "%",
+        const r = await executeProcedure("sp_NC_growers_list_for_growers", {
+            lnPageNumber: page,
+            lnRowsOfPage: limit,
+            lcgrower: search,
         });
-        return NextResponse.json(r.recordset ?? []);
+        
+        let data = [];
+        let total = 0;
+        
+        // If the SP returns multiple recordsets (e.g. one for data, one for count)
+        if (r.recordsets && r.recordsets.length > 1) {
+            const rs0 = r.recordsets[0];
+            const rs1 = r.recordsets[1];
+            if (rs0.length === 1 && rs0[0].TOTAL_RECORDS !== undefined) {
+                total = rs0[0].TOTAL_RECORDS;
+                data = rs1;
+            } else if (rs1.length === 1 && rs1[0].TOTAL_RECORDS !== undefined) {
+                total = rs1[0].TOTAL_RECORDS;
+                data = rs0;
+            } else {
+                data = r.recordset ?? [];
+            }
+        } else {
+            data = r.recordset ?? [];
+        }
+        
+        // Return standard array for backward compatibility if page/limit not explicitly used by client
+        return NextResponse.json(data);
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });
     }
