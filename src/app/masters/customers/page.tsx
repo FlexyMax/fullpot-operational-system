@@ -164,11 +164,11 @@ export default function CustomersSetupPage() {
             if (m && String(m.unico) !== String(custForm.salesman_uq)) updates.salesman_uq = String(m.unico);
         }
         if (!custForm.terms_uq && c.terms && lookups?.terms?.length) {
-            const m = lookups.terms.find((tt:any) => String(tt.TERMS||"").trim() === String(c.terms||"").trim());
-            if (m && String(m.unico) !== String(custForm.terms_uq)) updates.terms_uq = String(m.unico);
+            const m = lookups.terms.find((tt:any) => String(tt.CONDITION||"").trim() === String(c.terms||"").trim());
+            if (m && String(m.UNICO) !== String(custForm.terms_uq)) updates.terms_uq = String(m.UNICO);
         }
         if (!custForm.rc_uq && c.rc && lookups?.companies?.length) {
-            const m = lookups.companies.find((comp:any) => String(comp.Company||"").trim() === String(c.rc||"").trim());
+            const m = lookups.companies.find((comp:any) => String(comp.company||"").trim() === String(c.rc||"").trim());
             if (m && String(m.unico) !== String(custForm.rc_uq)) updates.rc_uq = String(m.unico);
         }
         
@@ -970,11 +970,11 @@ function CustomerModal({ mode, form, setForm, error, saving, activeTab, setActiv
                                 {Sel("Salesman *","salesman_uq",lookups.salesmen||[],"unico","salesman_name")}
                                 {Sel("Web Salesman","sales_web_uq",lookups.webSalesmen||[],"unico","salesman_name")}
                                 {Sel("Group *","group_uq",lookups.groups||[],"unico","groupname")}
-                                {Sel("Customer For *","rc_uq",lookups.companies||[],"unico","companyname")}
+                                {Sel("Customer For *","rc_uq",lookups.companies||[],"unico","company")}
                             </div>
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                 {Sel("Subregion","subregion_uq",lookups.subregions||[],"unico","subregion")}
-                                {Sel("Terms *","terms_uq",lookups.terms||[],"unico","TERMS")}
+                                {Sel("Terms *","terms_uq",lookups.terms||[],"UNICO","CONDITION")}
                                 {F("Customer Since","custsince",{type:"date"})}
                                 {F("Reason Hold","reasonhold")}
                             </div>
