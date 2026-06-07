@@ -704,7 +704,6 @@ export default function VendorsPage() {
                 >
                     <PanelGridTable>
                         <PanelGridThead>
-                            <tr>
                                 <PanelGridTh className="w-6">{""}</PanelGridTh>
                                 <PanelGridTh>Code</PanelGridTh>
                                 <PanelGridTh>Vendor</PanelGridTh>
@@ -713,7 +712,6 @@ export default function VendorsPage() {
                                 <PanelGridTh>City</PanelGridTh>
                                 <PanelGridTh>Country</PanelGridTh>
                                 <PanelGridTh className="text-center">Act.</PanelGridTh>
-                            </tr>
                         </PanelGridThead>
                         <PanelGridTbody>
                             {filteredList.length === 0 && !loadingList ? (
@@ -774,11 +772,9 @@ export default function VendorsPage() {
                                                         >
                                                             <PanelGridTable>
                                                                 <PanelGridThead>
-                                                                    <tr>
                                                                         <PanelGridTh>Document</PanelGridTh>
                                                                         <PanelGridTh>Date From</PanelGridTh>
                                                                         <PanelGridTh>Date To</PanelGridTh>
-                                                                    </tr>
                                                                 </PanelGridThead>
                                                                 <PanelGridTbody>
                                                                     {loadingDocs ? (
