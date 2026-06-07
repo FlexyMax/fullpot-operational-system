@@ -15,8 +15,11 @@ import { AppHeader } from "@/components/layout/AppHeader";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { GridMenu } from "@/components/GridMenu";
+import PanelGrid from "@/components/ui/PanelGrid";
+import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
 import { usePagePermissions } from "@/lib/permissions";
 import { useAuditLog } from "@/lib/audit";
+import { AppFooter } from "@/components/layout/AppFooter";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const t = (v: any) => String(v ?? "").trim();
@@ -205,9 +208,14 @@ export default function VendorsPage() {
     // ── State ─────────────────────────────────────────────────────────────────
     const [search,      setSearch]      = useState("");
     const [selectedUq,  setSelectedUq]  = useState<string | null>(null);
-    const [activeTab,   setActiveTab]   = useState<ActiveTab>("statement");
-    const [tabLoaded,   setTabLoaded]   = useState<Partial<Record<ActiveTab, boolean>>>({});
-    const [mobilePanel, setMobilePanel] = useState<"list" | "detail">("list");
+    const [expandedVendorUnico, setExpandedVendorUnico] = useState<string | null>(null);
+    
+    // Statement Modal & Data
+
+    // Modals
+    const [stmtModal, setStmtModal] = useState(false);
+    const [pendingModal, setPendingModal] = useState(false);
+    const [classesModal, setClassesModal] = useState(false);
 
     // Statement date range
     const [stmtFrom, setStmtFrom] = useState(firstOfYear());
@@ -264,7 +272,7 @@ export default function VendorsPage() {
         queryKey: ["vendors-statement", selectedUq, stmtFrom, stmtTo, stmtKey],
         queryFn:  () => fetch(`/api/vendors/statement?grower_uq=${selectedUq}&date_from=${stmtFrom}&date_to=${stmtTo}`)
             .then(r => r.json()),
-        enabled:  !!selectedUq && activeTab === "statement" && !!tabLoaded["statement"],
+        enabled:  !!selectedUq && (stmtModal || pendingModal),
         staleTime: 0,
     });
     const stmtRows    = norm(stmtData?.statement ?? []);
@@ -274,7 +282,7 @@ export default function VendorsPage() {
     const { data: docsList = [], isFetching: loadingDocs, refetch: refetchDocs } = useQuery({
         queryKey: ["vendors-documents", selectedUq],
         queryFn:  () => fetch(`/api/vendors/documents?grower_uq=${selectedUq}`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
-        enabled:  !!selectedUq && activeTab === "documents" && !!tabLoaded["documents"],
+        enabled:  !!selectedUq && expandedVendorUnico === selectedUq,
         staleTime: 0,
     });
 
@@ -282,13 +290,13 @@ export default function VendorsPage() {
     const { data: assignedClasses = [], isFetching: loadingClassA, refetch: refetchClassA } = useQuery({
         queryKey: ["vendors-classes-assigned", selectedUq],
         queryFn:  () => fetch(`/api/vendors/classes?grower_uq=${selectedUq}`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
-        enabled:  !!selectedUq && activeTab === "classes" && !!tabLoaded["classes"],
+        enabled:  !!selectedUq && classesModal,
         staleTime: 0,
     });
     const { data: availableClasses = [], isFetching: loadingClassB, refetch: refetchClassB } = useQuery({
         queryKey: ["vendors-classes-available", selectedUq],
         queryFn:  () => fetch(`/api/vendors/classes?grower_uq=${selectedUq}&not_in=1`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
-        enabled:  !!selectedUq && activeTab === "classes" && !!tabLoaded["classes"],
+        enabled:  !!selectedUq && classesModal,
         staleTime: 0,
     });
 
@@ -312,18 +320,12 @@ export default function VendorsPage() {
         );
     }, [vendorsList, search]);
 
-    // ── Tab click ─────────────────────────────────────────────────────────────
-    const handleTabClick = (tab: ActiveTab) => {
-        setActiveTab(tab);
-        setTabLoaded(prev => ({ ...prev, [tab]: true }));
-    };
+
 
     // ── Row select ────────────────────────────────────────────────────────────
     const handleSelectRow = (row: any) => {
         const uq = t(row.UNICO);
         setSelectedUq(uq);
-        setTabLoaded({ [activeTab]: true });
-        setMobilePanel("detail");
     };
 
     // ── Add vendor ────────────────────────────────────────────────────────────
@@ -347,6 +349,8 @@ export default function VendorsPage() {
             const fill: any = {};
             for (const [k, v] of Object.entries(d)) fill[k.toLowerCase()] = v;
             setForm({
+                ...EMPTY_FORM,
+                ...fill,
                 unico:                  t(fill.unico),
                 grower:                 t(fill.grower),
                 farm:                   t(fill.farm),
@@ -401,9 +405,9 @@ export default function VendorsPage() {
                 special_contributor:    Boolean(fill.special_contributor ?? fill.special),
                 inventory_from_products: Boolean(fill.inventory_from_products),
                 clave:                  t(fill.password ?? fill.clave ?? ""),
-                terms_uq:               t(fill.terms_uq),
-                agency_uq:              t(fill.type_uq ?? fill.agency_uq ?? ""),
-                group_uq:               t(fill.cargo_uq ?? fill.group_uq ?? ""),
+                terms_uq:               t(fill.terms_uq ?? fill.terms ?? ""),
+                agency_uq:              t(fill.type_uq ?? fill.agency_uq ?? fill.type ?? ""),
+                group_uq:               t(fill.cargo_uq ?? fill.group_uq ?? fill.cargo_airline ?? ""),
             });
             setFormError(null);
             setModalTab("main");
@@ -643,371 +647,334 @@ export default function VendorsPage() {
 
     const fInput = "fos-input h-8 text-xs";
     const fLabel = "text-[10px] font-black text-gray-500 uppercase tracking-wider";
-
     return (
         <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
-
             <AppHeader title="Vendors" />
 
-            {/* ── Main Layout ── */}
-            <div className="flex flex-col md:flex-row flex-1 gap-2 p-2 overflow-hidden min-h-0">
-
-                {/* ── Left: Vendors List ── */}
-                <div className={cn(
-                    "flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden min-h-0",
-                    "md:w-[30%] md:shrink-0 md:flex",
-                    mobilePanel === "list" ? "flex flex-1" : "hidden md:flex"
-                )}>
-                    <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
-                        <div className="flex items-center gap-2">
-                            <Building2 size={16} className="text-[#FB7506]" />
-                            <span className="font-black text-[10px] text-gray-100 uppercase tracking-widest">Vendors</span>
-                            {loadingList && <RefreshCcw size={12} className="animate-spin text-gray-400" />}
-                        </div>
-                        <GridMenu items={[
-                            { label: "Add",     icon: Plus,        color: "green", onClick: handleAdd,    disabled: !perms.canCreate },
-                            { label: "Edit",    icon: Pencil,      color: "orange", onClick: handleEdit,  disabled: !selectedUq || !perms.canEdit },
-                            { label: "Delete",  icon: Trash2,      color: "red",   onClick: handleDelete, disabled: !selectedUq || !perms.canDelete },
-                            { separator: true } as any,
-                            { label: "Refresh", icon: RefreshCcw,  color: "gray",  onClick: () => refetchList() },
-                            { label: "Reports", icon: FileText,    color: "blue",  onClick: () => toast.info("Reports coming soon."), disabled: !perms.canReport },
-                        ]} />
-                    </div>
-
-                    {/* Search */}
-                    <div className="p-2 border-b border-gray-100 shrink-0">
-                        <div className="relative">
-                            <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-                                placeholder="Search vendors..."
-                                className="w-full pl-7 pr-2 h-8 text-xs border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506]" />
-                        </div>
-                    </div>
-
-                    {/* Grid header */}
-                    <div className="bg-gray-100 border-b border-gray-200 shrink-0">
-                        <div className="grid grid-cols-[1fr_40px] px-2 py-1.5 md:hidden">
-                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Vendor</span>
-                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide text-center">Act.</span>
-                        </div>
-                        <div className="hidden md:grid px-2 py-1.5" style={{ gridTemplateColumns: "55px 1fr 45px 55px 80px 65px 44px" }}>
-                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Code</span>
-                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Vendor</span>
-                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">FOB</span>
-                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">SalesRep</span>
-                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">City</span>
-                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Country</span>
-                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide text-center">Act.</span>
-                        </div>
-                    </div>
-
-                    {/* List rows */}
-                    <div className="overflow-y-auto flex-1 divide-y divide-gray-50 text-gray-800">
-                        {filteredList.length === 0 && !loadingList ? (
-                            <div className="p-6 text-center text-gray-300 text-xs italic">
-                                {search ? "No results" : "No vendors found"}
-                            </div>
-                        ) : filteredList.map((row: any, i: number) => {
-                            const uq = t(row.UNICO);
-                            const selected = selectedUq === uq;
-                            const rowBase = cn("cursor-pointer transition-colors text-xs px-2 py-1.5",
-                                selected ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50");
-                            return (
-                                <div key={uq || i} onClick={() => handleSelectRow(row)}>
-                                    {/* Mobile row */}
-                                    <div className={cn(rowBase, "grid grid-cols-[1fr_40px] md:hidden")}>
-                                        <div className="min-w-0">
-                                            <p className={cn("truncate font-semibold text-xs", selected ? "text-blue-800" : "text-gray-800")}>{t(row.GROWER)}</p>
-                                            <p className="text-[10px] text-gray-400 truncate">{t(row.FARM)} {t(row.CITY) && `· ${t(row.CITY)}`}</p>
-                                        </div>
-                                        <span className="text-center self-center">
-                                            {Boolean(row.ACTIVE) ? <span className="text-green-600 font-black text-[10px]">✓</span> : <span className="text-gray-300 text-[10px]">—</span>}
-                                        </span>
-                                    </div>
-                                    {/* Desktop row */}
-                                    <div className={cn(rowBase, "hidden md:grid")} style={{ gridTemplateColumns: "55px 1fr 45px 55px 80px 65px 44px" }}>
-                                        <span className="truncate text-gray-500 text-[11px] self-center font-mono">{t(row.FARM)}</span>
-                                        <span className={cn("truncate font-semibold text-[11px] self-center", selected ? "text-blue-800" : "text-gray-800")}>{t(row.GROWER)}</span>
-                                        <span className="truncate text-gray-500 text-[11px] self-center">{t(row.FOB)}</span>
-                                        <span className="truncate text-gray-500 text-[11px] self-center">{t(row.SALES_PERSON)}</span>
-                                        <span className="truncate text-gray-500 text-[11px] self-center">{t(row.CITY)}</span>
-                                        <span className="truncate text-gray-500 text-[11px] self-center">{t(row.COUNTRY)}</span>
-                                        <span className="text-center self-center">
-                                            {Boolean(row.ACTIVE) ? <span className="text-green-600 font-black text-[10px]">YES</span> : <span className="text-gray-400 text-[10px]">—</span>}
-                                        </span>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                    <div className="px-3 py-1.5 border-t border-gray-100 shrink-0 bg-gray-50">
-                        <span className="text-[10px] text-gray-400 font-bold">{filteredList.length} record{filteredList.length !== 1 ? "s" : ""}</span>
-                    </div>
-                </div>
-
-                {/* ── Right: Detail tabs ── */}
-                <div className={cn(
-                    "flex flex-col min-w-0 min-h-0 bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden",
-                    "md:flex md:flex-1",
-                    mobilePanel === "detail" ? "flex flex-1" : "hidden md:flex"
-                )}>
-                    {/* Tab bar */}
-                    <div className="h-10 bg-[#374151] flex items-center px-2 gap-0.5 shrink-0 overflow-x-auto scrollbar-none">
-                        <div className="flex items-end flex-1 gap-0.5 self-end">
-                            {TABS.map(tab => (
-                                <button key={tab.key}
-                                    onClick={() => { if (selectedUq) handleTabClick(tab.key); }}
-                                    disabled={!selectedUq}
-                                    className={cn(
-                                        "px-2 md:px-4 h-8 text-[9px] md:text-[10px] font-black uppercase tracking-wider rounded-t transition-all whitespace-nowrap shrink-0",
-                                        !selectedUq && "opacity-40 cursor-not-allowed",
-                                        activeTab === tab.key ? "bg-[#f4f6f8] text-[#FB7506]" : "text-gray-400 hover:text-white hover:bg-white/10"
-                                    )}>
-                                    {tab.label}
-                                </button>
-                            ))}
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0 pb-1">
-                            <button onClick={() => { setWsModal(true); }} disabled={!selectedUq}
-                                className="flex items-center gap-1 bg-white/10 hover:bg-white/20 disabled:opacity-40 text-white px-2 py-1 rounded text-[10px] font-black uppercase tracking-wide transition-colors">
+            <div className="flex-1 overflow-hidden p-2 flex flex-col min-h-0">
+                <PanelGrid
+                    icon={Building2}
+                    title="Vendors"
+                    recordCount={filteredList.length}
+                    loading={loadingList}
+                    onRefresh={refetchList}
+                    search={search}
+                    onSearch={setSearch}
+                    searchPlaceholder="Search vendors..."
+                    menuItems={[
+                        { label: "Add",     icon: Plus,        color: "green", onClick: handleAdd,    disabled: !perms.canCreate },
+                        { label: "Edit",    icon: Pencil,      color: "orange", onClick: handleEdit,  disabled: !selectedUq || !perms.canEdit },
+                        { label: "Delete",  icon: Trash2,      color: "red",   onClick: handleDelete, disabled: !selectedUq || !perms.canDelete },
+                        { separator: true } as any,
+                        { label: "Groups",  icon: Building2,   color: "blue",  onClick: () => { setGrpForm({ unico: "", growertype: "" }); setGrpMode("add"); setSelGrpUq(null); setGrpError(null); setGrpModal(true); } },
+                        { label: "CSV",     icon: Download,    color: "gray",  onClick: () => {
+                            if (!filteredList.length) return;
+                            const headers = ["Code","Vendor","FOB","SalesRep","City","Country","Active","Phone","Fax","Email"];
+                            const rows2 = filteredList.map((r: any) => [
+                                t(r.FARM), t(r.GROWER), t(r.FOB), t(r.SALES_PERSON), t(r.CITY), t(r.COUNTRY),
+                                r.ACTIVE ? "Yes" : "No", t(r.PHONE_1), t(r.FAX_1), t(r.EMAIL_1)
+                            ]);
+                            const csv = [headers, ...rows2].map(row => row.map((v: string) => `"${v.replace(/"/g,'""')}"`).join(",")).join("\n");
+                            const blob = new Blob([csv], { type: "text/csv" });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement("a"); a.href = url; a.download = "vendors.csv"; a.click();
+                            URL.revokeObjectURL(url);
+                        }},
+                    ]}
+                    headerRight={
+                        <div className="flex items-center gap-1.5 h-full px-2 overflow-x-auto scrollbar-none shrink-0">
+                            <button onClick={() => setStmtModal(true)} disabled={!selectedUq}
+                                className="flex items-center gap-1.5 h-6 px-2.5 bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded text-[10px] font-black uppercase tracking-wider transition-colors whitespace-nowrap">
+                                <FileText size={12} /> Statement
+                            </button>
+                            <button onClick={() => setPendingModal(true)} disabled={!selectedUq}
+                                className="flex items-center gap-1.5 h-6 px-2.5 bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded text-[10px] font-black uppercase tracking-wider transition-colors whitespace-nowrap">
+                                <AlertCircle size={12} /> Pending Invoices
+                            </button>
+                            <button onClick={() => setClassesModal(true)} disabled={!selectedUq}
+                                className="flex items-center gap-1.5 h-6 px-2.5 bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded text-[10px] font-black uppercase tracking-wider transition-colors whitespace-nowrap">
+                                <Settings2 size={12} /> Classes
+                            </button>
+                            <button onClick={() => setWsModal(true)} disabled={!selectedUq}
+                                className="flex items-center gap-1.5 h-6 px-2.5 bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded text-[10px] font-black uppercase tracking-wider transition-colors whitespace-nowrap">
                                 <Globe size={12} /> Web
                             </button>
-                            <button onClick={() => { setGrpForm({ unico: "", growertype: "" }); setGrpMode("add"); setSelGrpUq(null); setGrpError(null); setGrpModal(true); }}
-                                className="flex items-center gap-1 bg-white/10 hover:bg-white/20 text-white px-2 py-1 rounded text-[10px] font-black uppercase tracking-wide transition-colors">
-                                <Building2 size={12} /> Groups
-                            </button>
-                            <button onClick={() => {
-                                if (!filteredList.length) return;
-                                const headers = ["Code","Vendor","FOB","SalesRep","City","Country","Active","Phone","Fax","Email"];
-                                const rows2 = filteredList.map((r: any) => [
-                                    t(r.FARM), t(r.GROWER), t(r.FOB), t(r.SALES_PERSON), t(r.CITY), t(r.COUNTRY),
-                                    r.ACTIVE ? "Yes" : "No", t(r.PHONE_1), t(r.FAX_1), t(r.EMAIL_1)
-                                ]);
-                                const csv = [headers, ...rows2].map(row => row.map((v: string) => `"${v.replace(/"/g,'""')}"`).join(",")).join("\n");
-                                const blob = new Blob([csv], { type: "text/csv" });
-                                const url = URL.createObjectURL(blob);
-                                const a = document.createElement("a"); a.href = url; a.download = "vendors.csv"; a.click();
-                                URL.revokeObjectURL(url);
-                            }}
-                                className="flex items-center gap-1 bg-white/10 hover:bg-white/20 text-white px-2 py-1 rounded text-[10px] font-black uppercase tracking-wide transition-colors">
-                                <Download size={12} /> CSV
-                            </button>
                         </div>
-                    </div>
+                    }
+                >
+                    <PanelGridTable>
+                        <PanelGridThead>
+                            <tr>
+                                <PanelGridTh className="w-8 text-center"></PanelGridTh>
+                                <PanelGridTh>Code</PanelGridTh>
+                                <PanelGridTh>Vendor</PanelGridTh>
+                                <PanelGridTh>FOB</PanelGridTh>
+                                <PanelGridTh>SalesRep</PanelGridTh>
+                                <PanelGridTh>City</PanelGridTh>
+                                <PanelGridTh>Country</PanelGridTh>
+                                <PanelGridTh className="text-center">Act.</PanelGridTh>
+                            </tr>
+                        </PanelGridThead>
+                        <PanelGridTbody>
+                            {filteredList.length === 0 && !loadingList ? (
+                                <tr>
+                                    <PanelGridTd colSpan={8} className="text-center italic text-gray-400">
+                                        {search ? "No results" : "No vendors found"}
+                                    </PanelGridTd>
+                                </tr>
+                            ) : filteredList.map((row: any, i: number) => {
+                                const uq = t(row.UNICO);
+                                const selected = selectedUq === uq;
+                                const isExp = expandedVendorUnico === uq;
 
-                    {/* Vendor name header */}
-                    {selectedUq && (
-                        <div className="bg-white border-b border-gray-200 px-4 py-2 shrink-0 flex items-center justify-between">
-                            <span className="font-black text-lg text-[#374151] uppercase tracking-tight">
-                                {selName || "—"}
-                            </span>
-                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                                {selRec && t(selRec.FARM) ? `Farm: ${t(selRec.FARM)}` : ""}{selRec && t(selRec.CITY) ? ` · ${t(selRec.CITY)}` : ""}
-                            </span>
+                                return (
+                                    <Fragment key={uq || i}>
+                                        <PanelGridTr selected={selected} onClick={() => handleSelectRow(row)}>
+                                            <PanelGridTd className="text-center cursor-pointer"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleSelectRow(row);
+                                                    setExpandedVendorUnico(isExp ? null : uq);
+                                                }}>
+                                                <button className={cn("p-0.5 rounded transition-colors text-gray-400 hover:text-[#FB7506] hover:bg-orange-50")}>
+                                                    <ChevronRight size={14} className={cn("transition-transform duration-200", isExp && "rotate-90 text-[#FB7506]")} />
+                                                </button>
+                                            </PanelGridTd>
+                                            <PanelGridTd className="font-mono">{t(row.FARM)}</PanelGridTd>
+                                            <PanelGridTd className="font-bold">{t(row.GROWER)}</PanelGridTd>
+                                            <PanelGridTd>{t(row.FOB)}</PanelGridTd>
+                                            <PanelGridTd>{t(row.SALES_PERSON)}</PanelGridTd>
+                                            <PanelGridTd>{t(row.CITY)}</PanelGridTd>
+                                            <PanelGridTd>{t(row.COUNTRY)}</PanelGridTd>
+                                            <PanelGridTd className="text-center">
+                                                {Boolean(row.ACTIVE) ? <span className="text-green-600 font-black text-[10px]">YES</span> : <span className="text-gray-400 text-[10px]">—</span>}
+                                            </PanelGridTd>
+                                        </PanelGridTr>
+                                        
+                                        {isExp && (
+                                            <tr className="bg-gray-50/80 border-b border-gray-100 relative">
+                                                {/* Connecting line */}
+                                                <td className="relative p-0">
+                                                    <div className="absolute left-1/2 top-0 bottom-4 w-px bg-gray-200 -translate-x-1/2"></div>
+                                                    <div className="absolute left-1/2 bottom-4 w-4 h-px bg-gray-200"></div>
+                                                </td>
+                                                <td colSpan={7} className="p-3 pl-0 pr-4">
+                                                    <div className="bg-white rounded-md border border-gray-200 shadow-sm overflow-hidden flex flex-col" style={{ minHeight: "150px" }}>
+                                                        <div className="h-8 bg-gray-100 border-b border-gray-200 flex items-center justify-between pl-2 pr-0 shrink-0">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <FileText size={12} className="text-[#FB7506]" />
+                                                                <span className="font-black text-[9px] text-gray-600 uppercase tracking-widest">Documents ({(docsList as any[]).length})</span>
+                                                                {loadingDocs && <RefreshCcw size={10} className="animate-spin text-gray-400" />}
+                                                            </div>
+                                                            <GridMenu items={[
+                                                                { label: "Add",    icon: Plus,   color: "green",  onClick: handleOpenAddDoc },
+                                                                { label: "Edit",   icon: Pencil, color: "orange", onClick: handleOpenEditDoc, disabled: !selDocUq },
+                                                                { label: "Delete", icon: Trash2, color: "red",    onClick: handleDeleteDoc,   disabled: !selDocUq },
+                                                            ]} />
+                                                        </div>
+                                                        <div className="flex-1 overflow-auto bg-white">
+                                                            <table className="min-w-full text-left border-collapse">
+                                                                <thead className="sticky top-0 z-10 bg-white">
+                                                                    <tr>
+                                                                        {["Document", "Date From", "Date To"].map(h => (
+                                                                            <th key={h} className="px-2 py-1 border-b border-r border-gray-100 last:border-r-0 font-black text-[9px] text-gray-400 uppercase tracking-wider bg-white">
+                                                                                {h}
+                                                                            </th>
+                                                                        ))}
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody className="divide-y divide-gray-50">
+                                                                    {loadingDocs ? (
+                                                                        <tr><td colSpan={3} className="p-4 text-center"><RefreshCcw size={14} className="animate-spin mx-auto text-gray-400" /></td></tr>
+                                                                    ) : (docsList as any[]).length === 0 ? (
+                                                                        <tr><td colSpan={3} className="p-4 text-center text-gray-300 italic text-[10px]">No documents found</td></tr>
+                                                                    ) : (docsList as any[]).map((doc: any, j: number) => {
+                                                                        const duq = t(doc.UNICO);
+                                                                        const dsel = selDocUq === duq;
+                                                                        return (
+                                                                            <tr key={j} onClick={() => setSelDocUq(dsel ? null : duq)}
+                                                                                className={cn("cursor-pointer transition-colors text-[10px]", dsel ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50")}>
+                                                                                <td className="px-2 py-1.5 border-r border-gray-50 truncate max-w-[200px] font-semibold text-gray-700">{t(doc.DOCUMENT)}</td>
+                                                                                <td className="px-2 py-1.5 border-r border-gray-50">{fmtDate(doc.DATE_FROM ?? doc.LDFROM)}</td>
+                                                                                <td className="px-2 py-1.5">{fmtDate(doc.DATE_TO ?? doc.LDTO)}</td>
+                                                                            </tr>
+                                                                        );
+                                                                    })}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </Fragment>
+                                );
+                            })}
+                        </PanelGridTbody>
+                    </PanelGridTable>
+                </PanelGrid>
+            </div>
+            
+            <AppFooter />
+
+            {/* ─── Statement Modal ─────────────────────────────────────────────────── */}
+            {stmtModal && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                    onClick={() => setStmtModal(false)}>
+                    <div className="bg-white rounded-lg shadow-2xl w-full max-w-5xl h-[80vh] flex flex-col overflow-hidden"
+                        onClick={e => e.stopPropagation()}>
+                        <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
+                            <div className="flex items-center gap-2">
+                                <FileText size={16} className="text-[#FB7506]" />
+                                <span className="font-black text-[10px] text-white uppercase tracking-widest">
+                                    Statement — {(filteredList as any[]).find((r: any) => t(r.UNICO) === selectedUq)?.GROWER}
+                                </span>
+                            </div>
+                            <button onClick={() => setStmtModal(false)} className="text-gray-400 hover:text-white transition-colors"><X size={16} /></button>
                         </div>
-                    )}
-
-                    {/* Tab content */}
-                    <div className="flex-1 overflow-hidden min-h-0 flex flex-col">
-                        {!selectedUq ? (
-                            <div className="flex-1 flex items-center justify-center text-gray-300 text-sm font-bold uppercase tracking-wide">
-                                <div className="text-center">
-                                    <Building2 size={40} className="mx-auto mb-3 opacity-30" />
-                                    <p>Select a vendor</p>
-                                </div>
+                        
+                        <div className="bg-gray-50 border-b border-gray-200 px-3 py-2 flex flex-wrap items-center gap-2 shrink-0">
+                            <Calendar size={14} className="text-gray-400" />
+                            <div className="flex items-center gap-1">
+                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-wide">From</label>
+                                <input type="date" value={stmtFrom} onChange={e => setStmtFrom(e.target.value)}
+                                    className="h-7 text-xs border border-gray-200 rounded px-1.5 outline-none focus:ring-1 focus:ring-[#FB7506]" />
                             </div>
-                        ) : !tabLoaded[activeTab] ? (
-                            <div className="flex-1 flex items-center justify-center text-gray-300 text-xs font-bold uppercase">
-                                Click a tab to load data
+                            <div className="flex items-center gap-1">
+                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-wide">To</label>
+                                <input type="date" value={stmtTo} onChange={e => setStmtTo(e.target.value)}
+                                    className="h-7 text-xs border border-gray-200 rounded px-1.5 outline-none focus:ring-1 focus:ring-[#FB7506]" />
                             </div>
-                        ) : (
-                            <>
-                                {/* ── Tab: Statement ── */}
-                                {activeTab === "statement" && (
-                                    <div className="flex flex-col flex-1 min-h-0">
-                                        {/* Date filters */}
-                                        <div className="bg-gray-50 border-b border-gray-200 px-3 py-2 flex flex-wrap items-center gap-2 shrink-0">
-                                            <Calendar size={14} className="text-gray-400" />
-                                            <div className="flex items-center gap-1">
-                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-wide">From</label>
-                                                <input type="date" value={stmtFrom} onChange={e => setStmtFrom(e.target.value)}
-                                                    className="h-7 text-xs border border-gray-200 rounded px-1.5 outline-none focus:ring-1 focus:ring-[#FB7506]" />
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-wide">To</label>
-                                                <input type="date" value={stmtTo} onChange={e => setStmtTo(e.target.value)}
-                                                    className="h-7 text-xs border border-gray-200 rounded px-1.5 outline-none focus:ring-1 focus:ring-[#FB7506]" />
-                                            </div>
-                                            <button
-                                                onClick={() => setStmtKey(k => k + 1)}
-                                                className="flex items-center gap-1 px-2 py-1 bg-[#FB7506] hover:bg-orange-600 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors">
-                                                {loadingStmt ? <RefreshCcw size={12} className="animate-spin" /> : <RefreshCcw size={12} />}
-                                                Load
-                                            </button>
-                                            {loadingStmt && <RefreshCcw size={12} className="animate-spin text-gray-400" />}
-                                        </div>
+                            <button
+                                onClick={() => setStmtKey(k => k + 1)}
+                                className="flex items-center gap-1 px-2 py-1 bg-[#FB7506] hover:bg-orange-600 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors">
+                                {loadingStmt ? <RefreshCcw size={12} className="animate-spin" /> : <RefreshCcw size={12} />}
+                                Load
+                            </button>
+                            {loadingStmt && <RefreshCcw size={12} className="animate-spin text-gray-400" />}
+                        </div>
 
-                                        <div className="flex-1 overflow-auto flex flex-col md:flex-row gap-0 min-h-0">
-                                            {/* Statement balance table */}
-                                            <div className="flex flex-col md:flex-1 min-h-0" style={{ minHeight: "200px" }}>
-                                                <div className="bg-gray-100 border-b border-r border-gray-200 px-3 py-1.5 shrink-0">
-                                                    <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">
-                                                        Statement Balance ({stmtRows.length})
-                                                    </span>
-                                                </div>
-                                                <div className="flex-1 overflow-auto border-r border-gray-100">
-                                                    <table className="min-w-full text-left">
-                                                        <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
-                                                            <tr>
-                                                                {["Invoice", "PO", "Inv.Date", "Amount", "Payments", "Credits", "Debits", "Balance", "Due Date", "Accum.Bal"].map(h => (
-                                                                    <th key={h} className="px-2 py-1.5 font-black text-[10px] text-gray-600 uppercase tracking-wide whitespace-nowrap border-r border-gray-200 last:border-r-0">{h}</th>
-                                                                ))}
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody className="divide-y divide-gray-50 text-xs">
-                                                            {loadingStmt ? (
-                                                                <tr><td colSpan={10} className="p-4 text-center"><RefreshCcw size={14} className="animate-spin mx-auto text-gray-400" /></td></tr>
-                                                            ) : stmtRows.length === 0 ? (
-                                                                <tr><td colSpan={10} className="p-6 text-center text-gray-300 italic">No statement records</td></tr>
-                                                            ) : stmtRows.map((row: any, i: number) => (
-                                                                <tr key={i} className="hover:bg-gray-50">
-                                                                    <td className="px-2 py-1.5 border-r border-gray-50 font-mono truncate max-w-[90px]">{t(row.INVOICE_NO ?? "")}</td>
-                                                                    <td className="px-2 py-1.5 border-r border-gray-50 truncate max-w-[70px]">{row.PORDER_NO ? t(row.PORDER_NO) : ""}</td>
-                                                                    <td className="px-2 py-1.5 border-r border-gray-50 whitespace-nowrap">{fmtDate(row.DATE_ORDER ?? row.INVOICE_DATE ?? "")}</td>
-                                                                    <td className="px-2 py-1.5 border-r border-gray-50 text-right font-mono">{fmt(row.AMMOUNT ?? 0)}</td>
-                                                                    <td className="px-2 py-1.5 border-r border-gray-50 text-right font-mono">{fmt(row.PAYMENTS ?? 0)}</td>
-                                                                    <td className="px-2 py-1.5 border-r border-gray-50 text-right font-mono">{fmt(row.CREDITS ?? 0)}</td>
-                                                                    <td className="px-2 py-1.5 border-r border-gray-50 text-right font-mono">{fmt(row.DEBITS ?? 0)}</td>
-                                                                    <td className={cn("px-2 py-1.5 border-r border-gray-50 text-right font-mono font-bold",
-                                                                        parseFloat(row.TOTAL_BALANCE ?? 0) > 0 ? "text-red-600" : "text-green-700")}>
-                                                                        {fmt(row.TOTAL_BALANCE ?? 0)}
-                                                                    </td>
-                                                                    <td className="px-2 py-1.5 border-r border-gray-50 whitespace-nowrap">{t(row.DUE_DATE ?? "")}</td>
-                                                                    <td className={cn("px-2 py-1.5 text-right font-mono font-bold",
-                                                                        parseFloat(row.ACCUMULATED ?? 0) > 0 ? "text-red-600" : "text-green-700")}>
-                                                                        {fmt(row.ACCUMULATED ?? 0)}
-                                                                    </td>
-                                                                </tr>
-                                                            ))}
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </div>
-
-                                            {/* Pending invoices table */}
-                                            <div className="flex flex-col md:w-[42%] shrink-0 min-h-0" style={{ minHeight: "200px" }}>
-                                                <div className="bg-gray-100 border-b border-gray-200 px-3 py-1.5 shrink-0">
-                                                    <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">
-                                                        Pending Invoices ({pendingRows.length})
-                                                    </span>
-                                                </div>
-                                                <div className="flex-1 overflow-auto">
-                                                    <table className="min-w-full text-left">
-                                                        <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
-                                                            <tr>
-                                                                {["Invoice", "Inv.Date", "Amount", "Payments", "Balance"].map(h => (
-                                                                    <th key={h} className="px-2 py-1.5 font-black text-[10px] text-gray-600 uppercase tracking-wide whitespace-nowrap border-r border-gray-200 last:border-r-0">{h}</th>
-                                                                ))}
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody className="divide-y divide-gray-50 text-xs">
-                                                            {loadingStmt ? (
-                                                                <tr><td colSpan={5} className="p-4 text-center"><RefreshCcw size={14} className="animate-spin mx-auto text-gray-400" /></td></tr>
-                                                            ) : pendingRows.length === 0 ? (
-                                                                <tr><td colSpan={5} className="p-6 text-center text-gray-300 italic">No pending invoices</td></tr>
-                                                            ) : pendingRows.map((row: any, i: number) => (
-                                                                <tr key={i} className="hover:bg-gray-50">
-                                                                    <td className="px-2 py-1.5 border-r border-gray-50 font-mono truncate max-w-[90px]">{t(row.INVOICE_NO ?? "")}</td>
-                                                                    <td className="px-2 py-1.5 border-r border-gray-50 whitespace-nowrap">{fmtDate(row.DATE_ORDER ?? row.INVOICE_DATE ?? "")}</td>
-                                                                    <td className="px-2 py-1.5 border-r border-gray-50 text-right font-mono">{fmt(row.AMMOUNT ?? 0)}</td>
-                                                                    <td className="px-2 py-1.5 border-r border-gray-50 text-right font-mono">{fmt(row.PAYMENTS ?? 0)}</td>
-                                                                    <td className={cn("px-2 py-1.5 text-right font-mono font-bold", parseFloat(row.TOTAL_BALANCE ?? 0) > 0 ? "text-red-600" : "text-green-700")}>{fmt(row.TOTAL_BALANCE ?? 0)}</td>
-                                                                </tr>
-                                                            ))}
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* ── Tab: Documents ── */}
-                                {activeTab === "documents" && (
-                                    <div className="flex flex-col flex-1 min-h-0">
-                                        <div className="h-9 bg-gray-50 border-b border-gray-200 flex items-center justify-between px-3 shrink-0">
-                                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">
-                                                Documents ({(docsList as any[]).length})
-                                            </span>
-                                            <div className="flex items-center gap-1">
-                                                {loadingDocs && <RefreshCcw size={12} className="animate-spin text-gray-400" />}
-                                                <button onClick={handleOpenAddDoc}
-                                                    className="flex items-center gap-1 px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors">
-                                                    <Plus size={12} /> Add
-                                                </button>
-                                                <button onClick={handleOpenEditDoc} disabled={!selDocUq}
-                                                    className="flex items-center gap-1 px-2 py-1 bg-[#FB7506] hover:bg-orange-600 disabled:opacity-40 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors">
-                                                    <Pencil size={12} /> Edit
-                                                </button>
-                                                <button onClick={handleDeleteDoc} disabled={!selDocUq}
-                                                    className="flex items-center gap-1 px-2 py-1 bg-red-500 hover:bg-red-600 disabled:opacity-40 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors">
-                                                    <Trash2 size={12} /> Del
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div className="flex-1 overflow-auto">
-                                            <table className="min-w-full text-left">
-                                                <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
-                                                    <tr>
-                                                        {["Document", "Date From", "Date To"].map(h => (
-                                                            <th key={h} className="px-2 py-1.5 font-black text-[10px] text-gray-600 uppercase tracking-wide whitespace-nowrap border-r border-gray-200 last:border-r-0">{h}</th>
-                                                        ))}
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-gray-50 text-xs">
-                                                    {loadingDocs ? (
-                                                        <tr><td colSpan={3} className="p-4 text-center"><RefreshCcw size={14} className="animate-spin mx-auto text-gray-400" /></td></tr>
-                                                    ) : (docsList as any[]).length === 0 ? (
-                                                        <tr><td colSpan={3} className="p-6 text-center text-gray-300 italic">No documents</td></tr>
-                                                    ) : (docsList as any[]).map((row: any, i: number) => {
-                                                        const uq = t(row.UNICO);
-                                                        const sel = selDocUq === uq;
-                                                        return (
-                                                            <tr key={i} onClick={() => setSelDocUq(sel ? null : uq)}
-                                                                className={cn("cursor-pointer transition-colors", sel ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50")}>
-                                                                <td className="px-2 py-1.5 border-r border-gray-50 truncate max-w-[240px]">{t(row.DOCUMENT)}</td>
-                                                                <td className="px-2 py-1.5 border-r border-gray-50 whitespace-nowrap">{fmtDate(row.DATE_FROM ?? row.LDFROM)}</td>
-                                                                <td className="px-2 py-1.5 whitespace-nowrap">{fmtDate(row.DATE_TO ?? row.LDTO)}</td>
-                                                            </tr>
-                                                        );
-                                                    })}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* ── Tab: Classes ── */}
-                                {activeTab === "classes" && (
-                                    <div className="flex-1 min-h-0 p-2 overflow-hidden">
-                                        <DualPanel
-                                            assignedRows={assignedClasses as any[]}
-                                            availableRows={availableClasses as any[]}
-                                            assignedCols={[{ key: "CLASE", label: "Class" }]}
-                                            availableCols={[{ key: "CLASE", label: "Class" }]}
-                                            onAdd={handleAddClass}
-                                            onRemove={handleRemoveClass}
-                                            loading={loadingClassA || loadingClassB}
-                                            assignedKey="UNICO"
-                                            availableKey="UNICO"
-                                        />
-                                    </div>
-                                )}
-                            </>
-                        )}
+                        <div className="flex-1 overflow-auto flex flex-col min-h-0 bg-white">
+                            <table className="min-w-full text-left">
+                                <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
+                                    <tr>
+                                        {["Invoice", "PO", "Inv.Date", "Amount", "Payments", "Credits", "Debits", "Balance", "Due Date", "Accum.Bal"].map(h => (
+                                            <th key={h} className="px-2 py-1.5 font-black text-[10px] text-gray-600 uppercase tracking-wide whitespace-nowrap border-r border-gray-200 last:border-r-0">{h}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-50 text-xs">
+                                    {loadingStmt ? (
+                                        <tr><td colSpan={10} className="p-4 text-center"><RefreshCcw size={14} className="animate-spin mx-auto text-gray-400" /></td></tr>
+                                    ) : stmtRows.length === 0 ? (
+                                        <tr><td colSpan={10} className="p-6 text-center text-gray-300 italic">No statement records</td></tr>
+                                    ) : stmtRows.map((row: any, i: number) => (
+                                        <tr key={i} className="hover:bg-gray-50">
+                                            <td className="px-2 py-1.5 border-r border-gray-50 font-mono truncate max-w-[90px]">{t(row.INVOICE_NO ?? "")}</td>
+                                            <td className="px-2 py-1.5 border-r border-gray-50 truncate max-w-[70px]">{row.PORDER_NO ? t(row.PORDER_NO) : ""}</td>
+                                            <td className="px-2 py-1.5 border-r border-gray-50 whitespace-nowrap">{fmtDate(row.DATE_ORDER ?? row.INVOICE_DATE ?? "")}</td>
+                                            <td className="px-2 py-1.5 border-r border-gray-50 text-right font-mono">{fmt(row.AMMOUNT ?? 0)}</td>
+                                            <td className="px-2 py-1.5 border-r border-gray-50 text-right font-mono">{fmt(row.PAYMENTS ?? 0)}</td>
+                                            <td className="px-2 py-1.5 border-r border-gray-50 text-right font-mono">{fmt(row.CREDITS ?? 0)}</td>
+                                            <td className="px-2 py-1.5 border-r border-gray-50 text-right font-mono">{fmt(row.DEBITS ?? 0)}</td>
+                                            <td className={cn("px-2 py-1.5 border-r border-gray-50 text-right font-mono font-bold",
+                                                parseFloat(row.TOTAL_BALANCE ?? 0) > 0 ? "text-red-600" : "text-green-700")}>
+                                                {fmt(row.TOTAL_BALANCE ?? 0)}
+                                            </td>
+                                            <td className="px-2 py-1.5 border-r border-gray-50 whitespace-nowrap">{t(row.DUE_DATE ?? "")}</td>
+                                            <td className={cn("px-2 py-1.5 text-right font-mono font-bold",
+                                                parseFloat(row.ACCUMULATED ?? 0) > 0 ? "text-red-600" : "text-green-700")}>
+                                                {fmt(row.ACCUMULATED ?? 0)}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
+
+            {/* ─── Pending Invoices Modal ────────────────────────────────────────── */}
+            {pendingModal && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                    onClick={() => setPendingModal(false)}>
+                    <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl h-[70vh] flex flex-col overflow-hidden"
+                        onClick={e => e.stopPropagation()}>
+                        <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
+                            <div className="flex items-center gap-2">
+                                <AlertCircle size={16} className="text-[#FB7506]" />
+                                <span className="font-black text-[10px] text-white uppercase tracking-widest">
+                                    Pending Invoices — {(filteredList as any[]).find((r: any) => t(r.UNICO) === selectedUq)?.GROWER}
+                                </span>
+                            </div>
+                            <button onClick={() => setPendingModal(false)} className="text-gray-400 hover:text-white transition-colors"><X size={16} /></button>
+                        </div>
+                        <div className="bg-gray-50 border-b border-gray-200 px-3 py-2 flex items-center gap-2 shrink-0">
+                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-wide">Showing pending invoices up to today</span>
+                            {loadingStmt && <RefreshCcw size={12} className="animate-spin text-gray-400 ml-auto" />}
+                        </div>
+                        <div className="flex-1 overflow-auto bg-white">
+                            <table className="min-w-full text-left">
+                                <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
+                                    <tr>
+                                        {["Invoice", "Inv.Date", "Amount", "Payments", "Balance"].map(h => (
+                                            <th key={h} className="px-2 py-1.5 font-black text-[10px] text-gray-600 uppercase tracking-wide whitespace-nowrap border-r border-gray-200 last:border-r-0">{h}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-50 text-xs">
+                                    {loadingStmt ? (
+                                        <tr><td colSpan={5} className="p-4 text-center"><RefreshCcw size={14} className="animate-spin mx-auto text-gray-400" /></td></tr>
+                                    ) : pendingRows.length === 0 ? (
+                                        <tr><td colSpan={5} className="p-6 text-center text-gray-300 italic">No pending invoices</td></tr>
+                                    ) : pendingRows.map((row: any, i: number) => (
+                                        <tr key={i} className="hover:bg-gray-50">
+                                            <td className="px-2 py-1.5 border-r border-gray-50 font-mono truncate max-w-[90px]">{t(row.INVOICE_NO ?? "")}</td>
+                                            <td className="px-2 py-1.5 border-r border-gray-50 whitespace-nowrap">{fmtDate(row.DATE_ORDER ?? row.INVOICE_DATE ?? "")}</td>
+                                            <td className="px-2 py-1.5 border-r border-gray-50 text-right font-mono">{fmt(row.AMMOUNT ?? 0)}</td>
+                                            <td className="px-2 py-1.5 border-r border-gray-50 text-right font-mono">{fmt(row.PAYMENTS ?? 0)}</td>
+                                            <td className={cn("px-2 py-1.5 text-right font-mono font-bold", parseFloat(row.TOTAL_BALANCE ?? 0) > 0 ? "text-red-600" : "text-green-700")}>{fmt(row.TOTAL_BALANCE ?? 0)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ─── Classes Modal ──────────────────────────────────────────────────── */}
+            {classesModal && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                    onClick={() => setClassesModal(false)}>
+                    <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl h-[70vh] flex flex-col overflow-hidden"
+                        onClick={e => e.stopPropagation()}>
+                        <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
+                            <div className="flex items-center gap-2">
+                                <Settings2 size={16} className="text-[#FB7506]" />
+                                <span className="font-black text-[10px] text-white uppercase tracking-widest">
+                                    Classes — {(filteredList as any[]).find((r: any) => t(r.UNICO) === selectedUq)?.GROWER}
+                                </span>
+                            </div>
+                            <button onClick={() => setClassesModal(false)} className="text-gray-400 hover:text-white transition-colors"><X size={16} /></button>
+                        </div>
+                        <div className="flex-1 min-h-0 p-2 overflow-hidden bg-white">
+                            <DualPanel
+                                assignedRows={assignedClasses as any[]}
+                                availableRows={availableClasses as any[]}
+                                assignedCols={[{ key: "CLASE", label: "Class" }]}
+                                availableCols={[{ key: "CLASE", label: "Class" }]}
+                                onAdd={handleAddClass}
+                                onRemove={handleRemoveClass}
+                                loading={loadingClassA || loadingClassB}
+                                assignedKey="UNICO"
+                                availableKey="UNICO"
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* ─── Vendor Setup Modal ──────────────────────────────────────────────── */}
             {modalOpen && (
