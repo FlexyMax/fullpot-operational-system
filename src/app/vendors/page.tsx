@@ -730,13 +730,15 @@ export default function VendorsPage() {
                                 return (
                                     <Fragment key={uq || i}>
                                         <PanelGridTr selected={selected} onClick={() => handleSelectRow(row)}>
-                                            <PanelGridTd className="text-center cursor-pointer"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleSelectRow(row);
-                                                    setExpandedVendorUnico(isExp ? null : uq);
-                                                }}>
-                                                <button className={cn("p-0.5 rounded transition-colors text-gray-400 hover:text-[#FB7506] hover:bg-orange-50")}>
+                                            <PanelGridTd className="text-center w-8">
+                                                <button 
+                                                    className={cn("p-0.5 rounded transition-colors cursor-pointer text-gray-400 hover:text-[#FB7506] hover:bg-orange-50")}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleSelectRow(row);
+                                                        setExpandedVendorUnico(isExp ? null : uq);
+                                                    }}
+                                                >
                                                     <ChevronRight size={14} className={cn("transition-transform duration-200", isExp && "rotate-90 text-[#FB7506]")} />
                                                 </button>
                                             </PanelGridTd>
