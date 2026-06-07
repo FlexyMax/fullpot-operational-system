@@ -5,7 +5,7 @@ export async function GET() {
     try {
         const [salesmen, webSalesmen, subregions, companies, groups, terms, dcs, routes, definitions, carriers] = await Promise.all([
             executeProcedure("sp_flower_salesman_list",                    { llall: 1 }),
-            executeProcedure("sp_NC_salesman_list",                        { llall: 1 }).catch(() => ({ recordset: [] })),
+            executeProcedure("sp_flower_salesman_web_list",                { llall: 0 }).catch(() => ({ recordset: [] })),
             executeProcedure("sp_flower_subregions_list",                  {}),
             executeProcedure("sp_flower_related_companies",                { lctype: "SELLER" }),
             executeProcedure("sp_flower_customers_groups",                 {}),
