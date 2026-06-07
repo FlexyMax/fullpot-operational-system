@@ -656,10 +656,10 @@ export default function VendorsPage() {
                     icon={Building2}
                     title="Vendors"
                     recordCount={filteredList.length}
-                    loading={loadingList}
+                    refreshing={loadingList}
                     onRefresh={refetchList}
-                    search={search}
-                    onSearch={setSearch}
+                    searchValue={search}
+                    onSearchChange={setSearch}
                     searchPlaceholder="Search vendors..."
                     menuItems={[
                         { label: "Add",     icon: Plus,        color: "green", onClick: handleAdd,    disabled: !perms.canCreate },
