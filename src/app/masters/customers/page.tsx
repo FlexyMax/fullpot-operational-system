@@ -400,13 +400,39 @@ export default function CustomersSetupPage() {
                 }
                 menuItems={[
                     { label: "Add Customer", icon: Plus, color: "green", onClick: () => { setCustForm({...EMPTY_CUST}); setFormError(null); setCustModalTab("general"); setCustModal({ mode:"add" }); }, disabled: !perms.canCreate },
-                    { label: "Edit Customer", icon: Pencil, color: "orange", onClick: () => { 
+                    { label: "Edit Customer", icon: Pencil, color: "orange", onClick: async () => { 
                         if (!selCust) return; 
-                        const c = selCust; 
+                        let c = selCust; 
                         
-                        const s_uq = (c.saleman_uq && String(c.saleman_uq)!=="0") ? String(c.saleman_uq) : (c.salesman_uq && String(c.salesman_uq)!=="0") ? String(c.salesman_uq) : (c.salesman_name ? (lookups?.salesmen?.find((s:any) => String(s.salesman_name||"").trim() === String(c.salesman_name||"").trim())?.unico || "") : "");
-                        const t_uq = (c.terms_uq && String(c.terms_uq)!=="0") ? String(c.terms_uq) : (c.terms ? (lookups?.terms?.find((tt:any) => String(tt.CONDITION||"").trim() === String(c.terms||"").trim())?.UNICO || "") : "");
-                        const r_uq = (c.rc_uq && String(c.rc_uq)!=="0") ? String(c.rc_uq) : (c.company ? (lookups?.companies?.find((comp:any) => String(comp.company||"").trim() === String(c.company||"").trim())?.unico || "") : "");
+                        try {
+                            const res = await fetch(`/api/masters/customers/${c.unico}`);
+                            if (res.ok) {
+                                const details = await res.json();
+                                if (details && typeof details === 'object') {
+                                    c = { ...c, ...details };
+                                }
+                            }
+                        } catch(e) {}
+                        
+                        let s_uq = "";
+                        if (c.salesman_uq && String(c.salesman_uq)!=="0") s_uq = String(c.salesman_uq).trim();
+                        else if (c.saleman_uq && String(c.saleman_uq)!=="0") s_uq = String(c.saleman_uq).trim();
+                        else if (c.salesman_name) s_uq = lookups?.salesmen?.find((s:any) => String(s.salesman_name||"").trim() === String(c.salesman_name||"").trim())?.unico || "";
+
+                        let t_uq = "";
+                        if (c.terms_uq && String(c.terms_uq)!=="0") t_uq = String(c.terms_uq).trim();
+                        else if (c.terms && String(c.terms)!=="0") {
+                            if (lookups?.terms?.some((tt:any) => String(tt.UNICO).trim() === String(c.terms).trim())) {
+                                t_uq = String(c.terms).trim();
+                            } else {
+                                t_uq = lookups?.terms?.find((tt:any) => String(tt.CONDITION||"").trim() === String(c.terms||"").trim())?.UNICO || "";
+                            }
+                        }
+
+                        let r_uq = "";
+                        if (c.rc_uq && String(c.rc_uq)!=="0") r_uq = String(c.rc_uq).trim();
+                        else if (c.company) r_uq = lookups?.companies?.find((comp:any) => String(comp.company||"").trim() === String(c.company||"").trim())?.unico || "";
+                        
                         
                         const isYes = (v: any) => String(v||"").trim().toLowerCase() === "yes" || v === true || v === 1;
                         
