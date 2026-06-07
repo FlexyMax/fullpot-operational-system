@@ -167,8 +167,8 @@ export default function CustomersSetupPage() {
             const m = lookups.terms.find((tt:any) => String(tt.CONDITION||"").trim() === String(c.terms||"").trim());
             if (m && String(m.UNICO) !== String(custForm.terms_uq)) updates.terms_uq = String(m.UNICO);
         }
-        if (!custForm.rc_uq && c.rc && lookups?.companies?.length) {
-            const m = lookups.companies.find((comp:any) => String(comp.company||"").trim() === String(c.rc||"").trim());
+        if (!custForm.rc_uq && c.company && lookups?.companies?.length) {
+            const m = lookups.companies.find((comp:any) => String(comp.company||"").trim() === String(c.company||"").trim());
             if (m && String(m.unico) !== String(custForm.rc_uq)) updates.rc_uq = String(m.unico);
         }
         
@@ -404,9 +404,9 @@ export default function CustomersSetupPage() {
                         if (!selCust) return; 
                         const c = selCust; 
                         
-                        const s_uq = (c.salesman_uq && String(c.salesman_uq)!=="0") ? String(c.salesman_uq) : (c.salesman_name ? (lookups?.salesmen?.find((s:any) => String(s.salesman_name||"").trim() === String(c.salesman_name||"").trim())?.unico || "") : "");
-                        const t_uq = (c.terms_uq && String(c.terms_uq)!=="0") ? String(c.terms_uq) : (c.terms ? (lookups?.terms?.find((tt:any) => String(tt.TERMS||"").trim() === String(c.terms||"").trim())?.unico || "") : "");
-                        const r_uq = (c.rc_uq && String(c.rc_uq)!=="0") ? String(c.rc_uq) : (c.rc ? (lookups?.companies?.find((comp:any) => String(comp.companyname||"").trim() === String(c.rc||"").trim())?.unico || "") : "");
+                        const s_uq = (c.saleman_uq && String(c.saleman_uq)!=="0") ? String(c.saleman_uq) : (c.salesman_uq && String(c.salesman_uq)!=="0") ? String(c.salesman_uq) : (c.salesman_name ? (lookups?.salesmen?.find((s:any) => String(s.salesman_name||"").trim() === String(c.salesman_name||"").trim())?.unico || "") : "");
+                        const t_uq = (c.terms_uq && String(c.terms_uq)!=="0") ? String(c.terms_uq) : (c.terms ? (lookups?.terms?.find((tt:any) => String(tt.CONDITION||"").trim() === String(c.terms||"").trim())?.UNICO || "") : "");
+                        const r_uq = (c.rc_uq && String(c.rc_uq)!=="0") ? String(c.rc_uq) : (c.company ? (lookups?.companies?.find((comp:any) => String(comp.company||"").trim() === String(c.company||"").trim())?.unico || "") : "");
                         
                         setCustForm({ old_code:c.old_code||"", edi_code:t(c.edi_code), fobmiami:!!c.fobmiami, inventory_from_invoice:!!c.inventory_from_invoice, dex:!!c.dex, auto_charge:!!c.auto_charge, credithold:!!c.credithold, internal_customer:!!c.internal_customer, active:!!c.active, customer:t(c.customer), dba:t(c.dba), contact:t(c.contact), purchaser:t(c.purchaser), address1:t(c.address1), address2:t(c.address2), city:t(c.city), state:t(c.state), zip:t(c.zip), country:t(c.country), phone_1:t(c.phone_1), phone_2:t(c.phone_2), fax_1:t(c.fax_1), fax_2:t(c.fax_2), email:t(c.email), terms_uq:t_uq, calls:t(c.calls)||"NNNNNN", subregion_uq:t(c.subregion_uq), salesman_uq:s_uq, group_uq:t(c.group_uq), rc_uq:r_uq, pickremark:t(c.pickremark), julian_from:t(c.julian_from), reasonhold:t(c.reasonhold), credit_limit:c.credit_limit||0, insurance_for:c.insurance_for||0, price_margin:c.price_margin||0, dry_discount:c.dry_discount||0, sales_web_uq:t(c.sales_web_uq), custsince:c.custsince?normalizeToISODate(c.custsince):"", ap_contact:t(c.ap_contact), ap_email:t(c.ap_email), ap_msn:t(c.ap_msn), ap_phone:t(c.ap_phone), ap_fax:t(c.ap_fax), website:t(c.website), statement_print:!!c.statement_print, inspection:!!c.inspection, gpm:c.gpm||0, availability_by:t(c.availability_by)||"NONE", availability_to:t(c.availability_to), invoice_by:t(c.invoice_by)||"EMAIL", extension:c.extension||0, commission_days:c.commission_days||0, resale_tax:c.resale_tax||0, ccard_name:t(c.ccard_name), ccard_on_file:t(c.ccard_on_file), ccard_expiration_month:t(c.ccard_expiration_month), ccard_expiration_year:t(c.ccard_expiration_year), tax_id:t(c.tax_id), international:!!c.international, collection:!!c.collection, check_price_override:!!c.check_price_override }); 
                         setFormError(null); 
