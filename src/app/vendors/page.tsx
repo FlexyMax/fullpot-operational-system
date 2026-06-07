@@ -708,8 +708,8 @@ export default function VendorsPage() {
                                 <PanelGridTh className="w-6">{""}</PanelGridTh>
                                 <PanelGridTh>Code</PanelGridTh>
                                 <PanelGridTh>Vendor</PanelGridTh>
-                                <PanelGridTh>FOB</PanelGridTh>
-                                <PanelGridTh>SalesRep</PanelGridTh>
+                                <PanelGridTh>Company</PanelGridTh>
+                                <PanelGridTh>Address</PanelGridTh>
                                 <PanelGridTh>City</PanelGridTh>
                                 <PanelGridTh>Country</PanelGridTh>
                                 <PanelGridTh className="text-center">Act.</PanelGridTh>
@@ -748,8 +748,8 @@ export default function VendorsPage() {
                                             </PanelGridTd>
                                             <PanelGridTd className="font-mono">{t(row.FARM)}</PanelGridTd>
                                             <PanelGridTd className="font-bold">{t(row.GROWER)}</PanelGridTd>
-                                            <PanelGridTd>{t(row.FOB)}</PanelGridTd>
-                                            <PanelGridTd>{t(row.SALES_PERSON)}</PanelGridTd>
+                                            <PanelGridTd>{t(row.COMPANY)}</PanelGridTd>
+                                            <PanelGridTd>{t(row.ADDRESS1)}</PanelGridTd>
                                             <PanelGridTd>{t(row.CITY)}</PanelGridTd>
                                             <PanelGridTd>{t(row.COUNTRY)}</PanelGridTd>
                                             <PanelGridTd className="text-center">
