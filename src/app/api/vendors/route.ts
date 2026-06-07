@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
         let total = 0;
         
         // If the SP returns multiple recordsets (e.g. one for data, one for count)
-        if (r.recordsets && r.recordsets.length > 1) {
+        if (Array.isArray(r.recordsets) && r.recordsets.length > 1) {
             const rs0 = r.recordsets[0];
             const rs1 = r.recordsets[1];
             if (rs0.length === 1 && rs0[0].TOTAL_RECORDS !== undefined) {
