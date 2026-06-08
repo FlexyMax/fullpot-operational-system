@@ -16,6 +16,7 @@ import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { AuditLogModal } from "@/components/AuditLogModal";
 import { cn } from "@/lib/utils";
 import { GridMenu } from "@/components/GridMenu";
+import { useCustomersStore } from "@/store/useCustomersStore";
 import PanelGrid from "@/components/ui/PanelGrid";
 import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
 import { todayEST, formatDateEST, formatMoney, parseMoney, normalizeToISODate } from "@/lib/dates";
@@ -49,19 +50,15 @@ export default function CustomersSetupPage() {
     const [totalRecords,   setTotalRecords]   = useState(0);
     const custGridRef = useRef<HTMLDivElement>(null);
 
-    const [search,         setSearch]         = useState("");
-    const [selCust,        setSelCust]        = useState<any>(null);
-    const [selShipto,      setSelShipto]      = useState<any>(null);
-    const [selCarrier,     setSelCarrier]     = useState<any>(null);
-    const [selWebUser,     setSelWebUser]     = useState<any>(null);
-    const [selMessage,     setSelMessage]     = useState<any>(null);
-    const [activeExpTab,   setActiveExpTab]   = useState<"shipto"|"statement"|"webusers"|"messages">("shipto");
-    const [custModal,      setCustModal]      = useState<{ mode:"add"|"edit"|"delete" } | null>(null);
-    const [shiptoModal,    setShiptoModal]    = useState<{ mode:"add"|"edit"|"delete" } | null>(null);
-    const [carrierModal,   setCarrierModal]   = useState<{ mode:"add"|"edit"|"delete" } | null>(null);
-    const [webUserModal,   setWebUserModal]   = useState<{ mode:"add"|"edit"|"delete" } | null>(null);
-    const [msgModal,       setMsgModal]       = useState(false);
-    const [stmtModal,      setStmtModal]      = useState(false);
+    const {
+        search, setSearch, selCust, setSelCust, selShipto, setSelShipto,
+        selCarrier, setSelCarrier, selWebUser, setSelWebUser, selMessage, setSelMessage,
+        activeExpTab, setActiveExpTab, custModal, setCustModal, shiptoModal, setShiptoModal,
+        carrierModal, setCarrierModal, webUserModal, setWebUserModal, msgModal, setMsgModal,
+        stmtModal, setStmtModal, custModalTab, setCustModalTab, expandedCustUnico, setExpandedCustUnico,
+        expandedShiptoUnico, setExpandedShiptoUnico
+    } = useCustomersStore();
+    
     const [custForm,       setCustForm]       = useState<any>(EMPTY_CUST);
     const [shiptoForm,     setShiptoForm]     = useState<any>(EMPTY_SHIPTO);
     const [carrierForm,    setCarrierForm]    = useState<any>(EMPTY_CARRIER);
@@ -72,9 +69,6 @@ export default function CustomersSetupPage() {
     const [stmtFrom,       setStmtFrom]       = useState(todayEST());
     const [stmtTo,         setStmtTo]         = useState(todayEST());
     const [stmtEnabled,    setStmtEnabled]    = useState(false);
-    const [custModalTab,       setCustModalTab]       = useState<"general"|"financial"|"delivery">("general");
-    const [expandedCustUnico,  setExpandedCustUnico]  = useState<string | null>(null);
-    const [expandedShiptoUnico,setExpandedShiptoUnico]= useState<string | null>(null);
 
     useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
 

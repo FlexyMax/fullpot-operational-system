@@ -20,6 +20,29 @@ import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridT
 import { usePagePermissions } from "@/lib/permissions";
 import { useAuditLog } from "@/lib/audit";
 import { AppFooter } from "@/components/layout/AppFooter";
+import { useVendorsStore } from "@/store/useVendorsStore";
+
+// ─── Confirm Delete Dialog ────────────────────────────────────────────────────
+function ConfirmDlg({ title, msg, onConfirm, onCancel, saving, error }: any) {
+    return (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[70] p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden" onClick={e => e.stopPropagation()}>
+                <div className="p-6 flex flex-col items-center gap-4">
+                    <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center"><Trash2 size={24} className="text-red-600" /></div>
+                    <div className="text-center">
+                        <h3 className="font-black text-gray-900 text-base mb-1">{title}</h3>
+                        <p className="text-sm text-gray-500 leading-relaxed">{msg}</p>
+                        {error && <p className="text-xs text-red-500 mt-2 font-bold">{error}</p>}
+                    </div>
+                </div>
+                <div className="flex border-t border-gray-100">
+                    <button onClick={onCancel} className="flex-1 py-3 text-sm font-bold text-gray-600 hover:bg-gray-50 border-r border-gray-100 transition-colors">Cancel</button>
+                    <button onClick={onConfirm} disabled={saving} className="flex-1 py-3 text-sm font-black text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors">{saving ? "..." : "Delete"}</button>
+                </div>
+            </div>
+        </div>
+    );
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const t = (v: any) => String(v ?? "").trim();
@@ -205,16 +228,13 @@ export default function VendorsPage() {
     const { logAction } = useAuditLog("vendors", "flower_growers");
 
     // ── State ─────────────────────────────────────────────────────────────────
-    const [search,      setSearch]      = useState("");
-    const [selectedUq,  setSelectedUq]  = useState<string | null>(null);
-    const [expandedVendorUnico, setExpandedVendorUnico] = useState<string | null>(null);
-    
-    // Statement Modal & Data
-
-    // Modals
-    const [stmtModal, setStmtModal] = useState(false);
-    const [pendingModal, setPendingModal] = useState(false);
-    const [classesModal, setClassesModal] = useState(false);
+    const {
+        search, setSearch, selectedUq, setSelectedUq, expandedVendorUnico, setExpandedVendorUnico,
+        stmtModal, setStmtModal, pendingModal, setPendingModal, classesModal, setClassesModal,
+        modalOpen, setModalOpen, modalMode, setModalMode, modalTab, setModalTab,
+        docModal, setDocModal, wsModal, setWsModal, grpModal, setGrpModal,
+        deleteModal, setDeleteModal
+    } = useVendorsStore();
 
     // Statement date range
     const [stmtFrom, setStmtFrom] = useState(firstOfYear());
@@ -222,26 +242,18 @@ export default function VendorsPage() {
     const [stmtKey,  setStmtKey]  = useState(0); // increment to force refetch
 
     // Vendor Setup modal
-    const [modalOpen,  setModalOpen]  = useState(false);
-    const [modalMode,  setModalMode]  = useState<"add" | "edit">("add");
-    const [modalTab,   setModalTab]   = useState<ModalVendorTab>("main");
     const [form,       setForm]       = useState<any>(EMPTY_FORM);
     const [saving,     setSaving]     = useState(false);
     const [formError,  setFormError]  = useState<string | null>(null);
 
     // Document modal
-    const [docModal,   setDocModal]   = useState(false);
     const [docMode,    setDocMode]    = useState<"add" | "edit">("add");
     const [docForm,    setDocForm]    = useState<any>(EMPTY_DOC);
     const [docSaving,  setDocSaving]  = useState(false);
     const [docError,   setDocError]   = useState<string | null>(null);
     const [selDocUq,   setSelDocUq]   = useState<string | null>(null);
 
-    // Web Settings modal
-    const [wsModal,    setWsModal]    = useState(false);
-
     // Groups modal
-    const [grpModal,   setGrpModal]   = useState(false);
     const [grpForm,    setGrpForm]    = useState({ unico: "", growertype: "" });
     const [grpMode,    setGrpMode]    = useState<"add" | "edit">("add");
     const [grpSaving,  setGrpSaving]  = useState(false);
@@ -460,17 +472,25 @@ export default function VendorsPage() {
         if (!perms.canDelete) { toast.error("You are not authorized to delete records."); return; }
         const rec = (vendorsList as any[]).find(r => t(r.UNICO) === selectedUq);
         const name = t(rec?.GROWER || selectedUq);
-        if (!confirm(`Delete vendor "${name}"? This action cannot be undone.`)) return;
+        setDeleteModal({ type: "vendor", id: selectedUq, name });
+    };
+
+    const confirmDeleteVendor = async () => {
+        if (!deleteModal || deleteModal.type !== "vendor") return;
+        setSaving(true);
         try {
-            const res = await fetch(`/api/vendors/${selectedUq}`, { method: "DELETE" });
+            const res = await fetch(`/api/vendors/${deleteModal.id}`, { method: "DELETE" });
             const d = await res.json();
             if (!d.success) throw new Error(d.error || "Delete failed");
-            logAction("Delete", selectedUq);
+            logAction("Delete", deleteModal.id);
             toast.success("Vendor deleted.");
             setSelectedUq(null);
+            setDeleteModal(null);
             qc.invalidateQueries({ queryKey: ["vendors-list"] });
         } catch (e: any) {
             toast.error(e.message);
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -572,17 +592,27 @@ export default function VendorsPage() {
 
     const handleDeleteDoc = async () => {
         if (!selDocUq) { toast.error("Select a document first."); return; }
-        if (!confirm("Delete this document?")) return;
+        const rec = (docsList as any[]).find(r => t(r.unico) === selDocUq);
+        const name = t(rec?.document || selDocUq);
+        setDeleteModal({ type: "document", id: selDocUq, name });
+    };
+
+    const confirmDeleteDoc = async () => {
+        if (!deleteModal || deleteModal.type !== "document") return;
+        setSaving(true);
         try {
-            const res = await fetch(`/api/vendors/documents/${selDocUq}`, { method: "DELETE" });
+            const res = await fetch(`/api/vendors/documents/${deleteModal.id}`, { method: "DELETE" });
             const d = await res.json();
             if (!d.success) throw new Error(d.error || "Delete failed");
-            logAction("Delete", selDocUq, "DeleteDocument");
+            logAction("Delete", deleteModal.id, "DeleteDocument");
             toast.success("Document deleted.");
             setSelDocUq(null);
+            setDeleteModal(null);
             qc.invalidateQueries({ queryKey: ["vendors-documents", selectedUq] });
         } catch (e: any) {
             toast.error(e.message);
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -649,19 +679,29 @@ export default function VendorsPage() {
 
     const handleDeleteGroup = async () => {
         if (!selGrpUq) { toast.error("Select a group first."); return; }
-        if (!confirm("Delete this group?")) return;
+        const rec = (groupsList as any[]).find(r => t(r.unico) === selGrpUq);
+        const name = t(rec?.growertype || selGrpUq);
+        setDeleteModal({ type: "group", id: selGrpUq, name });
+    };
+
+    const confirmDeleteGroup = async () => {
+        if (!deleteModal || deleteModal.type !== "group") return;
+        setSaving(true);
         try {
-            const res = await fetch(`/api/vendors/groups/${selGrpUq}`, { method: "DELETE" });
+            const res = await fetch(`/api/vendors/groups/${deleteModal.id}`, { method: "DELETE" });
             const d = await res.json();
             if (!d.success) throw new Error(d.error || "Delete failed");
             toast.success("Group deleted.");
             setSelGrpUq(null);
             setGrpForm({ unico: "", growertype: "" });
             setGrpMode("add");
+            setDeleteModal(null);
             qc.invalidateQueries({ queryKey: ["vendors-groups"] });
             qc.invalidateQueries({ queryKey: ["vendors-lookups"] });
         } catch (e: any) {
             toast.error(e.message);
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -1523,6 +1563,17 @@ export default function VendorsPage() {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Delete Modal */}
+            {deleteModal && (
+                <ConfirmDlg
+                    title={`Delete ${deleteModal.type.charAt(0).toUpperCase() + deleteModal.type.slice(1)}`}
+                    msg={`Are you sure you want to delete "${deleteModal.name}"? This action cannot be undone.`}
+                    saving={saving}
+                    onConfirm={deleteModal.type === "vendor" ? confirmDeleteVendor : deleteModal.type === "document" ? confirmDeleteDoc : confirmDeleteGroup}
+                    onCancel={() => setDeleteModal(null)}
+                />
             )}
         </div>
     );

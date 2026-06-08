@@ -17,6 +17,30 @@ import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions } from "@/lib/permissions";
 import { AuditLogModal } from "@/components/AuditLogModal";
 import { formatMoney, normalizeToISODate, formatDateEST } from "@/lib/dates";
+import { toast } from "sonner";
+import { useCarriersStore } from "@/store/useCarriersStore";
+
+// ─── Confirm Delete Dialog ────────────────────────────────────────────────────
+function ConfirmDlg({ title, msg, onConfirm, onCancel, saving, error }: any) {
+    return (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[70] p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden" onClick={e => e.stopPropagation()}>
+                <div className="p-6 flex flex-col items-center gap-4">
+                    <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center"><Trash2 size={24} className="text-red-600" /></div>
+                    <div className="text-center">
+                        <h3 className="font-black text-gray-900 text-base mb-1">{title}</h3>
+                        <p className="text-sm text-gray-500 leading-relaxed">{msg}</p>
+                        {error && <p className="text-xs text-red-500 mt-2 font-bold">{error}</p>}
+                    </div>
+                </div>
+                <div className="flex border-t border-gray-100">
+                    <button onClick={onCancel} className="flex-1 py-3 text-sm font-bold text-gray-600 hover:bg-gray-50 border-r border-gray-100 transition-colors">Cancel</button>
+                    <button onClick={onConfirm} disabled={saving} className="flex-1 py-3 text-sm font-black text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors">{saving ? "..." : "Delete"}</button>
+                </div>
+            </div>
+        </div>
+    );
+}
 
 const t  = (v: any) => String(v ?? "").trim();
 const sF = async (url: string) => {
@@ -57,17 +81,17 @@ export default function CarriersDefinitionPage() {
     const { logAction } = useAuditLog("carriers-definition", "flower_carriers");
     const perms = usePagePermissions("carriers-definition");
 
-    const [currentIdx,  setCurrentIdx]  = useState(0);
+    const {
+        carrSearch, setCarrSearch, currentIdx, setCurrentIdx,
+        mode, setMode, formModal, setFormModal, invModal, setInvModal,
+        custModal, setCustModal, othersModal, setOthersModal,
+        deleteModal, setDeleteModal
+    } = useCarriersStore();
+
     const [form,        setForm]        = useState<any>(EMPTY);
     const [formError,   setFormError]   = useState<string | null>(null);
     const [saving,      setSaving]      = useState(false);
-    const [mode,        setMode]        = useState<Mode>("edit");
-    const [formModal,   setFormModal]   = useState(false);
-    const [invModal,    setInvModal]    = useState(false);
-    const [custModal,   setCustModal]   = useState(false);
-    const [othersModal, setOthersModal] = useState(false);
     const [otherForm,   setOtherForm]   = useState({ internal_delivery: false });
-    const [carrSearch,  setCarrSearch]  = useState("");
     const [invDateIni,  setInvDateIni]  = useState(() => { const d = new Date(); d.setDate(d.getDate() - 30); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; });
     const [invDateEnd,  setInvDateEnd]  = useState(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; });
 
@@ -193,17 +217,24 @@ export default function CarriersDefinitionPage() {
     };
 
     const handleDelete = async () => {
-        if (!selUnico || !confirm(`Delete carrier "${t(form.carrier)}"?`)) return;
+        if (!selUnico) return;
+        setDeleteModal({ id: selUnico, name: t(form.carrier) });
+    };
+
+    const confirmDelete = async () => {
+        if (!deleteModal) return;
         setSaving(true);
         try {
-            const res  = await fetch(`/api/masters/carriers/${selUnico}`, { method: "DELETE" });
+            const res  = await fetch(`/api/masters/carriers/${deleteModal.id}`, { method: "DELETE" });
             const data = await res.json();
             if (!data.success) throw new Error(data.error);
-            logAction("Delete", selUnico);
+            logAction("Delete", deleteModal.id);
             await qc.invalidateQueries({ queryKey: ["carr-list"] });
+            toast.success("Carrier deleted.");
+            setDeleteModal(null);
             setCurrentIdx(0);
         } catch (e: any) {
-            alert(e.message);
+            toast.error(e.message);
         } finally {
             setSaving(false);
         }
@@ -216,10 +247,11 @@ export default function CarriersDefinitionPage() {
             const data = await res.json();
             if (!data.success) throw new Error(data.error);
             logAction("Edit", selUnico!, "Others");
+            toast.success("Settings updated.");
             setOthersModal(false);
             await loadCarrier(currentIdx);
         } catch (e: any) {
-            alert(e.message);
+            toast.error(e.message);
         } finally {
             setSaving(false);
         }
@@ -609,6 +641,17 @@ export default function CarriersDefinitionPage() {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Delete Modal */}
+            {deleteModal && (
+                <ConfirmDlg
+                    title="Delete Carrier"
+                    msg={`Are you sure you want to delete carrier "${deleteModal.name}"? This action cannot be undone.`}
+                    saving={saving}
+                    onConfirm={confirmDelete}
+                    onCancel={() => setDeleteModal(null)}
+                />
             )}
         </div>
     );

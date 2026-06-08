@@ -477,7 +477,7 @@ export default function SalesRepsPage() {
             const res = await fetch(`/api/sales-reps/${selectedUq}`, { method: "DELETE" });
             const d = await res.json();
             if (!d.success) throw new Error(d.error || "Delete failed");
-            logAction("Delete", selectedUq);
+            logAction("Delete", selectedUq!);
             toast.success("Sales rep deleted.");
             setSelectedUq(null);
             setDeleteModal(false);
