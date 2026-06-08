@@ -1,22 +1,23 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     Users, RefreshCcw, Plus, Pencil, Trash2,
     Search, X, Save, ChevronRight, ChevronLeft,
-    FileText, AlertCircle, Check,
+    FileText, AlertCircle, Check, XCircle
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
+import { AppFooter } from "@/components/layout/AppFooter";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { GridMenu } from "@/components/GridMenu";
 import PanelGrid from "@/components/ui/PanelGrid";
 import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
 import { usePagePermissions } from "@/lib/permissions";
 import { useAuditLog } from "@/lib/audit";
+import { useSalesRepsStore, ActiveTab } from "@/store/useSalesRepsStore";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const t = (v: any) => String(v ?? "").trim();
@@ -59,7 +60,6 @@ const EMPTY_FORM: any = {
     supervisor: false,
 };
 
-// Permission checkboxes in VFP 5-column order with exact VFP labels
 const PERM_LABELS: [string, string][] = [
     ["view_days",            "View Days"],
     ["view_hold",            "View Hold"],
@@ -114,8 +114,6 @@ const PERM_LABELS: [string, string][] = [
     ["make_payment",         "Make Payment"],
 ];
 
-type ActiveTab = "customers" | "product-classes" | "vendors" | "warehouses" | "cities" | "salesmen";
-
 // ─── DualPanel component ──────────────────────────────────────────────────────
 function DualPanel({
     assignedRows, availableRows, assignedCols, availableCols,
@@ -152,24 +150,19 @@ function DualPanel({
     };
 
     return (
-        <div className="flex flex-col md:flex-row gap-2 h-full min-h-0">
+        <div className="flex flex-col md:flex-row gap-4 h-full min-h-0">
             {/* Assigned */}
-            <div className="flex-1 flex flex-col min-h-0 min-w-0 md:min-h-0" style={{ minHeight: "200px" }}>
-                <div className="bg-gray-100 border-b border-gray-200 px-2 py-1">
-                    <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Assigned ({assignedRows.length})</span>
+            <div className="flex-1 flex flex-col min-h-0 border border-gray-200 rounded-lg shadow-sm bg-white overflow-hidden" style={{ minHeight: "200px" }}>
+                <div className="bg-gray-50 border-b border-gray-200 px-3 py-2 flex justify-between items-center shrink-0">
+                    <span className="font-black text-[11px] text-gray-700 uppercase tracking-widest">Assigned</span>
+                    <span className="text-[10px] font-bold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">{assignedRows.length}</span>
                 </div>
                 <div className="flex-1 overflow-auto">
-                    <table className="min-w-full text-left">
-                        <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
-                            <tr>
-                                {assignedCols.map(c => (
-                                    <th key={c.key} className="px-2 py-1.5 font-black text-[10px] text-gray-600 uppercase tracking-wide whitespace-nowrap border-r border-gray-200 last:border-r-0">
-                                        {c.label}
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-50">
+                    <PanelGridTable>
+                        <PanelGridThead>
+                            {assignedCols.map(c => <PanelGridTh key={c.key}>{c.label}</PanelGridTh>)}
+                        </PanelGridThead>
+                        <PanelGridTbody>
                             {loading ? (
                                 <tr><td colSpan={assignedCols.length} className="p-4 text-center"><RefreshCcw size={14} className="animate-spin mx-auto text-gray-400" /></td></tr>
                             ) : assignedRows.length === 0 ? (
@@ -178,52 +171,46 @@ function DualPanel({
                                 const rowKey = t(row[assignedKey]);
                                 const selected = selAssigned === rowKey;
                                 return (
-                                    <tr key={i} onClick={() => setSelAssigned(selected ? null : rowKey)}
-                                        className={cn("cursor-pointer text-xs transition-colors", selected ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50")}>
+                                    <PanelGridTr key={i} selected={selected} onClick={() => setSelAssigned(selected ? null : rowKey)}>
                                         {assignedCols.map(c => (
-                                            <td key={c.key} className="px-2 py-1.5 border-r border-gray-50 last:border-r-0 truncate max-w-[160px]">{t(row[c.key.toUpperCase()] ?? row[c.key])}</td>
+                                            <PanelGridTd key={c.key}>{t(row[c.key.toUpperCase()] ?? row[c.key])}</PanelGridTd>
                                         ))}
-                                    </tr>
+                                    </PanelGridTr>
                                 );
                             })}
-                        </tbody>
-                    </table>
+                        </PanelGridTbody>
+                    </PanelGridTable>
                 </div>
             </div>
 
             {/* Buttons */}
-            <div className="flex md:flex-col flex-row items-center justify-center gap-2 shrink-0 px-1 py-1 md:py-0">
+            <div className="flex md:flex-col flex-row items-center justify-center gap-3 shrink-0 py-2 md:py-0">
                 <button onClick={handleAdd} disabled={!selAvailable || busy}
-                    className="flex items-center gap-1 px-2 py-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors">
-                    <ChevronLeft size={12} className="hidden md:block" /><ChevronLeft size={12} className="hidden md:block" />
-                    <span className="md:hidden"><ChevronLeft size={12} /></span>
+                    className="flex items-center gap-1.5 px-4 py-2 bg-[#FB7506] hover:bg-orange-600 disabled:bg-gray-200 disabled:text-gray-400 text-white rounded text-xs font-black uppercase tracking-widest transition-all shadow-sm">
+                    <ChevronLeft size={14} className="hidden md:block" /><ChevronLeft size={14} className="hidden md:block -ml-2" />
+                    <span className="md:hidden"><ChevronLeft size={14} /></span>
                     Add
                 </button>
                 <button onClick={handleRemove} disabled={!selAssigned || busy}
-                    className="flex items-center gap-1 px-2 py-1.5 bg-red-500 hover:bg-red-600 disabled:opacity-40 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors">
+                    className="flex items-center gap-1.5 px-4 py-2 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-200 disabled:text-gray-400 text-white rounded text-xs font-black uppercase tracking-widest transition-all shadow-sm">
                     Remove
-                    <ChevronRight size={12} className="hidden md:block" /><ChevronRight size={12} className="hidden md:block" />
-                    <span className="md:hidden"><ChevronRight size={12} /></span>
+                    <ChevronRight size={14} className="hidden md:block" /><ChevronRight size={14} className="hidden md:block -ml-2" />
+                    <span className="md:hidden"><ChevronRight size={14} /></span>
                 </button>
             </div>
 
             {/* Available */}
-            <div className="flex-1 flex flex-col min-h-0 min-w-0" style={{ minHeight: "200px" }}>
-                <div className="bg-gray-100 border-b border-gray-200 px-2 py-1">
-                    <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Available ({availableRows.length})</span>
+            <div className="flex-1 flex flex-col min-h-0 border border-gray-200 rounded-lg shadow-sm bg-white overflow-hidden" style={{ minHeight: "200px" }}>
+                <div className="bg-gray-50 border-b border-gray-200 px-3 py-2 flex justify-between items-center shrink-0">
+                    <span className="font-black text-[11px] text-gray-700 uppercase tracking-widest">Available</span>
+                    <span className="text-[10px] font-bold bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded">{availableRows.length}</span>
                 </div>
                 <div className="flex-1 overflow-auto">
-                    <table className="min-w-full text-left">
-                        <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
-                            <tr>
-                                {availableCols.map(c => (
-                                    <th key={c.key} className="px-2 py-1.5 font-black text-[10px] text-gray-600 uppercase tracking-wide whitespace-nowrap border-r border-gray-200 last:border-r-0">
-                                        {c.label}
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-50">
+                    <PanelGridTable>
+                        <PanelGridThead>
+                            {availableCols.map(c => <PanelGridTh key={c.key}>{c.label}</PanelGridTh>)}
+                        </PanelGridThead>
+                        <PanelGridTbody>
                             {loading ? (
                                 <tr><td colSpan={availableCols.length} className="p-4 text-center"><RefreshCcw size={14} className="animate-spin mx-auto text-gray-400" /></td></tr>
                             ) : availableRows.length === 0 ? (
@@ -232,21 +219,43 @@ function DualPanel({
                                 const rowKey = t(row[availableKey]);
                                 const selected = selAvailable === rowKey;
                                 return (
-                                    <tr key={i} onClick={() => setSelAvailable(selected ? null : rowKey)}
-                                        className={cn("cursor-pointer text-xs transition-colors", selected ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50")}>
+                                    <PanelGridTr key={i} selected={selected} onClick={() => setSelAvailable(selected ? null : rowKey)}>
                                         {availableCols.map(c => (
-                                            <td key={c.key} className="px-2 py-1.5 border-r border-gray-50 last:border-r-0 truncate max-w-[160px]">{t(row[c.key.toUpperCase()] ?? row[c.key])}</td>
+                                            <PanelGridTd key={c.key}>{t(row[c.key.toUpperCase()] ?? row[c.key])}</PanelGridTd>
                                         ))}
-                                    </tr>
+                                    </PanelGridTr>
                                 );
                             })}
-                        </tbody>
-                    </table>
+                        </PanelGridTbody>
+                    </PanelGridTable>
                 </div>
             </div>
         </div>
     );
 }
+
+// ─── Confirm Delete Dialog ────────────────────────────────────────────────────
+function ConfirmDlg({ title, msg, onConfirm, onCancel, saving, error }: any) {
+    return (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden" onClick={e => e.stopPropagation()}>
+                <div className="p-6 flex flex-col items-center gap-4">
+                    <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center"><Trash2 size={24} className="text-red-600" /></div>
+                    <div className="text-center">
+                        <h3 className="font-black text-gray-900 text-base mb-1">{title}</h3>
+                        <p className="text-sm text-gray-500 leading-relaxed">{msg}</p>
+                        {error && <p className="text-xs text-red-500 mt-2 font-bold">{error}</p>}
+                    </div>
+                </div>
+                <div className="flex border-t border-gray-100">
+                    <button onClick={onCancel} className="flex-1 py-3 text-sm font-bold text-gray-600 hover:bg-gray-50 border-r border-gray-100 transition-colors">Cancel</button>
+                    <button onClick={onConfirm} disabled={saving} className="flex-1 py-3 text-sm font-black text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors">{saving ? "..." : "Delete"}</button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 export default function SalesRepsPage() {
@@ -256,12 +265,11 @@ export default function SalesRepsPage() {
     const perms    = usePagePermissions("sales-reps");
     const { logAction } = useAuditLog("sales-reps", "flower_salesmen");
 
-    // ── State ─────────────────────────────────────────────────────────────────
-    const [search,       setSearch]       = useState("");
-    const [selectedUq,   setSelectedUq]   = useState<string | null>(null);
-    const [activeTab,    setActiveTab]    = useState<ActiveTab>("customers");
-    const [tabLoaded,    setTabLoaded]    = useState<Partial<Record<ActiveTab, boolean>>>({});
-    const [mobilePanel,  setMobilePanel]  = useState<"list" | "detail">("list");
+    const {
+        search, setSearch, selectedUq, setSelectedUq,
+        activeTab, setActiveTab, tabLoaded, setTabLoaded,
+        activeModal, setActiveModal
+    } = useSalesRepsStore();
 
     // Modal state
     const [modalOpen,    setModalOpen]    = useState(false);
@@ -270,6 +278,10 @@ export default function SalesRepsPage() {
     const [form,         setForm]         = useState<any>(EMPTY_FORM);
     const [saving,       setSaving]       = useState(false);
     const [formError,    setFormError]    = useState<string | null>(null);
+
+    // Delete modal
+    const [deleteModal,  setDeleteModal]  = useState(false);
+    const [deleteError,  setDeleteError]  = useState<string | null>(null);
 
     // Customer reassign modal
     const [custModal,    setCustModal]    = useState(false);
@@ -297,88 +309,82 @@ export default function SalesRepsPage() {
         staleTime: 1000 * 60 * 10,
     });
 
-    // Tab 1 — Customers
+    // Modals data
     const { data: customers = [], isFetching: loadingCustomers, refetch: refetchCustomers } = useQuery({
         queryKey: ["sr-customers", selectedUq],
         queryFn:  () => fetch(`/api/sales-reps/customers?salesman_uq=${selectedUq}`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
-        enabled:  !!selectedUq && activeTab === "customers" && !!tabLoaded["customers"],
+        enabled:  !!selectedUq && activeModal === "customers" && !!tabLoaded["customers"],
         staleTime: 0,
     });
 
-    // Salesman search (for customer reassign modal and new salesman select)
     const { data: salesmanSearch = [] } = useQuery({
         queryKey: ["sr-salesman-search"],
         queryFn:  () => fetch("/api/sales-reps/search?search=%").then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         staleTime: 1000 * 60 * 5,
     });
 
-    // Tab 2 — Product Classes
     const { data: assignedClasses = [], isFetching: loadingClassesA, refetch: refetchClassesA } = useQuery({
         queryKey: ["sr-classes-assigned", selectedUq],
         queryFn:  () => fetch(`/api/sales-reps/product-classes?salesman_uq=${selectedUq}`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
-        enabled:  !!selectedUq && activeTab === "product-classes" && !!tabLoaded["product-classes"],
+        enabled:  !!selectedUq && activeModal === "product-classes" && !!tabLoaded["product-classes"],
         staleTime: 0,
     });
     const { data: availableClasses = [], isFetching: loadingClassesB, refetch: refetchClassesB } = useQuery({
         queryKey: ["sr-classes-available", selectedUq],
         queryFn:  () => fetch(`/api/sales-reps/product-classes?salesman_uq=${selectedUq}&not_in=1`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
-        enabled:  !!selectedUq && activeTab === "product-classes" && !!tabLoaded["product-classes"],
+        enabled:  !!selectedUq && activeModal === "product-classes" && !!tabLoaded["product-classes"],
         staleTime: 0,
     });
 
-    // Tab 3 — Vendors
     const { data: assignedVendors = [], isFetching: loadingVendorsA, refetch: refetchVendorsA } = useQuery({
         queryKey: ["sr-vendors-assigned", selectedUq],
         queryFn:  () => fetch(`/api/sales-reps/vendors?salesman_uq=${selectedUq}`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
-        enabled:  !!selectedUq && activeTab === "vendors" && !!tabLoaded["vendors"],
+        enabled:  !!selectedUq && activeModal === "vendors" && !!tabLoaded["vendors"],
         staleTime: 0,
     });
     const { data: availableVendors = [], isFetching: loadingVendorsB, refetch: refetchVendorsB } = useQuery({
         queryKey: ["sr-vendors-available", selectedUq],
         queryFn:  () => fetch(`/api/sales-reps/vendors?salesman_uq=${selectedUq}&not_in=1`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
-        enabled:  !!selectedUq && activeTab === "vendors" && !!tabLoaded["vendors"],
+        enabled:  !!selectedUq && activeModal === "vendors" && !!tabLoaded["vendors"],
         staleTime: 0,
     });
 
-    // Tab 4 — Warehouses
     const { data: assignedWarehouses = [], isFetching: loadingWarehousesA, refetch: refetchWarehousesA } = useQuery({
         queryKey: ["sr-warehouses-assigned", selectedUq],
         queryFn:  () => fetch(`/api/sales-reps/warehouses?salesman_uq=${selectedUq}`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
-        enabled:  !!selectedUq && activeTab === "warehouses" && !!tabLoaded["warehouses"],
+        enabled:  !!selectedUq && activeModal === "warehouses" && !!tabLoaded["warehouses"],
         staleTime: 0,
     });
     const { data: availableWarehouses = [], isFetching: loadingWarehousesB, refetch: refetchWarehousesB } = useQuery({
         queryKey: ["sr-warehouses-available", selectedUq],
         queryFn:  () => fetch(`/api/sales-reps/warehouses?salesman_uq=${selectedUq}&not_in=1`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
-        enabled:  !!selectedUq && activeTab === "warehouses" && !!tabLoaded["warehouses"],
+        enabled:  !!selectedUq && activeModal === "warehouses" && !!tabLoaded["warehouses"],
         staleTime: 0,
     });
 
-    // Tab 5 — Cities
     const { data: assignedCities = [], isFetching: loadingCitiesA, refetch: refetchCitiesA } = useQuery({
         queryKey: ["sr-cities-assigned", selectedUq],
         queryFn:  () => fetch(`/api/sales-reps/cities?salesman_uq=${selectedUq}`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
-        enabled:  !!selectedUq && activeTab === "cities" && !!tabLoaded["cities"],
+        enabled:  !!selectedUq && activeModal === "cities" && !!tabLoaded["cities"],
         staleTime: 0,
     });
     const { data: availableCities = [], isFetching: loadingCitiesB, refetch: refetchCitiesB } = useQuery({
         queryKey: ["sr-cities-available", selectedUq],
         queryFn:  () => fetch(`/api/sales-reps/cities?salesman_uq=${selectedUq}&not_in=1`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
-        enabled:  !!selectedUq && activeTab === "cities" && !!tabLoaded["cities"],
+        enabled:  !!selectedUq && activeModal === "cities" && !!tabLoaded["cities"],
         staleTime: 0,
     });
 
-    // Tab 6 — Salesmen links
     const { data: assignedSalesmen = [], isFetching: loadingSalesmenA, refetch: refetchSalesmenA } = useQuery({
         queryKey: ["sr-salesmen-assigned", selectedUq],
         queryFn:  () => fetch(`/api/sales-reps/salesmen-links?salesman_uq=${selectedUq}`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
-        enabled:  !!selectedUq && activeTab === "salesmen" && !!tabLoaded["salesmen"],
+        enabled:  !!selectedUq && activeModal === "salesmen" && !!tabLoaded["salesmen"],
         staleTime: 0,
     });
     const { data: availableSalesmen = [], isFetching: loadingSalesmenB, refetch: refetchSalesmenB } = useQuery({
         queryKey: ["sr-salesmen-available", selectedUq],
         queryFn:  () => fetch(`/api/sales-reps/salesmen-links?salesman_uq=${selectedUq}&not_in=1`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
-        enabled:  !!selectedUq && activeTab === "salesmen" && !!tabLoaded["salesmen"],
+        enabled:  !!selectedUq && activeModal === "salesmen" && !!tabLoaded["salesmen"],
         staleTime: 0,
     });
 
@@ -394,18 +400,10 @@ export default function SalesRepsPage() {
         );
     }, [salesRepsList, search]);
 
-    // ── Tab click ─────────────────────────────────────────────────────────────
-    const handleTabClick = (tab: ActiveTab) => {
-        setActiveTab(tab);
-        setTabLoaded(prev => ({ ...prev, [tab]: true }));
-    };
-
     // ── Row click (select salesman) ───────────────────────────────────────────
     const handleSelectRow = (row: any) => {
         const uq = t(row.UNICO);
-        setSelectedUq(uq);
-        setTabLoaded({ [activeTab]: true });
-        setMobilePanel("detail");
+        setSelectedUq(selectedUq === uq ? null : uq);
     };
 
     // ── Open Add modal ────────────────────────────────────────────────────────
@@ -469,19 +467,25 @@ export default function SalesRepsPage() {
     const handleDelete = async () => {
         if (!selectedUq) { toast.error("Select a sales rep first."); return; }
         if (!perms.canDelete) { toast.error("You are not authorized to delete records."); return; }
-        const rec = (salesRepsList as any[]).find(r => t(r.UNICO) === selectedUq);
-        const name = rec ? `${t(rec.FIRST_NAME)} ${t(rec.LAST_NAME)}`.trim() : selectedUq;
-        if (!confirm(`Delete sales rep "${name}"? This action cannot be undone.`)) return;
+        setDeleteError(null);
+        setDeleteModal(true);
+    };
+
+    const confirmDelete = async () => {
         try {
+            setSaving(true);
             const res = await fetch(`/api/sales-reps/${selectedUq}`, { method: "DELETE" });
             const d = await res.json();
             if (!d.success) throw new Error(d.error || "Delete failed");
             logAction("Delete", selectedUq);
             toast.success("Sales rep deleted.");
             setSelectedUq(null);
+            setDeleteModal(false);
             qc.invalidateQueries({ queryKey: ["sales-reps-list"] });
         } catch (e: any) {
-            toast.error(e.message);
+            setDeleteError(e.message);
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -693,22 +697,17 @@ export default function SalesRepsPage() {
         { key: "salesmen",       label: "Salesmen" },
     ];
 
+    const selDeleteName = selRec ? `${t(selRec.FIRST_NAME)} ${t(selRec.LAST_NAME)}`.trim() : selectedUq;
+
     return (
         <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
 
             <AppHeader title="Sales Reps" />
 
             {/* ── Main Layout ── */}
-            <div className="flex flex-col md:flex-row flex-1 gap-2 p-2 overflow-hidden min-h-0">
+            <div className="flex flex-col flex-1 p-2 overflow-hidden min-h-0">
 
-                {/* ── Left: Sales Reps List ── */}
-                {/* On mobile: show only when mobilePanel === "list" */}
-                <div className={cn(
-                    "flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden min-h-0",
-                    "md:w-[32%] md:shrink-0 md:flex",
-                    mobilePanel === "list" ? "flex flex-1" : "hidden md:flex"
-                )}>
-                    {/* List header — PanelGrid */}
+                <div className="flex flex-col flex-1 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden min-h-0">
                     <PanelGrid
                         title="Sales Reps"
                         icon={Users}
@@ -722,12 +721,28 @@ export default function SalesRepsPage() {
                             { separator: true },
                             { label: "Reports", icon: FileText, color: "gray", onClick: () => toast.info("Reports coming soon."), disabled: !perms.canReport },
                         ]}
+                        headerRight={
+                            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1 sm:pb-0">
+                                {TABS.map(tab => (
+                                    <button key={tab.key}
+                                        onClick={() => { if (selectedUq) { setActiveModal(tab.key); setTabLoaded({ [tab.key]: true }); } }}
+                                        disabled={!selectedUq}
+                                        className={cn(
+                                            "px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded transition-all whitespace-nowrap shrink-0 border",
+                                            !selectedUq ? "opacity-40 cursor-not-allowed border-transparent text-gray-400" :
+                                            "border-gray-200 text-gray-600 hover:text-[#FB7506] hover:border-[#FB7506] bg-white shadow-sm"
+                                        )}>
+                                        {tab.label}
+                                    </button>
+                                ))}
+                            </div>
+                        }
                         className="flex-1 min-h-0 flex flex-col"
                     >
 
                     {/* Search */}
-                    <div className="p-2 border-b border-gray-100 shrink-0">
-                        <div className="relative">
+                    <div className="p-2 border-b border-gray-100 shrink-0 bg-gray-50">
+                        <div className="relative max-w-sm">
                             <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
                             <input
                                 type="text" value={search} onChange={e => setSearch(e.target.value)}
@@ -742,14 +757,15 @@ export default function SalesRepsPage() {
                         <PanelGridTable>
                             <PanelGridThead>
                                 <PanelGridTh>Salesman</PanelGridTh>
-                                <PanelGridTh className="hidden md:table-cell">Phone</PanelGridTh>
-                                <PanelGridTh className="hidden md:table-cell">Whouse</PanelGridTh>
-                                <PanelGridTh className="hidden md:table-cell">Email</PanelGridTh>
+                                <PanelGridTh>Code</PanelGridTh>
+                                <PanelGridTh>Phone</PanelGridTh>
+                                <PanelGridTh>Whouse</PanelGridTh>
+                                <PanelGridTh>Email</PanelGridTh>
                                 <PanelGridTh align="center">Act.</PanelGridTh>
                             </PanelGridThead>
                             <PanelGridTbody>
                                 {filteredList.length === 0 && !loadingList ? (
-                                    <tr><td colSpan={5} className="p-6 text-center text-gray-300 text-xs italic">
+                                    <tr><td colSpan={6} className="p-6 text-center text-gray-300 text-xs italic">
                                         {search ? "No results" : "No sales reps found"}
                                     </td></tr>
                                 ) : filteredList.map((row: any, i: number) => {
@@ -757,11 +773,12 @@ export default function SalesRepsPage() {
                                     const selected = selectedUq === uq;
                                     return (
                                         <PanelGridTr key={uq || i} selected={selected} onClick={() => handleSelectRow(row)}>
-                                            <PanelGridTd className="font-semibold">{`${t(row.FIRST_NAME)} ${t(row.LAST_NAME)}`.trim()}</PanelGridTd>
-                                            <PanelGridTd className="hidden md:table-cell text-gray-500">{t(row.PHONE_1)}</PanelGridTd>
-                                            <PanelGridTd className="hidden md:table-cell text-gray-500">{t(row.WPHYSICAL_UQ ?? row.WAREHOUSE ?? "")}</PanelGridTd>
-                                            <PanelGridTd className="hidden md:table-cell text-gray-400 truncate max-w-[120px]">{t(row.EMAIL_1)}</PanelGridTd>
-                                            <PanelGridTd align="center">{Boolean(row.ACTIVE) ? <Check size={10} className="text-green-500 mx-auto" /> : <span className="text-gray-300">{"\u2014"}</span>}</PanelGridTd>
+                                            <PanelGridTd className="font-bold">{`${t(row.FIRST_NAME)} ${t(row.LAST_NAME)}`.trim()}</PanelGridTd>
+                                            <PanelGridTd className="text-gray-500 font-mono">{t(row.OLD_CODE)}</PanelGridTd>
+                                            <PanelGridTd className="text-gray-500">{t(row.PHONE_1)}</PanelGridTd>
+                                            <PanelGridTd className="text-gray-500">{t(row.WPHYSICAL_UQ ?? row.WAREHOUSE ?? "")}</PanelGridTd>
+                                            <PanelGridTd className="text-gray-500">{t(row.EMAIL_1)}</PanelGridTd>
+                                            <PanelGridTd align="center">{Boolean(row.ACTIVE) ? <Check size={12} className="text-green-500 mx-auto" /> : <span className="text-gray-300">{"\u2014"}</span>}</PanelGridTd>
                                         </PanelGridTr>
                                     );
                                 })}
@@ -769,201 +786,177 @@ export default function SalesRepsPage() {
                         </PanelGridTable>
                     </div>
                     </PanelGrid>
-                    <div className="px-3 py-1.5 border-t border-gray-100 shrink-0 bg-gray-50">
-                        <span className="text-[10px] text-gray-400 font-bold">{filteredList.length} record{filteredList.length !== 1 ? "s" : ""}</span>
-                    </div>
-                </div>
-
-                {/* ── Right: Detail tabs ── */}
-                {/* On mobile: show only when mobilePanel === "detail" */}
-                <div className={cn(
-                    "flex flex-col min-w-0 min-h-0 bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden",
-                    "md:flex md:flex-1",
-                    mobilePanel === "detail" ? "flex flex-1" : "hidden md:flex"
-                )}>
-
-                    {/* Tab bar — scrollable on small screens */}
-                    <div className="h-10 bg-[#374151] flex items-end px-2 gap-0.5 shrink-0 overflow-x-auto scrollbar-none">
-                        {TABS.map(tab => (
-                            <button key={tab.key}
-                                onClick={() => { if (selectedUq) handleTabClick(tab.key); }}
-                                disabled={!selectedUq}
-                                className={cn(
-                                    "px-2 md:px-4 h-8 text-[9px] md:text-[10px] font-black uppercase tracking-wider rounded-t transition-all whitespace-nowrap shrink-0",
-                                    !selectedUq && "opacity-40 cursor-not-allowed",
-                                    activeTab === tab.key ? "bg-[#f4f6f8] text-[#FB7506]" : "text-gray-400 hover:text-white hover:bg-white/10"
-                                )}>
-                                {tab.label}
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* Salesman name header */}
-                    {selectedUq && (
-                        <div className="bg-white border-b border-gray-200 px-4 py-2 shrink-0 flex items-center justify-between">
-                            <span className="font-black text-lg text-[#374151] uppercase tracking-tight">
-                                {selName || "—"}
-                            </span>
-                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                                Salesman and {TABS.find(t => t.key === activeTab)?.label ?? ""} Definition
-                            </span>
-                        </div>
-                    )}
-
-                    {/* Tab content */}
-                    <div className="flex-1 overflow-hidden min-h-0 flex flex-col">
-                        {!selectedUq ? (
-                            <div className="flex-1 flex items-center justify-center text-gray-300 text-sm font-bold uppercase tracking-wide">
-                                <div className="text-center">
-                                    <Users size={40} className="mx-auto mb-3 opacity-30" />
-                                    <p>Select a sales rep</p>
-                                </div>
-                            </div>
-                        ) : !tabLoaded[activeTab] ? (
-                            <div className="flex-1 flex items-center justify-center text-gray-300 text-xs font-bold uppercase">
-                                Click a tab to load data
-                            </div>
-                        ) : (
-                            <>
-                                {/* ── Tab 1: Customers ── */}
-                                {activeTab === "customers" && (
-                                    <div className="flex flex-col flex-1 min-h-0">
-                                        <div className="h-9 bg-gray-50 border-b border-gray-200 flex items-center justify-between px-3 shrink-0">
-                                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">
-                                                Customers of {selName}
-                                            </span>
-                                            <div className="flex items-center gap-1">
-                                                {loadingCustomers && <RefreshCcw size={12} className="animate-spin text-gray-400" />}
-                                                <button onClick={() => { setCustModal(true); setCustSearch(""); setSelCustUq(null); setNewSalesUq(null); }}
-                                                    className="flex items-center gap-1 px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors">
-                                                    <Plus size={12} /> Reassign
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div className="flex-1 overflow-auto">
-                                            <table className="min-w-full text-left">
-                                                <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
-                                                    <tr>
-                                                        {["Customer", "City", "State", "Phone", "Contact", "Cr. Limit", "Hold"].map(h => (
-                                                            <th key={h} className="px-2 py-1.5 font-black text-[10px] text-gray-600 uppercase tracking-wide whitespace-nowrap border-r border-gray-200 last:border-r-0">{h}</th>
-                                                        ))}
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-gray-50">
-                                                    {loadingCustomers ? (
-                                                        <tr><td colSpan={7} className="p-4 text-center"><RefreshCcw size={14} className="animate-spin mx-auto text-gray-400" /></td></tr>
-                                                    ) : (customers as any[]).length === 0 ? (
-                                                        <tr><td colSpan={7} className="p-6 text-center text-gray-300 text-xs italic">No customers assigned</td></tr>
-                                                    ) : (customers as any[]).map((row: any, i: number) => (
-                                                        <tr key={i} className="hover:bg-gray-50 text-xs">
-                                                            <td className="px-2 py-1.5 border-r border-gray-50 truncate max-w-[160px]">{t(row.CUSTOMER ?? row.CUST_CODE)}</td>
-                                                            <td className="px-2 py-1.5 border-r border-gray-50">{t(row.CITY)}</td>
-                                                            <td className="px-2 py-1.5 border-r border-gray-50">{t(row.STATE)}</td>
-                                                            <td className="px-2 py-1.5 border-r border-gray-50 whitespace-nowrap">{t(row.PHONE_1)}</td>
-                                                            <td className="px-2 py-1.5 border-r border-gray-50 truncate max-w-[120px]">{t(row.CONTACT)}</td>
-                                                            <td className="px-2 py-1.5 border-r border-gray-50 text-right font-mono">{fmt(row.CREDIT_LIMIT)}</td>
-                                                            <td className="px-2 py-1.5 text-center">
-                                                                {Boolean(row.CREDITHOLD) && <span className="text-red-500 font-black text-[10px]">HOLD</span>}
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* ── Tab 2: Product Classes ── */}
-                                {activeTab === "product-classes" && (
-                                    <div className="flex-1 min-h-0 p-2 overflow-hidden">
-                                        <DualPanel
-                                            assignedRows={assignedClasses as any[]}
-                                            availableRows={availableClasses as any[]}
-                                            assignedCols={[{ key: "CLASS", label: "Class" }, { key: "SALESMAN_NAME", label: "Salesman" }]}
-                                            availableCols={[{ key: "CLASS", label: "Class" }]}
-                                            onAdd={handleAddClass}
-                                            onRemove={handleRemoveClass}
-                                            loading={loadingClassesA || loadingClassesB}
-                                            assignedKey="UNICO"
-                                            availableKey="UNICO"
-                                        />
-                                    </div>
-                                )}
-
-                                {/* ── Tab 3: Vendors ── */}
-                                {activeTab === "vendors" && (
-                                    <div className="flex-1 min-h-0 p-2 overflow-hidden">
-                                        <DualPanel
-                                            assignedRows={assignedVendors as any[]}
-                                            availableRows={availableVendors as any[]}
-                                            assignedCols={[{ key: "GROWER", label: "Grower" }, { key: "FARM", label: "Farm" }, { key: "CITY", label: "City" }, { key: "COUNTRY", label: "Country" }]}
-                                            availableCols={[{ key: "GROWER", label: "Grower" }, { key: "FARM", label: "Farm" }, { key: "CITY", label: "City" }]}
-                                            onAdd={handleAddVendor}
-                                            onRemove={handleRemoveVendor}
-                                            loading={loadingVendorsA || loadingVendorsB}
-                                            assignedKey="UNICO"
-                                            availableKey="UNICO"
-                                        />
-                                    </div>
-                                )}
-
-                                {/* ── Tab 4: Warehouses ── */}
-                                {activeTab === "warehouses" && (
-                                    <div className="flex-1 min-h-0 p-2 overflow-hidden">
-                                        <DualPanel
-                                            assignedRows={assignedWarehouses as any[]}
-                                            availableRows={availableWarehouses as any[]}
-                                            assignedCols={[{ key: "WAREHOUSE", label: "Warehouse" }, { key: "HANDLING_KG", label: "Handling KG" }]}
-                                            availableCols={[{ key: "WAREHOUSE", label: "Warehouse" }]}
-                                            onAdd={handleAddWarehouse}
-                                            onRemove={handleRemoveWarehouse}
-                                            loading={loadingWarehousesA || loadingWarehousesB}
-                                            assignedKey="UNICO"
-                                            availableKey="UNICO"
-                                        />
-                                    </div>
-                                )}
-
-                                {/* ── Tab 5: Cities ── */}
-                                {activeTab === "cities" && (
-                                    <div className="flex-1 min-h-0 p-2 overflow-hidden">
-                                        <DualPanel
-                                            assignedRows={assignedCities as any[]}
-                                            availableRows={availableCities as any[]}
-                                            assignedCols={[{ key: "CITY", label: "City" }, { key: "SALESMAN_NAME", label: "Salesman" }]}
-                                            availableCols={[{ key: "CITY", label: "City" }]}
-                                            onAdd={handleAddCity}
-                                            onRemove={handleRemoveCity}
-                                            loading={loadingCitiesA || loadingCitiesB}
-                                            assignedKey="UNICO"
-                                            availableKey="CITY"
-                                        />
-                                    </div>
-                                )}
-
-                                {/* ── Tab 6: Salesmen ── */}
-                                {activeTab === "salesmen" && (
-                                    <div className="flex-1 min-h-0 p-2 overflow-hidden">
-                                        <DualPanel
-                                            assignedRows={assignedSalesmen as any[]}
-                                            availableRows={availableSalesmen as any[]}
-                                            assignedCols={[{ key: "SALESMAN_NAME", label: "Salesman" }]}
-                                            availableCols={[{ key: "SALESMAN_NAME", label: "Salesman" }]}
-                                            onAdd={handleAddSalesman}
-                                            onRemove={handleRemoveSalesman}
-                                            loading={loadingSalesmenA || loadingSalesmenB}
-                                            assignedKey="UNICO"
-                                            availableKey="UNICO"
-                                        />
-                                    </div>
-                                )}
-                            </>
-                        )}
-                    </div>
                 </div>
             </div>
 
-            {/* ─── Salesman Detail Modal ─────────────────────────────────────────────── */}
+            <AppFooter />
+
+            {/* ─── Modals ───────────────────────────────────────────────────────────── */}
+
+            {/* Delete confirm modal */}
+            {deleteModal && (
+                <ConfirmDlg
+                    title="Delete Sales Rep"
+                    msg={`Are you sure you want to delete sales rep "${selDeleteName}"? This action cannot be undone.`}
+                    saving={saving}
+                    error={deleteError}
+                    onConfirm={confirmDelete}
+                    onCancel={() => setDeleteModal(false)}
+                />
+            )}
+
+            {/* Sales Rep Detail Modal (6 tabs) */}
+            {activeModal && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-40 p-4" onClick={() => setActiveModal(null)}>
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+                        {/* Header */}
+                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-4 pr-2 rounded-t-xl shrink-0">
+                            <div className="flex items-center gap-2">
+                                <Users size={16} className="text-[#FB7506]" />
+                                <span className="font-black text-[11px] text-white uppercase tracking-widest">
+                                    {selName} — {TABS.find(t => t.key === activeModal)?.label}
+                                </span>
+                            </div>
+                            <button onClick={() => setActiveModal(null)} className="text-gray-400 hover:text-white transition-colors p-1 rounded-md hover:bg-white/10">
+                                <X size={16} />
+                            </button>
+                        </div>
+                        
+                        {/* Content */}
+                        <div className="flex-1 overflow-hidden min-h-0 flex flex-col p-4 bg-[#f4f6f8]">
+                            
+                            {/* ── Tab 1: Customers ── */}
+                            {activeModal === "customers" && (
+                                <div className="flex flex-col flex-1 min-h-0 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+                                    <div className="h-12 bg-gray-50 border-b border-gray-200 flex items-center justify-between px-4 shrink-0">
+                                        <span className="font-black text-xs text-gray-700 uppercase tracking-widest">
+                                            Assigned Customers
+                                        </span>
+                                        <div className="flex items-center gap-3">
+                                            {loadingCustomers && <RefreshCcw size={14} className="animate-spin text-[#FB7506]" />}
+                                            <button onClick={() => { setCustModal(true); setCustSearch(""); setSelCustUq(null); setNewSalesUq(null); }}
+                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FB7506] hover:bg-orange-600 text-white rounded text-xs font-black uppercase tracking-wider transition-all shadow-sm">
+                                                <Plus size={14} /> Reassign
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="flex-1 overflow-auto">
+                                        <PanelGridTable>
+                                            <PanelGridThead>
+                                                <PanelGridTh>Customer</PanelGridTh>
+                                                <PanelGridTh>City</PanelGridTh>
+                                                <PanelGridTh>State</PanelGridTh>
+                                                <PanelGridTh>Phone</PanelGridTh>
+                                                <PanelGridTh>Contact</PanelGridTh>
+                                                <PanelGridTh align="right">Cr. Limit</PanelGridTh>
+                                                <PanelGridTh align="center">Hold</PanelGridTh>
+                                            </PanelGridThead>
+                                            <PanelGridTbody>
+                                                {loadingCustomers ? (
+                                                    <tr><td colSpan={7} className="p-8 text-center"><RefreshCcw size={18} className="animate-spin mx-auto text-gray-400" /></td></tr>
+                                                ) : (customers as any[]).length === 0 ? (
+                                                    <tr><td colSpan={7} className="p-8 text-center text-gray-400 text-sm italic font-medium">No customers assigned</td></tr>
+                                                ) : (customers as any[]).map((row: any, i: number) => (
+                                                    <PanelGridTr key={i}>
+                                                        <PanelGridTd className="font-bold">{t(row.CUSTOMER ?? row.CUST_CODE)}</PanelGridTd>
+                                                        <PanelGridTd>{t(row.CITY)}</PanelGridTd>
+                                                        <PanelGridTd>{t(row.STATE)}</PanelGridTd>
+                                                        <PanelGridTd className="whitespace-nowrap">{t(row.PHONE_1)}</PanelGridTd>
+                                                        <PanelGridTd className="truncate max-w-[150px]">{t(row.CONTACT)}</PanelGridTd>
+                                                        <PanelGridTd align="right" className="font-mono text-gray-600">{fmt(row.CREDIT_LIMIT)}</PanelGridTd>
+                                                        <PanelGridTd align="center">
+                                                            {Boolean(row.CREDITHOLD) && <span className="text-red-500 font-black text-[10px] bg-red-50 px-1.5 py-0.5 rounded">HOLD</span>}
+                                                        </PanelGridTd>
+                                                    </PanelGridTr>
+                                                ))}
+                                            </PanelGridTbody>
+                                        </PanelGridTable>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ── Tab 2: Product Classes ── */}
+                            {activeModal === "product-classes" && (
+                                <DualPanel
+                                    assignedRows={assignedClasses as any[]}
+                                    availableRows={availableClasses as any[]}
+                                    assignedCols={[{ key: "CLASS", label: "Class" }, { key: "SALESMAN_NAME", label: "Salesman" }]}
+                                    availableCols={[{ key: "CLASS", label: "Class" }]}
+                                    onAdd={handleAddClass}
+                                    onRemove={handleRemoveClass}
+                                    loading={loadingClassesA || loadingClassesB}
+                                    assignedKey="UNICO"
+                                    availableKey="UNICO"
+                                />
+                            )}
+
+                            {/* ── Tab 3: Vendors ── */}
+                            {activeModal === "vendors" && (
+                                <DualPanel
+                                    assignedRows={assignedVendors as any[]}
+                                    availableRows={availableVendors as any[]}
+                                    assignedCols={[{ key: "GROWER", label: "Grower" }, { key: "FARM", label: "Farm" }, { key: "CITY", label: "City" }, { key: "COUNTRY", label: "Country" }]}
+                                    availableCols={[{ key: "GROWER", label: "Grower" }, { key: "FARM", label: "Farm" }, { key: "CITY", label: "City" }]}
+                                    onAdd={handleAddVendor}
+                                    onRemove={handleRemoveVendor}
+                                    loading={loadingVendorsA || loadingVendorsB}
+                                    assignedKey="UNICO"
+                                    availableKey="UNICO"
+                                />
+                            )}
+
+                            {/* ── Tab 4: Warehouses ── */}
+                            {activeModal === "warehouses" && (
+                                <DualPanel
+                                    assignedRows={assignedWarehouses as any[]}
+                                    availableRows={availableWarehouses as any[]}
+                                    assignedCols={[{ key: "WAREHOUSE", label: "Warehouse" }, { key: "HANDLING_KG", label: "Handling KG" }]}
+                                    availableCols={[{ key: "WAREHOUSE", label: "Warehouse" }]}
+                                    onAdd={handleAddWarehouse}
+                                    onRemove={handleRemoveWarehouse}
+                                    loading={loadingWarehousesA || loadingWarehousesB}
+                                    assignedKey="UNICO"
+                                    availableKey="UNICO"
+                                />
+                            )}
+
+                            {/* ── Tab 5: Cities ── */}
+                            {activeModal === "cities" && (
+                                <DualPanel
+                                    assignedRows={assignedCities as any[]}
+                                    availableRows={availableCities as any[]}
+                                    assignedCols={[{ key: "CITY", label: "City" }, { key: "SALESMAN_NAME", label: "Salesman" }]}
+                                    availableCols={[{ key: "CITY", label: "City" }]}
+                                    onAdd={handleAddCity}
+                                    onRemove={handleRemoveCity}
+                                    loading={loadingCitiesA || loadingCitiesB}
+                                    assignedKey="UNICO"
+                                    availableKey="CITY"
+                                />
+                            )}
+
+                            {/* ── Tab 6: Salesmen ── */}
+                            {activeModal === "salesmen" && (
+                                <DualPanel
+                                    assignedRows={assignedSalesmen as any[]}
+                                    availableRows={availableSalesmen as any[]}
+                                    assignedCols={[{ key: "SALESMAN_NAME", label: "Salesman" }]}
+                                    availableCols={[{ key: "SALESMAN_NAME", label: "Salesman" }]}
+                                    onAdd={handleAddSalesman}
+                                    onRemove={handleRemoveSalesman}
+                                    loading={loadingSalesmenA || loadingSalesmenB}
+                                    assignedKey="UNICO"
+                                    availableKey="UNICO"
+                                />
+                            )}
+
+                        </div>
+                    </div>
+                </div>
+            )}
+
+
+            {/* ─── Add/Edit Salesman Modal ─────────────────────────────────────────────── */}
             {modalOpen && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
                     onClick={() => setModalOpen(false)}>
@@ -1141,7 +1134,7 @@ export default function SalesRepsPage() {
 
             {/* ─── Customer Reassign Modal ─────────────────────────────────────────────── */}
             {custModal && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
                     onClick={() => setCustModal(false)}>
                     <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden"
                         onClick={e => e.stopPropagation()}>
