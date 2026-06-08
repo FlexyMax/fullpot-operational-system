@@ -374,7 +374,13 @@ export default function VendorsPage() {
     // ── Row select ────────────────────────────────────────────────────────────
     const handleSelectRow = (row: any) => {
         const uq = t(row.UNICO);
-        setSelectedUq(uq);
+        if (selectedUq === uq) {
+            setSelectedUq(null);
+            setExpandedVendorUnico(null);
+        } else {
+            setSelectedUq(uq);
+            setExpandedVendorUnico(null);
+        }
     };
 
     // ── Add vendor ────────────────────────────────────────────────────────────

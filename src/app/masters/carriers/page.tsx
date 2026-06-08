@@ -141,6 +141,10 @@ export default function CarriersDefinitionPage() {
     /* ── Data load ───────────────────────────────────────────────────────── */
     const loadCarrier = async (idx: number) => {
         if (!list[idx]) return;
+        if (currentIdx === idx) {
+            setCurrentIdx(-1);
+            return;
+        }
         setCurrentIdx(idx);
         try {
             const d = await sF(`/api/masters/carriers/${list[idx].unico}`);

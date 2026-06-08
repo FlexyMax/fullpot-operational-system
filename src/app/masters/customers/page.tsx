@@ -191,7 +191,14 @@ export default function CustomersSetupPage() {
         else setSelWebUser(null);
     }, [webUsers]);
 
-    const selectCustomer = (c: any) => { setSelCust(c); setSelShipto(null); setSelCarrier(null); setSelWebUser(null); setFormError(null); setExpandedShiptoUnico(null); setActiveExpTab("shipto"); };
+    const selectCustomer = (c: any) => { 
+        if (selCust?.unico === c?.unico) {
+            setSelCust(null);
+            setExpandedCustUnico(null);
+        } else {
+            setSelCust(c); setSelShipto(null); setSelCarrier(null); setSelWebUser(null); setFormError(null); setExpandedShiptoUnico(null); setActiveExpTab("shipto"); 
+        }
+    };
 
     // ── Export CSV ────────────────────────────────────────────────────────────
     const exportCSV = () => {
