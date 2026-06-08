@@ -759,7 +759,7 @@ export default function VendorsPage() {
                         }},
                     ]}
                     headerRight={
-                        <div className="flex items-center gap-1.5 h-full px-2 overflow-x-auto scrollbar-none shrink-0">
+                        <div className="hidden md:flex items-center gap-1.5 h-full px-2 overflow-x-auto scrollbar-none shrink-0">
                             <button onClick={() => setStmtModal(true)} disabled={!selectedUq}
                                 className="flex items-center gap-1.5 h-6 px-2.5 bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded text-[10px] font-black uppercase tracking-wider transition-colors whitespace-nowrap">
                                 <FileText size={12} /> Statement
@@ -884,6 +884,76 @@ export default function VendorsPage() {
                 </PanelGrid>
             </div>
             
+            {/* ─── Mobile Action Bar (Bottom) ────────────────────────────────────────────── */}
+            <div className={cn(
+                "md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] transition-transform duration-300 ease-in-out pb-4 pt-2 px-2",
+                selectedUq ? "translate-y-0" : "translate-y-full"
+            )}>
+                <div className="flex items-center gap-1 overflow-x-auto px-4 scrollbar-none">
+                    <button onClick={handleEdit} disabled={!perms.canEdit}
+                        className="flex flex-col items-center gap-1 text-gray-600 disabled:opacity-50 transition-colors hover:text-[#FB7506] min-w-[56px] shrink-0">
+                        <Pencil size={20} className={perms.canEdit ? "text-[#FB7506]" : "text-gray-400"} />
+                        <span className="text-[9px] font-black uppercase tracking-wider">Edit</span>
+                    </button>
+
+                    <div className="w-px h-8 bg-gray-200 shrink-0 mx-2" />
+
+                    <button onClick={() => { if (expandedVendorUnico === selectedUq) { setExpandedVendorUnico(null); } else { setExpandedVendorUnico(selectedUq); } }} 
+                        className="flex flex-col items-center gap-1 text-gray-600 transition-colors hover:text-blue-500 min-w-[56px] shrink-0">
+                        {expandedVendorUnico === selectedUq ? <Minus size={20} className="text-blue-500" /> : <Plus size={20} className="text-blue-500" />}
+                        <span className="text-[9px] font-black uppercase tracking-wider">{expandedVendorUnico === selectedUq ? "Collapse" : "Expand"}</span>
+                    </button>
+
+                    <button onClick={() => setStmtModal(true)} 
+                        className="flex flex-col items-center gap-1 text-gray-600 transition-colors hover:text-blue-500 min-w-[56px] shrink-0">
+                        <FileText size={20} className="text-blue-500" />
+                        <span className="text-[9px] font-black uppercase tracking-wider">Stmt</span>
+                    </button>
+
+                    <button onClick={() => setPendingModal(true)} 
+                        className="flex flex-col items-center gap-1 text-gray-600 transition-colors hover:text-blue-500 min-w-[56px] shrink-0">
+                        <AlertCircle size={20} className="text-blue-500" />
+                        <span className="text-[9px] font-black uppercase tracking-wider">Pending</span>
+                    </button>
+                    
+                    <button onClick={() => setClassesModal(true)} 
+                        className="flex flex-col items-center gap-1 text-gray-600 transition-colors hover:text-blue-500 min-w-[56px] shrink-0">
+                        <Settings2 size={20} className="text-blue-500" />
+                        <span className="text-[9px] font-black uppercase tracking-wider">Classes</span>
+                    </button>
+
+                    <button onClick={() => setWsModal(true)} 
+                        className="flex flex-col items-center gap-1 text-gray-600 transition-colors hover:text-blue-500 min-w-[56px] shrink-0">
+                        <Globe size={20} className="text-blue-500" />
+                        <span className="text-[9px] font-black uppercase tracking-wider">Web</span>
+                    </button>
+
+                    <div className="w-px h-8 bg-gray-200 shrink-0 mx-2" />
+
+                    <button onClick={handleDelete} disabled={!perms.canDelete}
+                        className="flex flex-col items-center gap-1 text-gray-600 disabled:opacity-50 transition-colors hover:text-red-600 min-w-[56px] shrink-0">
+                        <Trash2 size={20} className={perms.canDelete ? "text-red-500" : "text-gray-400"} />
+                        <span className="text-[9px] font-black uppercase tracking-wider">Delete</span>
+                    </button>
+                    
+                    <button onClick={() => { setSelectedUq(null); setExpandedVendorUnico(null); }}
+                        className="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-800 transition-colors min-w-[56px] shrink-0 pr-2">
+                        <X size={20} />
+                        <span className="text-[9px] font-black uppercase tracking-wider">Close</span>
+                    </button>
+                </div>
+            </div>
+
+            {/* ─── Mobile FAB (Add) ──────────────────────────────────────────────────────── */}
+            <div className={cn("md:hidden fixed bottom-6 right-6 z-40 transition-all duration-300", selectedUq ? "opacity-0 translate-y-8 pointer-events-none" : "opacity-100 translate-y-0")}>
+                {perms.canCreate && (
+                    <button onClick={() => { setFormError(null); setForm(EMPTY_FORM); setModalTab("main"); setModalMode("add"); setModalOpen(true); }}
+                        className="bg-[#01b763] hover:bg-[#01a056] text-white w-14 h-14 rounded-full shadow-[0_4px_12px_rgba(1,183,99,0.4)] flex items-center justify-center transition-transform transform active:scale-95">
+                        <Plus size={28} />
+                    </button>
+                )}
+            </div>
+
             <AppFooter />
 
             {/* ─── Statement Modal ─────────────────────────────────────────────────── */}
@@ -1047,9 +1117,9 @@ export default function VendorsPage() {
 
             {/* ─── Vendor Setup Modal ──────────────────────────────────────────────── */}
             {modalOpen && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
                     onClick={() => setModalOpen(false)}>
-                    <div className="bg-white rounded-t-2xl sm:rounded-lg shadow-2xl w-full sm:max-w-5xl sm:max-h-[80vh] flex flex-col overflow-hidden"
+                    <div className="bg-white rounded-lg shadow-2xl w-full sm:max-w-5xl sm:max-h-[80vh] flex flex-col overflow-hidden"
                         onClick={e => e.stopPropagation()}>
 
                         {/* Modal header */}

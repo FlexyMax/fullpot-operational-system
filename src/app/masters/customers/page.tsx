@@ -756,6 +756,58 @@ export default function CustomersSetupPage() {
             </PanelGrid>
 
 
+            {/* ─── Mobile Action Bar (Bottom) ────────────────────────────────────────────── */}
+            <div className={cn(
+                "md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] transition-transform duration-300 ease-in-out pb-4 pt-2 px-2",
+                selCust ? "translate-y-0" : "translate-y-full"
+            )}>
+                <div className="flex items-center gap-1 overflow-x-auto px-4 scrollbar-none">
+                    <button onClick={() => { setCustForm({...selCust, creditlimit:selCust.creditlimit||0}); setFormError(null); setCustModal({mode:"edit"}); }} disabled={!perms.canEdit}
+                        className="flex flex-col items-center gap-1 text-gray-600 disabled:opacity-50 transition-colors hover:text-[#FB7506] min-w-[56px] shrink-0">
+                        <Pencil size={20} className={perms.canEdit ? "text-[#FB7506]" : "text-gray-400"} />
+                        <span className="text-[9px] font-black uppercase tracking-wider">Edit</span>
+                    </button>
+
+                    <div className="w-px h-8 bg-gray-200 shrink-0 mx-2" />
+
+                    <button onClick={() => { if (expandedCustUnico === selCust.unico) { setExpandedCustUnico(null); } else { setExpandedCustUnico(selCust.unico); } }} 
+                        className="flex flex-col items-center gap-1 text-gray-600 transition-colors hover:text-blue-500 min-w-[56px] shrink-0">
+                        {expandedCustUnico === selCust.unico ? <Minus size={20} className="text-blue-500" /> : <Plus size={20} className="text-blue-500" />}
+                        <span className="text-[9px] font-black uppercase tracking-wider">{expandedCustUnico === selCust.unico ? "Collapse" : "Expand"}</span>
+                    </button>
+
+                    <button onClick={() => { setStmtEnabled(true); setStmtModal(true); const d = new Date(); d.setDate(d.getDate() - 30); setStmtFrom(normalizeToISODate(d)); setStmtTo(todayEST()); }} disabled={!perms.canReport}
+                        className="flex flex-col items-center gap-1 text-gray-600 disabled:opacity-50 transition-colors hover:text-blue-500 min-w-[56px] shrink-0">
+                        <FileText size={20} className={perms.canReport ? "text-blue-500" : "text-gray-400"} />
+                        <span className="text-[9px] font-black uppercase tracking-wider">Stmt</span>
+                    </button>
+
+                    <div className="w-px h-8 bg-gray-200 shrink-0 mx-2" />
+
+                    <button onClick={() => { setFormError(null); setCustModal({mode:"delete"}); }} disabled={!perms.canDelete}
+                        className="flex flex-col items-center gap-1 text-gray-600 disabled:opacity-50 transition-colors hover:text-red-600 min-w-[56px] shrink-0">
+                        <Trash2 size={20} className={perms.canDelete ? "text-red-500" : "text-gray-400"} />
+                        <span className="text-[9px] font-black uppercase tracking-wider">Delete</span>
+                    </button>
+                    
+                    <button onClick={() => { setSelCust(null); setExpandedCustUnico(null); }}
+                        className="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-800 transition-colors min-w-[56px] shrink-0 pr-2">
+                        <X size={20} />
+                        <span className="text-[9px] font-black uppercase tracking-wider">Close</span>
+                    </button>
+                </div>
+            </div>
+
+            {/* ─── Mobile FAB (Add) ──────────────────────────────────────────────────────── */}
+            <div className={cn("md:hidden fixed bottom-6 right-6 z-40 transition-all duration-300", selCust ? "opacity-0 translate-y-8 pointer-events-none" : "opacity-100 translate-y-0")}>
+                {perms.canCreate && (
+                    <button onClick={() => { setCustForm({...EMPTY_CUST, terms:"2"}); setFormError(null); setCustModal({mode:"add"}); }}
+                        className="bg-[#01b763] hover:bg-[#01a056] text-white w-14 h-14 rounded-full shadow-[0_4px_12px_rgba(1,183,99,0.4)] flex items-center justify-center transition-transform transform active:scale-95">
+                        <Plus size={28} />
+                    </button>
+                )}
+            </div>
+
             <AppFooter areaLabel="Masters" />
 
             {/* ── CUSTOMER MODAL ─────────────────────────────────────────── */}
