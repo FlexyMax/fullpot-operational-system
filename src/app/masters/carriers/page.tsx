@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     Save, X, RefreshCcw, Truck, Plus, Pencil, Trash2,
-    Mail, AlertCircle, XCircle, Settings, FileText, Users,
+    Mail, AlertCircle, XCircle, Settings, FileText, Users, Search,
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { AppFooter } from "@/components/layout/AppFooter";
@@ -329,6 +329,16 @@ export default function CarriersDefinitionPage() {
                         { label: "Other Settings", icon: Settings, color: "orange", onClick: () => { if (selUnico) { setOtherForm({ internal_delivery: Boolean(form.internal_delivery) }); setOthersModal(true); } }, disabled: !selUnico },
                     ]}
                 >
+                    <div className="p-2 border-b border-gray-100 shrink-0 bg-gray-50 md:hidden">
+                        <div className="relative">
+                            <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+                            <input
+                                type="text" value={carrSearch} onChange={e => setCarrSearch(e.target.value)}
+                                placeholder="Search carriers..."
+                                className="w-full pl-7 pr-2 h-8 text-xs border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506]"
+                            />
+                        </div>
+                    </div>
                     <PanelGridTable>
                         <PanelGridThead>
                             <PanelGridTh className="w-5" align="center">{""}</PanelGridTh>

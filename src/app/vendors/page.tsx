@@ -779,6 +779,16 @@ export default function VendorsPage() {
                         </div>
                     }
                 >
+                    <div className="p-2 border-b border-gray-100 shrink-0 bg-gray-50 md:hidden">
+                        <div className="relative">
+                            <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+                            <input
+                                type="text" value={search} onChange={e => setSearch(e.target.value)}
+                                placeholder="Search vendors..."
+                                className="w-full pl-7 pr-2 h-8 text-xs border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506]"
+                            />
+                        </div>
+                    </div>
                     <PanelGridTable>
                         <PanelGridThead>
                                 <PanelGridTh className="w-6">{""}</PanelGridTh>

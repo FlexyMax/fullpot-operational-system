@@ -762,7 +762,7 @@ export default function CustomersSetupPage() {
                 selCust ? "translate-y-0" : "translate-y-full"
             )}>
                 <div className="flex items-center gap-1 overflow-x-auto px-4 scrollbar-none">
-                    <button onClick={() => { setCustForm({...selCust, creditlimit:selCust.creditlimit||0}); setFormError(null); setCustModal({mode:"edit"}); }} disabled={!perms.canEdit}
+                    <button onClick={() => { if(selCust) { setCustForm({...selCust, creditlimit:selCust.creditlimit||0}); setFormError(null); setCustModal({mode:"edit"}); } }} disabled={!perms.canEdit || !selCust}
                         className="flex flex-col items-center gap-1 text-gray-600 disabled:opacity-50 transition-colors hover:text-[#FB7506] min-w-[56px] shrink-0">
                         <Pencil size={20} className={perms.canEdit ? "text-[#FB7506]" : "text-gray-400"} />
                         <span className="text-[9px] font-black uppercase tracking-wider">Edit</span>
@@ -770,10 +770,10 @@ export default function CustomersSetupPage() {
 
                     <div className="w-px h-8 bg-gray-200 shrink-0 mx-2" />
 
-                    <button onClick={() => { if (expandedCustUnico === selCust.unico) { setExpandedCustUnico(null); } else { setExpandedCustUnico(selCust.unico); } }} 
+                    <button onClick={() => { if (selCust && expandedCustUnico === selCust.unico) { setExpandedCustUnico(null); } else if(selCust) { setExpandedCustUnico(selCust.unico); } }} 
                         className="flex flex-col items-center gap-1 text-gray-600 transition-colors hover:text-blue-500 min-w-[56px] shrink-0">
-                        {expandedCustUnico === selCust.unico ? <Minus size={20} className="text-blue-500" /> : <Plus size={20} className="text-blue-500" />}
-                        <span className="text-[9px] font-black uppercase tracking-wider">{expandedCustUnico === selCust.unico ? "Collapse" : "Expand"}</span>
+                        {selCust && expandedCustUnico === selCust.unico ? <Minus size={20} className="text-blue-500" /> : <Plus size={20} className="text-blue-500" />}
+                        <span className="text-[9px] font-black uppercase tracking-wider">{selCust && expandedCustUnico === selCust.unico ? "Collapse" : "Expand"}</span>
                     </button>
 
                     <button onClick={() => { setStmtEnabled(true); setStmtModal(true); const d = new Date(); d.setDate(d.getDate() - 30); setStmtFrom(normalizeToISODate(d)); setStmtTo(todayEST()); }} disabled={!perms.canReport}
