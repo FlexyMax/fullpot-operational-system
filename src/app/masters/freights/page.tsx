@@ -434,15 +434,24 @@ export default function FreightsSetupPage() {
 
     const updateAwbs = async () => {
         if (!store.selFr) { toast.error("Select a freight rate first."); return; }
-        if (!confirm("Are you sure you want to update AWB Freight Rates?")) return;
-        setSaving(true);
-        try {
-            const res = await fetch(`/api/freights/rates/${store.selFr.unico}/update-awb`, { method:"PUT" });
-            const d = await res.json(); if (!d.success) throw new Error(d.error);
-            logAction("Edit", store.selFr.unico, "Update AWB Freight Rates");
-            toast.success("AWBs updated");
-        } catch (e: any) { toast.error(e.message); }
-        finally { setSaving(false); }
+        
+        toast("Are you sure you want to update AWB Freight Rates?", {
+            duration: 10000,
+            action: {
+                label: "Confirm",
+                onClick: async () => {
+                    setSaving(true);
+                    try {
+                        const res = await fetch(`/api/freights/rates/${store.selFr!.unico}/update-awb`, { method:"PUT" });
+                        const d = await res.json(); if (!d.success) throw new Error(d.error);
+                        logAction("Edit", store.selFr!.unico, "Update AWB Freight Rates");
+                        toast.success("AWBs updated");
+                    } catch (e: any) { toast.error(e.message); }
+                    finally { setSaving(false); }
+                }
+            },
+            cancel: { label: "Cancel", onClick: () => {} }
+        });
     };
 
     if (status === "loading") return null;
