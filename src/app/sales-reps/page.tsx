@@ -1172,97 +1172,95 @@ export default function SalesRepsPage() {
                             </button>
                         </div>
 
-                        <div className="flex flex-1 min-h-0 gap-4 p-4 bg-[#f8f9fa]">
+                        <div className="flex flex-1 min-h-0 gap-4 p-4 bg-gray-100">
                             {/* Left Panel: Current Salesman Customers */}
-                            <div className="flex-1 flex flex-col min-h-0 bg-white border border-gray-300 shadow-sm">
-                                <div className="p-4 border-b border-gray-200 shrink-0 h-[68px] flex items-center">
-                                    <h2 className="text-2xl sm:text-3xl font-black text-blue-700 uppercase tracking-widest break-all">
-                                        {currentSalesman ? `${t(currentSalesman.SALESMAN_FNAME)} ${t(currentSalesman.SALESMAN_LNAME)}`.trim() : "Unknown"}
+                            <div className="flex-1 flex flex-col min-h-0 border border-gray-200 rounded-lg shadow-sm bg-white overflow-hidden" style={{ minHeight: "300px" }}>
+                                <div className="p-3 bg-white border-b border-gray-200 shrink-0">
+                                    <h2 className="text-xl font-black text-gray-800 uppercase tracking-widest break-all">
+                                        {currentSalesman ? `${t(currentSalesman.SALESMAN_FNAME)} ${t(currentSalesman.SALESMAN_LNAME)}`.trim() : "Unknown Salesman"}
                                     </h2>
                                 </div>
-                                <div className="bg-[#0000ff] text-white px-3 py-1.5 flex justify-between items-center shrink-0">
-                                    <span className="text-sm font-bold tracking-wider">Customers by Salesman</span>
+                                <div className="bg-gray-50 border-b border-gray-200 px-3 py-2 flex justify-between items-center shrink-0">
+                                    <span className="font-black text-[11px] text-gray-700 uppercase tracking-widest flex items-center gap-2">
+                                        Customers by Salesman
+                                        {loadingCustomers && <RefreshCcw size={12} className="animate-spin text-gray-400" />}
+                                    </span>
                                     <button onClick={handleReassignCustomer} disabled={!selCustUq || !newSalesUq || custSaving}
-                                        className="bg-white text-[#0000ff] hover:bg-gray-100 disabled:opacity-50 px-3 py-1 rounded-sm flex items-center gap-1 shadow-sm font-bold text-xs">
+                                        className="bg-[#FB7506] text-white hover:bg-orange-600 disabled:opacity-50 px-3 py-1 rounded flex items-center gap-1.5 shadow-sm font-black text-[10px] uppercase tracking-wider transition-colors">
                                         {custSaving ? <RefreshCcw size={12} className="animate-spin" /> : "Add >>>"}
                                     </button>
                                 </div>
-                                <div className="flex-1 overflow-auto bg-white border-l border-r border-gray-300">
-                                    <table className="min-w-full text-left">
-                                        <thead className="bg-gray-50 border-b border-gray-300 sticky top-0 z-10 shadow-sm">
-                                            <tr><th className="px-3 py-1.5 font-bold text-[13px] text-gray-900 border-r border-gray-300 text-center">Customer</th></tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-200">
-                                            {loadingCustomers ? (
-                                                <tr><td className="p-4 text-center text-gray-400"><RefreshCcw size={16} className="animate-spin mx-auto" /></td></tr>
+                                <div className="flex-1 overflow-auto">
+                                    <PanelGridTable>
+                                        <PanelGridThead>
+                                            <PanelGridTh>Customer</PanelGridTh>
+                                        </PanelGridThead>
+                                        <PanelGridTbody>
+                                            {loadingCustomers && (customers as any[]).length === 0 ? (
+                                                <tr><td className="p-4 text-center"><RefreshCcw size={14} className="animate-spin mx-auto text-gray-400" /></td></tr>
                                             ) : (customers as any[]).length === 0 ? (
-                                                <tr><td className="p-4 text-center text-gray-400 text-xs italic">No customers</td></tr>
+                                                <tr><td className="p-4 text-center text-gray-300 text-xs italic">No customers</td></tr>
                                             ) : (customers as any[]).map((row: any, i: number) => {
                                                 const uq = t(row.UNICO);
                                                 const sel = selCustUq === uq;
                                                 return (
-                                                    <tr key={uq || i} onClick={() => setSelCustUq(sel ? null : uq)}
-                                                        className={cn("cursor-pointer transition-colors border-b border-gray-300", sel ? "bg-[#f97316] text-white" : "even:bg-[#e6e6fa] hover:bg-blue-100")}>
-                                                        <td className="px-1 py-1 whitespace-nowrap text-[13px] font-semibold flex items-center">
-                                                            <div className="w-4 flex justify-center shrink-0">
-                                                                {sel ? <ChevronRight size={14} className="text-white" /> : <div className="w-[4px] h-[4px] bg-black rounded-full" />}
-                                                            </div>
-                                                            <span className="truncate">{t(row.CUSTOMER ?? row.CUST_CODE)}</span>
-                                                        </td>
-                                                    </tr>
+                                                    <PanelGridTr key={uq || i} selected={sel} onClick={() => setSelCustUq(sel ? null : uq)}>
+                                                        <PanelGridTd className="font-bold">
+                                                            {sel && <ChevronRight size={14} className="inline mr-1 text-[#FB7506]" />}
+                                                            {t(row.CUSTOMER ?? row.CUST_CODE)}
+                                                        </PanelGridTd>
+                                                    </PanelGridTr>
                                                 );
                                             })}
-                                        </tbody>
-                                    </table>
+                                        </PanelGridTbody>
+                                    </PanelGridTable>
                                 </div>
                             </div>
 
                             {/* Right Panel: New Salesman Customers */}
-                            <div className="flex-1 flex flex-col min-h-0 bg-white border border-gray-300 shadow-sm">
-                                <div className="p-4 border-b border-gray-200 shrink-0 h-[68px] flex flex-col justify-center items-end relative">
-                                    <span className="absolute top-1 right-4 font-black text-[#008000] text-xl tracking-tighter">New Salesman</span>
-                                    <div className="w-[85%] mt-3 z-10">
-                                        <select value={newSalesUq || ""} onChange={e => setNewSalesUq(e.target.value)} 
-                                            className="w-full pl-2 pr-2 h-7 text-[13px] border border-gray-400 shadow-sm bg-[#0066cc] text-white font-semibold focus:ring-2 focus:ring-blue-400 rounded-none outline-none">
-                                            <option value="">-- Select --</option>
-                                            {salesmanSearch.map((r: any) => (
-                                                <option key={t(r.UNICO)} value={t(r.UNICO)}>
-                                                    {`${t(r.SALESMAN_FNAME ?? r.salesman_fname)} ${t(r.SALESMAN_LNAME ?? r.salesman_lname)}`.trim()} ({t(r.OLD_CODE ?? r.old_code)})
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
+                            <div className="flex-1 flex flex-col min-h-0 border border-gray-200 rounded-lg shadow-sm bg-white overflow-hidden" style={{ minHeight: "300px" }}>
+                                <div className="p-3 bg-white border-b border-gray-200 shrink-0 flex flex-col gap-2">
+                                    <span className="font-black text-[11px] text-gray-700 uppercase tracking-widest">New Salesman</span>
+                                    <select value={newSalesUq || ""} onChange={e => setNewSalesUq(e.target.value)} 
+                                        className="fos-input h-8 text-xs w-full bg-gray-50 border border-gray-200 focus:ring-[#FB7506] font-bold">
+                                        <option value="">-- Select New Salesman --</option>
+                                        {salesmanSearch.map((r: any) => (
+                                            <option key={t(r.UNICO)} value={t(r.UNICO)}>
+                                                {`${t(r.SALESMAN_FNAME ?? r.salesman_fname)} ${t(r.SALESMAN_LNAME ?? r.salesman_lname)}`.trim()} ({t(r.OLD_CODE ?? r.old_code)})
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
-                                <div className="bg-[#008000] text-white px-3 py-1.5 flex justify-end items-center shrink-0">
-                                    <span className="text-sm font-bold tracking-wider">Customers by salesman</span>
+                                <div className="bg-gray-50 border-b border-gray-200 px-3 py-2 flex justify-between items-center shrink-0">
+                                    <span className="font-black text-[11px] text-gray-700 uppercase tracking-widest flex items-center gap-2">
+                                        Customers by Salesman
+                                        {loadingNewCustomers && <RefreshCcw size={12} className="animate-spin text-gray-400" />}
+                                    </span>
                                 </div>
-                                <div className="flex-1 overflow-auto bg-white border-l border-r border-gray-300">
-                                    <table className="min-w-full text-left">
-                                        <thead className="bg-gray-50 border-b border-gray-300 sticky top-0 z-10 shadow-sm">
-                                            <tr><th className="px-3 py-1.5 font-bold text-[13px] text-gray-900 border-r border-gray-300 text-center">Customer</th></tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-200">
+                                <div className="flex-1 overflow-auto">
+                                    <PanelGridTable>
+                                        <PanelGridThead>
+                                            <PanelGridTh>Customer</PanelGridTh>
+                                        </PanelGridThead>
+                                        <PanelGridTbody>
                                             {!newSalesUq ? (
-                                                <tr><td className="p-4 text-center text-gray-400 text-xs italic">Select a new salesman</td></tr>
-                                            ) : loadingNewCustomers ? (
-                                                <tr><td className="p-4 text-center text-gray-400"><RefreshCcw size={16} className="animate-spin mx-auto" /></td></tr>
+                                                <tr><td className="p-4 text-center text-gray-300 text-xs italic">Select a new salesman</td></tr>
+                                            ) : loadingNewCustomers && newSalesCustomers.length === 0 ? (
+                                                <tr><td className="p-4 text-center"><RefreshCcw size={14} className="animate-spin mx-auto text-gray-400" /></td></tr>
                                             ) : newSalesCustomers.length === 0 ? (
-                                                <tr><td className="p-4 text-center text-gray-400 text-xs italic">No customers</td></tr>
+                                                <tr><td className="p-4 text-center text-gray-300 text-xs italic">No customers</td></tr>
                                             ) : newSalesCustomers.map((row: any, i: number) => {
                                                 const uq = t(row.UNICO);
                                                 return (
-                                                    <tr key={uq || i} className="even:bg-[#e6e6fa] hover:bg-green-100 transition-colors border-b border-gray-300">
-                                                        <td className="px-1 py-1 whitespace-nowrap text-[13px] font-semibold text-gray-800 flex items-center">
-                                                            <div className="w-4 flex justify-center shrink-0">
-                                                                <div className="w-[4px] h-[4px] bg-black rounded-full" />
-                                                            </div>
-                                                            <span className="truncate">{t(row.CUSTOMER ?? row.CUST_CODE)}</span>
-                                                        </td>
-                                                    </tr>
+                                                    <PanelGridTr key={uq || i}>
+                                                        <PanelGridTd className="text-gray-700">
+                                                            {t(row.CUSTOMER ?? row.CUST_CODE)}
+                                                        </PanelGridTd>
+                                                    </PanelGridTr>
                                                 );
                                             })}
-                                        </tbody>
-                                    </table>
+                                        </PanelGridTbody>
+                                    </PanelGridTable>
                                 </div>
                             </div>
                         </div>
