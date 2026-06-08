@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
-import { X, Save, Camera, UserCircle2, AlertCircle } from "lucide-react";
+import { X, Save, Camera, UserCircle2 } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useUserStore } from "@/store/system/useUserStore";
 
@@ -20,7 +21,6 @@ const generateUsername = (nombres: string, apellidos: string) => {
 export function UserUpsertModal({ onSaved }: { onSaved: () => void }) {
     const { isUpsertModalOpen, setUpsertModalOpen, mode, selectedRow } = useUserStore();
     const [form, setForm] = useState(EMPTY_FORM);
-    const [error, setError] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
     const [photoFile, setPhotoFile] = useState<File | null>(null);
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -49,7 +49,6 @@ export function UserUpsertModal({ onSaved }: { onSaved: () => void }) {
             }
             setPhotoFile(null);
             setPhotoPreview(null);
-            setError(null);
         }
     }, [isUpsertModalOpen, mode, selectedRow]);
 
@@ -66,8 +65,8 @@ export function UserUpsertModal({ onSaved }: { onSaved: () => void }) {
 
     const handleSave = async () => {
         const err = validate();
-        if (err) { setError(err); return; }
-        setSaving(true); setError(null);
+        if (err) { toast.error(err); return; }
+        setSaving(true);
         try {
             let targetUnico = form.unico;
             let res;
@@ -96,7 +95,7 @@ export function UserUpsertModal({ onSaved }: { onSaved: () => void }) {
             onSaved();
             setUpsertModalOpen(false);
         } catch (e: any) {
-            setError(e.message);
+            toast.error(e.message || "Operation failed");
         } finally {
             setSaving(false);
         }
@@ -195,7 +194,6 @@ export function UserUpsertModal({ onSaved }: { onSaved: () => void }) {
 
                 <div className="p-3 border-t bg-gray-50 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-2">
-                        {error && <span className="flex items-center gap-1 text-red-500 text-[10px] font-bold"><AlertCircle size={12}/>{error}</span>}
                     </div>
                     <div className="flex gap-2">
                         <button onClick={() => setUpsertModalOpen(false)} className="px-4 py-1.5 text-xs font-bold text-gray-600 hover:bg-gray-200 rounded transition-colors uppercase">Cancel</button>

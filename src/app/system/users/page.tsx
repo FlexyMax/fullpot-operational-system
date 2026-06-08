@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Search, Users, Plus, Pencil, Trash2, Calendar, Check, AlertCircle, XCircle } from "lucide-react";
+import { toast } from "sonner";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { AppFooter } from "@/components/layout/AppFooter";
 import PanelGrid from "@/components/ui/PanelGrid";
@@ -30,8 +31,6 @@ export default function UsersDefinitionPage() {
 
     const [deleteDialog, setDeleteDialog] = useState(false);
     const [deleting, setDeleting] = useState(false);
-    const [delError, setDelError] = useState<string | null>(null);
-    const [saveMsg, setSaveMsg] = useState<string | null>(null);
 
     useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
 
@@ -68,7 +67,7 @@ export default function UsersDefinitionPage() {
 
     const handleDelete = async () => {
         if (!selectedRow) return;
-        setDeleting(true); setDelError(null);
+        setDeleting(true);
         try {
             const res = await fetch(`/api/system/users/${selectedRow.unico}`, { method: "DELETE" });
             const data = await res.json();
@@ -77,10 +76,9 @@ export default function UsersDefinitionPage() {
             await qc.invalidateQueries({ queryKey: ["sys-users-list"] });
             setSelectedRow(null);
             setDeleteDialog(false);
-            setSaveMsg("User deleted successfully.");
-            setTimeout(() => setSaveMsg(null), 3000);
+            toast.success("User deleted successfully.");
         } catch (e: any) {
-            setDelError(e.message);
+            toast.error(e.message || "Failed to delete user.");
         } finally {
             setDeleting(false);
         }
@@ -99,7 +97,6 @@ export default function UsersDefinitionPage() {
                     <input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
                         placeholder="Search users..." className="pl-7 pr-3 py-1.5 text-xs border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506] w-80" />
                 </div>
-                {saveMsg && <span className="text-green-600 text-[10px] font-bold flex items-center gap-1 ml-2"><Check size={11} />{saveMsg}</span>}
             </div>
 
             <PanelGrid
@@ -184,8 +181,7 @@ export default function UsersDefinitionPage() {
 
             <UserUpsertModal onSaved={() => {
                 qc.invalidateQueries({ queryKey: ["sys-users-list"] });
-                setSaveMsg("User saved successfully.");
-                setTimeout(() => setSaveMsg(null), 3000);
+                toast.success("User saved successfully.");
             }} />
             <UserLogModal />
 
@@ -199,11 +195,10 @@ export default function UsersDefinitionPage() {
                                 <p className="text-sm text-gray-500 leading-relaxed">
                                     Delete <strong>{selectedRow?.apellidos}, {selectedRow?.nombres}</strong>?<br/>This cannot be undone.
                                 </p>
-                                {delError && <p className="text-xs text-red-500 mt-2 font-bold">{delError}</p>}
                             </div>
                         </div>
                         <div className="flex border-t border-gray-100">
-                            <button onClick={() => { setDeleteDialog(false); setDelError(null); }} className="flex-1 py-3 text-sm font-bold text-gray-600 hover:bg-gray-50 border-r border-gray-100">Cancel</button>
+                            <button onClick={() => { setDeleteDialog(false); }} className="flex-1 py-3 text-sm font-bold text-gray-600 hover:bg-gray-50 border-r border-gray-100">Cancel</button>
                             <button onClick={handleDelete} disabled={deleting} className="flex-1 py-3 text-sm font-black text-red-600 hover:bg-red-50 disabled:opacity-50">
                                 {deleting ? "Deleting..." : "Delete"}
                             </button>
