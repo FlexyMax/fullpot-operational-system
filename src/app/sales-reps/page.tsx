@@ -286,7 +286,7 @@ export default function SalesRepsPage() {
     // Customer reassign modal
     const [custModal,    setCustModal]    = useState(false);
     const [custSearch,   setCustSearch]   = useState("");
-    const [selCustUq,    setSelCustUq]    = useState<string | null>(null);
+    const [selectedCustUqs, setSelectedCustUqs] = useState<string[]>([]);
     const [newSalesUq,   setNewSalesUq]   = useState<string | null>(null);
     const [custSaving,   setCustSaving]   = useState(false);
 
@@ -536,19 +536,21 @@ export default function SalesRepsPage() {
     }, [salesmanSearch, custSearch]);
 
     const handleReassignCustomer = async () => {
-        if (!selCustUq || !newSalesUq) { toast.error("Select both a customer and a new salesman."); return; }
+        if (selectedCustUqs.length === 0 || !newSalesUq) { toast.error("Select customers and a new salesman."); return; }
         setCustSaving(true);
         try {
-            const res = await fetch("/api/sales-reps/customers", {
-                method: "PUT", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ customer_uq: selCustUq, new_salesman_uq: newSalesUq }),
-            });
-            const d = await res.json();
-            if (!d.success) throw new Error(d.error || "Reassign failed");
-            logAction("Edit", selCustUq, "ReassignCustomer");
-            toast.success("Customer reassigned.");
+            for (const custUq of selectedCustUqs) {
+                const res = await fetch("/api/sales-reps/customers", {
+                    method: "PUT", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ customer_uq: custUq, new_salesman_uq: newSalesUq }),
+                });
+                const d = await res.json();
+                if (!d.success) throw new Error(d.error || "Reassign failed");
+                logAction("Edit", custUq, "ReassignCustomer");
+            }
+            toast.success("Customers reassigned.");
             setCustModal(false);
-            setSelCustUq(null);
+            setSelectedCustUqs([]);
             setNewSalesUq(null);
             qc.invalidateQueries({ queryKey: ["sr-customers", selectedUq] });
         } catch (e: any) {
@@ -835,7 +837,7 @@ export default function SalesRepsPage() {
                                         </span>
                                         <div className="flex items-center gap-3">
                                             {loadingCustomers && <RefreshCcw size={14} className="animate-spin text-[#FB7506]" />}
-                                            <button onClick={() => { setCustModal(true); setCustSearch(""); setSelCustUq(null); setNewSalesUq(null); }}
+                                            <button onClick={() => { setCustModal(true); setCustSearch(""); setSelectedCustUqs([]); setNewSalesUq(null); }}
                                                 className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FB7506] hover:bg-orange-600 text-white rounded text-xs font-black uppercase tracking-wider transition-all shadow-sm">
                                                 <Plus size={14} /> Reassign
                                             </button>
@@ -991,21 +993,25 @@ export default function SalesRepsPage() {
                         </div>
 
                         {/* Modal inner tabs */}
-                        <div className="bg-[#374151] flex items-end px-2 gap-0.5 shrink-0">
+                        <div className="bg-white border-b border-gray-200 flex items-end px-2 gap-1 shrink-0">
                             {(["setup", "permissions"] as const).map(tab => (
                                 <button key={tab} onClick={() => setModalTab(tab)}
                                     className={cn(
-                                        "px-4 h-7 text-[10px] font-black uppercase tracking-wider rounded-t transition-all",
-                                        modalTab === tab ? "bg-white text-[#FB7506]" : "text-gray-400 hover:text-white hover:bg-white/10"
+                                        "px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-colors border-b-2",
+                                        modalTab === tab ? "border-[#FB7506] text-[#FB7506] bg-[#FB7506]/5" : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
                                     )}>
                                     {tab === "setup" ? "Salesman Setup" : "Permissions"}
                                 </button>
                             ))}
                         </div>
 
-                        {/* ── Always-visible top fields ── */}
-                        <div className="px-3 md:px-4 pt-3 pb-2 border-b border-gray-200 bg-gray-50 shrink-0">
-                            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-x-3 gap-y-2 text-xs">
+                        {/* Modal tab content */}
+                        <div className="flex-1 overflow-y-auto bg-gray-50">
+
+                            {/* ── Salesman Setup Tab ── */}
+                            {modalTab === "setup" && (
+                                <div className="space-y-4 p-4">
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-3">
                                 {/* Row 1 */}
                                 <div className="flex flex-col gap-0.5">
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">EDI Code</label>
@@ -1075,21 +1081,16 @@ export default function SalesRepsPage() {
                                         <option value="">-- None --</option>
                                         {(salesmanSearch as any[]).filter(r => t(r.UNICO) !== form.unico).map((r: any) => (
                                             <option key={t(r.UNICO)} value={t(r.UNICO)}>
-                                                {`${t(r.FIRST_NAME)} ${t(r.LAST_NAME)}`.trim()}
+                                                {`${t(r.SALESMAN_FNAME ?? r.salesman_fname)} ${t(r.SALESMAN_LNAME ?? r.salesman_lname)}`.trim()}
                                             </option>
                                         ))}
                                     </select>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Modal tab content */}
-                        <div className="flex-1 overflow-y-auto p-3">
-
-                            {/* ── Salesman Setup Tab: numeric fields ── */}
-                            {modalTab === "setup" && (
-                                <div className="space-y-2">
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                                    <hr className="border-gray-200" />
+                                    
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                                         {[
                                             { key: "commi_osales",  label: "% Sales Commission",       step: "0.01", isFloat: true },
                                             { key: "due_days",      label: "Commission Due Days",       step: "1",    isFloat: false },
@@ -1143,33 +1144,55 @@ export default function SalesRepsPage() {
                             </button>
                         </div>
 
+                        <div className="p-3 bg-gray-50 border-b border-gray-200 flex flex-col gap-2 shrink-0">
+                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Select New Salesman</span>
+                            <div className="flex gap-2">
+                                <div className="relative flex-1">
+                                    <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+                                    <input type="text" placeholder="Search new salesman..." value={custSearch}
+                                        onChange={e => setCustSearch(e.target.value)}
+                                        className="w-full pl-6 pr-2 h-8 text-xs border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506]" />
+                                </div>
+                                <select value={newSalesUq || ""} onChange={e => setNewSalesUq(e.target.value)} className="fos-input h-8 text-xs w-80 bg-white">
+                                    <option value="">-- Select --</option>
+                                    {filteredCustSearch.map((r: any) => (
+                                        <option key={t(r.UNICO)} value={t(r.UNICO)}>
+                                            {t(r.SALESMAN_NAME ?? r.salesman_name) || `${t(r.SALESMAN_FNAME ?? r.salesman_fname)} ${t(r.SALESMAN_LNAME ?? r.salesman_lname)}`.trim()} ({t(r.OLD_CODE ?? r.old_code)})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
                         <div className="flex flex-1 min-h-0 gap-2 p-3">
-                            {/* Customers list */}
+                            {/* Available Customers */}
                             <div className="flex-1 flex flex-col min-h-0 border border-gray-200 rounded overflow-hidden">
-                                <div className="bg-gray-100 border-b border-gray-200 px-2 py-1.5 shrink-0">
-                                    <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Select Customer</span>
+                                <div className="bg-gray-100 border-b border-gray-200 px-2 py-1.5 shrink-0 flex justify-between items-center">
+                                    <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Available Customers</span>
+                                    <span className="text-[10px] text-gray-500">{(customers as any[]).filter(c => !selectedCustUqs.includes(t(c.UNICO))).length}</span>
                                 </div>
                                 <div className="flex-1 overflow-auto">
                                     <table className="min-w-full text-left">
                                         <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
                                             <tr>
-                                                {["Customer", "City", "Phone"].map(h => (
-                                                    <th key={h} className="px-2 py-1.5 font-black text-[10px] text-gray-600 uppercase tracking-wide whitespace-nowrap border-r border-gray-200 last:border-r-0">{h}</th>
+                                                {["Customer", "City", "Phone", ""].map(h => (
+                                                    <th key={h} className="px-2 py-1.5 font-black text-[10px] text-gray-600 uppercase tracking-wide border-r border-gray-200 last:border-r-0">{h}</th>
                                                 ))}
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-50">
-                                            {(customers as any[]).length === 0 ? (
-                                                <tr><td colSpan={3} className="p-4 text-center text-gray-300 text-xs italic">No customers</td></tr>
-                                            ) : (customers as any[]).map((row: any, i: number) => {
+                                            {(customers as any[]).filter(c => !selectedCustUqs.includes(t(c.UNICO))).map((row: any, i: number) => {
                                                 const uq = t(row.UNICO);
-                                                const sel = selCustUq === uq;
                                                 return (
-                                                    <tr key={i} onClick={() => setSelCustUq(sel ? null : uq)}
-                                                        className={cn("cursor-pointer text-xs transition-colors", sel ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50")}>
+                                                    <tr key={uq || i} className="hover:bg-gray-50 text-xs transition-colors">
                                                         <td className="px-2 py-1.5 border-r border-gray-50 truncate max-w-[140px]">{t(row.CUSTOMER ?? row.CUST_CODE)}</td>
                                                         <td className="px-2 py-1.5 border-r border-gray-50">{t(row.CITY)}</td>
-                                                        <td className="px-2 py-1.5">{t(row.PHONE_1)}</td>
+                                                        <td className="px-2 py-1.5 border-r border-gray-50">{t(row.PHONE_1)}</td>
+                                                        <td className="px-1 py-1 w-8 text-center">
+                                                            <button onClick={() => setSelectedCustUqs([...selectedCustUqs, uq])} className="p-1 rounded text-green-600 hover:bg-green-100 transition-colors">
+                                                                <ChevronRight size={14} />
+                                                            </button>
+                                                        </td>
                                                     </tr>
                                                 );
                                             })}
@@ -1178,38 +1201,37 @@ export default function SalesRepsPage() {
                                 </div>
                             </div>
 
-                            {/* New salesman */}
+                            {/* Selected Customers */}
                             <div className="flex-1 flex flex-col min-h-0 border border-gray-200 rounded overflow-hidden">
-                                <div className="bg-gray-100 border-b border-gray-200 px-2 py-1 shrink-0">
-                                    <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Select New Salesman</span>
+                                <div className="bg-gray-100 border-b border-gray-200 px-2 py-1.5 shrink-0 flex justify-between items-center">
+                                    <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Selected for Reassign</span>
+                                    <span className="text-[10px] text-gray-500">{selectedCustUqs.length}</span>
                                 </div>
-                                <div className="p-2 border-b border-gray-100 shrink-0">
-                                    <div className="relative">
-                                        <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
-                                        <input type="text" placeholder="Search..." value={custSearch}
-                                            onChange={e => setCustSearch(e.target.value)}
-                                            className="w-full pl-6 pr-2 h-7 text-xs border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506]" />
-                                    </div>
-                                </div>
-                                <div className="flex-1 overflow-auto">
+                                <div className="flex-1 overflow-auto bg-blue-50/30">
                                     <table className="min-w-full text-left">
                                         <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
                                             <tr>
-                                                <th className="px-2 py-1.5 font-black text-[10px] text-gray-600 uppercase tracking-wide">Name</th>
-                                                <th className="px-2 py-1.5 font-black text-[10px] text-gray-600 uppercase tracking-wide">Code</th>
+                                                <th className="px-2 py-1.5 font-black text-[10px] text-gray-600 uppercase tracking-wide border-r border-gray-200 w-8"></th>
+                                                <th className="px-2 py-1.5 font-black text-[10px] text-gray-600 uppercase tracking-wide border-r border-gray-200">Customer</th>
+                                                <th className="px-2 py-1.5 font-black text-[10px] text-gray-600 uppercase tracking-wide border-r border-gray-200">City</th>
+                                                <th className="px-2 py-1.5 font-black text-[10px] text-gray-600 uppercase tracking-wide border-r border-gray-200">Phone</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-50">
-                                            {filteredCustSearch.length === 0 ? (
-                                                <tr><td colSpan={2} className="p-4 text-center text-gray-300 text-xs italic">No salesmen</td></tr>
-                                            ) : filteredCustSearch.map((row: any, i: number) => {
+                                            {selectedCustUqs.length === 0 ? (
+                                                <tr><td colSpan={4} className="p-4 text-center text-gray-400 text-xs italic">No customers selected</td></tr>
+                                            ) : (customers as any[]).filter(c => selectedCustUqs.includes(t(c.UNICO))).map((row: any, i: number) => {
                                                 const uq = t(row.UNICO);
-                                                const sel = newSalesUq === uq;
                                                 return (
-                                                    <tr key={i} onClick={() => setNewSalesUq(sel ? null : uq)}
-                                                        className={cn("cursor-pointer text-xs transition-colors", sel ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50")}>
-                                                        <td className="px-2 py-1.5 border-r border-gray-50">{t(row.SALESMAN_NAME ?? row.salesman_name) || `${t(row.FIRST_NAME ?? row.salesman_fname)} ${t(row.LAST_NAME ?? row.salesman_lname)}`.trim()}</td>
-                                                        <td className="px-2 py-1.5 font-mono text-gray-500">{t(row.OLD_CODE ?? row.old_code)}</td>
+                                                    <tr key={uq || i} className="hover:bg-blue-50 text-xs transition-colors">
+                                                        <td className="px-1 py-1 text-center border-r border-gray-50">
+                                                            <button onClick={() => setSelectedCustUqs(selectedCustUqs.filter(id => id !== uq))} className="p-1 rounded text-red-500 hover:bg-red-100 transition-colors">
+                                                                <ChevronLeft size={14} />
+                                                            </button>
+                                                        </td>
+                                                        <td className="px-2 py-1.5 border-r border-gray-50 truncate max-w-[140px] font-bold text-blue-900">{t(row.CUSTOMER ?? row.CUST_CODE)}</td>
+                                                        <td className="px-2 py-1.5 border-r border-gray-50">{t(row.CITY)}</td>
+                                                        <td className="px-2 py-1.5">{t(row.PHONE_1)}</td>
                                                     </tr>
                                                 );
                                             })}
@@ -1224,7 +1246,7 @@ export default function SalesRepsPage() {
                                 className="px-4 py-2 rounded border border-gray-200 text-xs font-black uppercase text-gray-600 hover:bg-gray-100 transition-colors">
                                 Cancel
                             </button>
-                            <button onClick={handleReassignCustomer} disabled={!selCustUq || !newSalesUq || custSaving}
+                            <button onClick={handleReassignCustomer} disabled={selectedCustUqs.length === 0 || !newSalesUq || custSaving}
                                 className="flex items-center gap-2 px-5 py-2 rounded bg-[#FB7506] hover:bg-orange-600 disabled:opacity-40 text-white text-xs font-black uppercase tracking-wider transition-all">
                                 {custSaving ? <RefreshCcw size={12} className="animate-spin" /> : <Check size={12} />}
                                 {custSaving ? "Reassigning..." : "Reassign"}
