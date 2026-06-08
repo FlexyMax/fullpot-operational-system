@@ -8,20 +8,9 @@ const str = (v: any, len = 255) => String(v ?? "").trim().substring(0, len);
 
 export async function GET(_req: NextRequest) {
     try {
-        const r = await executeQuery(`
-            SELECT 
-                unico,
-                old_code,
-                salesman_fname AS first_name,
-                salesman_lname AS last_name,
-                salesman_name,
-                phone_1,
-                wphysical_uq,
-                email_1,
-                active
-            FROM flower_salesmen
-            ORDER BY salesman_name
-        `);
+        const r = await executeProcedure("sp_NC_salesman_list", {
+            lcsearch: "%",
+        });
         return NextResponse.json(r.recordset ?? []);
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });

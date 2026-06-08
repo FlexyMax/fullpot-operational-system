@@ -393,16 +393,16 @@ export default function SalesRepsPage() {
         const q = search.trim().toLowerCase();
         if (!q) return salesRepsList as any[];
         return (salesRepsList as any[]).filter(r =>
-            t(r.FIRST_NAME).toLowerCase().includes(q) ||
-            t(r.LAST_NAME).toLowerCase().includes(q) ||
-            t(r.OLD_CODE).toLowerCase().includes(q) ||
-            t(r.EMAIL_1).toLowerCase().includes(q)
+            t(r.salesman_fname).toLowerCase().includes(q) ||
+            t(r.salesman_lname).toLowerCase().includes(q) ||
+            t(r.old_code).toLowerCase().includes(q) ||
+            t(r.email_1).toLowerCase().includes(q)
         );
     }, [salesRepsList, search]);
 
     // ── Row click (select salesman) ───────────────────────────────────────────
     const handleSelectRow = (row: any) => {
-        const uq = t(row.UNICO);
+        const uq = t(row.unico ?? row.UNICO);
         setSelectedUq(selectedUq === uq ? null : uq);
     };
 
@@ -770,16 +770,16 @@ export default function SalesRepsPage() {
                                         {search ? "No results" : "No sales reps found"}
                                     </td></tr>
                                 ) : filteredList.map((row: any, i: number) => {
-                                    const uq = t(row.UNICO);
+                                    const uq = t(row.unico ?? row.UNICO);
                                     const selected = selectedUq === uq;
                                     return (
                                         <PanelGridTr key={uq || i} selected={selected} onClick={() => handleSelectRow(row)}>
-                                            <PanelGridTd className="font-bold">{`${t(row.FIRST_NAME)} ${t(row.LAST_NAME)}`.trim()}</PanelGridTd>
-                                            <PanelGridTd className="text-gray-500 font-mono">{t(row.OLD_CODE)}</PanelGridTd>
-                                            <PanelGridTd className="text-gray-500">{t(row.PHONE_1)}</PanelGridTd>
-                                            <PanelGridTd className="text-gray-500">{t(row.WPHYSICAL_UQ ?? row.WAREHOUSE ?? "")}</PanelGridTd>
-                                            <PanelGridTd className="text-gray-500">{t(row.EMAIL_1)}</PanelGridTd>
-                                            <PanelGridTd align="center">{Boolean(row.ACTIVE) ? <Check size={12} className="text-green-500 mx-auto" /> : <span className="text-gray-300">{"\u2014"}</span>}</PanelGridTd>
+                                            <PanelGridTd className="font-bold">{`${t(row.salesman_fname)} ${t(row.salesman_lname)}`.trim()}</PanelGridTd>
+                                            <PanelGridTd className="text-gray-500 font-mono">{t(row.old_code)}</PanelGridTd>
+                                            <PanelGridTd className="text-gray-500">{t(row.phone_1)}</PanelGridTd>
+                                            <PanelGridTd className="text-gray-500">{t(row.wp_name)}</PanelGridTd>
+                                            <PanelGridTd className="text-gray-500">{t(row.email_1)}</PanelGridTd>
+                                            <PanelGridTd align="center">{(row.active === "Yes" || row.active === true || row.active === 1) ? <Check size={12} className="text-green-500 mx-auto" /> : <span className="text-gray-300">{"\u2014"}</span>}</PanelGridTd>
                                         </PanelGridTr>
                                     );
                                 })}
