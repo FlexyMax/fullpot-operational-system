@@ -985,9 +985,9 @@ export default function SalesRepsPage() {
 
             {/* ─── Add/Edit Salesman Modal ─────────────────────────────────────────────── */}
             {modalOpen && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
                     onClick={() => setModalOpen(false)}>
-                    <div className="bg-white rounded-t-2xl sm:rounded-lg shadow-2xl w-full sm:max-w-5xl h-fit max-h-[95vh] flex flex-col overflow-hidden"
+                    <div className="bg-white rounded-lg shadow-2xl w-full sm:max-w-5xl h-fit max-h-[95vh] flex flex-col overflow-hidden"
                         onClick={e => e.stopPropagation()}>
 
                         {/* Modal header */}
@@ -1158,9 +1158,9 @@ export default function SalesRepsPage() {
 
             {/* ─── Customer Reassign Modal ─────────────────────────────────────────────── */}
             {custModal && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end md:items-center justify-center z-[60] p-0 md:p-4"
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
                     onClick={() => setCustModal(false)}>
-                    <div className="bg-white rounded-t-2xl md:rounded-lg shadow-2xl w-full max-w-2xl max-h-[95vh] flex flex-col overflow-hidden"
+                    <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[95vh] flex flex-col overflow-hidden"
                         onClick={e => e.stopPropagation()}>
 
                         <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 rounded-t-lg shrink-0">
