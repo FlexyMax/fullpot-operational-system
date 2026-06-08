@@ -7,7 +7,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     Users, RefreshCcw, Plus, Pencil, Trash2,
     Search, X, Save, ChevronRight, ChevronLeft,
-    FileText, AlertCircle, Check, XCircle
+    FileText, AlertCircle, Check, XCircle,
+    Box, Truck, Building2, MapPin, UserCheck
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { AppFooter } from "@/components/layout/AppFooter";
@@ -698,13 +699,13 @@ export default function SalesRepsPage() {
     const selRec = (salesRepsList as any[]).find(r => t(r.UNICO) === selectedUq);
     const selName = selRec ? `${t(selRec.FIRST_NAME)} ${t(selRec.LAST_NAME)}`.trim() : "";
 
-    const TABS: { key: ActiveTab; label: string }[] = [
-        { key: "customers",      label: "Customers" },
-        { key: "product-classes", label: "Product Class" },
-        { key: "vendors",        label: "Vendors" },
-        { key: "warehouses",     label: "Warehouses" },
-        { key: "cities",         label: "Cities" },
-        { key: "salesmen",       label: "Salesmen" },
+    const TABS: { key: ActiveTab; label: string; icon?: any }[] = [
+        { key: "customers",      label: "Customers",     icon: Users },
+        { key: "product-classes", label: "Prod. Class",   icon: Box },
+        { key: "vendors",        label: "Vendors",       icon: Truck },
+        { key: "warehouses",     label: "Warehouses",    icon: Building2 },
+        { key: "cities",         label: "Cities",        icon: MapPin },
+        { key: "salesmen",       label: "Salesmen",      icon: UserCheck },
     ];
 
     const selDeleteName = selRec ? `${t(selRec.FIRST_NAME)} ${t(selRec.LAST_NAME)}`.trim() : selectedUq;
@@ -732,7 +733,7 @@ export default function SalesRepsPage() {
                             { label: "Reports", icon: FileText, color: "gray", onClick: () => toast.info("Reports coming soon."), disabled: !perms.canReport },
                         ]}
                         headerRight={
-                            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1 sm:pb-0">
+                            <div className="hidden md:flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1 sm:pb-0">
                                 {TABS.map(tab => (
                                     <button key={tab.key}
                                         onClick={() => { if (selectedUq) { setActiveModal(tab.key); setTabLoaded({ [tab.key]: true }); } }}
@@ -1273,29 +1274,35 @@ export default function SalesRepsPage() {
                 "md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] transition-transform duration-300 ease-in-out pb-4 pt-2 px-2",
                 selectedUq ? "translate-y-0" : "translate-y-full"
             )}>
-                <div className="flex items-center justify-around">
+                <div className="flex items-center gap-1 overflow-x-auto px-4 scrollbar-none">
                     <button onClick={handleEdit} disabled={!perms.canEdit}
-                        className="flex flex-col items-center gap-1 text-gray-600 disabled:opacity-50 transition-colors hover:text-[#FB7506] w-16">
+                        className="flex flex-col items-center gap-1 text-gray-600 disabled:opacity-50 transition-colors hover:text-[#FB7506] min-w-[56px] shrink-0">
                         <Pencil size={20} className={perms.canEdit ? "text-[#FB7506]" : "text-gray-400"} />
-                        <span className="text-[10px] font-black uppercase tracking-wider">Edit</span>
+                        <span className="text-[9px] font-black uppercase tracking-wider">Edit</span>
                     </button>
                     
-                    <button onClick={() => { setActiveModal("customers"); setTabLoaded({ customers: true }); }}
-                        className="flex flex-col items-center gap-1 text-gray-600 transition-colors hover:text-blue-500 w-16">
-                        <Users size={20} className="text-blue-500" />
-                        <span className="text-[10px] font-black uppercase tracking-wider">Cust.</span>
-                    </button>
+                    <div className="w-px h-8 bg-gray-200 shrink-0 mx-2" />
+
+                    {TABS.map(tab => (
+                        <button key={tab.key} onClick={() => { setActiveModal(tab.key); setTabLoaded({ [tab.key]: true }); }}
+                            className="flex flex-col items-center gap-1 text-gray-600 transition-colors hover:text-blue-500 min-w-[72px] shrink-0">
+                            {tab.icon && <tab.icon size={20} className="text-blue-500" />}
+                            <span className="text-[9px] font-black uppercase tracking-wider">{tab.label}</span>
+                        </button>
+                    ))}
+
+                    <div className="w-px h-8 bg-gray-200 shrink-0 mx-2" />
 
                     <button onClick={handleDelete} disabled={!perms.canDelete || saving}
-                        className="flex flex-col items-center gap-1 text-gray-600 disabled:opacity-50 transition-colors hover:text-red-600 w-16">
+                        className="flex flex-col items-center gap-1 text-gray-600 disabled:opacity-50 transition-colors hover:text-red-600 min-w-[56px] shrink-0">
                         {saving ? <RefreshCcw size={20} className="animate-spin text-red-500" /> : <Trash2 size={20} className={perms.canDelete ? "text-red-500" : "text-gray-400"} />}
-                        <span className="text-[10px] font-black uppercase tracking-wider">Delete</span>
+                        <span className="text-[9px] font-black uppercase tracking-wider">Delete</span>
                     </button>
                     
                     <button onClick={() => setSelectedUq(null)}
-                        className="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-800 transition-colors w-16">
+                        className="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-800 transition-colors min-w-[56px] shrink-0 pr-2">
                         <X size={20} />
-                        <span className="text-[10px] font-black uppercase tracking-wider">Close</span>
+                        <span className="text-[9px] font-black uppercase tracking-wider">Close</span>
                     </button>
                 </div>
             </div>
