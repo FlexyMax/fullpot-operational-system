@@ -31,8 +31,10 @@ export async function PUT(req: NextRequest, { params }: P) {
 export async function DELETE(_req: NextRequest, { params }: P) {
     const { unico } = await params;
     try {
-        await executeQuery(`DELETE FROM flower_airlines WHERE unico='${txt(unico)}'`);
-        return NextResponse.json({ success: true });
+        const r = await executeProcedure("sp_flower_airlines_delete", { lcunico: unico });
+        const row = r.recordset[0];
+        if (row?.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
+        return NextResponse.json({ success: true, message: row?.Message || "Airline deleted." });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }

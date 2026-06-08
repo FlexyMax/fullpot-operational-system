@@ -19,8 +19,14 @@ export async function POST(req: NextRequest) {
     const b = await req.json();
     const unico = genUq();
     try {
-        await executeQuery(`INSERT INTO flower_cities (unico,country_iso,city,buyer_email) VALUES('${txt(unico)}','${txt(b.country_iso)}','${txt(b.city)}','${txt(b.buyer_email)}')`);
-        return NextResponse.json({ success: true, unico });
+        const r = await executeProcedure("sp_flower_cities_insert", {
+            lccity: txt(b.city),
+            lccountry_iso: txt(b.country_iso),
+            lcbuyer_email: txt(b.buyer_email)
+        });
+        const row = r.recordset?.[0] || {};
+        if (row.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
+        return NextResponse.json({ success: true, unico: row.unico || row.Unico || unico });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }
