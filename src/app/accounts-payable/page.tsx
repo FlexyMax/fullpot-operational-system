@@ -23,6 +23,7 @@ import { AuditLogModal } from "@/components/AuditLogModal";
 import { useAPStore } from "@/store/useAPStore";
 import { cn } from "@/lib/utils";
 import { formatDateEST, formatMoney, parseMoney, todayEST, currentYearEST, dateInputToEST, normalizeToISODate } from "@/lib/dates";
+const EMPTY_ARR: any[] = [];
 
 // ─── fetch helpers ───────────────────────────────────────────────────────────
 const apFetch = async (url: string) => {
@@ -101,19 +102,19 @@ export default function AccountsPayablePage() {
     }, [status, router]);
 
     // ── Queries ──────────────────────────────────────────────────────────────
-    const { data: years = [] } = useQuery({
+    const { data: years = EMPTY_ARR } = useQuery({
         queryKey: ["ap-years"],
         queryFn:  () => apFetch("/api/accounts-payable/years"),
     });
 
-    const { data: dates = [], isFetching: loadingDates, error: datesError } = useQuery({
+    const { data: dates = EMPTY_ARR, isFetching: loadingDates, error: datesError } = useQuery({
         queryKey: ["ap-dates", selectedYear],
         queryFn:  () => apFetch(`/api/accounts-payable/dates?year=${selectedYear}`),
         enabled:  !!selectedYear,
         retry: false,
     });
 
-    const { data: invoices = [], isFetching: loadingInvoices } = useQuery({
+    const { data: invoices = EMPTY_ARR, isFetching: loadingInvoices } = useQuery({
         queryKey: ["ap-invoices", selectedDate],
         queryFn:  () => apFetch(`/api/accounts-payable/invoices?date=${selectedDate}`),
         enabled:  !!selectedDate,
@@ -126,15 +127,15 @@ export default function AccountsPayablePage() {
         enabled:  !!selectedUnico,
     });
 
-    const { data: tabTerms    = [], isFetching: loadingTerms    } = useQuery({ queryKey: ["ap-terms",    selectedUnico], queryFn: () => apFetch(`/api/accounts-payable/details?unico=${selectedUnico}`),  enabled: !!selectedUnico && activeTab === "terms"    });
-    const { data: tabPobs     = [], isFetching: loadingPobs     } = useQuery({ queryKey: ["ap-pobs",     selectedUnico], queryFn: () => apFetch(`/api/accounts-payable/pobs?unico=${selectedUnico}`),    enabled: !!selectedUnico && activeTab === "po"       });
-    const { data: tabPrebooks = [], isFetching: loadingPrebooks } = useQuery({ queryKey: ["ap-prebooks", selectedUnico], queryFn: () => apFetch(`/api/accounts-payable/prebooks?unico=${selectedUnico}`), enabled: !!selectedUnico && activeTab === "prebooks" });
-    const { data: tabCredits  = [], isFetching: loadingCredits  } = useQuery({ queryKey: ["ap-credits",  selectedUnico], queryFn: () => apFetch(`/api/accounts-payable/credits?unico=${selectedUnico}`),  enabled: !!selectedUnico && activeTab === "credits"  });
+    const { data: tabTerms = EMPTY_ARR, isFetching: loadingTerms    } = useQuery({ queryKey: ["ap-terms",    selectedUnico], queryFn: () => apFetch(`/api/accounts-payable/details?unico=${selectedUnico}`),  enabled: !!selectedUnico && activeTab === "terms"    });
+    const { data: tabPobs = EMPTY_ARR, isFetching: loadingPobs     } = useQuery({ queryKey: ["ap-pobs",     selectedUnico], queryFn: () => apFetch(`/api/accounts-payable/pobs?unico=${selectedUnico}`),    enabled: !!selectedUnico && activeTab === "po"       });
+    const { data: tabPrebooks = EMPTY_ARR, isFetching: loadingPrebooks } = useQuery({ queryKey: ["ap-prebooks", selectedUnico], queryFn: () => apFetch(`/api/accounts-payable/prebooks?unico=${selectedUnico}`), enabled: !!selectedUnico && activeTab === "prebooks" });
+    const { data: tabCredits = EMPTY_ARR, isFetching: loadingCredits  } = useQuery({ queryKey: ["ap-credits",  selectedUnico], queryFn: () => apFetch(`/api/accounts-payable/credits?unico=${selectedUnico}`),  enabled: !!selectedUnico && activeTab === "credits"  });
 
-    const { data: reasons   = [] } = useQuery({ queryKey: ["ap-reasons"],   queryFn: () => apFetch("/api/accounts-payable/reasons")   });
-    const { data: apTypes   = [] } = useQuery({ queryKey: ["ap-types"],    queryFn: () => apFetch("/api/accounts-payable/ap-types")   });
-    const { data: growers   = [] } = useQuery({ queryKey: ["ap-growers"],  queryFn: () => apFetch("/api/accounts-payable/growers")    });
-    const { data: termsList = [] } = useQuery({ queryKey: ["ap-terms-list"], queryFn: () => apFetch("/api/accounts-payable/terms")   });
+    const { data: reasons = EMPTY_ARR } = useQuery({ queryKey: ["ap-reasons"],   queryFn: () => apFetch("/api/accounts-payable/reasons")   });
+    const { data: apTypes = EMPTY_ARR } = useQuery({ queryKey: ["ap-types"],    queryFn: () => apFetch("/api/accounts-payable/ap-types")   });
+    const { data: growers = EMPTY_ARR } = useQuery({ queryKey: ["ap-growers"],  queryFn: () => apFetch("/api/accounts-payable/growers")    });
+    const { data: termsList = EMPTY_ARR } = useQuery({ queryKey: ["ap-terms-list"], queryFn: () => apFetch("/api/accounts-payable/terms")   });
 
     // ── Mutations ────────────────────────────────────────────────────────────
     const crdbAdd = useMutation({
@@ -874,7 +875,7 @@ function VendorSummaryModal({ onClose }: { onClose: () => void }) {
     const [error,     setError]     = useState<string | null>(null);
     const [ranOnce,   setRanOnce]   = useState(false);
 
-    const { data: growers = [] } = useQuery({
+    const { data: growers = EMPTY_ARR } = useQuery({
         queryKey: ["rpt-growers-balance"],
         queryFn:  () => apFetch("/api/accounts-payable/reports/balance"),
         staleTime: 1000 * 60 * 5,
@@ -1015,7 +1016,7 @@ function PendingAPModal({ onClose }: { onClose: () => void }) {
     const [error,      setError]      = useState<string | null>(null);
     const [ranOnce,    setRanOnce]    = useState(false);
 
-    const { data: growers = [] } = useQuery({
+    const { data: growers = EMPTY_ARR } = useQuery({
         queryKey: ["rpt-growers-balance"],
         queryFn:  () => apFetch("/api/accounts-payable/reports/balance"),
         staleTime: 1000 * 60 * 5,

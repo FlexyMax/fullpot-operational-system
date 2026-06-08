@@ -4,6 +4,7 @@ import { useState, useEffect, ReactNode, InputHTMLAttributes } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { LogOut, Save, RefreshCcw } from "lucide-react";
 import { toast } from "sonner";
+const EMPTY_ARR: any[] = [];
 
 const today  = () => new Date().toISOString().split("T")[0];
 // mssql returns date columns as JS Date objects — convert safely to "YYYY-MM-DD"
@@ -158,7 +159,7 @@ export default function QCModal({ mode, lot, credit, onClose, onSaved }: QCModal
     const [saving, setSaving] = useState(false);
     const [error,  setError]  = useState<string | null>(null);
 
-    const { data: reasons = [] } = useQuery({
+    const { data: reasons = EMPTY_ARR } = useQuery({
         queryKey: ["qc-reasons"],
         queryFn:  () => qcPost("/api/qc/lookup/reasons", {}),
         staleTime: 300000,

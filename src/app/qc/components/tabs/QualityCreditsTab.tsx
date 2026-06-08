@@ -7,6 +7,7 @@ import { RefreshCw, Download, Menu, Plus, Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useQCContext } from "../../context/QCContext";
+const EMPTY_ARR: any[] = [];
 
 const t = (v: any) => String(v ?? "").trim();
 const fmtDate = (v: any) => {
@@ -110,7 +111,7 @@ export default function QualityCreditsTab({ onAddQC, onEditQC }: Props) {
     const rows     = allRows.slice((page - 1) * PAGE, page * PAGE);
 
     // Credits by lot — auto-select first row when data arrives
-    const { data: creditRows = [], isFetching: loadingCredits } = useQuery({
+    const { data: creditRows = EMPTY_ARR, isFetching: loadingCredits } = useQuery({
         queryKey: ["qc-credits-by-box", selRow?.unico, refreshTrigger],
         queryFn:  () => qcPost("/api/qc/credits/by-box", { pkboxUq: selRow.unico }),
         enabled:  !!selRow?.unico,

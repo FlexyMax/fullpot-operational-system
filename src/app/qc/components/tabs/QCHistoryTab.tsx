@@ -7,6 +7,7 @@ import { RefreshCw, Download, Menu, Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useQCContext } from "../../context/QCContext";
+const EMPTY_ARR: any[] = [];
 
 const t = (v: any) => String(v ?? "").trim();
 const fmtDate = (v: any) => {
@@ -84,14 +85,14 @@ export default function QCHistoryTab({ onEditQC }: Props) {
     const [selRow,    setSelRow]    = useState<any>(null);
     const [datePage,  setDatePage]  = useState(1);
 
-    const { data: dateRows = [], isFetching: loadingDates, refetch: refetchDates } = useQuery({
+    const { data: dateRows = EMPTY_ARR, isFetching: loadingDates, refetch: refetchDates } = useQuery({
         queryKey: ["qc-history-dates"],
         queryFn:  () => qcPost("/api/qc/history/dates", { dateFilter: 1 }),
         staleTime: 0,
         select:   (d: any) => d.data ?? [],
     });
 
-    const { data: historyRows = [], isFetching: loadingHistory } = useQuery({
+    const { data: historyRows = EMPTY_ARR, isFetching: loadingHistory } = useQuery({
         queryKey: ["qc-history-list", selDate?.crdate],
         queryFn:  () => qcPost("/api/qc/history/list", { dateFilter: 1, crDate: selDate.crdate, growerUq: "%" }),
         enabled:  !!selDate?.crdate,

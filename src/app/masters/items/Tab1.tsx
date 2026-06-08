@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { AuditLogModal } from "@/components/AuditLogModal";
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
+const EMPTY_ARR: any[] = [];
 
 const t   = (v: any) => String(v ?? "").trim();
 const sF  = async (url: string) => { const r = await fetch(url); const j = await r.json(); if (!r.ok) throw new Error(j?.error || `HTTP ${r.status}`); return j; };
@@ -333,13 +334,13 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
     const [classSearch, setClassSearch] = useState("");
 
     // ── Queries ───────────────────────────────────────────────────────────────
-    const { data: classes = [], isFetching: loadingCl, refetch: refetchCl } =
+    const { data: classes = EMPTY_ARR, isFetching: loadingCl, refetch: refetchCl } =
         useQuery({ queryKey:["t1-cl", classSearch], queryFn:()=>sF(`/api/masters/items/classes?search=${encodeURIComponent(classSearch||"%")}`), staleTime:30000 });
-    const { data: grades  = [], isFetching: loadingGr, refetch: refetchGr } =
+    const { data: grades = EMPTY_ARR, isFetching: loadingGr, refetch: refetchGr } =
         useQuery({ queryKey:["t1-gr"], queryFn:()=>sF("/api/masters/items/grades"), staleTime:60000 });
-    const { data: colors  = [], isFetching: loadingCo, refetch: refetchCo } =
+    const { data: colors = EMPTY_ARR, isFetching: loadingCo, refetch: refetchCo } =
         useQuery({ queryKey:["t1-co"], queryFn:()=>sF("/api/masters/items/colors"), staleTime:60000 });
-    const { data: cases   = [], isFetching: loadingCs, refetch: refetchCs } =
+    const { data: cases = EMPTY_ARR, isFetching: loadingCs, refetch: refetchCs } =
         useQuery({ queryKey:["t1-cs"], queryFn:()=>sF("/api/masters/items/cases"), staleTime:60000 });
 
     // ── Modal state ───────────────────────────────────────────────────────────

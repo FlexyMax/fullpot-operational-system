@@ -8,6 +8,7 @@ import { TabTable } from "../TabTable";
 import { TopActionBar } from "../TopActionBar";
 import { useFlexy2QBContext } from "../../context/Flexy2QBContext";
 import { toast } from "sonner";
+const EMPTY_ARR: any[] = [];
 
 export default function CustomerPaymentsTab() {
   const qc = useQueryClient();
@@ -20,7 +21,7 @@ export default function CustomerPaymentsTab() {
   const [selectedReadyIdx, setSelectedReadyIdx] = useState<number | undefined>();
   const [selectedSentIdx, setSelectedSentIdx] = useState<number | undefined>();
 
-  const { data: dates = [], isFetching: loadingDates } = useQuery({
+  const { data: dates = EMPTY_ARR, isFetching: loadingDates } = useQuery({
     queryKey: ["flexy2qb-payments-dates"],
     queryFn: async () => {
       const r = await fetch("/api/flexy2qb/payments/dates", {
@@ -32,7 +33,7 @@ export default function CustomerPaymentsTab() {
     }
   });
 
-  const { data: notReady = [], isFetching: loadingNotReady } = useQuery({
+  const { data: notReady = EMPTY_ARR, isFetching: loadingNotReady } = useQuery({
     queryKey: ["flexy2qb-payments-not-ready", selectedDate, refreshTrigger],
     queryFn: async () => {
       const r = await fetch("/api/flexy2qb/payments/not-ready", {
@@ -45,7 +46,7 @@ export default function CustomerPaymentsTab() {
     enabled: !!selectedDate && subTab === "not-ready"
   });
 
-  const { data: readyData = [], isFetching: loadingReady } = useQuery({
+  const { data: readyData = EMPTY_ARR, isFetching: loadingReady } = useQuery({
     queryKey: ["flexy2qb-payments-ready", refreshTrigger],
     queryFn: async () => {
       const r = await fetch("/api/flexy2qb/payments/ready", { method: "POST", body: "{}" });
@@ -55,7 +56,7 @@ export default function CustomerPaymentsTab() {
     enabled: subTab === "ready"
   });
 
-  const { data: sentData = [], isFetching: loadingSent } = useQuery({
+  const { data: sentData = EMPTY_ARR, isFetching: loadingSent } = useQuery({
     queryKey: ["flexy2qb-payments-sent", selectedDate, refreshTrigger],
     queryFn: async () => {
       const r = await fetch("/api/flexy2qb/payments/sent", {

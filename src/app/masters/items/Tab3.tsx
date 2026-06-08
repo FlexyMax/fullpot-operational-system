@@ -10,6 +10,7 @@ import { GridMenu } from "@/components/GridMenu";
 import { cn } from "@/lib/utils";
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
+const EMPTY_ARR: any[] = [];
 
 const t  = (v: any) => String(v ?? "").trim();
 const n2 = (v: any) => parseFloat(v ?? 0).toFixed(2);
@@ -86,8 +87,8 @@ function VarietyDefinitionModal({ mode, form, setForm, onSave, onDelete, onClose
     const isDelete = mode === "delete";
     const isEdit   = mode === "edit";
 
-    const { data: subclasses = [] } = useQuery({ queryKey:["vd-sc"], queryFn:()=>sF("/api/masters/items/subclasses?class_uq=%&search=%"), staleTime:60000 });
-    const { data: colors     = [] } = useQuery({ queryKey:["items-co"], queryFn:()=>sF("/api/masters/items/colors"), staleTime:60000 });
+    const { data: subclasses = EMPTY_ARR } = useQuery({ queryKey:["vd-sc"], queryFn:()=>sF("/api/masters/items/subclasses?class_uq=%&search=%"), staleTime:60000 });
+    const { data: colors = EMPTY_ARR } = useQuery({ queryKey:["items-co"], queryFn:()=>sF("/api/masters/items/colors"), staleTime:60000 });
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 sm:p-4">
@@ -253,10 +254,10 @@ function WarehouseBOGOModal({ initialSalesmanUq, onClose, logAction }: { initial
     const [working,    setWorking]    = useState(false);
     const [err,        setErr]        = useState<string|null>(null);
 
-    const { data: available = [], isFetching: loadL, refetch: refL } = useQuery({ queryKey:["wbogo-avail"], queryFn:()=>sF("/api/masters/items/warehouses-bogo/available"), staleTime:0 });
-    const { data: assigned  = [], isFetching: loadM, refetch: refM } = useQuery({ queryKey:["wbogo-asgn"],  queryFn:()=>sF("/api/masters/items/warehouses-bogo"),           staleTime:0 });
-    const { data: subclasses= [], isFetching: loadR, refetch: refR } = useQuery({ queryKey:["wbogo-sub", midSel?.unico], queryFn:()=>sF(`/api/masters/items/warehouses-bogo/${midSel.unico}/subclasses`), enabled:!!midSel?.unico, staleTime:0 });
-    const { data: salesmen  = [] } = useQuery({ queryKey:["bogo-sales"], queryFn:()=>sF("/api/masters/items/lookups/salesmen"), staleTime:60000 });
+    const { data: available = EMPTY_ARR, isFetching: loadL, refetch: refL } = useQuery({ queryKey:["wbogo-avail"], queryFn:()=>sF("/api/masters/items/warehouses-bogo/available"), staleTime:0 });
+    const { data: assigned = EMPTY_ARR, isFetching: loadM, refetch: refM } = useQuery({ queryKey:["wbogo-asgn"],  queryFn:()=>sF("/api/masters/items/warehouses-bogo"),           staleTime:0 });
+    const { data: subclasses = EMPTY_ARR, isFetching: loadR, refetch: refR } = useQuery({ queryKey:["wbogo-sub", midSel?.unico], queryFn:()=>sF(`/api/masters/items/warehouses-bogo/${midSel.unico}/subclasses`), enabled:!!midSel?.unico, staleTime:0 });
+    const { data: salesmen = EMPTY_ARR } = useQuery({ queryKey:["bogo-sales"], queryFn:()=>sF("/api/masters/items/lookups/salesmen"), staleTime:60000 });
 
     const addWarehouse = async () => {
         if (!leftSel) { setErr("Warehouse empty."); return; }
@@ -428,7 +429,7 @@ interface Tab3Props {
 // ─── Tab 3 Main ───────────────────────────────────────────────────────────────
 export default function Tab3({ selSubclass, selVariety, setSelVariety }: Tab3Props) {
     // Fetch varieties for the left panel based on selSubclass
-    const { data: varieties = [], isFetching: loadingVr, refetch: refetchVr } = useQuery({
+    const { data: varieties = EMPTY_ARR, isFetching: loadingVr, refetch: refetchVr } = useQuery({
         queryKey: ["tab3-vr", selSubclass?.unico],
         queryFn:  () => sF(`/api/masters/items/varieties?subclass_uq=${selSubclass.unico}&search=%`),
         enabled:  !!selSubclass?.unico,

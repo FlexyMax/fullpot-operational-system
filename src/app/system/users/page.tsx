@@ -21,6 +21,7 @@ import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { AuditLogModal } from "@/components/AuditLogModal";
 import { cn } from "@/lib/utils";
 import { todayEST, formatDateEST, normalizeToISODate } from "@/lib/dates";
+const EMPTY_ARR: any[] = [];
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const LEVELS = ["ADMINISTRADOR", "DIGITADOR 1", "DIGITADOR 2", "VISITANTE"];
@@ -81,12 +82,12 @@ export default function UsersDefinitionPage() {
     }, [status, router]);
 
     // ── Queries ───────────────────────────────────────────────────────────────
-    const { data: users = [], isFetching: loadingUsers } = useQuery({
+    const { data: users = EMPTY_ARR, isFetching: loadingUsers } = useQuery({
         queryKey: ["sys-users-list"],
         queryFn:  () => sysFetch("/api/system/users"),
     });
 
-    const { data: logData = [], isFetching: loadingLog, refetch: refetchLog } = useQuery({
+    const { data: logData = EMPTY_ARR, isFetching: loadingLog, refetch: refetchLog } = useQuery({
         queryKey: ["sys-user-log", selectedUnico, logFrom, logTo],
         queryFn:  () => sysFetch(`/api/system/users/${selectedUnico}/log?from=${logFrom}&to=${logTo}`),
         enabled:  !!selectedUnico && logEnabled,

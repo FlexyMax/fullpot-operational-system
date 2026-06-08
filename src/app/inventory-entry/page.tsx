@@ -31,6 +31,7 @@ import { ModalAWBSetup }             from "@/components/inventory-entry/ModalAWB
 import { ModalDeletePackingDetails } from "@/components/inventory-entry/ModalDeletePackingDetails";
 import { ModalHeader2 }              from "@/components/inventory-entry/ModalHeader2";
 import { ModalWarehouseTransfer }    from "@/components/inventory-entry/ModalWarehouseTransfer";
+const EMPTY_ARR: any[] = [];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const t   = (v: any) => String(v ?? "").trim();
@@ -218,27 +219,27 @@ export default function InventoryEntryPage() {
     const warehouses = useMemo(() => norm(lookups?.warehouses ?? []), [lookups]);
     const airlines   = useMemo(() => norm(lookups?.airlines   ?? []), [lookups]);
 
-    const { data: awbByDate = [], isFetching: loadingAwb, refetch: refetchAwb } = useQuery({
+    const { data: awbByDate = EMPTY_ARR, isFetching: loadingAwb, refetch: refetchAwb } = useQuery({
         queryKey: ["ie-awb-by-date", lddate],
         queryFn:  () => fetch(`/api/inventory-entry/awb-by-date?date=${lddate}`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         staleTime: 0,
         enabled:  !!lddate,
     });
 
-    const { data: packingXAwb = [], isFetching: loadingPacking, refetch: refetchPacking } = useQuery({
+    const { data: packingXAwb = EMPTY_ARR, isFetching: loadingPacking, refetch: refetchPacking } = useQuery({
         queryKey: ["ie-packing-x-awb", lcawb, lddate],
         queryFn:  () => fetch(`/api/inventory-entry/packing-x-awb?awb=${encodeURIComponent(lcawb)}&date=${lddate}`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         staleTime: 0,
     });
 
-    const { data: boxesDetail = [], isFetching: loadingBoxes, refetch: refetchBoxes } = useQuery({
+    const { data: boxesDetail = EMPTY_ARR, isFetching: loadingBoxes, refetch: refetchBoxes } = useQuery({
         queryKey: ["ie-boxes", lcawbcode],
         queryFn:  () => fetch(`/api/inventory-entry/packing-box-by-awb?awbcode=${encodeURIComponent(lcawbcode)}`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         enabled:  !!lcawbcode,
         staleTime: 0,
     });
 
-    const { data: packingDetails = [], isFetching: loadingPackingDetails } = useQuery({
+    const { data: packingDetails = EMPTY_ARR, isFetching: loadingPackingDetails } = useQuery({
         queryKey: ["ie-packing-details", lcpack_uq],
         queryFn:  () => fetch(`/api/inventory-entry/packings/${lcpack_uq}/details`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         enabled:  !!lcpack_uq,
@@ -255,7 +256,7 @@ export default function InventoryEntryPage() {
     const whAdjusts  = useMemo(() => norm(whData?.adjusts  ?? []), [whData]);
     const whInvoices = useMemo(() => norm(whData?.invoices ?? []), [whData]);
 
-    const { data: plDetails = [], isFetching: loadingPL } = useQuery({
+    const { data: plDetails = EMPTY_ARR, isFetching: loadingPL } = useQuery({
         queryKey: ["ie-pldetails", lcpack_uq],
         queryFn:  () => fetch(`/api/inventory-entry/packings/${lcpack_uq}/details`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         enabled:  !!lcpack_uq && activeTab === "plcontrol" && !!tabLoaded.plcontrol,
@@ -263,14 +264,14 @@ export default function InventoryEntryPage() {
     });
 
     // PL Control tab: all packings for the current date
-    const { data: plControlAll = [], isFetching: loadingPLC, refetch: refetchPLC } = useQuery({
+    const { data: plControlAll = EMPTY_ARR, isFetching: loadingPLC, refetch: refetchPLC } = useQuery({
         queryKey: ["ie-plcontrol-all", lddate],
         queryFn:  () => fetch(`/api/inventory-entry/pl-control?date=${lddate}`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         enabled:  activeTab === "plcontrol",
         staleTime: 0,
     });
 
-    const { data: adjustsOnly = [], isFetching: loadingAdj } = useQuery({
+    const { data: adjustsOnly = EMPTY_ARR, isFetching: loadingAdj } = useQuery({
         queryKey: ["ie-adjusts", lcpk_box_uq],
         queryFn:  () => fetch(`/api/inventory-entry/warehouse?pk_box_uq=${lcpk_box_uq}`).then(r => r.json()).then(d => norm(d.adjusts ?? [])),
         enabled:  false,  // adjusts tab removed
@@ -300,14 +301,14 @@ export default function InventoryEntryPage() {
     });
     const poRows = useMemo(() => norm(poSummary?.summary ?? []), [poSummary]);
 
-    const { data: poByGrower = [], isFetching: loadingPOG } = useQuery({
+    const { data: poByGrower = EMPTY_ARR, isFetching: loadingPOG } = useQuery({
         queryKey: ["ie-po-grower", poGrower, ldship_date],
         queryFn:  () => fetch(`/api/inventory-entry/purchase-orders?ship_date=${ldship_date}&grower_uq=${poGrower}`).then(r => r.json()).then(d => norm(d.byGrower ?? [])),
         enabled:  !!poGrower,
         staleTime: 0,
     });
 
-    const { data: awbDates = [], isFetching: loadingDates } = useQuery({
+    const { data: awbDates = EMPTY_ARR, isFetching: loadingDates } = useQuery({
         queryKey: ["ie-awb-dates"],
         queryFn:  () => fetch("/api/inventory-entry/awb-dates").then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         staleTime: 1000 * 60 * 5,

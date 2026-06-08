@@ -19,6 +19,7 @@ import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { AuditLogModal } from "@/components/AuditLogModal";
 import { EntityListModal } from "@/components/EntityListModal";
 import { EntityFormModal } from "@/components/EntityFormModal";
+const EMPTY_ARR: any[] = [];
 
 // â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const t       = (v: any) => String(v ?? "").trim();
@@ -169,10 +170,10 @@ export default function FreightsSetupPage() {
     useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
 
     // â”€â”€ Queries â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    const { data: warehouses = [], isFetching: loadingWh }  = useQuery({ queryKey: ["fr-wh"],       queryFn: () => ff("/api/freights/warehouses") });
-    const { data: freights   = [], isFetching: loadingFr, refetch: refetchFr }  = useQuery({ queryKey: ["fr-fr", selWh?.unico], queryFn: () => ff(`/api/freights/rates?warehouse=${selWh.unico}`),    enabled: !!selWh?.unico, retry: false });
-    const { data: handling   = [], isFetching: loadingHa, refetch: refetchHa }  = useQuery({ queryKey: ["fr-ha", selWh?.unico], queryFn: () => ff(`/api/freights/handling?warehouse=${selWh.unico}`), enabled: !!selWh?.unico, retry: false });
-    const { data: atpda      = [], isFetching: loadingAt, refetch: refetchAt }  = useQuery({ queryKey: ["fr-at", selWh?.unico], queryFn: () => ff(`/api/freights/atpda?warehouse=${selWh.unico}`),    enabled: !!selWh?.unico, retry: false });
+    const { data: warehouses = EMPTY_ARR, isFetching: loadingWh }  = useQuery({ queryKey: ["fr-wh"],       queryFn: () => ff("/api/freights/warehouses") });
+    const { data: freights = EMPTY_ARR, isFetching: loadingFr, refetch: refetchFr }  = useQuery({ queryKey: ["fr-fr", selWh?.unico], queryFn: () => ff(`/api/freights/rates?warehouse=${selWh.unico}`),    enabled: !!selWh?.unico, retry: false });
+    const { data: handling = EMPTY_ARR, isFetching: loadingHa, refetch: refetchHa }  = useQuery({ queryKey: ["fr-ha", selWh?.unico], queryFn: () => ff(`/api/freights/handling?warehouse=${selWh.unico}`), enabled: !!selWh?.unico, retry: false });
+    const { data: atpda = EMPTY_ARR, isFetching: loadingAt, refetch: refetchAt }  = useQuery({ queryKey: ["fr-at", selWh?.unico], queryFn: () => ff(`/api/freights/atpda?warehouse=${selWh.unico}`),    enabled: !!selWh?.unico, retry: false });
     const { data: lookups }  = useQuery({ queryKey: ["fr-look"], queryFn: () => ff("/api/freights/lookups"), staleTime: 1000*60*5 });
 
     // Auto-select first records

@@ -17,6 +17,7 @@ import { OrderDetailModal }      from "./OrderDetailModal";
 import PanelGrid from "@/components/ui/PanelGrid";
 import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
 import { AuditLogModal } from "@/components/AuditLogModal";
+const EMPTY_ARR: any[] = [];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const t    = (v: any) => String(v ?? "").trim();
@@ -76,7 +77,7 @@ export default function StandingOrdersPage() {
     });
 
     // ── Orders list ───────────────────────────────────────────────────────────
-    const { data: ordersRaw = [], isFetching: loadingOrders } = useQuery({
+    const { data: ordersRaw = EMPTY_ARR, isFetching: loadingOrders } = useQuery({
         queryKey: ["so-orders", listKey],
         queryFn: async () => {
             const r = await fetch("/api/standing-orders/orders?customer_uq=%&mode=all");

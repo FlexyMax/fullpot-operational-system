@@ -11,6 +11,7 @@ import { GridMenu } from "@/components/GridMenu";
 import { cn } from "@/lib/utils";
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
+const EMPTY_ARR: any[] = [];
 
 const t  = (v: any) => String(v ?? "").trim();
 const n2 = (v: any) => parseFloat(v ?? 0).toFixed(2);
@@ -71,7 +72,7 @@ function DualListModal({ title, productDesc, productUq, availUrl, assignedUrl, o
 
     const { data: availPages, isFetching: loadL, fetchNextPage: fetchMoreAvail, hasNextPage: hasMoreAvail, isFetchingNextPage: fetchingMoreAvail, refetch: refL } =
         useInfiniteQuery({ queryKey:["dual-avail", productUq, search], queryFn:({pageParam})=>sF(availUrl(search, pageParam as number)), initialPageParam:1, getNextPageParam: nextPage, staleTime:0, enabled: canSearch });
-    const { data: assigned = [], isFetching: loadR, refetch: refR } =
+    const { data: assigned = EMPTY_ARR, isFetching: loadR, refetch: refR } =
         useQuery({ queryKey:["dual-asgn", productUq], queryFn:()=>sF(assignedUrl), staleTime:0 });
 
     const available = getPages(availPages);
@@ -183,11 +184,11 @@ function BuyersQuotasModal({ productUq, productDesc, onClose }: { productUq: str
     const [saving,     setSaving]     = useState(false);
     const [err,        setErr]        = useState<string|null>(null);
 
-    const { data: quotas  = [], isFetching: loadQ, refetch: refQ } = useQuery({ queryKey:["bq-q",  productUq], queryFn:()=>sF(`/api/masters/items/products/${productUq}/quotas`), staleTime:0 });
-    const { data: countries = [] } = useQuery({ queryKey:["bq-countries"], queryFn:()=>sF("/api/masters/items/lookups/countries"), staleTime:60000 });
-    const { data: cities  = [], refetch: refCities } = useQuery({ queryKey:["bq-cities", qForm.country], queryFn:()=>sF(`/api/masters/items/lookups/cities?country=${encodeURIComponent(qForm.country)}`), enabled: !!qForm.country, staleTime:30000 });
-    const { data: growersLeft  = [], isFetching: loadGL, refetch: refGL } = useQuery({ queryKey:["bq-gl", productUq], queryFn:()=>sF(`/api/masters/items/products/quota/growers?product_uq=${productUq}`), staleTime:0 });
-    const { data: growersRight = [], isFetching: loadGR, refetch: refGR } = useQuery({ queryKey:["bq-gr", selQuota?.unico], queryFn:()=>sF(`/api/masters/items/products/quota/growers-in/${selQuota.unico}`), enabled:!!selQuota?.unico, staleTime:0 });
+    const { data: quotas = EMPTY_ARR, isFetching: loadQ, refetch: refQ } = useQuery({ queryKey:["bq-q",  productUq], queryFn:()=>sF(`/api/masters/items/products/${productUq}/quotas`), staleTime:0 });
+    const { data: countries = EMPTY_ARR } = useQuery({ queryKey:["bq-countries"], queryFn:()=>sF("/api/masters/items/lookups/countries"), staleTime:60000 });
+    const { data: cities = EMPTY_ARR, refetch: refCities } = useQuery({ queryKey:["bq-cities", qForm.country], queryFn:()=>sF(`/api/masters/items/lookups/cities?country=${encodeURIComponent(qForm.country)}`), enabled: !!qForm.country, staleTime:30000 });
+    const { data: growersLeft = EMPTY_ARR, isFetching: loadGL, refetch: refGL } = useQuery({ queryKey:["bq-gl", productUq], queryFn:()=>sF(`/api/masters/items/products/quota/growers?product_uq=${productUq}`), staleTime:0 });
+    const { data: growersRight = EMPTY_ARR, isFetching: loadGR, refetch: refGR } = useQuery({ queryKey:["bq-gr", selQuota?.unico], queryFn:()=>sF(`/api/masters/items/products/quota/growers-in/${selQuota.unico}`), enabled:!!selQuota?.unico, staleTime:0 });
 
     useEffect(() => { if ((quotas as any[]).length > 0 && !selQuota) setSelQuota((quotas as any[])[0]); }, [quotas]);
 
@@ -368,7 +369,7 @@ function POPricesModal({ onClose }: { onClose: () => void }) {
     const custList = getPages(custPages);
     const custSentinel = useSentinel(() => fetchMoreCust(), !!(hasMoreCust && !fetchingMoreCust));
 
-    const { data: seasons = [] } = useQuery({ queryKey:["po-seasons"], queryFn:()=>sF("/api/masters/items/lookups/seasons"), staleTime:60000 });
+    const { data: seasons = EMPTY_ARR } = useQuery({ queryKey:["po-seasons"], queryFn:()=>sF("/api/masters/items/lookups/seasons"), staleTime:60000 });
 
     // Available products: infinite scroll — require city+season AND min 2 chars OR explicit empty (load first page when user clears)
     const canSearchPO = !!(cityUq && seasonUq) && leftSearch.length >= 2;
@@ -377,7 +378,7 @@ function POPricesModal({ onClose }: { onClose: () => void }) {
     const available = getPages(availPages);
     const availSentinel = useSentinel(() => fetchMoreAvail(), !!(hasMoreAvail && !fetchingMoreAvail));
 
-    const { data: assigned = [], isFetching: loadR, refetch: refR } =
+    const { data: assigned = EMPTY_ARR, isFetching: loadR, refetch: refR } =
         useQuery({ queryKey:["po-asgn", cityUq, seasonUq], queryFn:()=>sF(`/api/masters/items/po-prices/assigned?city_uq=${cityUq}&season_uq=${seasonUq}`), enabled: !!(cityUq && seasonUq), staleTime:0 });
 
     useEffect(() => {
@@ -699,9 +700,9 @@ function ProductsModalTab2({ mode, form, setForm, lookups, onSave, onClose, savi
     const [noteTab, setNoteTab] = useState("remarks");
     const totalUnits = form.stem_pack ? (form.up_x_case||0) : (form.up_x_pack||0)*(form.up_x_case||0);
 
-    const { data: classes    = [] } = useQuery({ queryKey:["pm2-cl"], queryFn:()=>sF("/api/masters/items/classes?search=%"), staleTime:60000 });
-    const { data: subclasses = [] } = useQuery({ queryKey:["pm2-sc", form.class_filter], queryFn:()=>sF(`/api/masters/items/subclasses?class_uq=${form.class_filter}&search=%`), enabled:!!form.class_filter, staleTime:60000 });
-    const { data: varieties  = [] } = useQuery({ queryKey:["pm2-vr", form.subclass_filter], queryFn:()=>sF(`/api/masters/items/varieties?subclass_uq=${form.subclass_filter}&search=%`), enabled:!!form.subclass_filter, staleTime:60000 });
+    const { data: classes = EMPTY_ARR } = useQuery({ queryKey:["pm2-cl"], queryFn:()=>sF("/api/masters/items/classes?search=%"), staleTime:60000 });
+    const { data: subclasses = EMPTY_ARR } = useQuery({ queryKey:["pm2-sc", form.class_filter], queryFn:()=>sF(`/api/masters/items/subclasses?class_uq=${form.class_filter}&search=%`), enabled:!!form.class_filter, staleTime:60000 });
+    const { data: varieties = EMPTY_ARR } = useQuery({ queryKey:["pm2-vr", form.subclass_filter], queryFn:()=>sF(`/api/masters/items/varieties?subclass_uq=${form.subclass_filter}&search=%`), enabled:!!form.subclass_filter, staleTime:60000 });
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 sm:p-4">

@@ -17,6 +17,7 @@ import { ProductsListModal }   from "./ProductsListModal";
 import { FutureStockModal }    from "./FutureStockModal";
 import { ChangeSalesmanModal } from "./ChangeSalesmanModal";
 import { ChangeCustomerModal } from "./ChangeCustomerModal";
+const EMPTY_ARR: any[] = [];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const t    = (v: any) => String(v ?? "").trim();
@@ -102,7 +103,7 @@ export function OrderDetailModal({ soUnico, orderRow, lookups, canEdit, canDelet
     });
 
     // ── Vendors query
-    const { data: vendors = [], isFetching: loadingVendors } = useQuery({
+    const { data: vendors = EMPTY_ARR, isFetching: loadingVendors } = useQuery({
         queryKey: ["so-vendors", selectedLineUnico],
         enabled: !!selectedLineUnico,
         queryFn: async () => {

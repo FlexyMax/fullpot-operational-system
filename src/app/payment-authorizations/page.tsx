@@ -19,6 +19,7 @@ import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { usePaymentAuthorizationsStore } from "@/store/usePaymentAuthorizationsStore";
 import AppHeader from "@/components/layout/AppHeader";
 import AppFooter from "@/components/layout/AppFooter";
+const EMPTY_ARR: any[] = [];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const t       = (v: any) => String(v ?? "").trim();
@@ -517,33 +518,33 @@ export default function PaymentAuthorizationsPage() {
 
     // ─── Data queries ─────────────────────────────────────────────────────
 
-    const { data: growersList = [] } = useQuery({
+    const { data: growersList = EMPTY_ARR } = useQuery({
         queryKey: ["pa-growers"],
         queryFn:  () => paFetch("/api/payment-authorizations/growers?all=0").then(d => norm(Array.isArray(d) ? d : [])),
         staleTime: 5 * 60 * 1000,
     });
 
-    const { data: banksList = [] } = useQuery({
+    const { data: banksList = EMPTY_ARR } = useQuery({
         queryKey: ["pa-banks"],
         queryFn:  () => paFetch("/api/payment-authorizations/banks").then(d => norm(Array.isArray(d) ? d : [])),
         staleTime: 5 * 60 * 1000,
     });
 
     // Tab 1 — Vendors (always load all, independent of selected vendor)
-    const { data: vendorsList = [], isFetching: loadingVendors, refetch: refetchVendors } = useQuery({
+    const { data: vendorsList = EMPTY_ARR, isFetching: loadingVendors, refetch: refetchVendors } = useQuery({
         queryKey: ["pa-vendors"],
         queryFn:  () => paFetch(`/api/payment-authorizations/vendors?grower=`).then(d => norm(Array.isArray(d) ? d : [])),
         staleTime: 0,
     });
 
-    const { data: vendorsSummary = [], isFetching: loadingVendorsSummary, refetch: refetchVendorsSummary } = useQuery({
+    const { data: vendorsSummary = EMPTY_ARR, isFetching: loadingVendorsSummary, refetch: refetchVendorsSummary } = useQuery({
         queryKey: ["pa-vendors-summary"],
         queryFn:  () => paFetch("/api/payment-authorizations/vendors-summary").then(d => norm(Array.isArray(d) ? d : [])),
         staleTime: 0,
     });
 
     // Tab 2 — Invoices
-    const { data: invoicesList = [], isFetching: loadingInvoices, refetch: refetchInvoices } = useQuery({
+    const { data: invoicesList = EMPTY_ARR, isFetching: loadingInvoices, refetch: refetchInvoices } = useQuery({
         queryKey: ["pa-invoices", store.lcgrower_uq, invoiceBalFilter],
         queryFn:  () => paFetch(`/api/payment-authorizations/invoices?supplier_uq=${encodeURIComponent(store.lcgrower_uq)}&balance=${invoiceBalFilter}`).then(d => norm(Array.isArray(d) ? d : [])),
         enabled:  !!store.lcgrower_uq,
@@ -551,21 +552,21 @@ export default function PaymentAuthorizationsPage() {
     });
 
     // Tab 3 — Payments / Outcomes
-    const { data: outcomesList = [], isFetching: loadingOutcomes, refetch: refetchOutcomes } = useQuery({
+    const { data: outcomesList = EMPTY_ARR, isFetching: loadingOutcomes, refetch: refetchOutcomes } = useQuery({
         queryKey: ["pa-outcomes", store.lcgrower_uq, store.ldPaymentsFrom, store.lnclose],
         queryFn:  () => paFetch(`/api/payment-authorizations/outcomes?grower_uq=${encodeURIComponent(store.lcgrower_uq)}&ldfrom=${store.ldPaymentsFrom || "2000-01-01"}&lnclose=${store.lnclose}`).then(d => norm(Array.isArray(d) ? d : [])),
         enabled:  !!store.lcgrower_uq,
         staleTime: 0,
     });
 
-    const { data: outcomeDetails = [], isFetching: loadingDetails } = useQuery({
+    const { data: outcomeDetails = EMPTY_ARR, isFetching: loadingDetails } = useQuery({
         queryKey: ["pa-outcome-details", store.lcapd_uq],
         queryFn:  () => paFetch(`/api/payment-authorizations/outcome-details?acc_payd_uq=${encodeURIComponent(store.lcapd_uq)}`).then(d => norm(Array.isArray(d) ? d : [])),
         enabled:  !!store.lcapd_uq,
         staleTime: 0,
     });
 
-    const { data: paymentInvoices = [], isFetching: loadingPayInv } = useQuery({
+    const { data: paymentInvoices = EMPTY_ARR, isFetching: loadingPayInv } = useQuery({
         queryKey: ["pa-payment-invoices", store.lcoutcome_uq],
         queryFn:  () => paFetch(`/api/payment-authorizations/payment-invoices?payment_uq=${encodeURIComponent(store.lcoutcome_uq)}`).then(d => norm(Array.isArray(d) ? d : [])),
         enabled:  !!store.lcoutcome_uq,

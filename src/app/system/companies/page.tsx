@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { AuditLogModal } from "@/components/AuditLogModal";
+const EMPTY_ARR: any[] = [];
 
 // â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const t   = (v: any) => String(v ?? "").trim();
@@ -59,7 +60,7 @@ export default function CompaniesDefinitionPage() {
     useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
 
     // â”€â”€ Queries â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    const { data: companies = [], isFetching: loadingList } = useQuery({
+    const { data: companies = EMPTY_ARR, isFetching: loadingList } = useQuery({
         queryKey: ["sys-companies-list"],
         queryFn:  () => sF("/api/system/companies"),
     });

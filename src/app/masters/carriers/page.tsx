@@ -19,6 +19,7 @@ import { AuditLogModal } from "@/components/AuditLogModal";
 import { formatMoney, normalizeToISODate, formatDateEST } from "@/lib/dates";
 import { toast } from "sonner";
 import { useCarriersStore } from "@/store/useCarriersStore";
+const EMPTY_ARR: any[] = [];
 
 // ─── Confirm Delete Dialog ────────────────────────────────────────────────────
 function ConfirmDlg({ title, msg, onConfirm, onCancel, saving, error }: any) {
@@ -98,12 +99,12 @@ export default function CarriersDefinitionPage() {
     useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
 
     /* ── Queries ─────────────────────────────────────────────────────────── */
-    const { data: carriers = [], isFetching: loadingList, refetch: refetchList } = useQuery({
+    const { data: carriers = EMPTY_ARR, isFetching: loadingList, refetch: refetchList } = useQuery({
         queryKey: ["carr-list"],
         queryFn:  () => sF("/api/masters/carriers"),
     });
 
-    const { data: products = [] } = useQuery({
+    const { data: products = EMPTY_ARR } = useQuery({
         queryKey: ["carr-products"],
         queryFn:  () => sF("/api/masters/carriers/lookups"),
         staleTime: 1000 * 60 * 10,
@@ -121,14 +122,14 @@ export default function CarriersDefinitionPage() {
 
     const selUnico = list[currentIdx]?.unico ?? null;
 
-    const { data: invoices  = [], isFetching: loadingInv  } = useQuery({
+    const { data: invoices = EMPTY_ARR, isFetching: loadingInv  } = useQuery({
         queryKey: ["carr-inv",  selUnico, invDateIni, invDateEnd],
         queryFn:  () => sF(`/api/masters/carriers/${selUnico}/invoices?date_ini=${invDateIni}&date_end=${invDateEnd}`),
         enabled:  !!selUnico && invModal,
         retry: false,
     });
 
-    const { data: customers = [], isFetching: loadingCust } = useQuery({
+    const { data: customers = EMPTY_ARR, isFetching: loadingCust } = useQuery({
         queryKey: ["carr-cust", selUnico],
         queryFn:  () => sF(`/api/masters/carriers/${selUnico}/customers`),
         enabled:  !!selUnico && custModal,

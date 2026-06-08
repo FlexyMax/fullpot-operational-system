@@ -19,6 +19,7 @@ import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridT
 import { usePagePermissions } from "@/lib/permissions";
 import { useAuditLog } from "@/lib/audit";
 import { useSalesRepsStore, ActiveTab } from "@/store/useSalesRepsStore";
+const EMPTY_ARR: any[] = [];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const t = (v: any) => String(v ?? "").trim();
@@ -291,7 +292,7 @@ export default function SalesRepsPage() {
     const [custSaving,   setCustSaving]   = useState(false);
 
     // ── Queries ───────────────────────────────────────────────────────────────
-    const { data: salesRepsList = [], isFetching: loadingList, refetch: refetchList } = useQuery({
+    const { data: salesRepsList = EMPTY_ARR, isFetching: loadingList, refetch: refetchList } = useQuery({
         queryKey: ["sales-reps-list"],
         queryFn:  () => fetch("/api/sales-reps").then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         staleTime: 0,
@@ -301,98 +302,98 @@ export default function SalesRepsPage() {
         return (salesRepsList as any[]).find(r => t(r.UNICO) === selectedUq) || null;
     }, [salesRepsList, selectedUq]);
 
-    const { data: physicalWarehouses = [] } = useQuery({
+    const { data: physicalWarehouses = EMPTY_ARR } = useQuery({
         queryKey: ["sr-physical-warehouses"],
         queryFn:  () => fetch("/api/sales-reps/physical-warehouses").then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         staleTime: 1000 * 60 * 10,
     });
 
-    const { data: systemUsers = [] } = useQuery({
+    const { data: systemUsers = EMPTY_ARR } = useQuery({
         queryKey: ["sr-system-users"],
         queryFn:  () => fetch("/api/sales-reps/system-users").then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         staleTime: 1000 * 60 * 10,
     });
 
     // Modals data
-    const { data: customers = [], isFetching: loadingCustomers, refetch: refetchCustomers } = useQuery({
+    const { data: customers = EMPTY_ARR, isFetching: loadingCustomers, refetch: refetchCustomers } = useQuery({
         queryKey: ["sr-customers", selectedUq],
         queryFn:  () => fetch(`/api/sales-reps/customers?salesman_uq=${selectedUq}`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         enabled:  !!selectedUq && activeModal === "customers" && !!tabLoaded["customers"],
         staleTime: 0,
     });
 
-    const { data: newSalesCustomers = [], isFetching: loadingNewCustomers } = useQuery({
+    const { data: newSalesCustomers = EMPTY_ARR, isFetching: loadingNewCustomers } = useQuery({
         queryKey: ["sr-customers", newSalesUq],
         queryFn:  () => fetch(`/api/sales-reps/customers?salesman_uq=${newSalesUq}`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         enabled:  !!newSalesUq && !!custModal,
         staleTime: 0,
     });
 
-    const { data: salesmanSearch = [] } = useQuery({
+    const { data: salesmanSearch = EMPTY_ARR } = useQuery({
         queryKey: ["sr-salesman-search"],
         queryFn:  () => fetch("/api/sales-reps/search?search=%").then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         staleTime: 1000 * 60 * 5,
     });
 
-    const { data: assignedClasses = [], isFetching: loadingClassesA, refetch: refetchClassesA } = useQuery({
+    const { data: assignedClasses = EMPTY_ARR, isFetching: loadingClassesA, refetch: refetchClassesA } = useQuery({
         queryKey: ["sr-product-classes-assigned", selectedUq],
         queryFn:  () => fetch(`/api/sales-reps/product-classes?salesman_uq=${selectedUq}`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         enabled:  !!selectedUq && activeModal === "product-classes" && !!tabLoaded["product-classes"],
         staleTime: 0,
     });
-    const { data: availableClasses = [], isFetching: loadingClassesB, refetch: refetchClassesB } = useQuery({
+    const { data: availableClasses = EMPTY_ARR, isFetching: loadingClassesB, refetch: refetchClassesB } = useQuery({
         queryKey: ["sr-product-classes-available", selectedUq],
         queryFn:  () => fetch(`/api/sales-reps/product-classes?salesman_uq=${selectedUq}&not_in=1`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         enabled:  !!selectedUq && activeModal === "product-classes" && !!tabLoaded["product-classes"],
         staleTime: 0,
     });
 
-    const { data: assignedVendors = [], isFetching: loadingVendorsA, refetch: refetchVendorsA } = useQuery({
+    const { data: assignedVendors = EMPTY_ARR, isFetching: loadingVendorsA, refetch: refetchVendorsA } = useQuery({
         queryKey: ["sr-vendors-assigned", selectedUq],
         queryFn:  () => fetch(`/api/sales-reps/vendors?salesman_uq=${selectedUq}`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         enabled:  !!selectedUq && activeModal === "vendors" && !!tabLoaded["vendors"],
         staleTime: 0,
     });
-    const { data: availableVendors = [], isFetching: loadingVendorsB, refetch: refetchVendorsB } = useQuery({
+    const { data: availableVendors = EMPTY_ARR, isFetching: loadingVendorsB, refetch: refetchVendorsB } = useQuery({
         queryKey: ["sr-vendors-available", selectedUq],
         queryFn:  () => fetch(`/api/sales-reps/vendors?salesman_uq=${selectedUq}&not_in=1`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         enabled:  !!selectedUq && activeModal === "vendors" && !!tabLoaded["vendors"],
         staleTime: 0,
     });
 
-    const { data: assignedWarehouses = [], isFetching: loadingWarehousesA, refetch: refetchWarehousesA } = useQuery({
+    const { data: assignedWarehouses = EMPTY_ARR, isFetching: loadingWarehousesA, refetch: refetchWarehousesA } = useQuery({
         queryKey: ["sr-warehouses-assigned", selectedUq],
         queryFn:  () => fetch(`/api/sales-reps/warehouses?salesman_uq=${selectedUq}`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         enabled:  !!selectedUq && activeModal === "warehouses" && !!tabLoaded["warehouses"],
         staleTime: 0,
     });
-    const { data: availableWarehouses = [], isFetching: loadingWarehousesB, refetch: refetchWarehousesB } = useQuery({
+    const { data: availableWarehouses = EMPTY_ARR, isFetching: loadingWarehousesB, refetch: refetchWarehousesB } = useQuery({
         queryKey: ["sr-warehouses-available", selectedUq],
         queryFn:  () => fetch(`/api/sales-reps/warehouses?salesman_uq=${selectedUq}&not_in=1`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         enabled:  !!selectedUq && activeModal === "warehouses" && !!tabLoaded["warehouses"],
         staleTime: 0,
     });
 
-    const { data: assignedCities = [], isFetching: loadingCitiesA, refetch: refetchCitiesA } = useQuery({
+    const { data: assignedCities = EMPTY_ARR, isFetching: loadingCitiesA, refetch: refetchCitiesA } = useQuery({
         queryKey: ["sr-cities-assigned", selectedUq],
         queryFn:  () => fetch(`/api/sales-reps/cities?salesman_uq=${selectedUq}`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         enabled:  !!selectedUq && activeModal === "cities" && !!tabLoaded["cities"],
         staleTime: 0,
     });
-    const { data: availableCities = [], isFetching: loadingCitiesB, refetch: refetchCitiesB } = useQuery({
+    const { data: availableCities = EMPTY_ARR, isFetching: loadingCitiesB, refetch: refetchCitiesB } = useQuery({
         queryKey: ["sr-cities-available", selectedUq],
         queryFn:  () => fetch(`/api/sales-reps/cities?salesman_uq=${selectedUq}&not_in=1`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         enabled:  !!selectedUq && activeModal === "cities" && !!tabLoaded["cities"],
         staleTime: 0,
     });
 
-    const { data: assignedSalesmen = [], isFetching: loadingSalesmenA, refetch: refetchSalesmenA } = useQuery({
+    const { data: assignedSalesmen = EMPTY_ARR, isFetching: loadingSalesmenA, refetch: refetchSalesmenA } = useQuery({
         queryKey: ["sr-salesmen-assigned", selectedUq],
         queryFn:  () => fetch(`/api/sales-reps/salesmen-links?salesman_uq=${selectedUq}`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         enabled:  !!selectedUq && activeModal === "salesmen" && !!tabLoaded["salesmen"],
         staleTime: 0,
     });
-    const { data: availableSalesmen = [], isFetching: loadingSalesmenB, refetch: refetchSalesmenB } = useQuery({
+    const { data: availableSalesmen = EMPTY_ARR, isFetching: loadingSalesmenB, refetch: refetchSalesmenB } = useQuery({
         queryKey: ["sr-salesmen-available", selectedUq],
         queryFn:  () => fetch(`/api/sales-reps/salesmen-links?salesman_uq=${selectedUq}&not_in=1`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         enabled:  !!selectedUq && activeModal === "salesmen" && !!tabLoaded["salesmen"],

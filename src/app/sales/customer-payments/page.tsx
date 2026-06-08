@@ -18,6 +18,7 @@ import { AuditLogModal } from "@/components/AuditLogModal";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import AppHeader from "@/components/layout/AppHeader";
 import AppFooter from "@/components/layout/AppFooter";
+const EMPTY_ARR: any[] = [];
 
 const t   = (v: any) => String(v ?? "").trim();
 const fmt = (v: any) => parseFloat(v ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -200,8 +201,8 @@ function NewPaymentModal({ mode, income, customerUq, customerName, onClose, onSa
     const [saving, setSaving] = useState(false);
     const [error,  setError]  = useState<string|null>(null);
 
-    const { data: banks = [] }     = useQuery({ queryKey: ["cp-banks", mode], queryFn: () => cpFetch(`/api/customer-payments/lookups/banks?mode=${isAdd?"last":"list"}`), staleTime: 60000 });
-    const { data: types = [] }     = useQuery({ queryKey: ["cp-inc-types"], queryFn: () => cpFetch("/api/customer-payments/lookups/income-types"), staleTime: 60000 });
+    const { data: banks = EMPTY_ARR }     = useQuery({ queryKey: ["cp-banks", mode], queryFn: () => cpFetch(`/api/customer-payments/lookups/banks?mode=${isAdd?"last":"list"}`), staleTime: 60000 });
+    const { data: types = EMPTY_ARR }     = useQuery({ queryKey: ["cp-inc-types"], queryFn: () => cpFetch("/api/customer-payments/lookups/income-types"), staleTime: 60000 });
 
     useEffect(() => {
         if (isAdd && banks.length > 0 && !form.bank_uq) setForm((p: any) => ({ ...p, bank_uq: banks[0].unico }));
@@ -542,7 +543,7 @@ function CrDbModal({ mode, crdb, invoice, customerName, accRecUq, onClose, onSav
     const [saving, setSaving] = useState(false);
     const [error,  setError]  = useState<string|null>(null);
 
-    const { data: reasons = [] } = useQuery({ queryKey: ["cp-crdb-reasons"], queryFn: () => cpFetch("/api/customer-payments/lookups/crdb-reasons"), staleTime: 60000 });
+    const { data: reasons = EMPTY_ARR } = useQuery({ queryKey: ["cp-crdb-reasons"], queryFn: () => cpFetch("/api/customer-payments/lookups/crdb-reasons"), staleTime: 60000 });
 
     const save = async () => {
         setSaving(true); setError(null);
@@ -656,7 +657,7 @@ function CrDbReportModal({ invoiceUq, onClose }: any) {
 // ─── SalesmanSelectorModal ────────────────────────────────────────────────────
 function SalesmanSelectorModal({ destination, onClose, onConfirm }: any) {
     const [salesmanUq, setSalesmanUq] = useState("");
-    const { data: salesmen = [] } = useQuery({ queryKey:["cp-salesmen"], queryFn:()=>cpFetch("/api/customer-payments/lookups/salesmen"), staleTime:60000 });
+    const { data: salesmen = EMPTY_ARR } = useQuery({ queryKey:["cp-salesmen"], queryFn:()=>cpFetch("/api/customer-payments/lookups/salesmen"), staleTime:60000 });
     return (
         <Modal title="Print by Salesman" icon={Users} onClose={onClose} size="sm"
             footer={<><button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Cancel</button><button onClick={()=>{ if(!salesmanUq){return;} onConfirm(salesmanUq); onClose(); }} disabled={!salesmanUq} className="flex items-center gap-2 px-4 py-2 rounded bg-[#FB7506] text-white text-sm font-black disabled:opacity-50"><Printer size={13}/>Print</button></>}>
@@ -779,7 +780,7 @@ function CorpInvoiceModal({ corpIncome, customerUq, onClose, onSaved }: any) {
     const [searching,  setSearching]  = useState(false);
     const [saving,     setSaving]     = useState(false);
     const [error,      setError]      = useState<string|null>(null);
-    const { data: types = [] } = useQuery({ queryKey:["cp-inc-types"], queryFn:()=>cpFetch("/api/customer-payments/lookups/income-types"), staleTime:60000 });
+    const { data: types = EMPTY_ARR } = useQuery({ queryKey:["cp-inc-types"], queryFn:()=>cpFetch("/api/customer-payments/lookups/income-types"), staleTime:60000 });
     const [typeUq, setTypeUq] = useState("");
 
     const searchInvoice = async () => {
@@ -926,19 +927,19 @@ export default function CustomerPaymentsPage() {
             fetchMoreCust();
         }
     }, [fetchMoreCust]);
-    const { data: invoices = [], isFetching: loadingInv, refetch: refetchInv } = useQuery({
+    const { data: invoices = EMPTY_ARR, isFetching: loadingInv, refetch: refetchInv } = useQuery({
         queryKey: ["cp-invoices", selCustomer?.unico, balanceFilter],
         queryFn:  () => cpFetch(`/api/customer-payments/invoices/${selCustomer.unico}?balance=${balanceFilter}`),
         enabled:  !!selCustomer?.unico,
         staleTime: 0,
     });
-    const { data: applied = [], isFetching: loadingApplied, refetch: refetchApplied } = useQuery({
+    const { data: applied = EMPTY_ARR, isFetching: loadingApplied, refetch: refetchApplied } = useQuery({
         queryKey: ["cp-applied", selInvoice?.unico],
         queryFn:  () => cpFetch(`/api/customer-payments/applied/${selInvoice.unico}`),
         enabled:  !!selInvoice?.unico,
         staleTime: 0,
     });
-    const { data: incomes = [], isFetching: loadingIncomes, refetch: refetchIncomes } = useQuery({
+    const { data: incomes = EMPTY_ARR, isFetching: loadingIncomes, refetch: refetchIncomes } = useQuery({
         queryKey: ["cp-incomes", selCustomer?.unico],
         queryFn:  () => cpFetch(`/api/customer-payments/incomes/${selCustomer.unico}`),
         enabled:  !!selCustomer?.unico,
@@ -946,25 +947,25 @@ export default function CustomerPaymentsPage() {
     });
 
     // ── Tab 3 & 4 queries ─────────────────────────────────────────────────────
-    const { data: paymentsHistory = [], isFetching: loadingPay, refetch: refetchPay } = useQuery({
+    const { data: paymentsHistory = EMPTY_ARR, isFetching: loadingPay, refetch: refetchPay } = useQuery({
         queryKey: ["cp-pay-hist", selCustomer?.unico],
         queryFn:  () => cpFetch(`/api/customer-payments/payment-history/${selCustomer.unico}`),
         enabled:  !!selCustomer?.unico && activeTab === "payments",
         staleTime: 0,
     });
-    const { data: payInvoices = [], isFetching: loadingPayInv } = useQuery({
+    const { data: payInvoices = EMPTY_ARR, isFetching: loadingPayInv } = useQuery({
         queryKey: ["cp-pay-inv", selPayment?.unico],
         queryFn:  () => cpFetch(`/api/customer-payments/payment-invoices/${selPayment.unico}`),
         enabled:  !!selPayment?.unico,
         staleTime: 0,
     });
-    const { data: crdbDates = [], isFetching: loadingCrdbDates, refetch: refetchCrdbDates } = useQuery({
+    const { data: crdbDates = EMPTY_ARR, isFetching: loadingCrdbDates, refetch: refetchCrdbDates } = useQuery({
         queryKey: ["cp-crdb-dates", selCustomer?.unico],
         queryFn:  () => cpFetch(`/api/customer-payments/crdb-dates/${selCustomer.unico}`),
         enabled:  !!selCustomer?.unico && activeTab === "crdb",
         staleTime: 0,
     });
-    const { data: crdbHistory = [], isFetching: loadingCrdb, refetch: refetchCrdb } = useQuery({
+    const { data: crdbHistory = EMPTY_ARR, isFetching: loadingCrdb, refetch: refetchCrdb } = useQuery({
         queryKey: ["cp-crdb-hist", selCustomer?.unico, selCrDbDate],
         queryFn:  () => cpFetch(`/api/customer-payments/crdb-history/${selCustomer.unico}?date=${selCrDbDate}`),
         enabled:  !!selCustomer?.unico && !!selCrDbDate && activeTab === "crdb",
@@ -972,32 +973,32 @@ export default function CustomerPaymentsPage() {
     });
 
     // ── Tab 5 queries ─────────────────────────────────────────────────────────
-    const { data: stmtData = [], isFetching: loadingStmt, refetch: refetchStmt } = useQuery({
+    const { data: stmtData = EMPTY_ARR, isFetching: loadingStmt, refetch: refetchStmt } = useQuery({
         queryKey: ["cp-stmt", selCustomer?.unico, stmtFrom, stmtTo],
         queryFn:  () => cpFetch(`/api/customer-payments/statement/${selCustomer.unico}?from=${stmtFrom}&to=${stmtTo}`),
         enabled:  !!selCustomer?.unico && activeTab === "statement",
         staleTime: 0,
     });
-    const { data: stmtBalData = [], isFetching: loadingStmtBal, refetch: refetchStmtBal } = useQuery({
+    const { data: stmtBalData = EMPTY_ARR, isFetching: loadingStmtBal, refetch: refetchStmtBal } = useQuery({
         queryKey: ["cp-stmt-bal", selCustomer?.unico, stmtFrom, stmtTo],
         queryFn:  () => cpFetch(`/api/customer-payments/statement-balance/${selCustomer.unico}?from=${stmtFrom}&to=${stmtTo}`),
         enabled:  !!selCustomer?.unico && activeTab === "statement",
         staleTime: 0,
     });
     // ── Tab 6 queries ─────────────────────────────────────────────────────────
-    const { data: corpIncomes = [], isFetching: loadingCorpInc, refetch: refetchCorpInc } = useQuery({
+    const { data: corpIncomes = EMPTY_ARR, isFetching: loadingCorpInc, refetch: refetchCorpInc } = useQuery({
         queryKey: ["cp-corp-inc", corpDate],
         queryFn:  () => cpFetch(`/api/customer-payments/corporate-incomes?date=${corpDate}`),
         enabled:  activeTab === "corporate",
         staleTime: 0,
     });
-    const { data: corpPayments = [], isFetching: loadingCorpPay, refetch: refetchCorpPay } = useQuery({
+    const { data: corpPayments = EMPTY_ARR, isFetching: loadingCorpPay, refetch: refetchCorpPay } = useQuery({
         queryKey: ["cp-corp-pay", selCorpIncome?.unico],
         queryFn:  () => cpFetch(`/api/customer-payments/corporate-payments/${selCorpIncome.unico}`),
         enabled:  !!selCorpIncome?.unico,
         staleTime: 0,
     });
-    const { data: corpInvoices = [], isFetching: loadingCorpInv, refetch: refetchCorpInv } = useQuery({
+    const { data: corpInvoices = EMPTY_ARR, isFetching: loadingCorpInv, refetch: refetchCorpInv } = useQuery({
         queryKey: ["cp-corp-inv", selCorpPayment?.unico],
         queryFn:  () => cpFetch(`/api/customer-payments/corporate-invoices/${selCorpPayment.unico}`),
         enabled:  !!selCorpPayment?.unico,

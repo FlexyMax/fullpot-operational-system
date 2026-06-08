@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { usePagePermissions } from "@/lib/permissions";
 import AppHeader from "@/components/layout/AppHeader";
 import AppFooter from "@/components/layout/AppFooter";
+const EMPTY_ARR: any[] = [];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const t      = (v: any) => String(v ?? "").trim();
@@ -250,7 +251,7 @@ export default function PhysicalScanPage() {
 
     // ── Other tab views ───────────────────────────────────────────────────────
     const activeTabDef = TABS.find(t => t.id === activeTab)!;
-    const { data: viewRows = [], isFetching: loadingView } = useQuery({
+    const { data: viewRows = EMPTY_ARR, isFetching: loadingView } = useQuery({
         queryKey: ["scan-view", activeTabDef.view, viewKey],
         enabled:  activeTab !== "pending",
         queryFn:  async () => {

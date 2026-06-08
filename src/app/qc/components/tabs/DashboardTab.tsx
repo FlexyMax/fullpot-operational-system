@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { RefreshCcw } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { cn } from "@/lib/utils";
+const EMPTY_ARR: any[] = [];
 
 const qcFetch = (url: string, body: any) =>
     fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
@@ -27,14 +28,14 @@ export default function DashboardTab() {
     const [selClass,setSelClass]= useState("A");
     const [subTab,  setSubTab]  = useState<SubTab>("Boxes");
 
-    const { data: years = [] } = useQuery({
+    const { data: years = EMPTY_ARR } = useQuery({
         queryKey: ["qc-years"],
         queryFn: () => qcFetch("/api/qc/dashboard/years", {}),
         staleTime: 300000,
         select: (d: any) => d.data ?? [],
     });
 
-    const { data: dashboard = [], isFetching } = useQuery({
+    const { data: dashboard = EMPTY_ARR, isFetching } = useQuery({
         queryKey: ["qc-dashboard", year, selClass],
         queryFn: () => qcFetch("/api/qc/dashboard/list", { lnYear: year, lcClass: selClass }),
         select: (d: any) => d.data ?? [],

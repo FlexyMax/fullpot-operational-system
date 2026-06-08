@@ -21,6 +21,7 @@ import { usePagePermissions } from "@/lib/permissions";
 import { useAuditLog } from "@/lib/audit";
 import { AppFooter } from "@/components/layout/AppFooter";
 import { useVendorsStore } from "@/store/useVendorsStore";
+const EMPTY_ARR: any[] = [];
 
 // ─── Confirm Delete Dialog ────────────────────────────────────────────────────
 function ConfirmDlg({ title, msg, onConfirm, onCancel, saving, error }: any) {
@@ -328,20 +329,20 @@ export default function VendorsPage() {
     const pendingRows = norm(stmtData?.pending   ?? []);
 
     // Documents
-    const { data: docsList = [], isFetching: loadingDocs, refetch: refetchDocs } = useQuery({
+    const { data: docsList = EMPTY_ARR, isFetching: loadingDocs, refetch: refetchDocs } = useQuery({
         queryKey: ["vendors-documents", selectedUq],
         queryFn:  () => fetch(`/api/vendors/documents?grower_uq=${selectedUq}`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         enabled:  !!selectedUq && expandedVendorUnico === selectedUq,
         staleTime: 0,
     });
     // Classes
-    const { data: assignedClasses = [], isFetching: loadingClassA, refetch: refetchClassA } = useQuery({
+    const { data: assignedClasses = EMPTY_ARR, isFetching: loadingClassA, refetch: refetchClassA } = useQuery({
         queryKey: ["vendors-classes-assigned", selectedUq],
         queryFn:  () => fetch(`/api/vendors/classes?grower_uq=${selectedUq}`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         enabled:  !!selectedUq && classesModal,
         staleTime: 0,
     });
-    const { data: availableClasses = [], isFetching: loadingClassB, refetch: refetchClassB } = useQuery({
+    const { data: availableClasses = EMPTY_ARR, isFetching: loadingClassB, refetch: refetchClassB } = useQuery({
         queryKey: ["vendors-classes-available", selectedUq],
         queryFn:  () => fetch(`/api/vendors/classes?grower_uq=${selectedUq}&not_in=1`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         enabled:  !!selectedUq && classesModal,
@@ -349,7 +350,7 @@ export default function VendorsPage() {
     });
 
     // Groups list (for groups modal)
-    const { data: groupsList = [], refetch: refetchGroups } = useQuery({
+    const { data: groupsList = EMPTY_ARR, refetch: refetchGroups } = useQuery({
         queryKey: ["vendors-groups"],
         queryFn:  () => fetch("/api/vendors/groups").then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         enabled:  grpModal,

@@ -19,6 +19,7 @@ import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { AuditLogModal } from "@/components/AuditLogModal";
 import { cn } from "@/lib/utils";
+const EMPTY_ARR: any[] = [];
 
 // """ Types """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 const CLASSES   = ["Empresas", "Sistema", "Otros"];
@@ -69,9 +70,9 @@ export default function ModuleScreenSetupPage() {
     useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
 
     // "" Queries """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-    const { data: modules = [], isFetching: loadingMods } = useQuery({ queryKey: ["sys-mods"], queryFn: () => sysFetch("/api/system/modules") });
-    const { data: screens = [], isFetching: loadingScr, refetch: refetchScr } = useQuery({ queryKey: ["sys-scr", selModUnico], queryFn: () => sysFetch(`/api/system/modules/${selModUnico}/screens`), enabled: !!selModUnico, retry: false });
-    const { data: reports = [], isFetching: loadingRpt, refetch: refetchRpt } = useQuery({ queryKey: ["sys-rpt", selScrUnico], queryFn: () => sysFetch(`/api/system/screens/${selScrUnico}/reports`), enabled: !!selScrUnico && !!screenModal, retry: false });
+    const { data: modules = EMPTY_ARR, isFetching: loadingMods } = useQuery({ queryKey: ["sys-mods"], queryFn: () => sysFetch("/api/system/modules") });
+    const { data: screens = EMPTY_ARR, isFetching: loadingScr, refetch: refetchScr } = useQuery({ queryKey: ["sys-scr", selModUnico], queryFn: () => sysFetch(`/api/system/modules/${selModUnico}/screens`), enabled: !!selModUnico, retry: false });
+    const { data: reports = EMPTY_ARR, isFetching: loadingRpt, refetch: refetchRpt } = useQuery({ queryKey: ["sys-rpt", selScrUnico], queryFn: () => sysFetch(`/api/system/screens/${selScrUnico}/reports`), enabled: !!selScrUnico && !!screenModal, retry: false });
 
     // "" Module selection """"""""""""""""""""""""""""""""""""""""""""""""""""""
     const selectModule = (m: any) => {

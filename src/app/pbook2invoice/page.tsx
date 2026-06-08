@@ -19,6 +19,7 @@ import { usePagePermissions } from "@/lib/permissions";
 import { GridMenu } from "@/components/GridMenu";
 import AppHeader from "@/components/layout/AppHeader";
 import AppFooter from "@/components/layout/AppFooter";
+const EMPTY_ARR: any[] = [];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const t       = (v: any) => String(v ?? "").trim();
@@ -388,7 +389,7 @@ export default function Pbook2InvoicePage() {
     }, [dateRows]);
 
     // ── Customers ─────────────────────────────────────────────────────────────
-    const { data: customers = [], isFetching: loadingCustomers } = useQuery({
+    const { data: customers = EMPTY_ARR, isFetching: loadingCustomers } = useQuery({
         queryKey: ["pb2inv-customers", selectedDate, dateMode],
         enabled: !!selectedDate,
         queryFn: async () => {
@@ -400,7 +401,7 @@ export default function Pbook2InvoicePage() {
     });
 
     // ── Lines ─────────────────────────────────────────────────────────────────
-    const { data: lines = [], isFetching: loadingLines } = useQuery({
+    const { data: lines = EMPTY_ARR, isFetching: loadingLines } = useQuery({
         queryKey: ["pb2inv-lines", selectedDate, selectedCustUq, dateMode, appliedSearch, linesKey],
         enabled: !!selectedDate,
         queryFn: async () => {
@@ -436,7 +437,7 @@ export default function Pbook2InvoicePage() {
     });
 
     // ── Stock OM ──────────────────────────────────────────────────────────────
-    const { data: stockOm = [], isFetching: loadingStockOm, refetch: fetchStockOm } = useQuery({
+    const { data: stockOm = EMPTY_ARR, isFetching: loadingStockOm, refetch: fetchStockOm } = useQuery({
         queryKey: ["pb2inv-stockom", selectedUnico],
         enabled: false,
         queryFn: async () => {

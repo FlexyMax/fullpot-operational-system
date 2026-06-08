@@ -8,6 +8,7 @@ import { TabTable } from "../TabTable";
 import { TopActionBar } from "../TopActionBar";
 import { useFlexy2QBContext } from "../../context/Flexy2QBContext";
 import { toast } from "sonner";
+const EMPTY_ARR: any[] = [];
 
 export default function PurchasesOChargesTab() {
   const qc = useQueryClient();
@@ -21,7 +22,7 @@ export default function PurchasesOChargesTab() {
   const [selectedReadyIdx, setSelectedReadyIdx] = useState<number | undefined>();
   const [selectedSentIdx, setSelectedSentIdx] = useState<number | undefined>();
 
-  const { data: years = [] } = useQuery({
+  const { data: years = EMPTY_ARR } = useQuery({
     queryKey: ["flexy2qb-ocharges-years"],
     queryFn: async () => {
       const r = await fetch("/api/flexy2qb/ocharges/years", { method: "POST", body: "{}" });
@@ -30,7 +31,7 @@ export default function PurchasesOChargesTab() {
     }
   });
 
-  const { data: dates = [], isFetching: loadingDates } = useQuery({
+  const { data: dates = EMPTY_ARR, isFetching: loadingDates } = useQuery({
     queryKey: ["flexy2qb-ocharges-dates", selectedYear],
     queryFn: async () => {
       const r = await fetch("/api/flexy2qb/ocharges/dates", {
@@ -43,7 +44,7 @@ export default function PurchasesOChargesTab() {
     enabled: !!selectedYear
   });
 
-  const { data: notReady = [], isFetching: loadingNotReady } = useQuery({
+  const { data: notReady = EMPTY_ARR, isFetching: loadingNotReady } = useQuery({
     queryKey: ["flexy2qb-ocharges-not-ready", selectedDate, refreshTrigger],
     queryFn: async () => {
       const r = await fetch("/api/flexy2qb/ocharges/not-ready", {
@@ -56,7 +57,7 @@ export default function PurchasesOChargesTab() {
     enabled: !!selectedDate && subTab === "not-ready"
   });
 
-  const { data: readyData = [], isFetching: loadingReady } = useQuery({
+  const { data: readyData = EMPTY_ARR, isFetching: loadingReady } = useQuery({
     queryKey: ["flexy2qb-ocharges-ready", refreshTrigger],
     queryFn: async () => {
       const r = await fetch("/api/flexy2qb/ocharges/ready", { method: "POST", body: "{}" });
@@ -66,7 +67,7 @@ export default function PurchasesOChargesTab() {
     enabled: subTab === "ready"
   });
 
-  const { data: sentData = [], isFetching: loadingSent } = useQuery({
+  const { data: sentData = EMPTY_ARR, isFetching: loadingSent } = useQuery({
     queryKey: ["flexy2qb-ocharges-sent", selectedDate, refreshTrigger],
     queryFn: async () => {
       const r = await fetch("/api/flexy2qb/ocharges/sent", {

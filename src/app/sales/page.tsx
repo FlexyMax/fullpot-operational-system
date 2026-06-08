@@ -17,6 +17,7 @@ import { AppFooter } from "@/components/layout/AppFooter";
 import { toast } from "sonner";
 import { usePagePermissions } from "@/lib/permissions";
 import { usePOSStore } from "@/store/usePOSStore";
+const EMPTY_ARR: any[] = [];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const t       = (v: any) => String(v ?? "").trim();
@@ -217,7 +218,7 @@ export default function SalesPage() {
     // ── Queries ───────────────────────────────────────────────────────────────
     const listSalesmanUq = myInvoices ? salesmanUq : "%";
 
-    const { data: invoiceList = [], isFetching: loadingList } = useQuery({
+    const { data: invoiceList = EMPTY_ARR, isFetching: loadingList } = useQuery({
         queryKey: ["pos-list", listSalesmanUq, invoiceDate, listKey],
         enabled:  !!salesmanUq,
         queryFn:  async () => {
@@ -237,7 +238,7 @@ export default function SalesPage() {
         },
     });
 
-    const { data: invoiceLines = [], isFetching: loadingLines } = useQuery({
+    const { data: invoiceLines = EMPTY_ARR, isFetching: loadingLines } = useQuery({
         queryKey: ["pos-lines", activeInvoiceUq, salesmanUq, detailKey],
         enabled:  !!activeInvoiceUq,
         queryFn:  async () => {
@@ -255,7 +256,7 @@ export default function SalesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeTab]);
 
-    const { data: histInvoices = [], isFetching: loadingHistList } = useQuery({
+    const { data: histInvoices = EMPTY_ARR, isFetching: loadingHistList } = useQuery({
         queryKey: ["pos-hist-list", histCustUq, histFrom, histTo, salesmanUq],
         enabled:  activeTab === "history" && !!salesmanUq,
         queryFn:  async () => {
@@ -271,7 +272,7 @@ export default function SalesPage() {
         },
     });
 
-    const { data: histDetails = [] } = useQuery({
+    const { data: histDetails = EMPTY_ARR } = useQuery({
         queryKey: ["pos-hist-detail", histInvoiceUq, histSubTab, histCustUq, salesmanUq],
         enabled:  !!histInvoiceUq && activeTab === "history",
         queryFn:  async () => {

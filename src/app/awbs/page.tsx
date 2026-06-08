@@ -16,6 +16,7 @@ import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import AppHeader from "@/components/layout/AppHeader";
 import AppFooter from "@/components/layout/AppFooter";
+const EMPTY_ARR: any[] = [];
 
 const t       = (v: any) => String(v ?? "").trim();
 const fmt     = (v: any) => parseFloat(v ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -111,8 +112,8 @@ function AwbsChargesModal({ mode, charge, awbcode, onClose, onSaved }: any) {
     const [saving, setSaving] = useState(false);
     const [error,  setError]  = useState<string | null>(null);
 
-    const { data: suppliers   = [] } = useQuery({ queryKey: ["awb-suppliers"],    queryFn: () => awbFetch("/api/awbs/lookups/suppliers"),    staleTime: 60000, select: (d: any) => d.records ?? [] });
-    const { data: chargeTypes = [] } = useQuery({ queryKey: ["awb-chargetypes"], queryFn: () => awbFetch("/api/awbs/lookups/charge-types"), staleTime: 60000, select: (d: any) => d.records ?? [] });
+    const { data: suppliers = EMPTY_ARR } = useQuery({ queryKey: ["awb-suppliers"],    queryFn: () => awbFetch("/api/awbs/lookups/suppliers"),    staleTime: 60000, select: (d: any) => d.records ?? [] });
+    const { data: chargeTypes = EMPTY_ARR } = useQuery({ queryKey: ["awb-chargetypes"], queryFn: () => awbFetch("/api/awbs/lookups/charge-types"), staleTime: 60000, select: (d: any) => d.records ?? [] });
 
     const F = (key: string, num = false) => num
         ? { type: "number", step: "0.01", value: form[key] ?? 0, onChange: (e: any) => setForm((p: any) => ({ ...p, [key]: parseFloat(e.target.value) || 0 })) }
@@ -237,8 +238,8 @@ function AwbsFreightsModal({ mode, charge, airline, onClose, onSaved }: any) {
     const [saving, setSaving] = useState(false);
     const [error,  setError]  = useState<string | null>(null);
 
-    const { data: suppliers   = [] } = useQuery({ queryKey: ["awb-suppliers"],        queryFn: () => awbFetch("/api/awbs/lookups/suppliers"),         staleTime: 60000, select: (d: any) => d.records ?? [] });
-    const { data: chargeTypes = [] } = useQuery({ queryKey: ["awb-chargetypes-date"], queryFn: () => awbFetch("/api/awbs/lookups/charge-types-date"), staleTime: 60000, select: (d: any) => d.records ?? [] });
+    const { data: suppliers = EMPTY_ARR } = useQuery({ queryKey: ["awb-suppliers"],        queryFn: () => awbFetch("/api/awbs/lookups/suppliers"),         staleTime: 60000, select: (d: any) => d.records ?? [] });
+    const { data: chargeTypes = EMPTY_ARR } = useQuery({ queryKey: ["awb-chargetypes-date"], queryFn: () => awbFetch("/api/awbs/lookups/charge-types-date"), staleTime: 60000, select: (d: any) => d.records ?? [] });
 
     const F = (key: string, num = false) => num
         ? { type: "number", step: "0.01", value: form[key] ?? 0, onChange: (e: any) => setForm((p: any) => ({ ...p, [key]: parseFloat(e.target.value) || 0 })) }
@@ -336,9 +337,9 @@ function AwbsInvoiceChargesModal({ packUq, awbcode, onClose, onSaved }: any) {
     const [error,  setError]  = useState<string | null>(null);
     const qc = useQueryClient();
 
-    const { data: suppliers   = [] } = useQuery({ queryKey: ["awb-suppliers"],    queryFn: () => awbFetch("/api/awbs/lookups/suppliers"),    staleTime: 60000, select: (d: any) => d.records ?? [] });
-    const { data: chargeTypes = [] } = useQuery({ queryKey: ["awb-chargetypes"], queryFn: () => awbFetch("/api/awbs/lookups/charge-types"), staleTime: 60000, select: (d: any) => d.records ?? [] });
-    const { data: charges = [], isFetching } = useQuery({
+    const { data: suppliers = EMPTY_ARR } = useQuery({ queryKey: ["awb-suppliers"],    queryFn: () => awbFetch("/api/awbs/lookups/suppliers"),    staleTime: 60000, select: (d: any) => d.records ?? [] });
+    const { data: chargeTypes = EMPTY_ARR } = useQuery({ queryKey: ["awb-chargetypes"], queryFn: () => awbFetch("/api/awbs/lookups/charge-types"), staleTime: 60000, select: (d: any) => d.records ?? [] });
+    const { data: charges = EMPTY_ARR, isFetching } = useQuery({
         queryKey: ["awb-invoice-charges", packUq],
         queryFn:  () => awbFetch(`/api/awbs/invoice-charges?pack_uq=${encodeURIComponent(packUq)}`),
         enabled:  !!packUq,
@@ -694,7 +695,7 @@ export default function AwbsPage() {
     }, [status, router]);
 
     // ── 4. Data queries — ALL declared here, before any early returns ─────────
-    const { data: airlines = [] } = useQuery({
+    const { data: airlines = EMPTY_ARR } = useQuery({
         queryKey: ["awb-airlines"],
         queryFn:  () => awbFetch("/api/awbs/airlines"),
         staleTime: 300000,
@@ -703,7 +704,7 @@ export default function AwbsPage() {
     });
 
     // Main AWB grid: only fetches when searchKey > 0 (user pressed Search)
-    const { data: awbs = [], isFetching: loadingAwbs } = useQuery({
+    const { data: awbs = EMPTY_ARR, isFetching: loadingAwbs } = useQuery({
         queryKey: ["awb-list", searchKey, ldDate, ldEndDate, lcAirline],
         queryFn:  () => awbFetch(`/api/awbs/list?from=${ldDate}&to=${ldEndDate}&airline=${encodeURIComponent(lcAirline)}`),
         enabled:  status === "authenticated" && searchKey > 0,
@@ -711,7 +712,7 @@ export default function AwbsPage() {
         staleTime: 0,
     });
 
-    const { data: vendors = [], isFetching: loadingVendors } = useQuery({
+    const { data: vendors = EMPTY_ARR, isFetching: loadingVendors } = useQuery({
         queryKey: ["awb-packing", selAwb?.AWBCODE],
         queryFn:  () => awbFetch(`/api/awbs/${encodeURIComponent(selAwb!.AWBCODE)}/packing`),
         enabled:  !!selAwb?.AWBCODE && activeTab === "vendors",
@@ -719,7 +720,7 @@ export default function AwbsPage() {
         staleTime: 0,
     });
 
-    const { data: chargesTab = [], isFetching: loadingCharges } = useQuery({
+    const { data: chargesTab = EMPTY_ARR, isFetching: loadingCharges } = useQuery({
         queryKey: ["awb-charges", selAwb?.AWBCODE],
         queryFn:  () => awbFetch(`/api/awbs/${encodeURIComponent(selAwb!.AWBCODE)}/charges`),
         enabled:  !!selAwb?.AWBCODE && activeTab === "charges",
@@ -727,7 +728,7 @@ export default function AwbsPage() {
         staleTime: 0,
     });
 
-    const { data: boxes = [], isFetching: loadingBoxes } = useQuery({
+    const { data: boxes = EMPTY_ARR, isFetching: loadingBoxes } = useQuery({
         queryKey: ["awb-boxes", selAwb?.AWBCODE],
         queryFn:  () => awbFetch(`/api/awbs/${encodeURIComponent(selAwb!.AWBCODE)}/boxes`),
         enabled:  !!selAwb?.AWBCODE && activeTab === "boxes",
@@ -735,7 +736,7 @@ export default function AwbsPage() {
         staleTime: 0,
     });
 
-    const { data: byDate = [], isFetching: loadingByDate } = useQuery({
+    const { data: byDate = EMPTY_ARR, isFetching: loadingByDate } = useQuery({
         queryKey: ["awb-by-date", ldDate, ldEndDate],
         queryFn:  () => awbFetch(`/api/awbs/charges-by-date?from=${ldDate}&to=${ldEndDate}`),
         enabled:  status === "authenticated" && activeTab === "by-date",
@@ -743,7 +744,7 @@ export default function AwbsPage() {
         staleTime: 0,
     });
 
-    const { data: varieties = [], isFetching: loadingVarieties } = useQuery({
+    const { data: varieties = EMPTY_ARR, isFetching: loadingVarieties } = useQuery({
         queryKey: ["awb-varieties", selAwb?.AWBCODE],
         queryFn:  () => awbFetch(`/api/awbs/${encodeURIComponent(selAwb!.AWBCODE)}/varieties`),
         enabled:  !!selAwb?.AWBCODE && activeTab === "varieties",

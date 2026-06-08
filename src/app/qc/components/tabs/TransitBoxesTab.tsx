@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { RefreshCw, X, ChevronDown, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
+const EMPTY_ARR: any[] = [];
 
 const t = (v: any) => String(v ?? "").trim();
 
@@ -24,7 +25,7 @@ export default function TransitBoxesTab() {
     const [search,    setSearch]    = useState("");
     const [page,      setPage]      = useState(1);
 
-    const { data: years = [] } = useQuery({
+    const { data: years = EMPTY_ARR } = useQuery({
         queryKey: ["qc-transit-years"],
         queryFn:  () => qcPost("/api/qc/transit/years", {}),
         staleTime: 300000,

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { XCircle, Save, RefreshCcw } from "lucide-react";
 import { toast } from "sonner";
+const EMPTY_ARR: any[] = [];
 
 const fmt = (v: any) => parseFloat(v ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const qcPost = (url: string, body: any) =>
@@ -27,7 +28,7 @@ export default function BoxTransferModal({ mode, lot, onClose, onSaved }: BoxTra
     const [saving, setSaving] = useState(false);
     const [error,  setError]  = useState<string | null>(null);
 
-    const { data: warehouses = [] } = useQuery({
+    const { data: warehouses = EMPTY_ARR } = useQuery({
         queryKey: ["qc-warehouses"],
         queryFn: () => qcPost("/api/qc/lookup/warehouses", {}),
         staleTime: 300000,

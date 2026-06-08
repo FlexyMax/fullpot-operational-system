@@ -18,6 +18,7 @@ import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { AuditLogModal } from "@/components/AuditLogModal";
 import { cn } from "@/lib/utils";
+const EMPTY_ARR: any[] = [];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type PermField = "acceso" | "crear" | "editar" | "borrar" | "consultar" | "reportes";
@@ -60,7 +61,7 @@ export default function SystemAccessPage() {
     }, [status, router]);
 
     // ── Queries ───────────────────────────────────────────────────────────────
-    const { data: users = [], isFetching: loadingUsers } = useQuery({
+    const { data: users = EMPTY_ARR, isFetching: loadingUsers } = useQuery({
         queryKey: ["sys-users"],
         queryFn:  () => sysFetch("/api/system/access/users"),
     });
@@ -71,15 +72,15 @@ export default function SystemAccessPage() {
         enabled:  !!selectedUnico,
     });
 
-    const { data: permissions = [], isFetching: loadingPerms, refetch: refetchPerms } = useQuery({
+    const { data: permissions = EMPTY_ARR, isFetching: loadingPerms, refetch: refetchPerms } = useQuery({
         queryKey: ["sys-perms", selectedUnico],
         queryFn:  () => sysFetch(`/api/system/access/permissions?unico=${selectedUnico}`),
         enabled:  !!selectedUnico,
         retry:    false,
     });
 
-    const { data: modules   = [] } = useQuery({ queryKey: ["sys-modules"],    queryFn: () => sysFetch("/api/system/access/modules")    });
-    const { data: companies = [] } = useQuery({ queryKey: ["sys-companies"],  queryFn: () => sysFetch("/api/system/access/companies")  });
+    const { data: modules = EMPTY_ARR } = useQuery({ queryKey: ["sys-modules"],    queryFn: () => sysFetch("/api/system/access/modules")    });
+    const { data: companies = EMPTY_ARR } = useQuery({ queryKey: ["sys-companies"],  queryFn: () => sysFetch("/api/system/access/companies")  });
 
     // ── Sync permissions to local state ──────────────────────────────────────
     useEffect(() => {

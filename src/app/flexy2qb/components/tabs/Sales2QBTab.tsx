@@ -8,6 +8,7 @@ import { TabTable } from "../TabTable";
 import { TopActionBar } from "../TopActionBar";
 import { useFlexy2QBContext } from "../../context/Flexy2QBContext";
 import { toast } from "sonner";
+const EMPTY_ARR: any[] = [];
 
 export default function Sales2QBTab() {
   const qc = useQueryClient();
@@ -21,7 +22,7 @@ export default function Sales2QBTab() {
   const [selectedReadyIdx, setSelectedReadyIdx] = useState<number | undefined>();
   const [selectedSentIdx, setSelectedSentIdx] = useState<number | undefined>();
 
-  const { data: years = [] } = useQuery({
+  const { data: years = EMPTY_ARR } = useQuery({
     queryKey: ["flexy2qb-sales-years"],
     queryFn: async () => {
       const r = await fetch("/api/flexy2qb/sales/years", { method: "POST", body: "{}" });
@@ -30,7 +31,7 @@ export default function Sales2QBTab() {
     }
   });
 
-  const { data: dates = [], isFetching: loadingDates } = useQuery({
+  const { data: dates = EMPTY_ARR, isFetching: loadingDates } = useQuery({
     queryKey: ["flexy2qb-sales-dates", selectedYear],
     queryFn: async () => {
       const r = await fetch("/api/flexy2qb/sales/dates", {
@@ -43,7 +44,7 @@ export default function Sales2QBTab() {
     enabled: !!selectedYear
   });
 
-  const { data: notReady = [], isFetching: loadingNotReady } = useQuery({
+  const { data: notReady = EMPTY_ARR, isFetching: loadingNotReady } = useQuery({
     queryKey: ["flexy2qb-sales-not-ready", selectedDate, refreshTrigger],
     queryFn: async () => {
       const r = await fetch("/api/flexy2qb/sales/not-ready", {
@@ -56,7 +57,7 @@ export default function Sales2QBTab() {
     enabled: !!selectedDate && subTab === "not-ready"
   });
 
-  const { data: readyData = [], isFetching: loadingReady } = useQuery({
+  const { data: readyData = EMPTY_ARR, isFetching: loadingReady } = useQuery({
     queryKey: ["flexy2qb-sales-ready", refreshTrigger],
     queryFn: async () => {
       const r = await fetch("/api/flexy2qb/sales/ready", { method: "POST", body: "{}" });
@@ -66,7 +67,7 @@ export default function Sales2QBTab() {
     enabled: subTab === "ready"
   });
 
-  const { data: sentData = [], isFetching: loadingSent } = useQuery({
+  const { data: sentData = EMPTY_ARR, isFetching: loadingSent } = useQuery({
     queryKey: ["flexy2qb-sales-sent", selectedDate, refreshTrigger],
     queryFn: async () => {
       const r = await fetch("/api/flexy2qb/sales/sent", {

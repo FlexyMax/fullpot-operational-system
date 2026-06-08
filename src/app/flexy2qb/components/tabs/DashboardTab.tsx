@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { RefreshCcw } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+const EMPTY_ARR: any[] = [];
 
 // SP: sp_AR_accouts_rec_dashboard(@lcCustomerType)
 // Returns 20 rows with columns: cust_code, Customer_uq, AR15, AR30, AR45,
@@ -24,7 +25,7 @@ const CUSTOMER_TYPES = [
 export default function DashboardTab() {
     const [customerType, setCustomerType] = useState<string>("A");
 
-    const { data: dashboardData = [], isFetching } = useQuery({
+    const { data: dashboardData = EMPTY_ARR, isFetching } = useQuery({
         queryKey: ["flexy2qb-dashboard", customerType],
         queryFn: async () => {
             const r = await fetch("/api/flexy2qb/dashboard/get", {

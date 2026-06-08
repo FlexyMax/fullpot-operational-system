@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { RefreshCw, Download, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
+const EMPTY_ARR: any[] = [];
 
 const t = (v: any) => String(v ?? "").trim();
 
@@ -26,14 +27,14 @@ export default function CancelledPurchasesTab() {
     const [datePage,   setDatePage]   = useState(1);
     const [cancelPage, setCancelPage] = useState(1);
 
-    const { data: dateRows = [], isFetching: loadingDates } = useQuery({
+    const { data: dateRows = EMPTY_ARR, isFetching: loadingDates } = useQuery({
         queryKey: ["qc-cancel-dates"],
         queryFn:  () => qcPost("/api/qc/cancellations/dates", {}),
         staleTime: 0,
         select:   (d: any) => d.data ?? [],
     });
 
-    const { data: cancelRows = [], isFetching: loadingCancel } = useQuery({
+    const { data: cancelRows = EMPTY_ARR, isFetching: loadingCancel } = useQuery({
         queryKey: ["qc-cancel-list", selDate?.canceldate],
         queryFn:  () => qcPost("/api/qc/cancellations/list", { cancelDate: selDate.canceldate }),
         enabled:  !!selDate?.canceldate,

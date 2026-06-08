@@ -6,6 +6,7 @@ import { RefreshCw, Download, ChevronDown, X, Trash2, Pencil, ArrowRight } from 
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useQCContext } from "../../context/QCContext";
+const EMPTY_ARR: any[] = [];
 
 const t   = (v: any) => String(v ?? "").trim();
 const fmt = (v: any) => parseFloat(v ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -123,7 +124,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
     const [subTab,     setSubTab]     = useState<SubTab>("warehouse-stock");
 
     // Physical warehouses
-    const { data: physWarehouses = [] } = useQuery({
+    const { data: physWarehouses = EMPTY_ARR } = useQuery({
         queryKey: ["qc-phys-warehouses"],
         queryFn: () => qcPost("/api/qc/stock/physical-warehouses", {}),
         staleTime: 300000,
@@ -147,7 +148,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
     const totalPages   = Math.max(1, Math.ceil(totalRecords / PAGE_SIZE));
 
     // Lots Scan IN (right panel — always refreshes with selected row)
-    const { data: scanInRows = [], isFetching: loadingScanIn } = useQuery({
+    const { data: scanInRows = EMPTY_ARR, isFetching: loadingScanIn } = useQuery({
         queryKey: ["qc-scan-in", selRow?.unico, refreshTrigger],
         queryFn: () => qcPost("/api/qc/stock/racks-by-lot", { pkboxUq: selRow.unico }),
         enabled: !!selRow?.unico,
@@ -156,7 +157,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
     });
 
     // Warehouse stock (sub-tab 1)
-    const { data: stockRows = [], isFetching: loadingStock } = useQuery({
+    const { data: stockRows = EMPTY_ARR, isFetching: loadingStock } = useQuery({
         queryKey: ["qc-stock-by-box", selRow?.unico, refreshTrigger],
         queryFn: () => qcPost("/api/qc/stock/stock-by-box", { pkboxUq: selRow.unico }),
         enabled: !!selRow?.unico && subTab === "warehouse-stock",
@@ -165,7 +166,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
     });
 
     // Invoiced lots (sub-tab 2)
-    const { data: invoiceRows = [], isFetching: loadingInvoice } = useQuery({
+    const { data: invoiceRows = EMPTY_ARR, isFetching: loadingInvoice } = useQuery({
         queryKey: ["qc-invoiced-by-box", selRow?.unico],
         queryFn: () => qcPost("/api/qc/stock/invoiced-by-box", { pkboxUq: selRow.unico }),
         enabled: !!selRow?.unico && subTab === "invoiced-lots",
@@ -174,7 +175,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
     });
 
     // Invoice Lots Scan OUT (right panel for sub-tab 2)
-    const { data: scanOutRows = [], isFetching: loadingScanOut } = useQuery({
+    const { data: scanOutRows = EMPTY_ARR, isFetching: loadingScanOut } = useQuery({
         queryKey: ["qc-scan-out", selInvoice?.unico],
         queryFn: () => qcPost("/api/qc/stock/racks-by-invoice", { invoiceBoxUq: selInvoice.unico }),
         enabled: !!selInvoice?.unico && subTab === "invoiced-lots",
