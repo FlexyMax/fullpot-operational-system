@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { executeQuery, getSistemaPool } from "@/lib/db";
+import { executeQuery, executeProcedure, getSistemaPool } from "@/lib/db";
 import crypto from "crypto";
 import sql from "mssql";
 
@@ -30,16 +30,21 @@ export async function POST(req: NextRequest) {
         cargo, correo, image, windows_usuario, windows_password
     } = body;
     try {
-        await executeQuery(`
-            INSERT INTO usuarios (unico, nombres, apellidos, username, clave, cedula, nivel,
-                cargo, correo, image, activo, windows_usuario, windows_password, timestamp)
-            VALUES (
-                '${txt(unico)}', '${txt(nombres)}', '${txt(apellidos)}',
-                '${txt(username)}', '${txt(clave)}', '${txt(cedula)}',
-                '${txt(nivel)}', '${txt(cargo)}', '${txt(correo)}',
-                '${txt(image)}', 1,
-                '${txt(windows_usuario)}', '${txt(windows_password)}', GETDATE()
-            )`, true);
+        const r = await executeProcedure("sp_NC_user_insert", {
+            lcUserName:  txt(username),
+            lcFirstName: txt(nombres),
+            lcLastName:  txt(apellidos),
+            lcLevel:     txt(nivel),
+            lcPassword:  txt(clave),
+            lcPosition:  txt(cargo),
+            lcemail:     txt(correo)
+        });
+        const row = r.recordset?.[0] || {};
+        if (row.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
+        
+        // The SP likely generates the unique ID. We should get it from the dataset if possible.
+        // Assuming the SP returns it as `Unico` or `unico`. If not, we will use the one we generated.
+        const returnedUnico = row.unico || row.Unico || unico;
 
         // Insert placeholder photo record
         const photoUnico = genUnico();

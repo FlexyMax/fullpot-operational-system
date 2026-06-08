@@ -1,245 +1,46 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef, useCallback } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-    Search, Plus, Trash2, Pencil, Save, X,
-    RefreshCcw, Users, Camera, Check, AlertCircle,
-    Calendar, Filter, ChevronRight, UserCircle2, XCircle, Menu
-} from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Search, Users, Plus, Pencil, Trash2, Calendar, Check, AlertCircle, XCircle, Menu } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { AppFooter } from "@/components/layout/AppFooter";
 import PanelGrid from "@/components/ui/PanelGrid";
 import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
-
 import { GridMenu } from "@/components/GridMenu";
-
-import { useAuditLog } from "@/lib/audit";
-import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
-import { AuditLogModal } from "@/components/AuditLogModal";
+import { useUserStore } from "@/store/system/useUserStore";
+import { UserUpsertModal } from "./components/UserUpsertModal";
+import { UserLogModal } from "./components/UserLogModal";
+import { usePagePermissions } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
-import { todayEST, formatDateEST, normalizeToISODate } from "@/lib/dates";
-const EMPTY_ARR: any[] = [];
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-const LEVELS = ["ADMINISTRADOR", "DIGITADOR 1", "DIGITADOR 2", "VISITANTE"];
+const apiFetch = async (url: string) => { const r = await fetch(url); const j = await r.json(); if (!r.ok) throw new Error(j?.error || `HTTP ${r.status}`); return j; };
 
-const EMPTY_FORM = {
-    unico: "", cedula: "", nombres: "", apellidos: "", username: "",
-    clave: "", nivel: "", cargo: "", correo: "", image: "",
-    activo: true, windows_usuario: "", windows_password: "",
-};
-
-type UserForm = typeof EMPTY_FORM;
-type Mode = "view" | "add" | "edit";
-
-const sysFetch = async (url: string) => {
-    const r = await fetch(url);
-    const json = await r.json();
-    if (!r.ok) throw new Error(json?.error || `HTTP ${r.status}`);
-    return json;
-};
-
-const generateUsername = (nombres: string, apellidos: string) => {
-    const first = nombres.trim().charAt(0).toLowerCase();
-    const last  = apellidos.trim().replace(/\s/g, "").substring(0, 9).toLowerCase();
-    return first + last;
-};
-
-// ─── GridMenu (Appsmith style) ────────────────────────────────────────────────
-
-
-// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function UsersDefinitionPage() {
     const { status } = useSession();
     const router = useRouter();
-    const qc     = useQueryClient();
-    const { logAction } = useAuditLog("users-definition", "usuarios");
+    const qc = useQueryClient();
     const perms = usePagePermissions("users-definition");
 
-    const [selectedUnico,  setSelectedUnico]  = useState<string | null>(null);
-    const [mode,           setMode]           = useState<Mode>("view");
-    const [form,           setForm]           = useState<UserForm>(EMPTY_FORM);
-    const [formError,      setFormError]      = useState<string | null>(null);
-    const [saveMsg,        setSaveMsg]        = useState<string | null>(null);
-    const [saving,         setSaving]         = useState(false);
-    const [searchTerm,     setSearchTerm]     = useState("");
-    const [mobileOpen,     setMobileOpen]     = useState(false);
-    const [photoPreview,   setPhotoPreview]   = useState<string | null>(null);
-    const [photoFile,      setPhotoFile]      = useState<File | null>(null);
-    const [logFrom,        setLogFrom]        = useState(() => {
-        const d = new Date(); d.setDate(d.getDate() - 7); return d.toISOString().split("T")[0];
-    });
-    const [logTo,          setLogTo]          = useState(todayEST);
-    const [logEnabled,     setLogEnabled]     = useState(false);
-    const [deleteDialog,   setDeleteDialog]   = useState(false);
-    const fileRef = useRef<HTMLInputElement>(null);
+    const {
+        searchTerm, setSearchTerm, selectedRow, setSelectedRow,
+        setUpsertModalOpen, setLogModalOpen, setMode
+    } = useUserStore();
 
-    useEffect(() => {
-        if (status === "unauthenticated") router.push("/login");
-    }, [status, router]);
+    const [deleteDialog, setDeleteDialog] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+    const [delError, setDelError] = useState<string | null>(null);
+    const [saveMsg, setSaveMsg] = useState<string | null>(null);
 
-    // ── Queries ───────────────────────────────────────────────────────────────
-    const { data: users = EMPTY_ARR, isFetching: loadingUsers } = useQuery({
+    useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
+
+    const { data: users = [], isFetching } = useQuery({
         queryKey: ["sys-users-list"],
-        queryFn:  () => sysFetch("/api/system/users"),
+        queryFn: () => apiFetch("/api/system/users"),
     });
 
-    const { data: logData = EMPTY_ARR, isFetching: loadingLog, refetch: refetchLog } = useQuery({
-        queryKey: ["sys-user-log", selectedUnico, logFrom, logTo],
-        queryFn:  () => sysFetch(`/api/system/users/${selectedUnico}/log?from=${logFrom}&to=${logTo}`),
-        enabled:  !!selectedUnico && logEnabled,
-        retry:    false,
-    });
-
-    // ── Auto-select first user ─────────────────────────────────────────────────
-    useEffect(() => {
-        if ((users as any[]).length > 0 && !selectedUnico) {
-            handleSelectUser((users as any[])[0].unico);
-        }
-    }, [users]);
-
-    // ── Select user ───────────────────────────────────────────────────────────
-    const handleSelectUser = (unico: string) => {
-        if (mode !== "view") return;
-        const u = (users as any[]).find(x => x.unico === unico);
-        if (!u) return;
-        setSelectedUnico(unico);
-        setForm({
-            unico:            u.unico            ?? "",
-            cedula:           String(u.cedula    || "").trim(),
-            nombres:          String(u.nombres   || "").trim(),
-            apellidos:        String(u.apellidos || "").trim(),
-            username:         String(u.username  || "").trim(),
-            clave:            String(u.clave     || "").trim(),
-            nivel:            String(u.nivel     || "").trim(),
-            cargo:            String(u.cargo     || "").trim(),
-            correo:           String(u.correo    || "").trim(),
-            image:            String(u.image     || "").trim(),
-            activo:           Boolean(u.activo),
-            windows_usuario:  String(u.windows_usuario  || "").trim(),
-            windows_password: String(u.windows_password || "").trim(),
-        });
-        setPhotoPreview(null);
-        setPhotoFile(null);
-        setFormError(null);
-        setLogEnabled(false);
-        setMobileOpen(false);
-    };
-
-    // ── Mode handlers ─────────────────────────────────────────────────────────
-    const handleAdd = () => {
-        setForm({ ...EMPTY_FORM });
-        setPhotoPreview(null); setPhotoFile(null);
-        setMode("add"); setFormError(null);
-    };
-
-    const handleEdit = () => {
-        if (!selectedUnico) return;
-        setMode("edit"); setFormError(null);
-    };
-
-    const handleCancel = () => {
-        if (mode === "add") {
-            if (selectedUnico) handleSelectUser(selectedUnico);
-            else setForm(EMPTY_FORM);
-        } else {
-            if (selectedUnico) handleSelectUser(selectedUnico);
-        }
-        setMode("view"); setFormError(null); setPhotoFile(null); setPhotoPreview(null);
-    };
-
-    // ── Validation ────────────────────────────────────────────────────────────
-    const validate = (): string | null => {
-        if (!form.nombres.trim())   return "First name is required.";
-        if (!form.apellidos.trim()) return "Last name is required.";
-        if (!form.username.trim())  return "Username for the system is required.";
-        if (!form.clave.trim())     return "Password is required.";
-        if (!form.image.trim())     return "Image is required.";
-        if (!form.nivel.trim())     return "Level is required.";
-        return null;
-    };
-
-    // ── Save ──────────────────────────────────────────────────────────────────
-    const handleSave = async () => {
-        const err = validate();
-        if (err) { setFormError(err); return; }
-        setSaving(true); setFormError(null);
-        try {
-            let unico = selectedUnico;
-            if (mode === "add") {
-                const res  = await fetch("/api/system/users", {
-                    method: "POST", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(form),
-                });
-                const data = await res.json();
-                if (!data.success) throw new Error(data.error || "Create failed");
-                unico = data.unico;
-                logAction("Insert", unico!);
-            } else {
-                const res  = await fetch(`/api/system/users/${unico}`, {
-                    method: "PUT", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(form),
-                });
-                const data = await res.json();
-                if (!data.success) throw new Error(data.error || "Update failed");
-            }
-
-            // Upload photo if selected
-            if (photoFile && unico) {
-                const fd = new FormData();
-                fd.append("photo", photoFile);
-                await fetch(`/api/system/users/${unico}/photo`, { method: "POST", body: fd });
-            }
-
-            await qc.invalidateQueries({ queryKey: ["sys-users-list"] });
-            setSelectedUnico(unico);
-            if (mode === "edit") logAction("Edit", unico!);
-            setSaveMsg(mode === "add" ? "User created." : "User updated.");
-            setTimeout(() => setSaveMsg(null), 3000);
-            setMode("view");
-            setPhotoFile(null);
-        } catch (e: any) {
-            setFormError(e.message);
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    // ── Delete ────────────────────────────────────────────────────────────────
-    const handleDelete = async () => {
-        if (!selectedUnico) return;
-        setSaving(true);
-        try {
-            const res  = await fetch(`/api/system/users/${selectedUnico}`, { method: "DELETE" });
-            const data = await res.json();
-            if (!data.success) throw new Error(data.error);
-            await qc.invalidateQueries({ queryKey: ["sys-users-list"] });
-            logAction("Delete", selectedUnico!);
-            setSelectedUnico(null);
-            setForm(EMPTY_FORM);
-            setDeleteDialog(false);
-            setSaveMsg("User deleted.");
-            setTimeout(() => setSaveMsg(null), 3000);
-        } catch (e: any) {
-            setFormError(e.message);
-            setDeleteDialog(false);
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    // ── Photo ─────────────────────────────────────────────────────────────────
-    const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        setPhotoFile(file);
-        setPhotoPreview(URL.createObjectURL(file));
-    };
-
-    // ── Filtered users ────────────────────────────────────────────────────────
     const filteredUsers = useMemo(() => {
         if (!searchTerm.trim()) return users as any[];
         const q = searchTerm.toLowerCase();
@@ -250,327 +51,143 @@ export default function UsersDefinitionPage() {
         );
     }, [users, searchTerm]);
 
-    const isEditing = mode === "edit" || mode === "add";
+    const handleSelect = (row: any) => {
+        if (selectedRow?.unico === row.unico) setSelectedRow(null);
+        else setSelectedRow(row);
+    };
 
-    // ── Photo URL ─────────────────────────────────────────────────────────────
-    const photoSrc = photoPreview
-        ? photoPreview
-        : selectedUnico
-            ? `/api/system/users/${selectedUnico}/photo`
-            : null;
+    const handleAdd = () => {
+        setMode("add");
+        setUpsertModalOpen(true);
+    };
+
+    const handleEdit = () => {
+        if (!selectedRow) return;
+        setMode("edit");
+        setUpsertModalOpen(true);
+    };
+
+    const handleDelete = async () => {
+        if (!selectedRow) return;
+        setDeleting(true); setDelError(null);
+        try {
+            const res = await fetch(`/api/system/users/${selectedRow.unico}`, { method: "DELETE" });
+            const data = await res.json();
+            if (!res.ok || !data.success) throw new Error(data.error || "Delete failed");
+            
+            await qc.invalidateQueries({ queryKey: ["sys-users-list"] });
+            setSelectedRow(null);
+            setDeleteDialog(false);
+            setSaveMsg("User deleted successfully.");
+            setTimeout(() => setSaveMsg(null), 3000);
+        } catch (e: any) {
+            setDelError(e.message);
+        } finally {
+            setDeleting(false);
+        }
+    };
 
     if (status === "loading") return null;
 
     return (
         <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
-
             <AppHeader title="Users" />
 
-            {/* Main layout */}
-            <div className="flex flex-col lg:flex-row flex-1 gap-2 p-2 overflow-y-auto lg:overflow-hidden">
-
-                {/* ── Left: User List (desktop) ────────────────────────────── */}
+            <div className="flex flex-col flex-1 p-2 overflow-hidden min-h-0">
                 <PanelGrid
-                    title="Users"
+                    title="System Users"
                     icon={Users}
                     recordCount={filteredUsers.length}
-                    refreshing={loadingUsers}
+                    refreshing={isFetching}
                     searchValue={searchTerm}
                     onSearchChange={setSearchTerm}
                     searchPlaceholder="Search users..."
-                    className="hidden lg:flex w-[240px] shrink-0"
+                    headerRight={
+                        <>
+                            {saveMsg && (
+                                <span className="flex items-center gap-1 text-green-500 text-[10px] font-bold mr-2 bg-green-50 px-2 py-1 rounded">
+                                    <Check size={12} />{saveMsg}
+                                </span>
+                            )}
+                            <GridMenu
+                                items={[
+                                    { label: "New User", icon: Plus, color: "green", onClick: handleAdd, disabled: !perms.canCreate },
+                                    { label: "Edit User", icon: Pencil, color: "orange", onClick: handleEdit, disabled: !selectedRow || !perms.canEdit },
+                                    { label: "Delete User", icon: Trash2, color: "red", onClick: () => setDeleteDialog(true), disabled: !selectedRow || !perms.canDelete },
+                                    { label: "Activity Log", icon: Calendar, color: "blue", onClick: () => setLogModalOpen(true), disabled: !selectedRow },
+                                ]}
+                            />
+                        </>
+                    }
+                    className="flex-1"
                 >
-                    <div className="overflow-y-auto flex-1">
-                        {filteredUsers.map((u: any) => {
-                            const isSelected = selectedUnico === u.unico;
-                            return (
-                                <div key={u.unico} onClick={() => handleSelectUser(u.unico)}
-                                    className={cn(
-                                        "px-3 py-2 border-b border-gray-50 flex items-center gap-2 transition-colors",
-                                        isEditing ? "cursor-not-allowed opacity-60" : "cursor-pointer",
-                                        isSelected ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "hover:bg-blue-50"
-                                    )}>
-                                    <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", u.activo ? "bg-green-400" : "bg-gray-300")} />
-                                    <div className="min-w-0">
-                                        <p className="text-xs font-semibold text-gray-800 truncate">
-                                            {String(u.apellidos || "").trim()}, {String(u.nombres || "").trim()}
-                                        </p>
-                                        <p className="text-[9px] text-gray-400 truncate">{String(u.username || "").trim()} · {String(u.nivel || "").trim()}</p>
-                                    </div>
-                                </div>
-                            );
-                        })}
+                    <div className="overflow-auto flex-1">
+                        <PanelGridTable>
+                            <PanelGridThead>
+                                <PanelGridTh>Code</PanelGridTh>
+                                <PanelGridTh>ID / Cédula</PanelGridTh>
+                                <PanelGridTh>Name</PanelGridTh>
+                                <PanelGridTh>Username</PanelGridTh>
+                                <PanelGridTh>E-mail</PanelGridTh>
+                                <PanelGridTh>Position</PanelGridTh>
+                                <PanelGridTh>Level</PanelGridTh>
+                                <PanelGridTh className="text-center">Status</PanelGridTh>
+                            </PanelGridThead>
+                            <PanelGridTbody>
+                                {filteredUsers.map((u: any) => {
+                                    const isSelected = selectedRow?.unico === u.unico;
+                                    return (
+                                        <PanelGridTr
+                                            key={u.unico}
+                                            selected={isSelected}
+                                            onClick={() => handleSelect(u)}
+                                            className="cursor-pointer"
+                                        >
+                                            <PanelGridTd className="font-mono text-[10px] text-gray-500">{u.unico}</PanelGridTd>
+                                            <PanelGridTd>{String(u.cedula || "")}</PanelGridTd>
+                                            <PanelGridTd className="font-semibold">{String(u.apellidos || "").trim()}, {String(u.nombres || "").trim()}</PanelGridTd>
+                                            <PanelGridTd className="text-blue-700">{String(u.username || "")}</PanelGridTd>
+                                            <PanelGridTd className="text-gray-500">{String(u.correo || "")}</PanelGridTd>
+                                            <PanelGridTd>{String(u.cargo || "")}</PanelGridTd>
+                                            <PanelGridTd>{String(u.nivel || "")}</PanelGridTd>
+                                            <PanelGridTd className="text-center">
+                                                <div className={cn("inline-flex w-2.5 h-2.5 rounded-full", u.activo ? "bg-green-500" : "bg-red-500")} title={u.activo ? "Active" : "Inactive"} />
+                                            </PanelGridTd>
+                                        </PanelGridTr>
+                                    );
+                                })}
+                            </PanelGridTbody>
+                        </PanelGridTable>
                     </div>
                 </PanelGrid>
-
-                {/* ── Right: Form + Log ─────────────────────────────────────── */}
-                <div className="flex-1 flex flex-col gap-2 min-w-0 lg:overflow-hidden">
-
-                    <PanelGrid
-                        title={mode === "add" ? "New User" : "User Information"}
-                        icon={Users}
-                        headerRight={
-                            <>
-                                <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} bareButton />
-                                {mode === "view" && form.unico && (
-                                    <span className={cn(
-                                        "text-[10px] font-black uppercase px-2 py-0.5 rounded",
-                                        form.activo ? "bg-green-500 text-white" : "bg-red-500 text-white"
-                                    )}>
-                                        {form.activo ? "Active" : "Inactive"}
-                                    </span>
-                                )}
-                                {formError && (
-                                    <span className="flex items-center gap-1 text-amber-400 text-[10px] font-bold ml-1">
-                                        <AlertCircle size={12} />{formError}
-                                    </span>
-                                )}
-                                {saveMsg && (
-                                    <span className="flex items-center gap-1 text-green-400 text-[10px] font-bold ml-1">
-                                        <Check size={12} />{saveMsg}
-                                    </span>
-                                )}
-                                {mode !== "view" && (
-                                    <>
-                                        <button onClick={handleSave} disabled={saving}
-                                            className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all">
-                                            {saving ? <RefreshCcw size={14} className="animate-spin" /> : <Save size={14} />}
-                                            {saving ? "Saving..." : "Save"}
-                                        </button>
-                                        <button onClick={handleCancel}
-                                            className="flex items-center gap-1.5 bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all">
-                                            <X size={14} /> Cancel
-                                        </button>
-                                    </>
-                                )}
-                            </>
-                        }
-                        menuItems={mode === "view" ? [
-                            { label: "Add Record", icon: Plus, color: "green", onClick: handleAdd, disabled: !perms.canCreate },
-                            { label: "Edit Selected", icon: Pencil, color: "orange", onClick: handleEdit, disabled: !selectedUnico || !perms.canEdit },
-                            { label: "Delete Selected", icon: Trash2, color: "red", onClick: () => { if (selectedUnico) setDeleteDialog(true); }, disabled: !selectedUnico || !perms.canDelete },
-                        ] : []}
-                        className="shrink-0"
-                    >
-
-                        {/* Form body */}
-                        <div className="p-3 flex gap-4">
-                            {/* Photo column */}
-                            <div className="flex flex-col items-center gap-2 shrink-0 w-20">
-                                <div className="w-20 h-20 rounded-lg border-2 border-gray-200 overflow-hidden bg-gray-100 flex items-center justify-center">
-                                    {photoSrc ? (
-                                        <img src={photoSrc} alt="User" className="w-full h-full object-cover"
-                                            onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                                    ) : (
-                                        <UserCircle2 size={40} className="text-gray-300" />
-                                    )}
-                                </div>
-                                {isEditing && (
-                                    <>
-                                        <button onClick={() => fileRef.current?.click()}
-                                            className="flex items-center gap-1.5 bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wide w-full justify-center transition-all">
-                                            <Camera size={14} /> Photo
-                                        </button>
-                                        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
-                                    </>
-                                )}
-                            </div>
-
-                            {/* Fields grid */}
-                            <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-2 text-xs">
-                                {[
-                                    { label: "Code",       key: "unico",    readonly: true },
-                                    { label: "ID / Cédula",key: "cedula",   readonly: false },
-                                    { label: "First Name", key: "nombres",  readonly: false },
-                                    { label: "Last Name",  key: "apellidos",readonly: false },
-                                    { label: "Username",   key: "username", readonly: false },
-                                    { label: "Password",   key: "clave",    readonly: false, type: "password" },
-                                    { label: "Position",   key: "cargo",    readonly: false },
-                                    { label: "E-mail",     key: "correo",   readonly: false },
-                                    { label: "W. User",    key: "windows_usuario",  readonly: false },
-                                    { label: "W. Password",key: "windows_password", readonly: false },
-                                    { label: "Image",      key: "image",    readonly: false },
-                                ].map(f => (
-                                    <div key={f.key} className="flex flex-col gap-0.5">
-                                        <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">{f.label}</label>
-                                        <input
-                                            type={f.type || "text"}
-                                            value={(form as any)[f.key] || ""}
-                                            readOnly={!isEditing || f.readonly}
-                                            onChange={e => {
-                                                const val = e.target.value;
-                                                setForm(prev => {
-                                                    const next = { ...prev, [f.key]: val };
-                                                    if (f.key === "apellidos" && mode === "add") {
-                                                        next.username = generateUsername(prev.nombres, val);
-                                                    }
-                                                    if (f.key === "nombres" && mode === "add") {
-                                                        next.username = generateUsername(val, prev.apellidos);
-                                                    }
-                                                    return next;
-                                                });
-                                            }}
-                                            className={cn(
-                                                "fos-input h-10 text-sm",
-                                                (!isEditing || f.readonly) && "bg-gray-50 text-gray-500 cursor-default"
-                                            )}
-                                        />
-                                    </div>
-                                ))}
-
-                                {/* Level + Active */}
-                                <div className="flex flex-col gap-0.5">
-                                    <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Level</label>
-                                    {isEditing ? (
-                                        <select value={form.nivel}
-                                            onChange={e => setForm(prev => ({ ...prev, nivel: e.target.value }))}
-                                            className="fos-input h-10 text-sm">
-                                            <option value="">— Select —</option>
-                                            {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
-                                        </select>
-                                    ) : (
-                                        <input readOnly value={form.nivel} className="fos-input h-10 text-sm bg-gray-50 text-gray-500" />
-                                    )}
-                                </div>
-
-                                <div className="flex flex-col gap-0.5 justify-center">
-                                    <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Active</label>
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input type="checkbox" checked={Boolean(form.activo)}
-                                            disabled={!isEditing || mode === "add"}
-                                            onChange={e => setForm(prev => ({ ...prev, activo: e.target.checked }))}
-                                            className="w-4 h-4 accent-[#FB7506]" />
-                                        <span className={cn("text-xs font-semibold", form.activo ? "text-green-600" : "text-gray-400")}>
-                                            {form.activo ? "Yes" : "No"}
-                                        </span>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    </PanelGrid>
-
-                    <PanelGrid
-                        title="User Activity Log"
-                        icon={Calendar}
-                        refreshing={loadingLog}
-                        headerRight={
-                            <>
-                                <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} bareButton />
-                                {mode === "view" && (
-                                    <div className="flex items-center gap-2">
-                                        <input type="date" value={logFrom} onChange={e => setLogFrom(e.target.value)}
-                                            className="bg-gray-600 text-white text-xs border-none outline-none rounded px-2 h-8 w-32" />
-                                        <span className="text-gray-400 text-xs">→</span>
-                                        <input type="date" value={logTo} onChange={e => setLogTo(e.target.value)}
-                                            className="bg-gray-600 text-white text-xs border-none outline-none rounded px-2 h-8 w-32" />
-                                        <button onClick={() => { setLogEnabled(true); refetchLog(); }}
-                                            className="flex items-center gap-1.5 bg-[#FB7506] hover:bg-orange-600 text-white px-3 h-8 rounded text-xs font-black uppercase tracking-wider transition-all">
-                                            <Filter size={14} /> Filter
-                                        </button>
-                                    </div>
-                                )}
-                            </>
-                        }
-                        className="flex-1 min-h-[200px] lg:min-h-0"
-                    >
-
-                        <div className="overflow-auto max-h-[400px]">
-                            {!logEnabled ? (
-                                <div className="h-32 flex flex-col items-center justify-center text-gray-300 gap-2">
-                                    <Calendar size={28} className="opacity-20" />
-                                    <p className="text-xs font-bold uppercase tracking-widest">Select date range and click Filter</p>
-                                </div>
-                            ) : logData.length === 0 ? (
-                                <div className="h-32 flex items-center justify-center text-gray-400 text-xs font-bold italic">
-                                    {loadingLog ? "Loading activity..." : "No activity found for selected dates"}
-                                </div>
-                            ) : (
-                                <PanelGridTable>
-                                    <PanelGridThead>
-                                        <PanelGridTh>Date</PanelGridTh>
-                                        <PanelGridTh>Action</PanelGridTh>
-                                        <PanelGridTh>Screen</PanelGridTh>
-                                        <PanelGridTh>Module</PanelGridTh>
-                                        <PanelGridTh>Company</PanelGridTh>
-                                    </PanelGridThead>
-                                    <PanelGridTbody>
-                                        {(logData as any[]).map((row: any, i: number) => (
-                                            <PanelGridTr key={i}>
-                                                <PanelGridTd className="text-gray-600">
-                                                    {row.fecha ? new Date(row.fecha).toLocaleString("en-US", { timeZone: "America/New_York" }) : ""}
-                                                </PanelGridTd>
-                                                <PanelGridTd className="font-semibold text-blue-700">
-                                                    {String(row.accion || "").trim()}
-                                                </PanelGridTd>
-                                                <PanelGridTd className="truncate max-w-[180px]">
-                                                    {String(row.pantalla || "").trim()}
-                                                </PanelGridTd>
-                                                <PanelGridTd className="truncate max-w-[140px] text-gray-500">
-                                                    {String(row.modulo || "").trim()}
-                                                </PanelGridTd>
-                                                <PanelGridTd className="text-gray-400">
-                                                    {String(row.empresa || "").trim()}
-                                                </PanelGridTd>
-                                            </PanelGridTr>
-                                        ))}
-                                    </PanelGridTbody>
-                                </PanelGridTable>
-                            )}
-                        </div>
-                        <div className="px-3 py-1.5 bg-gray-50 border-t text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">
-                            {logEnabled ? `${(logData as any[]).length} records` : ""}
-                        </div>
-                    </PanelGrid>
-                </div>
             </div>
 
             <AppFooter areaLabel="System Management" database="Sistema" />
 
-            {/* Mobile floating button */}
-            <button onClick={() => setMobileOpen(true)}
-                className="lg:hidden fixed bottom-6 right-6 z-40 w-12 h-12 bg-[#FB7506] hover:bg-orange-600 text-white rounded-full shadow-xl flex items-center justify-center transition-all active:scale-95">
-                <Users size={20} />
+            {/* Floating Action Menu for Mobile */}
+            <div className={cn("fixed bottom-6 right-6 flex flex-col-reverse gap-3 z-40 lg:hidden transition-all duration-300", selectedRow ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8 pointer-events-none")}>
+                <button onClick={() => setDeleteDialog(true)} disabled={!perms.canDelete} className="w-12 h-12 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-105 active:scale-95 disabled:opacity-50">
+                    <Trash2 size={20} />
+                </button>
+                <button onClick={handleEdit} disabled={!perms.canEdit} className="w-12 h-12 bg-orange-500 hover:bg-orange-600 text-white rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-105 active:scale-95 disabled:opacity-50">
+                    <Pencil size={20} />
+                </button>
+                <button onClick={() => setLogModalOpen(true)} className="w-12 h-12 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-105 active:scale-95">
+                    <Calendar size={20} />
+                </button>
+            </div>
+            {/* Always visible add button for mobile */}
+            <button onClick={handleAdd} disabled={!perms.canCreate} className="fixed bottom-6 right-6 lg:hidden w-12 h-12 bg-[#FB7506] hover:bg-orange-600 text-white rounded-full shadow-xl flex items-center justify-center z-30 transition-transform hover:scale-105 active:scale-95 disabled:opacity-50">
+                <Plus size={24} />
             </button>
 
-            {/* Mobile user list */}
-            {mobileOpen && (
-                <div className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden">
-                        <div className="h-10 bg-[#374151] flex items-center justify-between px-4 border-b border-black/10 shrink-0">
-                            <div className="flex items-center gap-2">
-                                <Users size={16} className="text-[#FB7506]" />
-                                <span className="fos-grid-header-text">Select User</span>
-                            </div>
-                            <button onClick={() => setMobileOpen(false)}
-                                className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors">
-                                <X size={16} />
-                            </button>
-                        </div>
-                        <div className="p-3 border-b shrink-0">
-                            <div className="relative">
-                                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                <input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-                                    placeholder="Search..." autoFocus
-                                    className="w-full pl-9 pr-3 h-10 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-[#FB7506]" />
-                            </div>
-                        </div>
-                        <div className="overflow-y-auto flex-1">
-                            {filteredUsers.map((u: any) => (
-                                <div key={u.unico} onClick={() => handleSelectUser(u.unico)}
-                                    className="px-4 py-3 border-b flex items-center gap-3 cursor-pointer hover:bg-gray-50">
-                                    <div className={cn("w-2 h-2 rounded-full shrink-0", u.activo ? "bg-green-400" : "bg-gray-300")} />
-                                    <div>
-                                        <p className="text-sm font-semibold">{String(u.apellidos || "").trim()}, {String(u.nombres || "").trim()}</p>
-                                        <p className="text-xs text-gray-400">{String(u.username || "").trim()}</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            )}
+            <UserUpsertModal onSaved={() => {
+                qc.invalidateQueries({ queryKey: ["sys-users-list"] });
+                setSaveMsg("User saved successfully.");
+                setTimeout(() => setSaveMsg(null), 3000);
+            }} />
+            <UserLogModal />
 
-            {/* Delete confirmation */}
             {deleteDialog && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
@@ -581,18 +198,16 @@ export default function UsersDefinitionPage() {
                             <div className="text-center">
                                 <h3 className="font-black text-gray-900 text-base mb-1">Delete User?</h3>
                                 <p className="text-sm text-gray-500">
-                                    Delete <strong>{form.apellidos.trim()}, {form.nombres.trim()}</strong>?
+                                    Delete <strong>{selectedRow?.apellidos}, {selectedRow?.nombres}</strong>?
                                     This cannot be undone.
                                 </p>
-                                {formError && <p className="text-xs text-red-500 mt-2 font-bold">{formError}</p>}
+                                {delError && <p className="text-xs text-red-500 mt-2 font-bold">{delError}</p>}
                             </div>
                         </div>
                         <div className="flex border-t border-gray-100">
-                            <button onClick={() => { setDeleteDialog(false); setFormError(null); }}
-                                className="flex-1 py-3 text-sm font-bold text-gray-600 hover:bg-gray-50 border-r border-gray-100">Cancel</button>
-                            <button onClick={handleDelete} disabled={saving}
-                                className="flex-1 py-3 text-sm font-black text-red-600 hover:bg-red-50 disabled:opacity-50">
-                                {saving ? "Deleting..." : "Delete"}
+                            <button onClick={() => { setDeleteDialog(false); setDelError(null); }} className="flex-1 py-3 text-sm font-bold text-gray-600 hover:bg-gray-50 border-r border-gray-100">Cancel</button>
+                            <button onClick={handleDelete} disabled={deleting} className="flex-1 py-3 text-sm font-black text-red-600 hover:bg-red-50 disabled:opacity-50">
+                                {deleting ? "Deleting..." : "Delete"}
                             </button>
                         </div>
                     </div>
@@ -601,4 +216,3 @@ export default function UsersDefinitionPage() {
         </div>
     );
 }
-
