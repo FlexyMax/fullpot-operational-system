@@ -81,62 +81,29 @@ function SimpleModal({ title, icon: Icon, children, onSave, onClose, saving, isD
     );
 }
 
-function MenuDropdown({ onAdd, onEdit, onDel, canEdit, canDel, menuOpen, setMenuOpen, saving }: any) {
-    const items = [
-        { label: "Add Record",      icon: Plus,   onClick: onAdd,  enabled: true,              color: "text-green-600",  text: "text-green-700" },
-        { label: "Edit Selected",   icon: Pencil, onClick: onEdit, enabled: !!canEdit,          color: "text-[#FB7506]",  text: "text-gray-800"  },
-        { label: "Delete Selected", icon: Trash2, onClick: onDel,  enabled: !!canDel && !saving, color: "text-red-500",   text: "text-gray-800"  },
-    ];
-    return (
-        <div className="relative shrink-0">
-            <button
-                onClick={() => setMenuOpen((o: boolean) => !o)}
-                className="flex items-center justify-center p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-                title="Menu"
-            >
-                <Menu size={20} />
-            </button>
-            {menuOpen && (
-                <div className="absolute right-0 top-full mt-1.5 w-56 bg-white border border-gray-200 rounded-lg shadow-2xl z-50 overflow-hidden">
-                    {items.map((item, i) => (
-                        <button key={i} onClick={() => { item.onClick(); setMenuOpen(false); }}
-                            disabled={!item.enabled}
-                            className={cn(
-                                "w-full flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors",
-                                i < items.length - 1 && "border-b border-gray-100"
-                            )}>
-                            <item.icon size={20} className={item.color} />
-                            <span className={cn("text-sm font-bold", item.text)}>{item.label}</span>
-                        </button>
-                    ))}
-                </div>
-            )}
-        </div>
-    );
-}
 
-function SetupModal({ title, onClose, listUrl, detailUrl, emptyForm, cols, formFields, checkFields, growers = [] }: any) {
+
+function SetupModal({ title, icon: Icon, onClose, listUrl, detailUrl, emptyForm, cols, formFields, checkFields, growers = [] }: any) {
     const t2 = (v: any) => String(v ?? "").trim();
     const [rows,     setRows]     = useState<any[]>([]);
     const [selRow,   setSelRow]   = useState<any>(null);
-    const [mode,     setMode]     = useState<"view"|"add"|"edit">("view");
+    const [mode,     setMode]     = useState<"view"|"add"|"edit"|"delete">("view");
     const [form,     setForm]     = useState<any>(emptyForm);
     const [search,   setSearch]   = useState("");
     const [loading,  setLoading]  = useState(false);
     const [saving,   setSaving]   = useState(false);
-    const [menuOpen, setMenuOpen] = useState(false);
 
-    const load = useCallback(async (q: string) => {
+    const load = useCallback(async () => {
         setLoading(true);
         try {
-            const d = await ff(`${listUrl}?search=${encodeURIComponent(q||"%")}`);
+            const d = await ff(`${listUrl}?search=${encodeURIComponent(search||"%")}`);
             setRows(d);
             if (d.length > 0 && !selRow) setSelRow(d[0]);
         } catch { /* ignore */ }
         finally { setLoading(false); }
-    }, [listUrl]);
+    }, [listUrl, search]);
 
-    useEffect(() => { load("%"); }, []);
+    useEffect(() => { load(); }, [load]);
 
     useEffect(() => {
         if (selRow && mode === "view") {
@@ -152,7 +119,7 @@ function SetupModal({ title, onClose, listUrl, detailUrl, emptyForm, cols, formF
     }, [selRow, mode]);
 
     const openAdd = () => {
-        setForm({...emptyForm}); setMode("add"); setMenuOpen(false);
+        setForm({...emptyForm}); setMode("add");
     };
     const openEdit = () => {
         if (!selRow) return;
@@ -163,7 +130,7 @@ function SetupModal({ title, onClose, listUrl, detailUrl, emptyForm, cols, formF
             f.handling_kg = selRow.handling_kg || 0;
             f.grower_uq = selRow.grower_uq || "";
         }
-        setForm(f); setMode("edit"); setMenuOpen(false);
+        setForm(f); setMode("edit");
     };
 
     const save = async () => {
@@ -174,150 +141,158 @@ function SetupModal({ title, onClose, listUrl, detailUrl, emptyForm, cols, formF
             } else if (mode === "edit" && selRow) {
                 await fetch(`${detailUrl}/${selRow.unico}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(form) });
             }
-            await load(search); setMode("view");
+            await load(); setMode("view");
             toast.success("Saved successfully");
         } catch (e: any) { toast.error(e.message); }
         finally { setSaving(false); }
     };
 
     const del = async () => {
-        if (!selRow || !confirm(`Delete "${t2(selRow[cols[0].key])}"?`)) return;
-        setMenuOpen(false); setSaving(true);
+        if (!selRow) return;
+        setSaving(true);
         try { 
             await fetch(`${detailUrl}/${selRow.unico}`, { method:"DELETE" }); 
             setSelRow(null); 
-            await load(search); 
+            await load(); 
+            setMode("view");
             toast.success("Deleted successfully");
         }
         catch (e: any) { toast.error(e.message); }
         finally { setSaving(false); }
     };
 
-    return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
-            onClick={() => setMenuOpen(false)}>
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[70vh] flex flex-col"
-                onClick={e => e.stopPropagation()}>
-
-                <div className="h-10 bg-[#374151] rounded-t-xl flex items-center justify-between px-4 shrink-0">
-                    <div className="flex items-center gap-2">
-                        <span className="font-black text-[11px] uppercase tracking-widest text-white">{title}</span>
-                        {loading && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
+    if (mode === "delete") {
+        return (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[70] p-4">
+                <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm">
+                    <div className="p-6 flex flex-col items-center gap-4 text-center">
+                        <Trash2 size={48} className="text-red-500" />
+                        <h3 className="text-lg font-bold text-gray-800">Delete Record?</h3>
+                        <p className="text-sm text-gray-500">Are you sure you want to delete <strong>{t2(selRow?.[cols[0]?.key])}</strong>? This action cannot be undone.</p>
                     </div>
-                    <button onClick={onClose}><XCircle size={16} className="text-gray-400 hover:text-white" /></button>
+                    <div className="flex gap-2 p-4 bg-gray-50 rounded-b-xl border-t border-gray-100">
+                        <button onClick={() => setMode("view")} className="flex-1 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-50">Cancel</button>
+                        <button onClick={del} disabled={saving} className="flex-1 px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg text-sm font-bold text-white flex items-center justify-center gap-2">
+                            {saving ? <RefreshCcw size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                            Delete
+                        </button>
+                    </div>
                 </div>
+            </div>
+        );
+    }
 
-                <div className="flex flex-1 overflow-hidden">
-                    <div className="w-64 md:w-80 border-r border-gray-100 flex flex-col shrink-0">
-                        <div className="px-3 border-b border-gray-100 shrink-0" style={{ height: "44px", display:"flex", alignItems:"center" }}>
-                            <div className="relative flex-1">
-                                <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                <input type="text" value={search}
-                                    onChange={e => { setSearch(e.target.value); load(e.target.value); }}
-                                    placeholder="Search..."
-                                    className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-[#FB7506]" />
+    return (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-full max-h-[90vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+                {mode === "view" ? (
+                    <div className="flex flex-col h-full overflow-hidden relative">
+                        <button onClick={onClose} className="absolute top-2 right-24 z-[100] text-gray-400 hover:text-white p-1 rounded-full"><X size={18}/></button>
+                        
+                        <PanelGrid
+                            title={title}
+                            icon={Icon || Building2}
+                            recordCount={rows.length}
+                            onRefresh={() => load()}
+                            refreshing={loading}
+                            menuItems={[
+                                { label:"Add Record", icon:Plus, color:"green", onClick:openAdd },
+                                { label:"Edit Selected", icon:Pencil, color:"blue", onClick:openEdit, disabled:!selRow },
+                                { label:"Delete Selected", icon:Trash2, color:"red", onClick:() => setMode("delete"), disabled:!selRow }
+                            ]}
+                            className="flex flex-col h-full border-0 rounded-none shadow-none"
+                        >
+                            {/* Toolbar under header */}
+                            <div className="px-4 py-2 border-b border-gray-200 bg-gray-50 flex shrink-0">
+                                <div className="relative flex-1 max-w-xs">
+                                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                    <input type="text" value={search} onChange={e => { setSearch(e.target.value); }} placeholder="Search..."
+                                        className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded outline-none focus:ring-1 focus:ring-[#FB7506]" />
+                                </div>
                             </div>
-                        </div>
-                        <div className="overflow-auto flex-1">
-                            {rows.map((r: any, i: number) => (
-                                <div key={r.unico||i}
-                                    onClick={() => { setSelRow(r); if (mode !== "view") setMode("view"); }}
-                                    onDoubleClick={() => { setSelRow(r); openEdit(); }}
-                                    style={{ minHeight: "44px" }}
-                                    className={cn(
-                                        "flex items-center px-4 border-b border-gray-50 cursor-pointer transition-colors",
-                                        selRow?.unico===r.unico
-                                            ? "bg-blue-50 border-l-[3px] border-l-blue-500"
-                                            : "hover:bg-gray-50 border-l-[3px] border-l-transparent"
-                                    )}>
-                                    <div className="flex items-baseline gap-2 min-w-0">
-                                        <span className={cn("text-sm font-semibold truncate", selRow?.unico===r.unico ? "text-blue-800" : "text-gray-800")}>
-                                            {t2(r[cols[0].key])}
-                                        </span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="flex-1 flex flex-col overflow-hidden">
-                        {!selRow && mode === "view" ? (
-                            <>
-                                <div className="flex items-center justify-between px-4 border-b border-gray-100 shrink-0" style={{ height:"44px" }}>
-                                    <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">Select a record</span>
-                                    <MenuDropdown onAdd={openAdd} onEdit={openEdit} onDel={del} canEdit={false} canDel={false} menuOpen={menuOpen} setMenuOpen={setMenuOpen} saving={saving} />
-                                </div>
-                                <div className="flex-1 flex flex-col items-center justify-center text-gray-300 gap-2">
-                                    <span className="text-4xl">≡</span>
-                                    <p className="text-xs font-bold uppercase tracking-widest">Use Menu to add a record</p>
-                                </div>
-                            </>
-                        ) : (
-                            <>
-                                <div className="flex items-center justify-between px-4 border-b border-gray-100 shrink-0" style={{ height:"44px" }}>
-                                    <span className="text-sm font-black text-gray-800">
-                                        {mode === "add" ? "New Record" : mode === "edit" ? `Editing: ${t2(selRow?.[cols[0]?.key])}` : t2(selRow?.[cols[0]?.key])}
-                                    </span>
-                                    <MenuDropdown onAdd={openAdd} onEdit={openEdit} onDel={del} canEdit={!!selRow} canDel={!!selRow && !saving} menuOpen={menuOpen} setMenuOpen={setMenuOpen} saving={saving} />
-                                </div>
-                                <div className="overflow-auto p-4">
-                                    <div className="grid grid-cols-2 gap-3 text-xs">
-                                        {formFields.map((f: any) => (
-                                            <div key={f.k} className="flex flex-col gap-0.5">
-                                                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{f.l}</label>
-                                                <input type={f.type||"text"} value={form[f.k]||""}
-                                                    readOnly={mode === "view"}
-                                                    onChange={e => mode !== "view" && setForm((p: any) => ({...p, [f.k]: e.target.value}))}
-                                                    className={cn("fos-input text-xs py-1.5", mode === "view" && "bg-gray-50 text-gray-600 cursor-default")} />
-                                            </div>
+                            <div className="h-full overflow-auto">
+                                <PanelGridTable>
+                                    <PanelGridThead>
+                                        {cols.map((c: any) => <PanelGridTh key={c.key}>{c.label}</PanelGridTh>)}
+                                    </PanelGridThead>
+                                    <PanelGridTbody>
+                                        {rows.length === 0 ? (
+                                            <PanelGridTr><PanelGridTd colSpan={cols.length} className="p-4 text-center text-gray-300 italic text-xs">No records found.</PanelGridTd></PanelGridTr>
+                                        ) : rows.map((r: any, i: number) => (
+                                            <PanelGridTr key={r.unico||i} selected={selRow?.unico === r.unico} onClick={() => { if(selRow?.unico === r.unico) setSelRow(null); else setSelRow(r); }}>
+                                                {cols.map((c: any) => (
+                                                    <PanelGridTd key={c.key}>{c.render ? c.render(r[c.key], r) : t2(r[c.key])}</PanelGridTd>
+                                                ))}
+                                            </PanelGridTr>
                                         ))}
-                                        {title === "Warehouses" && (
-                                            <>
-                                                <div className="flex flex-col gap-0.5">
-                                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Handling KG</label>
-                                                    <input type="number" value={form.handling_kg||0} readOnly={mode==="view"} onChange={e=>mode!=="view"&&setForm((p:any)=>({...p,handling_kg:parseFloat(e.target.value)||0}))} className={cn("fos-input text-xs py-1.5", mode === "view" && "bg-gray-50 text-gray-600 cursor-default")} />
-                                                </div>
-                                                <div className="flex flex-col gap-0.5">
-                                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Grower</label>
-                                                    <select value={form.grower_uq||""} disabled={mode==="view"} onChange={e=>mode!=="view"&&setForm((p:any)=>({...p,grower_uq:e.target.value}))} className={cn("fos-input text-xs py-1.5", mode === "view" && "bg-gray-50 text-gray-600 cursor-default")}>
-                                                        <option value="">— None —</option>
-                                                        {growers.map((g:any) => <option key={g.unico} value={g.unico}>{t2(g.grower)}</option>)}
-                                                    </select>
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-                                    {checkFields.length > 0 && (
-                                        <div className="flex flex-wrap gap-4 pt-3 mt-1 border-t border-gray-100">
-                                            {checkFields.map((c: any) => (
-                                                <label key={c.k} className={cn("flex items-center gap-2", mode !== "view" && "cursor-pointer")}>
-                                                    <input type="checkbox" checked={!!form[c.k]}
-                                                        disabled={mode === "view"}
-                                                        onChange={e => mode !== "view" && setForm((p: any) => ({...p, [c.k]: e.target.checked}))}
-                                                        className="w-4 h-4 accent-[#FB7506]" />
-                                                    <span className="text-xs font-semibold text-gray-600">{c.l}</span>
-                                                </label>
-                                            ))}
+                                    </PanelGridTbody>
+                                </PanelGridTable>
+                            </div>
+                        </PanelGrid>
+                    </div>
+                ) : (
+                    <div className="flex flex-col h-full">
+                        <div className="h-12 bg-[#374151] flex items-center justify-between px-5 shrink-0 border-b border-black/10">
+                            <div className="flex items-center gap-3">
+                                <button onClick={() => setMode("view")} className="text-gray-400 hover:text-white transition-colors">
+                                    <ChevronLeft size={20} />
+                                </button>
+                                <span className="font-black text-[13px] uppercase tracking-widest text-white">
+                                    {mode === "add" ? `New ${title}` : `Edit ${title}: ${t2(selRow?.[cols[0]?.key])}`}
+                                </span>
+                            </div>
+                            <button onClick={() => setMode("view")}><X size={18} className="text-gray-400 hover:text-white" /></button>
+                        </div>
+                        <div className="p-6 overflow-y-auto flex-1 bg-gray-50/50">
+                            <div className="max-w-2xl mx-auto space-y-6">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                                    {formFields.map((f: any) => (
+                                        <div key={f.k} className="flex flex-col gap-1.5">
+                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{f.l}</label>
+                                            <input type={f.type||"text"} value={form[f.k]||""}
+                                                onChange={e => setForm((p: any) => ({...p, [f.k]: e.target.value}))}
+                                                className="fos-input h-10 text-sm" />
                                         </div>
+                                    ))}
+                                    {title === "Warehouses" && (
+                                        <>
+                                            <div className="flex flex-col gap-1.5">
+                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Handling KG</label>
+                                                <input type="number" value={form.handling_kg||0} onChange={e=>setForm((p:any)=>({...p,handling_kg:parseFloat(e.target.value)||0}))} className="fos-input h-10 text-sm" />
+                                            </div>
+                                            <div className="flex flex-col gap-1.5">
+                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Grower</label>
+                                                <select value={form.grower_uq||""} onChange={e=>setForm((p:any)=>({...p,grower_uq:e.target.value}))} className="fos-input h-10 text-sm">
+                                                    <option value="">— None —</option>
+                                                    {growers.map((g:any) => <option key={g.unico} value={g.unico}>{t2(g.grower)}</option>)}
+                                                </select>
+                                            </div>
+                                        </>
                                     )}
                                 </div>
-                                {mode !== "view" && (
-                                    <div className="shrink-0 border-t border-gray-100 bg-gray-50 px-4 py-3 flex gap-2 justify-end">
-                                        <button onClick={() => { setMode("view"); }}
-                                            className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-100">
-                                            Cancel
-                                        </button>
-                                        <button onClick={save} disabled={saving}
-                                            className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#FB7506] hover:bg-orange-600 disabled:opacity-50 text-white text-sm font-black uppercase tracking-wider">
-                                            {saving ? <RefreshCcw size={14} className="animate-spin" /> : <Save size={14} />}
-                                            {saving ? "Saving..." : mode === "add" ? "Create" : "Save"}
-                                        </button>
+                                {checkFields.length > 0 && (
+                                    <div className="flex flex-wrap gap-6 pt-4 border-t border-gray-200">
+                                        {checkFields.map((c: any) => (
+                                            <label key={c.k} className="flex items-center gap-2.5 cursor-pointer">
+                                                <input type="checkbox" checked={!!form[c.k]}
+                                                    onChange={e => setForm((p: any) => ({...p, [c.k]: e.target.checked}))}
+                                                    className="w-4 h-4 accent-[#FB7506] rounded border-gray-300" />
+                                                <span className="text-xs font-bold text-gray-700">{c.l}</span>
+                                            </label>
+                                        ))}
                                     </div>
                                 )}
-                            </>
-                        )}
+                            </div>
+                        </div>
+                        <div className="flex justify-end gap-3 px-6 py-4 bg-white border-t border-gray-200 shrink-0">
+                            <button onClick={() => setMode("view")} className="px-6 py-2.5 rounded-lg border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50">Cancel</button>
+                            <button onClick={save} disabled={saving} className="flex items-center gap-2 px-8 py-2.5 rounded-lg text-white text-sm font-black uppercase tracking-wider transition-all disabled:opacity-50 bg-[#FB7506] hover:bg-orange-600 shadow-sm">
+                                {saving ? <RefreshCcw size={16} className="animate-spin" /> : <Save size={16} />}
+                                {saving ? "Saving..." : mode === "add" ? "Create" : "Save"}
+                            </button>
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
         </div>
     );
@@ -780,7 +755,7 @@ export default function FreightsSetupPage() {
             {store.warehousesModal && (
                 <SetupModal title="Warehouses" onClose={() => store.setWarehousesModal(false)}
                     listUrl="/api/freights/warehouses" detailUrl="/api/freights/warehouse" emptyForm={EMPTY_WH}
-                    cols={[{ key:"wp_name", label:"Warehouse" }]}
+                    cols={[{ key:"wp_name", label:"Warehouse" }, { key:"city", label:"City" }, { key:"state", label:"State" }, { key:"country", label:"Country" }, { key:"phone", label:"Phone" }]}
                     formFields={[
                         { k:"wp_name", l:"Warehouse Name", type:"text" },
                         { k:"address", l:"Address", type:"text" },
@@ -805,7 +780,7 @@ export default function FreightsSetupPage() {
             {store.citiesModal && (
                 <SetupModal title="Cities" onClose={() => store.setCitiesModal(false)}
                     listUrl="/api/freights/cities" detailUrl="/api/freights/cities" emptyForm={EMPTY_CI}
-                    cols={[{ key:"city", label:"City" }]}
+                    cols={[{ key:"city", label:"City" }, { key:"country_iso", label:"Country ISO" }, { key:"buyer_email", label:"Buyer Email" }]}
                     formFields={[
                         { k:"city", l:"City", type:"text" },
                         { k:"country_iso", l:"Country ISO", type:"text" },
@@ -818,7 +793,7 @@ export default function FreightsSetupPage() {
             {store.airlinesModal && (
                 <SetupModal title="Airlines" onClose={() => store.setAirlinesModal(false)}
                     listUrl="/api/freights/airlines" detailUrl="/api/freights/airlines" emptyForm={EMPTY_AL}
-                    cols={[{ key:"airline", label:"Airline" }]}
+                    cols={[{ key:"airline", label:"Airline" }, { key:"cod_linea", label:"Code" }, { key:"city", label:"City" }, { key:"phone", label:"Phone" }, { key:"email", label:"Email" }]}
                     formFields={[
                         { k:"airline", l:"Airline Name", type:"text" },
                         { k:"cod_linea", l:"Line Code", type:"text" },
@@ -837,7 +812,7 @@ export default function FreightsSetupPage() {
             {store.seasonsModal && (
                 <SetupModal title="Seasons" onClose={() => store.setSeasonsModal(false)}
                     listUrl="/api/freights/seasons" detailUrl="/api/freights/seasons" emptyForm={EMPTY_SE}
-                    cols={[{ key:"season", label:"Season" }]}
+                    cols={[{ key:"season", label:"Season" }, { key:"sh_season", label:"Short Name" }, { key:"startdate", label:"Start Date", render: (v:any)=>v?.split('T')[0]||'' }, { key:"enddate", label:"End Date", render: (v:any)=>v?.split('T')[0]||'' }]}
                     formFields={[
                         { k:"season", l:"Season Name", type:"text" },
                         { k:"sh_season", l:"Short Name", type:"text" },
