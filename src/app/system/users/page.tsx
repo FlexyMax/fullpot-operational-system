@@ -4,12 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Search, Users, Plus, Pencil, Trash2, Calendar, Check, AlertCircle, XCircle, Menu } from "lucide-react";
+import { Search, Users, Plus, Pencil, Trash2, Calendar, Check, AlertCircle, XCircle } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { AppFooter } from "@/components/layout/AppFooter";
 import PanelGrid from "@/components/ui/PanelGrid";
 import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
-import { GridMenu } from "@/components/GridMenu";
 import { useUserStore } from "@/store/system/useUserStore";
 import { UserUpsertModal } from "./components/UserUpsertModal";
 import { UserLogModal } from "./components/UserLogModal";
@@ -93,93 +92,95 @@ export default function UsersDefinitionPage() {
         <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
             <AppHeader title="Users" />
 
-            <div className="flex flex-col flex-1 p-2 overflow-hidden min-h-0">
-                <PanelGrid
-                    title="System Users"
-                    icon={Users}
-                    recordCount={filteredUsers.length}
-                    refreshing={isFetching}
-                    searchValue={searchTerm}
-                    onSearchChange={setSearchTerm}
-                    searchPlaceholder="Search users..."
-                    headerRight={
-                        <>
-                            {saveMsg && (
-                                <span className="flex items-center gap-1 text-green-500 text-[10px] font-bold mr-2 bg-green-50 px-2 py-1 rounded">
-                                    <Check size={12} />{saveMsg}
-                                </span>
-                            )}
-                            <GridMenu
-                                items={[
-                                    { label: "New User", icon: Plus, color: "green", onClick: handleAdd, disabled: !perms.canCreate },
-                                    { label: "Edit User", icon: Pencil, color: "orange", onClick: handleEdit, disabled: !selectedRow || !perms.canEdit },
-                                    { label: "Delete User", icon: Trash2, color: "red", onClick: () => setDeleteDialog(true), disabled: !selectedRow || !perms.canDelete },
-                                    { label: "Activity Log", icon: Calendar, color: "blue", onClick: () => setLogModalOpen(true), disabled: !selectedRow },
-                                ]}
-                            />
-                        </>
-                    }
-                    className="flex-1"
-                >
-                    <div className="overflow-auto flex-1">
-                        <PanelGridTable>
-                            <PanelGridThead>
-                                <PanelGridTh>Code</PanelGridTh>
-                                <PanelGridTh>ID / Cédula</PanelGridTh>
-                                <PanelGridTh>Name</PanelGridTh>
-                                <PanelGridTh>Username</PanelGridTh>
-                                <PanelGridTh>E-mail</PanelGridTh>
-                                <PanelGridTh>Position</PanelGridTh>
-                                <PanelGridTh>Level</PanelGridTh>
-                                <PanelGridTh className="text-center">Status</PanelGridTh>
-                            </PanelGridThead>
-                            <PanelGridTbody>
-                                {filteredUsers.map((u: any) => {
-                                    const isSelected = selectedRow?.unico === u.unico;
-                                    return (
-                                        <PanelGridTr
-                                            key={u.unico}
-                                            selected={isSelected}
-                                            onClick={() => handleSelect(u)}
-                                            className="cursor-pointer"
-                                        >
-                                            <PanelGridTd className="font-mono text-[10px] text-gray-500">{u.unico}</PanelGridTd>
-                                            <PanelGridTd>{String(u.cedula || "")}</PanelGridTd>
-                                            <PanelGridTd className="font-semibold">{String(u.apellidos || "").trim()}, {String(u.nombres || "").trim()}</PanelGridTd>
-                                            <PanelGridTd className="text-blue-700">{String(u.username || "")}</PanelGridTd>
-                                            <PanelGridTd className="text-gray-500">{String(u.correo || "")}</PanelGridTd>
-                                            <PanelGridTd>{String(u.cargo || "")}</PanelGridTd>
-                                            <PanelGridTd>{String(u.nivel || "")}</PanelGridTd>
-                                            <PanelGridTd className="text-center">
-                                                <div className={cn("inline-flex w-2.5 h-2.5 rounded-full", u.activo ? "bg-green-500" : "bg-red-500")} title={u.activo ? "Active" : "Inactive"} />
-                                            </PanelGridTd>
-                                        </PanelGridTr>
-                                    );
-                                })}
-                            </PanelGridTbody>
-                        </PanelGridTable>
-                    </div>
-                </PanelGrid>
+            {/* Search toolbar */}
+            <div className="bg-white border-b border-gray-200 px-3 py-2 flex items-center gap-2 shrink-0 shadow-sm flex-wrap">
+                <div className="relative">
+                    <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+                        placeholder="Search users..." className="pl-7 pr-3 py-1.5 text-xs border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506] w-80" />
+                </div>
+                {saveMsg && <span className="text-green-600 text-[10px] font-bold flex items-center gap-1 ml-2"><Check size={11} />{saveMsg}</span>}
             </div>
+
+            <PanelGrid
+                title="System Users"
+                icon={Users}
+                recordCount={filteredUsers.length}
+                refreshing={isFetching}
+                menuItems={[
+                    { label: "New User", icon: Plus, color: "green", onClick: handleAdd, disabled: !perms.canCreate },
+                    { label: "Edit User", icon: Pencil, color: "orange", onClick: handleEdit, disabled: !selectedRow || !perms.canEdit },
+                    { label: "Delete User", icon: Trash2, color: "orange", onClick: () => setDeleteDialog(true), disabled: !selectedRow || !perms.canDelete },
+                    { separator: true },
+                    { label: "Activity Log", icon: Calendar, color: "blue", onClick: () => setLogModalOpen(true), disabled: !selectedRow },
+                ]}
+                className="mx-2 mt-2 mb-3 flex-1 flex flex-col min-h-0"
+            >
+                <div className="overflow-auto flex-1">
+                    <PanelGridTable>
+                        <PanelGridThead>
+                            <PanelGridTh>Code</PanelGridTh>
+                            <PanelGridTh>ID / Cédula</PanelGridTh>
+                            <PanelGridTh>Name</PanelGridTh>
+                            <PanelGridTh>Username</PanelGridTh>
+                            <PanelGridTh>E-mail</PanelGridTh>
+                            <PanelGridTh className="hidden md:table-cell">Position</PanelGridTh>
+                            <PanelGridTh className="hidden sm:table-cell">Level</PanelGridTh>
+                            <PanelGridTh className="text-center">Active</PanelGridTh>
+                        </PanelGridThead>
+                        <PanelGridTbody>
+                            {filteredUsers.length === 0 ? (
+                                <tr><td colSpan={8} className="p-6 text-center text-gray-300 text-xs">No users found</td></tr>
+                            ) : filteredUsers.map((u: any) => {
+                                const isSelected = selectedRow?.unico === u.unico;
+                                return (
+                                    <PanelGridTr
+                                        key={u.unico}
+                                        selected={isSelected}
+                                        onClick={() => handleSelect(u)}
+                                        className="cursor-pointer"
+                                    >
+                                        <PanelGridTd className="font-mono text-[9px] text-gray-400 border-r">{u.unico}</PanelGridTd>
+                                        <PanelGridTd className="border-r">{String(u.cedula || "")}</PanelGridTd>
+                                        <PanelGridTd className="font-bold border-r">{String(u.apellidos || "").trim()}, {String(u.nombres || "").trim()}</PanelGridTd>
+                                        <PanelGridTd className="border-r">{String(u.username || "")}</PanelGridTd>
+                                        <PanelGridTd className="border-r">{String(u.correo || "")}</PanelGridTd>
+                                        <PanelGridTd className="hidden md:table-cell border-r text-gray-500">{String(u.cargo || "")}</PanelGridTd>
+                                        <PanelGridTd className="hidden sm:table-cell border-r">{String(u.nivel || "")}</PanelGridTd>
+                                        <PanelGridTd className="text-center">
+                                            {u.activo ? <Check size={10} className="text-green-500 mx-auto" /> : "—"}
+                                        </PanelGridTd>
+                                    </PanelGridTr>
+                                );
+                            })}
+                        </PanelGridTbody>
+                    </PanelGridTable>
+                </div>
+            </PanelGrid>
 
             <AppFooter areaLabel="System Management" database="Sistema" />
 
-            {/* Floating Action Menu for Mobile */}
-            <div className={cn("fixed bottom-6 right-6 flex flex-col-reverse gap-3 z-40 lg:hidden transition-all duration-300", selectedRow ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8 pointer-events-none")}>
-                <button onClick={() => setDeleteDialog(true)} disabled={!perms.canDelete} className="w-12 h-12 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-105 active:scale-95 disabled:opacity-50">
-                    <Trash2 size={20} />
-                </button>
-                <button onClick={handleEdit} disabled={!perms.canEdit} className="w-12 h-12 bg-orange-500 hover:bg-orange-600 text-white rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-105 active:scale-95 disabled:opacity-50">
-                    <Pencil size={20} />
-                </button>
-                <button onClick={() => setLogModalOpen(true)} className="w-12 h-12 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-105 active:scale-95">
-                    <Calendar size={20} />
+            {/* Mobile Add Button */}
+            <div className={cn("md:hidden fixed bottom-6 right-6 z-40 transition-all duration-300", selectedRow ? "opacity-0 translate-y-8 pointer-events-none" : "opacity-100 translate-y-0")}>
+                <button onClick={handleAdd} disabled={!perms.canCreate} className="w-12 h-12 bg-[#FB7506] hover:bg-orange-600 text-white rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-105 active:scale-95 disabled:opacity-50">
+                    <Plus size={24} />
                 </button>
             </div>
-            {/* Always visible add button for mobile */}
-            <button onClick={handleAdd} disabled={!perms.canCreate} className="fixed bottom-6 right-6 lg:hidden w-12 h-12 bg-[#FB7506] hover:bg-orange-600 text-white rounded-full shadow-xl flex items-center justify-center z-30 transition-transform hover:scale-105 active:scale-95 disabled:opacity-50">
-                <Plus size={24} />
-            </button>
+
+            {/* Slide-up Action Bar for Mobile Selection */}
+            <div className={cn("md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] transition-transform duration-300 ease-in-out pb-4 pt-2 px-2", selectedRow ? "translate-y-0" : "translate-y-full")}>
+                <div className="flex items-center justify-around">
+                    <button onClick={handleEdit} disabled={!perms.canEdit} className="flex flex-col items-center gap-1 p-2 text-orange-600 disabled:opacity-30">
+                        <Pencil size={20} /><span className="text-[10px] font-bold uppercase">Edit</span>
+                    </button>
+                    <button onClick={() => setDeleteDialog(true)} disabled={!perms.canDelete} className="flex flex-col items-center gap-1 p-2 text-red-600 disabled:opacity-30">
+                        <Trash2 size={20} /><span className="text-[10px] font-bold uppercase">Delete</span>
+                    </button>
+                    <button onClick={() => setLogModalOpen(true)} className="flex flex-col items-center gap-1 p-2 text-blue-600">
+                        <Calendar size={20} /><span className="text-[10px] font-bold uppercase">Log</span>
+                    </button>
+                </div>
+            </div>
 
             <UserUpsertModal onSaved={() => {
                 qc.invalidateQueries({ queryKey: ["sys-users-list"] });
@@ -190,16 +191,13 @@ export default function UsersDefinitionPage() {
 
             {deleteDialog && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
                         <div className="p-6 flex flex-col items-center gap-4">
-                            <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center">
-                                <Trash2 size={24} className="text-red-600" />
-                            </div>
+                            <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center"><Trash2 size={24} className="text-red-600" /></div>
                             <div className="text-center">
                                 <h3 className="font-black text-gray-900 text-base mb-1">Delete User?</h3>
-                                <p className="text-sm text-gray-500">
-                                    Delete <strong>{selectedRow?.apellidos}, {selectedRow?.nombres}</strong>?
-                                    This cannot be undone.
+                                <p className="text-sm text-gray-500 leading-relaxed">
+                                    Delete <strong>{selectedRow?.apellidos}, {selectedRow?.nombres}</strong>?<br/>This cannot be undone.
                                 </p>
                                 {delError && <p className="text-xs text-red-500 mt-2 font-bold">{delError}</p>}
                             </div>
