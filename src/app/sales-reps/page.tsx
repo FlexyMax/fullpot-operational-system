@@ -1008,7 +1008,7 @@ export default function SalesRepsPage() {
                         </div>
 
                         {/* Modal inner tabs */}
-                        <div className="bg-white border-b border-gray-200 flex items-end px-2 gap-1 shrink-0">
+                        <div className="bg-white border-b border-gray-200 flex items-end px-2 gap-1 shrink-0 overflow-x-auto">
                             {(["setup", "permissions"] as const).map(tab => (
                                 <button key={tab} onClick={() => setModalTab(tab)}
                                     className={cn(
@@ -1157,9 +1157,9 @@ export default function SalesRepsPage() {
 
             {/* ─── Customer Reassign Modal ─────────────────────────────────────────────── */}
             {custModal && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end md:items-center justify-center z-[60] p-0 md:p-4"
                     onClick={() => setCustModal(false)}>
-                    <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden"
+                    <div className="bg-white rounded-t-2xl md:rounded-lg shadow-2xl w-full max-w-2xl max-h-[95vh] flex flex-col overflow-hidden"
                         onClick={e => e.stopPropagation()}>
 
                         <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 rounded-t-lg shrink-0">
@@ -1172,7 +1172,7 @@ export default function SalesRepsPage() {
                             </button>
                         </div>
 
-                        <div className="flex flex-1 min-h-0 gap-4 p-4 bg-gray-100">
+                        <div className="flex flex-1 min-h-0 gap-4 p-4 bg-gray-100 flex-col md:flex-row overflow-y-auto md:overflow-hidden">
                             {/* Left Panel: Current Salesman Customers */}
                             <div className="flex-1 flex flex-col min-h-0 border border-gray-200 rounded-lg shadow-sm bg-white overflow-hidden" style={{ minHeight: "300px" }}>
                                 <div className="p-3 bg-white border-b border-gray-200 shrink-0">
