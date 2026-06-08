@@ -715,6 +715,15 @@ export default function SalesRepsPage() {
 
             <AppHeader title="Sales Reps" />
 
+            {/* Search toolbar */}
+            <div className="bg-white border-b border-gray-200 px-3 py-2 flex items-center gap-2 shrink-0 shadow-sm flex-wrap">
+                <div className="relative flex-1 md:flex-none">
+                    <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input type="text" value={search} onChange={e => setSearch(e.target.value)}
+                        placeholder="Search sales reps..." className="w-full md:w-80 pl-7 pr-3 py-1.5 text-xs border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506]" />
+                </div>
+            </div>
+
             {/* ── Main Layout ── */}
             <div className="flex flex-col flex-1 p-2 overflow-hidden min-h-0">
 

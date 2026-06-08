@@ -277,6 +277,15 @@ export default function CarriersDefinitionPage() {
         <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
             <AppHeader title="Carriers" />
 
+            {/* Search toolbar */}
+            <div className="bg-white border-b border-gray-200 px-3 py-2 flex items-center gap-2 shrink-0 shadow-sm flex-wrap">
+                <div className="relative flex-1 md:flex-none">
+                    <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input type="text" value={carrSearch} onChange={e => setCarrSearch(e.target.value)}
+                        placeholder="Search carriers..." className="w-full md:w-80 pl-7 pr-3 py-1.5 text-xs border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506]" />
+                </div>
+            </div>
+
             {/* ── Full-page grid ─────────────────────────────────────────────── */}
             <div className="flex flex-1 min-h-0 p-2">
                 <PanelGrid
@@ -284,9 +293,6 @@ export default function CarriersDefinitionPage() {
                     title="Carriers"
                     icon={Truck}
                     recordCount={filteredList.length}
-                    searchValue={carrSearch}
-                    onSearchChange={setCarrSearch}
-                    searchPlaceholder="Search carriers..."
                     onRefresh={() => refetchList()}
                     refreshing={loadingList}
                     headerRight={
@@ -329,16 +335,7 @@ export default function CarriersDefinitionPage() {
                         { label: "Other Settings", icon: Settings, color: "orange", onClick: () => { if (selUnico) { setOtherForm({ internal_delivery: Boolean(form.internal_delivery) }); setOthersModal(true); } }, disabled: !selUnico },
                     ]}
                 >
-                    <div className="p-2 border-b border-gray-100 shrink-0 bg-gray-50 md:hidden">
-                        <div className="relative">
-                            <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input
-                                type="text" value={carrSearch} onChange={e => setCarrSearch(e.target.value)}
-                                placeholder="Search carriers..."
-                                className="w-full pl-7 pr-2 h-8 text-xs border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506]"
-                            />
-                        </div>
-                    </div>
+
                     <PanelGridTable>
                         <PanelGridThead>
                             <PanelGridTh className="w-5" align="center">{""}</PanelGridTh>
