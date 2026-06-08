@@ -327,3 +327,28 @@ src/
 
 > Keep pages as single `page.tsx` files with inline sub-components.
 > Split into separate files only when the file exceeds ~1500 lines.
+
+---
+
+## React Query & Infinite Renders (CRITICAL)
+
+**NEVER** use array literals `[]` or object literals `{}` as default values in `useQuery` destructuring if that data is used as a dependency in `useEffect`, `useMemo`, or passed to components that re-render based on reference equality.
+
+When `data` is `undefined` (while fetching), `const { data = [] } = useQuery(...)` creates a **new array reference on every render**. This causes catastrophic infinite render loops ("Maximum update depth exceeded" / "Application error").
+
+**DO THIS:**
+```tsx
+const EMPTY_ARR: any[] = []; // Define outside component or top of file
+
+export default function MyPage() {
+    const { data: myData = EMPTY_ARR } = useQuery(...);
+}
+```
+
+**NEVER DO THIS:**
+```tsx
+export default function MyPage() {
+    // ❌ FATAL ERROR: creates new array on every render while loading
+    const { data: myData = [] } = useQuery(...); 
+}
+```
