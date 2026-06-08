@@ -134,7 +134,7 @@ function DualPanel({
     const [busy, setBusy] = useState(false);
 
     const handleAdd = async () => {
-        const row = availableRows.find(r => t(r[availableKey]) === selAvailable);
+        const row = availableRows.find(r => t(r[availableKey.toUpperCase()] ?? r[availableKey.toLowerCase()]) === selAvailable);
         if (!row) return;
         setBusy(true);
         try { await onAdd(row); setSelAvailable(null); }
@@ -142,7 +142,7 @@ function DualPanel({
     };
 
     const handleRemove = async () => {
-        const row = assignedRows.find(r => t(r[assignedKey]) === selAssigned);
+        const row = assignedRows.find(r => t(r[assignedKey.toUpperCase()] ?? r[assignedKey.toLowerCase()]) === selAssigned);
         if (!row) return;
         setBusy(true);
         try { await onRemove(row); setSelAssigned(null); }
@@ -151,55 +151,7 @@ function DualPanel({
 
     return (
         <div className="flex flex-col md:flex-row gap-4 h-full min-h-0">
-            {/* Assigned */}
-            <div className="flex-1 flex flex-col min-h-0 border border-gray-200 rounded-lg shadow-sm bg-white overflow-hidden" style={{ minHeight: "200px" }}>
-                <div className="bg-gray-50 border-b border-gray-200 px-3 py-2 flex justify-between items-center shrink-0">
-                    <span className="font-black text-[11px] text-gray-700 uppercase tracking-widest">Assigned</span>
-                    <span className="text-[10px] font-bold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">{assignedRows.length}</span>
-                </div>
-                <div className="flex-1 overflow-auto">
-                    <PanelGridTable>
-                        <PanelGridThead>
-                            {assignedCols.map(c => <PanelGridTh key={c.key}>{c.label}</PanelGridTh>)}
-                        </PanelGridThead>
-                        <PanelGridTbody>
-                            {loading ? (
-                                <tr><td colSpan={assignedCols.length} className="p-4 text-center"><RefreshCcw size={14} className="animate-spin mx-auto text-gray-400" /></td></tr>
-                            ) : assignedRows.length === 0 ? (
-                                <tr><td colSpan={assignedCols.length} className="p-4 text-center text-gray-300 text-xs italic">None assigned</td></tr>
-                            ) : assignedRows.map((row, i) => {
-                                const rowKey = t(row[assignedKey]);
-                                const selected = selAssigned === rowKey;
-                                return (
-                                    <PanelGridTr key={i} selected={selected} onClick={() => setSelAssigned(selected ? null : rowKey)}>
-                                        {assignedCols.map(c => (
-                                            <PanelGridTd key={c.key}>{t(row[c.key.toUpperCase()] ?? row[c.key])}</PanelGridTd>
-                                        ))}
-                                    </PanelGridTr>
-                                );
-                            })}
-                        </PanelGridTbody>
-                    </PanelGridTable>
-                </div>
-            </div>
-
-            {/* Buttons */}
-            <div className="flex md:flex-col flex-row items-center justify-center gap-3 shrink-0 py-2 md:py-0">
-                <button onClick={handleAdd} disabled={!selAvailable || busy}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-[#FB7506] hover:bg-orange-600 disabled:bg-gray-200 disabled:text-gray-400 text-white rounded text-xs font-black uppercase tracking-widest transition-all shadow-sm">
-                    <ChevronLeft size={14} className="hidden md:block" /><ChevronLeft size={14} className="hidden md:block -ml-2" />
-                    <span className="md:hidden"><ChevronLeft size={14} /></span>
-                    Add
-                </button>
-                <button onClick={handleRemove} disabled={!selAssigned || busy}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-200 disabled:text-gray-400 text-white rounded text-xs font-black uppercase tracking-widest transition-all shadow-sm">
-                    Remove
-                    <ChevronRight size={14} className="hidden md:block" /><ChevronRight size={14} className="hidden md:block -ml-2" />
-                    <span className="md:hidden"><ChevronRight size={14} /></span>
-                </button>
-            </div>
-
-            {/* Available */}
+            {/* Available (Left) */}
             <div className="flex-1 flex flex-col min-h-0 border border-gray-200 rounded-lg shadow-sm bg-white overflow-hidden" style={{ minHeight: "200px" }}>
                 <div className="bg-gray-50 border-b border-gray-200 px-3 py-2 flex justify-between items-center shrink-0">
                     <span className="font-black text-[11px] text-gray-700 uppercase tracking-widest">Available</span>
@@ -216,12 +168,60 @@ function DualPanel({
                             ) : availableRows.length === 0 ? (
                                 <tr><td colSpan={availableCols.length} className="p-4 text-center text-gray-300 text-xs italic">None available</td></tr>
                             ) : availableRows.map((row, i) => {
-                                const rowKey = t(row[availableKey]);
+                                const rowKey = t(row[availableKey.toUpperCase()] ?? row[availableKey.toLowerCase()]);
                                 const selected = selAvailable === rowKey;
                                 return (
                                     <PanelGridTr key={i} selected={selected} onClick={() => setSelAvailable(selected ? null : rowKey)}>
                                         {availableCols.map(c => (
-                                            <PanelGridTd key={c.key}>{t(row[c.key.toUpperCase()] ?? row[c.key])}</PanelGridTd>
+                                            <PanelGridTd key={c.key}>{t(row[c.key.toUpperCase()] ?? row[c.key.toLowerCase()])}</PanelGridTd>
+                                        ))}
+                                    </PanelGridTr>
+                                );
+                            })}
+                        </PanelGridTbody>
+                    </PanelGridTable>
+                </div>
+            </div>
+
+            {/* Buttons (Center) */}
+            <div className="flex md:flex-col flex-row items-center justify-center gap-3 shrink-0 py-2 md:py-0">
+                <button onClick={handleAdd} disabled={!selAvailable || busy}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-[#FB7506] hover:bg-orange-600 disabled:bg-gray-200 disabled:text-gray-400 text-white rounded text-xs font-black uppercase tracking-widest transition-all shadow-sm">
+                    <span className="md:hidden"><ChevronRight size={14} /></span>
+                    Add
+                    <ChevronRight size={14} className="hidden md:block" /><ChevronRight size={14} className="hidden md:block -ml-2" />
+                </button>
+                <button onClick={handleRemove} disabled={!selAssigned || busy}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-200 disabled:text-gray-400 text-white rounded text-xs font-black uppercase tracking-widest transition-all shadow-sm">
+                    <ChevronLeft size={14} className="hidden md:block" /><ChevronLeft size={14} className="hidden md:block -ml-2" />
+                    <span className="md:hidden"><ChevronLeft size={14} /></span>
+                    Remove
+                </button>
+            </div>
+
+            {/* Assigned (Right) */}
+            <div className="flex-1 flex flex-col min-h-0 border border-gray-200 rounded-lg shadow-sm bg-white overflow-hidden" style={{ minHeight: "200px" }}>
+                <div className="bg-gray-50 border-b border-gray-200 px-3 py-2 flex justify-between items-center shrink-0">
+                    <span className="font-black text-[11px] text-gray-700 uppercase tracking-widest">Assigned</span>
+                    <span className="text-[10px] font-bold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">{assignedRows.length}</span>
+                </div>
+                <div className="flex-1 overflow-auto">
+                    <PanelGridTable>
+                        <PanelGridThead>
+                            {assignedCols.map(c => <PanelGridTh key={c.key}>{c.label}</PanelGridTh>)}
+                        </PanelGridThead>
+                        <PanelGridTbody>
+                            {loading ? (
+                                <tr><td colSpan={assignedCols.length} className="p-4 text-center"><RefreshCcw size={14} className="animate-spin mx-auto text-gray-400" /></td></tr>
+                            ) : assignedRows.length === 0 ? (
+                                <tr><td colSpan={assignedCols.length} className="p-4 text-center text-gray-300 text-xs italic">None assigned</td></tr>
+                            ) : assignedRows.map((row, i) => {
+                                const rowKey = t(row[assignedKey.toUpperCase()] ?? row[assignedKey.toLowerCase()]);
+                                const selected = selAssigned === rowKey;
+                                return (
+                                    <PanelGridTr key={i} selected={selected} onClick={() => setSelAssigned(selected ? null : rowKey)}>
+                                        {assignedCols.map(c => (
+                                            <PanelGridTd key={c.key}>{t(row[c.key.toUpperCase()] ?? row[c.key.toLowerCase()])}</PanelGridTd>
                                         ))}
                                     </PanelGridTr>
                                 );
@@ -274,7 +274,7 @@ export default function SalesRepsPage() {
     // Modal state
     const [modalOpen,    setModalOpen]    = useState(false);
     const [modalMode,    setModalMode]    = useState<"add" | "edit">("add");
-    const [modalTab,     setModalTab]     = useState<"setup" | "buyer" | "others">("setup");
+    const [modalTab,     setModalTab]     = useState<"setup" | "permissions">("setup");
     const [form,         setForm]         = useState<any>(EMPTY_FORM);
     const [saving,       setSaving]       = useState(false);
     const [formError,    setFormError]    = useState<string | null>(null);
@@ -324,13 +324,13 @@ export default function SalesRepsPage() {
     });
 
     const { data: assignedClasses = [], isFetching: loadingClassesA, refetch: refetchClassesA } = useQuery({
-        queryKey: ["sr-classes-assigned", selectedUq],
+        queryKey: ["sr-product-classes-assigned", selectedUq],
         queryFn:  () => fetch(`/api/sales-reps/product-classes?salesman_uq=${selectedUq}`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         enabled:  !!selectedUq && activeModal === "product-classes" && !!tabLoaded["product-classes"],
         staleTime: 0,
     });
     const { data: availableClasses = [], isFetching: loadingClassesB, refetch: refetchClassesB } = useQuery({
-        queryKey: ["sr-classes-available", selectedUq],
+        queryKey: ["sr-product-classes-available", selectedUq],
         queryFn:  () => fetch(`/api/sales-reps/product-classes?salesman_uq=${selectedUq}&not_in=1`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         enabled:  !!selectedUq && activeModal === "product-classes" && !!tabLoaded["product-classes"],
         staleTime: 0,
@@ -529,8 +529,9 @@ export default function SalesRepsPage() {
         const q = custSearch.trim().toLowerCase();
         if (!q) return salesmanSearch as any[];
         return (salesmanSearch as any[]).filter(r =>
-            t(r.FIRST_NAME).toLowerCase().includes(q) ||
-            t(r.LAST_NAME).toLowerCase().includes(q)
+            t(r.FIRST_NAME ?? r.salesman_fname).toLowerCase().includes(q) ||
+            t(r.LAST_NAME ?? r.salesman_lname).toLowerCase().includes(q) ||
+            t(r.SALESMAN_NAME ?? r.salesman_name).toLowerCase().includes(q)
         );
     }, [salesmanSearch, custSearch]);
 
@@ -940,8 +941,8 @@ export default function SalesRepsPage() {
                                 <DualPanel
                                     assignedRows={assignedSalesmen as any[]}
                                     availableRows={availableSalesmen as any[]}
-                                    assignedCols={[{ key: "SALESMAN_NAME", label: "Salesman" }]}
-                                    availableCols={[{ key: "SALESMAN_NAME", label: "Salesman" }]}
+                                    assignedCols={[{ key: "SALESMAN", label: "Salesman" }]}
+                                    availableCols={[{ key: "SALESMAN", label: "Salesman" }]}
                                     onAdd={handleAddSalesman}
                                     onRemove={handleRemoveSalesman}
                                     loading={loadingSalesmenA || loadingSalesmenB}
@@ -991,13 +992,13 @@ export default function SalesRepsPage() {
 
                         {/* Modal inner tabs */}
                         <div className="bg-[#374151] flex items-end px-2 gap-0.5 shrink-0">
-                            {(["setup", "buyer", "others"] as const).map(tab => (
+                            {(["setup", "permissions"] as const).map(tab => (
                                 <button key={tab} onClick={() => setModalTab(tab)}
                                     className={cn(
                                         "px-4 h-7 text-[10px] font-black uppercase tracking-wider rounded-t transition-all",
                                         modalTab === tab ? "bg-white text-[#FB7506]" : "text-gray-400 hover:text-white hover:bg-white/10"
                                     )}>
-                                    {tab === "setup" ? "Salesman Setup" : tab === "buyer" ? "Buyer Setup" : "Others"}
+                                    {tab === "setup" ? "Salesman Setup" : "Permissions"}
                                 </button>
                             ))}
                         </div>
@@ -1085,7 +1086,7 @@ export default function SalesRepsPage() {
                         {/* Modal tab content */}
                         <div className="flex-1 overflow-y-auto p-3">
 
-                            {/* ── Salesman Setup Tab: numeric fields + permission grid ── */}
+                            {/* ── Salesman Setup Tab: numeric fields ── */}
                             {modalTab === "setup" && (
                                 <div className="space-y-2">
                                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
@@ -1104,28 +1105,21 @@ export default function SalesRepsPage() {
                                             </div>
                                         ))}
                                     </div>
-                                    {/* Permission grid: 2 cols mobile → 3 sm → 4 md → 5 lg */}
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-1 gap-y-0 border-t border-gray-100 pt-2">
-                                        {PERM_LABELS.map(([key, label]) => (
-                                            <label key={key} className="flex items-center gap-1.5 cursor-pointer py-1 px-1 rounded hover:bg-gray-50">
-                                                <input type="checkbox" checked={Boolean(form[key])}
-                                                    onChange={e => setField(key, e.target.checked)}
-                                                    className="w-4 h-4 md:w-3.5 md:h-3.5 accent-[#FB7506] shrink-0" />
-                                                <span className="text-[11px] md:text-[10px] font-semibold text-gray-700 leading-tight">{label}</span>
-                                            </label>
-                                        ))}
-                                    </div>
                                 </div>
                             )}
 
-                            {/* ── Buyer Setup Tab ── */}
-                            {modalTab === "buyer" && (
-                                <p className="text-xs text-gray-400 italic text-center py-8">Buyer Setup — coming soon.</p>
-                            )}
-
-                            {/* ── Others Tab ── */}
-                            {modalTab === "others" && (
-                                <p className="text-xs text-gray-400 italic text-center py-8">Additional settings — coming soon.</p>
+                            {/* ── Permissions Tab ── */}
+                            {modalTab === "permissions" && (
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-1 gap-y-0 pt-1">
+                                    {PERM_LABELS.map(([key, label]) => (
+                                        <label key={key} className="flex items-center gap-1.5 cursor-pointer py-1 px-1 rounded hover:bg-gray-50">
+                                            <input type="checkbox" checked={Boolean(form[key])}
+                                                onChange={e => setField(key, e.target.checked)}
+                                                className="w-4 h-4 md:w-3.5 md:h-3.5 accent-[#FB7506] shrink-0" />
+                                            <span className="text-[11px] md:text-[10px] font-semibold text-gray-700 leading-tight">{label}</span>
+                                        </label>
+                                    ))}
+                                </div>
                             )}
                         </div>
                     </div>
@@ -1214,8 +1208,8 @@ export default function SalesRepsPage() {
                                                 return (
                                                     <tr key={i} onClick={() => setNewSalesUq(sel ? null : uq)}
                                                         className={cn("cursor-pointer text-xs transition-colors", sel ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50")}>
-                                                        <td className="px-2 py-1.5 border-r border-gray-50">{`${t(row.FIRST_NAME)} ${t(row.LAST_NAME)}`.trim()}</td>
-                                                        <td className="px-2 py-1.5 font-mono text-gray-500">{t(row.OLD_CODE)}</td>
+                                                        <td className="px-2 py-1.5 border-r border-gray-50">{t(row.SALESMAN_NAME ?? row.salesman_name) || `${t(row.FIRST_NAME ?? row.salesman_fname)} ${t(row.LAST_NAME ?? row.salesman_lname)}`.trim()}</td>
+                                                        <td className="px-2 py-1.5 font-mono text-gray-500">{t(row.OLD_CODE ?? row.old_code)}</td>
                                                     </tr>
                                                 );
                                             })}
