@@ -91,14 +91,10 @@ function MenuDropdown({ onAdd, onEdit, onDel, canEdit, canDel, menuOpen, setMenu
         <div className="relative shrink-0">
             <button
                 onClick={() => setMenuOpen((o: boolean) => !o)}
-                className="flex items-center justify-center w-10 h-10 bg-[#FB7506] hover:bg-orange-600 text-white rounded-lg shadow-sm transition-all active:scale-95"
+                className="flex items-center justify-center p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
                 title="Menu"
             >
-                <svg width="18" height="14" viewBox="0 0 18 14" fill="none">
-                    <rect y="0"    width="18" height="2.5" rx="1.25" fill="white"/>
-                    <rect y="5.75" width="18" height="2.5" rx="1.25" fill="white"/>
-                    <rect y="11.5" width="18" height="2.5" rx="1.25" fill="white"/>
-                </svg>
+                <Menu size={20} />
             </button>
             {menuOpen && (
                 <div className="absolute right-0 top-full mt-1.5 w-56 bg-white border border-gray-200 rounded-lg shadow-2xl z-50 overflow-hidden">
@@ -539,14 +535,14 @@ export default function FreightsSetupPage() {
                             </PanelGridThead>
                             <PanelGridTbody>
                                 {freights.length === 0 ? (
-                                    <tr><td colSpan={4} className="p-4 text-center text-gray-300 italic text-xs">{store.selWh ? "No freight rates" : "Select a warehouse"}</td></tr>
+                                    <PanelGridTr><PanelGridTd colSpan={4} className="p-4 text-center text-gray-300 italic text-xs">{store.selWh ? "No freight rates" : "Select a warehouse"}</PanelGridTd></PanelGridTr>
                                 ) : freights.map((r: any) => (
-                                    <tr key={r.unico} onClick={() => { store.setSelFr(r); store.setSelHa(null); store.setSelAt(null); }} className={cn("cursor-pointer transition-colors", store.selFr?.unico === r.unico ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50/80")}>
+                                    <PanelGridTr key={r.unico} selected={store.selFr?.unico === r.unico} onClick={() => { if(store.selFr?.unico === r.unico) store.setSelFr(null); else { store.setSelFr(r); store.setSelHa(null); store.setSelAt(null); } }}>
                                         <PanelGridTd>{t(r.season)}</PanelGridTd>
                                         <PanelGridTd>{t(r.city)}</PanelGridTd>
                                         <PanelGridTd className="text-right">{parseFloat(r.freight||0).toFixed(4)}</PanelGridTd>
                                         <PanelGridTd className="text-right">{parseFloat(r.freight_kg||0).toFixed(2)}</PanelGridTd>
-                                    </tr>
+                                    </PanelGridTr>
                                 ))}
                             </PanelGridTbody>
                         </PanelGridTable>
@@ -575,12 +571,12 @@ export default function FreightsSetupPage() {
                             </PanelGridThead>
                             <PanelGridTbody>
                                 {handling.length === 0 ? (
-                                    <tr><td colSpan={2} className="p-4 text-center text-gray-300 italic text-xs">{store.selWh ? "No handling rates" : "Select a warehouse"}</td></tr>
+                                    <PanelGridTr><PanelGridTd colSpan={2} className="p-4 text-center text-gray-300 italic text-xs">{store.selWh ? "No handling rates" : "Select a warehouse"}</PanelGridTd></PanelGridTr>
                                 ) : handling.map((r: any) => (
-                                    <tr key={r.unico} onClick={() => { store.setSelHa(r); store.setSelFr(null); store.setSelAt(null); }} className={cn("cursor-pointer transition-colors", store.selHa?.unico === r.unico ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50/80")}>
+                                    <PanelGridTr key={r.unico} selected={store.selHa?.unico === r.unico} onClick={() => { if(store.selHa?.unico === r.unico) store.setSelHa(null); else { store.setSelHa(r); store.setSelFr(null); store.setSelAt(null); } }}>
                                         <PanelGridTd>{t(r.season)}</PanelGridTd>
                                         <PanelGridTd className="text-right">{parseFloat(r.handling||0).toFixed(4)}</PanelGridTd>
-                                    </tr>
+                                    </PanelGridTr>
                                 ))}
                             </PanelGridTbody>
                         </PanelGridTable>
@@ -610,13 +606,13 @@ export default function FreightsSetupPage() {
                             </PanelGridThead>
                             <PanelGridTbody>
                                 {atpda.length === 0 ? (
-                                    <tr><td colSpan={3} className="p-4 text-center text-gray-300 italic text-xs">{store.selWh ? "No ATPDA tariffs" : "Select a warehouse"}</td></tr>
+                                    <PanelGridTr><PanelGridTd colSpan={3} className="p-4 text-center text-gray-300 italic text-xs">{store.selWh ? "No ATPDA tariffs" : "Select a warehouse"}</PanelGridTd></PanelGridTr>
                                 ) : atpda.map((r: any) => (
-                                    <tr key={r.unico} onClick={() => { store.setSelAt(r); store.setSelFr(null); store.setSelHa(null); }} className={cn("cursor-pointer transition-colors", store.selAt?.unico === r.unico ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50/80")}>
+                                    <PanelGridTr key={r.unico} selected={store.selAt?.unico === r.unico} onClick={() => { if(store.selAt?.unico === r.unico) store.setSelAt(null); else { store.setSelAt(r); store.setSelFr(null); store.setSelHa(null); } }}>
                                         <PanelGridTd>{t(r.season)}</PanelGridTd>
                                         <PanelGridTd>{t(r.city)}</PanelGridTd>
                                         <PanelGridTd className="text-right">{parseFloat(r.tariff||0).toFixed(2)}%</PanelGridTd>
-                                    </tr>
+                                    </PanelGridTr>
                                 ))}
                             </PanelGridTbody>
                         </PanelGridTable>
