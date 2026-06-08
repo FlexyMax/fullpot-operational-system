@@ -352,3 +352,14 @@ export default function MyPage() {
     const { data: myData = [] } = useQuery(...); 
 }
 ```
+
+---
+
+## Database Interactions & Store Procedures (CRITICAL)
+
+**MANDATORY RULES FOR DB INTEGRATION:**
+
+1. **ALL Database Interactions MUST use Store Procedures (SPs).** Direct SQL queries (e.g., `SELECT * FROM table`, `INSERT INTO table`) are strictly prohibited in API routes.
+2. **Missing SPs:** If a required CRUD operation does not have an existing Store Procedure, DO NOT write a raw SQL query. You must stop and ask the user to provide or create the SP.
+3. **Business Rules Validation in SPs:** All CRUD Store Procedures return business rule validations and errors. You must capture the returned dataset from the SP (e.g., checking `row.Error` and `row.Message`) to know if the operation was successful. Do NOT assume success just because the HTTP request or SQL execution didn't throw an exception.
+4. **UI Notifications:** All success/error feedback for CRUD operations must be displayed to the user using **Sonner Toasts** (`toast.success` and `toast.error`). Do not use inline `<span>` elements, manual states (`setSaveMsg`), or native browser windows (`alert()`) for operation feedback.
