@@ -283,12 +283,15 @@ export default function SalesRepsPage() {
     const [deleteModal,  setDeleteModal]  = useState(false);
     const [deleteError,  setDeleteError]  = useState<string | null>(null);
 
-    // Customer reassign modal
     const [custModal,    setCustModal]    = useState(false);
     const [custSearch,   setCustSearch]   = useState("");
-    const [selectedCustUqs, setSelectedCustUqs] = useState<string[]>([]);
+    const [selCustUq,    setSelCustUq]    = useState<string | null>(null);
     const [newSalesUq,   setNewSalesUq]   = useState<string | null>(null);
     const [custSaving,   setCustSaving]   = useState(false);
+
+    const currentSalesman = useMemo(() => {
+        return (salesRepsList as any[]).find(r => t(r.UNICO) === selectedUq) || null;
+    }, [salesRepsList, selectedUq]);
 
     // ── Queries ───────────────────────────────────────────────────────────────
     const { data: salesRepsList = [], isFetching: loadingList, refetch: refetchList } = useQuery({
@@ -314,6 +317,13 @@ export default function SalesRepsPage() {
         queryKey: ["sr-customers", selectedUq],
         queryFn:  () => fetch(`/api/sales-reps/customers?salesman_uq=${selectedUq}`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         enabled:  !!selectedUq && activeModal === "customers" && !!tabLoaded["customers"],
+        staleTime: 0,
+    });
+
+    const { data: newSalesCustomers = [], isFetching: loadingNewCustomers } = useQuery({
+        queryKey: ["sr-customers", newSalesUq],
+        queryFn:  () => fetch(`/api/sales-reps/customers?salesman_uq=${newSalesUq}`).then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
+        enabled:  !!newSalesUq && !!custModal,
         staleTime: 0,
     });
 
@@ -536,23 +546,20 @@ export default function SalesRepsPage() {
     }, [salesmanSearch, custSearch]);
 
     const handleReassignCustomer = async () => {
-        if (selectedCustUqs.length === 0 || !newSalesUq) { toast.error("Select customers and a new salesman."); return; }
+        if (!selCustUq || !newSalesUq) { toast.error("Select a customer and a new salesman."); return; }
         setCustSaving(true);
         try {
-            for (const custUq of selectedCustUqs) {
-                const res = await fetch("/api/sales-reps/customers", {
-                    method: "PUT", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ customer_uq: custUq, new_salesman_uq: newSalesUq }),
-                });
-                const d = await res.json();
-                if (!d.success) throw new Error(d.error || "Reassign failed");
-                logAction("Edit", custUq, "ReassignCustomer");
-            }
-            toast.success("Customers reassigned.");
-            setCustModal(false);
-            setSelectedCustUqs([]);
-            setNewSalesUq(null);
+            const res = await fetch("/api/sales-reps/customers", {
+                method: "PUT", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ customer_uq: selCustUq, new_salesman_uq: newSalesUq }),
+            });
+            const d = await res.json();
+            if (!d.success) throw new Error(d.error || "Reassign failed");
+            logAction("Edit", selCustUq, "ReassignCustomer");
+            toast.success("Customer reassigned.");
+            setSelCustUq(null);
             qc.invalidateQueries({ queryKey: ["sr-customers", selectedUq] });
+            qc.invalidateQueries({ queryKey: ["sr-customers", newSalesUq] });
         } catch (e: any) {
             toast.error(e.message);
         } finally {
@@ -853,7 +860,7 @@ export default function SalesRepsPage() {
                                         </span>
                                         <div className="flex items-center gap-3">
                                             {loadingCustomers && <RefreshCcw size={14} className="animate-spin text-[#FB7506]" />}
-                                            <button onClick={() => { setCustModal(true); setCustSearch(""); setSelectedCustUqs([]); setNewSalesUq(null); }}
+                                            <button onClick={() => { setCustModal(true); setCustSearch(""); setSelCustUq(null); setNewSalesUq(null); }}
                                                 className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FB7506] hover:bg-orange-600 text-white rounded text-xs font-black uppercase tracking-wider transition-all shadow-sm">
                                                 <Plus size={14} /> Reassign
                                             </button>
@@ -1165,54 +1172,42 @@ export default function SalesRepsPage() {
                             </button>
                         </div>
 
-                        <div className="p-3 bg-gray-50 border-b border-gray-200 flex flex-col gap-2 shrink-0">
-                            <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Select New Salesman</span>
-                            <div className="flex gap-2">
-                                <div className="relative flex-1">
-                                    <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
-                                    <input type="text" placeholder="Search new salesman..." value={custSearch}
-                                        onChange={e => setCustSearch(e.target.value)}
-                                        className="w-full pl-6 pr-2 h-8 text-xs border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506]" />
+                        <div className="flex flex-1 min-h-0 gap-4 p-4 bg-[#f8f9fa]">
+                            {/* Left Panel: Current Salesman Customers */}
+                            <div className="flex-1 flex flex-col min-h-0 bg-white border border-gray-300 shadow-sm">
+                                <div className="p-4 border-b border-gray-200 shrink-0 h-[68px] flex items-center">
+                                    <h2 className="text-2xl sm:text-3xl font-black text-blue-700 uppercase tracking-widest break-all">
+                                        {currentSalesman ? `${t(currentSalesman.SALESMAN_FNAME)} ${t(currentSalesman.SALESMAN_LNAME)}`.trim() : "Unknown"}
+                                    </h2>
                                 </div>
-                                <select value={newSalesUq || ""} onChange={e => setNewSalesUq(e.target.value)} className="fos-input h-8 text-xs w-80 bg-white">
-                                    <option value="">-- Select --</option>
-                                    {filteredCustSearch.map((r: any) => (
-                                        <option key={t(r.UNICO)} value={t(r.UNICO)}>
-                                            {t(r.SALESMAN_NAME ?? r.salesman_name) || `${t(r.SALESMAN_FNAME ?? r.salesman_fname)} ${t(r.SALESMAN_LNAME ?? r.salesman_lname)}`.trim()} ({t(r.OLD_CODE ?? r.old_code)})
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-
-                        <div className="flex flex-1 min-h-0 gap-2 p-3">
-                            {/* Available Customers */}
-                            <div className="flex-1 flex flex-col min-h-0 border border-gray-200 rounded overflow-hidden">
-                                <div className="bg-gray-100 border-b border-gray-200 px-2 py-1.5 shrink-0 flex justify-between items-center">
-                                    <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Available Customers</span>
-                                    <span className="text-[10px] text-gray-500">{(customers as any[]).filter(c => !selectedCustUqs.includes(t(c.UNICO))).length}</span>
+                                <div className="bg-[#0000ff] text-white px-3 py-1.5 flex justify-between items-center shrink-0">
+                                    <span className="text-sm font-bold tracking-wider">Customers by Salesman</span>
+                                    <button onClick={handleReassignCustomer} disabled={!selCustUq || !newSalesUq || custSaving}
+                                        className="bg-white text-[#0000ff] hover:bg-gray-100 disabled:opacity-50 px-3 py-1 rounded-sm flex items-center gap-1 shadow-sm font-bold text-xs">
+                                        {custSaving ? <RefreshCcw size={12} className="animate-spin" /> : "Add >>>"}
+                                    </button>
                                 </div>
-                                <div className="flex-1 overflow-auto">
+                                <div className="flex-1 overflow-auto bg-white border-l border-r border-gray-300">
                                     <table className="min-w-full text-left">
-                                        <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
-                                            <tr>
-                                                {["Customer", "City", "Phone", ""].map(h => (
-                                                    <th key={h} className="px-2 py-1.5 font-black text-[10px] text-gray-600 uppercase tracking-wide border-r border-gray-200 last:border-r-0">{h}</th>
-                                                ))}
-                                            </tr>
+                                        <thead className="bg-gray-50 border-b border-gray-300 sticky top-0 z-10 shadow-sm">
+                                            <tr><th className="px-3 py-1.5 font-bold text-[13px] text-gray-900 border-r border-gray-300 text-center">Customer</th></tr>
                                         </thead>
-                                        <tbody className="divide-y divide-gray-50">
-                                            {(customers as any[]).filter(c => !selectedCustUqs.includes(t(c.UNICO))).map((row: any, i: number) => {
+                                        <tbody className="divide-y divide-gray-200">
+                                            {loadingCustomers ? (
+                                                <tr><td className="p-4 text-center text-gray-400"><RefreshCcw size={16} className="animate-spin mx-auto" /></td></tr>
+                                            ) : (customers as any[]).length === 0 ? (
+                                                <tr><td className="p-4 text-center text-gray-400 text-xs italic">No customers</td></tr>
+                                            ) : (customers as any[]).map((row: any, i: number) => {
                                                 const uq = t(row.UNICO);
+                                                const sel = selCustUq === uq;
                                                 return (
-                                                    <tr key={uq || i} className="hover:bg-gray-50 text-xs transition-colors">
-                                                        <td className="px-2 py-1.5 border-r border-gray-50 truncate max-w-[140px]">{t(row.CUSTOMER ?? row.CUST_CODE)}</td>
-                                                        <td className="px-2 py-1.5 border-r border-gray-50">{t(row.CITY)}</td>
-                                                        <td className="px-2 py-1.5 border-r border-gray-50">{t(row.PHONE_1)}</td>
-                                                        <td className="px-1 py-1 w-8 text-center">
-                                                            <button onClick={() => setSelectedCustUqs([...selectedCustUqs, uq])} className="p-1 rounded text-green-600 hover:bg-green-100 transition-colors">
-                                                                <ChevronRight size={14} />
-                                                            </button>
+                                                    <tr key={uq || i} onClick={() => setSelCustUq(sel ? null : uq)}
+                                                        className={cn("cursor-pointer transition-colors border-b border-gray-300", sel ? "bg-[#f97316] text-white" : "even:bg-[#e6e6fa] hover:bg-blue-100")}>
+                                                        <td className="px-1 py-1 whitespace-nowrap text-[13px] font-semibold flex items-center">
+                                                            <div className="w-4 flex justify-center shrink-0">
+                                                                {sel ? <ChevronRight size={14} className="text-white" /> : <div className="w-[4px] h-[4px] bg-black rounded-full" />}
+                                                            </div>
+                                                            <span className="truncate">{t(row.CUSTOMER ?? row.CUST_CODE)}</span>
                                                         </td>
                                                     </tr>
                                                 );
@@ -1222,37 +1217,47 @@ export default function SalesRepsPage() {
                                 </div>
                             </div>
 
-                            {/* Selected Customers */}
-                            <div className="flex-1 flex flex-col min-h-0 border border-gray-200 rounded overflow-hidden">
-                                <div className="bg-gray-100 border-b border-gray-200 px-2 py-1.5 shrink-0 flex justify-between items-center">
-                                    <span className="font-black text-[10px] text-gray-600 uppercase tracking-wide">Selected for Reassign</span>
-                                    <span className="text-[10px] text-gray-500">{selectedCustUqs.length}</span>
+                            {/* Right Panel: New Salesman Customers */}
+                            <div className="flex-1 flex flex-col min-h-0 bg-white border border-gray-300 shadow-sm">
+                                <div className="p-4 border-b border-gray-200 shrink-0 h-[68px] flex flex-col justify-center items-end relative">
+                                    <span className="absolute top-1 right-4 font-black text-[#008000] text-xl tracking-tighter">New Salesman</span>
+                                    <div className="w-[85%] mt-3 z-10">
+                                        <select value={newSalesUq || ""} onChange={e => setNewSalesUq(e.target.value)} 
+                                            className="w-full pl-2 pr-2 h-7 text-[13px] border border-gray-400 shadow-sm bg-[#0066cc] text-white font-semibold focus:ring-2 focus:ring-blue-400 rounded-none outline-none">
+                                            <option value="">-- Select --</option>
+                                            {salesmanSearch.map((r: any) => (
+                                                <option key={t(r.UNICO)} value={t(r.UNICO)}>
+                                                    {`${t(r.SALESMAN_FNAME ?? r.salesman_fname)} ${t(r.SALESMAN_LNAME ?? r.salesman_lname)}`.trim()} ({t(r.OLD_CODE ?? r.old_code)})
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>
-                                <div className="flex-1 overflow-auto bg-blue-50/30">
+                                <div className="bg-[#008000] text-white px-3 py-1.5 flex justify-end items-center shrink-0">
+                                    <span className="text-sm font-bold tracking-wider">Customers by salesman</span>
+                                </div>
+                                <div className="flex-1 overflow-auto bg-white border-l border-r border-gray-300">
                                     <table className="min-w-full text-left">
-                                        <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
-                                            <tr>
-                                                <th className="px-2 py-1.5 font-black text-[10px] text-gray-600 uppercase tracking-wide border-r border-gray-200 w-8"></th>
-                                                <th className="px-2 py-1.5 font-black text-[10px] text-gray-600 uppercase tracking-wide border-r border-gray-200">Customer</th>
-                                                <th className="px-2 py-1.5 font-black text-[10px] text-gray-600 uppercase tracking-wide border-r border-gray-200">City</th>
-                                                <th className="px-2 py-1.5 font-black text-[10px] text-gray-600 uppercase tracking-wide border-r border-gray-200">Phone</th>
-                                            </tr>
+                                        <thead className="bg-gray-50 border-b border-gray-300 sticky top-0 z-10 shadow-sm">
+                                            <tr><th className="px-3 py-1.5 font-bold text-[13px] text-gray-900 border-r border-gray-300 text-center">Customer</th></tr>
                                         </thead>
-                                        <tbody className="divide-y divide-gray-50">
-                                            {selectedCustUqs.length === 0 ? (
-                                                <tr><td colSpan={4} className="p-4 text-center text-gray-400 text-xs italic">No customers selected</td></tr>
-                                            ) : (customers as any[]).filter(c => selectedCustUqs.includes(t(c.UNICO))).map((row: any, i: number) => {
+                                        <tbody className="divide-y divide-gray-200">
+                                            {!newSalesUq ? (
+                                                <tr><td className="p-4 text-center text-gray-400 text-xs italic">Select a new salesman</td></tr>
+                                            ) : loadingNewCustomers ? (
+                                                <tr><td className="p-4 text-center text-gray-400"><RefreshCcw size={16} className="animate-spin mx-auto" /></td></tr>
+                                            ) : newSalesCustomers.length === 0 ? (
+                                                <tr><td className="p-4 text-center text-gray-400 text-xs italic">No customers</td></tr>
+                                            ) : newSalesCustomers.map((row: any, i: number) => {
                                                 const uq = t(row.UNICO);
                                                 return (
-                                                    <tr key={uq || i} className="hover:bg-blue-50 text-xs transition-colors">
-                                                        <td className="px-1 py-1 text-center border-r border-gray-50">
-                                                            <button onClick={() => setSelectedCustUqs(selectedCustUqs.filter(id => id !== uq))} className="p-1 rounded text-red-500 hover:bg-red-100 transition-colors">
-                                                                <ChevronLeft size={14} />
-                                                            </button>
+                                                    <tr key={uq || i} className="even:bg-[#e6e6fa] hover:bg-green-100 transition-colors border-b border-gray-300">
+                                                        <td className="px-1 py-1 whitespace-nowrap text-[13px] font-semibold text-gray-800 flex items-center">
+                                                            <div className="w-4 flex justify-center shrink-0">
+                                                                <div className="w-[4px] h-[4px] bg-black rounded-full" />
+                                                            </div>
+                                                            <span className="truncate">{t(row.CUSTOMER ?? row.CUST_CODE)}</span>
                                                         </td>
-                                                        <td className="px-2 py-1.5 border-r border-gray-50 truncate max-w-[140px] font-bold text-blue-900">{t(row.CUSTOMER ?? row.CUST_CODE)}</td>
-                                                        <td className="px-2 py-1.5 border-r border-gray-50">{t(row.CITY)}</td>
-                                                        <td className="px-2 py-1.5">{t(row.PHONE_1)}</td>
                                                     </tr>
                                                 );
                                             })}
@@ -1260,18 +1265,6 @@ export default function SalesRepsPage() {
                                     </table>
                                 </div>
                             </div>
-                        </div>
-
-                        <div className="flex justify-end gap-3 px-4 py-3 bg-gray-50 border-t shrink-0">
-                            <button onClick={() => setCustModal(false)}
-                                className="px-4 py-2 rounded border border-gray-200 text-xs font-black uppercase text-gray-600 hover:bg-gray-100 transition-colors">
-                                Cancel
-                            </button>
-                            <button onClick={handleReassignCustomer} disabled={selectedCustUqs.length === 0 || !newSalesUq || custSaving}
-                                className="flex items-center gap-2 px-5 py-2 rounded bg-[#FB7506] hover:bg-orange-600 disabled:opacity-40 text-white text-xs font-black uppercase tracking-wider transition-all">
-                                {custSaving ? <RefreshCcw size={12} className="animate-spin" /> : <Check size={12} />}
-                                {custSaving ? "Reassigning..." : "Reassign"}
-                            </button>
                         </div>
                     </div>
                 </div>
