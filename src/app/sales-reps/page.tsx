@@ -289,16 +289,16 @@ export default function SalesRepsPage() {
     const [newSalesUq,   setNewSalesUq]   = useState<string | null>(null);
     const [custSaving,   setCustSaving]   = useState(false);
 
-    const currentSalesman = useMemo(() => {
-        return (salesRepsList as any[]).find(r => t(r.UNICO) === selectedUq) || null;
-    }, [salesRepsList, selectedUq]);
-
     // ── Queries ───────────────────────────────────────────────────────────────
     const { data: salesRepsList = [], isFetching: loadingList, refetch: refetchList } = useQuery({
         queryKey: ["sales-reps-list"],
         queryFn:  () => fetch("/api/sales-reps").then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         staleTime: 0,
     });
+
+    const currentSalesman = useMemo(() => {
+        return (salesRepsList as any[]).find(r => t(r.UNICO) === selectedUq) || null;
+    }, [salesRepsList, selectedUq]);
 
     const { data: physicalWarehouses = [] } = useQuery({
         queryKey: ["sr-physical-warehouses"],
