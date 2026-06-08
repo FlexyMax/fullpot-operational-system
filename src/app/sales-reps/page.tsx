@@ -759,16 +759,24 @@ export default function SalesRepsPage() {
                     <div className="overflow-y-auto flex-1">
                         <PanelGridTable>
                             <PanelGridThead>
-                                <PanelGridTh>Salesman</PanelGridTh>
-                                <PanelGridTh>Code</PanelGridTh>
-                                <PanelGridTh>Phone</PanelGridTh>
-                                <PanelGridTh>Whouse</PanelGridTh>
-                                <PanelGridTh>Email</PanelGridTh>
-                                <PanelGridTh align="center">Act.</PanelGridTh>
+                                <PanelGridTh align="center" className="w-12">Active</PanelGridTh>
+                                <PanelGridTh>First Name</PanelGridTh>
+                                <PanelGridTh>Last Name</PanelGridTh>
+                                <PanelGridTh>Report To</PanelGridTh>
+                                <PanelGridTh>Address</PanelGridTh>
+                                <PanelGridTh>Phone 1</PanelGridTh>
+                                <PanelGridTh>Email 1</PanelGridTh>
+                                <PanelGridTh>Warehouse</PanelGridTh>
+                                <PanelGridTh align="right">Commission %</PanelGridTh>
+                                <PanelGridTh align="center">Supervisor</PanelGridTh>
+                                <PanelGridTh align="center">Administrator</PanelGridTh>
+                                <PanelGridTh align="center">Accounting</PanelGridTh>
+                                <PanelGridTh>QB Class</PanelGridTh>
+                                <PanelGridTh>POSLinkIP</PanelGridTh>
                             </PanelGridThead>
                             <PanelGridTbody>
                                 {filteredList.length === 0 && !loadingList ? (
-                                    <tr><td colSpan={6} className="p-6 text-center text-gray-300 text-xs italic">
+                                    <tr><td colSpan={14} className="p-6 text-center text-gray-300 text-xs italic">
                                         {search ? "No results" : "No sales reps found"}
                                     </td></tr>
                                 ) : filteredList.map((row: any, i: number) => {
@@ -776,12 +784,20 @@ export default function SalesRepsPage() {
                                     const selected = selectedUq === uq;
                                     return (
                                         <PanelGridTr key={uq || i} selected={selected} onClick={() => handleSelectRow(row)}>
-                                            <PanelGridTd className="font-bold">{`${t(row.SALESMAN_FNAME)} ${t(row.SALESMAN_LNAME)}`.trim()}</PanelGridTd>
-                                            <PanelGridTd className="text-gray-500 font-mono">{t(row.OLD_CODE)}</PanelGridTd>
-                                            <PanelGridTd className="text-gray-500">{t(row.PHONE_1)}</PanelGridTd>
-                                            <PanelGridTd className="text-gray-500">{t(row.WP_NAME)}</PanelGridTd>
-                                            <PanelGridTd className="text-gray-500">{t(row.EMAIL_1)}</PanelGridTd>
-                                            <PanelGridTd align="center">{(row.ACTIVE === "Yes" || row.ACTIVE === true || row.ACTIVE === 1) ? <Check size={12} className="text-green-500 mx-auto" /> : <span className="text-gray-300">{"\u2014"}</span>}</PanelGridTd>
+                                            <PanelGridTd align="center">{(row.ACTIVE === "Yes" || row.ACTIVE === true || row.ACTIVE === 1) ? <Check size={12} className="text-[#01b763] mx-auto" /> : <span className="text-gray-300">{"\u2014"}</span>}</PanelGridTd>
+                                            <PanelGridTd className="font-bold text-gray-800">{t(row.SALESMAN_FNAME)}</PanelGridTd>
+                                            <PanelGridTd className="font-bold text-gray-800">{t(row.SALESMAN_LNAME)}</PanelGridTd>
+                                            <PanelGridTd className="text-gray-600">{t(row.SUPERIOR)}</PanelGridTd>
+                                            <PanelGridTd className="text-gray-500 truncate max-w-[120px]">{t(row.ADDRESS)}</PanelGridTd>
+                                            <PanelGridTd className="text-gray-500 whitespace-nowrap">{t(row.PHONE_1)}</PanelGridTd>
+                                            <PanelGridTd className="text-gray-500 truncate max-w-[120px]">{t(row.EMAIL_1)}</PanelGridTd>
+                                            <PanelGridTd className="text-gray-600">{t(row.WP_NAME)}</PanelGridTd>
+                                            <PanelGridTd align="right" className="text-gray-600 font-mono">{t(row.COMMISSION)}</PanelGridTd>
+                                            <PanelGridTd align="center">{row.SUPERVISOR ? <Check size={12} className="text-gray-400 mx-auto" /> : <span className="text-gray-200">{"\u2014"}</span>}</PanelGridTd>
+                                            <PanelGridTd align="center">{row.ADMINISTRATOR ? <Check size={12} className="text-gray-400 mx-auto" /> : <span className="text-gray-200">{"\u2014"}</span>}</PanelGridTd>
+                                            <PanelGridTd align="center">{row.ACCOUNTING ? <Check size={12} className="text-gray-400 mx-auto" /> : <span className="text-gray-200">{"\u2014"}</span>}</PanelGridTd>
+                                            <PanelGridTd className="text-gray-600">{t(row.QB_CLASS)}</PanelGridTd>
+                                            <PanelGridTd className="text-gray-500 font-mono">{t(row.POSLINKIP)}</PanelGridTd>
                                         </PanelGridTr>
                                     );
                                 })}
