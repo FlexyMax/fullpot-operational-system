@@ -6,7 +6,7 @@ const txt = (v: any) => String(v ?? "").replace(/'/g, "''");
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ unico: string }> }) {
     const { unico } = await params;
     try {
-        const r = await executeProcedure("sp_NC_User_Info", { lcUser_uq: unico });
+        const r = await executeProcedure("sp_NC_User_Info", { lcUser_uq: unico }, true);
         return NextResponse.json(r.recordset?.[0] ?? null);
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });
@@ -27,7 +27,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ unic
             lcPassword:  txt(clave),
             lcPosition:  txt(cargo),
             lcemail:     txt(correo)
-        });
+        }, true);
         const row = r.recordset?.[0] || {};
         if (row.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
 
@@ -40,7 +40,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ unic
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ unico: string }> }) {
     const { unico } = await params;
     try {
-        const r = await executeProcedure("sp_NC_user_delete", { lcUnico: unico });
+        const r = await executeProcedure("sp_NC_user_delete", { lcUnico: unico }, true);
         const row = r.recordset?.[0] || {};
         if (row.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
 

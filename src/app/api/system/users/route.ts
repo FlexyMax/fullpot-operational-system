@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
             lcPassword:  txt(clave),
             lcPosition:  txt(cargo),
             lcemail:     txt(correo)
-        });
+        }, true);
         const row = r.recordset?.[0] || {};
         if (row.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
         
