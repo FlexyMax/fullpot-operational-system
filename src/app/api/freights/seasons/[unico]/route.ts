@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { executeQuery } from "@/lib/db";
+import { executeQuery, executeProcedure } from "@/lib/db";
 
 const txt = (v: any) => String(v ?? "").replace(/'/g, "''");
 const bit = (v: any) => (v ? 1 : 0);
@@ -21,11 +21,20 @@ export async function PUT(req: NextRequest, { params }: P) {
     const { unico } = await params;
     const b = await req.json();
     try {
-        await executeQuery(`
-            UPDATE flower_seasons SET season='${txt(b.season)}',sh_season='${txt(b.sh_season)}',
-                startdate=${dt(b.startdate)},enddate=${dt(b.enddate)},activedate=${dt(b.activedate)},
-                desacdate=${dt(b.desacdate)},publicate=${bit(b.publicate)},increment=${num(b.increment)},bypercent=${bit(b.bypercent)}
-            WHERE unico='${txt(unico)}'`);
+        const r = await executeProcedure("sp_flower_seasons_update", {
+            lcunico: unico,
+            lcseason: txt(b.season),
+            lcsh_season: txt(b.sh_season),
+            ldstartdate: b.startdate ? b.startdate.split('T')[0] : null,
+            ldenddate: b.enddate ? b.enddate.split('T')[0] : null,
+            ldactivedate: b.activedate ? b.activedate.split('T')[0] : null,
+            lddesacdate: b.desacdate ? b.desacdate.split('T')[0] : null,
+            llpublicate: bit(b.publicate),
+            lnincrement: num(b.increment),
+            llbypercent: bit(b.bypercent)
+        });
+        const row = r.recordset?.[0];
+        if (row?.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
         return NextResponse.json({ success: true });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });

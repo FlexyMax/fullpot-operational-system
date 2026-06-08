@@ -21,7 +21,7 @@ export async function PUT(req: NextRequest, { params }: P) {
     const b = await req.json();
     try {
         const r = await executeProcedure("sp_flower_warehouses_physical_update", {
-            lcunico:         unico,
+            lcwhouse_uq:     unico,
             lcwp_name:       txt(b.wp_name),
             llcargo:         bit(b.cargo),
             llsend_xml:      bit(b.send_xml),

@@ -136,10 +136,15 @@ function SetupModal({ title, icon: Icon, onClose, listUrl, detailUrl, emptyForm,
     const save = async () => {
         setSaving(true);
         try {
+            let res;
             if (mode === "add") {
-                await fetch(detailUrl, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(form) });
+                res = await fetch(detailUrl, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(form) });
             } else if (mode === "edit" && selRow) {
-                await fetch(`${detailUrl}/${selRow.unico}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(form) });
+                res = await fetch(`${detailUrl}/${selRow.unico}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(form) });
+            }
+            if (res && !res.ok) {
+                const j = await res.json().catch(()=>({}));
+                throw new Error(j.error || "Save failed");
             }
             await load(); setMode("view");
             toast.success("Saved successfully");
@@ -151,7 +156,11 @@ function SetupModal({ title, icon: Icon, onClose, listUrl, detailUrl, emptyForm,
         if (!selRow) return;
         setSaving(true);
         try { 
-            await fetch(`${detailUrl}/${selRow.unico}`, { method:"DELETE" }); 
+            const res = await fetch(`${detailUrl}/${selRow.unico}`, { method:"DELETE" }); 
+            if (res && !res.ok) {
+                const j = await res.json().catch(()=>({}));
+                throw new Error(j.error || "Delete failed");
+            }
             setSelRow(null); 
             await load(); 
             setMode("view");

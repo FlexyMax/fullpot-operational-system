@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { executeQuery } from "@/lib/db";
+import { executeQuery, executeProcedure } from "@/lib/db";
 
 const txt = (v: any) => String(v ?? "").replace(/'/g, "''");
 type P = { params: Promise<{ unico: string }> };
@@ -8,7 +8,20 @@ export async function PUT(req: NextRequest, { params }: P) {
     const { unico } = await params;
     const b = await req.json();
     try {
-        await executeQuery(`UPDATE flower_airlines SET cod_linea='${txt(b.cod_linea)}',airline='${txt(b.airline)}',address='${txt(b.address)}',city='${txt(b.city)}',country='${txt(b.country)}',phone='${txt(b.phone)}',fax='${txt(b.fax)}',email='${txt(b.email)}',contact='${txt(b.contact)}' WHERE unico='${txt(unico)}'`);
+        const r = await executeProcedure("sp_flower_airlines_update", {
+            lcunico: unico,
+            lccod_linea: txt(b.cod_linea),
+            lcairline: txt(b.airline),
+            lcaddress: txt(b.address),
+            lccity: txt(b.city),
+            lccountry: txt(b.country),
+            lcphone: txt(b.phone),
+            lcfax: txt(b.fax),
+            lcemail: txt(b.email),
+            lccontact: txt(b.contact)
+        });
+        const row = r.recordset?.[0];
+        if (row?.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
         return NextResponse.json({ success: true });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
