@@ -22,6 +22,7 @@ import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridT
 import { todayEST, formatDateEST, formatMoney, parseMoney, normalizeToISODate } from "@/lib/dates";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+const EMPTY_ARR: any[] = [];
 const t       = (v: any) => String(v ?? "").trim();
 const apiFetch = async (url: string) => { const r = await fetch(url); const j = await r.json(); if (!r.ok) throw new Error(j?.error || `HTTP ${r.status}`); return j; };
 
@@ -111,32 +112,32 @@ export default function CustomersSetupPage() {
 
     // ── Queries ───────────────────────────────────────────────────────────────
 
-    const { data: shiptos = [], isFetching: loadingShiptos, refetch: refetchShiptos } = useQuery({
+    const { data: shiptos = EMPTY_ARR, isFetching: loadingShiptos, refetch: refetchShiptos } = useQuery({
         queryKey: ["cust-shiptos", selCust?.unico],
         queryFn:  () => apiFetch(`/api/masters/customers/${selCust.unico}/shiptos`),
         enabled:  !!selCust?.unico,
     });
 
-    const { data: carriers = [], isFetching: loadingCarriers, refetch: refetchCarriers } = useQuery({
+    const { data: carriers = EMPTY_ARR, isFetching: loadingCarriers, refetch: refetchCarriers } = useQuery({
         queryKey: ["cust-carriers", selCust?.unico, selShipto?.unico],
         queryFn:  () => apiFetch(`/api/masters/customers/carrier?cust_uq=${selCust.unico}&shipto_uq=${selShipto?.unico||""}`),
         enabled:  !!selCust?.unico,
     });
 
-    const { data: statement = [], isFetching: loadingStmt, refetch: refetchStmt } = useQuery({
+    const { data: statement = EMPTY_ARR, isFetching: loadingStmt, refetch: refetchStmt } = useQuery({
         queryKey: ["cust-stmt", selCust?.unico, stmtFrom, stmtTo],
         queryFn:  () => apiFetch(`/api/masters/customers/${selCust.unico}/statement?from=${stmtFrom}&to=${stmtTo}`),
         enabled:  !!selCust?.unico && stmtEnabled,
         retry:    false,
     });
 
-    const { data: webUsers = [], isFetching: loadingWebUsers, refetch: refetchWebUsers } = useQuery({
+    const { data: webUsers = EMPTY_ARR, isFetching: loadingWebUsers, refetch: refetchWebUsers } = useQuery({
         queryKey: ["cust-webusers", selCust?.unico],
         queryFn:  () => apiFetch(`/api/masters/customers/${selCust.unico}/web-users`),
         enabled:  !!selCust?.unico && expandedCustUnico !== null && activeExpTab === "webusers",
     });
 
-    const { data: messages = [], isFetching: loadingMsgs, refetch: refetchMsgs } = useQuery({
+    const { data: messages = EMPTY_ARR, isFetching: loadingMsgs, refetch: refetchMsgs } = useQuery({
         queryKey: ["cust-msgs", selCust?.unico],
         queryFn:  () => apiFetch(`/api/masters/customers/${selCust.unico}/messages`),
         enabled:  !!selCust?.unico && expandedCustUnico !== null && activeExpTab === "messages",
