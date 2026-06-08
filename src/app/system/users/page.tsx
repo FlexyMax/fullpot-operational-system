@@ -140,13 +140,13 @@ export default function UsersDefinitionPage() {
                                         onClick={() => handleSelect(u)}
                                         className="cursor-pointer"
                                     >
-                                        <PanelGridTd className="font-mono text-[10px] text-gray-400">{u.unico}</PanelGridTd>
-                                        <PanelGridTd className="text-gray-500">{String(u.cedula || "")}</PanelGridTd>
-                                        <PanelGridTd className="font-bold text-gray-700 uppercase tracking-wide">{String(u.apellidos || "").trim()}, {String(u.nombres || "").trim()}</PanelGridTd>
-                                        <PanelGridTd className="text-blue-600 font-medium uppercase">{String(u.username || "")}</PanelGridTd>
-                                        <PanelGridTd className="text-gray-600">{String(u.correo || "")}</PanelGridTd>
-                                        <PanelGridTd className="hidden md:table-cell text-gray-500 uppercase">{String(u.cargo || "")}</PanelGridTd>
-                                        <PanelGridTd className="hidden sm:table-cell text-gray-500 uppercase">{String(u.nivel || "")}</PanelGridTd>
+                                        <PanelGridTd className="font-mono text-[10px]">{u.unico}</PanelGridTd>
+                                        <PanelGridTd>{String(u.cedula || "")}</PanelGridTd>
+                                        <PanelGridTd className="font-semibold max-w-[180px] truncate">{String(u.apellidos || "").trim()}, {String(u.nombres || "").trim()}</PanelGridTd>
+                                        <PanelGridTd className="text-gray-600">{String(u.username || "")}</PanelGridTd>
+                                        <PanelGridTd className="text-gray-500">{String(u.correo || "")}</PanelGridTd>
+                                        <PanelGridTd className="hidden md:table-cell text-gray-500">{String(u.cargo || "")}</PanelGridTd>
+                                        <PanelGridTd className="hidden sm:table-cell text-gray-500">{String(u.nivel || "")}</PanelGridTd>
                                         <PanelGridTd className="text-center">
                                             {u.activo ? <Check size={10} className="text-green-500 mx-auto" /> : "—"}
                                         </PanelGridTd>
