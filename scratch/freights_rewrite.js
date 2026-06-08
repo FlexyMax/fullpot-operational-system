@@ -1,4 +1,7 @@
-"use client";
+const fs = require('fs');
+const path = require('path');
+
+const content = `"use client";
 
 import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
@@ -13,8 +16,7 @@ import {
 import { AppHeader } from "@/components/layout/AppHeader";
 import { AppFooter } from "@/components/layout/AppFooter";
 import { GridMenu } from "@/components/GridMenu";
-import PanelGrid from "@/components/ui/PanelGrid";
-import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
+import { PanelGrid, PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTd } from "@/components/ui/PanelGrid";
 import { cn } from "@/lib/utils";
 
 import { useAuditLog } from "@/lib/audit";
@@ -27,7 +29,7 @@ const EMPTY_ARR: any[] = [];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const t       = (v: any) => String(v ?? "").trim();
-const ff      = async (url: string) => { const r = await fetch(url); const j = await r.json(); if (!r.ok) throw new Error(j?.error || `HTTP ${r.status}`); return j; };
+const ff      = async (url: string) => { const r = await fetch(url); const j = await r.json(); if (!r.ok) throw new Error(j?.error || \`HTTP \${r.status}\`); return j; };
 
 // ─── Empty forms ─────────────────────────────────────────────────────────────
 const EMPTY_WH   = { wp_name:"", cargo:false, send_xml:false, charge:false, address:"", city:"", state:"", zipcode:"", country:"", phone:"", fax:"", email:"", grower_uq:"", handling_kg:0, send_to_whouse:false };
@@ -133,7 +135,7 @@ function SetupModal({ title, onClose, listUrl, detailUrl, emptyForm, cols, formF
     const load = useCallback(async (q: string) => {
         setLoading(true);
         try {
-            const d = await ff(`${listUrl}?search=${encodeURIComponent(q||"%")}`);
+            const d = await ff(\`\${listUrl}?search=\${encodeURIComponent(q||"%")}\`);
             setRows(d);
             if (d.length > 0 && !selRow) setSelRow(d[0]);
         } catch { /* ignore */ }
@@ -176,7 +178,7 @@ function SetupModal({ title, onClose, listUrl, detailUrl, emptyForm, cols, formF
             if (mode === "add") {
                 await fetch(detailUrl, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(form) });
             } else if (mode === "edit" && selRow) {
-                await fetch(`${detailUrl}/${selRow.unico}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(form) });
+                await fetch(\`\${detailUrl}/\${selRow.unico}\`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(form) });
             }
             await load(search); setMode("view");
             toast.success("Saved successfully");
@@ -185,10 +187,10 @@ function SetupModal({ title, onClose, listUrl, detailUrl, emptyForm, cols, formF
     };
 
     const del = async () => {
-        if (!selRow || !confirm(`Delete "${t2(selRow[cols[0].key])}"?`)) return;
+        if (!selRow || !confirm(\`Delete "\${t2(selRow[cols[0].key])}"?\`)) return;
         setMenuOpen(false); setSaving(true);
         try { 
-            await fetch(`${detailUrl}/${selRow.unico}`, { method:"DELETE" }); 
+            await fetch(\`\${detailUrl}/\${selRow.unico}\`, { method:"DELETE" }); 
             setSelRow(null); 
             await load(search); 
             toast.success("Deleted successfully");
@@ -260,7 +262,7 @@ function SetupModal({ title, onClose, listUrl, detailUrl, emptyForm, cols, formF
                             <>
                                 <div className="flex items-center justify-between px-4 border-b border-gray-100 shrink-0" style={{ height:"44px" }}>
                                     <span className="text-sm font-black text-gray-800">
-                                        {mode === "add" ? "New Record" : mode === "edit" ? `Editing: ${t2(selRow?.[cols[0]?.key])}` : t2(selRow?.[cols[0]?.key])}
+                                        {mode === "add" ? "New Record" : mode === "edit" ? \`Editing: \${t2(selRow?.[cols[0]?.key])}\` : t2(selRow?.[cols[0]?.key])}
                                     </span>
                                     <MenuDropdown onAdd={openAdd} onEdit={openEdit} onDel={del} canEdit={!!selRow} canDel={!!selRow && !saving} menuOpen={menuOpen} setMenuOpen={setMenuOpen} saving={saving} />
                                 </div>
@@ -346,9 +348,9 @@ export default function FreightsSetupPage() {
 
     // Queries
     const { data: warehouses = EMPTY_ARR }  = useQuery({ queryKey: ["fr-wh"], queryFn: () => ff("/api/freights/warehouses") });
-    const { data: freights = EMPTY_ARR, isFetching: loadingFr, refetch: refetchFr }  = useQuery({ queryKey: ["fr-fr", store.selWh?.unico], queryFn: () => ff(`/api/freights/rates?warehouse=${store.selWh?.unico}`), enabled: !!store.selWh?.unico, retry: false });
-    const { data: handling = EMPTY_ARR, isFetching: loadingHa, refetch: refetchHa }  = useQuery({ queryKey: ["fr-ha", store.selWh?.unico], queryFn: () => ff(`/api/freights/handling?warehouse=${store.selWh?.unico}`), enabled: !!store.selWh?.unico, retry: false });
-    const { data: atpda = EMPTY_ARR, isFetching: loadingAt, refetch: refetchAt }  = useQuery({ queryKey: ["fr-at", store.selWh?.unico], queryFn: () => ff(`/api/freights/atpda?warehouse=${store.selWh?.unico}`), enabled: !!store.selWh?.unico, retry: false });
+    const { data: freights = EMPTY_ARR, isFetching: loadingFr, refetch: refetchFr }  = useQuery({ queryKey: ["fr-fr", store.selWh?.unico], queryFn: () => ff(\`/api/freights/rates?warehouse=\${store.selWh?.unico}\`), enabled: !!store.selWh?.unico, retry: false });
+    const { data: handling = EMPTY_ARR, isFetching: loadingHa, refetch: refetchHa }  = useQuery({ queryKey: ["fr-ha", store.selWh?.unico], queryFn: () => ff(\`/api/freights/handling?warehouse=\${store.selWh?.unico}\`), enabled: !!store.selWh?.unico, retry: false });
+    const { data: atpda = EMPTY_ARR, isFetching: loadingAt, refetch: refetchAt }  = useQuery({ queryKey: ["fr-at", store.selWh?.unico], queryFn: () => ff(\`/api/freights/atpda?warehouse=\${store.selWh?.unico}\`), enabled: !!store.selWh?.unico, retry: false });
     const { data: lookups = {seasons:EMPTY_ARR,cities:EMPTY_ARR,airlines:EMPTY_ARR,growers:EMPTY_ARR} }  = useQuery({ queryKey: ["fr-look"], queryFn: () => ff("/api/freights/lookups"), staleTime: 1000*60*5 });
 
     // Auto-select warehouse
@@ -376,11 +378,11 @@ export default function FreightsSetupPage() {
                 const d   = await res.json(); if (!d.success) throw new Error(d.error);
                 logAction("Insert", d.unico);
             } else if (store.frModal?.mode === "edit") {
-                const res = await fetch(`/api/freights/rates/${store.selFr.unico}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body) });
+                const res = await fetch(\`/api/freights/rates/\${store.selFr.unico}\`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body) });
                 const d   = await res.json(); if (!d.success) throw new Error(d.error);
                 logAction("Edit", store.selFr.unico);
             } else {
-                const res = await fetch(`/api/freights/rates/${store.selFr.unico}`, { method:"DELETE" });
+                const res = await fetch(\`/api/freights/rates/\${store.selFr.unico}\`, { method:"DELETE" });
                 const d   = await res.json(); if (!d.success) throw new Error(d.error);
                 logAction("Delete", store.selFr.unico);
                 store.setSelFr(null);
@@ -402,11 +404,11 @@ export default function FreightsSetupPage() {
                 const d   = await res.json(); if (!d.success) throw new Error(d.error);
                 logAction("Insert", d.unico);
             } else if (store.haModal?.mode === "edit") {
-                const res = await fetch(`/api/freights/handling/${store.selHa.unico}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body) });
+                const res = await fetch(\`/api/freights/handling/\${store.selHa.unico}\`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body) });
                 const d   = await res.json(); if (!d.success) throw new Error(d.error);
                 logAction("Edit", store.selHa.unico);
             } else {
-                const res = await fetch(`/api/freights/handling/${store.selHa.unico}`, { method:"DELETE" });
+                const res = await fetch(\`/api/freights/handling/\${store.selHa.unico}\`, { method:"DELETE" });
                 const d   = await res.json(); if (!d.success) throw new Error(d.error);
                 logAction("Delete", store.selHa.unico);
                 store.setSelHa(null);
@@ -429,11 +431,11 @@ export default function FreightsSetupPage() {
                 const d   = await res.json(); if (!d.success) throw new Error(d.error);
                 logAction("Insert", d.unico);
             } else if (store.atModal?.mode === "edit") {
-                const res = await fetch(`/api/freights/atpda/${store.selAt.unico}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body) });
+                const res = await fetch(\`/api/freights/atpda/\${store.selAt.unico}\`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body) });
                 const d   = await res.json(); if (!d.success) throw new Error(d.error);
                 logAction("Edit", store.selAt.unico);
             } else {
-                const res = await fetch(`/api/freights/atpda/${store.selAt.unico}`, { method:"DELETE" });
+                const res = await fetch(\`/api/freights/atpda/\${store.selAt.unico}\`, { method:"DELETE" });
                 const d   = await res.json(); if (!d.success) throw new Error(d.error);
                 logAction("Delete", store.selAt.unico);
                 store.setSelAt(null);
@@ -466,7 +468,7 @@ export default function FreightsSetupPage() {
         if (!confirm("Are you sure you want to update AWB Freight Rates?")) return;
         setSaving(true);
         try {
-            const res = await fetch(`/api/freights/rates/${store.selFr.unico}/update-awb`, { method:"PUT" });
+            const res = await fetch(\`/api/freights/rates/\${store.selFr.unico}/update-awb\`, { method:"PUT" });
             const d = await res.json(); if (!d.success) throw new Error(d.error);
             logAction("Edit", store.selFr.unico, "Update AWB Freight Rates");
             toast.success("AWBs updated");
@@ -515,17 +517,17 @@ export default function FreightsSetupPage() {
                 
                 {/* ─── FREIGHTS ───────────────────────────────────────────────────────────── */}
                 <PanelGrid
-                    title={`Freights${store.selWh ? ` — ${t(store.selWh.wp_name)}` : ""}`}
+                    title={\`Freights\${store.selWh ? \` — \${t(store.selWh.wp_name)}\` : ""}\`}
                     icon={Cloud}
                     recordCount={freights.length}
                     onRefresh={() => refetchFr()}
                     refreshing={loadingFr}
                     menuItems={[
                         { label:"Add Rate",      icon:Plus,   color:"green", onClick:() => { if(!store.selWh){toast.error("Select a warehouse first.");return;} setFrForm({...EMPTY_FR}); store.setFrModal({mode:"add"}); }, disabled:!store.selWh || !perms.canCreate },
-                        { label:"Edit Selected", icon:Pencil, color:"blue",  onClick:async() => { if(!store.selFr) return; try { const d = await ff(`/api/freights/rates/${store.selFr.unico}`); setFrForm({ wphysical_uq: d.wphysical_uq||store.selWh?.unico, season_uq: d.season_uq||"", city_uq: d.city_uq||"", freight: d.freight||0, freight_kg: d.freight_kg||0 }); store.setFrModal({mode:"edit"}); } catch(e:any){toast.error(e.message);} }, disabled:!store.selFr || !perms.canEdit },
+                        { label:"Edit Selected", icon:Pencil, color:"blue",  onClick:async() => { if(!store.selFr) return; try { const d = await ff(\`/api/freights/rates/\${store.selFr.unico}\`); setFrForm({ wphysical_uq: d.wphysical_uq||store.selWh?.unico, season_uq: d.season_uq||"", city_uq: d.city_uq||"", freight: d.freight||0, freight_kg: d.freight_kg||0 }); store.setFrModal({mode:"edit"}); } catch(e:any){toast.error(e.message);} }, disabled:!store.selFr || !perms.canEdit },
                         { label:"Delete Selected",icon:Trash2, color:"red",  onClick:() => { if(store.selFr){store.setFrModal({mode:"delete"});} }, disabled:!store.selFr || !perms.canDelete },
                         { label:"Copy From...",  icon:Copy,   color:"gray",  onClick:() => { if(!store.selWh){toast.error("Select a warehouse first.");return;} store.setCopyModal(true); }, disabled:!store.selWh },
-                        { label:"Update AWBs",   icon:Zap,    color:"orange", onClick:updateAwbs, disabled:!store.selFr },
+                        { label:"Update AWBs",   icon:Zap,    color:"amber", onClick:updateAwbs, disabled:!store.selFr },
                     ]}
                     className="flex flex-col min-h-[300px] lg:min-h-0"
                 >
@@ -562,7 +564,7 @@ export default function FreightsSetupPage() {
                     refreshing={loadingHa}
                     menuItems={[
                         { label:"Add Rate",      icon:Plus,   color:"green", onClick:() => { if(!store.selWh){toast.error("Select a warehouse first.");return;} setHaForm({...EMPTY_HA}); store.setHaModal({mode:"add"}); }, disabled:!store.selWh || !perms.canCreate },
-                        { label:"Edit Selected", icon:Pencil, color:"blue",  onClick:async() => { if(!store.selHa) return; try { const d = await ff(`/api/freights/handling/${store.selHa.unico}`); setHaForm({ wphysical_uq: d.wphysical_uq||store.selWh?.unico, season_uq: d.season_uq||"", handling: d.handling||0 }); store.setHaModal({mode:"edit"}); } catch(e:any){toast.error(e.message);} }, disabled:!store.selHa || !perms.canEdit },
+                        { label:"Edit Selected", icon:Pencil, color:"blue",  onClick:async() => { if(!store.selHa) return; try { const d = await ff(\`/api/freights/handling/\${store.selHa.unico}\`); setHaForm({ wphysical_uq: d.wphysical_uq||store.selWh?.unico, season_uq: d.season_uq||"", handling: d.handling||0 }); store.setHaModal({mode:"edit"}); } catch(e:any){toast.error(e.message);} }, disabled:!store.selHa || !perms.canEdit },
                         { label:"Delete Selected",icon:Trash2, color:"red", onClick:() => { if(store.selHa){store.setHaModal({mode:"delete"});} }, disabled:!store.selHa || !perms.canDelete },
                     ]}
                     className="flex flex-col min-h-[300px] lg:min-h-0"
@@ -596,7 +598,7 @@ export default function FreightsSetupPage() {
                     refreshing={loadingAt}
                     menuItems={[
                         { label:"Add Tariff",    icon:Plus,   color:"green", onClick:() => { if(!store.selWh){toast.error("Select a warehouse first.");return;} setAtForm({...EMPTY_AT}); store.setAtModal({mode:"add"}); }, disabled:!store.selWh || !perms.canCreate },
-                        { label:"Edit Selected", icon:Pencil, color:"blue",  onClick:async() => { if(!store.selAt) return; try { const d = await ff(`/api/freights/atpda/${store.selAt.unico}`); setAtForm({ wphysical_uq: d.wphysical_uq||store.selWh?.unico, season_uq: d.season_uq||"", city_uq: d.city_uq||"", tariff: d.tariff||0 }); store.setAtModal({mode:"edit"}); } catch(e:any){toast.error(e.message);} }, disabled:!store.selAt || !perms.canEdit },
+                        { label:"Edit Selected", icon:Pencil, color:"blue",  onClick:async() => { if(!store.selAt) return; try { const d = await ff(\`/api/freights/atpda/\${store.selAt.unico}\`); setAtForm({ wphysical_uq: d.wphysical_uq||store.selWh?.unico, season_uq: d.season_uq||"", city_uq: d.city_uq||"", tariff: d.tariff||0 }); store.setAtModal({mode:"edit"}); } catch(e:any){toast.error(e.message);} }, disabled:!store.selAt || !perms.canEdit },
                         { label:"Delete Selected",icon:Trash2, color:"red", onClick:() => { if(store.selAt){store.setAtModal({mode:"delete"});} }, disabled:!store.selAt || !perms.canDelete },
                     ]}
                     className="flex flex-col min-h-[300px] lg:min-h-0"
@@ -634,17 +636,17 @@ export default function FreightsSetupPage() {
                 <div className="flex justify-around items-center max-w-sm mx-auto">
                     <button onClick={() => { 
                         if (store.selFr) {
-                            ff(`/api/freights/rates/${store.selFr.unico}`).then(d => {
+                            ff(\`/api/freights/rates/\${store.selFr.unico}\`).then(d => {
                                 setFrForm({ wphysical_uq: d.wphysical_uq||store.selWh?.unico, season_uq: d.season_uq||"", city_uq: d.city_uq||"", freight: d.freight||0, freight_kg: d.freight_kg||0 });
                                 store.setFrModal({mode:"edit"});
                             }).catch(e => toast.error(e.message));
                         } else if (store.selHa) {
-                            ff(`/api/freights/handling/${store.selHa.unico}`).then(d => {
+                            ff(\`/api/freights/handling/\${store.selHa.unico}\`).then(d => {
                                 setHaForm({ wphysical_uq: d.wphysical_uq||store.selWh?.unico, season_uq: d.season_uq||"", handling: d.handling||0 });
                                 store.setHaModal({mode:"edit"});
                             }).catch(e => toast.error(e.message));
                         } else if (store.selAt) {
-                            ff(`/api/freights/atpda/${store.selAt.unico}`).then(d => {
+                            ff(\`/api/freights/atpda/\${store.selAt.unico}\`).then(d => {
                                 setAtForm({ wphysical_uq: d.wphysical_uq||store.selWh?.unico, season_uq: d.season_uq||"", city_uq: d.city_uq||"", tariff: d.tariff||0 });
                                 store.setAtModal({mode:"edit"});
                             }).catch(e => toast.error(e.message));
@@ -685,9 +687,9 @@ export default function FreightsSetupPage() {
 
             {/* ─── Modals ───────────────────────────────────────────────────────────── */}
             {store.frModal && (
-                <SimpleModal title={`${store.frModal.mode === "add" ? "Add" : store.frModal.mode === "edit" ? "Edit" : "Delete"} Freight Rate`} icon={Cloud}
+                <SimpleModal title={\`\${store.frModal.mode === "add" ? "Add" : store.frModal.mode === "edit" ? "Edit" : "Delete"} Freight Rate\`} icon={Cloud}
                     onSave={saveFr} onClose={() => { store.setFrModal(null); }} saving={saving}
-                    isDelete={store.frModal.mode === "delete"} deleteMsg={`Delete freight rate for ${t(store.selFr?.season)} / ${t(store.selFr?.city)}?`}>
+                    isDelete={store.frModal.mode === "delete"} deleteMsg={\`Delete freight rate for \${t(store.selFr?.season)} / \${t(store.selFr?.city)}?\`}>
                     {store.frModal.mode !== "delete" && (
                         <div className="grid grid-cols-2 gap-3 text-xs">
                             <div className="flex flex-col gap-0.5 col-span-2">
@@ -712,9 +714,9 @@ export default function FreightsSetupPage() {
             )}
 
             {store.haModal && (
-                <SimpleModal title={`${store.haModal.mode === "add" ? "Add" : store.haModal.mode === "edit" ? "Edit" : "Delete"} Handling Rate`} icon={Building2}
+                <SimpleModal title={\`\${store.haModal.mode === "add" ? "Add" : store.haModal.mode === "edit" ? "Edit" : "Delete"} Handling Rate\`} icon={Building2}
                     onSave={saveHa} onClose={() => { store.setHaModal(null); }} saving={saving}
-                    isDelete={store.haModal.mode === "delete"} deleteMsg={`Delete handling rate for ${t(store.selHa?.season)}?`}>
+                    isDelete={store.haModal.mode === "delete"} deleteMsg={\`Delete handling rate for \${t(store.selHa?.season)}?\`}>
                     {store.haModal.mode !== "delete" && (
                         <div className="grid grid-cols-1 gap-3 text-xs">
                             <div className="flex flex-col gap-0.5">
@@ -731,9 +733,9 @@ export default function FreightsSetupPage() {
             )}
 
             {store.atModal && (
-                <SimpleModal title={`${store.atModal.mode === "add" ? "Add" : store.atModal.mode === "edit" ? "Edit" : "Delete"} ATPDA Tariff`} icon={MapPin}
+                <SimpleModal title={\`\${store.atModal.mode === "add" ? "Add" : store.atModal.mode === "edit" ? "Edit" : "Delete"} ATPDA Tariff\`} icon={MapPin}
                     onSave={saveAt} onClose={() => { store.setAtModal(null); }} saving={saving}
-                    isDelete={store.atModal.mode === "delete"} deleteMsg={`Delete ATPDA tariff for ${t(store.selAt?.season)} / ${t(store.selAt?.city)}?`}>
+                    isDelete={store.atModal.mode === "delete"} deleteMsg={\`Delete ATPDA tariff for \${t(store.selAt?.season)} / \${t(store.selAt?.city)}?\`}>
                     {store.atModal.mode !== "delete" && (
                         <div className="grid grid-cols-1 gap-3 text-xs">
                             <div className="flex flex-col gap-0.5">
@@ -861,3 +863,6 @@ export default function FreightsSetupPage() {
         </div>
     );
 }
+`;
+
+fs.writeFileSync(path.resolve('c:/EIS-Data/AppSmith/Antigravity/fullpot-operational-system/src/app/masters/freights/page.tsx'), content, 'utf8');
