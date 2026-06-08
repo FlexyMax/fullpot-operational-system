@@ -393,10 +393,10 @@ export default function SalesRepsPage() {
         const q = search.trim().toLowerCase();
         if (!q) return salesRepsList as any[];
         return (salesRepsList as any[]).filter(r =>
-            t(r.salesman_fname).toLowerCase().includes(q) ||
-            t(r.salesman_lname).toLowerCase().includes(q) ||
-            t(r.old_code).toLowerCase().includes(q) ||
-            t(r.email_1).toLowerCase().includes(q)
+            t(r.SALESMAN_FNAME).toLowerCase().includes(q) ||
+            t(r.SALESMAN_LNAME).toLowerCase().includes(q) ||
+            t(r.OLD_CODE).toLowerCase().includes(q) ||
+            t(r.EMAIL_1).toLowerCase().includes(q)
         );
     }, [salesRepsList, search]);
 
@@ -776,12 +776,12 @@ export default function SalesRepsPage() {
                                     const selected = selectedUq === uq;
                                     return (
                                         <PanelGridTr key={uq || i} selected={selected} onClick={() => handleSelectRow(row)}>
-                                            <PanelGridTd className="font-bold">{`${t(row.salesman_fname)} ${t(row.salesman_lname)}`.trim()}</PanelGridTd>
-                                            <PanelGridTd className="text-gray-500 font-mono">{t(row.old_code)}</PanelGridTd>
-                                            <PanelGridTd className="text-gray-500">{t(row.phone_1)}</PanelGridTd>
-                                            <PanelGridTd className="text-gray-500">{t(row.wp_name)}</PanelGridTd>
-                                            <PanelGridTd className="text-gray-500">{t(row.email_1)}</PanelGridTd>
-                                            <PanelGridTd align="center">{(row.active === "Yes" || row.active === true || row.active === 1) ? <Check size={12} className="text-green-500 mx-auto" /> : <span className="text-gray-300">{"\u2014"}</span>}</PanelGridTd>
+                                            <PanelGridTd className="font-bold">{`${t(row.SALESMAN_FNAME)} ${t(row.SALESMAN_LNAME)}`.trim()}</PanelGridTd>
+                                            <PanelGridTd className="text-gray-500 font-mono">{t(row.OLD_CODE)}</PanelGridTd>
+                                            <PanelGridTd className="text-gray-500">{t(row.PHONE_1)}</PanelGridTd>
+                                            <PanelGridTd className="text-gray-500">{t(row.WP_NAME)}</PanelGridTd>
+                                            <PanelGridTd className="text-gray-500">{t(row.EMAIL_1)}</PanelGridTd>
+                                            <PanelGridTd align="center">{(row.ACTIVE === "Yes" || row.ACTIVE === true || row.ACTIVE === 1) ? <Check size={12} className="text-green-500 mx-auto" /> : <span className="text-gray-300">{"\u2014"}</span>}</PanelGridTd>
                                         </PanelGridTr>
                                     );
                                 })}
@@ -963,11 +963,11 @@ export default function SalesRepsPage() {
             {modalOpen && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
                     onClick={() => setModalOpen(false)}>
-                    <div className="bg-white rounded-t-2xl sm:rounded-lg shadow-2xl w-full sm:max-w-5xl h-[95vh] sm:max-h-[92vh] flex flex-col overflow-hidden"
+                    <div className="bg-white rounded-t-2xl sm:rounded-lg shadow-2xl w-full sm:max-w-5xl h-fit max-h-[95vh] flex flex-col overflow-hidden"
                         onClick={e => e.stopPropagation()}>
 
                         {/* Modal header */}
-                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 rounded-t-lg shrink-0">
+                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 rounded-t-lg shrink-0">
                             <div className="flex items-center gap-2">
                                 <Users size={16} className="text-[#FB7506]" />
                                 <span className="font-black text-[10px] text-white uppercase tracking-widest">
@@ -979,17 +979,9 @@ export default function SalesRepsPage() {
                                     </span>
                                 )}
                             </div>
-                            <div className="flex items-center gap-1.5 px-2">
-                                <button onClick={handleSave} disabled={saving}
-                                    className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all">
-                                    {saving ? <RefreshCcw size={14} className="animate-spin" /> : <Save size={14} />}
-                                    {saving ? "Saving..." : "Save"}
-                                </button>
-                                <button onClick={() => setModalOpen(false)}
-                                    className="flex items-center gap-1.5 bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all">
-                                    <X size={14} /> Cancel
-                                </button>
-                            </div>
+                            <button onClick={() => setModalOpen(false)} className="text-gray-400 hover:text-white transition-colors p-1">
+                                <X size={16} />
+                            </button>
                         </div>
 
                         {/* Modal inner tabs */}
@@ -1122,6 +1114,19 @@ export default function SalesRepsPage() {
                                     ))}
                                 </div>
                             )}
+                        </div>
+                        
+                        {/* Modal footer */}
+                        <div className="flex justify-end gap-3 px-4 py-3 bg-white border-t border-gray-200 shrink-0">
+                            <button onClick={() => setModalOpen(false)}
+                                className="px-4 py-2 rounded border border-gray-200 text-xs font-black uppercase text-gray-600 hover:bg-gray-100 transition-colors">
+                                Cancel
+                            </button>
+                            <button onClick={handleSave} disabled={saving}
+                                className="flex items-center gap-2 px-5 py-2 rounded bg-[#01b763] hover:bg-[#01a056] disabled:opacity-50 text-white text-xs font-black uppercase tracking-wider transition-all shadow-sm">
+                                {saving ? <RefreshCcw size={12} className="animate-spin" /> : <Save size={12} />}
+                                {saving ? "Saving..." : "Save"}
+                            </button>
                         </div>
                     </div>
                 </div>
