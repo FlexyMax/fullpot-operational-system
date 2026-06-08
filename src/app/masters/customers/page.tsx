@@ -562,7 +562,7 @@ export default function CustomersSetupPage() {
                                                                                     const isShiptoExp = expandedShiptoUnico === s.unico;
                                                                                     return (
                                                                                         <Fragment key={s.unico}>
-                                                                                            <PanelGridTr selected={isShiptoSel} onClick={() => setSelShipto(s)}>
+                                                                                            <PanelGridTr selected={isShiptoSel} onClick={() => setSelShipto(isShiptoSel ? null : s)}>
                                                                                                 <PanelGridTd className="w-6 pl-1 pr-0">
                                                                                                     <button onClick={e => { e.stopPropagation(); if (isShiptoExp) { setExpandedShiptoUnico(null); } else { setSelShipto(s); setExpandedShiptoUnico(s.unico); } }}
                                                                                                         className="p-0.5 rounded hover:bg-gray-200 transition-colors">
@@ -621,7 +621,7 @@ export default function CustomersSetupPage() {
                                                                                                                             : (carriers as any[]).map((car: any) => {
                                                                                                                                 const isCarSel = selCarrier?.unico === car.unico;
                                                                                                                                 return (
-                                                                                                                                    <PanelGridTr key={car.unico} selected={isCarSel} onClick={() => setSelCarrier(car)}>
+                                                                                                                                    <PanelGridTr key={car.unico} selected={isCarSel} onClick={() => setSelCarrier(isCarSel ? null : car)}>
                                                                                                                                         <PanelGridTd className="font-medium">{t(car.carrier)}</PanelGridTd>
                                                                                                                                         <PanelGridTd>{t(car.account)}</PanelGridTd>
                                                                                                                                         <PanelGridTd className="hidden sm:table-cell max-w-[100px] truncate">{t(car.ship_name)}</PanelGridTd>
@@ -687,7 +687,7 @@ export default function CustomersSetupPage() {
                                                                                         const isSel = selWebUser?.unico === u.unico;
                                                                                         const yn = (v: any) => v ? <Check size={10} className="text-green-500" /> : <span className="text-gray-200">{"—"}</span>;
                                                                                         return (
-                                                                                            <PanelGridTr key={u.unico} selected={isSel} onClick={() => setSelWebUser(u)}>
+                                                                                            <PanelGridTr key={u.unico} selected={isSel} onClick={() => setSelWebUser(isSel ? null : u)}>
                                                                                                 <PanelGridTd className="font-medium">{t(u.fullname)}</PanelGridTd>
                                                                                                 <PanelGridTd className="font-mono text-[10px]">{t(u.username)}</PanelGridTd>
                                                                                                 <PanelGridTd align="center">{yn(u.active)}</PanelGridTd>
@@ -735,7 +735,7 @@ export default function CustomersSetupPage() {
                                                                                     {(messages as any[]).map((m: any, i: number) => {
                                                                                         const isSel = selMessage?.unico === m.unico;
                                                                                         return (
-                                                                                            <PanelGridTr key={m.unico||i} selected={isSel} onClick={() => setSelMessage(m)}>
+                                                                                            <PanelGridTr key={m.unico||i} selected={isSel} onClick={() => setSelMessage(isSel ? null : m)}>
                                                                                                 <PanelGridTd className="truncate max-w-[300px]">{t(m.grid_message)}</PanelGridTd>
                                                                                                 <PanelGridTd className="whitespace-nowrap text-gray-500">{formatDateEST(normalizeToISODate(m.add_date))}</PanelGridTd>
                                                                                                 <PanelGridTd className="whitespace-nowrap text-gray-500">{formatDateEST(normalizeToISODate(m.deadline))}</PanelGridTd>
