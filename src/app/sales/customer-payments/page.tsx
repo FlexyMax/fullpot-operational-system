@@ -439,7 +439,6 @@ export default function CustomerPaymentsPage() {
                     >
                             <PanelGridTable>
                                 <PanelGridThead>
-                                    <tr>
                                         <PanelGridTh>Customer</PanelGridTh>
                                         <PanelGridTh align="right">% Margin</PanelGridTh>
                                         <PanelGridTh align="right">Cr. Limit</PanelGridTh>
@@ -454,7 +453,6 @@ export default function CustomerPaymentsPage() {
                                         <PanelGridTh align="right">Book-Bal</PanelGridTh>
                                         <PanelGridTh>Stmt By</PanelGridTh>
                                         <PanelGridTh align="center">Hold</PanelGridTh>
-                                    </tr>
                                 </PanelGridThead>
                                 <PanelGridTbody>
                                     {(customers as any[]).map((c: any) => {
@@ -554,7 +552,6 @@ export default function CustomerPaymentsPage() {
                     >
                             <PanelGridTable>
                                 <PanelGridThead>
-                                    <tr>
                                         <PanelGridTh>Invoice</PanelGridTh>
                                         <PanelGridTh>Inv.Date</PanelGridTh>
                                         <PanelGridTh align="right">Days</PanelGridTh>
@@ -567,7 +564,6 @@ export default function CustomerPaymentsPage() {
                                         <PanelGridTh align="right">Balance</PanelGridTh>
                                         <PanelGridTh align="center">Void</PanelGridTh>
                                         <PanelGridTh align="right">Acumulative</PanelGridTh>
-                                    </tr>
                                 </PanelGridThead>
                                 <PanelGridTbody>
                                     {(invoices as any[]).map((inv: any) => {
@@ -622,7 +618,7 @@ export default function CustomerPaymentsPage() {
                         >
                                 <PanelGridTable>
                                     <PanelGridThead>
-                                        <tr><PanelGridTh>Income</PanelGridTh><PanelGridTh align="right">Payment</PanelGridTh></tr>
+                                        <PanelGridTh>Income</PanelGridTh><PanelGridTh align="right">Payment</PanelGridTh>
                                     </PanelGridThead>
                                     <PanelGridTbody>
                                         {(applied as any[]).map((a: any) => {
@@ -713,7 +709,6 @@ export default function CustomerPaymentsPage() {
                     >
                             <PanelGridTable>
                                 <PanelGridThead>
-                                    <tr>
                                         <PanelGridTh>Date</PanelGridTh>
                                         <PanelGridTh align="right">Amount</PanelGridTh>
                                         <PanelGridTh align="right">Applied</PanelGridTh>
@@ -723,7 +718,6 @@ export default function CustomerPaymentsPage() {
                                         <PanelGridTh>Card</PanelGridTh>
                                         <PanelGridTh>Approval</PanelGridTh>
                                         <PanelGridTh align="center">Void</PanelGridTh>
-                                    </tr>
                                 </PanelGridThead>
                                 <PanelGridTbody>
                                     {(paymentsHistory as any[]).map((p:any)=>{
@@ -755,7 +749,6 @@ export default function CustomerPaymentsPage() {
                     >
                             <PanelGridTable>
                                 <PanelGridThead>
-                                    <tr>
                                         <PanelGridTh>Invoice</PanelGridTh>
                                         <PanelGridTh>Date</PanelGridTh>
                                         <PanelGridTh>Due-Date</PanelGridTh>
@@ -764,7 +757,6 @@ export default function CustomerPaymentsPage() {
                                         <PanelGridTh align="right">Debits</PanelGridTh>
                                         <PanelGridTh align="right">Payment</PanelGridTh>
                                         <PanelGridTh align="right">T.Payments</PanelGridTh>
-                                    </tr>
                                 </PanelGridThead>
                                 <PanelGridTbody>
                                     {(payInvoices as any[]).map((p:any,i:number)=>(
@@ -804,7 +796,7 @@ export default function CustomerPaymentsPage() {
                         >
                                 <PanelGridTable>
                                     <PanelGridThead>
-                                        <tr><th className="p-2 border-r border-gray-200">Date</th><th className="p-2 text-right">#</th></tr>
+                                        <PanelGridTh>Date</PanelGridTh><PanelGridTh align="right">#</PanelGridTh>
                                     </PanelGridThead>
                                     <PanelGridTbody>
                                         {(crdbDates as any[]).map((d:any)=>{
@@ -852,7 +844,6 @@ export default function CustomerPaymentsPage() {
                         >
                                 <PanelGridTable>
                                 <PanelGridThead>
-                                    <tr>
                                         <PanelGridTh>Type</PanelGridTh>
                                         <PanelGridTh>Invoice</PanelGridTh>
                                         <PanelGridTh align="right">Debits</PanelGridTh>
@@ -861,7 +852,6 @@ export default function CustomerPaymentsPage() {
                                         <PanelGridTh align="center">Auto</PanelGridTh>
                                         <PanelGridTh>Reason</PanelGridTh>
                                         <PanelGridTh>Details</PanelGridTh>
-                                    </tr>
                                 </PanelGridThead>
                                 <PanelGridTbody>
                                     {(crdbHistory as any[]).map((c:any)=>{
@@ -925,14 +915,12 @@ export default function CustomerPaymentsPage() {
                     >
                             <PanelGridTable>
                                 <PanelGridThead>
-                                    <tr>
                                         <PanelGridTh>Type</PanelGridTh>
                                         <PanelGridTh>Date</PanelGridTh>
                                         <PanelGridTh>Doc.</PanelGridTh>
                                         <PanelGridTh align="right">Debits</PanelGridTh>
                                         <PanelGridTh align="right">Credits</PanelGridTh>
                                         <PanelGridTh align="right">Balance</PanelGridTh>
-                                    </tr>
                                 </PanelGridThead>
                                 <PanelGridTbody>
                                     {(stmtData as any[]).map((r:any,i:number)=><PanelGridTr key={i}>
@@ -972,7 +960,6 @@ export default function CustomerPaymentsPage() {
                         <div className="overflow-auto flex-1">
                             <PanelGridTable>
                                 <PanelGridThead>
-                                    <tr>
                                         <PanelGridTh>Type</PanelGridTh>
                                         <PanelGridTh>Date</PanelGridTh>
                                         <PanelGridTh>Doc.</PanelGridTh>
@@ -982,7 +969,6 @@ export default function CustomerPaymentsPage() {
                                         <PanelGridTh align="right">Debits</PanelGridTh>
                                         <PanelGridTh align="right">Credits</PanelGridTh>
                                         <PanelGridTh align="right">Balance</PanelGridTh>
-                                    </tr>
                                 </PanelGridThead>
                                 <PanelGridTbody>
                                     {(stmtBalData as any[]).map((r:any,i:number)=><PanelGridTr key={i}>
@@ -1031,14 +1017,12 @@ export default function CustomerPaymentsPage() {
                     >
                             <PanelGridTable>
                                 <PanelGridThead>
-                                    <tr>
                                         <PanelGridTh>Date</PanelGridTh>
                                         <PanelGridTh>Customer</PanelGridTh>
                                         <PanelGridTh>Bank-Doc</PanelGridTh>
                                         <PanelGridTh align="right">Amount</PanelGridTh>
                                         <PanelGridTh align="right">Applied</PanelGridTh>
                                         <PanelGridTh align="right">Balance</PanelGridTh>
-                                    </tr>
                                 </PanelGridThead>
                                 <PanelGridTbody>
                                     {(corpIncomes as any[]).map((c:any)=>{
@@ -1073,7 +1057,6 @@ export default function CustomerPaymentsPage() {
                     >
                             <PanelGridTable>
                                 <PanelGridThead>
-                                    <tr>
                                         <PanelGridTh>Date</PanelGridTh>
                                         <PanelGridTh>Customer</PanelGridTh>
                                         <PanelGridTh>Bank-Doc</PanelGridTh>
@@ -1081,7 +1064,6 @@ export default function CustomerPaymentsPage() {
                                         <PanelGridTh align="right">Applied</PanelGridTh>
                                         <PanelGridTh align="right">UnApply</PanelGridTh>
                                         <PanelGridTh align="right">Deposit</PanelGridTh>
-                                    </tr>
                                 </PanelGridThead>
                                 <PanelGridTbody>
                                     {(corpPayments as any[]).map((p:any)=>{
@@ -1117,14 +1099,12 @@ export default function CustomerPaymentsPage() {
                     >
                             <PanelGridTable>
                                 <PanelGridThead>
-                                    <tr>
                                         <PanelGridTh>Date</PanelGridTh>
                                         <PanelGridTh>Customer</PanelGridTh>
                                         <PanelGridTh>Bank-Doc</PanelGridTh>
                                         <PanelGridTh align="right">Applied</PanelGridTh>
                                         <PanelGridTh>Invoice</PanelGridTh>
                                         <PanelGridTh>Due Date</PanelGridTh>
-                                    </tr>
                                 </PanelGridThead>
                                 <PanelGridTbody>
                                     {(corpInvoices as any[]).map((c:any,i:number)=><PanelGridTr key={i}>
