@@ -346,6 +346,18 @@ export default function CustomerPaymentsPage() {
         setActiveTab("invoices");
     };
 
+    const handleHoldNoSales = () => toastConfirm("Put on hold customers with no sales?", async () => {
+        const r = await fetch("/api/customer-payments/hold-no-sales", { method: "POST" });
+        const d = await r.json();
+        d.error ? toast.error(d.error) : toast.success("Done.");
+    }, "Hold");
+
+    const handlePrintAll = () => toastConfirm("Print statements for all customers?", async () => {
+        setPrintAllProgress("Loading...");
+        try { const d = await cpFetch("/api/customer-payments/reports/all-statements"); toast.success(`${d.records?.length ?? 0} statements generated.`); setPrintAllProgress(null); }
+        catch (e: any) { toast.error((e as any).message); setPrintAllProgress(null); }
+    }, "Print All");
+
     // totalRow: only total_books_bal is raw numeric; other money fields are pre-formatted strings
     const totalRow = { balance: (customers as any[]).reduce((s: number, c: any) => s + parseFloat(c.total_books_bal||0), 0) };
     const invTotals = { payments: (invoices as any[]).reduce((s: number, i: any) => s + parseFloat(i.in_ammount||0), 0), credits: (invoices as any[]).reduce((s: number, i: any) => s + parseFloat(i.cre_ammount||0), 0), debits: (invoices as any[]).reduce((s: number, i: any) => s + parseFloat(i.deb_ammount||0), 0), invBal: (invoices as any[]).reduce((s: number, i: any) => s + parseFloat(i.balance||0), 0), booksBal: selCustomer?.total_books_bal ?? 0 };
@@ -393,7 +405,33 @@ export default function CustomerPaymentsPage() {
             {/* ── TAB 1: CUSTOMER ───────────────────────────────────────────── */}
             {activeTab === "customer" && (
                 <div className="flex flex-col flex-1 overflow-hidden p-1.5 gap-1.5">
-                    {/* Search toolbar */}
+                    {/* Mobile-only global actions bar (above filter row) */}
+                    <div className="md:hidden bg-white border-b border-gray-100 px-3 py-1.5 flex items-center gap-1.5 shrink-0 overflow-x-auto scrollbar-none">
+                        <button onClick={()=>setInvSearchModal(true)}
+                            className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase rounded border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors shrink-0">
+                            <Search size={10}/>Inv Search
+                        </button>
+                        <button onClick={handleHoldNoSales}
+                            className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase rounded border border-gray-200 text-orange-500 hover:bg-orange-50 whitespace-nowrap transition-colors shrink-0">
+                            <AlertCircle size={10}/>Hold No Sales
+                        </button>
+                        <div className="flex items-center shrink-0">
+                            <button onClick={handlePrintAll} disabled={!perms.canReport}
+                                className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase rounded-l border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors disabled:opacity-40">
+                                <Printer size={10}/>Print All
+                            </button>
+                            <select value={stmtDestination} onChange={e=>setStmtDestination(parseInt(e.target.value))}
+                                className="h-[30px] text-[10px] font-bold border border-l-0 border-gray-200 rounded-r px-1 outline-none bg-white text-gray-600">
+                                <option value={1}>PRN</option><option value={2}>EMAIL</option><option value={3}>FAX</option>
+                            </select>
+                        </div>
+                        <button onClick={()=>setSalesmanModal(true)} disabled={!perms.canReport}
+                            className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase rounded border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors shrink-0 disabled:opacity-40">
+                            <Users size={10}/>By Salesman
+                        </button>
+                    </div>
+
+                    {/* Search / filter toolbar */}
                     <div className="bg-white border-b border-gray-200 px-3 py-2 flex items-center gap-2 shrink-0 shadow-sm flex-wrap">
                         <div className="relative flex-1 max-w-sm">
                             <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -409,24 +447,29 @@ export default function CustomerPaymentsPage() {
                                 </button>
                             ))}
                         </div>
-                        <div className="flex items-center gap-1 shrink-0 ml-auto">
+                        {/* Desktop-only global actions */}
+                        <div className="hidden md:flex items-center gap-1 shrink-0 ml-auto">
                             <button onClick={()=>setInvSearchModal(true)}
                                 className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-black uppercase rounded border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors">
-                                <Search size={10}/><span className="hidden sm:inline">Inv Search</span>
+                                <Search size={10}/>Inv Search
                             </button>
-                            <button onClick={()=>toastConfirm("Put on hold customers with no sales?", async()=>{ const r=await fetch("/api/customer-payments/hold-no-sales",{method:"POST"}); const d=await r.json(); d.error?toast.error(d.error):toast.success("Done."); }, "Hold")}
+                            <button onClick={handleHoldNoSales}
                                 className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-black uppercase rounded border border-gray-200 text-orange-500 hover:bg-orange-50 whitespace-nowrap transition-colors">
-                                <AlertCircle size={10}/><span className="hidden sm:inline">Hold No Sales</span>
+                                <AlertCircle size={10}/>Hold No Sales
                             </button>
-                            <button onClick={()=>toastConfirm("Print statements for all customers?", async()=>{ setPrintAllProgress("Loading..."); try{const d=await cpFetch("/api/customer-payments/reports/all-statements");toast.success(`${d.records?.length??0} statements generated.`);setPrintAllProgress(null);}catch(e:any){toast.error((e as any).message);setPrintAllProgress(null);} }, "Print All")}
-                                disabled={!perms.canReport}
+                            <div className="flex items-center">
+                                <button onClick={handlePrintAll} disabled={!perms.canReport}
+                                    className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-black uppercase rounded-l border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors disabled:opacity-40">
+                                    <Printer size={10}/>Print All
+                                </button>
+                                <select value={stmtDestination} onChange={e=>setStmtDestination(parseInt(e.target.value))}
+                                    className="h-[30px] text-[10px] font-bold border border-l-0 border-gray-200 rounded-r px-1 outline-none bg-white text-gray-600">
+                                    <option value={1}>PRN</option><option value={2}>EMAIL</option><option value={3}>FAX</option>
+                                </select>
+                            </div>
+                            <button onClick={()=>setSalesmanModal(true)} disabled={!perms.canReport}
                                 className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-black uppercase rounded border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors disabled:opacity-40">
-                                <Printer size={10}/><span className="hidden sm:inline">Print All</span>
-                            </button>
-                            <button onClick={()=>setSalesmanModal(true)}
-                                disabled={!perms.canReport}
-                                className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-black uppercase rounded border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors disabled:opacity-40">
-                                <Users size={10}/><span className="hidden sm:inline">By Salesman</span>
+                                <Users size={10}/>By Salesman
                             </button>
                         </div>
                         {(loadingCust||fetchingMoreCust) && <RefreshCcw size={13} className="text-[#FB7506] animate-spin shrink-0"/>}
@@ -439,17 +482,7 @@ export default function CustomerPaymentsPage() {
                         recordCount={`${customers.length} / ${custTotal > 0 ? custTotal : customers.length}`}
                         onRefresh={refreshAll}
                         refreshing={loadingCust || fetchingMoreCust}
-                        headerRight={
-                            <div className="flex items-center gap-2">
-                                <select value={stmtDestination} onChange={e=>setStmtDestination(parseInt(e.target.value))} className="bg-white border-none text-gray-700 text-[10px] font-bold outline-none rounded px-2 py-1 h-7 mr-1">
-                                    <option value={1}>PRINT</option><option value={2}>EMAIL</option><option value={3}>FAX</option>
-                                </select>
-                                <AuditLogModal recordId={selCustomer?.unico} disabled={!selCustomer} bareButton />
-                            </div>
-                        }
-                        menuItems={[
-                            { label: "Update", icon: Pencil, color: "orange", onClick: ()=>{ if(!selCustomer){toast.error("Select a customer.");return;} if(!perms.canEdit){toast.error(PERMISSION_MSGS.edit);return;} setCustEditModal(true); }, disabled: !selCustomer||!perms.canEdit },
-                        ]}
+                        headerRight={<AuditLogModal recordId={selCustomer?.unico} disabled={!selCustomer} bareButton />}
                         className="mx-2 mt-2 mb-3 flex-1 flex flex-col min-h-0"
                         onScroll={handleCustScroll}
                     >
@@ -1214,7 +1247,6 @@ export default function CustomerPaymentsPage() {
                 onClearSelection={() => store.setActiveGrid(null)}
                 items={[
                     { grid: "customer", label: "Edit Cust", icon: Pencil, color: "orange", onClick: () => { if(selCustomer) setCustEditModal(true) }, disabled: !selCustomer || !perms.canEdit },
-                    { grid: "customer", label: "Print All", icon: Printer, color: "gray", onClick: () => {}, disabled: !perms.canReport },
                     { grid: "invoices", label: "New Pay", icon: Plus, color: "green", onClick: () => { if(!perms.canCreate){toast.error(PERMISSION_MSGS.create);return;} setNewPayModal({mode:"add"}); }, disabled: !selCustomer || !perms.canCreate },
                     { grid: "invoices", label: "Apply Pay", icon: DollarSign, color: "blue", onClick: () => { if(selInvoice && selIncome) setApplyModal({mode:"add"}) }, disabled: !selInvoice || !selIncome || !perms.canCreate },
                     { grid: "invoices", label: "Cr/Db", icon: CreditCard, color: "orange", onClick: () => { if(selInvoice) setCrdbModal({mode:"add"}) }, disabled: !selInvoice || !perms.canCreate },
