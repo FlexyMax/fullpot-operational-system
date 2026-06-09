@@ -430,7 +430,7 @@ export default function CustomerPaymentsPage() {
                         menuItems={[
                             { label: "Update", icon: Pencil, color: "orange", onClick: ()=>{ if(!selCustomer){toast.error("Select a customer.");return;} if(!perms.canEdit){toast.error(PERMISSION_MSGS.edit);return;} setCustEditModal(true); }, disabled: !selCustomer||!perms.canEdit },
                             { label: "Invoice Search", icon: Search, color: "gray", onClick: ()=>setInvSearchModal(true) },
-                            { label: "Hold No Sales", icon: AlertCircle, color: "amber", onClick: ()=>toastConfirm("Put on hold customers with no sales?", async()=>{ const r=await fetch("/api/customer-payments/hold-no-sales",{method:"POST"}); const d=await r.json(); d.error?toast.error(d.error):toast.success("Done."); }, "Hold") },
+                            { label: "Hold No Sales", icon: AlertCircle, color: "orange", onClick: ()=>toastConfirm("Put on hold customers with no sales?", async()=>{ const r=await fetch("/api/customer-payments/hold-no-sales",{method:"POST"}); const d=await r.json(); d.error?toast.error(d.error):toast.success("Done."); }, "Hold") },
                             { label: "Print All", icon: Users, color: "orange", onClick: ()=>toastConfirm("Print statements for all customers?", async()=>{ setPrintAllProgress("Loading..."); try{const d=await cpFetch("/api/customer-payments/reports/all-statements");toast.success(`${d.records?.length??0} statements generated.`);setPrintAllProgress(null);}catch(e:any){toast.error((e as any).message);setPrintAllProgress(null);} }, "Print All"), disabled: !perms.canReport },
                             { label: "By Salesman", icon: Search, color: "gray", onClick: ()=>setSalesmanModal(true), disabled: !perms.canReport },
                         ]}
@@ -682,7 +682,7 @@ export default function CustomerPaymentsPage() {
                             { label: "Add", icon: Plus, color: "green", onClick: ()=>{ if(!perms.canCreate){toast.error(PERMISSION_MSGS.create);return;} setNewPayModal({mode:"add"}); }, disabled: !selCustomer||!perms.canCreate },
                             { label: "Edit", icon: Pencil, color: "orange", onClick: ()=>{ if(!selPayment){toast.error("Payment empty.");return;} setNewPayModal({mode:"edit",income:selPayment}); }, disabled: !selPayment },
                             { label: "Delete", icon: Trash2, color: "red", onClick: ()=>{ if(!selPayment){toast.error("Payment empty.");return;} setNewPayModal({mode:"delete",income:selPayment}); }, disabled: !selPayment },
-                            { label: "Void Payment", icon: RotateCcw, color: "amber", onClick: ()=>{
+                            { label: "Void Payment", icon: RotateCcw, color: "orange", onClick: ()=>{
                                 if(!selPayment){toast.error("Payment empty.");return;}
                                 if(!perms.canEdit){toast.error(PERMISSION_MSGS.edit);return;}
                                 toastConfirm("Do you want to VOID this payment?", async()=>{
@@ -690,7 +690,7 @@ export default function CustomerPaymentsPage() {
                                 }, "Void");
                             }, disabled: !selPayment||!perms.canEdit },
                             { label: "Print", icon: Printer, color: "gray", onClick: async()=>{ if(!selPayment){toast.error("Payment empty.");return;} const d=await cpFetch(`/api/customer-payments/payment/${selPayment.unico}/report`); toast.info(`Report: ${d.records?.length??0} record(s) — print coming soon.`); }, disabled: !selPayment||!perms.canReport },
-                            { label: "Cash Back", icon: RotateCcw, color: "purple", onClick: ()=>{ if(!selPayment){toast.error("Payment empty.");return;} setCashbackModal(true); }, disabled: !selPayment||!perms.canCreate },
+                            { label: "Cash Back", icon: RotateCcw, color: "blue", onClick: ()=>{ if(!selPayment){toast.error("Payment empty.");return;} setCashbackModal(true); }, disabled: !selPayment||!perms.canCreate },
                         ]}
                         className="flex-[1.2] flex flex-col min-h-0"
                     >
