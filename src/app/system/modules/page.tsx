@@ -424,6 +424,13 @@ export default function ModuleScreenSetupPage() {
                 activeGrid ? "translate-y-0" : "translate-y-full"
             )}>
                 <div className="flex items-center gap-1 overflow-x-auto px-4 scrollbar-none justify-center">
+                    <div className="flex flex-col items-center justify-center gap-1 text-gray-400 shrink-0 mr-1">
+                        {activeGrid === "screen" ? <Monitor size={20} className="text-blue-500 opacity-80" /> : <LayoutGrid size={20} className="text-[#FB7506] opacity-80" />}
+                        <span className="text-[8px] font-black uppercase tracking-wider">{activeGrid === "screen" ? "Screen" : "Module"}</span>
+                    </div>
+
+                    <div className="w-px h-8 bg-gray-200 shrink-0 mx-2" />
+
                     <button onClick={activeGrid === "screen" ? handleEditScreen : handleEditModule} disabled={!perms.canEdit}
                         className="flex flex-col items-center gap-1 text-gray-600 disabled:opacity-50 transition-colors hover:text-[#FB7506] min-w-[56px] shrink-0">
                         <Pencil size={20} className={perms.canEdit ? "text-[#FB7506]" : "text-gray-400"} />
