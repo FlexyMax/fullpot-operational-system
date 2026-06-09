@@ -497,9 +497,9 @@ export default function CustomerPaymentsPage() {
                                     <PanelGridTfoot>
                                         <tr>
                                             <td className="px-2 py-1 font-black">TOTALS ({custTotal} customers)</td>
-                                            <td colSpan={9} className="px-2 py-1"/>
+                                            <td colSpan={10} className="px-2 py-1"/>
                                             <td className="px-2 py-1 text-right font-black">{fmt(totalRow.balance)}</td>
-                                            <td colSpan={3} className="px-2 py-1"/>
+                                            <td colSpan={2} className="px-2 py-1"/>
                                         </tr>
                                     </PanelGridTfoot>
                                 )}
