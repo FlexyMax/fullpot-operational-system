@@ -1201,13 +1201,16 @@ export default function CustomerPaymentsPage() {
             {/* ── Mobile Action Bar ────────────────────────────────────────── */}
             <MobileActionBar
                 activeGrid={activeGrid}
+                onClearSelection={() => store.setActiveGrid(null)}
                 items={[
                     { grid: "customer", label: "Edit Cust", icon: Pencil, color: "orange", onClick: () => { if(selCustomer) setCustEditModal(true) }, disabled: !selCustomer || !perms.canEdit },
                     { grid: "customer", label: "Print All", icon: Printer, color: "gray", onClick: () => {}, disabled: !perms.canReport },
-                    { grid: "invoices", label: "Apply Pay", icon: Plus, color: "green", onClick: () => { if(selInvoice && selIncome) setApplyModal({mode:"add"}) }, disabled: !selInvoice || !selIncome || !perms.canCreate },
-                    { grid: "invoices", label: "Insert Cr/Db", icon: CreditCard, color: "blue", onClick: () => { if(selInvoice) setCrdbModal({mode:"add"}) }, disabled: !selInvoice || !perms.canCreate },
-                    { grid: "payments", label: "Edit", icon: Pencil, color: "orange", onClick: () => { if(selIncome) setNewPayModal({mode:"edit", income:selIncome}) }, disabled: !selIncome || !perms.canEdit },
-                    { grid: "payments", label: "Delete", icon: Trash2, color: "red", onClick: () => { if(selIncome) setNewPayModal({mode:"delete", income:selIncome}) }, disabled: !selIncome || !perms.canDelete },
+                    { grid: "invoices", label: "New Pay", icon: Plus, color: "green", onClick: () => { if(!perms.canCreate){toast.error(PERMISSION_MSGS.create);return;} setNewPayModal({mode:"add"}); }, disabled: !selCustomer || !perms.canCreate },
+                    { grid: "invoices", label: "Apply Pay", icon: DollarSign, color: "blue", onClick: () => { if(selInvoice && selIncome) setApplyModal({mode:"add"}) }, disabled: !selInvoice || !selIncome || !perms.canCreate },
+                    { grid: "invoices", label: "Cr/Db", icon: CreditCard, color: "orange", onClick: () => { if(selInvoice) setCrdbModal({mode:"add"}) }, disabled: !selInvoice || !perms.canCreate },
+                    { grid: "payments", label: "Add", icon: Plus, color: "green", onClick: () => { if(!perms.canCreate){toast.error(PERMISSION_MSGS.create);return;} setNewPayModal({mode:"add"}); }, disabled: !selCustomer || !perms.canCreate },
+                    { grid: "payments", label: "Edit", icon: Pencil, color: "orange", onClick: () => { if(selPayment) setNewPayModal({mode:"edit", income:selPayment}) }, disabled: !selPayment || !perms.canEdit },
+                    { grid: "payments", label: "Delete", icon: Trash2, color: "red", onClick: () => { if(selPayment) setNewPayModal({mode:"delete", income:selPayment}) }, disabled: !selPayment || !perms.canDelete },
                     { grid: "crdb", label: "Edit", icon: Pencil, color: "orange", onClick: () => { if(selCrDb) setCrdbModal({mode:"edit"}) }, disabled: !selCrDb || !perms.canEdit },
                     { grid: "crdb", label: "Delete", icon: Trash2, color: "red", onClick: () => { if(selCrDb) setCrdbModal({mode:"delete"}) }, disabled: !selCrDb || !perms.canDelete },
                 ]}

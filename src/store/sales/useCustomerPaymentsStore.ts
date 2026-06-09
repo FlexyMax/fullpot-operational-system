@@ -17,6 +17,7 @@ interface CustomerPaymentsState {
 
     // Actions
     setActiveTab: (tab: "customer" | "invoices" | "payments" | "crdb" | "statement" | "corporate") => void;
+    setActiveGrid: (grid: "customer" | "invoices" | "payments" | "crdb" | "statement" | "corporate" | null) => void;
     setSelCustomerUq: (uq: string | null) => void;
     setSelInvoiceUq: (uq: string | null) => void;
     setSelPaymentUq: (uq: string | null) => void;
@@ -40,7 +41,8 @@ export const useCustomerPaymentsStore = create<CustomerPaymentsState>((set) => (
     customerSearch: "",
     customerFilterMode: "ALL",
 
-    setActiveTab: (tab) => set({ activeTab: tab, activeGrid: tab }),
+    setActiveTab: (tab) => set({ activeTab: tab, activeGrid: ["statement","corporate"].includes(tab) ? null : tab }),
+    setActiveGrid: (grid) => set({ activeGrid: grid }),
     
     setSelCustomerUq: (uq) => set({ selCustomerUq: uq, activeGrid: uq ? "customer" : null, selInvoiceUq: null, selPaymentUq: null, selCrdbUq: null }),
     setSelInvoiceUq: (uq) => set({ selInvoiceUq: uq, activeGrid: uq ? "invoices" : null }),
