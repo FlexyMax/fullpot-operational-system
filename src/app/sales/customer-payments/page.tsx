@@ -409,6 +409,26 @@ export default function CustomerPaymentsPage() {
                                 </button>
                             ))}
                         </div>
+                        <div className="flex items-center gap-1 shrink-0 ml-auto">
+                            <button onClick={()=>setInvSearchModal(true)}
+                                className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-black uppercase rounded border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors">
+                                <Search size={10}/><span className="hidden sm:inline">Inv Search</span>
+                            </button>
+                            <button onClick={()=>toastConfirm("Put on hold customers with no sales?", async()=>{ const r=await fetch("/api/customer-payments/hold-no-sales",{method:"POST"}); const d=await r.json(); d.error?toast.error(d.error):toast.success("Done."); }, "Hold")}
+                                className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-black uppercase rounded border border-gray-200 text-orange-500 hover:bg-orange-50 whitespace-nowrap transition-colors">
+                                <AlertCircle size={10}/><span className="hidden sm:inline">Hold No Sales</span>
+                            </button>
+                            <button onClick={()=>toastConfirm("Print statements for all customers?", async()=>{ setPrintAllProgress("Loading..."); try{const d=await cpFetch("/api/customer-payments/reports/all-statements");toast.success(`${d.records?.length??0} statements generated.`);setPrintAllProgress(null);}catch(e:any){toast.error((e as any).message);setPrintAllProgress(null);} }, "Print All")}
+                                disabled={!perms.canReport}
+                                className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-black uppercase rounded border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors disabled:opacity-40">
+                                <Printer size={10}/><span className="hidden sm:inline">Print All</span>
+                            </button>
+                            <button onClick={()=>setSalesmanModal(true)}
+                                disabled={!perms.canReport}
+                                className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-black uppercase rounded border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors disabled:opacity-40">
+                                <Users size={10}/><span className="hidden sm:inline">By Salesman</span>
+                            </button>
+                        </div>
                         {(loadingCust||fetchingMoreCust) && <RefreshCcw size={13} className="text-[#FB7506] animate-spin shrink-0"/>}
                     </div>
 
@@ -429,10 +449,6 @@ export default function CustomerPaymentsPage() {
                         }
                         menuItems={[
                             { label: "Update", icon: Pencil, color: "orange", onClick: ()=>{ if(!selCustomer){toast.error("Select a customer.");return;} if(!perms.canEdit){toast.error(PERMISSION_MSGS.edit);return;} setCustEditModal(true); }, disabled: !selCustomer||!perms.canEdit },
-                            { label: "Invoice Search", icon: Search, color: "gray", onClick: ()=>setInvSearchModal(true) },
-                            { label: "Hold No Sales", icon: AlertCircle, color: "orange", onClick: ()=>toastConfirm("Put on hold customers with no sales?", async()=>{ const r=await fetch("/api/customer-payments/hold-no-sales",{method:"POST"}); const d=await r.json(); d.error?toast.error(d.error):toast.success("Done."); }, "Hold") },
-                            { label: "Print All", icon: Users, color: "orange", onClick: ()=>toastConfirm("Print statements for all customers?", async()=>{ setPrintAllProgress("Loading..."); try{const d=await cpFetch("/api/customer-payments/reports/all-statements");toast.success(`${d.records?.length??0} statements generated.`);setPrintAllProgress(null);}catch(e:any){toast.error((e as any).message);setPrintAllProgress(null);} }, "Print All"), disabled: !perms.canReport },
-                            { label: "By Salesman", icon: Search, color: "gray", onClick: ()=>setSalesmanModal(true), disabled: !perms.canReport },
                         ]}
                         className="mx-2 mt-2 mb-3 flex-1 flex flex-col min-h-0"
                         onScroll={handleCustScroll}
@@ -548,7 +564,7 @@ export default function CustomerPaymentsPage() {
                             { label: "New Payment", icon: Plus, color: "green", onClick: ()=>{ if(!perms.canCreate){toast.error(PERMISSION_MSGS.create);return;} setNewPayModal({mode:"add"}); }, disabled: !selCustomer||!perms.canCreate },
                             { label: "Insert Cr/Db", icon: CreditCard, color: "blue", onClick: ()=>{ if(!perms.canCreate){toast.error(PERMISSION_MSGS.create);return;} if(!selInvoice){toast.error("Select an invoice first.");return;} setCrdbModal({mode:"add"}); }, disabled: !selCustomer||!selInvoice||!perms.canCreate },
                         ]}
-                        className="mx-2 mt-2 flex-[1.2] flex flex-col min-h-0"
+                        className="flex-1 flex flex-col min-h-0"
                     >
                             <PanelGridTable>
                                 <PanelGridThead>
@@ -601,7 +617,7 @@ export default function CustomerPaymentsPage() {
                     </PanelGrid>
 
                     {/* Applied payments + income combo */}
-                    <div className="flex gap-1.5 overflow-hidden" style={{flex:"1 1 45%",minHeight:0}}>
+                    <div className="flex gap-1.5 overflow-hidden flex-1 min-h-0">
                         {/* Applied payments sub-grid */}
                         {/* Applied payments sub-grid */}
                         <PanelGrid
@@ -1122,12 +1138,6 @@ export default function CustomerPaymentsPage() {
                     </PanelGrid>
                 </div>
             )}
-
-            {/* Footer */}
-            <div className="h-7 bg-gray-100 border-t px-4 flex items-center justify-between text-[9px] font-bold text-gray-500 uppercase tracking-tight shrink-0">
-                <div className="flex gap-4"><span>Server: Production</span><span className="text-gray-300">|</span><span>Database: FullPot</span></div>
-                <span className="text-[#FB7506]">FOS A/R V.1.0.0</span>
-            </div>
 
             {/* ── Modals ─────────────────────────────────────────────────────── */}
             {custEditModal && selCustomer && (
