@@ -62,26 +62,23 @@ export function PanelGridTbody({ children }: { children: React.ReactNode }) {
 export function PanelGridTr({
   children,
   className,
-  selected = false,
   onClick,
   onDoubleClick,
+  selected,
 }: {
   children: React.ReactNode;
   className?: string;
-  selected?: boolean;
   onClick?: () => void;
   onDoubleClick?: () => void;
+  selected?: boolean;
 }) {
   return (
     <tr
       onClick={onClick}
       onDoubleClick={onDoubleClick}
       className={cn(
-        "h-8 transition-colors text-gray-700 cursor-pointer",
-        "border-b border-black/5",
-        selected
-          ? "!bg-blue-100 ring-2 ring-inset ring-blue-300 z-10 relative"
-          : "hover:bg-blue-50/50 even:bg-black/[0.02]",
+        "border-b border-black/5 transition-colors cursor-pointer",
+        selected ? "bg-blue-50 hover:bg-blue-100/80" : "hover:bg-black/5 bg-white",
         className
       )}
     >
@@ -113,5 +110,13 @@ export function PanelGridTd({
     >
       {children}
     </td>
+  );
+}
+
+export function PanelGridTfoot({ children }: { children: React.ReactNode }) {
+  return (
+    <tfoot className="bg-gray-100 border-t-2 border-gray-300 sticky bottom-0 z-10">
+      {children}
+    </tfoot>
   );
 }

@@ -8,7 +8,7 @@ import {
     RefreshCcw, Search, Check, XCircle, Save, X, Trash2,
     Plus, Pencil, AlertCircle, Users, FileText, CreditCard,
     ChevronRight, Printer, Mail, BarChart2, DollarSign, CheckCircle,
-    Bell, Banknote, Calendar, RotateCcw
+    Bell, Banknote, Calendar, RotateCcw, Building2, LayoutGrid
 } from "lucide-react";
 import { GridMenu } from "@/components/GridMenu";
 import { cn } from "@/lib/utils";
@@ -18,662 +18,25 @@ import { AuditLogModal } from "@/components/AuditLogModal";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import AppHeader from "@/components/layout/AppHeader";
 import AppFooter from "@/components/layout/AppFooter";
-const EMPTY_ARR: any[] = [];
+import PanelGrid from "@/components/ui/PanelGrid";
+import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd, PanelGridTfoot } from "@/components/ui/PanelGridTable";
+import { MobileActionBar } from "@/components/layout/MobileActionBar";
+import { ConfirmDelete } from "@/components/ConfirmDelete";
+import { useCustomerPaymentsStore } from "@/store/sales/useCustomerPaymentsStore";
 
-const t   = (v: any) => String(v ?? "").trim();
-const fmt = (v: any) => parseFloat(v ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const fmtDate = (v: any) => { if (!v) return ""; const d = new Date(v); return isNaN(d.getTime()) ? t(v) : d.toLocaleDateString("en-US"); };
-const today = () => new Date().toISOString().split("T")[0];
-
-// Show a toast with Confirm / Cancel buttons
-const toastConfirm = (message: string, onConfirm: () => void, confirmLabel = "Confirm") => {
-    toast(message, {
-        duration: 10000,
-        action:  { label: confirmLabel, onClick: onConfirm },
-        cancel:  { label: "Cancel",  onClick: () => {} },
-    });
-};
-
-const cpFetch = async (url: string) => {
-    const r = await fetch(url);
-    const j = await r.json();
-    if (!r.ok) throw new Error(j?.error || `HTTP ${r.status}`);
-    return j;
-};
-
-// ─── Modal wrapper ─────────────────────────────────────────────────────────────
-function Modal({ title, icon: Icon, onClose, children, footer, size = "md", error }: any) {
-    return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 sm:p-4">
-            <div className={cn("bg-white rounded-t-xl sm:rounded-xl shadow-2xl w-full flex flex-col h-[85vh] sm:h-auto sm:max-h-[88vh]",
-                size === "lg" ? "sm:max-w-3xl" : size === "xl" ? "sm:max-w-4xl" : "sm:max-w-lg")}>
-                <div className="h-10 bg-[#374151] rounded-t-xl flex items-center justify-between px-4 shrink-0">
-                    <div className="flex items-center gap-2">
-                        {Icon && <Icon size={15} className="text-[#FB7506]"/>}
-                        <span className="fos-grid-header-text truncate">{title}</span>
-                        {error && <span className="text-amber-400 text-[10px] font-bold ml-2 truncate">{error}</span>}
-                    </div>
-                    <button onClick={onClose}><XCircle size={16} className="text-gray-400 hover:text-white"/></button>
-                </div>
-                <div className="overflow-y-auto flex-1 p-4">{children}</div>
-                {footer && <div className="flex justify-end gap-2 px-4 py-3 bg-gray-50 border-t rounded-b-xl shrink-0">{footer}</div>}
-            </div>
-        </div>
-    );
-}
-
-function Btn({ icon: Icon, label, color = "gray", onClick, disabled = false, size = "sm" }: any) {
-    const cls: Record<string, string> = { green: "bg-green-600 hover:bg-green-700", blue: "bg-blue-600 hover:bg-blue-700", red: "bg-red-600 hover:bg-red-700", gray: "bg-gray-600 hover:bg-gray-700", amber: "bg-amber-500 hover:bg-amber-600", orange: "bg-[#FB7506] hover:bg-orange-600" };
-    return (
-        <button onClick={onClick} disabled={disabled}
-            className={cn("flex items-center gap-1.5 px-3 py-1.5 text-xs text-white font-black uppercase tracking-wide rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0", cls[color] || cls.gray)}>
-            {Icon && <Icon size={13}/>}{label}
-        </button>
-    );
-}
-
-// ─── CustomerEditModal ─────────────────────────────────────────────────────────
-function CustomerEditModal({ customer, onClose, onSaved }: any) {
-    const { data: detail } = useQuery({
-        queryKey: ["cp-customer-detail", customer.unico],
-        queryFn:  () => cpFetch(`/api/customer-payments/customers/${customer.unico}`),
-        enabled:  !!customer?.unico,
-        staleTime: 30000,
-    });
-    const [form,   setForm]   = useState<any>({ ...customer });
-    const [saving, setSaving] = useState(false);
-    const [error,  setError]  = useState<string|null>(null);
-
-    useEffect(() => {
-        if (detail) setForm((p: any) => ({ ...p, ...detail }));
-    }, [detail]);
-
-    const save = async () => {
-        setSaving(true); setError(null);
-        try {
-            const res = await fetch(`/api/customer-payments/customers/${customer.unico}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
-            const d = await res.json();
-            if (!d.success) throw new Error(d.error);
-            onSaved();
-            onClose();
-        } catch(e: any) { setError(e.message); }
-        finally { setSaving(false); }
-    };
-
-    const F = (key: string, type: "text"|"number"|"checkbox" = "text") => {
-        if (type === "checkbox") return { checked: !!form[key], onChange: (e: any) => setForm((p: any) => ({ ...p, [key]: e.target.checked }) ) };
-        if (type === "number")   return { type: "number", value: form[key] ?? 0, onChange: (e: any) => setForm((p: any) => ({ ...p, [key]: parseFloat(e.target.value) || 0 })) };
-        return { value: form[key] ?? "", onChange: (e: any) => setForm((p: any) => ({ ...p, [key]: e.target.value })) };
-    };
-
-    return (
-        <Modal title={`Edit Customer — ${t(customer.customer)}`} icon={Users} onClose={onClose} size="lg" error={error}
-            footer={<><button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Cancel</button><button onClick={save} disabled={saving} className="flex items-center gap-2 px-4 py-2 rounded bg-[#FB7506] hover:bg-orange-600 text-white text-sm font-black disabled:opacity-50">{saving ? <RefreshCcw size={13} className="animate-spin"/> : <Save size={13}/>}{saving ? "Saving..." : "Save"}</button></>}>
-            <div className="grid grid-cols-2 gap-3 text-xs">
-                {/* Contact info */}
-                {[{k:"contact",l:"Contact"},{k:"purchaser",l:"Purchaser"},{k:"address1",l:"Address"},{k:"city",l:"City"},{k:"state",l:"State (2)"},{k:"country",l:"Country"},{k:"phone_1",l:"Phone"},{k:"fax_1",l:"Fax"},{k:"email",l:"E-mail"},{k:"ap_email",l:"AP Email"},{k:"ap_fax",l:"AP Fax"},{k:"statement_by",l:"Statement By"},{k:"resale_tax",l:"Resale Tax"},{k:"reasonhold",l:"Reason Hold"}].map(f => (
-                    <div key={f.k} className="flex flex-col gap-0.5">
-                        <label className="text-[9px] font-black text-gray-400 uppercase">{f.l}</label>
-                        <input {...F(f.k)} className="fos-input py-1"/>
-                    </div>
-                ))}
-                {/* Numeric fields */}
-                {[{k:"credit_limit",l:"Credit Limit"},{k:"price_margin",l:"Price Margin %"},{k:"insurance_for",l:"Insurance For"},{k:"discount_percentage",l:"Auth. Disc. %"},{k:"add_credit_limit",l:"Add Credit Limit"}].map(f => (
-                    <div key={f.k} className="flex flex-col gap-0.5">
-                        <label className="text-[9px] font-black text-gray-400 uppercase">{f.l}</label>
-                        <input {...F(f.k, "number")} step="0.01" className="fos-input py-1"/>
-                    </div>
-                ))}
-                {/* Extension */}
-                <div className="flex flex-col gap-0.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">Extension</label>
-                    <input type="number" value={form.extension ?? 0} onChange={e=>setForm((p:any)=>({...p,extension:parseInt(e.target.value)||0}))} className="fos-input py-1"/>
-                </div>
-                {/* Add CR Exp Date */}
-                <div className="flex flex-col gap-0.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">Add CR Exp Date</label>
-                    <input type="date" value={form.add_cr_exp_date?.split("T")[0] ?? ""} onChange={e=>setForm((p:any)=>({...p,add_cr_exp_date:e.target.value}))} className="fos-input py-1"/>
-                </div>
-                {/* Credit card */}
-                {[{k:"ccard_name",l:"CC Name"},{k:"ccard_on_file",l:"CC On File"},{k:"ccard_expiration_month",l:"CC Exp Month"},{k:"ccard_expiration_year",l:"CC Exp Year"}].map(f => (
-                    <div key={f.k} className="flex flex-col gap-0.5">
-                        <label className="text-[9px] font-black text-gray-400 uppercase">{f.l}</label>
-                        <input {...F(f.k)} className="fos-input py-1"/>
-                    </div>
-                ))}
-                {/* Readonly */}
-                <div className="flex flex-col gap-0.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">Credit Available</label>
-                    <input readOnly value={fmt(customer.credit_available)} className="fos-input py-1 bg-gray-50 text-gray-500 font-bold"/>
-                </div>
-                {/* Checkboxes */}
-                <div className="col-span-2 flex flex-wrap gap-4 border-t pt-2">
-                    {[{k:"credithold",l:"Credit Hold"},{k:"active",l:"Active"},{k:"auto_charge",l:"Auto Charges"}].map(f => (
-                        <label key={f.k} className="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" {...F(f.k,"checkbox")} className="w-4 h-4 accent-[#FB7506]"/>
-                            <span className="text-xs font-semibold text-gray-600">{f.l}</span>
-                        </label>
-                    ))}
-                </div>
-            </div>
-        </Modal>
-    );
-}
-
-// ─── InvoiceSearchModal ────────────────────────────────────────────────────────
-function InvoiceSearchModal({ onFound, onClose }: any) {
-    const [invoiceNo, setInvoiceNo] = useState("");
-    const [loading,   setLoading]   = useState(false);
-    const [message,   setMessage]   = useState<string|null>(null);
-
-    const search = async () => {
-        if (!invoiceNo.trim()) { setMessage("Search criteria is empty."); return; }
-        setLoading(true); setMessage(null);
-        try {
-            const d = await cpFetch(`/api/customer-payments/invoice-search?q=${invoiceNo}`);
-            if (!d.found) { setMessage(d.message); return; }
-            if (d.voided) { setMessage(d.message); return; }
-            onFound(d.invoice);
-            onClose();
-        } catch(e: any) { setMessage(e.message); }
-        finally { setLoading(false); }
-    };
-
-    return (
-        <Modal title="Invoice Search" icon={Search} onClose={onClose} size="sm"
-            footer={<><button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Cancel</button><button onClick={search} disabled={loading} className="flex items-center gap-2 px-4 py-2 rounded bg-[#FB7506] text-white text-sm font-black disabled:opacity-50">{loading?<RefreshCcw size={13} className="animate-spin"/>:<Search size={13}/>}Search</button></>}>
-            <div className="space-y-3">
-                <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">Invoice No.</label>
-                    <input type="number" value={invoiceNo} onChange={e=>setInvoiceNo(e.target.value)} onKeyDown={e=>e.key==="Enter"&&search()} placeholder="Enter invoice number..." className="fos-input py-2 text-sm" autoFocus/>
-                </div>
-                {message && <p className="text-sm font-bold text-amber-600">{message}</p>}
-            </div>
-        </Modal>
-    );
-}
-
-// ─── NewPaymentModal ───────────────────────────────────────────────────────────
-function NewPaymentModal({ mode, income, customerUq, customerName, onClose, onSaved }: any) {
-    const isDelete = mode === "delete";
-    const isAdd    = mode === "add";
-    const [form,   setForm]   = useState<any>( income ? { ...income, in_date: income.in_date?.split("T")[0] ?? today() } : { in_date: today(), customer_uq: customerUq, type_uq: "", bank_uq: "", in_ammount: 0, bank_doc: "", deposit: 0, card: "", approval: "", details: "" });
-    const [saving, setSaving] = useState(false);
-    const [error,  setError]  = useState<string|null>(null);
-
-    const { data: banks = EMPTY_ARR }     = useQuery({ queryKey: ["cp-banks", mode], queryFn: () => cpFetch(`/api/customer-payments/lookups/banks?mode=${isAdd?"last":"list"}`), staleTime: 60000 });
-    const { data: types = EMPTY_ARR }     = useQuery({ queryKey: ["cp-inc-types"], queryFn: () => cpFetch("/api/customer-payments/lookups/income-types"), staleTime: 60000 });
-
-    useEffect(() => {
-        if (isAdd && banks.length > 0 && !form.bank_uq) setForm((p: any) => ({ ...p, bank_uq: banks[0].unico }));
-    }, [banks]);
-
-    const save = async () => {
-        setSaving(true); setError(null);
-        try {
-            const body = { ...form, customer_uq: customerUq };
-            const url  = isAdd ? "/api/customer-payments/income" : `/api/customer-payments/income/${income.unico}`;
-            const res  = await fetch(url, { method: isAdd ? "POST" : "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-            const d    = await res.json();
-            if (!d.success) throw new Error(d.error);
-            onSaved(d.unico ?? income?.unico);
-            onClose();
-        } catch(e: any) { setError(e.message); }
-        finally { setSaving(false); }
-    };
-
-    const del = async () => {
-        setSaving(true); setError(null);
-        try {
-            const res = await fetch(`/api/customer-payments/income/${income.unico}`, { method: "DELETE" });
-            const d   = await res.json();
-            if (!d.success) throw new Error(d.error);
-            onSaved(null);
-            onClose();
-        } catch(e: any) { setError(e.message); }
-        finally { setSaving(false); }
-    };
-
-    return (
-        <Modal title={`${isAdd?"New":isDelete?"Delete":"Edit"} Payment — ${customerName}`} icon={DollarSign} onClose={onClose} size="md" error={error}
-            footer={<><button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Cancel</button>
-                {isDelete ? <button onClick={del} disabled={saving} className="flex items-center gap-2 px-4 py-2 rounded bg-red-600 text-white text-sm font-black disabled:opacity-50">{saving?<RefreshCcw size={13} className="animate-spin"/>:<Trash2 size={13}/>}Delete</button>
-                : <button onClick={save} disabled={saving} className="flex items-center gap-2 px-4 py-2 rounded bg-[#FB7506] text-white text-sm font-black disabled:opacity-50">{saving?<RefreshCcw size={13} className="animate-spin"/>:<Save size={13}/>}{saving?"Saving...":isAdd?"Create":"Save"}</button>}
-            </>}>
-            {isDelete ? (
-                <div className="text-center space-y-3 py-2">
-                    <Trash2 size={32} className="text-red-400 mx-auto"/>
-                    <p className="text-sm text-gray-600">Delete payment <strong>{t(income?.dato || income?.unico)}</strong>?</p>
-                </div>
-            ) : (
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                    <div className="col-span-2 flex flex-col gap-0.5">
-                        <label className="text-[9px] font-black text-gray-400 uppercase">Customer</label>
-                        <input readOnly value={customerName} className="fos-input py-1 bg-gray-50 text-gray-500"/>
-                    </div>
-                    <div className="flex flex-col gap-0.5">
-                        <label className="text-[9px] font-black text-gray-400 uppercase">Type *</label>
-                        <select value={form.type_uq||""} onChange={e=>setForm((p:any)=>({...p,type_uq:e.target.value}))} className="fos-input py-1">
-                            <option value="">— Select —</option>
-                            {(types as any[]).map((tp:any)=><option key={tp.unico} value={tp.unico}>{t(tp.type)}</option>)}
-                        </select>
-                    </div>
-                    <div className="flex flex-col gap-0.5">
-                        <label className="text-[9px] font-black text-gray-400 uppercase">Bank *</label>
-                        <select value={form.bank_uq||""} onChange={e=>setForm((p:any)=>({...p,bank_uq:e.target.value}))} className="fos-input py-1">
-                            <option value="">— Select —</option>
-                            {(banks as any[]).map((b:any)=><option key={b.unico} value={b.unico}>{t(b.bank)}</option>)}
-                        </select>
-                    </div>
-                    <div className="flex flex-col gap-0.5">
-                        <label className="text-[9px] font-black text-gray-400 uppercase">Date *</label>
-                        <input type="date" value={form.in_date||today()} onChange={e=>setForm((p:any)=>({...p,in_date:e.target.value}))} className="fos-input py-1"/>
-                    </div>
-                    <div className="flex flex-col gap-0.5">
-                        <label className="text-[9px] font-black text-gray-400 uppercase">Amount *</label>
-                        <input type="number" step="0.01" value={form.in_ammount||0} onChange={e=>setForm((p:any)=>({...p,in_ammount:parseFloat(e.target.value)||0}))} className="fos-input py-1"/>
-                    </div>
-                    <div className="flex flex-col gap-0.5">
-                        <label className="text-[9px] font-black text-gray-400 uppercase">Doc No.</label>
-                        <input value={form.bank_doc||""} onChange={e=>setForm((p:any)=>({...p,bank_doc:e.target.value}))} className="fos-input py-1"/>
-                    </div>
-                    <div className="flex flex-col gap-0.5">
-                        <label className="text-[9px] font-black text-gray-400 uppercase">Card (last 4)</label>
-                        <input value={form.card||""} onChange={e=>setForm((p:any)=>({...p,card:e.target.value}))} className="fos-input py-1"/>
-                    </div>
-                    <div className="flex flex-col gap-0.5">
-                        <label className="text-[9px] font-black text-gray-400 uppercase">Approval</label>
-                        <input value={form.approval||""} onChange={e=>setForm((p:any)=>({...p,approval:e.target.value}))} className="fos-input py-1"/>
-                    </div>
-                    <div className="flex flex-col gap-0.5">
-                        <label className="text-[9px] font-black text-gray-400 uppercase">Deposit</label>
-                        <input type="number" value={form.deposit||0} onChange={e=>setForm((p:any)=>({...p,deposit:parseInt(e.target.value)||0}))} className="fos-input py-1"/>
-                    </div>
-                    <div className="col-span-2 flex flex-col gap-0.5">
-                        <label className="text-[9px] font-black text-gray-400 uppercase">Detail</label>
-                        <textarea value={form.details||""} onChange={e=>setForm((p:any)=>({...p,details:e.target.value}))} rows={2} className="fos-input py-1 resize-none"/>
-                    </div>
-                    {!isAdd && (
-                        <div className="col-span-2 grid grid-cols-3 gap-2 bg-gray-50 rounded p-2">
-                            {[{l:"On Invoice",v:income?.in_total},{l:"Balance",v:income?.in_balance},{l:"Cr Available",v:null}].map((f,i)=>(
-                                <div key={i} className="flex flex-col gap-0.5">
-                                    <label className="text-[9px] font-black text-gray-400 uppercase">{f.l}</label>
-                                    <span className="text-xs font-bold text-blue-700">{f.v!=null?fmt(f.v):"—"}</span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            )}
-        </Modal>
-    );
-}
-
-// ─── ApplyPaymentModal ─────────────────────────────────────────────────────────
-function ApplyPaymentModal({ mode, apply, invoice, income, customerName, onClose, onSaved }: any) {
-    const isDelete = mode === "delete";
-    const isAdd    = mode === "add";
-    const [amount, setAmount] = useState<number>(apply?.in_ammount ?? 0);
-    const [saving, setSaving] = useState(false);
-    const [error,  setError]  = useState<string|null>(null);
-
-    const save = async () => {
-        if (!amount) { setError("Amount is empty."); return; }
-        setSaving(true); setError(null);
-        try {
-            let res, d;
-            if (isAdd) {
-                res = await fetch("/api/customer-payments/apply", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ income_uq: income?.unico, invoice_uq: invoice?.unico, in_ammount: amount }) });
-            } else if (isDelete) {
-                res = await fetch(`/api/customer-payments/apply/${apply.unico}`, { method: "DELETE" });
-            } else {
-                res = await fetch(`/api/customer-payments/apply/${apply.unico}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ in_ammount: amount }) });
-            }
-            d = await res.json();
-            if (!d.success) throw new Error(d.error);
-            onSaved();
-            onClose();
-        } catch(e: any) { setError(e.message); }
-        finally { setSaving(false); }
-    };
-
-    const invBal = parseFloat(invoice?.balance ?? 0);
-    const inBal  = parseFloat(income?.in_balance ?? 0);
-
-    return (
-        <Modal title={`${isAdd?"Apply":isDelete?"Delete Apply":"Edit Apply"} Payment`} icon={CreditCard} onClose={onClose} size="sm" error={error}
-            footer={<><button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Cancel</button>
-                <button onClick={save} disabled={saving} className={cn("flex items-center gap-2 px-4 py-2 rounded text-white text-sm font-black disabled:opacity-50", isDelete?"bg-red-600 hover:bg-red-700":"bg-[#FB7506] hover:bg-orange-600")}>
-                    {saving?<RefreshCcw size={13} className="animate-spin"/>:isDelete?<Trash2 size={13}/>:<Save size={13}/>}{saving?"...":isDelete?"Delete":isAdd?"Apply":"Save"}
-                </button></>}>
-            <div className="space-y-3 text-xs">
-                <div className="bg-gray-50 rounded p-2 grid grid-cols-2 gap-2">
-                    {[{l:"Customer",v:customerName},{l:"Invoice No",v:invoice?.invoice_no},{l:"Inv. Date",v:fmtDate(invoice?.arec_date)},{l:"Days",v:invoice?.days},{l:"Due Date",v:fmtDate(invoice?.date_due)},{l:"Invoice Amount",v:fmt(invoice?.ammount)},{l:"Invoice Balance",v:fmt(invBal)},{l:"Income",v:t(income?.dato)},{l:"Income Amount",v:fmt(income?.in_ammount)},{l:"Income Balance",v:fmt(inBal)}].map((f,i)=>(
-                        <div key={i} className="flex flex-col gap-0.5">
-                            <label className="text-[9px] font-black text-gray-400 uppercase">{f.l}</label>
-                            <span className="text-xs font-bold text-gray-700">{f.v}</span>
-                        </div>
-                    ))}
-                </div>
-                {!isDelete && (
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="flex flex-col gap-0.5">
-                            <label className="text-[9px] font-black text-gray-400 uppercase">Payment Amount *</label>
-                            <input type="number" step="0.01" value={amount} onChange={e=>setAmount(parseFloat(e.target.value)||0)} className="fos-input py-1.5 text-sm font-bold" autoFocus/>
-                        </div>
-                        <div className="flex flex-col gap-0.5">
-                            <label className="text-[9px] font-black text-gray-400 uppercase">Remaining Balance</label>
-                            <input readOnly value={fmt(invBal - amount)} className="fos-input py-1.5 bg-gray-50 text-gray-500 font-bold"/>
-                        </div>
-                    </div>
-                )}
-            </div>
-        </Modal>
-    );
-}
-
-// ─── PendingInvoicesReportModal ────────────────────────────────────────────────
-function PendingInvoicesReportModal({ customerUq, onClose }: any) {
-    const [dateFrom, setDateFrom] = useState(today());
-    const [dateTo,   setDateTo]   = useState(today());
-    const [loading,  setLoading]  = useState(false);
-    const [done,     setDone]     = useState(false);
-
-    const run = async () => {
-        setLoading(true);
-        try {
-            const res = await fetch("/api/customer-payments/reports/pending-invoices", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ customer_uq: customerUq, date_from: dateFrom, date_to: dateTo }) });
-            const d = await res.json();
-            if (!d.success) throw new Error(d.error);
-            setDone(true);
-            setTimeout(onClose, 1200);
-        } catch(e: any) { alert((e as any).message); }
-        finally { setLoading(false); }
-    };
-
-    return (
-        <Modal title="Pending Invoices Report" icon={FileText} onClose={onClose} size="sm"
-            footer={<><button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Cancel</button><button onClick={run} disabled={loading||done} className="flex items-center gap-2 px-4 py-2 rounded bg-[#FB7506] text-white text-sm font-black disabled:opacity-50">{loading?<RefreshCcw size={13} className="animate-spin"/>:done?<Check size={13}/>:<Printer size={13}/>}{done?"Done!":"Generate"}</button></>}>
-            <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                    <div className="flex flex-col gap-0.5">
-                        <label className="text-[9px] font-black text-gray-400 uppercase">Date From</label>
-                        <input type="date" value={dateFrom} onChange={e=>setDateFrom(e.target.value)} className="fos-input py-1.5"/>
-                    </div>
-                    <div className="flex flex-col gap-0.5">
-                        <label className="text-[9px] font-black text-gray-400 uppercase">Date To</label>
-                        <input type="date" value={dateTo} onChange={e=>setDateTo(e.target.value)} className="fos-input py-1.5"/>
-                    </div>
-                </div>
-                <p className="text-xs text-gray-500 italic">Pending Invoices report for selected customer and date range.</p>
-            </div>
-        </Modal>
-    );
-}
-
-// ─── ApproveCreditModal ────────────────────────────────────────────────────────
-function ApproveCreditModal({ requests, onClose, onAction }: any) {
-    const [selReq,   setSelReq]   = useState<any>(requests[0] ?? null);
-    const [amount,   setAmount]   = useState<number>(0);
-    const [saving,   setSaving]   = useState(false);
-    const [error,    setError]    = useState<string|null>(null);
-
-    const { data: profile } = useQuery({ queryKey: ["cp-cred-prof", selReq?.customer_uq], queryFn: () => cpFetch(`/api/customer-payments/customers/${selReq.customer_uq}`), enabled: !!selReq?.customer_uq });
-
-    const act = async (action: "approve"|"deny"|"extension") => {
-        if (!selReq) return;
-        if (action === "approve" && !amount) { setError("Approve value is empty."); return; }
-        setSaving(true); setError(null);
-        try {
-            const res = await fetch(`/api/customer-payments/credit-approve/${selReq.unico}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action, amount, customer_uq: selReq.customer_uq }) });
-            const d = await res.json();
-            if (!d.success) throw new Error(d.error);
-            onAction();
-        } catch(e: any) { setError(e.message); }
-        finally { setSaving(false); }
-    };
-
-    return (
-        <Modal title={`Approve Credits (${requests.length} pending)`} icon={CheckCircle} onClose={onClose} size="xl" error={error}
-            footer={<>
-                <button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Close</button>
-                <Btn icon={X}          label="Deny"      color="red"   onClick={()=>act("deny")}      disabled={!selReq||saving}/>
-                <Btn icon={ChevronRight} label="Extension" color="amber" onClick={()=>act("extension")} disabled={!selReq||saving}/>
-                <Btn icon={Check}      label="Approve"   color="green" onClick={()=>act("approve")}   disabled={!selReq||saving||!amount}/>
-            </>}>
-            <div className="flex gap-4 h-full">
-                {/* Requests grid */}
-                <div className="flex-1 min-w-0">
-                    <table className="min-w-full text-left">
-                        <thead className="bg-gray-100 border-b fos-grid-thead text-gray-700 sticky top-0">
-                            <tr>{["Salesman","Invoice","Date","Min.Cr.Req","Line Amt","Total Inv","Approved"].map(h=><th key={h} className="p-2 border-r border-gray-200 last:border-r-0">{h}</th>)}</tr>
-                        </thead>
-                        <tbody className="fos-grid-tbody divide-y divide-gray-100">
-                            {requests.map((r: any) => (
-                                <tr key={r.unico} onClick={()=>setSelReq(r)} className={cn("cursor-pointer transition-colors", selReq?.unico===r.unico?"!bg-blue-50 ring-1 ring-inset ring-blue-200":"hover:bg-gray-50")}>
-                                    <td className="p-2">{t(r.salesman_name)}</td>
-                                    <td className="p-2 font-bold">{r.invoice_no}</td>
-                                    <td className="p-2">{fmtDate(r.invoice_date)}</td>
-                                    <td className="p-2 text-right text-amber-600 font-bold">{fmt(r.min_cred_req)}</td>
-                                    <td className="p-2 text-right">{fmt(r.line_amount)}</td>
-                                    <td className="p-2 text-right">{fmt(r.total_invoice)}</td>
-                                    <td className="p-2 text-right text-green-600">{fmt(r.total_approved_by_invoice)}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-                {/* Approval panel */}
-                {selReq && (
-                    <div className="w-56 shrink-0 space-y-3 text-xs border-l pl-4">
-                        <div className="bg-gray-50 rounded p-2 space-y-1">
-                            {[{l:"Customer",v:t(profile?.customer)},{l:"Credit Limit",v:fmt(profile?.credit_limit)},{l:"Min. Required",v:fmt(selReq.min_cred_req)}].map((f,i)=>(
-                                <div key={i}><span className="text-[9px] font-black text-gray-400 uppercase">{f.l}: </span><span className="font-bold">{f.v}</span></div>
-                            ))}
-                        </div>
-                        <div className="flex flex-col gap-0.5">
-                            <label className="text-[9px] font-black text-gray-400 uppercase">Approve Amount</label>
-                            <input type="number" step="0.01" value={amount} onChange={e=>setAmount(parseFloat(e.target.value)||0)} className="fos-input py-1.5 font-bold" placeholder="0.00"/>
-                        </div>
-                    </div>
-                )}
-            </div>
-        </Modal>
-    );
-}
-
-// ─── CashBackModal ────────────────────────────────────────────────────────────
-function CashBackModal({ payment, customerName, onClose, onSaved }: any) {
-    const [form,   setForm]   = useState({ in_date: today(), in_ammount: 0, details: "" });
-    const [saving, setSaving] = useState(false);
-    const [error,  setError]  = useState<string|null>(null);
-    const maxAmount = parseFloat(payment?.in_balance ?? 0);
-
-    const save = async () => {
-        if (!form.in_ammount) { setError("Income amount is empty."); return; }
-        if (form.in_ammount > maxAmount) { setError("Income amount is greather to balance."); return; }
-        setSaving(true); setError(null);
-        try {
-            const res = await fetch("/api/customer-payments/cashback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ income_uq: payment.unico, ...form }) });
-            const d = await res.json();
-            if (!d.success) throw new Error(d.error);
-            onSaved(d.unico);
-            onClose();
-        } catch(e: any) { setError(e.message); }
-        finally { setSaving(false); }
-    };
-
-    return (
-        <Modal title={`Customer Cash Back — ${customerName}`} icon={RotateCcw} onClose={onClose} size="sm" error={error}
-            footer={<><button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Cancel</button><button onClick={save} disabled={saving} className="flex items-center gap-2 px-4 py-2 rounded bg-[#FB7506] text-white text-sm font-black disabled:opacity-50">{saving?<RefreshCcw size={13} className="animate-spin"/>:<Save size={13}/>}{saving?"Saving...":"Create"}</button></>}>
-            <div className="space-y-3 text-xs">
-                <div className="bg-gray-50 rounded p-2 grid grid-cols-2 gap-2">
-                    <div><span className="text-[9px] font-black text-gray-400 uppercase">Source Income: </span><span className="font-bold">{t(payment?.dato||payment?.unico)}</span></div>
-                    <div><span className="text-[9px] font-black text-gray-400 uppercase">Income Balance: </span><span className="font-bold text-blue-700">{fmt(maxAmount)}</span></div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                    <div className="flex flex-col gap-0.5">
-                        <label className="text-[9px] font-black text-gray-400 uppercase">Date *</label>
-                        <input type="date" value={form.in_date} onChange={e=>setForm(p=>({...p,in_date:e.target.value}))} className="fos-input py-1.5"/>
-                    </div>
-                    <div className="flex flex-col gap-0.5">
-                        <label className="text-[9px] font-black text-gray-400 uppercase">Amount * (max {fmt(maxAmount)})</label>
-                        <input type="number" step="0.01" max={maxAmount} value={form.in_ammount} onChange={e=>setForm(p=>({...p,in_ammount:parseFloat(e.target.value)||0}))} className="fos-input py-1.5"/>
-                    </div>
-                </div>
-                <div className="flex flex-col gap-0.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">Details</label>
-                    <textarea value={form.details} onChange={e=>setForm(p=>({...p,details:e.target.value}))} rows={2} className="fos-input py-1 resize-none"/>
-                </div>
-            </div>
-        </Modal>
-    );
-}
-
-// ─── CrDbModal ────────────────────────────────────────────────────────────────
-function CrDbModal({ mode, crdb, invoice, customerName, accRecUq, onClose, onSaved }: any) {
-    const isDelete = mode === "delete";
-    const isAdd    = mode === "add";
-    const showType = isAdd && parseFloat(invoice?.balance ?? 0) > 0;
-    const defaultType = isAdd ? (parseFloat(invoice?.balance ?? 0) > 0 ? "C" : "D") : (crdb?.type ?? "C");
-
-    const [form,   setForm]   = useState<any>(isAdd
-        ? { type: defaultType, cd_date: today(), reason_uq: "", cd_ammount: 0, details: "", all_invoices: false, acc_rec_uq: accRecUq ?? "" }
-        : { ...crdb, type: crdb?.type ?? "C", cd_date: crdb?.cd_date?.split("T")[0] ?? today(), cd_ammount: crdb?.cd_ammount ?? 0 });
-    const [saving, setSaving] = useState(false);
-    const [error,  setError]  = useState<string|null>(null);
-
-    const { data: reasons = EMPTY_ARR } = useQuery({ queryKey: ["cp-crdb-reasons"], queryFn: () => cpFetch("/api/customer-payments/lookups/crdb-reasons"), staleTime: 60000 });
-
-    const save = async () => {
-        setSaving(true); setError(null);
-        try {
-            let res, d;
-            if (isAdd) {
-                res = await fetch("/api/customer-payments/crdb", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
-            } else if (isDelete) {
-                res = await fetch(`/api/customer-payments/crdb/${crdb.unico}`, { method: "DELETE" });
-            } else {
-                res = await fetch(`/api/customer-payments/crdb/${crdb.unico}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
-            }
-            d = await res.json();
-            if (!d.success) throw new Error(d.error);
-            onSaved(d.unico ?? crdb?.unico ?? "");
-            onClose();
-        } catch(e: any) { setError(e.message); }
-        finally { setSaving(false); }
-    };
-
-    return (
-        <Modal title={`${isAdd?"Insert":isDelete?"Delete":"Edit"} Credit/Debit — ${customerName}`} icon={Banknote} onClose={onClose} size="sm" error={error}
-            footer={<><button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Cancel</button>
-                <button onClick={save} disabled={saving} className={cn("flex items-center gap-2 px-4 py-2 rounded text-white text-sm font-black disabled:opacity-50", isDelete?"bg-red-600 hover:bg-red-700":"bg-[#FB7506] hover:bg-orange-600")}>
-                    {saving?<RefreshCcw size={13} className="animate-spin"/>:isDelete?<Trash2 size={13}/>:<Save size={13}/>}{saving?"...":isDelete?"Delete":isAdd?"Create":"Save"}
-                </button></>}>
-            {isDelete ? (
-                <div className="text-center space-y-3 py-2">
-                    <Trash2 size={32} className="text-red-400 mx-auto"/>
-                    <p className="text-sm text-gray-600">Delete CR/DB <strong>{crdb?.identity_column}</strong>?</p>
-                </div>
-            ) : (
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                    {/* Type — only editable in Add with balance>0 */}
-                    <div className="flex flex-col gap-0.5">
-                        <label className="text-[9px] font-black text-gray-400 uppercase">Type *</label>
-                        <select value={form.type} onChange={e=>setForm((p:any)=>({...p,type:e.target.value}))} disabled={!showType} className={cn("fos-input py-1", !showType&&"bg-gray-50 text-gray-500")}>
-                            <option value="C">C — Credit</option>
-                            <option value="D">D — Debit</option>
-                        </select>
-                    </div>
-                    <div className="flex flex-col gap-0.5">
-                        <label className="text-[9px] font-black text-gray-400 uppercase">Date *</label>
-                        <input type="date" value={form.cd_date} onChange={e=>setForm((p:any)=>({...p,cd_date:e.target.value}))} className="fos-input py-1"/>
-                    </div>
-                    <div className="flex flex-col gap-0.5">
-                        <label className="text-[9px] font-black text-gray-400 uppercase">Reason *</label>
-                        <select value={form.reason_uq} onChange={e=>setForm((p:any)=>({...p,reason_uq:e.target.value}))} className="fos-input py-1">
-                            <option value="">— Select —</option>
-                            {(reasons as any[]).map((r:any)=><option key={r.unico} value={r.unico}>{t(r.reason)}</option>)}
-                        </select>
-                    </div>
-                    <div className="flex flex-col gap-0.5">
-                        <label className="text-[9px] font-black text-gray-400 uppercase">Amount *</label>
-                        <input type="number" step="0.01" value={form.cd_ammount} onChange={e=>setForm((p:any)=>({...p,cd_ammount:parseFloat(e.target.value)||0}))} className="fos-input py-1"/>
-                    </div>
-                    <div className="col-span-2 flex flex-col gap-0.5">
-                        <label className="text-[9px] font-black text-gray-400 uppercase">Details</label>
-                        <textarea value={form.details||""} onChange={e=>setForm((p:any)=>({...p,details:e.target.value}))} rows={2} className="fos-input py-1 resize-none"/>
-                    </div>
-                    {isAdd && (
-                        <label className="col-span-2 flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" checked={!!form.all_invoices} onChange={e=>setForm((p:any)=>({...p,all_invoices:e.target.checked}))} className="w-4 h-4 accent-[#FB7506]"/>
-                            <span className="text-xs font-semibold text-gray-600">Apply to All Invoices</span>
-                        </label>
-                    )}
-                    {!isAdd && crdb && (
-                        <div className="col-span-2 bg-gray-50 rounded p-2">
-                            <span className="text-[9px] font-black text-gray-400 uppercase">No. </span>
-                            <span className="font-bold">{crdb.identity_column}</span>
-                        </div>
-                    )}
-                </div>
-            )}
-        </Modal>
-    );
-}
-
-// ─── CrDbReportModal ──────────────────────────────────────────────────────────
-function CrDbReportModal({ invoiceUq, onClose }: any) {
-    const [option,  setOption]  = useState(1);
-    const [loading, setLoading] = useState(false);
-
-    const run = async () => {
-        setLoading(true);
-        try {
-            const res = await fetch("/api/customer-payments/reports/crdb", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ report_option: option, invoice_uq: invoiceUq }) });
-            const d = await res.json();
-            if (!d.success) throw new Error(d.error);
-            alert(`Report generated: ${d.records?.length ?? 0} record(s). Print functionality coming soon.`);
-            onClose();
-        } catch(e: any) { alert((e as any).message); }
-        finally { setLoading(false); }
-    };
-
-    return (
-        <Modal title="Print Material — Cr/Db Report" icon={Printer} onClose={onClose} size="sm"
-            footer={<><button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Cancel</button><button onClick={run} disabled={loading} className="flex items-center gap-2 px-4 py-2 rounded bg-[#FB7506] text-white text-sm font-black disabled:opacity-50">{loading?<RefreshCcw size={13} className="animate-spin"/>:<Printer size={13}/>}{loading?"Running...":"Print"}</button></>}>
-            <div className="space-y-3 text-xs">
-                {[{v:1,l:"Credit by Products"},{v:2,l:"Direct Credit to A/R"}].map(opt=>(
-                    <label key={opt.v} className="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" checked={option===opt.v} onChange={()=>setOption(opt.v)} className="accent-[#FB7506]"/>
-                        <span className="font-semibold text-gray-700">{opt.l}</span>
-                    </label>
-                ))}
-            </div>
-        </Modal>
-    );
-}
-
-// ─── SalesmanSelectorModal ────────────────────────────────────────────────────
-function SalesmanSelectorModal({ destination, onClose, onConfirm }: any) {
-    const [salesmanUq, setSalesmanUq] = useState("");
-    const { data: salesmen = EMPTY_ARR } = useQuery({ queryKey:["cp-salesmen"], queryFn:()=>cpFetch("/api/customer-payments/lookups/salesmen"), staleTime:60000 });
-    return (
-        <Modal title="Print by Salesman" icon={Users} onClose={onClose} size="sm"
-            footer={<><button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Cancel</button><button onClick={()=>{ if(!salesmanUq){return;} onConfirm(salesmanUq); onClose(); }} disabled={!salesmanUq} className="flex items-center gap-2 px-4 py-2 rounded bg-[#FB7506] text-white text-sm font-black disabled:opacity-50"><Printer size={13}/>Print</button></>}>
-            <div className="space-y-3 text-xs">
-                <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-black text-gray-400 uppercase">Salesman</label>
-                    <select value={salesmanUq} onChange={e=>setSalesmanUq(e.target.value)} className="fos-input py-1.5">
-                        <option value="">— Select —</option>
-                        {(salesmen as any[]).map((s:any)=><option key={s.unico} value={s.unico}>{t(s.salesman_name)}</option>)}
-                    </select>
-                </div>
-                <p className="text-gray-400 text-[10px] italic">Destination: {destination===1?"PRINT":destination===2?"EMAIL":"FAX"}</p>
-            </div>
-        </Modal>
-    );
-}
+import { EMPTY_ARR, t, fmt, fmtDate, today, toastConfirm, cpFetch, Modal, Btn } from "./components/Shared";
+import CustomerEditModal from "./components/CustomerEditModal";
+import InvoiceSearchModal from "./components/InvoiceSearchModal";
+import NewPaymentModal from "./components/NewPaymentModal";
+import ApplyPaymentModal from "./components/ApplyPaymentModal";
+import PendingInvoicesReportModal from "./components/PendingInvoicesReportModal";
+import ApproveCreditModal from "./components/ApproveCreditModal";
+import CashBackModal from "./components/CashBackModal";
+import CrDbModal from "./components/CrDbModal";
+import CrDbReportModal from "./components/CrDbReportModal";
+import SalesmanSelectorModal from "./components/SalesmanSelectorModal";
+import CorpPaymentModal from "./components/CorpPaymentModal";
+import CorpInvoiceModal from "./components/CorpInvoiceModal";
 
 // ─── CutDateModal ─────────────────────────────────────────────────────────────
 function CutDateModal({ customerUq, onClose }: any) {
@@ -684,7 +47,7 @@ function CutDateModal({ customerUq, onClose }: any) {
         try {
             const res = await fetch("/api/customer-payments/reports/statement-cut", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({customer_uq:customerUq, cut_date:cutDate}) });
             const d = await res.json();
-            alert(d.success ? "Statement cut report generated (print coming soon)." : d.error);
+            toast(d.success ? "Statement cut report generated (print coming soon)." : d.error);
             onClose();
         } finally { setLoading(false); }
     };
@@ -733,110 +96,8 @@ function StatementPreviewModal({ html, onClose, customer }: any) {
     );
 }
 
-// ─── CorpPaymentModal ─────────────────────────────────────────────────────────
-function CorpPaymentModal({ mode, income, customerName, customerUq, onClose, onSaved }: any) {
-    const isDelete = mode === "delete";
-    const [form,   setForm]   = useState(income ? { bank_doc:income.bank_doc||"", pay_amount:income.pay_amount||0, pay_date:income.pay_date?.split("T")[0]??today() } : { bank_doc:"", pay_amount:0, pay_date:today() });
-    const [saving, setSaving] = useState(false);
-    const [error,  setError]  = useState<string|null>(null);
-    const save = async () => {
-        setSaving(true); setError(null);
-        try {
-            let res;
-            if (mode==="add") res = await fetch("/api/customer-payments/corporate-income",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...form,customer_uq:customerUq})});
-            else if (isDelete) res = await fetch(`/api/customer-payments/corporate-income/${income.unico}`,{method:"DELETE"});
-            else res = await fetch(`/api/customer-payments/corporate-income/${income.unico}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(form)});
-            const d = await res.json();
-            if (!d.success) throw new Error(d.error);
-            onSaved(d.unico??income?.unico??""); onClose();
-        } catch(e:any){ setError(e.message); }
-        finally { setSaving(false); }
-    };
-    return (
-        <Modal title={`${mode==="add"?"Add":isDelete?"Delete":"Edit"} Corporate Payment`} icon={Banknote} onClose={onClose} size="sm" error={error}
-            footer={<><button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Cancel</button>
-                <button onClick={save} disabled={saving} className={cn("flex items-center gap-2 px-4 py-2 rounded text-white text-sm font-black disabled:opacity-50",isDelete?"bg-red-600 hover:bg-red-700":"bg-[#FB7506] hover:bg-orange-600")}>
-                    {saving?<RefreshCcw size={13} className="animate-spin"/>:isDelete?<Trash2 size={13}/>:<Save size={13}/>}{saving?"...":isDelete?"Delete":mode==="add"?"Create":"Save"}
-                </button></>}>
-            {isDelete?<div className="text-center py-2"><Trash2 size={28} className="text-red-400 mx-auto mb-2"/><p className="text-sm text-gray-600">Delete this corporate payment?</p></div>:(
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                    <div className="col-span-2 flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Customer</label><input readOnly value={customerName} className="fos-input py-1 bg-gray-50 text-gray-500"/></div>
-                    <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Bank Doc</label><input type="number" value={form.bank_doc} onChange={e=>setForm(p=>({...p,bank_doc:e.target.value}))} className="fos-input py-1"/></div>
-                    <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Date</label><input type="date" value={form.pay_date} onChange={e=>setForm(p=>({...p,pay_date:e.target.value}))} className="fos-input py-1"/></div>
-                    <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Payment *</label><input type="number" step="0.01" value={form.pay_amount} onChange={e=>setForm(p=>({...p,pay_amount:parseFloat(e.target.value)||0}))} className="fos-input py-1"/></div>
-                    {income&&<><div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Applied</label><input readOnly value={fmt(income.pay_applied)} className="fos-input py-1 bg-gray-50 text-gray-500 font-bold"/></div><div className="flex flex-col gap-0.5 col-span-2"><label className="text-[9px] font-black text-gray-400 uppercase">Balance</label><input readOnly value={fmt(income.pay_balance)} className="fos-input py-1 bg-gray-50 text-blue-700 font-bold"/></div></>}
-                </div>
-            )}
-        </Modal>
-    );
-}
-
-// ─── CorpInvoiceModal ─────────────────────────────────────────────────────────
-function CorpInvoiceModal({ corpIncome, customerUq, onClose, onSaved }: any) {
-    const [invoiceNo,  setInvoiceNo]  = useState("");
-    const [inDate,     setInDate]     = useState(today());
-    const [inAmount,   setInAmount]   = useState(0);
-    const [foundInv,   setFoundInv]   = useState<any>(null);
-    const [searching,  setSearching]  = useState(false);
-    const [saving,     setSaving]     = useState(false);
-    const [error,      setError]      = useState<string|null>(null);
-    const { data: types = EMPTY_ARR } = useQuery({ queryKey:["cp-inc-types"], queryFn:()=>cpFetch("/api/customer-payments/lookups/income-types"), staleTime:60000 });
-    const [typeUq, setTypeUq] = useState("");
-
-    const searchInvoice = async () => {
-        if (!invoiceNo) return;
-        setSearching(true); setFoundInv(null); setError(null);
-        try {
-            const d = await cpFetch(`/api/customer-payments/invoice-by-number/${invoiceNo}`);
-            if (!d.found) { setError(d.message); return; }
-            setFoundInv(d.invoice);
-        } catch(e:any){ setError(e.message); }
-        finally { setSearching(false); }
-    };
-
-    const save = async () => {
-        if (!corpIncome) { setError("No corporate income selected."); return; }
-        if (parseFloat(corpIncome.pay_balance??0) <= 0) { setError("Corporate Payment Balance is 0."); return; }
-        if (!foundInv) { setError("Search and select an invoice."); return; }
-        if (!inAmount) { setError("Applied amount is empty."); return; }
-        setSaving(true); setError(null);
-        try {
-            const res = await fetch("/api/customer-payments/corporate-invoice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type_uq:typeUq,in_date:inDate,customer_uq:customerUq,in_amount:inAmount,bank_doc:corpIncome.bank_doc,in_corp_uq:corpIncome.unico,acc_recd_uq:foundInv.unico})});
-            const d = await res.json();
-            if (!d.success) throw new Error(d.error);
-            onSaved(d.unico); onClose();
-        } catch(e:any){ setError(e.message); }
-        finally { setSaving(false); }
-    };
-
-    return (
-        <Modal title="Add Invoice to Corporate Payment" icon={FileText} onClose={onClose} size="md" error={error}
-            footer={<><button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Cancel</button><button onClick={save} disabled={saving||!foundInv} className="flex items-center gap-2 px-4 py-2 rounded bg-[#FB7506] text-white text-sm font-black disabled:opacity-50">{saving?<RefreshCcw size={13} className="animate-spin"/>:<Save size={13}/>}{saving?"Saving...":"Apply"}</button></>}>
-            <div className="grid grid-cols-2 gap-3 text-xs">
-                {corpIncome&&(<><div className="col-span-2 bg-gray-50 rounded p-2 grid grid-cols-3 gap-2">
-                    {[{l:"Corp. Customer",v:t(corpIncome.cust_code)},{l:"Bank Doc",v:t(corpIncome.bank_doc)},{l:"Total",v:fmt(corpIncome.pay_amount)},{l:"Applied",v:fmt(corpIncome.pay_applied)},{l:"Balance",v:fmt(corpIncome.pay_balance)}].map((f,i)=>(
-                        <div key={i}><span className="text-[9px] font-black text-gray-400 uppercase">{f.l}: </span><span className="font-bold">{f.v}</span></div>
-                    ))}
-                </div></>)}
-                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Type</label><select value={typeUq} onChange={e=>setTypeUq(e.target.value)} className="fos-input py-1"><option value="">— Select —</option>{(types as any[]).map((tp:any)=><option key={tp.unico} value={tp.unico}>{t(tp.type)}</option>)}</select></div>
-                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Date</label><input type="date" value={inDate} onChange={e=>setInDate(e.target.value)} className="fos-input py-1"/></div>
-                {/* Invoice search */}
-                <div className="col-span-2 flex gap-2">
-                    <div className="flex-1 flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Invoice No.</label><input type="number" value={invoiceNo} onChange={e=>setInvoiceNo(e.target.value)} onBlur={searchInvoice} onKeyDown={e=>e.key==="Enter"&&searchInvoice()} placeholder="Enter invoice number..." className="fos-input py-1"/></div>
-                    <button onClick={searchInvoice} disabled={searching||!invoiceNo} className="mt-4 px-3 py-1 bg-gray-600 hover:bg-gray-700 disabled:opacity-40 text-white text-xs font-black rounded flex items-center gap-1">{searching?<RefreshCcw size={11} className="animate-spin"/>:<Search size={11}/>}Search</button>
-                </div>
-                {foundInv&&(<div className="col-span-2 bg-blue-50 rounded p-2 grid grid-cols-3 gap-2 border border-blue-200">
-                    {[{l:"Invoice",v:foundInv.invoice_no},{l:"Customer",v:t(foundInv.customer)},{l:"Amount",v:fmt(foundInv.ammount)},{l:"Balance",v:fmt(foundInv.balance)}].map((f,i)=>(
-                        <div key={i}><span className="text-[9px] font-black text-gray-400 uppercase">{f.l}: </span><span className="font-bold text-blue-700">{f.v}</span></div>
-                    ))}
-                </div>)}
-                <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Applied Amount *</label><input type="number" step="0.01" value={inAmount} onChange={e=>setInAmount(parseFloat(e.target.value)||0)} className="fos-input py-1.5 font-bold"/></div>
-                {foundInv&&<div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Remaining Balance</label><input readOnly value={fmt(parseFloat(foundInv.balance??0)-inAmount)} className="fos-input py-1.5 bg-gray-50 text-gray-500 font-bold"/></div>}
-            </div>
-        </Modal>
-    );
-}
-
+// Extracted CorpPaymentModal
+// Extracted CorpInvoiceModal
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 export default function CustomerPaymentsPage() {
     const { data: session, status } = useSession();
@@ -846,15 +107,20 @@ export default function CustomerPaymentsPage() {
     const perms          = usePagePermissions("customer-payments");
 
     // ── Global state ───────────────────────────────────────────────────────────
-    const [activeTab,     setActiveTab]     = useState<"customer"|"invoices"|"payments"|"crdb"|"statement"|"corporate">("customer");
+    const store = useCustomerPaymentsStore();
+    const activeTab = store.activeTab;
+    const setActiveTab = store.setActiveTab;
     const [selCustomer,   setSelCustomer]   = useState<any>(null);
-    const [custSearch,    setCustSearch]    = useState("");
-    const [custBalance,   setCustBalance]   = useState<"A"|"B"|"N">("A"); // A=All, B=Bal>0, N=Bal=0
+    const custSearch = store.customerSearch;
+    const setCustSearch = store.setCustomerSearch;
+    const custBalance = store.customerFilterMode;
+    const setCustBalance = store.setCustomerFilterMode;
     const [balanceFilter, setBalanceFilter] = useState(true);    // true=Bal>0
     const [selInvoice,    setSelInvoice]    = useState<any>(null);
     const [selApply,      setSelApply]      = useState<any>(null);
     const [selIncome,     setSelIncome]     = useState<any>(null);
     const [payingAll,     setPayingAll]     = useState(false);
+    const activeGrid = store.activeGrid;
 
     // ── Modal state ────────────────────────────────────────────────────────────
     const [custEditModal,    setCustEditModal]    = useState(false);
@@ -1048,6 +314,7 @@ export default function CustomerPaymentsPage() {
 
     // ── Helpers ────────────────────────────────────────────────────────────────
     const selectCustomer = (c: any) => {
+        store.setSelCustomerUq(c?.unico || null);
         setSelCustomer(c);
         setSelInvoice(null);
         setSelApply(null);
@@ -1083,8 +350,8 @@ export default function CustomerPaymentsPage() {
     const totalRow = { balance: (customers as any[]).reduce((s: number, c: any) => s + parseFloat(c.total_books_bal||0), 0) };
     const invTotals = { payments: (invoices as any[]).reduce((s: number, i: any) => s + parseFloat(i.in_ammount||0), 0), credits: (invoices as any[]).reduce((s: number, i: any) => s + parseFloat(i.cre_ammount||0), 0), debits: (invoices as any[]).reduce((s: number, i: any) => s + parseFloat(i.deb_ammount||0), 0), invBal: (invoices as any[]).reduce((s: number, i: any) => s + parseFloat(i.balance||0), 0), booksBal: selCustomer?.total_books_bal ?? 0 };
 
-    const TAB_COLORS: Record<string, string> = { customer:"text-gray-400 hover:text-white hover:bg-white/10", invoices:"text-gray-400 hover:text-white hover:bg-white/10", payments:"text-gray-400 hover:text-white hover:bg-white/10", crdb:"text-gray-400 hover:text-white hover:bg-white/10", statement:"text-gray-400 hover:text-white hover:bg-white/10", corporate:"text-gray-400 hover:text-white hover:bg-white/10" };
-    const TAB_ACTIVE = "bg-[#f4f6f8] text-[#FB7506] border-b-2 border-[#FB7506]";
+    const TAB_COLORS: Record<string, string> = { customer:"text-gray-500 hover:text-gray-700 hover:bg-gray-50", invoices:"text-gray-500 hover:text-gray-700 hover:bg-gray-50", payments:"text-gray-500 hover:text-gray-700 hover:bg-gray-50", crdb:"text-gray-500 hover:text-gray-700 hover:bg-gray-50", statement:"text-gray-500 hover:text-gray-700 hover:bg-gray-50", corporate:"text-gray-500 hover:text-gray-700 hover:bg-gray-50" };
+    const TAB_ACTIVE = "bg-white text-blue-600 border-b-2 border-blue-600 shadow-sm";
 
     if (status === "loading") return null;
 
@@ -1113,7 +380,7 @@ export default function CustomerPaymentsPage() {
             />
 
             {/* Tab bar — scrollable on mobile */}
-            <div className="h-10 bg-[#374151] flex items-end px-2 gap-0.5 shrink-0 overflow-x-auto scrollbar-none">
+            <div className="h-12 bg-white flex items-end px-4 gap-2 shrink-0 overflow-x-auto scrollbar-none border-b border-gray-200">
                 {(["customer","invoices","payments","crdb","statement","corporate"] as const).map(tab => (
                     <button key={tab} onClick={()=>setActiveTab(tab)}
                         className={cn("px-3 sm:px-4 h-8 text-[10px] font-black uppercase tracking-wider rounded-t transition-all whitespace-nowrap shrink-0",
@@ -1157,8 +424,8 @@ export default function CustomerPaymentsPage() {
                                 </div>
                                 {/* Balance filter — A=All, B=Bal>0, N=Bal=0 */}
                                 <div className="flex items-center gap-1 shrink-0">
-                                    {([{v:"A",l:"All"},{v:"B",l:"Bal > 0"},{v:"N",l:"Bal = 0"}] as const).map(opt=>(
-                                        <button key={opt.v} onClick={()=>setCustBalance(opt.v)}
+                                    {([{v:"ALL",l:"All"},{v:"BAL>0",l:"Bal > 0"},{v:"BAL=0",l:"Bal = 0"}] as const).map(opt=>(
+                                        <button key={opt.v} onClick={()=>setCustBalance(opt.v as any)}
                                             className={cn("px-2.5 py-1.5 text-[10px] font-black uppercase rounded border transition-colors",
                                                 custBalance===opt.v ? "bg-[#FB7506] text-white border-[#FB7506]" : "border-gray-300 text-gray-500 hover:bg-gray-100")}>
                                             {opt.l}
@@ -1170,15 +437,15 @@ export default function CustomerPaymentsPage() {
                             </div>
                         </div>
                         <div ref={custScrollRef} onScroll={handleCustScroll} className="overflow-auto flex-1">
-                            <table className="min-w-full text-left">
-                                <thead className="bg-gray-100 border-b border-gray-200 text-gray-700 sticky top-0 z-10">
-                                    <tr className="fos-grid-thead">
+                            <PanelGridTable>
+                                <PanelGridThead>
+                                    <tr>
                                         {["Customer","% Margin","Cr. Limit","G.Invoice","T.Credits","T.Debits","N.Invoice","Payments","Apply","Inv-Bal","Unapply","Book-Bal","Stmt By","Hold"].map(h=>(
-                                            <th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
+                                            <PanelGridTh key={h}>{h}</PanelGridTh>
                                         ))}
                                     </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100 fos-grid-tbody">
+                                </PanelGridThead>
+                                <tbody>
                                     {(customers as any[]).map((c: any) => {
                                         const isSel = selCustomer?.unico === c.unico;
                                         return (
@@ -1219,16 +486,16 @@ export default function CustomerPaymentsPage() {
                                 </tbody>
                                 {/* Totals row */}
                                 {(customers as any[]).length > 0 && (
-                                    <tfoot className="bg-gray-100 border-t-2 border-gray-300 sticky bottom-0">
-                                        <tr className="fos-grid-thead text-gray-700">
+                                    <PanelGridTfoot>
+                                        <tr>
                                             <td className="p-2 font-black">TOTALS ({custTotal} customers)</td>
                                             <td colSpan={9} className="p-2"/>
                                             <td className="p-2 text-right font-black">{fmt(totalRow.balance)}</td>
                                             <td colSpan={2} className="p-2"/>
                                         </tr>
-                                    </tfoot>
+                                    </PanelGridTfoot>
                                 )}
-                            </table>
+                            </PanelGridTable>
                             {hasMoreCust && !fetchingMoreCust && (
                                 <div className="text-center py-2">
                                     <button onClick={() => fetchMoreCust()} className="px-4 py-1.5 bg-[#FB7506] text-white text-[10px] font-black uppercase rounded hover:bg-orange-600 transition-colors">
@@ -1279,21 +546,21 @@ export default function CustomerPaymentsPage() {
                             </div>
                         </div>
                         <div className="overflow-auto flex-1">
-                            <table className="min-w-full text-left">
-                                <thead className="bg-gray-100 border-b border-gray-200 text-gray-700 sticky top-0 z-10">
-                                    <tr className="fos-grid-thead">
+                            <PanelGridTable>
+                                <PanelGridThead>
+                                    <tr>
                                         {["Invoice","Inv.Date","Days","%","Due Date","Amount","Incomes","Credits","Debits","Balance","Void","Acumulative"].map(h=>(
-                                            <th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
+                                            <PanelGridTh key={h}>{h}</PanelGridTh>
                                         ))}
                                     </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100 fos-grid-tbody">
+                                </PanelGridThead>
+                                <tbody>
                                     {(invoices as any[]).map((inv: any) => {
                                         const isSel     = selInvoice?.unico === inv.unico;
                                         const isVoid    = inv.void;
                                         const isOverdue = !isVoid && parseFloat(inv.balance??0) > 0 && new Date(inv.date_due) < new Date();
                                         return (
-                                            <tr key={inv.unico} onClick={()=>setSelInvoice(inv)}
+                                            <tr key={inv.unico} onClick={()=>{setSelInvoice(inv); store.setSelInvoiceUq(inv?.unico || null);}}
                                                 className={cn("cursor-pointer transition-colors",
                                                     isSel ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : isOverdue ? "bg-red-50 hover:bg-red-100" : "hover:bg-gray-50",
                                                     isVoid && "opacity-45")}>
@@ -1315,7 +582,7 @@ export default function CustomerPaymentsPage() {
                                     {!loadingInv && !selCustomer && <tr><td colSpan={12} className="p-8 text-center text-gray-400 italic text-xs">Select a customer in Tab 1</td></tr>}
                                     {!loadingInv && selCustomer && (invoices as any[]).length === 0 && <tr><td colSpan={12} className="p-8 text-center text-gray-400 italic text-xs">No invoices found</td></tr>}
                                 </tbody>
-                            </table>
+                            </PanelGridTable>
                         </div>
                         {/* Totals bar */}
                         <div className="h-8 border-t border-gray-200 bg-gray-50 flex items-center gap-4 px-3 shrink-0 text-xs">
@@ -1342,11 +609,11 @@ export default function CustomerPaymentsPage() {
                                 ]} />
                             </div>
                             <div className="overflow-auto flex-1">
-                                <table className="min-w-full text-left">
-                                    <thead className="bg-gray-100 border-b border-gray-200 fos-grid-thead text-gray-700 sticky top-0">
+                                <PanelGridTable>
+                                    <PanelGridThead>
                                         <tr><th className="p-2 border-r border-gray-200">Income</th><th className="p-2 text-right">Payment</th></tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100 fos-grid-tbody">
+                                    </PanelGridThead>
+                                    <tbody>
                                         {(applied as any[]).map((a: any) => {
                                             const isSel = selApply?.unico === a.unico;
                                             return (
@@ -1358,7 +625,7 @@ export default function CustomerPaymentsPage() {
                                         })}
                                         {!loadingApplied && (applied as any[]).length === 0 && <tr><td colSpan={2} className="p-4 text-center text-gray-300 italic text-xs">No payments applied</td></tr>}
                                     </tbody>
-                                </table>
+                                </PanelGridTable>
                             </div>
                         </div>
 
@@ -1374,7 +641,7 @@ export default function CustomerPaymentsPage() {
                                     {(incomes as any[]).map((inc: any) => {
                                         const isSel = selIncome?.unico === inc.unico;
                                         return (
-                                            <div key={inc.unico} onClick={()=>setSelIncome(inc)}
+                                            <div key={inc.unico} onClick={()=>{setSelIncome(inc); store.setSelPaymentUq(inc?.unico || null);}}
                                                 className={cn("px-2 py-1.5 cursor-pointer border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors", isSel && "!bg-blue-50 font-bold")}>
                                                 <div className="text-xs font-medium text-gray-800 truncate">{t(inc.dato)}</div>
                                                 <div className="flex justify-between text-[10px]">
@@ -1434,11 +701,11 @@ export default function CustomerPaymentsPage() {
                             </div>
                         </div>
                         <div className="overflow-auto flex-1">
-                            <table className="min-w-full text-left">
-                                <thead className="bg-gray-100 border-b border-gray-200 text-gray-700 sticky top-0 z-10">
-                                    <tr className="fos-grid-thead">{["Date","Amount","Applied","Unapplied","Deposit","Check/Doc","Card","Approval","Void"].map(h=><th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>)}</tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100 fos-grid-tbody">
+                            <PanelGridTable>
+                                <PanelGridThead>
+                                    <tr>{["Date","Amount","Applied","Unapplied","Deposit","Check/Doc","Card","Approval","Void"].map(h=><PanelGridTh key={h}>{h}</PanelGridTh>)}</tr>
+                                </PanelGridThead>
+                                <tbody>
                                     {(paymentsHistory as any[]).map((p:any)=>{
                                         const isSel=selPayment?.unico===p.unico;
                                         return <tr key={p.unico} onClick={()=>setSelPayment(p)} className={cn("cursor-pointer transition-colors",isSel?"!bg-blue-50 ring-1 ring-inset ring-blue-200":"hover:bg-gray-50",p.void&&"opacity-45")}>
@@ -1456,7 +723,7 @@ export default function CustomerPaymentsPage() {
                                     {!loadingPay && !selCustomer && <tr><td colSpan={9} className="p-8 text-center text-gray-400 italic text-xs">Select a customer in Tab 1</td></tr>}
                                     {!loadingPay && selCustomer && (paymentsHistory as any[]).length===0 && <tr><td colSpan={9} className="p-8 text-center text-gray-400 italic text-xs">No payments found</td></tr>}
                                 </tbody>
-                            </table>
+                            </PanelGridTable>
                         </div>
                     </div>
                     {/* Payment invoices sub-grid */}
@@ -1467,11 +734,11 @@ export default function CustomerPaymentsPage() {
                             {loadingPayInv && <RefreshCcw size={11} className="text-gray-400 animate-spin ml-2"/>}
                         </div>
                         <div className="overflow-auto flex-1">
-                            <table className="min-w-full text-left">
-                                <thead className="bg-gray-100 border-b border-gray-200 fos-grid-thead text-gray-700 sticky top-0 z-10">
-                                    <tr>{["Invoice","Date","Due-Date","Amount","Credits","Debits","Payment","T.Payments"].map(h=><th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>)}</tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100 fos-grid-tbody">
+                            <PanelGridTable>
+                                <PanelGridThead>
+                                    <tr>{["Invoice","Date","Due-Date","Amount","Credits","Debits","Payment","T.Payments"].map(h=><PanelGridTh key={h}>{h}</PanelGridTh>)}</tr>
+                                </PanelGridThead>
+                                <tbody>
                                     {(payInvoices as any[]).map((p:any,i:number)=>(
                                         <tr key={i} className="hover:bg-gray-50">
                                             <td className="p-2 border-r border-gray-100 font-bold text-blue-700">{p.invoice_no}</td>
@@ -1487,7 +754,7 @@ export default function CustomerPaymentsPage() {
                                     {!loadingPayInv && !selPayment && <tr><td colSpan={8} className="p-4 text-center text-gray-300 italic text-xs">Select a payment</td></tr>}
                                     {!loadingPayInv && selPayment && (payInvoices as any[]).length===0 && <tr><td colSpan={8} className="p-4 text-center text-gray-300 italic text-xs">No invoices applied</td></tr>}
                                 </tbody>
-                            </table>
+                            </PanelGridTable>
                         </div>
                     </div>
                 </div>
@@ -1506,11 +773,11 @@ export default function CustomerPaymentsPage() {
                                 {loadingCrdbDates && <RefreshCcw size={9} className="text-gray-400 animate-spin ml-1"/>}
                             </div>
                             <div className="overflow-auto flex-1">
-                                <table className="min-w-full text-left">
-                                    <thead className="bg-gray-100 border-b border-gray-200 fos-grid-thead text-gray-700 sticky top-0">
+                                <PanelGridTable>
+                                    <PanelGridThead>
                                         <tr><th className="p-2 border-r border-gray-200">Date</th><th className="p-2 text-right">#</th></tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100 fos-grid-tbody">
+                                    </PanelGridThead>
+                                    <tbody>
                                         {(crdbDates as any[]).map((d:any)=>{
                                             const dKey = d.cddate ?? d.cd_date;
                                             const isSel = selCrDbDate === dKey;
@@ -1522,7 +789,7 @@ export default function CustomerPaymentsPage() {
                                         {!loadingCrdbDates && !selCustomer && <tr><td colSpan={2} className="p-2 text-center text-gray-300 italic text-[9px]">Select customer</td></tr>}
                                         {!loadingCrdbDates && selCustomer && (crdbDates as any[]).length===0 && <tr><td colSpan={2} className="p-2 text-center text-gray-300 italic text-[9px]">No dates</td></tr>}
                                     </tbody>
-                                </table>
+                                </PanelGridTable>
                             </div>
                         </div>
                         {/* Right: CR/DB History */}
@@ -1558,11 +825,11 @@ export default function CustomerPaymentsPage() {
                                 </div>
                             </div>
                             <div className="overflow-auto flex-1">
-                                <table className="min-w-full text-left">
-                                    <thead className="bg-gray-100 border-b border-gray-200 fos-grid-thead text-gray-700 sticky top-0 z-10">
-                                        <tr>{["Type","Invoice","Debits","Credits","OverCredits","Auto","Reason","Details"].map(h=><th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>)}</tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100 fos-grid-tbody">
+                                <PanelGridTable>
+                                    <PanelGridThead>
+                                        <tr>{["Type","Invoice","Debits","Credits","OverCredits","Auto","Reason","Details"].map(h=><PanelGridTh key={h}>{h}</PanelGridTh>)}</tr>
+                                    </PanelGridThead>
+                                    <tbody>
                                         {(crdbHistory as any[]).map((c:any)=>{
                                             const isSel=selCrDb?.unico===c.unico;
                                             return <tr key={c.unico} onClick={()=>setSelCrDb(c)} className={cn("cursor-pointer transition-colors",isSel?"!bg-blue-50 ring-1 ring-inset ring-blue-200":"hover:bg-gray-50")}>
@@ -1579,7 +846,7 @@ export default function CustomerPaymentsPage() {
                                         {!loadingCrdb && !selCrDbDate && <tr><td colSpan={8} className="p-8 text-center text-gray-400 italic text-xs">Select a date on the left</td></tr>}
                                         {!loadingCrdb && selCrDbDate && (crdbHistory as any[]).length===0 && <tr><td colSpan={8} className="p-8 text-center text-gray-400 italic text-xs">No records for this date</td></tr>}
                                     </tbody>
-                                </table>
+                                </PanelGridTable>
                             </div>
                         </div>
                     </div>
@@ -1619,12 +886,12 @@ export default function CustomerPaymentsPage() {
                                 ]} />
                         </div>
                         <div className="overflow-auto flex-1">
-                            <table className="min-w-full text-left"><thead className="bg-gray-100 border-b border-gray-200 fos-grid-thead text-gray-700 sticky top-0 z-10"><tr>{["Type","Date","Doc.","Debits","Credits","Balance"].map(h=><th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>)}</tr></thead>
-                            <tbody className="divide-y divide-gray-100 fos-grid-tbody">
+                            <PanelGridTable><PanelGridThead><tr>{["Type","Date","Doc.","Debits","Credits","Balance"].map(h=><PanelGridTh key={h}>{h}</PanelGridTh>)}</tr></PanelGridThead>
+                            <tbody>
                                 {(stmtData as any[]).map((r:any,i:number)=><tr key={i} className="hover:bg-gray-50"><td className="p-2 border-r border-gray-100 font-bold">{t(r.type)}</td><td className="p-2 border-r border-gray-100">{fmtDate(r.fecha||r.date)}</td><td className="p-2 border-r border-gray-100">{r.invoice_no}</td><td className="p-2 border-r border-gray-100 text-right text-red-500">{fmt(r.debits)}</td><td className="p-2 border-r border-gray-100 text-right text-green-600">{fmt(r.credits)}</td><td className="p-2 text-right font-bold text-orange-600">{fmt(r.balance)}</td></tr>)}
                                 {!loadingStmt&&!selCustomer&&<tr><td colSpan={6} className="p-6 text-center text-gray-300 italic text-xs">Select a customer</td></tr>}
                                 {!loadingStmt&&selCustomer&&(stmtData as any[]).length===0&&<tr><td colSpan={6} className="p-6 text-center text-gray-300 italic text-xs">No records</td></tr>}
-                            </tbody></table>
+                            </tbody></PanelGridTable>
                         </div>
                     </div>
                     {/* Statement balance grid */}
@@ -1645,12 +912,12 @@ export default function CustomerPaymentsPage() {
                         </div>
                         {printAllProgress && <div className="h-6 bg-blue-50 border-b border-blue-200 flex items-center px-3 text-xs font-bold text-blue-700 shrink-0"><RefreshCcw size={10} className="animate-spin mr-2"/>{printAllProgress}</div>}
                         <div className="overflow-auto flex-1">
-                            <table className="min-w-full text-left"><thead className="bg-gray-100 border-b border-gray-200 fos-grid-thead text-gray-700 sticky top-0 z-10"><tr>{["Type","Date","Doc.","Due Date","Amount","Payments","Debits","Credits","Balance"].map(h=><th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>)}</tr></thead>
-                            <tbody className="divide-y divide-gray-100 fos-grid-tbody">
+                            <PanelGridTable><PanelGridThead><tr>{["Type","Date","Doc.","Due Date","Amount","Payments","Debits","Credits","Balance"].map(h=><PanelGridTh key={h}>{h}</PanelGridTh>)}</tr></PanelGridThead>
+                            <tbody>
                                 {(stmtBalData as any[]).map((r:any,i:number)=><tr key={i} className="hover:bg-gray-50"><td className="p-2 border-r border-gray-100 font-bold">{t(r.type)}</td><td className="p-2 border-r border-gray-100">{fmtDate(r.fecha||r.date)}</td><td className="p-2 border-r border-gray-100">{r.invoice_no}</td><td className="p-2 border-r border-gray-100">{fmtDate(r.due_date)}</td><td className="p-2 border-r border-gray-100 text-right">{fmt(r.ammount)}</td><td className="p-2 border-r border-gray-100 text-right text-blue-700">{fmt(r.payments)}</td><td className="p-2 border-r border-gray-100 text-right text-red-500">{fmt(r.debits)}</td><td className="p-2 border-r border-gray-100 text-right text-green-600">{fmt(r.credits)}</td><td className="p-2 text-right font-bold text-orange-600">{fmt(r.balance)}</td></tr>)}
                                 {!loadingStmtBal&&!selCustomer&&<tr><td colSpan={9} className="p-6 text-center text-gray-300 italic text-xs">Select a customer</td></tr>}
                                 {!loadingStmtBal&&selCustomer&&(stmtBalData as any[]).length===0&&<tr><td colSpan={9} className="p-6 text-center text-gray-300 italic text-xs">No records</td></tr>}
-                            </tbody></table>
+                            </tbody></PanelGridTable>
                         </div>
                     </div>
                 </div>
@@ -1676,11 +943,11 @@ export default function CustomerPaymentsPage() {
                             ]} />
                         </div>
                         <div className="overflow-auto flex-1">
-                            <table className="min-w-full text-left"><thead className="bg-gray-100 border-b border-gray-200 fos-grid-thead text-gray-700 sticky top-0 z-10"><tr>{["Date","Customer","Bank-Doc","Amount","Applied","Balance"].map(h=><th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>)}</tr></thead>
-                            <tbody className="divide-y divide-gray-100 fos-grid-tbody">
+                            <PanelGridTable><PanelGridThead><tr>{["Date","Customer","Bank-Doc","Amount","Applied","Balance"].map(h=><PanelGridTh key={h}>{h}</PanelGridTh>)}</tr></PanelGridThead>
+                            <tbody>
                                 {(corpIncomes as any[]).map((c:any)=>{const isSel=selCorpIncome?.unico===c.unico;return<tr key={c.unico} onClick={()=>{setSelCorpIncome(c);setSelCorpPayment(null);}} className={cn("cursor-pointer transition-colors",isSel?"!bg-blue-50 ring-1 ring-inset ring-blue-200":"hover:bg-gray-50")}><td className="p-2 border-r border-gray-100">{fmtDate(c.pay_date)}</td><td className="p-2 border-r border-gray-100 font-bold">{t(c.cust_code)}</td><td className="p-2 border-r border-gray-100">{t(c.bank_doc)}</td><td className="p-2 border-r border-gray-100 text-right font-bold">{fmt(c.pay_amount)}</td><td className="p-2 border-r border-gray-100 text-right text-blue-700">{fmt(c.pay_applied)}</td><td className="p-2 text-right text-orange-600 font-bold">{fmt(c.pay_balance)}</td></tr>;})}
                                 {!loadingCorpInc&&(corpIncomes as any[]).length===0&&<tr><td colSpan={6} className="p-6 text-center text-gray-300 italic text-xs">No corporate payments for this date</td></tr>}
-                            </tbody></table>
+                            </tbody></PanelGridTable>
                         </div>
                     </div>
                     {/* Customer Payments (Detallecontrol3) */}
@@ -1695,12 +962,12 @@ export default function CustomerPaymentsPage() {
                             ]} />
                         </div>
                         <div className="overflow-auto flex-1">
-                            <table className="min-w-full text-left"><thead className="bg-gray-100 border-b border-gray-200 fos-grid-thead text-gray-700 sticky top-0 z-10"><tr>{["Date","Customer","Bank-Doc","Payment","Applied","UnApply","Deposit"].map(h=><th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>)}</tr></thead>
-                            <tbody className="divide-y divide-gray-100 fos-grid-tbody">
+                            <PanelGridTable><PanelGridThead><tr>{["Date","Customer","Bank-Doc","Payment","Applied","UnApply","Deposit"].map(h=><PanelGridTh key={h}>{h}</PanelGridTh>)}</tr></PanelGridThead>
+                            <tbody>
                                 {(corpPayments as any[]).map((p:any)=>{const isSel=selCorpPayment?.unico===p.unico;return<tr key={p.unico} onClick={()=>setSelCorpPayment(p)} className={cn("cursor-pointer transition-colors",isSel?"!bg-blue-50 ring-1 ring-inset ring-blue-200":"hover:bg-gray-50")}><td className="p-2 border-r border-gray-100">{fmtDate(p.pay_date)}</td><td className="p-2 border-r border-gray-100 font-bold">{t(p.cust_code)}</td><td className="p-2 border-r border-gray-100">{t(p.bank_doc)}</td><td className="p-2 border-r border-gray-100 text-right font-bold text-blue-700">{fmt(p.payment)}</td><td className="p-2 border-r border-gray-100 text-right">{fmt(p.applied)}</td><td className="p-2 border-r border-gray-100 text-right text-orange-600">{fmt(p.unapply)}</td><td className="p-2 text-right">{fmt(p.deposit)}</td></tr>;})}
                                 {!loadingCorpPay&&!selCorpIncome&&<tr><td colSpan={7} className="p-4 text-center text-gray-300 italic text-xs">Select a corporate payment</td></tr>}
                                 {!loadingCorpPay&&selCorpIncome&&(corpPayments as any[]).length===0&&<tr><td colSpan={7} className="p-4 text-center text-gray-300 italic text-xs">No customer payments</td></tr>}
-                            </tbody></table>
+                            </tbody></PanelGridTable>
                         </div>
                     </div>
                     {/* Invoice Applied Payments (Detallecontrol2) */}
@@ -1714,12 +981,12 @@ export default function CustomerPaymentsPage() {
                             ]} />
                         </div>
                         <div className="overflow-auto flex-1">
-                            <table className="min-w-full text-left"><thead className="bg-gray-100 border-b border-gray-200 fos-grid-thead text-gray-700 sticky top-0 z-10"><tr>{["Date","Customer","Bank-Doc","Applied","Invoice","Due Date"].map(h=><th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>)}</tr></thead>
-                            <tbody className="divide-y divide-gray-100 fos-grid-tbody">
+                            <PanelGridTable><PanelGridThead><tr>{["Date","Customer","Bank-Doc","Applied","Invoice","Due Date"].map(h=><PanelGridTh key={h}>{h}</PanelGridTh>)}</tr></PanelGridThead>
+                            <tbody>
                                 {(corpInvoices as any[]).map((c:any,i:number)=><tr key={i} className="hover:bg-gray-50"><td className="p-2 border-r border-gray-100">{fmtDate(c.pay_date)}</td><td className="p-2 border-r border-gray-100 font-bold">{t(c.cust_code)}</td><td className="p-2 border-r border-gray-100">{t(c.bank_doc)}</td><td className="p-2 border-r border-gray-100 text-right text-blue-700 font-bold">{fmt(c.in_ammount)}</td><td className="p-2 border-r border-gray-100 font-bold">{c.invoice_no}</td><td className="p-2">{fmtDate(c.date_due)}</td></tr>)}
                                 {!loadingCorpInv&&!selCorpPayment&&<tr><td colSpan={6} className="p-4 text-center text-gray-300 italic text-xs">Select a customer payment</td></tr>}
                                 {!loadingCorpInv&&selCorpPayment&&(corpInvoices as any[]).length===0&&<tr><td colSpan={6} className="p-4 text-center text-gray-300 italic text-xs">No invoices applied</td></tr>}
-                            </tbody></table>
+                            </tbody></PanelGridTable>
                         </div>
                     </div>
                 </div>
@@ -1799,6 +1066,22 @@ export default function CustomerPaymentsPage() {
                     onSaved={(unico:string)=>{ logAction("Insert", unico); refetchCorpInv(); refetchCorpInc(); }}/>
             )}
             <AppFooter areaLabel="Accounts Receivable" />
+
+            {/* ── Mobile Action Bar ────────────────────────────────────────── */}
+            <MobileActionBar
+                activeGrid={activeGrid}
+                items={[
+                    { grid: "customer", label: "Edit Cust", icon: Pencil, color: "orange", onClick: () => { if(selCustomer) setCustEditModal(true) }, disabled: !selCustomer || !perms.canEdit },
+                    { grid: "customer", label: "Print All", icon: Printer, color: "gray", onClick: () => {}, disabled: !perms.canReport },
+                    { grid: "invoices", label: "Apply Pay", icon: Plus, color: "green", onClick: () => { if(selInvoice && selIncome) setApplyModal({mode:"add"}) }, disabled: !selInvoice || !selIncome || !perms.canCreate },
+                    { grid: "invoices", label: "Insert Cr/Db", icon: CreditCard, color: "blue", onClick: () => { if(selInvoice) setCrdbModal({mode:"add"}) }, disabled: !selInvoice || !perms.canCreate },
+                    { grid: "payments", label: "Edit", icon: Pencil, color: "orange", onClick: () => { if(selIncome) setNewPayModal({mode:"edit", income:selIncome}) }, disabled: !selIncome || !perms.canEdit },
+                    { grid: "payments", label: "Delete", icon: Trash2, color: "red", onClick: () => { if(selIncome) setNewPayModal({mode:"delete", income:selIncome}) }, disabled: !selIncome || !perms.canDelete },
+                    { grid: "crdb", label: "Edit", icon: Pencil, color: "orange", onClick: () => { if(selCrDb) setCrdbModal({mode:"edit"}) }, disabled: !selCrDb || !perms.canEdit },
+                    { grid: "crdb", label: "Delete", icon: Trash2, color: "red", onClick: () => { if(selCrDb) setCrdbModal({mode:"delete"}) }, disabled: !selCrDb || !perms.canDelete },
+                ]}
+            />
+
         </div>
     );
 }

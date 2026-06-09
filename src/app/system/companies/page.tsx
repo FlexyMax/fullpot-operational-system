@@ -249,7 +249,7 @@ export default function CompaniesPage() {
 
             {/* Modals */}
             <CompanyFormModal mode={formModal?.mode} form={form} setForm={setForm} onSave={saveCompany} onClose={() => setFormModal(null)} saving={saving} />
-            {deleteDlg && <ConfirmDelete title="Delete Company" msg={`Delete company "${t(form.nombre)}"?`} onConfirm={deleteCompany} onCancel={() => setDeleteDlg(false)} saving={saving} />}
+            {deleteDlg && <ConfirmDelete title="Delete Company" msg={`Delete company "${t(selCompany?.nombre)}"?`} onConfirm={deleteCompany} onCancel={() => setDeleteDlg(false)} saving={saving} />}
         </div>
     );
 }
