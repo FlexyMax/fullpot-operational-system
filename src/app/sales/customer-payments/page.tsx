@@ -185,8 +185,8 @@ export default function CustomerPaymentsPage() {
         obs.observe(el);
         return () => obs.disconnect();
     }, [fetchMoreCust]);
-    const handleCustScroll = useCallback(() => {
-        const root = custScrollRef.current;
+    const handleCustScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+        const root = e.currentTarget;
         if (!root) return;
         const { scrollTop, scrollHeight, clientHeight } = root;
         if (scrollHeight - scrollTop - clientHeight < 200 && hasMoreCustRef.current && !fetchingMoreCustRef.current) {
@@ -440,40 +440,50 @@ export default function CustomerPaymentsPage() {
                             <PanelGridTable>
                                 <PanelGridThead>
                                     <tr>
-                                        {["Customer","% Margin","Cr. Limit","G.Invoice","T.Credits","T.Debits","N.Invoice","Payments","Apply","Inv-Bal","Unapply","Book-Bal","Stmt By","Hold"].map(h=>(
-                                            <PanelGridTh key={h}>{h}</PanelGridTh>
-                                        ))}
+                                        <PanelGridTh>Customer</PanelGridTh>
+                                        <PanelGridTh align="right">% Margin</PanelGridTh>
+                                        <PanelGridTh align="right">Cr. Limit</PanelGridTh>
+                                        <PanelGridTh align="right">G.Invoice</PanelGridTh>
+                                        <PanelGridTh align="right">T.Credits</PanelGridTh>
+                                        <PanelGridTh align="right">T.Debits</PanelGridTh>
+                                        <PanelGridTh align="right">N.Invoice</PanelGridTh>
+                                        <PanelGridTh align="right">Payments</PanelGridTh>
+                                        <PanelGridTh align="right">Apply</PanelGridTh>
+                                        <PanelGridTh align="right">Inv-Bal</PanelGridTh>
+                                        <PanelGridTh align="right">Unapply</PanelGridTh>
+                                        <PanelGridTh align="right">Book-Bal</PanelGridTh>
+                                        <PanelGridTh>Stmt By</PanelGridTh>
+                                        <PanelGridTh align="center">Hold</PanelGridTh>
                                     </tr>
                                 </PanelGridThead>
-                                <tbody>
+                                <PanelGridTbody>
                                     {(customers as any[]).map((c: any) => {
                                         const isSel = selCustomer?.unico === c.unico;
                                         return (
-                                            <tr key={c.unico} onDoubleClick={()=>setActiveTab("invoices")} onClick={()=>selectCustomer(c)}
-                                                className={cn("cursor-pointer transition-colors", isSel?"!bg-blue-50 ring-1 ring-inset ring-blue-200":"hover:bg-gray-50")}>
-                                                <td className="p-2 border-r border-gray-100 font-medium">
+                                            <PanelGridTr key={c.unico} onDoubleClick={()=>setActiveTab("invoices")} onClick={()=>selectCustomer(c)} selected={isSel}>
+                                                <PanelGridTd className="font-medium">
                                                     <div className="font-bold text-gray-800">{t(c.cust_code)}</div>
                                                     <div className="text-gray-500 text-[10px]">{t(c.customer)}</div>
-                                                </td>
+                                                </PanelGridTd>
                                                 {/* SP returns pre-formatted "$x,xxx.xx" strings for money — use t() directly */}
-                                                <td className="p-2 border-r border-gray-100 text-right">{t(c.price_margin)}%</td>
-                                                <td className="p-2 border-r border-gray-100 text-right">{t(c.credit_limit)}</td>
-                                                <td className="p-2 border-r border-gray-100 text-right">{t(c.total_invoice)}</td>
-                                                <td className="p-2 border-r border-gray-100 text-right text-green-600">{t(c.total_credits)}</td>
-                                                <td className="p-2 border-r border-gray-100 text-right text-red-500">{t(c.total_debits)}</td>
-                                                <td className="p-2 border-r border-gray-100 text-right font-bold">{t(c.total_in_cr_db)}</td>
-                                                <td className="p-2 border-r border-gray-100 text-right text-blue-700">{t(c.total_incomes)}</td>
-                                                <td className="p-2 border-r border-gray-100 text-right">{t(c.total_payments)}</td>
-                                                <td className="p-2 border-r border-gray-100 text-right font-bold text-orange-600">{t(c.total_inv_bal)}</td>
-                                                <td className="p-2 border-r border-gray-100 text-right">{t(c.total_unapply)}</td>
-                                                <td className="p-2 border-r border-gray-100 text-right font-bold">{fmt(c.total_books_bal)}</td>{/* raw numeric */}
-                                                <td className="p-2 border-r border-gray-100 text-gray-500">{t(c.statement_by)}</td>
-                                                <td className="p-2 text-center">{t(c.hold)==="Yes"?<span className="text-red-500 font-black text-[9px]">HOLD</span>:"—"}</td>
-                                            </tr>
+                                                <PanelGridTd align="right">{t(c.price_margin)}%</PanelGridTd>
+                                                <PanelGridTd align="right">{t(c.credit_limit)}</PanelGridTd>
+                                                <PanelGridTd align="right">{t(c.total_invoice)}</PanelGridTd>
+                                                <PanelGridTd align="right" className="text-green-600">{t(c.total_credits)}</PanelGridTd>
+                                                <PanelGridTd align="right" className="text-red-500">{t(c.total_debits)}</PanelGridTd>
+                                                <PanelGridTd align="right" className="font-bold">{t(c.total_in_cr_db)}</PanelGridTd>
+                                                <PanelGridTd align="right" className="text-blue-700">{t(c.total_incomes)}</PanelGridTd>
+                                                <PanelGridTd align="right">{t(c.total_payments)}</PanelGridTd>
+                                                <PanelGridTd align="right" className="font-bold text-orange-600">{t(c.total_inv_bal)}</PanelGridTd>
+                                                <PanelGridTd align="right">{t(c.total_unapply)}</PanelGridTd>
+                                                <PanelGridTd align="right" className="font-bold">{fmt(c.total_books_bal)}</PanelGridTd>{/* raw numeric */}
+                                                <PanelGridTd className="text-gray-500">{t(c.statement_by)}</PanelGridTd>
+                                                <PanelGridTd align="center">{t(c.hold)==="Yes"?<span className="text-red-500 font-black text-[9px]">HOLD</span>:"—"}</PanelGridTd>
+                                            </PanelGridTr>
                                         );
                                     })}
                                     {/* Infinite scroll sentinel */}
-                                    <tr className="h-4"><td colSpan={14} className="h-4 py-1">
+                                    <tr><td colSpan={14} className="h-4 py-1">
                                         <div ref={custSentRef} className="h-4">
                                             {fetchingMoreCust ? (
                                                 <div className="text-center py-1.5 text-[9px] text-gray-400"><RefreshCcw size={9} className="inline animate-spin mr-1"/>Loading more...</div>
@@ -483,15 +493,15 @@ export default function CustomerPaymentsPage() {
                                         </div>
                                     </td></tr>
                                     {!loadingCust && customers.length === 0 && <tr><td colSpan={14} className="p-8 text-center text-gray-400 italic text-xs">No customers found</td></tr>}
-                                </tbody>
+                                </PanelGridTbody>
                                 {/* Totals row */}
                                 {(customers as any[]).length > 0 && (
                                     <PanelGridTfoot>
                                         <tr>
-                                            <td className="p-2 font-black">TOTALS ({custTotal} customers)</td>
-                                            <td colSpan={9} className="p-2"/>
-                                            <td className="p-2 text-right font-black">{fmt(totalRow.balance)}</td>
-                                            <td colSpan={2} className="p-2"/>
+                                            <td className="px-2 py-1 font-black">TOTALS ({custTotal} customers)</td>
+                                            <td colSpan={9} className="px-2 py-1"/>
+                                            <td className="px-2 py-1 text-right font-black">{fmt(totalRow.balance)}</td>
+                                            <td colSpan={3} className="px-2 py-1"/>
                                         </tr>
                                     </PanelGridTfoot>
                                 )}
@@ -545,39 +555,46 @@ export default function CustomerPaymentsPage() {
                             <PanelGridTable>
                                 <PanelGridThead>
                                     <tr>
-                                        {["Invoice","Inv.Date","Days","%","Due Date","Amount","Incomes","Credits","Debits","Balance","Void","Acumulative"].map(h=>(
-                                            <PanelGridTh key={h}>{h}</PanelGridTh>
-                                        ))}
+                                        <PanelGridTh>Invoice</PanelGridTh>
+                                        <PanelGridTh>Inv.Date</PanelGridTh>
+                                        <PanelGridTh align="right">Days</PanelGridTh>
+                                        <PanelGridTh align="right">%</PanelGridTh>
+                                        <PanelGridTh>Due Date</PanelGridTh>
+                                        <PanelGridTh align="right">Amount</PanelGridTh>
+                                        <PanelGridTh align="right">Incomes</PanelGridTh>
+                                        <PanelGridTh align="right">Credits</PanelGridTh>
+                                        <PanelGridTh align="right">Debits</PanelGridTh>
+                                        <PanelGridTh align="right">Balance</PanelGridTh>
+                                        <PanelGridTh align="center">Void</PanelGridTh>
+                                        <PanelGridTh align="right">Acumulative</PanelGridTh>
                                     </tr>
                                 </PanelGridThead>
-                                <tbody>
+                                <PanelGridTbody>
                                     {(invoices as any[]).map((inv: any) => {
                                         const isSel     = selInvoice?.unico === inv.unico;
                                         const isVoid    = inv.void;
                                         const isOverdue = !isVoid && parseFloat(inv.balance??0) > 0 && new Date(inv.date_due) < new Date();
                                         return (
-                                            <tr key={inv.unico} onClick={()=>{setSelInvoice(inv); store.setSelInvoiceUq(inv?.unico || null);}}
-                                                className={cn("cursor-pointer transition-colors",
-                                                    isSel ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : isOverdue ? "bg-red-50 hover:bg-red-100" : "hover:bg-gray-50",
-                                                    isVoid && "opacity-45")}>
-                                                <td className="p-2 border-r border-gray-100 font-bold text-blue-700">{inv.invoice_no}</td>
-                                                <td className="p-2 border-r border-gray-100">{fmtDate(inv.arec_date)}</td>
-                                                <td className="p-2 border-r border-gray-100 text-right">{inv.days}</td>
-                                                <td className="p-2 border-r border-gray-100 text-right">{inv.percen}</td>
-                                                <td className="p-2 border-r border-gray-100">{fmtDate(inv.date_due)}</td>
-                                                <td className="p-2 border-r border-gray-100 text-right">{fmt(inv.ammount)}</td>
-                                                <td className="p-2 border-r border-gray-100 text-right text-blue-700">{fmt(inv.in_ammount)}</td>
-                                                <td className="p-2 border-r border-gray-100 text-right text-green-600">{fmt(inv.cre_ammount)}</td>
-                                                <td className="p-2 border-r border-gray-100 text-right text-red-500">{fmt(inv.deb_ammount)}</td>
-                                                <td className={cn("p-2 border-r border-gray-100 text-right font-bold", isOverdue?"text-red-600":"text-orange-600")}>{fmt(inv.balance)}</td>
-                                                <td className="p-2 border-r border-gray-100 text-center">{isVoid?<Check size={11} className="text-red-400 mx-auto"/>:"—"}</td>
-                                                <td className="p-2 text-right">{fmt(inv.acumulative_balance)}</td>
-                                            </tr>
+                                            <PanelGridTr key={inv.unico} onClick={()=>{setSelInvoice(inv); store.setSelInvoiceUq(inv?.unico || null);}}
+                                                className={cn(isOverdue && !isSel && "bg-red-50 hover:bg-red-100", isVoid && "opacity-45")} selected={isSel}>
+                                                <PanelGridTd className="font-bold text-blue-700">{inv.invoice_no}</PanelGridTd>
+                                                <PanelGridTd>{fmtDate(inv.arec_date)}</PanelGridTd>
+                                                <PanelGridTd align="right">{inv.days}</PanelGridTd>
+                                                <PanelGridTd align="right">{inv.percen}</PanelGridTd>
+                                                <PanelGridTd>{fmtDate(inv.date_due)}</PanelGridTd>
+                                                <PanelGridTd align="right">{fmt(inv.ammount)}</PanelGridTd>
+                                                <PanelGridTd align="right" className="text-blue-700">{fmt(inv.in_ammount)}</PanelGridTd>
+                                                <PanelGridTd align="right" className="text-green-600">{fmt(inv.cre_ammount)}</PanelGridTd>
+                                                <PanelGridTd align="right" className="text-red-500">{fmt(inv.deb_ammount)}</PanelGridTd>
+                                                <PanelGridTd align="right" className={cn("font-bold", isOverdue?"text-red-600":"text-orange-600")}>{fmt(inv.balance)}</PanelGridTd>
+                                                <PanelGridTd align="center">{isVoid?<Check size={11} className="text-red-400 mx-auto"/>:"—"}</PanelGridTd>
+                                                <PanelGridTd align="right">{fmt(inv.acumulative_balance)}</PanelGridTd>
+                                            </PanelGridTr>
                                         );
                                     })}
                                     {!loadingInv && !selCustomer && <tr><td colSpan={12} className="p-8 text-center text-gray-400 italic text-xs">Select a customer in Tab 1</td></tr>}
                                     {!loadingInv && selCustomer && (invoices as any[]).length === 0 && <tr><td colSpan={12} className="p-8 text-center text-gray-400 italic text-xs">No invoices found</td></tr>}
-                                </tbody>
+                                </PanelGridTbody>
                             </PanelGridTable>
                         {/* Totals bar */}
                         <div className="h-8 border-t border-gray-200 bg-gray-50 flex items-center gap-4 px-3 shrink-0 text-xs mt-auto">
@@ -605,20 +622,20 @@ export default function CustomerPaymentsPage() {
                         >
                                 <PanelGridTable>
                                     <PanelGridThead>
-                                        <tr><th className="p-2 border-r border-gray-200">Income</th><th className="p-2 text-right">Payment</th></tr>
+                                        <tr><PanelGridTh>Income</PanelGridTh><PanelGridTh align="right">Payment</PanelGridTh></tr>
                                     </PanelGridThead>
-                                    <tbody>
+                                    <PanelGridTbody>
                                         {(applied as any[]).map((a: any) => {
                                             const isSel = selApply?.unico === a.unico;
                                             return (
-                                                <tr key={a.unico} onClick={()=>setSelApply(a)} className={cn("cursor-pointer transition-colors", isSel?"!bg-blue-50 ring-1 ring-inset ring-blue-200":"hover:bg-gray-50")}>
-                                                    <td className="p-2 border-r border-gray-100">{t(a.dato)}</td>
-                                                    <td className="p-2 text-right font-bold text-blue-700">{fmt(a.in_ammount)}</td>
-                                                </tr>
+                                                <PanelGridTr key={a.unico} onClick={()=>setSelApply(a)} selected={isSel}>
+                                                    <PanelGridTd>{t(a.dato)}</PanelGridTd>
+                                                    <PanelGridTd align="right" className="font-bold text-blue-700">{fmt(a.in_ammount)}</PanelGridTd>
+                                                </PanelGridTr>
                                             );
                                         })}
                                         {!loadingApplied && (applied as any[]).length === 0 && <tr><td colSpan={2} className="p-4 text-center text-gray-300 italic text-xs">No payments applied</td></tr>}
-                                    </tbody>
+                                    </PanelGridTbody>
                                 </PanelGridTable>
                         </PanelGrid>
 
@@ -696,26 +713,36 @@ export default function CustomerPaymentsPage() {
                     >
                             <PanelGridTable>
                                 <PanelGridThead>
-                                    <tr>{["Date","Amount","Applied","Unapplied","Deposit","Check/Doc","Card","Approval","Void"].map(h=><PanelGridTh key={h}>{h}</PanelGridTh>)}</tr>
+                                    <tr>
+                                        <PanelGridTh>Date</PanelGridTh>
+                                        <PanelGridTh align="right">Amount</PanelGridTh>
+                                        <PanelGridTh align="right">Applied</PanelGridTh>
+                                        <PanelGridTh align="right">Unapplied</PanelGridTh>
+                                        <PanelGridTh align="right">Deposit</PanelGridTh>
+                                        <PanelGridTh>Check/Doc</PanelGridTh>
+                                        <PanelGridTh>Card</PanelGridTh>
+                                        <PanelGridTh>Approval</PanelGridTh>
+                                        <PanelGridTh align="center">Void</PanelGridTh>
+                                    </tr>
                                 </PanelGridThead>
-                                <tbody>
+                                <PanelGridTbody>
                                     {(paymentsHistory as any[]).map((p:any)=>{
                                         const isSel=selPayment?.unico===p.unico;
-                                        return <tr key={p.unico} onClick={()=>setSelPayment(p)} className={cn("cursor-pointer transition-colors",isSel?"!bg-blue-50 ring-1 ring-inset ring-blue-200":"hover:bg-gray-50",p.void&&"opacity-45")}>
-                                            <td className="p-2 border-r border-gray-100">{fmtDate(p.in_date)}</td>
-                                            <td className="p-2 border-r border-gray-100 text-right font-bold">{fmt(p.in_ammount)}</td>
-                                            <td className="p-2 border-r border-gray-100 text-right text-blue-700">{fmt(p.in_total)}</td>
-                                            <td className="p-2 border-r border-gray-100 text-right text-orange-600">{fmt(p.in_balance)}</td>
-                                            <td className="p-2 border-r border-gray-100 text-right">{fmt(p.deposit)}</td>
-                                            <td className="p-2 border-r border-gray-100">{t(p.bank_doc)}</td>
-                                            <td className="p-2 border-r border-gray-100">{t(p.card)}</td>
-                                            <td className="p-2 border-r border-gray-100">{t(p.approval)}</td>
-                                            <td className="p-2 text-center">{p.void?<Check size={11} className="text-red-400 mx-auto"/>:"—"}</td>
-                                        </tr>;
+                                        return <PanelGridTr key={p.unico} onClick={()=>setSelPayment(p)} className={cn(p.void&&"opacity-45")} selected={isSel}>
+                                            <PanelGridTd>{fmtDate(p.in_date)}</PanelGridTd>
+                                            <PanelGridTd align="right" className="font-bold">{fmt(p.in_ammount)}</PanelGridTd>
+                                            <PanelGridTd align="right" className="text-blue-700">{fmt(p.in_total)}</PanelGridTd>
+                                            <PanelGridTd align="right" className="text-orange-600">{fmt(p.in_balance)}</PanelGridTd>
+                                            <PanelGridTd align="right">{fmt(p.deposit)}</PanelGridTd>
+                                            <PanelGridTd>{t(p.bank_doc)}</PanelGridTd>
+                                            <PanelGridTd>{t(p.card)}</PanelGridTd>
+                                            <PanelGridTd>{t(p.approval)}</PanelGridTd>
+                                            <PanelGridTd align="center">{p.void?<Check size={11} className="text-red-400 mx-auto"/>:"—"}</PanelGridTd>
+                                        </PanelGridTr>;
                                     })}
                                     {!loadingPay && !selCustomer && <tr><td colSpan={9} className="p-8 text-center text-gray-400 italic text-xs">Select a customer in Tab 1</td></tr>}
                                     {!loadingPay && selCustomer && (paymentsHistory as any[]).length===0 && <tr><td colSpan={9} className="p-8 text-center text-gray-400 italic text-xs">No payments found</td></tr>}
-                                </tbody>
+                                </PanelGridTbody>
                             </PanelGridTable>
                     </PanelGrid>
                     {/* Payment invoices sub-grid */}
@@ -728,24 +755,33 @@ export default function CustomerPaymentsPage() {
                     >
                             <PanelGridTable>
                                 <PanelGridThead>
-                                    <tr>{["Invoice","Date","Due-Date","Amount","Credits","Debits","Payment","T.Payments"].map(h=><PanelGridTh key={h}>{h}</PanelGridTh>)}</tr>
+                                    <tr>
+                                        <PanelGridTh>Invoice</PanelGridTh>
+                                        <PanelGridTh>Date</PanelGridTh>
+                                        <PanelGridTh>Due-Date</PanelGridTh>
+                                        <PanelGridTh align="right">Amount</PanelGridTh>
+                                        <PanelGridTh align="right">Credits</PanelGridTh>
+                                        <PanelGridTh align="right">Debits</PanelGridTh>
+                                        <PanelGridTh align="right">Payment</PanelGridTh>
+                                        <PanelGridTh align="right">T.Payments</PanelGridTh>
+                                    </tr>
                                 </PanelGridThead>
-                                <tbody>
+                                <PanelGridTbody>
                                     {(payInvoices as any[]).map((p:any,i:number)=>(
-                                        <tr key={i} className="hover:bg-gray-50">
-                                            <td className="p-2 border-r border-gray-100 font-bold text-blue-700">{p.invoice_no}</td>
-                                            <td className="p-2 border-r border-gray-100">{fmtDate(p.ar_date)}</td>
-                                            <td className="p-2 border-r border-gray-100">{fmtDate(p.date_due)}</td>
-                                            <td className="p-2 border-r border-gray-100 text-right">{fmt(p.ammount)}</td>
-                                            <td className="p-2 border-r border-gray-100 text-right text-green-600">{fmt(p.credits)}</td>
-                                            <td className="p-2 border-r border-gray-100 text-right text-red-500">{fmt(p.debits)}</td>
-                                            <td className="p-2 border-r border-gray-100 text-right text-blue-700 font-bold">{fmt(p.payment)}</td>
-                                            <td className="p-2 text-right">{fmt(p.payments)}</td>
-                                        </tr>
+                                        <PanelGridTr key={i}>
+                                            <PanelGridTd className="font-bold text-blue-700">{p.invoice_no}</PanelGridTd>
+                                            <PanelGridTd>{fmtDate(p.ar_date)}</PanelGridTd>
+                                            <PanelGridTd>{fmtDate(p.date_due)}</PanelGridTd>
+                                            <PanelGridTd align="right">{fmt(p.ammount)}</PanelGridTd>
+                                            <PanelGridTd align="right" className="text-green-600">{fmt(p.credits)}</PanelGridTd>
+                                            <PanelGridTd align="right" className="text-red-500">{fmt(p.debits)}</PanelGridTd>
+                                            <PanelGridTd align="right" className="text-blue-700 font-bold">{fmt(p.payment)}</PanelGridTd>
+                                            <PanelGridTd align="right">{fmt(p.payments)}</PanelGridTd>
+                                        </PanelGridTr>
                                     ))}
                                     {!loadingPayInv && !selPayment && <tr><td colSpan={8} className="p-4 text-center text-gray-300 italic text-xs">Select a payment</td></tr>}
                                     {!loadingPayInv && selPayment && (payInvoices as any[]).length===0 && <tr><td colSpan={8} className="p-4 text-center text-gray-300 italic text-xs">No invoices applied</td></tr>}
-                                </tbody>
+                                </PanelGridTbody>
                             </PanelGridTable>
                     </PanelGrid>
                 </div>
@@ -770,18 +806,18 @@ export default function CustomerPaymentsPage() {
                                     <PanelGridThead>
                                         <tr><th className="p-2 border-r border-gray-200">Date</th><th className="p-2 text-right">#</th></tr>
                                     </PanelGridThead>
-                                    <tbody>
+                                    <PanelGridTbody>
                                         {(crdbDates as any[]).map((d:any)=>{
                                             const dKey = d.cddate ?? d.cd_date;
                                             const isSel = selCrDbDate === dKey;
-                                            return <tr key={dKey} onClick={()=>{setSelCrDbDate(dKey);setSelCrDb(null);}} className={cn("cursor-pointer transition-colors",isSel?"!bg-blue-50 ring-1 ring-inset ring-blue-200":"hover:bg-gray-50")}>
-                                                <td className="p-2 border-r border-gray-100 text-[10px]">{fmtDate(d.cd_date||d.cddate)}</td>
-                                                <td className="p-2 text-right text-[10px]">{d.records}</td>
-                                            </tr>;
+                                            return <PanelGridTr key={dKey} onClick={()=>{setSelCrDbDate(dKey);setSelCrDb(null);}} selected={isSel}>
+                                                <PanelGridTd className="text-[10px]">{fmtDate(d.cd_date||d.cddate)}</PanelGridTd>
+                                                <PanelGridTd align="right" className="text-[10px]">{d.records}</PanelGridTd>
+                                            </PanelGridTr>;
                                         })}
                                         {!loadingCrdbDates && !selCustomer && <tr><td colSpan={2} className="p-2 text-center text-gray-300 italic text-[9px]">Select customer</td></tr>}
                                         {!loadingCrdbDates && selCustomer && (crdbDates as any[]).length===0 && <tr><td colSpan={2} className="p-2 text-center text-gray-300 italic text-[9px]">No dates</td></tr>}
-                                </tbody>
+                                </PanelGridTbody>
                                 </PanelGridTable>
                         </PanelGrid>
                         {/* Right: CR/DB History */}
@@ -815,26 +851,35 @@ export default function CustomerPaymentsPage() {
                             className="flex-1 flex flex-col min-h-0"
                         >
                                 <PanelGridTable>
-                                    <PanelGridThead>
-                                        <tr>{["Type","Invoice","Debits","Credits","OverCredits","Auto","Reason","Details"].map(h=><PanelGridTh key={h}>{h}</PanelGridTh>)}</tr>
-                                    </PanelGridThead>
-                                    <tbody>
-                                        {(crdbHistory as any[]).map((c:any)=>{
-                                            const isSel=selCrDb?.unico===c.unico;
-                                            return <tr key={c.unico} onClick={()=>setSelCrDb(c)} className={cn("cursor-pointer transition-colors",isSel?"!bg-blue-50 ring-1 ring-inset ring-blue-200":"hover:bg-gray-50")}>
-                                                <td className="p-2 border-r border-gray-100"><span className={cn("font-black text-[10px]",c.type==="C"?"text-green-600":"text-red-500")}>{c.type}</span></td>
-                                                <td className="p-2 border-r border-gray-100 font-bold text-blue-700">{c.invoice_no}</td>
-                                                <td className="p-2 border-r border-gray-100 text-right text-red-500">{c.type==="D"?fmt(c.cd_ammount):"—"}</td>
-                                                <td className="p-2 border-r border-gray-100 text-right text-green-600">{c.type==="C"?fmt(c.cd_ammount):"—"}</td>
-                                                <td className="p-2 border-r border-gray-100 text-right">{fmt(c.overcredits)}</td>
-                                                <td className="p-2 border-r border-gray-100 text-center">{c.automatic?<Check size={11} className="text-blue-400 mx-auto"/>:"—"}</td>
-                                                <td className="p-2 border-r border-gray-100">{t(c.reason)}</td>
-                                                <td className="p-2">{t(c.details)}</td>
-                                            </tr>;
-                                        })}
-                                        {!loadingCrdb && !selCrDbDate && <tr><td colSpan={8} className="p-8 text-center text-gray-400 italic text-xs">Select a date on the left</td></tr>}
-                                        {!loadingCrdb && selCrDbDate && (crdbHistory as any[]).length===0 && <tr><td colSpan={8} className="p-8 text-center text-gray-400 italic text-xs">No records for this date</td></tr>}
-                                    </tbody>
+                                <PanelGridThead>
+                                    <tr>
+                                        <PanelGridTh>Type</PanelGridTh>
+                                        <PanelGridTh>Invoice</PanelGridTh>
+                                        <PanelGridTh align="right">Debits</PanelGridTh>
+                                        <PanelGridTh align="right">Credits</PanelGridTh>
+                                        <PanelGridTh align="right">OverCredits</PanelGridTh>
+                                        <PanelGridTh align="center">Auto</PanelGridTh>
+                                        <PanelGridTh>Reason</PanelGridTh>
+                                        <PanelGridTh>Details</PanelGridTh>
+                                    </tr>
+                                </PanelGridThead>
+                                <PanelGridTbody>
+                                    {(crdbHistory as any[]).map((c:any)=>{
+                                        const isSel=selCrDb?.unico===c.unico;
+                                        return <PanelGridTr key={c.unico} onClick={()=>setSelCrDb(c)} selected={isSel}>
+                                            <PanelGridTd><span className={cn("font-black text-[10px]",c.type==="C"?"text-green-600":"text-red-500")}>{c.type}</span></PanelGridTd>
+                                            <PanelGridTd className="font-bold text-blue-700">{c.invoice_no}</PanelGridTd>
+                                            <PanelGridTd align="right" className="text-red-500">{c.type==="D"?fmt(c.cd_ammount):"—"}</PanelGridTd>
+                                            <PanelGridTd align="right" className="text-green-600">{c.type==="C"?fmt(c.cd_ammount):"—"}</PanelGridTd>
+                                            <PanelGridTd align="right">{fmt(c.overcredits)}</PanelGridTd>
+                                            <PanelGridTd align="center">{c.automatic?<Check size={11} className="text-blue-400 mx-auto"/>:"—"}</PanelGridTd>
+                                            <PanelGridTd>{t(c.reason)}</PanelGridTd>
+                                            <PanelGridTd>{t(c.details)}</PanelGridTd>
+                                        </PanelGridTr>;
+                                    })}
+                                    {!loadingCrdb && !selCrDbDate && <tr><td colSpan={8} className="p-8 text-center text-gray-400 italic text-xs">Select a date on the left</td></tr>}
+                                    {!loadingCrdb && selCrDbDate && (crdbHistory as any[]).length===0 && <tr><td colSpan={8} className="p-8 text-center text-gray-400 italic text-xs">No records for this date</td></tr>}
+                                </PanelGridTbody>
                                 </PanelGridTable>
                         </PanelGrid>
                     </div>
@@ -878,12 +923,30 @@ export default function CustomerPaymentsPage() {
                             ]}
                         className="flex-[0.4] flex flex-col min-h-0"
                     >
-                            <PanelGridTable><PanelGridThead><tr>{["Type","Date","Doc.","Debits","Credits","Balance"].map(h=><PanelGridTh key={h}>{h}</PanelGridTh>)}</tr></PanelGridThead>
-                            <tbody>
-                                {(stmtData as any[]).map((r:any,i:number)=><tr key={i} className="hover:bg-gray-50"><td className="p-2 border-r border-gray-100 font-bold">{t(r.type)}</td><td className="p-2 border-r border-gray-100">{fmtDate(r.fecha||r.date)}</td><td className="p-2 border-r border-gray-100">{r.invoice_no}</td><td className="p-2 border-r border-gray-100 text-right text-red-500">{fmt(r.debits)}</td><td className="p-2 border-r border-gray-100 text-right text-green-600">{fmt(r.credits)}</td><td className="p-2 text-right font-bold text-orange-600">{fmt(r.balance)}</td></tr>)}
-                                {!loadingStmt&&!selCustomer&&<tr><td colSpan={6} className="p-6 text-center text-gray-300 italic text-xs">Select a customer</td></tr>}
-                                {!loadingStmt&&selCustomer&&(stmtData as any[]).length===0&&<tr><td colSpan={6} className="p-6 text-center text-gray-300 italic text-xs">No records</td></tr>}
-                            </tbody></PanelGridTable>
+                            <PanelGridTable>
+                                <PanelGridThead>
+                                    <tr>
+                                        <PanelGridTh>Type</PanelGridTh>
+                                        <PanelGridTh>Date</PanelGridTh>
+                                        <PanelGridTh>Doc.</PanelGridTh>
+                                        <PanelGridTh align="right">Debits</PanelGridTh>
+                                        <PanelGridTh align="right">Credits</PanelGridTh>
+                                        <PanelGridTh align="right">Balance</PanelGridTh>
+                                    </tr>
+                                </PanelGridThead>
+                                <PanelGridTbody>
+                                    {(stmtData as any[]).map((r:any,i:number)=><PanelGridTr key={i}>
+                                        <PanelGridTd className="font-bold">{t(r.type)}</PanelGridTd>
+                                        <PanelGridTd>{fmtDate(r.fecha||r.date)}</PanelGridTd>
+                                        <PanelGridTd>{r.invoice_no}</PanelGridTd>
+                                        <PanelGridTd align="right" className="text-red-500">{fmt(r.debits)}</PanelGridTd>
+                                        <PanelGridTd align="right" className="text-green-600">{fmt(r.credits)}</PanelGridTd>
+                                        <PanelGridTd align="right" className="font-bold text-orange-600">{fmt(r.balance)}</PanelGridTd>
+                                    </PanelGridTr>)}
+                                    {!loadingStmt&&!selCustomer&&<tr><td colSpan={6} className="p-6 text-center text-gray-300 italic text-xs">Select a customer</td></tr>}
+                                    {!loadingStmt&&selCustomer&&(stmtData as any[]).length===0&&<tr><td colSpan={6} className="p-6 text-center text-gray-300 italic text-xs">No records</td></tr>}
+                                </PanelGridTbody>
+                            </PanelGridTable>
                     </PanelGrid>
                     {/* Statement balance grid */}
                     <PanelGrid
@@ -907,12 +970,36 @@ export default function CustomerPaymentsPage() {
                     >
                         {printAllProgress && <div className="h-6 bg-blue-50 border-b border-blue-200 flex items-center px-3 text-xs font-bold text-blue-700 shrink-0"><RefreshCcw size={10} className="animate-spin mr-2"/>{printAllProgress}</div>}
                         <div className="overflow-auto flex-1">
-                            <PanelGridTable><PanelGridThead><tr>{["Type","Date","Doc.","Due Date","Amount","Payments","Debits","Credits","Balance"].map(h=><PanelGridTh key={h}>{h}</PanelGridTh>)}</tr></PanelGridThead>
-                            <tbody>
-                                {(stmtBalData as any[]).map((r:any,i:number)=><tr key={i} className="hover:bg-gray-50"><td className="p-2 border-r border-gray-100 font-bold">{t(r.type)}</td><td className="p-2 border-r border-gray-100">{fmtDate(r.fecha||r.date)}</td><td className="p-2 border-r border-gray-100">{r.invoice_no}</td><td className="p-2 border-r border-gray-100">{fmtDate(r.due_date)}</td><td className="p-2 border-r border-gray-100 text-right">{fmt(r.ammount)}</td><td className="p-2 border-r border-gray-100 text-right text-blue-700">{fmt(r.payments)}</td><td className="p-2 border-r border-gray-100 text-right text-red-500">{fmt(r.debits)}</td><td className="p-2 border-r border-gray-100 text-right text-green-600">{fmt(r.credits)}</td><td className="p-2 text-right font-bold text-orange-600">{fmt(r.balance)}</td></tr>)}
-                                {!loadingStmtBal&&!selCustomer&&<tr><td colSpan={9} className="p-6 text-center text-gray-300 italic text-xs">Select a customer</td></tr>}
-                                {!loadingStmtBal&&selCustomer&&(stmtBalData as any[]).length===0&&<tr><td colSpan={9} className="p-6 text-center text-gray-300 italic text-xs">No records</td></tr>}
-                            </tbody></PanelGridTable>
+                            <PanelGridTable>
+                                <PanelGridThead>
+                                    <tr>
+                                        <PanelGridTh>Type</PanelGridTh>
+                                        <PanelGridTh>Date</PanelGridTh>
+                                        <PanelGridTh>Doc.</PanelGridTh>
+                                        <PanelGridTh>Due Date</PanelGridTh>
+                                        <PanelGridTh align="right">Amount</PanelGridTh>
+                                        <PanelGridTh align="right">Payments</PanelGridTh>
+                                        <PanelGridTh align="right">Debits</PanelGridTh>
+                                        <PanelGridTh align="right">Credits</PanelGridTh>
+                                        <PanelGridTh align="right">Balance</PanelGridTh>
+                                    </tr>
+                                </PanelGridThead>
+                                <PanelGridTbody>
+                                    {(stmtBalData as any[]).map((r:any,i:number)=><PanelGridTr key={i}>
+                                        <PanelGridTd className="font-bold">{t(r.type)}</PanelGridTd>
+                                        <PanelGridTd>{fmtDate(r.fecha||r.date)}</PanelGridTd>
+                                        <PanelGridTd>{r.invoice_no}</PanelGridTd>
+                                        <PanelGridTd>{fmtDate(r.due_date)}</PanelGridTd>
+                                        <PanelGridTd align="right">{fmt(r.ammount)}</PanelGridTd>
+                                        <PanelGridTd align="right" className="text-blue-700">{fmt(r.payments)}</PanelGridTd>
+                                        <PanelGridTd align="right" className="text-red-500">{fmt(r.debits)}</PanelGridTd>
+                                        <PanelGridTd align="right" className="text-green-600">{fmt(r.credits)}</PanelGridTd>
+                                        <PanelGridTd align="right" className="font-bold text-orange-600">{fmt(r.balance)}</PanelGridTd>
+                                    </PanelGridTr>)}
+                                    {!loadingStmtBal&&!selCustomer&&<tr><td colSpan={9} className="p-6 text-center text-gray-300 italic text-xs">Select a customer</td></tr>}
+                                    {!loadingStmtBal&&selCustomer&&(stmtBalData as any[]).length===0&&<tr><td colSpan={9} className="p-6 text-center text-gray-300 italic text-xs">No records</td></tr>}
+                                </PanelGridTbody>
+                            </PanelGridTable>
                         </div>
                     </PanelGrid>
                 </div>
@@ -942,11 +1029,32 @@ export default function CustomerPaymentsPage() {
                         ]}
                         className="flex-[0.33] flex flex-col min-h-0"
                     >
-                            <PanelGridTable><PanelGridThead><tr>{["Date","Customer","Bank-Doc","Amount","Applied","Balance"].map(h=><PanelGridTh key={h}>{h}</PanelGridTh>)}</tr></PanelGridThead>
-                            <tbody>
-                                {(corpIncomes as any[]).map((c:any)=>{const isSel=selCorpIncome?.unico===c.unico;return<tr key={c.unico} onClick={()=>{setSelCorpIncome(c);setSelCorpPayment(null);}} className={cn("cursor-pointer transition-colors",isSel?"!bg-blue-50 ring-1 ring-inset ring-blue-200":"hover:bg-gray-50")}><td className="p-2 border-r border-gray-100">{fmtDate(c.pay_date)}</td><td className="p-2 border-r border-gray-100 font-bold">{t(c.cust_code)}</td><td className="p-2 border-r border-gray-100">{t(c.bank_doc)}</td><td className="p-2 border-r border-gray-100 text-right font-bold">{fmt(c.pay_amount)}</td><td className="p-2 border-r border-gray-100 text-right text-blue-700">{fmt(c.pay_applied)}</td><td className="p-2 text-right text-orange-600 font-bold">{fmt(c.pay_balance)}</td></tr>;})}
-                                {!loadingCorpInc&&(corpIncomes as any[]).length===0&&<tr><td colSpan={6} className="p-6 text-center text-gray-300 italic text-xs">No corporate payments for this date</td></tr>}
-                            </tbody></PanelGridTable>
+                            <PanelGridTable>
+                                <PanelGridThead>
+                                    <tr>
+                                        <PanelGridTh>Date</PanelGridTh>
+                                        <PanelGridTh>Customer</PanelGridTh>
+                                        <PanelGridTh>Bank-Doc</PanelGridTh>
+                                        <PanelGridTh align="right">Amount</PanelGridTh>
+                                        <PanelGridTh align="right">Applied</PanelGridTh>
+                                        <PanelGridTh align="right">Balance</PanelGridTh>
+                                    </tr>
+                                </PanelGridThead>
+                                <PanelGridTbody>
+                                    {(corpIncomes as any[]).map((c:any)=>{
+                                        const isSel=selCorpIncome?.unico===c.unico;
+                                        return <PanelGridTr key={c.unico} onClick={()=>{setSelCorpIncome(c);setSelCorpPayment(null);}} selected={isSel}>
+                                            <PanelGridTd>{fmtDate(c.pay_date)}</PanelGridTd>
+                                            <PanelGridTd className="font-bold">{t(c.cust_code)}</PanelGridTd>
+                                            <PanelGridTd>{t(c.bank_doc)}</PanelGridTd>
+                                            <PanelGridTd align="right" className="font-bold">{fmt(c.pay_amount)}</PanelGridTd>
+                                            <PanelGridTd align="right" className="text-blue-700">{fmt(c.pay_applied)}</PanelGridTd>
+                                            <PanelGridTd align="right" className="text-orange-600 font-bold">{fmt(c.pay_balance)}</PanelGridTd>
+                                        </PanelGridTr>;
+                                    })}
+                                    {!loadingCorpInc&&(corpIncomes as any[]).length===0&&<tr><td colSpan={6} className="p-6 text-center text-gray-300 italic text-xs">No corporate payments for this date</td></tr>}
+                                </PanelGridTbody>
+                            </PanelGridTable>
                     </PanelGrid>
                     {/* Customer Payments (Detallecontrol3) */}
                     <PanelGrid
@@ -963,12 +1071,35 @@ export default function CustomerPaymentsPage() {
                         ]}
                         className="flex-[0.33] flex flex-col min-h-0"
                     >
-                            <PanelGridTable><PanelGridThead><tr>{["Date","Customer","Bank-Doc","Payment","Applied","UnApply","Deposit"].map(h=><PanelGridTh key={h}>{h}</PanelGridTh>)}</tr></PanelGridThead>
-                            <tbody>
-                                {(corpPayments as any[]).map((p:any)=>{const isSel=selCorpPayment?.unico===p.unico;return<tr key={p.unico} onClick={()=>setSelCorpPayment(p)} className={cn("cursor-pointer transition-colors",isSel?"!bg-blue-50 ring-1 ring-inset ring-blue-200":"hover:bg-gray-50")}><td className="p-2 border-r border-gray-100">{fmtDate(p.pay_date)}</td><td className="p-2 border-r border-gray-100 font-bold">{t(p.cust_code)}</td><td className="p-2 border-r border-gray-100">{t(p.bank_doc)}</td><td className="p-2 border-r border-gray-100 text-right font-bold text-blue-700">{fmt(p.payment)}</td><td className="p-2 border-r border-gray-100 text-right">{fmt(p.applied)}</td><td className="p-2 border-r border-gray-100 text-right text-orange-600">{fmt(p.unapply)}</td><td className="p-2 text-right">{fmt(p.deposit)}</td></tr>;})}
-                                {!loadingCorpPay&&!selCorpIncome&&<tr><td colSpan={7} className="p-4 text-center text-gray-300 italic text-xs">Select a corporate payment</td></tr>}
-                                {!loadingCorpPay&&selCorpIncome&&(corpPayments as any[]).length===0&&<tr><td colSpan={7} className="p-4 text-center text-gray-300 italic text-xs">No customer payments</td></tr>}
-                            </tbody></PanelGridTable>
+                            <PanelGridTable>
+                                <PanelGridThead>
+                                    <tr>
+                                        <PanelGridTh>Date</PanelGridTh>
+                                        <PanelGridTh>Customer</PanelGridTh>
+                                        <PanelGridTh>Bank-Doc</PanelGridTh>
+                                        <PanelGridTh align="right">Payment</PanelGridTh>
+                                        <PanelGridTh align="right">Applied</PanelGridTh>
+                                        <PanelGridTh align="right">UnApply</PanelGridTh>
+                                        <PanelGridTh align="right">Deposit</PanelGridTh>
+                                    </tr>
+                                </PanelGridThead>
+                                <PanelGridTbody>
+                                    {(corpPayments as any[]).map((p:any)=>{
+                                        const isSel=selCorpPayment?.unico===p.unico;
+                                        return <PanelGridTr key={p.unico} onClick={()=>setSelCorpPayment(p)} selected={isSel}>
+                                            <PanelGridTd>{fmtDate(p.pay_date)}</PanelGridTd>
+                                            <PanelGridTd className="font-bold">{t(p.cust_code)}</PanelGridTd>
+                                            <PanelGridTd>{t(p.bank_doc)}</PanelGridTd>
+                                            <PanelGridTd align="right" className="font-bold text-blue-700">{fmt(p.payment)}</PanelGridTd>
+                                            <PanelGridTd align="right">{fmt(p.applied)}</PanelGridTd>
+                                            <PanelGridTd align="right" className="text-orange-600">{fmt(p.unapply)}</PanelGridTd>
+                                            <PanelGridTd align="right">{fmt(p.deposit)}</PanelGridTd>
+                                        </PanelGridTr>;
+                                    })}
+                                    {!loadingCorpPay&&!selCorpIncome&&<tr><td colSpan={7} className="p-4 text-center text-gray-300 italic text-xs">Select a corporate payment</td></tr>}
+                                    {!loadingCorpPay&&selCorpIncome&&(corpPayments as any[]).length===0&&<tr><td colSpan={7} className="p-4 text-center text-gray-300 italic text-xs">No customer payments</td></tr>}
+                                </PanelGridTbody>
+                            </PanelGridTable>
                     </PanelGrid>
                     {/* Invoice Applied Payments (Detallecontrol2) */}
                     <PanelGrid
@@ -984,12 +1115,30 @@ export default function CustomerPaymentsPage() {
                         ]}
                         className="flex-[0.33] flex flex-col min-h-0"
                     >
-                            <PanelGridTable><PanelGridThead><tr>{["Date","Customer","Bank-Doc","Applied","Invoice","Due Date"].map(h=><PanelGridTh key={h}>{h}</PanelGridTh>)}</tr></PanelGridThead>
-                            <tbody>
-                                {(corpInvoices as any[]).map((c:any,i:number)=><tr key={i} className="hover:bg-gray-50"><td className="p-2 border-r border-gray-100">{fmtDate(c.pay_date)}</td><td className="p-2 border-r border-gray-100 font-bold">{t(c.cust_code)}</td><td className="p-2 border-r border-gray-100">{t(c.bank_doc)}</td><td className="p-2 border-r border-gray-100 text-right text-blue-700 font-bold">{fmt(c.in_ammount)}</td><td className="p-2 border-r border-gray-100 font-bold">{c.invoice_no}</td><td className="p-2">{fmtDate(c.date_due)}</td></tr>)}
-                                {!loadingCorpInv&&!selCorpPayment&&<tr><td colSpan={6} className="p-4 text-center text-gray-300 italic text-xs">Select a customer payment</td></tr>}
-                                {!loadingCorpInv&&selCorpPayment&&(corpInvoices as any[]).length===0&&<tr><td colSpan={6} className="p-4 text-center text-gray-300 italic text-xs">No invoices applied</td></tr>}
-                            </tbody></PanelGridTable>
+                            <PanelGridTable>
+                                <PanelGridThead>
+                                    <tr>
+                                        <PanelGridTh>Date</PanelGridTh>
+                                        <PanelGridTh>Customer</PanelGridTh>
+                                        <PanelGridTh>Bank-Doc</PanelGridTh>
+                                        <PanelGridTh align="right">Applied</PanelGridTh>
+                                        <PanelGridTh>Invoice</PanelGridTh>
+                                        <PanelGridTh>Due Date</PanelGridTh>
+                                    </tr>
+                                </PanelGridThead>
+                                <PanelGridTbody>
+                                    {(corpInvoices as any[]).map((c:any,i:number)=><PanelGridTr key={i}>
+                                        <PanelGridTd>{fmtDate(c.pay_date)}</PanelGridTd>
+                                        <PanelGridTd className="font-bold">{t(c.cust_code)}</PanelGridTd>
+                                        <PanelGridTd>{t(c.bank_doc)}</PanelGridTd>
+                                        <PanelGridTd align="right" className="text-blue-700 font-bold">{fmt(c.in_ammount)}</PanelGridTd>
+                                        <PanelGridTd className="font-bold">{c.invoice_no}</PanelGridTd>
+                                        <PanelGridTd>{fmtDate(c.date_due)}</PanelGridTd>
+                                    </PanelGridTr>)}
+                                    {!loadingCorpInv&&!selCorpPayment&&<tr><td colSpan={6} className="p-4 text-center text-gray-300 italic text-xs">Select a customer payment</td></tr>}
+                                    {!loadingCorpInv&&selCorpPayment&&(corpInvoices as any[]).length===0&&<tr><td colSpan={6} className="p-4 text-center text-gray-300 italic text-xs">No invoices applied</td></tr>}
+                                </PanelGridTbody>
+                            </PanelGridTable>
                     </PanelGrid>
                 </div>
             )}
