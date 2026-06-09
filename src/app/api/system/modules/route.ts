@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { executeQuery } from "@/lib/db";
+import { executeQuery, executeProcedure } from "@/lib/db";
 import crypto from "crypto";
 
 const txt    = (v: any) => String(v ?? "").replace(/'/g, "''");
@@ -25,15 +25,22 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
     const body = await req.json();
-    const unico = genUq();
     const { nombre, clase, orden, image, descripcion, dsn, active, web } = body;
     try {
-        await executeQuery(`
-            INSERT INTO modulo (unico, nombre, clase, orden, image, descripcion, dsn, active, web, timestamp)
-            VALUES ('${txt(unico)}','${txt(nombre)}','${txt(clase)}',
-                    ${parseInt(orden)||0},'${txt(image)}','${txt(descripcion)}',
-                    '${txt(dsn)}',${bit(active)},${bit(web)},GETDATE())`, true);
-        return NextResponse.json({ success: true, unico, message: "Module created." });
+        const result = await executeProcedure("sp_sistema_modulos_insert", {
+            lcUnico: "",
+            lcNombre: nombre,
+            lcClase: clase,
+            lnOrden: parseInt(orden) || 0,
+            lcImage: image,
+            lcDescripcion: descripcion,
+            llActive: bit(active),
+            llWeb: bit(web),
+            lcDsn: dsn
+        }, true);
+        const row = result.recordset[0];
+        if (row.Error) throw new Error(row.Error);
+        return NextResponse.json({ success: true, unico: row.Unico, message: row.Message });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }

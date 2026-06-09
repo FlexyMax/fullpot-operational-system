@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState, useMemo, useRef } from "react";
 import { useSession } from "next-auth/react";
@@ -7,21 +7,22 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     Plus, Pencil, Trash2, Save, X, RefreshCcw,
     Download, Upload, LayoutGrid, Monitor, FileText,
-    Check, AlertCircle, ChevronRight, Search, XCircle, Menu
+    Check, AlertCircle, ChevronRight, Search, XCircle, Menu, Minus
 } from "lucide-react";
+import { toast } from "sonner";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { AppFooter } from "@/components/layout/AppFooter";
-
-
 import { GridMenu } from "@/components/GridMenu";
-
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { AuditLogModal } from "@/components/AuditLogModal";
 import { cn } from "@/lib/utils";
-const EMPTY_ARR: any[] = [];
+import { useModuleStore } from "@/store/system/useModuleStore";
+import PanelGrid from "@/components/ui/PanelGrid";
+import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
 
-// """ Types """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+const EMPTY_ARR: any[] = [];
 const CLASSES   = ["Empresas", "Sistema", "Otros"];
 const t         = (v: any) => String(v ?? "").trim();
 const sysFetch  = async (url: string) => { const r = await fetch(url); const j = await r.json(); if (!r.ok) throw new Error(j?.error || `HTTP ${r.status}`); return j; };
@@ -34,9 +35,6 @@ const EMPTY_MOD:    ModForm    = { unico: "", nombre: "", clase: "", orden: "0",
 const EMPTY_SCREEN: ScreenForm = { unico: "", modulo_uq: "", nombre: "", orden: "0", run_pantalla: "", executable: "", image: "", path: "", menu: true, web_form: "", descripcion: "" };
 const EMPTY_REPORT: ReportForm = { unico: "", panta_uq: "", nombre: "", titulo: "", path: "", descripcion: "", fecha_desde: false, fecha_hasta: false, numero_desde: false, numero_hasta: false, actual: true, comprimido: false, detallado: false, exportar: false };
 
-
-
-// """ Main Page """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 export default function ModuleScreenSetupPage() {
     const { status } = useSession();
     const router  = useRouter();
@@ -45,27 +43,27 @@ export default function ModuleScreenSetupPage() {
     const perms = usePagePermissions("module-screen-setup");
     const importRef = useRef<HTMLInputElement>(null);
 
-    const [selModUnico,    setSelModUnico]    = useState<string | null>(null);
-    const [selScrUnico,    setSelScrUnico]    = useState<string | null>(null);
+    const {
+        selModUnico, setSelModUnico,
+        selScrUnico, setSelScrUnico,
+        modSearch, setModSearch,
+        mobileModOpen, setMobileModOpen
+    } = useModuleStore();
+
     const [modFormModal,   setModFormModal]   = useState<{mode:"add"|"edit"}|null>(null);
     const [modForm,        setModForm]        = useState<ModForm>(EMPTY_MOD);
-    const [modError,       setModError]       = useState<string | null>(null);
-    const [modMsg,         setModMsg]         = useState<string | null>(null);
     const [saving,         setSaving]         = useState(false);
     const [deleteModDlg,   setDeleteModDlg]   = useState(false);
+    
     const [screenModal,    setScreenModal]    = useState<{ mode: "add"|"edit" } | null>(null);
     const [screenForm,     setScreenForm]     = useState<ScreenForm>(EMPTY_SCREEN);
-    const [screenError,    setScreenError]    = useState<string | null>(null);
     const [savingScreen,   setSavingScreen]   = useState(false);
     const [deleteScrDlg,   setDeleteScrDlg]   = useState(false);
+    
     const [reportModal,    setReportModal]    = useState<{ mode: "add"|"edit" } | null>(null);
     const [reportForm,     setReportForm]     = useState<ReportForm>(EMPTY_REPORT);
-    const [reportError,    setReportError]    = useState<string | null>(null);
     const [savingReport,   setSavingReport]   = useState(false);
     const [deleteRptDlg,   setDeleteRptDlg]   = useState(false);
-    const [modSearch,      setModSearch]      = useState("");
-    const [importMsg,      setImportMsg]      = useState<string | null>(null);
-    const [mobileModOpen,  setMobileModOpen]  = useState(false);
 
     useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
 
@@ -74,24 +72,17 @@ export default function ModuleScreenSetupPage() {
     const { data: screens = EMPTY_ARR, isFetching: loadingScr, refetch: refetchScr } = useQuery({ queryKey: ["sys-scr", selModUnico], queryFn: () => sysFetch(`/api/system/modules/${selModUnico}/screens`), enabled: !!selModUnico, retry: false });
     const { data: reports = EMPTY_ARR, isFetching: loadingRpt, refetch: refetchRpt } = useQuery({ queryKey: ["sys-rpt", selScrUnico], queryFn: () => sysFetch(`/api/system/screens/${selScrUnico}/reports`), enabled: !!selScrUnico && !!screenModal, retry: false });
 
-    // "" Module selection """"""""""""""""""""""""""""""""""""""""""""""""""""""
-    const selectModule = (m: any) => {
-        if (modFormModal) return;
-        setSelModUnico(m.unico);
-        setSelScrUnico(null);
-        setModForm({ unico: t(m.unico), nombre: t(m.nombre), clase: t(m.clase), orden: String(m.orden ?? 0), image: t(m.image), descripcion: t(m.descripcion), dsn: t(m.dsn), active: Boolean(m.active), web: Boolean(m.web) });
-        setModError(null);
-    };
-
+    // Auto-select
     useEffect(() => {
-        if ((modules as any[]).length > 0 && !selModUnico) selectModule((modules as any[])[0]);
-    }, [modules]);
+        if ((modules as any[]).length > 0 && !selModUnico) setSelModUnico((modules as any[])[0].unico);
+    }, [modules, selModUnico, setSelModUnico]);
 
-    // Auto-select first screen when screens load for selected module
     useEffect(() => {
         if ((screens as any[]).length > 0) setSelScrUnico((screens as any[])[0].unico);
         else setSelScrUnico(null);
-    }, [screens]);
+    }, [screens, setSelScrUnico]);
+
+    const selMod = (modules as any[]).find((m: any) => m.unico === selModUnico);
 
     // "" Module CRUD """""""""""""""""""""""""""""""""""""""""""""""""""""""""""
     const validateMod = () => {
@@ -102,8 +93,8 @@ export default function ModuleScreenSetupPage() {
     };
 
     const saveMod = async () => {
-        const err = validateMod(); if (err) { setModError(err); return; }
-        setSaving(true); setModError(null);
+        const err = validateMod(); if (err) { toast.error(err); return; }
+        setSaving(true);
         try {
             let unico = selModUnico;
             if (modFormModal?.mode === "add") {
@@ -116,9 +107,8 @@ export default function ModuleScreenSetupPage() {
             logAction(modFormModal?.mode === "add" ? "Insert" : "Edit", unico!);
             await qc.invalidateQueries({ queryKey: ["sys-mods"] });
             setSelModUnico(unico); setModFormModal(null);
-            setModMsg(modFormModal?.mode === "add" ? "Module created." : "Module updated.");
-            setTimeout(() => setModMsg(null), 3000);
-        } catch (e: any) { setModError(e.message); }
+            toast.success(modFormModal?.mode === "add" ? "Module created." : "Module updated.");
+        } catch (e: any) { toast.error(e.message); }
         finally { setSaving(false); }
     };
 
@@ -131,7 +121,8 @@ export default function ModuleScreenSetupPage() {
             logAction("Delete", selModUnico!);
             await qc.invalidateQueries({ queryKey: ["sys-mods"] });
             setSelModUnico(null); setModForm(EMPTY_MOD); setDeleteModDlg(false);
-        } catch (e: any) { setModError(e.message); setDeleteModDlg(false); }
+            toast.success("Module deleted.");
+        } catch (e: any) { toast.error(e.message); setDeleteModDlg(false); }
         finally { setSaving(false); }
     };
 
@@ -146,8 +137,8 @@ export default function ModuleScreenSetupPage() {
     };
 
     const saveScreen = async () => {
-        const err = validateScreen(); if (err) { setScreenError(err); return; }
-        setSavingScreen(true); setScreenError(null);
+        const err = validateScreen(); if (err) { toast.error(err); return; }
+        setSavingScreen(true);
         try {
             const body = { ...screenForm, modulo_uq: selModUnico };
             if (screenModal?.mode === "add") {
@@ -160,7 +151,8 @@ export default function ModuleScreenSetupPage() {
                 logAction("Edit", screenForm.unico, "Screen");
             }
             await refetchScr(); setScreenModal(null);
-        } catch (e: any) { setScreenError(e.message); }
+            toast.success(screenModal?.mode === "add" ? "Screen created." : "Screen updated.");
+        } catch (e: any) { toast.error(e.message); }
         finally { setSavingScreen(false); }
     };
 
@@ -172,14 +164,15 @@ export default function ModuleScreenSetupPage() {
             const data = await res.json(); if (!data.success) throw new Error(data.error);
             logAction("Delete", selScrUnico!, "Screen");
             await refetchScr(); setSelScrUnico(null); setDeleteScrDlg(false);
-        } catch (e: any) { setScreenError(e.message); setDeleteScrDlg(false); }
+            toast.success("Screen deleted.");
+        } catch (e: any) { toast.error(e.message); setDeleteScrDlg(false); }
         finally { setSavingScreen(false); }
     };
 
     // "" Report CRUD """""""""""""""""""""""""""""""""""""""""""""""""""""""""""
     const saveReport = async () => {
-        if (!reportForm.nombre.trim()) { setReportError("Report name is required."); return; }
-        setSavingReport(true); setReportError(null);
+        if (!reportForm.nombre.trim()) { toast.error("Report name is required."); return; }
+        setSavingReport(true);
         try {
             const body = { ...reportForm, panta_uq: selScrUnico };
             if (reportModal?.mode === "add") {
@@ -192,7 +185,8 @@ export default function ModuleScreenSetupPage() {
                 logAction("Edit", reportForm.unico, "Report");
             }
             await refetchRpt(); setReportModal(null);
-        } catch (e: any) { setReportError(e.message); }
+            toast.success("Report saved.");
+        } catch (e: any) { toast.error(e.message); }
         finally { setSavingReport(false); }
     };
 
@@ -203,41 +197,46 @@ export default function ModuleScreenSetupPage() {
             const data = await res.json(); if (!data.success) throw new Error(data.error);
             logAction("Delete", reportForm.unico, "Report");
             await refetchRpt(); setDeleteRptDlg(false); setReportModal(null);
-        } catch (e: any) { setReportError(e.message); setDeleteRptDlg(false); }
+            toast.success("Report deleted.");
+        } catch (e: any) { toast.error(e.message); setDeleteRptDlg(false); }
         finally { setSavingReport(false); }
     };
 
-    // "" Export """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+    // "" Export/Import """""""""""""""""""""""""""""""""""""""""""""""""""""""""""
     const exportAll = async () => {
-        const data = await sysFetch("/api/system/modules/export");
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-        const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `modules-export-${new Date().toISOString().split("T")[0]}.json` });
-        document.body.appendChild(a); a.click(); document.body.removeChild(a);
-        setModMsg(`Exported: ${data.modules?.length} modules, ${data.screens?.length} screens, ${data.reports?.length} reports`);
-        setTimeout(() => setModMsg(null), 5000);
+        try {
+            const data = await sysFetch("/api/system/modules/export");
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+            const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `modules-export-${new Date().toISOString().split("T")[0]}.json` });
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            toast.success(`Exported: ${data.modules?.length} modules, ${data.screens?.length} screens, ${data.reports?.length} reports`);
+        } catch(e:any) { toast.error(e.message); }
     };
 
     const exportModule = async () => {
         if (!selModUnico) return;
-        const data = await sysFetch(`/api/system/modules/${selModUnico}/export`);
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-        const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `module-${t(modForm.nombre).replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.json` });
-        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        try {
+            const data = await sysFetch(`/api/system/modules/${selModUnico}/export`);
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+            const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `module-${t(selMod?.nombre).replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.json` });
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        } catch(e:any) { toast.error(e.message); }
     };
 
     const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]; if (!file) return;
-        const text = await file.text(); const json = JSON.parse(text);
-        if (!confirm("Import and update Modules, Screens and Reports? Existing records will be updated.")) return;
-        const res  = await fetch("/api/system/modules/import", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(json) });
-        const data = await res.json();
-        if (data.success) {
-            const { modules: m, screens: s, reports: r } = data.imported;
-            logAction("Insert", selModUnico || "import", "JSON Import");
-            setImportMsg(`Applied changes: ${m} modules, ${s} screens, ${r} reports`);
-            setTimeout(() => setImportMsg(null), 5000);
-            await qc.invalidateQueries({ queryKey: ["sys-mods"] });
-        } else { setModError(data.error); }
+        try {
+            const text = await file.text(); const json = JSON.parse(text);
+            if (!confirm("Import and update Modules, Screens and Reports? Existing records will be updated.")) return;
+            const res  = await fetch("/api/system/modules/import", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(json) });
+            const data = await res.json();
+            if (data.success) {
+                const { modules: m, screens: s, reports: r } = data.imported;
+                logAction("Insert", selModUnico || "import", "JSON Import");
+                toast.success(`Imported: ${m} modules, ${s} screens, ${r} reports`);
+                await qc.invalidateQueries({ queryKey: ["sys-mods"] });
+            } else { toast.error(data.error); }
+        } catch (e:any) { toast.error("Error reading file: " + e.message); }
         e.target.value = "";
     };
 
@@ -247,25 +246,40 @@ export default function ModuleScreenSetupPage() {
         return (modules as any[]).filter((m: any) => t(m.nombre).toLowerCase().includes(q) || t(m.clase).toLowerCase().includes(q));
     }, [modules, modSearch]);
 
-    const isEditing = modFormModal !== null;
-    const selMod    = (modules as any[]).find((m: any) => m.unico === selModUnico);
+    // Handlers
+    const handleAddModule = () => {
+        if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; }
+        setModForm({...EMPTY_MOD}); setModFormModal({mode:"add"});
+    };
+    const handleEditModule = () => {
+        if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; }
+        if (selMod) {
+            setModForm({ unico: t(selMod.unico), nombre: t(selMod.nombre), clase: t(selMod.clase), orden: String(selMod.orden ?? 0), image: t(selMod.image), descripcion: t(selMod.descripcion), dsn: t(selMod.dsn), active: Boolean(selMod.active), web: Boolean(selMod.web) });
+            setModFormModal({mode:"edit"});
+        }
+    };
+    const handleRemoveModule = () => {
+        if (!perms.canDelete) { toast.error(PERMISSION_MSGS.delete); return; }
+        if (selModUnico) setDeleteModDlg(true);
+    };
 
     const handleAddScreen = () => {
-        if (!selModUnico || isEditing) return;
+        if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; }
+        if (!selModUnico) return;
         setScreenForm({...EMPTY_SCREEN, modulo_uq: selModUnico});
-        setScreenError(null);
         setScreenModal({ mode: "add" });
     };
     const handleEditScreen = () => {
-        if (!selScrUnico || isEditing) return;
+        if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; }
+        if (!selScrUnico) return;
         const s = (screens as any[]).find((x: any) => x.unico === selScrUnico);
         if (s) {
             setScreenForm({ unico: t(s.unico), modulo_uq: t(s.modulo_uq), nombre: t(s.nombre), orden: String(s.orden??0), run_pantalla: t(s.run_pantalla), executable: t(s.executable), image: t(s.image), path: t(s.path), menu: Boolean(s.menu), web_form: t(s.web_form), descripcion: t(s.descripcion) });
-            setScreenError(null);
             setScreenModal({ mode: "edit" });
         }
     };
     const handleRemoveScreen = () => {
+        if (!perms.canDelete) { toast.error(PERMISSION_MSGS.delete); return; }
         if (selScrUnico) setDeleteScrDlg(true);
     };
 
@@ -273,285 +287,218 @@ export default function ModuleScreenSetupPage() {
 
     return (
         <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
-
             <AppHeader title="Modules" />
 
-            {/* Main two-panel layout */}
-            <div className="flex flex-col lg:flex-row flex-1 gap-2 p-2 overflow-y-auto lg:overflow-hidden">
-
-                {/* "" LEFT: Module List """"""""""""""""""""""""""""""""""""""" */}
-                <div className="hidden lg:flex w-[240px] shrink-0 flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-                    <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 border-b border-black/10 shrink-0 rounded-t-lg">
-                        <div className="flex items-center gap-2">
-                            <LayoutGrid size={16} className="text-[#FB7506]" />
-                            <span className="fos-grid-header-text">Modules</span>
-                        </div>
-                        {loadingMods && <RefreshCcw size={16} className="text-gray-400 animate-spin" />}
-                    </div>
-                    <div className="p-2 border-b border-gray-100 shrink-0">
-                        <div className="relative">
-                            <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input type="text" value={modSearch} onChange={e => setModSearch(e.target.value)}
-                                placeholder="Filter modules..." className="w-full pl-7 pr-2 h-9 text-sm border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506]" />
-                        </div>
-                    </div>
-                    <div className="overflow-y-auto flex-1">
-                        {filteredMods.map((m: any) => {
-                            const isSelected = selModUnico === m.unico;
-                            return (
-                                <div key={m.unico} onClick={() => selectModule(m)}
-                                    className={cn("px-3 py-2 border-b border-gray-50 flex items-center gap-2 transition-colors",
-                                        isEditing ? "cursor-not-allowed opacity-60" : "cursor-pointer",
-                                        isSelected ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "hover:bg-blue-50"
-                                    )}>
-                                    <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", m.active ? "bg-green-400" : "bg-gray-300")} />
-                                    <div className="min-w-0 flex-1">
-                                        <p className="text-xs font-semibold text-gray-800 truncate">{t(m.nombre)}</p>
-                                        <div className="flex items-center justify-between">
-                                            <p className="text-[9px] text-gray-400">{t(m.clase)}</p>
-                                            <span className="text-[8px] font-black bg-blue-100 text-blue-600 px-1 rounded">{m.screen_count || 0}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+            <div className="flex flex-col flex-1 p-2 gap-2 overflow-hidden">
+                {/* TOP GRID: Modules (60%) */}
+                <div className="flex-1 lg:flex-[6] min-h-0 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+                    <PanelGrid
+                        title="Modules"
+                        icon={LayoutGrid}
+                        recordCount={(modules as any[]).length}
+                        refreshing={loadingMods}
+                        searchValue={modSearch}
+                        onSearchChange={setModSearch}
+                        headerRight={<AuditLogModal recordId={selModUnico} disabled={!selModUnico} />}
+                        menuItems={[
+                            { label: "Add Module", icon: Plus, color: "green", onClick: handleAddModule, disabled: !perms.canCreate },
+                            { label: "Edit Module", icon: Pencil, color: "orange", onClick: handleEditModule, disabled: !selModUnico || !perms.canEdit },
+                            { label: "Delete Module", icon: Trash2, color: "red", onClick: handleRemoveModule, disabled: !selModUnico || !perms.canDelete },
+                            { label: "Export All", icon: Download, color: "gray", onClick: exportAll },
+                            { label: "Export Module", icon: Download, color: "gray", onClick: exportModule, disabled: !selModUnico },
+                            { label: "Import JSON", icon: Upload, color: "gray", onClick: () => importRef.current?.click() },
+                        ]}
+                        className="flex-1 min-h-0"
+                    >
+                        <PanelGridTable>
+                            <PanelGridThead>
+                                    <PanelGridTh>Code</PanelGridTh>
+                                    <PanelGridTh>Module Name</PanelGridTh>
+                                    <PanelGridTh>Class</PanelGridTh>
+                                    <PanelGridTh>Order</PanelGridTh>
+                                    <PanelGridTh>Icon</PanelGridTh>
+                                    <PanelGridTh>DSN</PanelGridTh>
+                                    <PanelGridTh className="text-center">Active</PanelGridTh>
+                                    <PanelGridTh className="text-center">Web</PanelGridTh>
+                            </PanelGridThead>
+                            <PanelGridTbody>
+                                {filteredMods.map((m: any) => {
+                                    const isSel = selModUnico === m.unico;
+                                    return (
+                                        <PanelGridTr key={m.unico} selected={isSel} onClick={() => setSelModUnico(m.unico)} onDoubleClick={handleEditModule}>
+                                            <PanelGridTd className="font-semibold text-gray-800">{t(m.unico)}</PanelGridTd>
+                                            <PanelGridTd className="font-semibold text-blue-700">{t(m.nombre)}</PanelGridTd>
+                                            <PanelGridTd className="text-gray-500">{t(m.clase)}</PanelGridTd>
+                                            <PanelGridTd>{m.orden}</PanelGridTd>
+                                            <PanelGridTd className="text-gray-400">{t(m.image)}</PanelGridTd>
+                                            <PanelGridTd className="text-gray-400">{t(m.dsn)}</PanelGridTd>
+                                            <PanelGridTd className="text-center">{m.active ? <Check size={14} className="mx-auto text-green-500" /> : <Minus size={14} className="mx-auto text-gray-300" />}</PanelGridTd>
+                                            <PanelGridTd className="text-center">{m.web ? <Check size={14} className="mx-auto text-green-500" /> : <Minus size={14} className="mx-auto text-gray-300" />}</PanelGridTd>
+                                        </PanelGridTr>
+                                    );
+                                })}
+                            </PanelGridTbody>
+                        </PanelGridTable>
+                    </PanelGrid>
                 </div>
 
-                {/* RIGHT: Form + Screens */}
-                <div className="flex-1 flex flex-col gap-2 min-w-0 lg:overflow-hidden">
-
-                    {/* Module Form */}
-                    <div className="bg-white rounded-lg border border-gray-200 shadow-sm shrink-0">
-                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 border-b border-black/10 rounded-t-lg">
-                            <div className="flex items-center gap-2 min-w-0">
-                                <LayoutGrid size={16} className="text-[#FB7506] shrink-0" />
-                                <span className="fos-grid-header-text shrink-0">Module Details</span>
-                                <AuditLogModal recordId={selModUnico} disabled={!selModUnico} />
-                                {modError && <span className="flex items-center gap-1 text-amber-400 text-[10px] font-bold ml-2 truncate"><AlertCircle size={12} />{modError}</span>}
-                                {modMsg   && <span className="flex items-center gap-1 text-green-400 text-[10px] font-bold ml-2 truncate"><Check size={12} />{modMsg}</span>}
-                                {importMsg && <span className="text-blue-400 text-[10px] font-bold ml-2 truncate">{importMsg}</span>}
-                            </div>
-                            <div className="flex items-center gap-1.5 shrink-0">
-                                <GridMenu
-                                    items={[
-                                        { label: "Add Module", icon: Plus, color: "green", onClick: () => { setModForm({...EMPTY_MOD}); setModError(null); setModFormModal({mode:"add"}); }, disabled: !perms.canCreate },
-                                        { label: "Edit Module", icon: Pencil, color: "orange", onClick: () => { if (selModUnico) { setModForm(prev => ({...prev})); setModError(null); setModFormModal({mode:"edit"}); } }, disabled: !selModUnico || !perms.canEdit },
-                                        { label: "Delete Module", icon: Trash2, color: "red", onClick: () => { if (selModUnico) setDeleteModDlg(true); }, disabled: !selModUnico || !perms.canDelete },
-                                        { label: "Export All", icon: Download, color: "gray", onClick: exportAll },
-                                        { label: "Export Module", icon: Download, color: "gray", onClick: exportModule, disabled: !selModUnico },
-                                        { label: "Import JSON", icon: Upload, color: "gray", onClick: () => importRef.current?.click() },
-                                    ]}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="p-3 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 text-xs">
-                            {[
-                                { label: "Code",    key: "unico",  readonly: true },
-                                { label: "Order",   key: "orden",  readonly: false, type: "number" },
-                                { label: "Icon",    key: "image",  readonly: false },
-                                { label: "DSN",     key: "dsn",    readonly: false },
-                            ].map(f => (
-                                <div key={f.key} className="flex flex-col gap-0.5">
-                                    <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">{f.label}</label>
-                                    <input type={f.type||"text"} value={(modForm as any)[f.key]||""} readOnly
-                                        className={cn("fos-input h-10 text-sm", "bg-gray-50 text-gray-500")} />
-                                </div>
-                            ))}
-
-                            <div className="flex flex-col gap-0.5">
-                                <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Class</label>
-                                <input readOnly value={modForm.clase} className="fos-input h-10 text-sm bg-gray-50 text-gray-500" />
-                            </div>
-
-                            <div className="flex items-center gap-4 pt-3">
-                                {["active","web"].map(k => (
-                                    <label key={k} className="flex items-center gap-1.5">
-                                        <input type="checkbox" checked={Boolean((modForm as any)[k])} disabled
-                                            className="w-4 h-4 accent-[#FB7506]" />
-                                        <span className="text-xs font-semibold text-gray-600 uppercase">{k}</span>
-                                    </label>
-                                ))}
-                            </div>
-
-                            <div className="flex flex-col gap-0.5 col-span-2 sm:col-span-4 lg:col-span-2">
-                                <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Module Name</label>
-                                <input value={modForm.nombre} readOnly className="fos-input h-10 text-sm bg-gray-50 text-gray-500" />
-                            </div>
-
-                            <div className="flex flex-col gap-0.5 col-span-2 sm:col-span-4 lg:col-span-4">
-                                <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Description</label>
-                                <input value={modForm.descripcion} readOnly className="fos-input h-10 text-sm bg-gray-50 text-gray-500" />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Screens Grid */}
-                    <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-0">
-                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 border-b border-black/10 shrink-0 rounded-t-lg">
-                            <div className="flex items-center gap-2">
-                                <Monitor size={16} className="text-[#FB7506]" />
-                                <span className="fos-grid-header-text">
-                                    {"Screens" + (selMod ? " - " + t(selMod.nombre) : "")}
-                                </span>
-                                <AuditLogModal recordId={selScrUnico} disabled={!selScrUnico} />
-                                {loadingScr && <RefreshCcw size={16} className="text-gray-400 animate-spin" />}
-                                {screenError && <span className="flex items-center gap-1 text-amber-400 text-[10px] font-bold ml-2"><AlertCircle size={12} />{screenError}</span>}
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <GridMenu
-                                    items={[
-                                        { label: "Add Screen", icon: Plus, color: "green", onClick: handleAddScreen, disabled: !selModUnico || isEditing || !perms.canCreate },
-                                        { label: "Edit Screen", icon: Pencil, color: "orange", onClick: handleEditScreen, disabled: !selScrUnico || isEditing || !perms.canEdit },
-                                        { label: "Remove Screen", icon: Trash2, color: "red", onClick: handleRemoveScreen, disabled: !selScrUnico || isEditing || !perms.canDelete },
-                                    ]}
-                                />
-                            </div>
-                        </div>
-                        <div className="overflow-auto flex-1">
-                            {!selModUnico ? (
-                                <div className="h-full flex items-center justify-center text-gray-300 text-xs font-bold uppercase tracking-widest">Select a module</div>
-                            ) : (screens as any[]).length === 0 ? (
-                                <div className="h-32 flex items-center justify-center text-gray-400 text-xs italic">{loadingScr ? "Loading..." : "No screens in this module"}</div>
-                            ) : (
-                                <table className="min-w-full text-left">
-                                    <thead className="bg-gray-100 border-b text-gray-700 sticky top-0 z-10">
-                                        <tr className="fos-grid-thead">
-                                            <th className="p-2">Title</th>
-                                            <th className="p-2 border-l border-gray-200">Route</th>
-                                            <th className="p-2 border-l border-gray-200">Component</th>
-                                            <th className="p-2 border-l border-gray-200">Module folder</th>
-                                            <th className="p-2 border-l border-gray-200">Icon</th>
-                                            <th className="p-2 border-l border-gray-200 text-center">Ord</th>
-                                            <th className="p-2 border-l border-gray-200 text-center">Menu</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="fos-grid-tbody">
-                                        {(screens as any[]).map((s: any) => {
-                                            const isSel = selScrUnico === s.unico;
-                                            return (
-                                                <tr key={s.unico} onClick={() => setSelScrUnico(s.unico)}
-                                                    onDoubleClick={() => { setSelScrUnico(s.unico); setScreenForm({ unico: t(s.unico), modulo_uq: t(s.modulo_uq), nombre: t(s.nombre), orden: String(s.orden??0), run_pantalla: t(s.run_pantalla), executable: t(s.executable), image: t(s.image), path: t(s.path), menu: Boolean(s.menu), web_form: t(s.web_form), descripcion: t(s.descripcion) }); setScreenError(null); setScreenModal({ mode: "edit" }); }}
-                                                    className={cn("border-b cursor-pointer transition-colors", isSel ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50")}>
-                                                    <td className="p-2 font-medium truncate max-w-[180px]">{t(s.nombre)}</td>
-                                                    <td className="p-2 border-l border-gray-100 text-blue-600 truncate max-w-[140px]">{t(s.web_form)}</td>
-                                                    <td className="p-2 border-l border-gray-100 text-gray-500 truncate max-w-[120px]">{t(s.run_pantalla)}</td>
-                                                    <td className="p-2 border-l border-gray-100 text-gray-400 truncate max-w-[100px]">{t(s.executable)}</td>
-                                                    <td className="p-2 border-l border-gray-100 text-gray-400 truncate max-w-[80px]">{t(s.image)}</td>
-                                                    <td className="p-2 border-l border-gray-100 text-center">{s.orden}</td>
-                                                    <td className="p-2 border-l border-gray-100 text-center">
-                                                        {s.menu ? <Check size={12} className="text-green-500 mx-auto" /> : <span className="text-gray-300">-</span>}
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            )}
-                        </div>
-                    </div>
+                {/* BOTTOM GRID: Screens (40%) */}
+                <div className="flex-1 lg:flex-[4] min-h-0 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+                    <PanelGrid
+                        title={`Screens${selMod ? ' - ' + t(selMod.nombre) : ''}`}
+                        icon={Monitor}
+                        recordCount={(screens as any[]).length}
+                        refreshing={loadingScr}
+                        headerRight={<AuditLogModal recordId={selScrUnico} disabled={!selScrUnico} />}
+                        menuItems={[
+                            { label: "Add Screen", icon: Plus, color: "green", onClick: handleAddScreen, disabled: !selModUnico || !perms.canCreate },
+                            { label: "Edit Screen", icon: Pencil, color: "orange", onClick: handleEditScreen, disabled: !selScrUnico || !perms.canEdit },
+                            { label: "Remove Screen", icon: Trash2, color: "red", onClick: handleRemoveScreen, disabled: !selScrUnico || !perms.canDelete },
+                        ]}
+                        className="flex-1 min-h-0"
+                    >
+                        {!selModUnico ? (
+                            <div className="h-full flex items-center justify-center text-gray-300 text-xs font-bold uppercase tracking-widest">Select a module</div>
+                        ) : (screens as any[]).length === 0 ? (
+                            <div className="h-32 flex items-center justify-center text-gray-400 text-xs italic">{loadingScr ? "Loading..." : "No screens in this module"}</div>
+                        ) : (
+                            <PanelGridTable>
+                                <PanelGridThead>
+                                        <PanelGridTh>Code</PanelGridTh>
+                                        <PanelGridTh>Title</PanelGridTh>
+                                        <PanelGridTh>Route</PanelGridTh>
+                                        <PanelGridTh>Component</PanelGridTh>
+                                        <PanelGridTh>Module folder</PanelGridTh>
+                                        <PanelGridTh>Icon</PanelGridTh>
+                                        <PanelGridTh className="text-center">Ord</PanelGridTh>
+                                        <PanelGridTh className="text-center">Menu</PanelGridTh>
+                                </PanelGridThead>
+                                <PanelGridTbody>
+                                    {(screens as any[]).map((s: any) => {
+                                        const isSel = selScrUnico === s.unico;
+                                        return (
+                                            <PanelGridTr key={s.unico} selected={isSel} onClick={() => setSelScrUnico(s.unico)} onDoubleClick={handleEditScreen}>
+                                                <PanelGridTd className="font-semibold text-gray-800">{t(s.unico)}</PanelGridTd>
+                                                <PanelGridTd className="font-semibold text-blue-700">{t(s.nombre)}</PanelGridTd>
+                                                <PanelGridTd className="text-blue-600">{t(s.web_form)}</PanelGridTd>
+                                                <PanelGridTd className="text-gray-500">{t(s.run_pantalla)}</PanelGridTd>
+                                                <PanelGridTd className="text-gray-400">{t(s.executable)}</PanelGridTd>
+                                                <PanelGridTd className="text-gray-400">{t(s.image)}</PanelGridTd>
+                                                <PanelGridTd className="text-center">{s.orden}</PanelGridTd>
+                                                <PanelGridTd className="text-center">{s.menu ? <Check size={14} className="mx-auto text-green-500" /> : <Minus size={14} className="mx-auto text-gray-300" />}</PanelGridTd>
+                                            </PanelGridTr>
+                                        );
+                                    })}
+                                </PanelGridTbody>
+                            </PanelGridTable>
+                        )}
+                    </PanelGrid>
                 </div>
             </div>
 
             <AppFooter areaLabel="System Management" database="Sistema" />
 
-            {/* Mobile floating button */}
-            <button onClick={() => setMobileModOpen(true)}
-                className="lg:hidden fixed bottom-6 right-6 z-40 w-12 h-12 bg-[#FB7506] hover:bg-orange-600 text-white rounded-full shadow-xl flex items-center justify-center transition-all active:scale-95"
-                title="Select Module">
-                <LayoutGrid size={20} />
-            </button>
-
-            {/* Mobile module list modal */}
-            {mobileModOpen && (
-                <div className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden">
-                        <div className="h-10 bg-[#374151] flex items-center justify-between px-4 border-b border-black/10 shrink-0">
-                            <div className="flex items-center gap-2">
-                                <LayoutGrid size={16} className="text-[#FB7506]" />
-                                <span className="fos-grid-header-text">Select Module</span>
-                            </div>
-                            <button onClick={() => setMobileModOpen(false)}
-                                className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors">
-                                <X size={16} />
-                            </button>
-                        </div>
-                        <div className="p-3 border-b border-gray-100 shrink-0">
-                            <div className="relative">
-                                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                <input type="text" value={modSearch} onChange={e => setModSearch(e.target.value)}
-                                    placeholder="Filter modules..."
-                                    className="w-full pl-9 pr-3 h-10 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-[#FB7506]" />
-                            </div>
-                        </div>
-                        <div className="overflow-y-auto flex-1">
-                            {filteredMods.map((m: any) => {
-                                const isSelected = selModUnico === m.unico;
-                                return (
-                                    <div key={m.unico} onClick={() => { selectModule(m); setMobileModOpen(false); }}
-                                        className={cn("px-4 py-3 border-b border-gray-50 flex items-center gap-3 cursor-pointer transition-colors",
-                                            isSelected ? "bg-blue-50" : "hover:bg-gray-50"
-                                        )}>
-                                        <div className={cn("w-2 h-2 rounded-full shrink-0", m.active ? "bg-green-400" : "bg-gray-300")} />
-                                        <div className="min-w-0 flex-1">
-                                            <p className="text-sm font-semibold text-gray-800 truncate">{t(m.nombre)}</p>
-                                            <p className="text-xs text-gray-400">{t(m.clase)}</p>
-                                        </div>
-                                        {isSelected && <Check size={16} className="text-blue-500 shrink-0" />}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                </div>
-            )}
+            <input type="file" ref={importRef} accept=".json" className="hidden" onChange={handleImportFile} />
 
             {/* "" Module Form Modal """"""""""""""""""""""""""""""""""""""" */}
             {modFormModal && (
-                <ModuleFormModal
-                    mode={modFormModal.mode}
-                    form={modForm}
-                    setForm={setModForm}
-                    onSave={saveMod}
-                    onClose={() => { setModFormModal(null); setModError(null); if (selModUnico && selMod) selectModule(selMod); else setModForm(EMPTY_MOD); }}
-                    saving={saving}
-                    error={modError}
-                />
+                <ModuleFormModal mode={modFormModal.mode} form={modForm} setForm={setModForm} onSave={saveMod} onClose={() => setModFormModal(null)} saving={saving} />
             )}
 
             {/* "" Screen Modal """""""""""""""""""""""""""""""""""""""""""""" */}
             {screenModal && (
-                <ScreenFormModal
-                    mode={screenModal.mode} form={screenForm} setForm={setScreenForm}
-                    error={screenError} saving={savingScreen}
-                    modName={selMod ? t(selMod.nombre) : ""}
-                    reports={reports as any[]} loadingRpt={loadingRpt}
-                    selRptUnico={null}
-                    onSave={saveScreen} onClose={() => { setScreenModal(null); setScreenError(null); }}
-                    onAddReport={() => { setReportForm({...EMPTY_REPORT, panta_uq: selScrUnico||""}); setReportError(null); setReportModal({ mode: "add" }); }}
-                    onEditReport={(r: any) => { setReportForm({ unico: t(r.unico), panta_uq: t(r.panta_uq), nombre: t(r.nombre), titulo: t(r.titulo), path: t(r.path), descripcion: t(r.descripcion), fecha_desde: Boolean(r.fecha_desde), fecha_hasta: Boolean(r.fecha_hasta), numero_desde: Boolean(r.numero_desde), numero_hasta: Boolean(r.numero_hasta), actual: Boolean(r.actual), comprimido: Boolean(r.comprimido), detallado: Boolean(r.detallado), exportar: Boolean(r.exportar) }); setReportError(null); setReportModal({ mode: "edit" }); }}
-                    onDeleteReport={(r: any) => { setReportForm(r); setDeleteRptDlg(true); }}
-                />
+                <ScreenFormModal mode={screenModal.mode} form={screenForm} setForm={setScreenForm} saving={savingScreen} modName={selMod ? t(selMod.nombre) : ""} reports={reports as any[]} loadingRpt={loadingRpt} onSave={saveScreen} onClose={() => setScreenModal(null)} onAddReport={() => { setReportForm({...EMPTY_REPORT, panta_uq: selScrUnico||""}); setReportModal({ mode: "add" }); }} onEditReport={(r: any) => { setReportForm({ unico: t(r.unico), panta_uq: t(r.panta_uq), nombre: t(r.nombre), titulo: t(r.titulo), path: t(r.path), descripcion: t(r.descripcion), fecha_desde: Boolean(r.fecha_desde), fecha_hasta: Boolean(r.fecha_hasta), numero_desde: Boolean(r.numero_desde), numero_hasta: Boolean(r.numero_hasta), actual: Boolean(r.actual), comprimido: Boolean(r.comprimido), detallado: Boolean(r.detallado), exportar: Boolean(r.exportar) }); setReportModal({ mode: "edit" }); }} onDeleteReport={(r: any) => { setReportForm(r); setDeleteRptDlg(true); }} />
             )}
 
             {/* "" Report Modal """"""""""""""""""""""""""""""""""""""""""""""" */}
             {reportModal && (
-                <ReportFormModal mode={reportModal.mode} form={reportForm} setForm={setReportForm}
-                    error={reportError} saving={savingReport}
-                    onSave={saveReport} onClose={() => { setReportModal(null); setReportError(null); }} />
+                <ReportFormModal mode={reportModal.mode} form={reportForm} setForm={setReportForm} saving={savingReport} onSave={saveReport} onClose={() => setReportModal(null)} />
             )}
 
             {/* "" Confirm dialogs """""""""""""""""""""""""""""""""""""""""""" */}
-            {deleteModDlg && <ConfirmDelete title="Delete Module" msg={`Delete module "${t(modForm.nombre)}"? All screens must be removed first.`} onConfirm={deleteMod} onCancel={() => setDeleteModDlg(false)} saving={saving} error={modError} />}
-            {deleteScrDlg && <ConfirmDelete title="Remove Screen" msg={`Remove screen "${t(screenForm.nombre)}"? All reports must be removed first.`} onConfirm={deleteScreen} onCancel={() => { setDeleteScrDlg(false); setScreenError(null); }} saving={savingScreen} error={screenError} />}
-            {deleteRptDlg && <ConfirmDelete title="Delete Report" msg={`Delete report "${t(reportForm.nombre)}"?`} onConfirm={deleteReport} onCancel={() => { setDeleteRptDlg(false); setReportError(null); }} saving={savingReport} error={reportError} />}
+            {deleteModDlg && <ConfirmDelete title="Delete Module" msg={`Delete module "${t(modForm.nombre)}"? All screens must be removed first.`} onConfirm={deleteMod} onCancel={() => setDeleteModDlg(false)} saving={saving} />}
+            {deleteScrDlg && <ConfirmDelete title="Remove Screen" msg={`Remove screen "${t(screenForm.nombre)}"? All reports must be removed first.`} onConfirm={deleteScreen} onCancel={() => setDeleteScrDlg(false)} saving={savingScreen} />}
+            {deleteRptDlg && <ConfirmDelete title="Delete Report" msg={`Delete report "${t(reportForm.nombre)}"?`} onConfirm={deleteReport} onCancel={() => setDeleteRptDlg(false)} saving={savingReport} />}
+            
+            {/* Mobile Action Bars */}
+            <MobileActionBar 
+                selModUnico={selModUnico}
+                selScrUnico={selScrUnico}
+                perms={perms}
+                onAddMod={handleAddModule}
+                onEditMod={handleEditModule}
+                onDelMod={handleRemoveModule}
+                onAddScr={handleAddScreen}
+                onEditScr={handleEditScreen}
+                onDelScr={handleRemoveScreen}
+            />
         </div>
     );
 }
 
+// ── Mobile Action Bar Component ────────────────────────────────────────────────
+function MobileActionBar({ selModUnico, selScrUnico, perms, onAddMod, onEditMod, onDelMod, onAddScr, onEditScr, onDelScr }: any) {
+    const [open, setOpen] = useState(false);
+    
+    // Only show if at least one item is selected
+    if (!selModUnico && !selScrUnico) return null;
+
+    const isScreenSelected = !!selScrUnico;
+    const title = isScreenSelected ? "Screen Actions" : "Module Actions";
+
+    return (
+        <>
+            <button onClick={() => setOpen(true)}
+                className="lg:hidden fixed bottom-6 right-6 z-40 w-12 h-12 bg-[#FB7506] hover:bg-orange-600 text-white rounded-full shadow-xl flex items-center justify-center transition-all active:scale-95"
+                title="Actions">
+                <Menu size={20} />
+            </button>
+            
+            {open && (
+                <div className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200" onClick={() => setOpen(false)}>
+                    <div className="bg-white w-full sm:w-auto sm:min-w-[300px] rounded-t-xl sm:rounded-xl shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-8 duration-200" onClick={e => e.stopPropagation()}>
+                        <div className="h-12 bg-[#374151] flex items-center justify-between px-4 border-b border-black/10 shrink-0">
+                            <span className="font-black tracking-wider text-white text-xs uppercase">{title}</span>
+                            <button onClick={() => setOpen(false)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white rounded transition-colors">
+                                <X size={18} />
+                            </button>
+                        </div>
+                        <div className="flex flex-col p-2 gap-1 bg-gray-50">
+                            {isScreenSelected ? (
+                                <>
+                                    <button disabled={!perms.canCreate} onClick={() => { setOpen(false); onAddScr(); }} className="h-12 flex items-center gap-3 px-4 w-full bg-white rounded-lg border border-gray-100 shadow-sm active:bg-gray-100 disabled:opacity-50 text-left">
+                                        <Plus size={18} className="text-green-500" /><span className="text-sm font-semibold text-gray-700">Add New Screen</span>
+                                    </button>
+                                    <button disabled={!perms.canEdit} onClick={() => { setOpen(false); onEditScr(); }} className="h-12 flex items-center gap-3 px-4 w-full bg-white rounded-lg border border-gray-100 shadow-sm active:bg-gray-100 disabled:opacity-50 text-left">
+                                        <Pencil size={18} className="text-blue-500" /><span className="text-sm font-semibold text-gray-700">Edit Screen</span>
+                                    </button>
+                                    <button disabled={!perms.canDelete} onClick={() => { setOpen(false); onDelScr(); }} className="h-12 flex items-center gap-3 px-4 w-full bg-white rounded-lg border border-gray-100 shadow-sm active:bg-gray-100 disabled:opacity-50 text-left">
+                                        <Trash2 size={18} className="text-red-500" /><span className="text-sm font-semibold text-gray-700">Delete Screen</span>
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <button disabled={!perms.canCreate} onClick={() => { setOpen(false); onAddMod(); }} className="h-12 flex items-center gap-3 px-4 w-full bg-white rounded-lg border border-gray-100 shadow-sm active:bg-gray-100 disabled:opacity-50 text-left">
+                                        <Plus size={18} className="text-green-500" /><span className="text-sm font-semibold text-gray-700">Add New Module</span>
+                                    </button>
+                                    <button disabled={!perms.canEdit} onClick={() => { setOpen(false); onEditMod(); }} className="h-12 flex items-center gap-3 px-4 w-full bg-white rounded-lg border border-gray-100 shadow-sm active:bg-gray-100 disabled:opacity-50 text-left">
+                                        <Pencil size={18} className="text-blue-500" /><span className="text-sm font-semibold text-gray-700">Edit Module</span>
+                                    </button>
+                                    <button disabled={!perms.canDelete} onClick={() => { setOpen(false); onDelMod(); }} className="h-12 flex items-center gap-3 px-4 w-full bg-white rounded-lg border border-gray-100 shadow-sm active:bg-gray-100 disabled:opacity-50 text-left">
+                                        <Trash2 size={18} className="text-red-500" /><span className="text-sm font-semibold text-gray-700">Delete Module</span>
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
+    );
+}
+
 // """ Module Form Modal """"""""""""""""""""""""""""""""""""""""""""""""""""""""
-function ModuleFormModal({ mode, form, setForm, onSave, onClose, saving, error }: any) {
+function ModuleFormModal({ mode, form, setForm, onSave, onClose, saving }: any) {
     if (!mode) return null;
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -560,7 +507,6 @@ function ModuleFormModal({ mode, form, setForm, onSave, onClose, saving, error }
                     <div className="flex items-center gap-2">
                         <LayoutGrid size={16} className="text-[#FB7506]" />
                         <span className="fos-grid-header-text">{mode === "add" ? "New Module" : "Edit Module"}</span>
-                        {error && <span className="text-amber-400 text-[10px] font-bold ml-2 truncate">{error}</span>}
                     </div>
                     <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors">
                         <X size={16} />
@@ -626,7 +572,7 @@ function ModuleFormModal({ mode, form, setForm, onSave, onClose, saving, error }
 }
 
 // """ Screen Form Modal """"""""""""""""""""""""""""""""""""""""""""""""""""""""
-function ScreenFormModal({ mode, form, setForm, error, saving, modName, reports, loadingRpt, onSave, onClose, onAddReport, onEditReport, onDeleteReport }: any) {
+function ScreenFormModal({ mode, form, setForm, saving, modName, reports, loadingRpt, onSave, onClose, onAddReport, onEditReport, onDeleteReport }: any) {
     const [selRpt, setSelRpt] = useState<string | null>(null);
     const hasWebForm = form.web_form.trim();
     return (
@@ -636,7 +582,6 @@ function ScreenFormModal({ mode, form, setForm, error, saving, modName, reports,
                     <div className="flex items-center gap-2">
                         <Monitor size={16} className="text-[#FB7506]" />
                         <span className="fos-grid-header-text">{mode === "add" ? "Add Screen" : "Edit Screen"}</span>
-                        {error && <span className="text-amber-400 text-[10px] font-bold ml-2 truncate">{error}</span>}
                     </div>
                     <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors">
                         <X size={16} />
@@ -655,79 +600,83 @@ function ScreenFormModal({ mode, form, setForm, error, saving, modName, reports,
                             <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Module</label>
                             <input readOnly value={modName} className="fos-input h-10 text-sm bg-gray-50 text-gray-500" />
                         </div>
+                        <div className="flex flex-col gap-0.5 col-span-2">
+                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Title</label>
+                            <input value={form.nombre} onChange={e => setForm((p: any) => ({...p, nombre: e.target.value}))} className="fos-input h-10 text-sm" />
+                        </div>
+
+                        <div className="col-span-2 grid grid-cols-3 gap-3">
+                            <div className="flex flex-col gap-0.5 col-span-2">
+                                <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Route (Web App) - overrides below</label>
+                                <input value={form.web_form} onChange={e => setForm((p: any) => ({...p, web_form: e.target.value}))} className="fos-input h-10 text-sm text-blue-600 font-medium" placeholder="/sales or /masters/items" />
+                            </div>
+                            <div className="flex flex-col gap-0.5">
+                                <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Order</label>
+                                <input type="number" value={form.orden} onChange={e => setForm((p: any) => ({...p, orden: e.target.value}))} className="fos-input h-10 text-sm" />
+                            </div>
+                        </div>
+
                         <div className="flex flex-col gap-0.5">
-                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Title *</label>
-                            <input value={form.nombre} onChange={e => setForm((p: any) => ({...p, nombre: e.target.value}))} className="fos-input h-10 text-sm" placeholder="Screen / menu title" />
+                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Component (Desktop)</label>
+                            <input disabled={hasWebForm} value={form.run_pantalla} onChange={e => setForm((p: any) => ({...p, run_pantalla: e.target.value}))} className="fos-input h-10 text-sm" />
                         </div>
                         <div className="flex flex-col gap-0.5">
-                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Order</label>
-                            <input type="number" value={form.orden} onChange={e => setForm((p: any) => ({...p, orden: e.target.value}))} className="fos-input h-10 text-sm" />
+                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Program / Module folder</label>
+                            <input disabled={hasWebForm} value={form.executable} onChange={e => setForm((p: any) => ({...p, executable: e.target.value}))} className="fos-input h-10 text-sm" />
                         </div>
                         <div className="flex flex-col gap-0.5 col-span-2">
-                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Route (Web) {hasWebForm && <span className="text-blue-500 normal-case font-normal ml-1"> web form detected, VFP fields optional</span>}</label>
-                            <input value={form.web_form} onChange={e => setForm((p: any) => ({...p, web_form: e.target.value}))} className="fos-input h-10 text-sm" placeholder="/system/users  or  customercare/page.aspx" />
+                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Icon</label>
+                            <input value={form.image} onChange={e => setForm((p: any) => ({...p, image: e.target.value}))} className="fos-input h-10 text-sm" />
                         </div>
-                        <div className="flex flex-col gap-0.5">
-                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Component / Screen {!hasWebForm && "*"}</label>
-                            <input value={form.run_pantalla} onChange={e => setForm((p: any) => ({...p, run_pantalla: e.target.value}))} className="fos-input h-10 text-sm" placeholder="VFP: Form.scx  |  React: ComponentName" />
-                        </div>
-                        <div className="flex flex-col gap-0.5">
-                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Program / Module folder {!hasWebForm && "*"}</label>
-                            <input value={form.executable} onChange={e => setForm((p: any) => ({...p, executable: e.target.value}))} className="fos-input h-10 text-sm" placeholder="VFP: Program.exe  |  React: FolderName" />
-                        </div>
-                        <div className="flex flex-col gap-0.5">
-                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Icon {!hasWebForm && "*"}</label>
-                            <input value={form.image} onChange={e => setForm((p: any) => ({...p, image: e.target.value}))} className="fos-input h-10 text-sm" placeholder="icon-name.png" />
-                        </div>
-                        <div className="flex flex-col gap-0.5">
-                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Path</label>
-                            <input value={form.path} onChange={e => setForm((p: any) => ({...p, path: e.target.value}))} className="fos-input h-10 text-sm" />
-                        </div>
+
                         <div className="flex flex-col gap-0.5 col-span-2">
                             <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Description</label>
                             <input value={form.descripcion} onChange={e => setForm((p: any) => ({...p, descripcion: e.target.value}))} className="fos-input h-10 text-sm" />
                         </div>
-                        <div className="flex items-center gap-2 pt-1">
-                            <input type="checkbox" checked={form.menu} onChange={e => setForm((p: any) => ({...p, menu: e.target.checked}))} className="w-4 h-4 accent-[#FB7506]" id="scr-menu" />
-                            <label htmlFor="scr-menu" className="text-sm font-semibold cursor-pointer">Show in menu</label>
+                        <div className="flex items-center gap-1.5 pt-2 col-span-2">
+                            <input type="checkbox" id="scrmenu" checked={Boolean(form.menu)} onChange={e => setForm((p: any) => ({...p, menu: e.target.checked}))} className="w-4 h-4 accent-[#FB7506]" />
+                            <label htmlFor="scrmenu" className="text-xs font-semibold text-gray-600 uppercase cursor-pointer">Visible in Menu</label>
                         </div>
                     </div>
 
-                    {/* Reports sub-grid */}
                     {mode === "edit" && (
-                        <div className="border border-gray-200 rounded-lg overflow-hidden">
-                            <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 border-b border-black/10">
-                                <div className="flex items-center gap-2">
-                                    <FileText size={16} className="text-[#FB7506]" />
-                                    <span className="fos-grid-header-text">Reports ({reports.length})</span>
+                        <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col min-h-0">
+                            <div className="flex items-center justify-between mb-2">
+                                <h3 className="text-sm font-black text-gray-700 uppercase tracking-wider flex items-center gap-2">
+                                    <FileText size={16} className="text-[#FB7506]" /> Reports
+                                </h3>
+                                <div className="flex gap-2">
+                                    <button onClick={onAddReport} className="text-[10px] uppercase font-black tracking-wider bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded transition-colors flex items-center gap-1">
+                                        <Plus size={12} /> Add
+                                    </button>
                                 </div>
-                                <GridMenu
-                                    items={[
-                                        { label: "Add Report", icon: Plus, color: "green", onClick: onAddReport },
-                                        { label: "Edit Report", icon: Pencil, color: "orange", onClick: () => { const r = reports.find((x: any) => x.unico===selRpt); if(r) onEditReport(r); }, disabled: !selRpt },
-                                        { label: "Delete Report", icon: Trash2, color: "red", onClick: () => { const r = reports.find((x: any) => x.unico===selRpt); if(r) onDeleteReport(r); }, disabled: !selRpt },
-                                    ]}
-                                />
                             </div>
-                            <div className="max-h-40 overflow-auto">
-                                {reports.length === 0 ? (
-                                    <div className="p-4 text-center text-gray-400 text-xs italic">{loadingRpt ? "Loading..." : "No reports"}</div>
+                            <div className="border border-gray-200 rounded overflow-auto max-h-[200px]">
+                                {loadingRpt ? (
+                                    <div className="p-4 text-center text-xs text-gray-400 animate-pulse">Loading...</div>
+                                ) : reports.length === 0 ? (
+                                    <div className="p-4 text-center text-xs text-gray-400">No reports configured.</div>
                                 ) : (
-                                    <table className="min-w-full text-xs">
-                                        <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0">
-                                            <tr>{["Name","Title","Active","Dates","Excel","Description"].map(h => <th key={h} className="p-1.5 text-left whitespace-nowrap border-r border-gray-200 last:border-r-0">{h}</th>)}</tr>
+                                    <table className="min-w-full text-xs text-left">
+                                        <thead className="bg-gray-50 border-b">
+                                            <tr className="text-gray-500 uppercase tracking-wider">
+                                                <th className="p-2 font-black">Title</th>
+                                                <th className="p-2 font-black border-l">Path</th>
+                                                <th className="p-2 font-black border-l text-center">Actions</th>
+                                            </tr>
                                         </thead>
                                         <tbody>
                                             {reports.map((r: any) => (
-                                                <tr key={r.unico} onClick={() => setSelRpt(r.unico)}
-                                                    onDoubleClick={() => onEditReport(r)}
-                                                    className={cn("border-b cursor-pointer transition-colors", selRpt===r.unico ? "!bg-blue-100" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50")}>
-                                                    <td className="p-1.5 border-r border-gray-100 font-medium">{t(r.nombre)}</td>
-                                                    <td className="p-1.5 border-r border-gray-100 text-gray-500 truncate max-w-[120px]">{t(r.titulo)}</td>
-                                                    <td className="p-1.5 border-r border-gray-100 text-center">{r.actual ? <Check size={10} className="text-green-500 mx-auto" /> : "-"}</td>
-                                                    <td className="p-1.5 border-r border-gray-100 text-center">{(r.fecha_desde||r.fecha_hasta) ? <Check size={10} className="text-blue-500 mx-auto" /> : "-"}</td>
-                                                    <td className="p-1.5 border-r border-gray-100 text-center">{r.exportar ? <Check size={10} className="text-orange-500 mx-auto" /> : "-"}</td>
-                                                    <td className="p-1.5 text-gray-400 truncate max-w-[120px]">{t(r.descripcion)}</td>
+                                                <tr key={r.unico} onClick={() => setSelRpt(r.unico)} onDoubleClick={() => onEditReport(r)}
+                                                    className={cn("border-b cursor-pointer transition-colors", selRpt === r.unico ? "bg-blue-50" : "hover:bg-gray-50")}>
+                                                    <td className="p-2 font-semibold text-gray-700 truncate max-w-[150px]">{t(r.titulo)}</td>
+                                                    <td className="p-2 text-gray-500 border-l truncate max-w-[200px]">{t(r.path)}</td>
+                                                    <td className="p-1 border-l text-center">
+                                                        <div className="flex items-center justify-center gap-1">
+                                                            <button onClick={(e) => { e.stopPropagation(); onEditReport(r); }} className="p-1 text-blue-500 hover:bg-blue-100 rounded" title="Edit"><Pencil size={12} /></button>
+                                                            <button onClick={(e) => { e.stopPropagation(); onDeleteReport(r); }} className="p-1 text-red-500 hover:bg-red-100 rounded" title="Delete"><Trash2 size={12} /></button>
+                                                        </div>
+                                                    </td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -738,11 +687,11 @@ function ScreenFormModal({ mode, form, setForm, error, saving, modName, reports,
                     )}
                 </div>
 
-                <div className="flex justify-end gap-3 px-4 py-3 bg-gray-50 border-t shrink-0">
-                    <button onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-100">Cancel</button>
+                <div className="shrink-0 p-4 bg-white border-t border-gray-100">
                     <button onClick={onSave} disabled={saving}
-                        className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#FB7506] hover:bg-orange-600 disabled:opacity-40 text-white text-sm font-black uppercase tracking-wider transition-all">
-                        {saving ? <RefreshCcw size={14} className="animate-spin" /> : <Save size={14} />}{saving ? "Saving..." : "Save Screen"}
+                        className="w-full h-12 bg-[#FB7506] hover:bg-orange-600 disabled:opacity-50 text-white rounded-lg text-sm font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2">
+                        {saving ? <RefreshCcw size={16} className="animate-spin" /> : <Save size={16} />}
+                        {saving ? "Saving..." : "Save"}
                     </button>
                 </div>
             </div>
@@ -751,53 +700,52 @@ function ScreenFormModal({ mode, form, setForm, error, saving, modName, reports,
 }
 
 // """ Report Form Modal """"""""""""""""""""""""""""""""""""""""""""""""""""""""
-function ReportFormModal({ mode, form, setForm, error, saving, onSave, onClose }: any) {
-    const BOOL_FIELDS: Array<{ key: string; label: string }> = [
-        { key: "fecha_desde", label: "Date From" }, { key: "fecha_hasta", label: "Date To" },
-        { key: "numero_desde", label: "Num From" }, { key: "numero_hasta", label: "Num To" },
-        { key: "actual", label: "Current" }, { key: "comprimido", label: "Compressed" },
-        { key: "detallado", label: "Detailed" }, { key: "exportar", label: "Excel" },
-    ];
+function ReportFormModal({ mode, form, setForm, saving, onSave, onClose }: any) {
+    if (!mode) return null;
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
                 <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 border-b border-black/10 shrink-0">
                     <div className="flex items-center gap-2">
                         <FileText size={16} className="text-[#FB7506]" />
                         <span className="fos-grid-header-text">{mode === "add" ? "Add Report" : "Edit Report"}</span>
-                        {error && <span className="text-amber-400 text-[10px] font-bold ml-2">{error}</span>}
                     </div>
                     <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors">
                         <X size={16} />
                     </button>
                 </div>
-                <div className="p-4 space-y-3 text-xs">
-                    {mode === "edit" && (
-                        <div className="flex flex-col gap-0.5">
-                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Code</label>
-                            <input readOnly value={form.unico} className="fos-input h-10 text-sm bg-gray-50 text-gray-500" />
+                <div className="p-4 space-y-3 text-xs overflow-y-auto max-h-[80vh]">
+                    <div className="flex flex-col gap-0.5">
+                        <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Report Internal Name</label>
+                        <input value={form.nombre} onChange={e => setForm((p: any) => ({...p, nombre: e.target.value}))} className="fos-input h-10 text-sm" />
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                        <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Display Title</label>
+                        <input value={form.titulo} onChange={e => setForm((p: any) => ({...p, titulo: e.target.value}))} className="fos-input h-10 text-sm" />
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                        <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">File Path (.FRX)</label>
+                        <input value={form.path} onChange={e => setForm((p: any) => ({...p, path: e.target.value}))} className="fos-input h-10 text-sm" />
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                        <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Description</label>
+                        <input value={form.descripcion} onChange={e => setForm((p: any) => ({...p, descripcion: e.target.value}))} className="fos-input h-10 text-sm" />
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                        <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider mb-2 block">Parameters / Options</label>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-3 gap-x-2">
+                            {["fecha_desde", "fecha_hasta", "numero_desde", "numero_hasta", "actual", "comprimido", "detallado", "exportar"].map(k => (
+                                <label key={k} className="flex items-center gap-1.5 cursor-pointer">
+                                    <input type="checkbox" checked={Boolean((form as any)[k])} onChange={e => setForm((p: any) => ({...p, [k]: e.target.checked}))} className="w-4 h-4 accent-[#FB7506]" />
+                                    <span className="text-[10px] font-semibold text-gray-600 uppercase truncate" title={k.replace("_"," ")}>{k.replace("_"," ")}</span>
+                                </label>
+                            ))}
                         </div>
-                    )}
-                    {[{ key: "nombre", label: "Name *" }, { key: "titulo", label: "Title" }, { key: "path", label: "Path" }, { key: "descripcion", label: "Description" }].map(f => (
-                        <div key={f.key} className="flex flex-col gap-0.5">
-                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">{f.label}</label>
-                            <input value={form[f.key]||""} onChange={e => setForm((p: any) => ({...p, [f.key]: e.target.value}))} className="fos-input h-10 text-sm" />
-                        </div>
-                    ))}
-                    <div className="grid grid-cols-4 gap-2 pt-1">
-                        {BOOL_FIELDS.map(f => (
-                            <label key={f.key} className="flex items-center gap-1.5 cursor-pointer">
-                                <input type="checkbox" checked={Boolean(form[f.key])} onChange={e => setForm((p: any) => ({...p, [f.key]: e.target.checked}))} className="w-4 h-4 accent-[#FB7506]" />
-                                <span className="text-xs font-semibold text-gray-600">{f.label}</span>
-                            </label>
-                        ))}
                     </div>
                 </div>
-                <div className="flex justify-end gap-3 px-4 py-3 bg-gray-50 border-t shrink-0">
-                    <button onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-100">Cancel</button>
-                    <button onClick={onSave} disabled={saving}
-                        className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#FB7506] hover:bg-orange-600 disabled:opacity-40 text-white text-sm font-black uppercase tracking-wider transition-all">
-                        {saving ? <RefreshCcw size={14} className="animate-spin" /> : <Save size={14} />}{saving ? "..." : "Save"}
+                <div className="shrink-0 p-4 bg-gray-50 border-t border-gray-100">
+                    <button onClick={onSave} disabled={saving} className="w-full h-12 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white rounded-lg text-sm font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2">
+                        {saving ? <RefreshCcw size={16} className="animate-spin" /> : <Save size={16} />} Save
                     </button>
                 </div>
             </div>
@@ -805,29 +753,30 @@ function ReportFormModal({ mode, form, setForm, error, saving, onSave, onClose }
     );
 }
 
-// """ Confirm Delete Dialog """"""""""""""""""""""""""""""""""""""""""""""""""""
-function ConfirmDelete({ title, msg, onConfirm, onCancel, saving, error }: any) {
+// """ Confirm Delete Dialog """""""""""""""""""""""""""""""""""""""""""""""""
+function ConfirmDelete({ title, msg, onConfirm, onCancel, saving }: any) {
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
-                <div className="p-6 flex flex-col items-center gap-4">
-                    <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center">
-                        <Trash2 size={24} className="text-red-600" />
-                    </div>
-                    <div className="text-center">
-                        <h3 className="font-black text-gray-900 text-base mb-1">{title}</h3>
-                        <p className="text-sm text-gray-500 leading-relaxed">{msg}</p>
-                        {error && <p className="text-xs text-red-500 mt-2 font-bold">{error}</p>}
-                    </div>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
+                <div className="h-10 bg-red-50 flex items-center pl-3 pr-2 border-b border-red-100 shrink-0">
+                    <span className="text-red-600 font-bold tracking-wide text-sm flex items-center gap-2">
+                        <AlertCircle size={16} />
+                        {title}
+                    </span>
                 </div>
-                <div className="flex border-t border-gray-100">
-                    <button onClick={onCancel} className="flex-1 py-3 text-sm font-bold text-gray-600 hover:bg-gray-50 border-r border-gray-100">Cancel</button>
-                    <button onClick={onConfirm} disabled={saving} className="flex-1 py-3 text-sm font-black text-red-600 hover:bg-red-50 disabled:opacity-50">
-                        {saving ? "Deleting..." : "Delete"}
+                <div className="p-5 text-sm text-gray-700 font-medium">
+                    {msg}
+                </div>
+                <div className="p-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3 shrink-0">
+                    <button onClick={onCancel} disabled={saving} className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700 transition-colors disabled:opacity-50 uppercase tracking-wider">
+                        Cancel
+                    </button>
+                    <button onClick={onConfirm} disabled={saving} className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded shadow-sm flex items-center gap-2 text-sm font-bold transition-all disabled:opacity-50 uppercase tracking-wider">
+                        {saving ? <RefreshCcw size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                        Delete
                     </button>
                 </div>
             </div>
         </div>
     );
 }
-

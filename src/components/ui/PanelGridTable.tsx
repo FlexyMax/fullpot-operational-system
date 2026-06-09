@@ -64,15 +64,18 @@ export function PanelGridTr({
   className,
   selected = false,
   onClick,
+  onDoubleClick,
 }: {
   children: React.ReactNode;
   className?: string;
   selected?: boolean;
   onClick?: () => void;
+  onDoubleClick?: () => void;
 }) {
   return (
     <tr
       onClick={onClick}
+      onDoubleClick={onDoubleClick}
       className={cn(
         "h-8 transition-colors text-gray-700 cursor-pointer",
         "border-b border-black/5",
