@@ -25,36 +25,46 @@ export async function PUT(req: NextRequest, { params }: P) {
     const { unico } = await params;
     const b = await req.json();
     try {
-        await executeQuery(`
-            UPDATE empresas SET
-                ruc        = '${txt(b.ruc)}',
-                nombre     = '${txt(b.nombre)}',
-                pais       = '${txt(b.pais)}',
-                ciudad     = '${txt(b.ciudad)}',
-                direccion  = '${txt(b.direccion)}',
-                telefono1  = '${txt(b.telefono1)}',
-                telefono2  = '${txt(b.telefono2)}',
-                fax1       = '${txt(b.fax1)}',
-                fax2       = '${txt(b.fax2)}',
-                apostal    = '${txt(b.apostal)}',
-                email      = '${txt(b.email)}',
-                image      = '${txt(b.image)}',
-                basedatos  = '${txt(b.basedatos)}',
-                datapath   = '${txt(b.datapath)}',
-                servidor   = '${txt(b.servidor)}',
-                dsn        = '${txt(b.dsn)}',
-                active     = ${bit(b.active)},
-                website    = '${txt(b.website)}'
-            WHERE unico = '${txt(unico)}'`, true);
-        return NextResponse.json({ success: true, message: "Company updated." });
+        const sql = `
+            EXEC sp_sistema_empresas_update
+                @lcUnico = '${txt(unico)}',
+                @lcRuc = '${txt(b.ruc)}',
+                @lcNombre = '${txt(b.nombre)}',
+                @lcPais = '${txt(b.pais)}',
+                @lcCiudad = '${txt(b.ciudad)}',
+                @lcDireccion = '${txt(b.direccion)}',
+                @lcTelefono1 = '${txt(b.telefono1)}',
+                @lcTelefono2 = '${txt(b.telefono2)}',
+                @lcFax1 = '${txt(b.fax1)}',
+                @lcFax2 = '${txt(b.fax2)}',
+                @lcApostal = '${txt(b.apostal)}',
+                @lcEmail = '${txt(b.email)}',
+                @lcImage = '${txt(b.image)}',
+                @lcBasedatos = '${txt(b.basedatos)}',
+                @lcDatapath = '${txt(b.datapath)}',
+                @lcServidor = '${txt(b.servidor)}',
+                @lcDsn = '${txt(b.dsn)}',
+                @llActive = ${bit(b.active)},
+                @lcWebsite = '${txt(b.website)}'
+        `;
+        const r = await executeQuery(sql, true);
+        const res = r.recordset?.[0] || {};
+        if (res.Error) return NextResponse.json({ success: false, error: res.Error });
+        return NextResponse.json({ success: true, message: res.Message || "Company updated." });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }
 }
 
-export async function DELETE() {
-    return NextResponse.json(
-        { success: false, error: "Instruction isn't enabled. / Instrucción no disponible." },
-        { status: 400 }
-    );
+export async function DELETE(req: NextRequest, { params }: P) {
+    const { unico } = await params;
+    try {
+        const sql = `EXEC sp_sistema_empresas_delete @lcUnico = '${txt(unico)}'`;
+        const r = await executeQuery(sql, true);
+        const res = r.recordset?.[0] || {};
+        if (res.Error) return NextResponse.json({ success: false, error: res.Error });
+        return NextResponse.json({ success: true, message: res.Message || "Company deleted." });
+    } catch (err: any) {
+        return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    }
 }
