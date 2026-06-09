@@ -43,10 +43,8 @@ export default function ModuleScreenSetupPage() {
     const perms = usePagePermissions("module-screen-setup");
     const importRef = useRef<HTMLInputElement>(null);
 
-    const {
-        selModUnico, setSelModUnico,
-        selScrUnico, setSelScrUnico,
-        modSearch, setModSearch,
+    const { 
+        selModUnico, setSelModUnico, selScrUnico, setSelScrUnico, activeGrid, clearSelection, modSearch, setModSearch,
         mobileModOpen, setMobileModOpen
     } = useModuleStore();
 
@@ -323,9 +321,9 @@ export default function ModuleScreenSetupPage() {
                             </PanelGridThead>
                             <PanelGridTbody>
                                 {filteredMods.map((m: any) => {
-                                    const isSel = selModUnico === m.unico;
+                                    const isSel = activeGrid === "module" && selModUnico === m.unico;
                                     return (
-                                        <PanelGridTr key={m.unico} selected={isSel} onClick={() => setSelModUnico(m.unico)} onDoubleClick={handleEditModule}>
+                                        <PanelGridTr key={m.unico} selected={isSel} onClick={() => isSel ? clearSelection() : setSelModUnico(m.unico)} onDoubleClick={handleEditModule}>
                                             <PanelGridTd className="font-semibold text-gray-800">{t(m.unico)}</PanelGridTd>
                                             <PanelGridTd className="font-semibold text-blue-700">{t(m.nombre)}</PanelGridTd>
                                             <PanelGridTd className="text-gray-500">{t(m.clase)}</PanelGridTd>
@@ -375,9 +373,9 @@ export default function ModuleScreenSetupPage() {
                                 </PanelGridThead>
                                 <PanelGridTbody>
                                     {(screens as any[]).map((s: any) => {
-                                        const isSel = selScrUnico === s.unico;
+                                        const isSel = activeGrid === "screen" && selScrUnico === s.unico;
                                         return (
-                                            <PanelGridTr key={s.unico} selected={isSel} onClick={() => setSelScrUnico(s.unico)} onDoubleClick={handleEditScreen}>
+                                            <PanelGridTr key={s.unico} selected={isSel} onClick={() => isSel ? setSelScrUnico(null) : setSelScrUnico(s.unico)} onDoubleClick={handleEditScreen}>
                                                 <PanelGridTd className="font-semibold text-gray-800">{t(s.unico)}</PanelGridTd>
                                                 <PanelGridTd className="font-semibold text-blue-700">{t(s.nombre)}</PanelGridTd>
                                                 <PanelGridTd className="text-blue-600">{t(s.web_form)}</PanelGridTd>
@@ -420,82 +418,49 @@ export default function ModuleScreenSetupPage() {
             {deleteScrDlg && <ConfirmDelete title="Remove Screen" msg={`Remove screen "${t(screenForm.nombre)}"? All reports must be removed first.`} onConfirm={deleteScreen} onCancel={() => setDeleteScrDlg(false)} saving={savingScreen} />}
             {deleteRptDlg && <ConfirmDelete title="Delete Report" msg={`Delete report "${t(reportForm.nombre)}"?`} onConfirm={deleteReport} onCancel={() => setDeleteRptDlg(false)} saving={savingReport} />}
             
-            {/* Mobile Action Bars */}
-            <MobileActionBar 
-                selModUnico={selModUnico}
-                selScrUnico={selScrUnico}
-                perms={perms}
-                onAddMod={handleAddModule}
-                onEditMod={handleEditModule}
-                onDelMod={handleRemoveModule}
-                onAddScr={handleAddScreen}
-                onEditScr={handleEditScreen}
-                onDelScr={handleRemoveScreen}
-            />
+            {/* ─── Mobile Action Bar (Bottom) ────────────────────────────────────────────── */}
+            <div className={cn(
+                "md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] transition-transform duration-300 ease-in-out pb-4 pt-2 px-2",
+                activeGrid ? "translate-y-0" : "translate-y-full"
+            )}>
+                <div className="flex items-center gap-1 overflow-x-auto px-4 scrollbar-none justify-center">
+                    <button onClick={activeGrid === "screen" ? handleEditScreen : handleEditModule} disabled={!perms.canEdit}
+                        className="flex flex-col items-center gap-1 text-gray-600 disabled:opacity-50 transition-colors hover:text-[#FB7506] min-w-[56px] shrink-0">
+                        <Pencil size={20} className={perms.canEdit ? "text-[#FB7506]" : "text-gray-400"} />
+                        <span className="text-[9px] font-black uppercase tracking-wider">Edit</span>
+                    </button>
+
+                    <div className="w-px h-8 bg-gray-200 shrink-0 mx-2" />
+
+                    <button onClick={activeGrid === "screen" ? handleRemoveScreen : handleRemoveModule} disabled={!perms.canDelete}
+                        className="flex flex-col items-center gap-1 text-gray-600 disabled:opacity-50 transition-colors hover:text-red-600 min-w-[56px] shrink-0">
+                        <Trash2 size={20} className={perms.canDelete ? "text-red-500" : "text-gray-400"} />
+                        <span className="text-[9px] font-black uppercase tracking-wider">Delete</span>
+                    </button>
+                    
+                    <div className="w-px h-8 bg-gray-200 shrink-0 mx-2" />
+
+                    <button onClick={activeGrid === "screen" ? () => setSelScrUnico(null) : clearSelection}
+                        className="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-800 transition-colors min-w-[56px] shrink-0 pr-2">
+                        <X size={20} />
+                        <span className="text-[9px] font-black uppercase tracking-wider">Close</span>
+                    </button>
+                </div>
+            </div>
+
+            {/* ─── Mobile FAB (Add) ──────────────────────────────────────────────────────── */}
+            <div className={cn("md:hidden fixed bottom-6 right-6 z-40 transition-all duration-300", activeGrid ? "opacity-0 translate-y-8 pointer-events-none" : "opacity-100 translate-y-0")}>
+                {perms.canCreate && (
+                    <button onClick={handleAddModule}
+                        className="bg-[#01b763] hover:bg-[#01a056] text-white w-14 h-14 rounded-full shadow-[0_4px_12px_rgba(1,183,99,0.4)] flex items-center justify-center transition-transform transform active:scale-95">
+                        <Plus size={28} />
+                    </button>
+                )}
+            </div>
         </div>
     );
 }
 
-// ── Mobile Action Bar Component ────────────────────────────────────────────────
-function MobileActionBar({ selModUnico, selScrUnico, perms, onAddMod, onEditMod, onDelMod, onAddScr, onEditScr, onDelScr }: any) {
-    const [open, setOpen] = useState(false);
-    
-    // Only show if at least one item is selected
-    if (!selModUnico && !selScrUnico) return null;
-
-    const isScreenSelected = !!selScrUnico;
-    const title = isScreenSelected ? "Screen Actions" : "Module Actions";
-
-    return (
-        <>
-            <button onClick={() => setOpen(true)}
-                className="lg:hidden fixed bottom-6 right-6 z-40 w-12 h-12 bg-[#FB7506] hover:bg-orange-600 text-white rounded-full shadow-xl flex items-center justify-center transition-all active:scale-95"
-                title="Actions">
-                <Menu size={20} />
-            </button>
-            
-            {open && (
-                <div className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200" onClick={() => setOpen(false)}>
-                    <div className="bg-white w-full sm:w-auto sm:min-w-[300px] rounded-t-xl sm:rounded-xl shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-8 duration-200" onClick={e => e.stopPropagation()}>
-                        <div className="h-12 bg-[#374151] flex items-center justify-between px-4 border-b border-black/10 shrink-0">
-                            <span className="font-black tracking-wider text-white text-xs uppercase">{title}</span>
-                            <button onClick={() => setOpen(false)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white rounded transition-colors">
-                                <X size={18} />
-                            </button>
-                        </div>
-                        <div className="flex flex-col p-2 gap-1 bg-gray-50">
-                            {isScreenSelected ? (
-                                <>
-                                    <button disabled={!perms.canCreate} onClick={() => { setOpen(false); onAddScr(); }} className="h-12 flex items-center gap-3 px-4 w-full bg-white rounded-lg border border-gray-100 shadow-sm active:bg-gray-100 disabled:opacity-50 text-left">
-                                        <Plus size={18} className="text-green-500" /><span className="text-sm font-semibold text-gray-700">Add New Screen</span>
-                                    </button>
-                                    <button disabled={!perms.canEdit} onClick={() => { setOpen(false); onEditScr(); }} className="h-12 flex items-center gap-3 px-4 w-full bg-white rounded-lg border border-gray-100 shadow-sm active:bg-gray-100 disabled:opacity-50 text-left">
-                                        <Pencil size={18} className="text-blue-500" /><span className="text-sm font-semibold text-gray-700">Edit Screen</span>
-                                    </button>
-                                    <button disabled={!perms.canDelete} onClick={() => { setOpen(false); onDelScr(); }} className="h-12 flex items-center gap-3 px-4 w-full bg-white rounded-lg border border-gray-100 shadow-sm active:bg-gray-100 disabled:opacity-50 text-left">
-                                        <Trash2 size={18} className="text-red-500" /><span className="text-sm font-semibold text-gray-700">Delete Screen</span>
-                                    </button>
-                                </>
-                            ) : (
-                                <>
-                                    <button disabled={!perms.canCreate} onClick={() => { setOpen(false); onAddMod(); }} className="h-12 flex items-center gap-3 px-4 w-full bg-white rounded-lg border border-gray-100 shadow-sm active:bg-gray-100 disabled:opacity-50 text-left">
-                                        <Plus size={18} className="text-green-500" /><span className="text-sm font-semibold text-gray-700">Add New Module</span>
-                                    </button>
-                                    <button disabled={!perms.canEdit} onClick={() => { setOpen(false); onEditMod(); }} className="h-12 flex items-center gap-3 px-4 w-full bg-white rounded-lg border border-gray-100 shadow-sm active:bg-gray-100 disabled:opacity-50 text-left">
-                                        <Pencil size={18} className="text-blue-500" /><span className="text-sm font-semibold text-gray-700">Edit Module</span>
-                                    </button>
-                                    <button disabled={!perms.canDelete} onClick={() => { setOpen(false); onDelMod(); }} className="h-12 flex items-center gap-3 px-4 w-full bg-white rounded-lg border border-gray-100 shadow-sm active:bg-gray-100 disabled:opacity-50 text-left">
-                                        <Trash2 size={18} className="text-red-500" /><span className="text-sm font-semibold text-gray-700">Delete Module</span>
-                                    </button>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
-        </>
-    );
-}
 
 // """ Module Form Modal """"""""""""""""""""""""""""""""""""""""""""""""""""""""
 function ModuleFormModal({ mode, form, setForm, onSave, onClose, saving }: any) {
