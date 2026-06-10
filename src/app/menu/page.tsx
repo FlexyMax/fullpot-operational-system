@@ -296,7 +296,7 @@ export default function MenuPage() {
                                 </div>
 
                                 {/* Module Tiles */}
-                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
                                     {items.map((item, idx) => {
                                         const route = getRoute(item.app_page);
                                         const isAvailable = !!route;
@@ -308,43 +308,37 @@ export default function MenuPage() {
                                                 onClick={() => route && router.push(route)}
                                                 disabled={!isAvailable}
                                                 className={cn(
-                                                    "group relative flex flex-col items-start gap-3 p-4 rounded-xl border bg-white text-left transition-all duration-200",
+                                                    "group relative flex flex-row items-center gap-2.5 px-3 py-2.5 rounded-xl border bg-white text-left transition-all duration-200",
                                                     isAvailable
-                                                        ? "border-gray-200 shadow-sm hover:border-[#FB7506] hover:shadow-md hover:-translate-y-0.5 cursor-pointer"
+                                                        ? "border-gray-200 shadow-sm hover:border-[#FB7506] hover:shadow-md cursor-pointer"
                                                         : "border-gray-100 cursor-not-allowed opacity-55"
                                                 )}
                                             >
                                                 {/* Available dot */}
                                                 {isAvailable && (
-                                                    <div className="absolute top-3 right-3 w-1.5 h-1.5 bg-green-400 rounded-full" />
+                                                    <div className="absolute top-2 right-2 w-1.5 h-1.5 bg-green-400 rounded-full" />
                                                 )}
 
                                                 {/* Icon */}
                                                 <div className={cn(
-                                                    "w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200",
+                                                    "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all duration-200",
                                                     isAvailable
                                                         ? "bg-orange-50 text-[#FB7506] group-hover:bg-[#FB7506] group-hover:text-white"
                                                         : "bg-gray-100 text-gray-300"
                                                 )}>
-                                                    <Icon size={20} />
+                                                    <Icon size={16} />
                                                 </div>
 
                                                 {/* Label */}
-                                                <div className="w-full min-w-0">
+                                                <div className="min-w-0 flex-1 pr-2">
                                                     <p className={cn(
-                                                        "font-black text-[11px] uppercase tracking-tight leading-tight truncate",
+                                                        "font-black text-[10px] uppercase tracking-tight leading-tight truncate",
                                                         isAvailable ? "text-gray-800" : "text-gray-400"
                                                     )}>
                                                         {item.app_page}
                                                     </p>
-
-                                                    {isAvailable ? (
-                                                        <div className="flex items-center gap-0.5 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-                                                            <span className="text-[9px] font-black text-[#FB7506] uppercase tracking-widest">Open</span>
-                                                            <ChevronRight size={10} className="text-[#FB7506]" />
-                                                        </div>
-                                                    ) : (
-                                                        <span className="inline-block mt-1.5 text-[8px] font-black uppercase tracking-widest bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded">
+                                                    {!isAvailable && (
+                                                        <span className="inline-block mt-0.5 text-[8px] font-black uppercase tracking-widest bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded">
                                                             Coming soon
                                                         </span>
                                                     )}
