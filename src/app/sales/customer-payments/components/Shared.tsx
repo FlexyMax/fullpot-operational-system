@@ -25,9 +25,9 @@ export const cpFetch = async (url: string) => {
 
 export function Modal({ title, icon: Icon, onClose, children, footer, size = "md", error }: any) {
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 sm:p-4">
-            <div className={cn("bg-white rounded-t-xl sm:rounded-xl shadow-2xl w-full flex flex-col h-[85vh] sm:h-auto sm:max-h-[88vh]",
-                size === "lg" ? "sm:max-w-3xl" : size === "xl" ? "sm:max-w-4xl" : "sm:max-w-lg")}>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className={cn("bg-white rounded-xl shadow-2xl w-full flex flex-col max-h-[90dvh]",
+                size === "lg" ? "max-w-3xl" : size === "xl" ? "max-w-4xl" : "max-w-lg")}>
                 <div className="h-10 bg-[#374151] rounded-t-xl flex items-center justify-between px-4 shrink-0">
                     <div className="flex items-center gap-2">
                         {Icon && <Icon size={15} className="text-[#FB7506]"/>}
@@ -43,7 +43,7 @@ export function Modal({ title, icon: Icon, onClose, children, footer, size = "md
     );
 }
 
-export function Btn({ icon: Icon, label, color = "gray", onClick, disabled = false, size = "sm" }: any) {
+export function Btn({ icon: Icon, label, color = "gray", onClick, disabled = false }: any) {
     const cls: Record<string, string> = { green: "bg-green-600 hover:bg-green-700", blue: "bg-blue-600 hover:bg-blue-700", red: "bg-red-600 hover:bg-red-700", gray: "bg-gray-600 hover:bg-gray-700", amber: "bg-amber-500 hover:bg-amber-600", orange: "bg-[#FB7506] hover:bg-orange-600" };
     return (
         <button onClick={onClick} disabled={disabled}

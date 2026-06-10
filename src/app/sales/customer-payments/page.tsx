@@ -89,8 +89,8 @@ function StatementPreviewModal({ html, onClose, customer }: any) {
                     <Printer size={13}/>Fax
                 </button>
             </div>}>
-            <div className="w-full h-[70vh]">
-                <iframe srcDoc={html} className="w-full h-full border rounded" title="Statement Preview"/>
+            <div className="w-full overflow-auto" style={{height:"65vh"}}>
+                <iframe srcDoc={html} className="border rounded" style={{minWidth:"700px",width:"100%",height:"65vh"}} title="Statement Preview"/>
             </div>
         </Modal>
     );
@@ -134,7 +134,7 @@ export default function CustomerPaymentsPage() {
     // ── Tab 5 state ───────────────────────────────────────────────────────────
     const [stmtFrom,         setStmtFrom]          = useState(() => new Date(new Date().getFullYear(), 0, 1).toISOString().split("T")[0]);
     const [stmtTo,           setStmtTo]            = useState(today());
-    const [stmtDestination,  setStmtDestination]   = useState(1);
+    const [stmtDestination,  setStmtDestination]   = useState(2);
     const [salesmanModal,    setSalesmanModal]      = useState(false);
     const [cutDateModal,     setCutDateModal]       = useState(false);
     const [printAllProgress, setPrintAllProgress]  = useState<string|null>(null);
@@ -407,6 +407,13 @@ export default function CustomerPaymentsPage() {
                 <div className="flex flex-col flex-1 overflow-hidden p-1.5 gap-1.5">
                     {/* Mobile-only global actions bar (above filter row) */}
                     <div className="md:hidden bg-white border-b border-gray-100 px-3 py-1.5 flex items-center gap-1.5 shrink-0 overflow-x-auto scrollbar-none">
+                        {creditCount > 0 && (
+                            <button onClick={()=>setCreditModal(true)}
+                                className="relative flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase rounded border border-green-300 bg-green-50 text-green-700 whitespace-nowrap transition-colors shrink-0">
+                                <Bell size={10}/>Approve Credits
+                                <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center">{creditCount}</span>
+                            </button>
+                        )}
                         <button onClick={()=>setInvSearchModal(true)}
                             className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase rounded border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors shrink-0">
                             <Search size={10}/>Inv Search
@@ -507,7 +514,7 @@ export default function CustomerPaymentsPage() {
                                     {(customers as any[]).map((c: any) => {
                                         const isSel = selCustomer?.unico === c.unico;
                                         return (
-                                            <PanelGridTr key={c.unico} onDoubleClick={()=>setActiveTab("invoices")} onClick={()=>selectCustomer(c)} selected={isSel}>
+                                            <PanelGridTr key={c.unico} onDoubleClick={()=>setActiveTab("invoices")} onClick={()=>{ if(isSel) selectCustomer(null); else selectCustomer(c); }} selected={isSel}>
                                                 <PanelGridTd className="font-medium">
                                                     <div className="font-bold text-gray-800">{t(c.cust_code)}</div>
                                                     <div className="text-gray-500 text-[10px]">{t(c.customer)}</div>
@@ -523,7 +530,7 @@ export default function CustomerPaymentsPage() {
                                                 <PanelGridTd align="right">{t(c.total_payments)}</PanelGridTd>
                                                 <PanelGridTd align="right" className="font-bold text-orange-600">{t(c.total_inv_bal)}</PanelGridTd>
                                                 <PanelGridTd align="right">{t(c.total_unapply)}</PanelGridTd>
-                                                <PanelGridTd align="right" className="font-bold">{fmt(c.total_books_bal)}</PanelGridTd>{/* raw numeric */}
+                                                <PanelGridTd align="right" className="font-bold">{"$"+fmt(c.total_books_bal)}</PanelGridTd>
                                                 <PanelGridTd className="text-gray-500">{t(c.statement_by)}</PanelGridTd>
                                                 <PanelGridTd align="center">{t(c.hold)==="Yes"?<span className="text-red-500 font-black text-[9px]">HOLD</span>:"—"}</PanelGridTd>
                                             </PanelGridTr>
@@ -547,7 +554,7 @@ export default function CustomerPaymentsPage() {
                                         <tr>
                                             <td className="px-2 py-1 font-black">TOTALS ({custTotal} customers)</td>
                                             <td colSpan={10} className="px-2 py-1"/>
-                                            <td className="px-2 py-1 text-right font-black">{fmt(totalRow.balance)}</td>
+                                            <td className="px-2 py-1 text-right font-black">{"$"+fmt(totalRow.balance)}</td>
                                             <td colSpan={2} className="px-2 py-1"/>
                                         </tr>
                                     </PanelGridTfoot>
@@ -620,7 +627,7 @@ export default function CustomerPaymentsPage() {
                                         const isVoid    = inv.void;
                                         const isOverdue = !isVoid && parseFloat(inv.balance??0) > 0 && new Date(inv.date_due) < new Date();
                                         return (
-                                            <PanelGridTr key={inv.unico} onClick={()=>{setSelInvoice(inv); store.setSelInvoiceUq(inv?.unico || null);}}
+                                            <PanelGridTr key={inv.unico} onClick={()=>{ const isSel=selInvoice?.unico===inv.unico; setSelInvoice(isSel?null:inv); store.setSelInvoiceUq(isSel?null:inv?.unico||null); }}
                                                 className={cn(isOverdue && !isSel && "bg-red-50 hover:bg-red-100", isVoid && "opacity-45")} selected={isSel}>
                                                 <PanelGridTd className="font-bold text-blue-700">{inv.invoice_no}</PanelGridTd>
                                                 <PanelGridTd>{fmtDate(inv.arec_date)}</PanelGridTd>
@@ -771,7 +778,7 @@ export default function CustomerPaymentsPage() {
                                 <PanelGridTbody>
                                     {(paymentsHistory as any[]).map((p:any)=>{
                                         const isSel=selPayment?.unico===p.unico;
-                                        return <PanelGridTr key={p.unico} onClick={()=>setSelPayment(p)} className={cn(p.void&&"opacity-45")} selected={isSel}>
+                                        return <PanelGridTr key={p.unico} onClick={()=>{ const s=selPayment?.unico===p.unico; setSelPayment(s?null:p); store.setSelPaymentUq(s?null:p?.unico||null); }} className={cn(p.void&&"opacity-45")} selected={isSel}>
                                             <PanelGridTd>{fmtDate(p.in_date)}</PanelGridTd>
                                             <PanelGridTd align="right" className="font-bold">{fmt(p.in_ammount)}</PanelGridTd>
                                             <PanelGridTd align="right" className="text-blue-700">{fmt(p.in_total)}</PanelGridTd>
@@ -905,7 +912,7 @@ export default function CustomerPaymentsPage() {
                                 <PanelGridTbody>
                                     {(crdbHistory as any[]).map((c:any)=>{
                                         const isSel=selCrDb?.unico===c.unico;
-                                        return <PanelGridTr key={c.unico} onClick={()=>setSelCrDb(c)} selected={isSel}>
+                                        return <PanelGridTr key={c.unico} onClick={()=>{ const s=selCrDb?.unico===c.unico; setSelCrDb(s?null:c); store.setSelCrdbUq(s?null:c?.unico||null); }} selected={isSel}>
                                             <PanelGridTd><span className={cn("font-black text-[10px]",c.type==="C"?"text-green-600":"text-red-500")}>{c.type}</span></PanelGridTd>
                                             <PanelGridTd className="font-bold text-blue-700">{c.invoice_no}</PanelGridTd>
                                             <PanelGridTd align="right" className="text-red-500">{c.type==="D"?fmt(c.cd_ammount):"—"}</PanelGridTd>
@@ -930,7 +937,6 @@ export default function CustomerPaymentsPage() {
                 <div className="flex flex-col flex-1 overflow-hidden p-1.5 gap-1.5">
                     {/* Date filters shared between both grids */}
                     <div className="bg-gray-100 border border-gray-200 rounded-lg px-3 py-1.5 flex flex-wrap items-center gap-3 shrink-0 text-xs">
-                        <Btn icon={RefreshCcw} label="Refresh" color="gray" onClick={()=>{refetchStmt();refetchStmtBal();}}/>
                         <div className="flex items-center gap-2">
                             <label className="text-[9px] font-black text-gray-500 uppercase">Start Date</label>
                             <input type="date" value={stmtFrom} onChange={e=>setStmtFrom(e.target.value)} className="fos-input py-1 w-36"/>
@@ -939,6 +945,11 @@ export default function CustomerPaymentsPage() {
                             <label className="text-[9px] font-black text-gray-500 uppercase">End Date</label>
                             <input type="date" value={stmtTo} onChange={e=>setStmtTo(e.target.value)} className="fos-input py-1 w-36"/>
                         </div>
+                        <button onClick={()=>{refetchStmt();refetchStmtBal();}}
+                            className="p-1.5 rounded border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 hover:text-[#FB7506] transition-colors"
+                            title="Refresh">
+                            <RefreshCcw size={13}/>
+                        </button>
                     </div>
                     {/* Statement summary grid */}
                     {/* Statement summary grid */}
@@ -1076,7 +1087,7 @@ export default function CustomerPaymentsPage() {
                                 <PanelGridTbody>
                                     {(corpIncomes as any[]).map((c:any)=>{
                                         const isSel=selCorpIncome?.unico===c.unico;
-                                        return <PanelGridTr key={c.unico} onClick={()=>{setSelCorpIncome(c);setSelCorpPayment(null);}} selected={isSel}>
+                                        return <PanelGridTr key={c.unico} onClick={()=>{ const s=selCorpIncome?.unico===c.unico; if(s){setSelCorpIncome(null);store.setActiveGrid(null);}else{setSelCorpIncome(c);setSelCorpPayment(null);store.setActiveGrid("corporate");} }} selected={isSel}>
                                             <PanelGridTd>{fmtDate(c.pay_date)}</PanelGridTd>
                                             <PanelGridTd className="font-bold">{t(c.cust_code)}</PanelGridTd>
                                             <PanelGridTd>{t(c.bank_doc)}</PanelGridTd>
@@ -1117,7 +1128,7 @@ export default function CustomerPaymentsPage() {
                                 <PanelGridTbody>
                                     {(corpPayments as any[]).map((p:any)=>{
                                         const isSel=selCorpPayment?.unico===p.unico;
-                                        return <PanelGridTr key={p.unico} onClick={()=>setSelCorpPayment(p)} selected={isSel}>
+                                        return <PanelGridTr key={p.unico} onClick={()=>{ const s=selCorpPayment?.unico===p.unico; if(s){setSelCorpPayment(null);store.setActiveGrid(null);}else{setSelCorpPayment(p);store.setActiveGrid("corp-invoice");} }} selected={isSel}>
                                             <PanelGridTd>{fmtDate(p.pay_date)}</PanelGridTd>
                                             <PanelGridTd className="font-bold">{t(p.cust_code)}</PanelGridTd>
                                             <PanelGridTd>{t(p.bank_doc)}</PanelGridTd>
@@ -1255,6 +1266,10 @@ export default function CustomerPaymentsPage() {
                     { grid: "payments", label: "Delete", icon: Trash2, color: "red", onClick: () => { if(selPayment) setNewPayModal({mode:"delete", income:selPayment}) }, disabled: !selPayment || !perms.canDelete },
                     { grid: "crdb", label: "Edit", icon: Pencil, color: "orange", onClick: () => { if(selCrDb) setCrdbModal({mode:"edit"}) }, disabled: !selCrDb || !perms.canEdit },
                     { grid: "crdb", label: "Delete", icon: Trash2, color: "red", onClick: () => { if(selCrDb) setCrdbModal({mode:"delete"}) }, disabled: !selCrDb || !perms.canDelete },
+                    { grid: "corporate", label: "Add", icon: Plus, color: "green", onClick: () => setCorpPayModal({mode:"add"}), disabled: !perms.canCreate },
+                    { grid: "corporate", label: "Edit", icon: Pencil, color: "orange", onClick: () => { if(selCorpIncome) setCorpPayModal({mode:"edit"}); }, disabled: !selCorpIncome || !perms.canEdit },
+                    { grid: "corporate", label: "Delete", icon: Trash2, color: "red", onClick: () => { if(selCorpIncome) setCorpPayModal({mode:"delete"}); }, disabled: !selCorpIncome || !perms.canDelete },
+                    { grid: "corp-invoice", label: "Add Inv", icon: Plus, color: "green", onClick: () => { if(selCorpIncome) setCorpInvModal(true); }, disabled: !selCorpIncome || !perms.canCreate },
                 ]}
             />
 

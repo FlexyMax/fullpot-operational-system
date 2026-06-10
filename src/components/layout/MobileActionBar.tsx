@@ -1,13 +1,27 @@
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 
+const GRID_LABELS: Record<string, string> = {
+    customer: "Customer",
+    invoices: "Invoices",
+    payments: "Payments",
+    crdb: "Cr / Db",
+    corporate: "Corp. Payments",
+    "corp-invoice": "Corp. Invoices",
+};
+
 export function MobileActionBar({ activeGrid, items, onClearSelection }: any) {
     const isVisible = !!activeGrid;
     return (
         <div className={cn(
-            "md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] transition-transform duration-300 ease-in-out pb-4 pt-2 px-2",
+            "md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] transition-transform duration-300 ease-in-out pb-4 pt-1.5 px-2",
             isVisible ? "translate-y-0" : "translate-y-full"
         )}>
+            {activeGrid && GRID_LABELS[activeGrid] && (
+                <div className="text-center mb-1">
+                    <span className="text-[8px] font-black uppercase tracking-[0.15em] text-gray-400">{GRID_LABELS[activeGrid]}</span>
+                </div>
+            )}
             <div className="flex items-center gap-1 overflow-x-auto px-4 scrollbar-none justify-center">
                 {items.filter((i:any)=>i.grid===activeGrid).map((item: any, idx: number) => (
                     <div key={idx} className="flex items-center">

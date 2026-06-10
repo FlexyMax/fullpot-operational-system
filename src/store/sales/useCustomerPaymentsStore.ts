@@ -3,7 +3,7 @@ import { create } from "zustand";
 interface CustomerPaymentsState {
     // Tabs & Grid controls
     activeTab: "customer" | "invoices" | "payments" | "crdb" | "statement" | "corporate";
-    activeGrid: "customer" | "invoices" | "payments" | "crdb" | "statement" | "corporate" | null;
+    activeGrid: "customer" | "invoices" | "payments" | "crdb" | "statement" | "corporate" | "corp-invoice" | null;
     
     // Selections
     selCustomerUq: string | null;
@@ -17,7 +17,7 @@ interface CustomerPaymentsState {
 
     // Actions
     setActiveTab: (tab: "customer" | "invoices" | "payments" | "crdb" | "statement" | "corporate") => void;
-    setActiveGrid: (grid: "customer" | "invoices" | "payments" | "crdb" | "statement" | "corporate" | null) => void;
+    setActiveGrid: (grid: "customer" | "invoices" | "payments" | "crdb" | "statement" | "corporate" | "corp-invoice" | null) => void;
     setSelCustomerUq: (uq: string | null) => void;
     setSelInvoiceUq: (uq: string | null) => void;
     setSelPaymentUq: (uq: string | null) => void;
