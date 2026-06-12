@@ -11,6 +11,10 @@ const GRID_LABELS: Record<string, string> = {
     "not-ready": "Not Ready",
     "ready": "Ready to QB",
     "sent": "Sent to QB",
+    terms: "Terms",
+    po: "PO",
+    prebooks: "Prebooks",
+    credits: "Credits & Debits",
 };
 
 export function MobileActionBar({ activeGrid, items, onClearSelection }: any) {

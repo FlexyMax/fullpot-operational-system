@@ -21,7 +21,9 @@ export async function POST(req: NextRequest) {
             lncost:     cost,
             lcaptype_uq: ap_type_uq
         });
-        return NextResponse.json({ success: true, data: result.recordset[0] });
+        const row = result.recordset?.[0];
+        if (row?.Error) return NextResponse.json({ success: false, error: row.Message || "Business rule violation" }, { status: 400 });
+        return NextResponse.json({ success: true, unico: row?.unico ?? null, message: "PO record added." });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }
@@ -36,7 +38,9 @@ export async function PUT(req: NextRequest) {
             lncost:      cost,
             lcaptype_uq: ap_type_uq
         });
-        return NextResponse.json({ success: true, data: result.recordset[0] });
+        const row = result.recordset?.[0];
+        if (row?.Error) return NextResponse.json({ success: false, error: row.Message || "Business rule violation" }, { status: 400 });
+        return NextResponse.json({ success: true, unico, message: "PO record updated." });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }
@@ -44,10 +48,12 @@ export async function PUT(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
     const unico = req.nextUrl.searchParams.get("unico");
-    if (!unico) return NextResponse.json({ error: "unico required" }, { status: 400 });
+    if (!unico) return NextResponse.json({ success: false, error: "unico required" }, { status: 400 });
     try {
-        await executeProcedure("sp_flower_accounts_pay_pob_delete", { lcunico: unico });
-        return NextResponse.json({ success: true });
+        const result = await executeProcedure("sp_flower_accounts_pay_pob_delete", { lcunico: unico });
+        const row = result.recordset?.[0];
+        if (row?.Error) return NextResponse.json({ success: false, error: row.Message || "Business rule violation" }, { status: 400 });
+        return NextResponse.json({ success: true, unico, message: "PO record deleted." });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }

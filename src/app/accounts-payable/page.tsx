@@ -1,28 +1,31 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
-    ArrowLeft, RefreshCcw, Calendar, DollarSign,
+    RefreshCcw, Calendar,
     FileText, CreditCard, ClipboardList, BookOpen, Plus,
-    Pencil, Trash2, Check, XCircle, X, AlertCircle, CheckCircle,
+    Pencil, Trash2, Check, XCircle, AlertCircle, CheckCircle,
     ChevronRight, ChevronLeft, Search, Download, Printer,
-    BarChart2, Clock, Power
+    BarChart2, Clock
 } from "lucide-react";
-import { GridMenu } from "@/components/GridMenu";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { AppFooter } from "@/components/layout/AppFooter";
+import { MobileActionBar } from "@/components/layout/MobileActionBar";
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { AuditLogModal } from "@/components/AuditLogModal";
 import { useAPStore } from "@/store/useAPStore";
 import { cn } from "@/lib/utils";
-import { formatDateEST, formatMoney, parseMoney, todayEST, currentYearEST, dateInputToEST, normalizeToISODate } from "@/lib/dates";
+import { toast } from "sonner";
+import PanelGrid from "@/components/ui/PanelGrid";
+import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
+import { formatDateEST, formatMoney, parseMoney, todayEST, currentYearEST, normalizeToISODate } from "@/lib/dates";
 const EMPTY_ARR: any[] = [];
 
 // ─── fetch helpers ───────────────────────────────────────────────────────────
@@ -69,7 +72,7 @@ type InvoiceForm = z.infer<typeof invoiceSchema>;
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function AccountsPayablePage() {
-    const { data: session, status } = useSession();
+    const { status } = useSession();
     const router = useRouter();
     const qc = useQueryClient();
     const { logAction } = useAuditLog("accounts-payable", "flower_accounts_pay");
@@ -94,8 +97,6 @@ export default function AccountsPayablePage() {
     const [summaryModal,     setSummaryModal]     = useState(false);
     const [pendingAPModal,   setPendingAPModal]   = useState(false);
     const [pendingUnico,     setPendingUnico]     = useState<string | null>(null);
-    const [mobileInvOpen,    setMobileInvOpen]    = useState(false);
-    const [invSearch,        setInvSearch]        = useState("");
 
     useEffect(() => {
         if (status === "unauthenticated") router.push("/login");
@@ -139,46 +140,56 @@ export default function AccountsPayablePage() {
 
     // ── Mutations ────────────────────────────────────────────────────────────
     const crdbAdd = useMutation({
-        mutationFn: (body: any) => fetch("/api/accounts-payable/crdb", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()),
-        onSuccess: (d) => { logAction("Insert", d?.unico || selectedUnico || "", "Credit/Debit"); qc.invalidateQueries({ queryKey: ["ap-credits", selectedUnico] }); setCrdbModal(null); },
+        mutationFn: async (body: any) => { const r = await fetch("/api/accounts-payable/crdb", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()); if (!r.success) throw new Error(r.error || "Failed to add"); return r; },
+        onSuccess: (d) => { toast.success("Credit/Debit added."); logAction("Insert", d?.unico || selectedUnico || "", "Credit/Debit"); qc.invalidateQueries({ queryKey: ["ap-credits", selectedUnico] }); setCrdbModal(null); },
+        onError: (e: any) => toast.error(e.message),
     });
     const crdbEdit = useMutation({
-        mutationFn: (body: any) => fetch("/api/accounts-payable/crdb", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()),
-        onSuccess: (_d, vars: any) => { logAction("Edit", vars?.unico || selectedUnico || "", "Credit/Debit"); qc.invalidateQueries({ queryKey: ["ap-credits", selectedUnico] }); setCrdbModal(null); },
+        mutationFn: async (body: any) => { const r = await fetch("/api/accounts-payable/crdb", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()); if (!r.success) throw new Error(r.error || "Failed to update"); return r; },
+        onSuccess: (_d, vars: any) => { toast.success("Credit/Debit updated."); logAction("Edit", vars?.unico || selectedUnico || "", "Credit/Debit"); qc.invalidateQueries({ queryKey: ["ap-credits", selectedUnico] }); setCrdbModal(null); },
+        onError: (e: any) => toast.error(e.message),
     });
     const crdbDelete = useMutation({
-        mutationFn: (unico: string) => fetch(`/api/accounts-payable/crdb?unico=${unico}`, { method: "DELETE" }).then(r => r.json()),
-        onSuccess: (_d, unico) => { logAction("Delete", unico, "Credit/Debit"); qc.invalidateQueries({ queryKey: ["ap-credits", selectedUnico] }); setCrdbModal(null); },
+        mutationFn: async (unico: string) => { const r = await fetch(`/api/accounts-payable/crdb?unico=${unico}`, { method: "DELETE" }).then(r => r.json()); if (!r.success) throw new Error(r.error || "Failed to delete"); return r; },
+        onSuccess: (_d, unico) => { toast.success("Credit/Debit deleted."); logAction("Delete", unico, "Credit/Debit"); qc.invalidateQueries({ queryKey: ["ap-credits", selectedUnico] }); setCrdbModal(null); },
+        onError: (e: any) => toast.error(e.message),
     });
 
     const pobAdd = useMutation({
-        mutationFn: (body: any) => fetch("/api/accounts-payable/pob", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()),
-        onSuccess: (d) => { logAction("Insert", d?.unico || selectedUnico || "", "PO"); qc.invalidateQueries({ queryKey: ["ap-pobs", selectedUnico] }); },
+        mutationFn: async (body: any) => { const r = await fetch("/api/accounts-payable/pob", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()); if (!r.success) throw new Error(r.error || "Failed to add PO"); return r; },
+        onSuccess: (d) => { toast.success("PO record added."); logAction("Insert", d?.unico || selectedUnico || "", "PO"); qc.invalidateQueries({ queryKey: ["ap-pobs", selectedUnico] }); },
+        onError: (e: any) => toast.error(e.message),
     });
     const pobEdit = useMutation({
-        mutationFn: (body: any) => fetch("/api/accounts-payable/pob", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()),
-        onSuccess: (_d, vars: any) => { logAction("Edit", vars?.unico || selectedUnico || "", "PO"); qc.invalidateQueries({ queryKey: ["ap-pobs", selectedUnico] }); },
+        mutationFn: async (body: any) => { const r = await fetch("/api/accounts-payable/pob", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()); if (!r.success) throw new Error(r.error || "Failed to update PO"); return r; },
+        onSuccess: (_d, vars: any) => { toast.success("PO record updated."); logAction("Edit", vars?.unico || selectedUnico || "", "PO"); qc.invalidateQueries({ queryKey: ["ap-pobs", selectedUnico] }); },
+        onError: (e: any) => toast.error(e.message),
     });
     const pobDelete = useMutation({
-        mutationFn: (unico: string) => fetch(`/api/accounts-payable/pob?unico=${unico}`, { method: "DELETE" }).then(r => r.json()),
-        onSuccess: (_d, unico) => { logAction("Delete", unico, "PO"); qc.invalidateQueries({ queryKey: ["ap-pobs", selectedUnico] }); },
+        mutationFn: async (unico: string) => { const r = await fetch(`/api/accounts-payable/pob?unico=${unico}`, { method: "DELETE" }).then(r => r.json()); if (!r.success) throw new Error(r.error || "Failed to delete PO"); return r; },
+        onSuccess: (_d, unico) => { toast.success("PO record deleted."); logAction("Delete", unico, "PO"); qc.invalidateQueries({ queryKey: ["ap-pobs", selectedUnico] }); },
+        onError: (e: any) => toast.error(e.message),
     });
     const pobApprove = useMutation({
-        mutationFn: (ap_uq: string) => fetch("/api/accounts-payable/pob/approve", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ap_uq }) }).then(r => r.json()),
-        onSuccess: (_d, ap_uq) => { logAction("Edit", ap_uq, "Approve PO Cost"); qc.invalidateQueries({ queryKey: ["ap-invoice", selectedUnico] }); },
+        mutationFn: async (ap_uq: string) => { const r = await fetch("/api/accounts-payable/pob/approve", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ap_uq }) }).then(r => r.json()); if (!r.success) throw new Error(r.error || "Failed to approve"); return r; },
+        onSuccess: (_d, ap_uq) => { toast.success("PO cost approved."); logAction("Edit", ap_uq, "Approve PO Cost"); qc.invalidateQueries({ queryKey: ["ap-invoice", selectedUnico] }); },
+        onError: (e: any) => toast.error(e.message),
     });
 
     const invoiceAdd = useMutation({
-        mutationFn: (body: any) => fetch("/api/accounts-payable/invoice", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()),
-        onSuccess: (data) => { logAction("Insert", data?.unico || selectedUnico || ""); qc.invalidateQueries({ queryKey: ["ap-invoices", selectedDate] }); setInvoiceModal(null); },
+        mutationFn: async (body: any) => { const r = await fetch("/api/accounts-payable/invoice", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()); if (!r.success) throw new Error(r.error || "Failed to create invoice"); return r; },
+        onSuccess: (data) => { toast.success("Invoice created."); logAction("Insert", data?.unico || selectedUnico || ""); qc.invalidateQueries({ queryKey: ["ap-invoices", selectedDate] }); setInvoiceModal(null); },
+        onError: (e: any) => toast.error(e.message),
     });
     const invoiceEdit = useMutation({
-        mutationFn: (body: any) => fetch("/api/accounts-payable/invoice", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()),
-        onSuccess: () => { logAction("Edit", selectedUnico || ""); qc.invalidateQueries({ queryKey: ["ap-invoices", selectedDate] }); setInvoiceModal(null); },
+        mutationFn: async (body: any) => { const r = await fetch("/api/accounts-payable/invoice", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()); if (!r.success) throw new Error(r.error || "Failed to update invoice"); return r; },
+        onSuccess: () => { toast.success("Invoice updated."); logAction("Edit", selectedUnico || ""); qc.invalidateQueries({ queryKey: ["ap-invoices", selectedDate] }); setInvoiceModal(null); },
+        onError: (e: any) => toast.error(e.message),
     });
     const invoiceDelete = useMutation({
-        mutationFn: (unico: string) => fetch(`/api/accounts-payable/invoice?unico=${unico}`, { method: "DELETE" }).then(r => r.json()),
-        onSuccess: (_d, unico) => { logAction("Delete", unico); qc.invalidateQueries({ queryKey: ["ap-invoices", selectedDate] }); setUnico(null); setInvoiceModal(null); },
+        mutationFn: async (unico: string) => { const r = await fetch(`/api/accounts-payable/invoice?unico=${unico}`, { method: "DELETE" }).then(r => r.json()); if (!r.success) throw new Error(r.error || "Failed to delete invoice"); return r; },
+        onSuccess: (_d, unico) => { toast.success("Invoice deleted."); logAction("Delete", unico); qc.invalidateQueries({ queryKey: ["ap-invoices", selectedDate] }); setUnico(null); setInvoiceModal(null); },
+        onError: (e: any) => toast.error(e.message),
     });
 
     // ── Fetch full crdb record before opening Edit modal ─────────────────────
@@ -310,54 +321,42 @@ export default function AccountsPayablePage() {
             <div className="flex flex-col lg:flex-row flex-1 gap-2 p-2 overflow-auto">
 
                 {/* ── LEFT: Date Panel (desktop only) ─────────────────────── */}
-                <div className="hidden lg:flex w-[280px] shrink-0 flex-col gap-2">
-                    <div className="flex flex-col flex-1 bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-                        <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
-                            <div className="flex items-center gap-2">
-                                <Calendar size={13} className="text-[#FB7506]" />
-                                <span className="font-black text-[10px] uppercase tracking-widest text-white">Dates</span>
+                <div className="hidden lg:flex w-[260px] shrink-0">
+                    <PanelGrid
+                        title="Dates"
+                        icon={Calendar}
+                        recordCount={dates.length}
+                        refreshing={loadingDates}
+                        className="flex-1"
+                    >
+                        {datesError && (
+                            <div className="p-3 m-2 bg-red-50 border border-red-200 rounded text-xs text-red-600">
+                                <p className="font-bold mb-1">Error</p>
+                                <p className="break-all font-normal">{(datesError as Error).message}</p>
                             </div>
-                            {loadingDates && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
-                        </div>
-                        <div className="bg-[#F0F2F5] px-2 py-0.5 text-[9px] font-black text-gray-500 uppercase tracking-widest border-b border-gray-200 text-right">
-                            {dates.length} records
-                        </div>
-                        <div className="overflow-y-auto flex-1">
-                            {datesError && (
-                                <div className="p-3 m-2 bg-red-50 border border-red-200 rounded text-xs text-red-600">
-                                    <p className="font-bold mb-1">API Error</p>
-                                    <p className="break-all font-normal">{(datesError as Error).message}</p>
-                                </div>
-                            )}
-                            <table className="min-w-full text-xs text-left">
-                                <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
-                                    <tr>
-                                        <th className="p-2">Date</th>
-                                        <th className="p-2 text-center border-l border-gray-200">Inv</th>
-                                        <th className="p-2 text-right border-l border-gray-200">Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {dates.length === 0 && !datesError ? (
-                                        <tr><td colSpan={3} className="p-8 text-center text-gray-400 italic">No dates</td></tr>
-                                    ) : dates.map((d: any, i: number) => {
-                                        const ds = normalizeToISODate(d.ap_date);
-                                        const active = selectedDate === ds;
-                                        return (
-                                            <tr key={i} onClick={() => setDate(ds)} className={cn(
-                                                "border-b cursor-pointer transition-colors",
-                                                active ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50"
-                                            )}>
-                                                <td className="p-2 font-medium">{formatDateEST(ds)}</td>
-                                                <td className="p-2 text-center border-l border-gray-100">{d.records || 0}</td>
-                                                <td className="p-2 text-right border-l border-gray-100 font-semibold">{formatMoney(d.total_amount)}</td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                        )}
+                        <PanelGridTable>
+                            <PanelGridThead>
+                                <PanelGridTh>Date</PanelGridTh>
+                                <PanelGridTh align="center">Inv</PanelGridTh>
+                                <PanelGridTh align="right">Amount</PanelGridTh>
+                            </PanelGridThead>
+                            <PanelGridTbody>
+                                {dates.length === 0 && !datesError ? (
+                                    <PanelGridTr><PanelGridTd colSpan={3} className="py-8 text-center text-gray-400 italic">No dates</PanelGridTd></PanelGridTr>
+                                ) : dates.map((d: any, i: number) => {
+                                    const ds = normalizeToISODate(d.ap_date);
+                                    return (
+                                        <PanelGridTr key={i} selected={selectedDate === ds} onClick={() => setDate(ds)}>
+                                            <PanelGridTd className="font-medium">{formatDateEST(ds)}</PanelGridTd>
+                                            <PanelGridTd align="center">{d.records || 0}</PanelGridTd>
+                                            <PanelGridTd align="right" className="font-semibold">{formatMoney(d.total_amount)}</PanelGridTd>
+                                        </PanelGridTr>
+                                    );
+                                })}
+                            </PanelGridTbody>
+                        </PanelGridTable>
+                    </PanelGrid>
                 </div>
 
                 {/* ── CALENDAR: Mobile only ───────────────────────────────── */}
@@ -383,72 +382,58 @@ export default function AccountsPayablePage() {
                 <div className="flex-1 flex flex-col gap-2 min-w-0 lg:overflow-hidden">
 
                     {/* Invoice List */}
-                    <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden min-h-[220px] max-h-[50vh] lg:max-h-none lg:h-[42%]">
-                        <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
-                            <div className="flex items-center gap-2">
-                                <FileText size={13} className="text-[#FB7506]" />
-                                <span className="font-black text-[10px] uppercase tracking-widest text-white">
-                                    Invoices {selectedDate ? `— ${selectedDate}` : ""}
-                                </span>
-                                <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} />
-                                {loadingInvoices && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
-                            </div>
-                            <GridMenu items={[
-                                { label: "Search", icon: Search, color: "gray", onClick: () => setSearchModal(true) },
-                                { label: "Export CSV", icon: Download, color: "gray", onClick: exportToCSV, disabled: !invoices.length || !perms.canReport },
-                                { label: "Add", icon: Plus, color: "green", onClick: () => setInvoiceModal({ open: true, mode: "Add" }), disabled: !perms.canCreate },
-                                { label: "Edit", icon: Pencil, color: "orange", onClick: () => selectedUnico && setInvoiceModal({ open: true, mode: "Edit" }), disabled: !selectedUnico || !perms.canEdit },
-                                { label: "Delete", icon: Trash2, color: "red", onClick: () => selectedUnico && setInvoiceModal({ open: true, mode: "Delete" }), disabled: !selectedUnico || !perms.canDelete },
-                            ]} />
-                        </div>
-                        <div className="bg-[#F0F2F5] px-2 py-0.5 text-[9px] font-black text-gray-500 uppercase tracking-widest border-b border-gray-200 text-right">
-                            {invoices.length} records
-                        </div>
-                        <div className="overflow-auto flex-1">
-                            <table className="min-w-full text-xs text-left">
-                                <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
-                                    <tr>
-                                        <th className="p-2 whitespace-nowrap">Vendor</th>
-                                        <th className="p-2 whitespace-nowrap border-l border-gray-200">Invoice</th>
-                                        <th className="p-2 whitespace-nowrap text-right border-l border-gray-200">Estimated</th>
-                                        <th className="p-2 whitespace-nowrap text-right border-l border-gray-200">Amount</th>
-                                        <th className="p-2 whitespace-nowrap text-right border-l border-gray-200 text-green-700">Credits</th>
-                                        <th className="p-2 whitespace-nowrap text-right border-l border-gray-200 text-red-600">Debits</th>
-                                        <th className="p-2 whitespace-nowrap text-right border-l border-gray-200">Balance</th>
-                                        <th className="p-2 whitespace-nowrap border-l border-gray-200">Control</th>
-                                        <th className="p-2 whitespace-nowrap border-l border-gray-200">AP Date</th>
-                                        <th className="p-2 whitespace-nowrap border-l border-gray-200">Phone</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {!selectedDate ? (
-                                        <tr><td colSpan={10} className="p-10 text-center text-gray-400 italic">Select a date to view invoices</td></tr>
-                                    ) : invoices.length === 0 ? (
-                                        <tr><td colSpan={10} className="p-10 text-center text-gray-400 italic">No invoices for this date</td></tr>
-                                    ) : invoices.map((inv: any, i: number) => {
-                                        const active = selectedUnico === inv.unico;
-                                        return (
-                                            <tr key={inv.unico || i} onClick={() => setUnico(inv.unico)} className={cn(
-                                                "border-b text-gray-600 cursor-pointer transition-colors",
-                                                active ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50"
-                                            )}>
-                                                <td className="p-2 font-medium truncate max-w-[180px]">{String(inv.grower || "").trim()}</td>
-                                                <td className="p-2 border-l border-gray-100 font-semibold text-blue-700">{String(inv.invoice_no || "").trim()}</td>
-                                                <td className="p-2 border-l border-gray-100 text-right">{formatMoney(inv.estimated)}</td>
-                                                <td className="p-2 border-l border-gray-100 text-right font-semibold">{formatMoney(inv.amount)}</td>
-                                                <td className="p-2 border-l border-gray-100 text-right text-green-600">{formatMoney(inv.credits)}</td>
-                                                <td className="p-2 border-l border-gray-100 text-right text-red-500">{formatMoney(inv.debits)}</td>
-                                                <td className="p-2 border-l border-gray-100 text-right font-semibold text-orange-600">{formatMoney(inv.total_balance)}</td>
-                                                <td className="p-2 border-l border-gray-100">{formatDateEST(normalizeToISODate(inv.control_Date ?? inv.control_date))}</td>
-                                                <td className="p-2 border-l border-gray-100">{formatDateEST(normalizeToISODate(inv.ap_date))}</td>
-                                                <td className="p-2 border-l border-gray-100 text-gray-400">{String(inv.phone_1 || "").trim()}</td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <PanelGrid
+                        title={`Invoices${selectedDate ? ` — ${selectedDate}` : ""}`}
+                        icon={FileText}
+                        recordCount={invoices.length}
+                        refreshing={loadingInvoices}
+                        onLog={selectedUnico ? () => {} : undefined}
+                        headerRight={<AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} bareButton />}
+                        menuItems={[
+                            { label: "Search", icon: Search, color: "gray", onClick: () => setSearchModal(true) },
+                            { label: "Export CSV", icon: Download, color: "gray", onClick: exportToCSV, disabled: !invoices.length || !perms.canReport },
+                            { separator: true },
+                            { label: "Add Invoice", icon: Plus, color: "green", onClick: () => { if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; } setInvoiceModal({ open: true, mode: "Add" }); }, disabled: !perms.canCreate },
+                            { label: "Edit Invoice", icon: Pencil, color: "orange", onClick: () => { if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } selectedUnico && setInvoiceModal({ open: true, mode: "Edit" }); }, disabled: !selectedUnico || !perms.canEdit },
+                            { label: "Delete Invoice", icon: Trash2, color: "red", onClick: () => { if (!perms.canDelete) { toast.error(PERMISSION_MSGS.delete); return; } selectedUnico && setInvoiceModal({ open: true, mode: "Delete" }); }, disabled: !selectedUnico || !perms.canDelete },
+                        ]}
+                        className="min-h-[200px] max-h-[45vh] lg:max-h-none lg:h-[42%]"
+                    >
+                        <PanelGridTable>
+                            <PanelGridThead>
+                                <PanelGridTh>Vendor</PanelGridTh>
+                                <PanelGridTh>Invoice</PanelGridTh>
+                                <PanelGridTh align="right">Estimated</PanelGridTh>
+                                <PanelGridTh align="right">Amount</PanelGridTh>
+                                <PanelGridTh align="right" className="text-green-700">Credits</PanelGridTh>
+                                <PanelGridTh align="right" className="text-red-600">Debits</PanelGridTh>
+                                <PanelGridTh align="right">Balance</PanelGridTh>
+                                <PanelGridTh>Control</PanelGridTh>
+                                <PanelGridTh>AP Date</PanelGridTh>
+                                <PanelGridTh className="hidden lg:table-cell">Phone</PanelGridTh>
+                            </PanelGridThead>
+                            <PanelGridTbody>
+                                {!selectedDate ? (
+                                    <PanelGridTr><PanelGridTd colSpan={10} className="py-10 text-center text-gray-400 italic">Select a date to view invoices</PanelGridTd></PanelGridTr>
+                                ) : invoices.length === 0 ? (
+                                    <PanelGridTr><PanelGridTd colSpan={10} className="py-10 text-center text-gray-400 italic">No invoices for this date</PanelGridTd></PanelGridTr>
+                                ) : invoices.map((inv: any, i: number) => (
+                                    <PanelGridTr key={inv.unico || i} selected={selectedUnico === inv.unico} onClick={() => setUnico(inv.unico)}>
+                                        <PanelGridTd className="font-medium max-w-[180px] truncate">{String(inv.grower || "").trim()}</PanelGridTd>
+                                        <PanelGridTd className="font-semibold text-blue-700">{String(inv.invoice_no || "").trim()}</PanelGridTd>
+                                        <PanelGridTd align="right">{formatMoney(inv.estimated)}</PanelGridTd>
+                                        <PanelGridTd align="right" className="font-semibold">{formatMoney(inv.amount)}</PanelGridTd>
+                                        <PanelGridTd align="right" className="text-green-600">{formatMoney(inv.credits)}</PanelGridTd>
+                                        <PanelGridTd align="right" className="text-red-500">{formatMoney(inv.debits)}</PanelGridTd>
+                                        <PanelGridTd align="right" className="font-semibold text-orange-600">{formatMoney(inv.total_balance)}</PanelGridTd>
+                                        <PanelGridTd>{formatDateEST(normalizeToISODate(inv.control_Date ?? inv.control_date))}</PanelGridTd>
+                                        <PanelGridTd>{formatDateEST(normalizeToISODate(inv.ap_date))}</PanelGridTd>
+                                        <PanelGridTd className="hidden lg:table-cell text-gray-400">{String(inv.phone_1 || "").trim()}</PanelGridTd>
+                                    </PanelGridTr>
+                                ))}
+                            </PanelGridTbody>
+                        </PanelGridTable>
+                    </PanelGrid>
 
                     {/* Detail Tabs */}
                     <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-[300px] lg:min-h-0">
@@ -487,23 +472,36 @@ export default function AccountsPayablePage() {
                                 <>
                                     {/* TERMS TAB */}
                                     {activeTab === "terms" && (
-                                        <TabTable
-                                            loading={loadingTerms}
-                                            rows={tabTerms}
-                                            empty="No payment terms found"
-                                            selectedIdx={selectedTermIdx}
-                                            onSelectIdx={setSelectedTermIdx}
-                                            columns={[
-                                                { key: "date_due",    label: "Date",     render: (v: any) => formatDateEST(v) },
-                                                { key: "days",        label: "Days",     className: "text-center" },
-                                                { key: "percen",      label: "%",        className: "text-right", render: (v: any) => `${parseMoney(v).toFixed(1)}%` },
-                                                { key: "ammount",     label: "Amount",   className: "text-right", render: (v: any) => formatMoney(v) },
-                                                { key: "out_ammount", label: "Payments", className: "text-right", render: (v: any) => formatMoney(v) },
-                                                { key: "cre_ammount", label: "Credits",  className: "text-right text-green-600", render: (v: any) => formatMoney(v) },
-                                                { key: "deb_ammount", label: "Debits",   className: "text-right text-red-500",   render: (v: any) => formatMoney(v) },
-                                                { key: "balance",     label: "Balance",  className: "text-right font-black text-[#FB7506]", render: (v: any) => formatMoney(v) },
-                                            ]}
-                                        />
+                                        <PanelGridTable>
+                                            <PanelGridThead>
+                                                <PanelGridTh>Date</PanelGridTh>
+                                                <PanelGridTh align="center">Days</PanelGridTh>
+                                                <PanelGridTh align="right">%</PanelGridTh>
+                                                <PanelGridTh align="right">Amount</PanelGridTh>
+                                                <PanelGridTh align="right">Payments</PanelGridTh>
+                                                <PanelGridTh align="right" className="text-green-700">Credits</PanelGridTh>
+                                                <PanelGridTh align="right" className="text-red-600">Debits</PanelGridTh>
+                                                <PanelGridTh align="right" className="text-[#FB7506]">Balance</PanelGridTh>
+                                            </PanelGridThead>
+                                            <PanelGridTbody>
+                                                {loadingTerms ? (
+                                                    <PanelGridTr><PanelGridTd colSpan={8} className="py-8 text-center text-gray-400">Loading...</PanelGridTd></PanelGridTr>
+                                                ) : tabTerms.length === 0 ? (
+                                                    <PanelGridTr><PanelGridTd colSpan={8} className="py-8 text-center text-gray-400 italic">No payment terms found</PanelGridTd></PanelGridTr>
+                                                ) : tabTerms.map((row: any, i: number) => (
+                                                    <PanelGridTr key={i} selected={i === selectedTermIdx} onClick={() => setSelectedTermIdx(i)}>
+                                                        <PanelGridTd>{formatDateEST(row.date_due)}</PanelGridTd>
+                                                        <PanelGridTd align="center">{row.days}</PanelGridTd>
+                                                        <PanelGridTd align="right">{parseMoney(row.percen).toFixed(1)}%</PanelGridTd>
+                                                        <PanelGridTd align="right">{formatMoney(row.ammount)}</PanelGridTd>
+                                                        <PanelGridTd align="right">{formatMoney(row.out_ammount)}</PanelGridTd>
+                                                        <PanelGridTd align="right" className="text-green-600">{formatMoney(row.cre_ammount)}</PanelGridTd>
+                                                        <PanelGridTd align="right" className="text-red-500">{formatMoney(row.deb_ammount)}</PanelGridTd>
+                                                        <PanelGridTd align="right" className="font-black text-[#FB7506]">{formatMoney(row.balance)}</PanelGridTd>
+                                                    </PanelGridTr>
+                                                ))}
+                                            </PanelGridTbody>
+                                        </PanelGridTable>
                                     )}
 
                                     {/* PO TAB */}
@@ -518,121 +516,129 @@ export default function AccountsPayablePage() {
                                                     <Pencil size={10} /> Update POs
                                                 </button>
                                             </div>
-                                            <TabTable
-                                                loading={loadingPobs}
-                                                rows={tabPobs}
-                                                empty="No PO records"
-                                                selectedIdx={selectedPobIdx}
-                                                onSelectIdx={setSelectedPobIdx}
-                                                columns={[
-                                                    { key: "ap_type",   label: "Acc. Type" },
-                                                    { key: "ap_date",   label: "AP Date",  render: (v: any) => formatDateEST(v) },
-                                                    { key: "ammount",   label: "Amount",   className: "text-right", render: (v: any) => formatMoney(v) },
-                                                    { key: "porder_no", label: "PO" },
-                                                    { key: "po_date",   label: "PO Date",  render: (v: any) => formatDateEST(v) },
-                                                    { key: "cost",      label: "Cost",     className: "text-right font-black text-[#FB7506]", render: (v: any) => formatMoney(v) },
-                                                ]}
-                                            />
+                                            <div className="overflow-auto flex-1">
+                                                <PanelGridTable>
+                                                    <PanelGridThead>
+                                                        <PanelGridTh>Acc. Type</PanelGridTh>
+                                                        <PanelGridTh>AP Date</PanelGridTh>
+                                                        <PanelGridTh align="right">Amount</PanelGridTh>
+                                                        <PanelGridTh>PO</PanelGridTh>
+                                                        <PanelGridTh>PO Date</PanelGridTh>
+                                                        <PanelGridTh align="right" className="text-[#FB7506]">Cost</PanelGridTh>
+                                                    </PanelGridThead>
+                                                    <PanelGridTbody>
+                                                        {loadingPobs ? (
+                                                            <PanelGridTr><PanelGridTd colSpan={6} className="py-8 text-center text-gray-400">Loading...</PanelGridTd></PanelGridTr>
+                                                        ) : tabPobs.length === 0 ? (
+                                                            <PanelGridTr><PanelGridTd colSpan={6} className="py-8 text-center text-gray-400 italic">No PO records</PanelGridTd></PanelGridTr>
+                                                        ) : tabPobs.map((row: any, i: number) => (
+                                                            <PanelGridTr key={i} selected={i === selectedPobIdx} onClick={() => setSelectedPobIdx(i)}>
+                                                                <PanelGridTd>{row.ap_type}</PanelGridTd>
+                                                                <PanelGridTd>{formatDateEST(row.ap_date)}</PanelGridTd>
+                                                                <PanelGridTd align="right">{formatMoney(row.ammount)}</PanelGridTd>
+                                                                <PanelGridTd>{row.porder_no}</PanelGridTd>
+                                                                <PanelGridTd>{formatDateEST(row.po_date)}</PanelGridTd>
+                                                                <PanelGridTd align="right" className="font-black text-[#FB7506]">{formatMoney(row.cost)}</PanelGridTd>
+                                                            </PanelGridTr>
+                                                        ))}
+                                                    </PanelGridTbody>
+                                                </PanelGridTable>
+                                            </div>
                                         </div>
                                     )}
 
                                     {/* PREBOOKS TAB */}
                                     {activeTab === "prebooks" && (
-                                        <TabTable
-                                            loading={loadingPrebooks}
-                                            rows={tabPrebooks}
-                                            empty="No prebook records"
-                                            selectedIdx={selectedPbkIdx}
-                                            onSelectIdx={setSelectedPbkIdx}
-                                            columns={[
-                                                { key: "grower",       label: "Vendor" },
-                                                { key: "ap_type",      label: "Type" },
-                                                { key: "invoice_date", label: "Inv. Date",  render: (v: any) => formatDateEST(v) },
-                                                { key: "invoice_no",   label: "Invoice" },
-                                                { key: "amount",       label: "Amount",    className: "text-right", render: (v: any) => formatMoney(v) },
-                                                { key: "customer",     label: "Customer" },
-                                                { key: "pbook_no",     label: "PB No" },
-                                                { key: "cporder_no",   label: "Cust PO" },
-                                                { key: "pb_date",      label: "Delivery",  render: (v: any) => formatDateEST(v) },
-                                                { key: "notes",        label: "Notes" },
-                                            ]}
-                                        />
+                                        <PanelGridTable>
+                                            <PanelGridThead>
+                                                <PanelGridTh>Vendor</PanelGridTh>
+                                                <PanelGridTh>Type</PanelGridTh>
+                                                <PanelGridTh>Inv. Date</PanelGridTh>
+                                                <PanelGridTh>Invoice</PanelGridTh>
+                                                <PanelGridTh align="right">Amount</PanelGridTh>
+                                                <PanelGridTh>Customer</PanelGridTh>
+                                                <PanelGridTh>PB No</PanelGridTh>
+                                                <PanelGridTh>Cust PO</PanelGridTh>
+                                                <PanelGridTh>Delivery</PanelGridTh>
+                                                <PanelGridTh>Notes</PanelGridTh>
+                                            </PanelGridThead>
+                                            <PanelGridTbody>
+                                                {loadingPrebooks ? (
+                                                    <PanelGridTr><PanelGridTd colSpan={10} className="py-8 text-center text-gray-400">Loading...</PanelGridTd></PanelGridTr>
+                                                ) : tabPrebooks.length === 0 ? (
+                                                    <PanelGridTr><PanelGridTd colSpan={10} className="py-8 text-center text-gray-400 italic">No prebook records</PanelGridTd></PanelGridTr>
+                                                ) : tabPrebooks.map((row: any, i: number) => (
+                                                    <PanelGridTr key={i} selected={i === selectedPbkIdx} onClick={() => setSelectedPbkIdx(i)}>
+                                                        <PanelGridTd className="max-w-[140px] truncate">{row.grower}</PanelGridTd>
+                                                        <PanelGridTd>{row.ap_type}</PanelGridTd>
+                                                        <PanelGridTd>{formatDateEST(row.invoice_date)}</PanelGridTd>
+                                                        <PanelGridTd>{row.invoice_no}</PanelGridTd>
+                                                        <PanelGridTd align="right">{formatMoney(row.amount)}</PanelGridTd>
+                                                        <PanelGridTd className="max-w-[120px] truncate">{row.customer}</PanelGridTd>
+                                                        <PanelGridTd>{row.pbook_no}</PanelGridTd>
+                                                        <PanelGridTd>{row.cporder_no}</PanelGridTd>
+                                                        <PanelGridTd>{formatDateEST(row.pb_date)}</PanelGridTd>
+                                                        <PanelGridTd className="max-w-[160px] truncate">{row.notes}</PanelGridTd>
+                                                    </PanelGridTr>
+                                                ))}
+                                            </PanelGridTbody>
+                                        </PanelGridTable>
                                     )}
 
                                     {/* CREDITS & DEBITS TAB */}
                                     {activeTab === "credits" && (
                                         <div className="flex flex-col h-full">
                                             <div className="flex items-center justify-between px-3 py-1.5 bg-white border-b border-gray-200 shrink-0">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{tabCredits.length} records</span>
-                                                    <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} size="sm" />
-                                                </div>
+                                                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{tabCredits.length} records</span>
                                                 <div className="flex gap-2">
-                                                    <button onClick={() => setCrdbModal({ open: true, mode: "Add", type: "C" })} className="flex items-center gap-1 bg-green-50 hover:bg-green-100 border border-green-200 text-green-700 px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest transition-all">
+                                                    <button onClick={() => { if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; } setCrdbModal({ open: true, mode: "Add", type: "C" }); }} disabled={!perms.canCreate} className="flex items-center gap-1 bg-green-50 hover:bg-green-100 border border-green-200 text-green-700 px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest transition-all disabled:opacity-50">
                                                         <Plus size={9} /> Credit
                                                     </button>
-                                                    <button onClick={() => setCrdbModal({ open: true, mode: "Add", type: "D" })} className="flex items-center gap-1 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest transition-all">
+                                                    <button onClick={() => { if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; } setCrdbModal({ open: true, mode: "Add", type: "D" }); }} disabled={!perms.canCreate} className="flex items-center gap-1 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest transition-all disabled:opacity-50">
                                                         <Plus size={9} /> Debit
                                                     </button>
                                                 </div>
                                             </div>
                                             <div className="overflow-auto flex-1">
-                                                <table className="min-w-full text-xs text-left">
-                                                    <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
-                                                        <tr>
-                                                            <th className="p-2 w-8" />
-                                                            <th className="p-2 border-l border-gray-200">Type</th>
-                                                            <th className="p-2 border-l border-gray-200">Date</th>
-                                                            <th className="p-2 border-l border-gray-200">Reason</th>
-                                                            <th className="p-2 border-l border-gray-200 text-right">Amount</th>
-                                                            <th className="p-2 border-l border-gray-200">Doc. No</th>
-                                                            <th className="p-2 border-l border-gray-200">Auto No</th>
-                                                            <th className="p-2 border-l border-gray-200">Comments</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
+                                                <PanelGridTable>
+                                                    <PanelGridThead>
+                                                        <PanelGridTh className="w-14">{""}</PanelGridTh>
+                                                        <PanelGridTh>Type</PanelGridTh>
+                                                        <PanelGridTh>Date</PanelGridTh>
+                                                        <PanelGridTh>Reason</PanelGridTh>
+                                                        <PanelGridTh align="right">Amount</PanelGridTh>
+                                                        <PanelGridTh>Doc. No</PanelGridTh>
+                                                        <PanelGridTh>Auto No</PanelGridTh>
+                                                        <PanelGridTh>Comments</PanelGridTh>
+                                                    </PanelGridThead>
+                                                    <PanelGridTbody>
                                                         {loadingCredits ? (
-                                                            <tr><td colSpan={8} className="p-8 text-center text-gray-400">Loading...</td></tr>
+                                                            <PanelGridTr><PanelGridTd colSpan={8} className="py-8 text-center text-gray-400">Loading...</PanelGridTd></PanelGridTr>
                                                         ) : tabCredits.length === 0 ? (
-                                                            <tr><td colSpan={8} className="p-8 text-center text-gray-400 italic">No credits or debits</td></tr>
+                                                            <PanelGridTr><PanelGridTd colSpan={8} className="py-8 text-center text-gray-400 italic">No credits or debits</PanelGridTd></PanelGridTr>
                                                         ) : tabCredits.map((cr: any, i: number) => (
-                                                            <tr key={i} onClick={() => setSelectedCrdbIdx(i)} className={cn(
-                                                                "border-b text-gray-600 cursor-pointer transition-colors",
-                                                                i === selectedCrdbIdx ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50"
-                                                            )}>
-                                                                <td className="p-2 w-14">
+                                                            <PanelGridTr key={i} selected={i === selectedCrdbIdx} onClick={() => setSelectedCrdbIdx(i)}>
+                                                                <PanelGridTd className="w-14">
                                                                     <div className="flex gap-1">
-                                                                        <button
-                                                                            onClick={e => { e.stopPropagation(); handleEditCrdb(cr); }}
-                                                                            className="p-1 rounded text-blue-500 hover:text-blue-700 hover:bg-blue-100 transition-colors"
-                                                                            title="Edit"
-                                                                        >
-                                                                            <Pencil size={12} />
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={e => { e.stopPropagation(); setCrdbModal({ open: true, mode: "Delete", type: cr.type, row: cr }); }}
-                                                                            className="p-1 rounded text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                                                                            title="Delete"
-                                                                        >
-                                                                            <Trash2 size={12} />
-                                                                        </button>
+                                                                        <button onClick={e => { e.stopPropagation(); if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } handleEditCrdb(cr); }} className="p-1 rounded text-blue-500 hover:text-blue-700 hover:bg-blue-100 transition-colors" title="Edit"><Pencil size={12} /></button>
+                                                                        <button onClick={e => { e.stopPropagation(); if (!perms.canDelete) { toast.error(PERMISSION_MSGS.delete); return; } setCrdbModal({ open: true, mode: "Delete", type: cr.type, row: cr }); }} className="p-1 rounded text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors" title="Delete"><Trash2 size={12} /></button>
                                                                     </div>
-                                                                </td>
-                                                                <td className="p-2 border-l border-gray-100">
+                                                                </PanelGridTd>
+                                                                <PanelGridTd>
                                                                     <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-semibold", cr.type === "C" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600")}>
                                                                         {cr.type === "C" ? "Credit" : "Debit"}
                                                                     </span>
-                                                                </td>
-                                                                <td className="p-2 border-l border-gray-100">{formatDateEST(cr.cd_date)}</td>
-                                                                <td className="p-2 border-l border-gray-100 font-medium truncate max-w-[150px]">{cr.reason}</td>
-                                                                <td className={cn("p-2 border-l border-gray-100 text-right font-semibold", cr.type === "C" ? "text-green-600" : "text-red-500")}>{formatMoney(cr.cd_amount)}</td>
-                                                                <td className="p-2 border-l border-gray-100">{cr.retention_no}</td>
-                                                                <td className="p-2 border-l border-gray-100 text-gray-400">{cr.cd_no}</td>
-                                                                <td className="p-2 border-l border-gray-100 truncate max-w-[200px]">{cr.cd_details}</td>
-                                                            </tr>
+                                                                </PanelGridTd>
+                                                                <PanelGridTd>{formatDateEST(cr.cd_date)}</PanelGridTd>
+                                                                <PanelGridTd className="font-medium max-w-[150px] truncate">{cr.reason}</PanelGridTd>
+                                                                <PanelGridTd align="right" className={cn("font-semibold", cr.type === "C" ? "text-green-600" : "text-red-500")}>{formatMoney(cr.cd_amount)}</PanelGridTd>
+                                                                <PanelGridTd>{cr.retention_no}</PanelGridTd>
+                                                                <PanelGridTd className="text-gray-400">{cr.cd_no}</PanelGridTd>
+                                                                <PanelGridTd className="max-w-[200px] truncate">{cr.cd_details}</PanelGridTd>
+                                                            </PanelGridTr>
                                                         ))}
-                                                    </tbody>
-                                                </table>
+                                                    </PanelGridTbody>
+                                                </PanelGridTable>
                                             </div>
                                         </div>
                                     )}
@@ -644,6 +650,21 @@ export default function AccountsPayablePage() {
             </div>
 
             <AppFooter areaLabel="Terminal" />
+
+            {/* ── Mobile Action Bar ──────────────────────────────────────────── */}
+            <MobileActionBar
+                activeGrid={selectedUnico ? activeTab : (selectedDate ? "invoices" : null)}
+                items={[
+                    { grid: "invoices", label: "Add", icon: Plus, color: "green", onClick: () => { if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; } setInvoiceModal({ open: true, mode: "Add" }); }, disabled: !perms.canCreate },
+                    { grid: "invoices", label: "Edit", icon: Pencil, color: "orange", onClick: () => { if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } selectedUnico && setInvoiceModal({ open: true, mode: "Edit" }); }, disabled: !selectedUnico || !perms.canEdit },
+                    { grid: "invoices", label: "Delete", icon: Trash2, color: "red", onClick: () => { if (!perms.canDelete) { toast.error(PERMISSION_MSGS.delete); return; } selectedUnico && setInvoiceModal({ open: true, mode: "Delete" }); }, disabled: !selectedUnico || !perms.canDelete },
+                    { grid: "invoices", label: "Search", icon: Search, color: "gray", onClick: () => setSearchModal(true) },
+                    { grid: "po", label: "Update POs", icon: Pencil, color: "orange", onClick: () => setPobModal({ open: true }), disabled: !selectedUnico },
+                    { grid: "credits", label: "Credit", icon: Plus, color: "green", onClick: () => { if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; } setCrdbModal({ open: true, mode: "Add", type: "C" }); }, disabled: !selectedUnico || !perms.canCreate },
+                    { grid: "credits", label: "Debit", icon: Plus, color: "red", onClick: () => { if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; } setCrdbModal({ open: true, mode: "Add", type: "D" }); }, disabled: !selectedUnico || !perms.canCreate },
+                ]}
+                onClearSelection={() => setUnico(null)}
+            />
 
             {/* ── MODALS ──────────────────────────────────────────────────── */}
             {crdbModal?.open && (
@@ -1672,59 +1693,9 @@ function APCalendar({ dates, selectedDate, onSelect, calYear, calMonth, onMonthC
     );
 }
 
-// ─── Reusable Table Component ─────────────────────────────────────────────────
-function TabTable({ rows, columns, loading, empty, selectedIdx = 0, onSelectIdx }: {
-    rows: any[];
-    columns: { key: string; label: string; className?: string; render?: (v: any, row: any) => any }[];
-    loading: boolean;
-    empty: string;
-    selectedIdx?: number;
-    onSelectIdx?: (i: number) => void;
-}) {
-    return (
-        <div className="overflow-auto h-full">
-            <table className="min-w-full text-xs text-left">
-                <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
-                    <tr>
-                        {columns.map(c => (
-                            <th key={c.key} className={cn("p-2 whitespace-nowrap", c.className)}>
-                                {c.label}
-                            </th>
-                        ))}
-                    </tr>
-                </thead>
-                <tbody>
-                    {loading ? (
-                        <tr><td colSpan={columns.length} className="p-8 text-center text-gray-400">Loading...</td></tr>
-                    ) : rows.length === 0 ? (
-                        <tr><td colSpan={columns.length} className="p-8 text-center text-gray-400 italic">{empty}</td></tr>
-                    ) : rows.map((row, i) => (
-                        <tr
-                            key={i}
-                            onClick={() => onSelectIdx?.(i)}
-                            className={cn(
-                                "border-b text-gray-600 cursor-pointer transition-colors",
-                                i === selectedIdx
-                                    ? "!bg-blue-100 ring-2 ring-inset ring-blue-300"
-                                    : "odd:bg-white even:bg-gray-50 hover:bg-blue-50"
-                            )}
-                        >
-                            {columns.map((c, ci) => (
-                                <td key={c.key} className={cn("p-2 whitespace-nowrap", ci < columns.length - 1 && "border-r border-gray-100", c.className)}>
-                                    {c.render ? c.render(row[c.key], row) : row[c.key] ?? ""}
-                                </td>
-                            ))}
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
-    );
-}
-
 // ─── Credit/Debit Modal ───────────────────────────────────────────────────────
 function CreditDebitModal({ mode, type: initType, row, invoice, reasons, todayEST, onClose, onAdd, onEdit, onDelete, saving }: any) {
-    const { register, handleSubmit, watch, formState: { errors } } = useForm<CrdbForm>({
+    const { register, handleSubmit, formState: { errors } } = useForm<CrdbForm>({
         resolver: zodResolver(crdbSchema),
         defaultValues: {
             type:         row?.type || initType,
@@ -1822,10 +1793,9 @@ function CreditDebitModal({ mode, type: initType, row, invoice, reasons, todayES
 }
 
 // ─── PO Modal ─────────────────────────────────────────────────────────────────
-function POModal({ apUq, invoice, pobs, apTypes, onClose, onAdd, onEdit, onDelete, onApprove, saving }: any) {
+function POModal({ invoice, pobs, apTypes, onClose, onAdd, onEdit, onDelete, onApprove, saving }: any) {
     const [mode, setMode] = useState<"view" | "add" | "edit">("view");
     const [selectedPob, setSelectedPob] = useState<any>(null);
-    const [pobSearch, setPobSearch] = useState("");
     const [pobResult, setPobResult] = useState<any>(null);
 
     const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<PobForm>({
@@ -1915,7 +1885,7 @@ function POModal({ apUq, invoice, pobs, apTypes, onClose, onAdd, onEdit, onDelet
                                     className="fos-input"
                                     placeholder="Enter and tab to search"
                                 />
-                                {pobSearch && !pobResult && <p className="text-[9px] text-red-500 mt-0.5 font-bold">PO not found</p>}
+                                {!pobResult && <p className="text-[9px] text-red-500 mt-0.5 font-bold">PO not found</p>}
                             </FormField>
                             <FormField label="Cost" error={errors.cost?.message}>
                                 <input type="number" step="0.01" min="0" {...register("cost", { valueAsNumber: true })} className="fos-input text-right" />

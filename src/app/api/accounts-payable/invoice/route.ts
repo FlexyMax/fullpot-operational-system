@@ -29,7 +29,9 @@ export async function POST(req: NextRequest) {
             llindirect:       body.llindirect     ? 1 : 0,
             llautomatic_cost: body.llautomatic_cost ? 1 : 0,
         });
-        return NextResponse.json({ success: true, data: result.recordset[0] ?? null });
+        const row = result.recordset?.[0];
+        if (row?.Error) return NextResponse.json({ success: false, error: row.Message || "Business rule violation" }, { status: 400 });
+        return NextResponse.json({ success: true, unico: row?.unico ?? row?.UNICO ?? null, message: "Invoice created." });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }
@@ -37,7 +39,7 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
     const body = await req.json();
-    if (!body.lcunico) return NextResponse.json({ error: "lcunico required" }, { status: 400 });
+    if (!body.lcunico) return NextResponse.json({ success: false, error: "lcunico required" }, { status: 400 });
     try {
         const result = await executeProcedure("sp_flower_accounts_pay_update", {
             lcunico:          body.lcunico,
@@ -54,7 +56,9 @@ export async function PUT(req: NextRequest) {
             llindirect:       body.llindirect     ? 1 : 0,
             llautomatic_cost: body.llautomatic_cost ? 1 : 0,
         });
-        return NextResponse.json({ success: true, data: result.recordset[0] ?? null });
+        const row = result.recordset?.[0];
+        if (row?.Error) return NextResponse.json({ success: false, error: row.Message || "Business rule violation" }, { status: 400 });
+        return NextResponse.json({ success: true, unico: body.lcunico, message: "Invoice updated." });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }
@@ -62,10 +66,12 @@ export async function PUT(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
     const unico = req.nextUrl.searchParams.get("unico");
-    if (!unico) return NextResponse.json({ error: "unico required" }, { status: 400 });
+    if (!unico) return NextResponse.json({ success: false, error: "unico required" }, { status: 400 });
     try {
-        await executeProcedure("sp_flower_accounts_pay_delete", { lcunico: unico });
-        return NextResponse.json({ success: true });
+        const result = await executeProcedure("sp_flower_accounts_pay_delete", { lcunico: unico });
+        const row = result.recordset?.[0];
+        if (row?.Error) return NextResponse.json({ success: false, error: row.Message || "Business rule violation" }, { status: 400 });
+        return NextResponse.json({ success: true, unico, message: "Invoice deleted." });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }
