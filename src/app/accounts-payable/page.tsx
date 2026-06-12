@@ -389,11 +389,14 @@ export default function AccountsPayablePage() {
                         recordCount={invoices.length}
                         refreshing={loadingInvoices}
                         onLog={selectedUnico ? () => {} : undefined}
-                        headerRight={<AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} bareButton />}
+                        headerRight={
+                            <div className="flex items-center gap-0.5">
+                                <button onClick={() => setSearchModal(true)} title="Search" className="p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded transition-colors"><Search size={13} /></button>
+                                <button onClick={exportToCSV} disabled={!invoices.length || !perms.canReport} title="Export CSV" className="p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"><Download size={13} /></button>
+                                <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} bareButton />
+                            </div>
+                        }
                         menuItems={[
-                            { label: "Search", icon: Search, color: "gray", onClick: () => setSearchModal(true) },
-                            { label: "Export CSV", icon: Download, color: "gray", onClick: exportToCSV, disabled: !invoices.length || !perms.canReport },
-                            { separator: true },
                             { label: "Add Invoice", icon: Plus, color: "green", onClick: () => { if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; } setInvoiceModal({ open: true, mode: "Add" }); }, disabled: !perms.canCreate },
                             { label: "Edit Invoice", icon: Pencil, color: "orange", onClick: () => { if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } selectedUnico && setInvoiceModal({ open: true, mode: "Edit" }); }, disabled: !selectedUnico || !perms.canEdit },
                             { label: "Delete Invoice", icon: Trash2, color: "red", onClick: () => { if (!perms.canDelete) { toast.error(PERMISSION_MSGS.delete); return; } selectedUnico && setInvoiceModal({ open: true, mode: "Delete" }); }, disabled: !selectedUnico || !perms.canDelete },
@@ -946,6 +949,23 @@ function VendorSummaryModal({ onClose }: { onClose: () => void }) {
     const totalDebits  = rows.reduce((s, r) => s + parseMoney(r.deb_ammount), 0);
     const totalBalance = rows.reduce((s, r) => s + parseMoney(r.total_balance), 0);
 
+    const handleExportCSV = () => {
+        const headers = ['Vendor', 'Contact', 'Phone', 'Fax', 'E-Mail', 'Amount', 'Credits', 'Debits', 'Balance'];
+        const dataRows = rows.map((r: any) => [
+            String(r.grower ?? "").trim(), String(r.contact ?? "").trim(), String(r.phone_1 ?? "").trim(),
+            String(r.fax_1 ?? "").trim(), String(r.email_1 ?? "").trim(),
+            parseMoney(r.ammount).toFixed(2), parseMoney(r.cre_ammount).toFixed(2),
+            parseMoney(r.deb_ammount).toFixed(2), parseMoney(r.total_balance).toFixed(2),
+        ]);
+        const totals = ['Total Payable', '', '', '', '', totalAmount.toFixed(2), totalCredits.toFixed(2), totalDebits.toFixed(2), totalBalance.toFixed(2)];
+        const csv = [headers, ...dataRows, totals].map(row => row.map((c: string) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = Object.assign(document.createElement('a'), { href: url, download: `VendorSummary_${dateFrom}_${dateTo}.csv` });
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
     const handlePrint = () => {
         const thead = `<tr><th>Vendor</th><th>Contact</th><th>Phone</th><th>Fax</th><th>E-Mail</th>
           <th class="tr">Amount</th><th class="tr">Credits</th><th class="tr">Debits</th><th class="tr">Balance</th></tr>`;
@@ -1038,6 +1058,10 @@ function VendorSummaryModal({ onClose }: { onClose: () => void }) {
                     <span className="text-[10px] font-bold text-gray-400">{ranOnce ? `${rows.length} vendors` : ""}</span>
                     <div className="flex gap-2">
                         <button onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-100">Close</button>
+                        <button onClick={handleExportCSV} disabled={!rows.length}
+                            className="flex items-center gap-2 px-5 py-2 rounded-lg bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white text-sm font-black uppercase tracking-wider transition-all">
+                            <Download size={14} /> CSV
+                        </button>
                         <button onClick={handlePrint} disabled={!rows.length}
                             className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#374151] hover:bg-gray-600 disabled:opacity-40 text-white text-sm font-black uppercase tracking-wider transition-all">
                             <Printer size={14} /> Print
@@ -1095,6 +1119,23 @@ function PendingAPModal({ onClose }: { onClose: () => void }) {
 
     // Verified field names: ammount, cre_ammount, deb_ammount, total_balance
     const grandTotal = rows.reduce((s, r) => s + parseMoney(r.total_balance), 0);
+
+    const handleExportCSV = () => {
+        const headers = ['Vendor', 'Invoice', 'Date', 'Amount', 'Credits', 'Debits', 'Balance'];
+        const dataRows = rows.map((r: any) => [
+            String(r.grower ?? "").trim(), String(r.invoice_no ?? "").trim(),
+            formatDateEST(normalizeToISODate(r.ap_date)),
+            parseMoney(r.ammount).toFixed(2), parseMoney(r.cre_ammount).toFixed(2),
+            parseMoney(r.deb_ammount).toFixed(2), parseMoney(r.total_balance).toFixed(2),
+        ]);
+        const totals = ['Grand Total', '', '', '', '', '', grandTotal.toFixed(2)];
+        const csv = [headers, ...dataRows, totals].map(row => row.map((c: string) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = Object.assign(document.createElement('a'), { href: url, download: `PendingAP_${dateFrom}_${dateTo}.csv` });
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
 
     const handlePrint = () => {
         const sections = grouped.map(({ info, invoices }) => {
@@ -1222,6 +1263,10 @@ function PendingAPModal({ onClose }: { onClose: () => void }) {
                     </span>
                     <div className="flex gap-2">
                         <button onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-100">Close</button>
+                        <button onClick={handleExportCSV} disabled={!rows.length}
+                            className="flex items-center gap-2 px-5 py-2 rounded-lg bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white text-sm font-black uppercase tracking-wider transition-all">
+                            <Download size={14} /> CSV
+                        </button>
                         <button onClick={handlePrint} disabled={!rows.length}
                             className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#374151] hover:bg-gray-600 disabled:opacity-40 text-white text-sm font-black uppercase tracking-wider transition-all">
                             <Printer size={14} /> Print
