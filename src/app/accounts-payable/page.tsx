@@ -421,20 +421,33 @@ export default function AccountsPayablePage() {
                                     <PanelGridTr><PanelGridTd colSpan={10} className="py-10 text-center text-gray-400 italic">Select a date to view invoices</PanelGridTd></PanelGridTr>
                                 ) : invoices.length === 0 ? (
                                     <PanelGridTr><PanelGridTd colSpan={10} className="py-10 text-center text-gray-400 italic">No invoices for this date</PanelGridTd></PanelGridTr>
-                                ) : invoices.map((inv: any, i: number) => (
-                                    <PanelGridTr key={inv.unico || i} selected={selectedUnico === inv.unico} onClick={() => { const desel = selectedUnico === inv.unico; setUnico(desel ? null : inv.unico); setSelectedPobIdx(-1); setSelectedCrdbIdx(-1); setActiveBar(desel ? null : "invoices"); }}>
-                                        <PanelGridTd className="font-medium max-w-[180px] truncate">{String(inv.grower || "").trim()}</PanelGridTd>
-                                        <PanelGridTd className="font-semibold text-blue-700">{String(inv.invoice_no || "").trim()}</PanelGridTd>
-                                        <PanelGridTd align="right">{formatMoney(inv.estimated)}</PanelGridTd>
-                                        <PanelGridTd align="right" className="font-semibold">{formatMoney(inv.amount)}</PanelGridTd>
-                                        <PanelGridTd align="right" className="text-green-600">{formatMoney(inv.credits)}</PanelGridTd>
-                                        <PanelGridTd align="right" className="text-red-500">{formatMoney(inv.debits)}</PanelGridTd>
-                                        <PanelGridTd align="right" className="font-semibold text-orange-600">{formatMoney(inv.total_balance)}</PanelGridTd>
-                                        <PanelGridTd>{formatDateEST(normalizeToISODate(inv.control_Date ?? inv.control_date))}</PanelGridTd>
-                                        <PanelGridTd>{formatDateEST(normalizeToISODate(inv.ap_date))}</PanelGridTd>
-                                        <PanelGridTd className="hidden lg:table-cell text-gray-400">{String(inv.phone_1 || "").trim()}</PanelGridTd>
-                                    </PanelGridTr>
-                                ))}
+                                ) : (<>
+                                    {invoices.map((inv: any, i: number) => (
+                                        <PanelGridTr key={inv.unico || i} selected={selectedUnico === inv.unico} onClick={() => { const desel = selectedUnico === inv.unico; setUnico(desel ? null : inv.unico); setSelectedPobIdx(-1); setSelectedCrdbIdx(-1); setActiveBar(desel ? null : "invoices"); }}>
+                                            <PanelGridTd className="font-medium max-w-[180px] truncate">{String(inv.grower || "").trim()}</PanelGridTd>
+                                            <PanelGridTd className="font-semibold text-blue-700">{String(inv.invoice_no || "").trim()}</PanelGridTd>
+                                            <PanelGridTd align="right">{formatMoney(inv.estimated)}</PanelGridTd>
+                                            <PanelGridTd align="right" className="font-semibold">{formatMoney(inv.amount)}</PanelGridTd>
+                                            <PanelGridTd align="right" className="text-green-600">{formatMoney(inv.credits)}</PanelGridTd>
+                                            <PanelGridTd align="right" className="text-red-500">{formatMoney(inv.debits)}</PanelGridTd>
+                                            <PanelGridTd align="right" className="font-semibold text-orange-600">{formatMoney(inv.total_balance)}</PanelGridTd>
+                                            <PanelGridTd>{formatDateEST(normalizeToISODate(inv.control_Date ?? inv.control_date))}</PanelGridTd>
+                                            <PanelGridTd>{formatDateEST(normalizeToISODate(inv.ap_date))}</PanelGridTd>
+                                            <PanelGridTd className="hidden lg:table-cell text-gray-400">{String(inv.phone_1 || "").trim()}</PanelGridTd>
+                                        </PanelGridTr>
+                                    ))}
+                                    <tr className="border-t-2 border-gray-300 bg-gray-50">
+                                        <td className="px-2 py-1.5 text-[10px] font-black text-gray-600 uppercase tracking-wider whitespace-nowrap" colSpan={2}>
+                                            TOTALS ({invoices.length} invoices)
+                                        </td>
+                                        <td className="px-2 py-1.5 text-[11px] font-black text-right text-gray-700">{formatMoney(invoices.reduce((s: number, inv: any) => s + parseMoney(inv.estimated), 0))}</td>
+                                        <td className="px-2 py-1.5 text-[11px] font-black text-right text-gray-700">{formatMoney(invoices.reduce((s: number, inv: any) => s + parseMoney(inv.amount), 0))}</td>
+                                        <td className="px-2 py-1.5 text-[11px] font-black text-right text-green-600">{formatMoney(invoices.reduce((s: number, inv: any) => s + parseMoney(inv.credits), 0))}</td>
+                                        <td className="px-2 py-1.5 text-[11px] font-black text-right text-red-500">{formatMoney(invoices.reduce((s: number, inv: any) => s + parseMoney(inv.debits), 0))}</td>
+                                        <td className="px-2 py-1.5 text-[11px] font-black text-right text-orange-600">{formatMoney(invoices.reduce((s: number, inv: any) => s + parseMoney(inv.total_balance), 0))}</td>
+                                        <td colSpan={3} />
+                                    </tr>
+                                </>)}
                             </PanelGridTbody>
                         </PanelGridTable>
                     </PanelGrid>
