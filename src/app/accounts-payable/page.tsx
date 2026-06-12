@@ -92,6 +92,7 @@ export default function AccountsPayablePage() {
     const [selectedPobIdx,   setSelectedPobIdx]   = useState(0);
     const [selectedPbkIdx,   setSelectedPbkIdx]   = useState(0);
     const [selectedCrdbIdx,  setSelectedCrdbIdx]  = useState(0);
+    const [activeBar,        setActiveBar]        = useState<"invoices" | "po" | "credits" | null>(null);
     const [invoiceModal,     setInvoiceModal]     = useState<{ open: boolean; mode: "Add" | "Edit" | "Delete" } | null>(null);
     const [searchModal,      setSearchModal]      = useState(false);
     const [summaryModal,     setSummaryModal]     = useState(false);
@@ -397,7 +398,7 @@ export default function AccountsPayablePage() {
                             { label: "Edit Invoice", icon: Pencil, color: "orange", onClick: () => { if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } selectedUnico && setInvoiceModal({ open: true, mode: "Edit" }); }, disabled: !selectedUnico || !perms.canEdit },
                             { label: "Delete Invoice", icon: Trash2, color: "red", onClick: () => { if (!perms.canDelete) { toast.error(PERMISSION_MSGS.delete); return; } selectedUnico && setInvoiceModal({ open: true, mode: "Delete" }); }, disabled: !selectedUnico || !perms.canDelete },
                         ]}
-                        className="min-h-[200px] max-h-[45vh] lg:max-h-none lg:h-[42%]"
+                        className="min-h-[200px] max-h-[45vh] lg:max-h-none lg:h-[50%]"
                     >
                         <PanelGridTable>
                             <PanelGridThead>
@@ -418,7 +419,7 @@ export default function AccountsPayablePage() {
                                 ) : invoices.length === 0 ? (
                                     <PanelGridTr><PanelGridTd colSpan={10} className="py-10 text-center text-gray-400 italic">No invoices for this date</PanelGridTd></PanelGridTr>
                                 ) : invoices.map((inv: any, i: number) => (
-                                    <PanelGridTr key={inv.unico || i} selected={selectedUnico === inv.unico} onClick={() => setUnico(inv.unico)}>
+                                    <PanelGridTr key={inv.unico || i} selected={selectedUnico === inv.unico} onClick={() => { const desel = selectedUnico === inv.unico; setUnico(desel ? null : inv.unico); setSelectedPobIdx(-1); setSelectedCrdbIdx(-1); setActiveBar(desel ? null : "invoices"); }}>
                                         <PanelGridTd className="font-medium max-w-[180px] truncate">{String(inv.grower || "").trim()}</PanelGridTd>
                                         <PanelGridTd className="font-semibold text-blue-700">{String(inv.invoice_no || "").trim()}</PanelGridTd>
                                         <PanelGridTd align="right">{formatMoney(inv.estimated)}</PanelGridTd>
@@ -532,7 +533,7 @@ export default function AccountsPayablePage() {
                                                         ) : tabPobs.length === 0 ? (
                                                             <PanelGridTr><PanelGridTd colSpan={6} className="py-8 text-center text-gray-400 italic">No PO records</PanelGridTd></PanelGridTr>
                                                         ) : tabPobs.map((row: any, i: number) => (
-                                                            <PanelGridTr key={i} selected={i === selectedPobIdx} onClick={() => setSelectedPobIdx(i)}>
+                                                            <PanelGridTr key={i} selected={i === selectedPobIdx} onClick={() => { const desel = selectedPobIdx === i; setSelectedPobIdx(desel ? -1 : i); setActiveBar(desel ? null : "po"); }}>
                                                                 <PanelGridTd>{row.ap_type}</PanelGridTd>
                                                                 <PanelGridTd>{formatDateEST(row.ap_date)}</PanelGridTd>
                                                                 <PanelGridTd align="right">{formatMoney(row.ammount)}</PanelGridTd>
@@ -617,7 +618,7 @@ export default function AccountsPayablePage() {
                                                         ) : tabCredits.length === 0 ? (
                                                             <PanelGridTr><PanelGridTd colSpan={8} className="py-8 text-center text-gray-400 italic">No credits or debits</PanelGridTd></PanelGridTr>
                                                         ) : tabCredits.map((cr: any, i: number) => (
-                                                            <PanelGridTr key={i} selected={i === selectedCrdbIdx} onClick={() => setSelectedCrdbIdx(i)}>
+                                                            <PanelGridTr key={i} selected={i === selectedCrdbIdx} onClick={() => { const desel = selectedCrdbIdx === i; setSelectedCrdbIdx(desel ? -1 : i); setActiveBar(desel ? null : "credits"); }}>
                                                                 <PanelGridTd className="w-14">
                                                                     <div className="flex gap-1">
                                                                         <button onClick={e => { e.stopPropagation(); if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } handleEditCrdb(cr); }} className="p-1 rounded text-blue-500 hover:text-blue-700 hover:bg-blue-100 transition-colors" title="Edit"><Pencil size={12} /></button>
@@ -651,6 +652,16 @@ export default function AccountsPayablePage() {
 
             <AppFooter areaLabel="Terminal" />
 
+            {/* ── Floating Search Button (mobile only, when a date is selected) ─── */}
+            {selectedDate && (
+                <button
+                    onClick={() => setSearchModal(true)}
+                    className="md:hidden fixed bottom-40 right-4 z-30 w-14 h-14 bg-white border-2 border-gray-200 text-gray-600 rounded-full shadow-lg flex items-center justify-center transition-all hover:bg-gray-50"
+                >
+                    <Search size={22} />
+                </button>
+            )}
+
             {/* ── Floating Add Button (mobile only, when a date is selected) ─── */}
             {selectedDate && (
                 <button
@@ -661,15 +672,24 @@ export default function AccountsPayablePage() {
                 </button>
             )}
 
-            {/* ── Mobile Action Bar (invoices grid only) ─────────────────────── */}
+            {/* ── Mobile Action Bar ────────────────────────────────────────────── */}
             <MobileActionBar
-                activeGrid={selectedDate ? "invoices" : null}
+                activeGrid={activeBar}
                 items={[
-                    { grid: "invoices", label: "Edit", icon: Pencil, color: "orange", onClick: () => { if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } selectedUnico && setInvoiceModal({ open: true, mode: "Edit" }); }, disabled: !selectedUnico || !perms.canEdit },
-                    { grid: "invoices", label: "Delete", icon: Trash2, color: "red", onClick: () => { if (!perms.canDelete) { toast.error(PERMISSION_MSGS.delete); return; } selectedUnico && setInvoiceModal({ open: true, mode: "Delete" }); }, disabled: !selectedUnico || !perms.canDelete },
-                    { grid: "invoices", label: "Search", icon: Search, color: "gray", onClick: () => setSearchModal(true) },
+                    { grid: "invoices", label: "Edit",     icon: Pencil, color: "orange", onClick: () => { if (!perms.canEdit)   { toast.error(PERMISSION_MSGS.edit);   return; } selectedUnico && setInvoiceModal({ open: true, mode: "Edit" });   }, disabled: !selectedUnico || !perms.canEdit   },
+                    { grid: "invoices", label: "Delete",   icon: Trash2, color: "red",    onClick: () => { if (!perms.canDelete) { toast.error(PERMISSION_MSGS.delete); return; } selectedUnico && setInvoiceModal({ open: true, mode: "Delete" }); }, disabled: !selectedUnico || !perms.canDelete },
+                    { grid: "po",       label: "Update POs", icon: Pencil, color: "orange", onClick: () => setPobModal({ open: true }), disabled: !selectedUnico || !perms.canEdit },
+                    { grid: "credits",  label: "Credit",   icon: Plus,   color: "green",  onClick: () => { if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; } setCrdbModal({ open: true, mode: "Add", type: "C" }); }, disabled: !selectedUnico || !perms.canCreate },
+                    { grid: "credits",  label: "Debit",    icon: Plus,   color: "red",    onClick: () => { if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; } setCrdbModal({ open: true, mode: "Add", type: "D" }); }, disabled: !selectedUnico || !perms.canCreate },
+                    { grid: "credits",  label: "Edit",     icon: Pencil, color: "orange", onClick: () => { if (!perms.canEdit)   { toast.error(PERMISSION_MSGS.edit);   return; } selectedCrdbIdx >= 0 && handleEditCrdb(tabCredits[selectedCrdbIdx]); }, disabled: selectedCrdbIdx < 0 || tabCredits.length === 0 || !perms.canEdit   },
+                    { grid: "credits",  label: "Delete",   icon: Trash2, color: "red",    onClick: () => { if (!perms.canDelete) { toast.error(PERMISSION_MSGS.delete); return; } selectedCrdbIdx >= 0 && tabCredits[selectedCrdbIdx] && setCrdbModal({ open: true, mode: "Delete", type: tabCredits[selectedCrdbIdx].type, row: tabCredits[selectedCrdbIdx] }); }, disabled: selectedCrdbIdx < 0 || tabCredits.length === 0 || !perms.canDelete },
                 ]}
-                onClearSelection={selectedUnico ? () => setUnico(null) : undefined}
+                onClearSelection={() => {
+                    if (activeBar === "invoices") setUnico(null);
+                    if (activeBar === "po") setSelectedPobIdx(-1);
+                    if (activeBar === "credits") setSelectedCrdbIdx(-1);
+                    setActiveBar(null);
+                }}
             />
 
             {/* ── MODALS ──────────────────────────────────────────────────── */}

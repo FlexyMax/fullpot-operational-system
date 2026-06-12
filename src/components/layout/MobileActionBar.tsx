@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { X } from "lucide-react";
+import { X, FileText, ClipboardList, CreditCard, type LucideIcon } from "lucide-react";
 
 const GRID_LABELS: Record<string, string> = {
     customer: "Customer",
@@ -17,15 +17,23 @@ const GRID_LABELS: Record<string, string> = {
     credits: "Credits & Debits",
 };
 
+const GRID_ICONS: Record<string, LucideIcon> = {
+    invoices: FileText,
+    po: ClipboardList,
+    credits: CreditCard,
+};
+
 export function MobileActionBar({ activeGrid, items, onClearSelection }: any) {
     const isVisible = !!activeGrid;
+    const GridIcon = activeGrid ? GRID_ICONS[activeGrid] : null;
     return (
         <div className={cn(
             "md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] transition-transform duration-300 ease-in-out pb-4 pt-1.5 px-2",
             isVisible ? "translate-y-0" : "translate-y-full"
         )}>
             {activeGrid && GRID_LABELS[activeGrid] && (
-                <div className="text-center mb-1">
+                <div className="flex items-center justify-center gap-1 mb-1">
+                    {GridIcon && <GridIcon size={9} className="text-gray-400" />}
                     <span className="text-[8px] font-black uppercase tracking-[0.15em] text-gray-400">{GRID_LABELS[activeGrid]}</span>
                 </div>
             )}
