@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { X, FileText, ClipboardList, CreditCard, type LucideIcon } from "lucide-react";
+import { X, FileText, ClipboardList, CreditCard, DollarSign, type LucideIcon } from "lucide-react";
 
 const GRID_LABELS: Record<string, string> = {
     customer: "Customer",
@@ -21,6 +21,7 @@ const GRID_ICONS: Record<string, LucideIcon> = {
     invoices: FileText,
     po: ClipboardList,
     credits: CreditCard,
+    payments: DollarSign,
 };
 
 export function MobileActionBar({ activeGrid, items, onClearSelection }: any) {
