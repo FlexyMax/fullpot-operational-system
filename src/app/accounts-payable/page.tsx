@@ -651,19 +651,25 @@ export default function AccountsPayablePage() {
 
             <AppFooter areaLabel="Terminal" />
 
-            {/* ── Mobile Action Bar ──────────────────────────────────────────── */}
+            {/* ── Floating Add Button (mobile only, when a date is selected) ─── */}
+            {selectedDate && (
+                <button
+                    onClick={() => { if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; } setInvoiceModal({ open: true, mode: "Add" }); }}
+                    className="md:hidden fixed bottom-24 right-4 z-30 w-14 h-14 bg-[#FB7506] hover:bg-orange-600 text-white rounded-full shadow-lg flex items-center justify-center transition-all"
+                >
+                    <Plus size={24} />
+                </button>
+            )}
+
+            {/* ── Mobile Action Bar (invoices grid only) ─────────────────────── */}
             <MobileActionBar
-                activeGrid={selectedUnico ? activeTab : (selectedDate ? "invoices" : null)}
+                activeGrid={selectedDate ? "invoices" : null}
                 items={[
-                    { grid: "invoices", label: "Add", icon: Plus, color: "green", onClick: () => { if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; } setInvoiceModal({ open: true, mode: "Add" }); }, disabled: !perms.canCreate },
                     { grid: "invoices", label: "Edit", icon: Pencil, color: "orange", onClick: () => { if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } selectedUnico && setInvoiceModal({ open: true, mode: "Edit" }); }, disabled: !selectedUnico || !perms.canEdit },
                     { grid: "invoices", label: "Delete", icon: Trash2, color: "red", onClick: () => { if (!perms.canDelete) { toast.error(PERMISSION_MSGS.delete); return; } selectedUnico && setInvoiceModal({ open: true, mode: "Delete" }); }, disabled: !selectedUnico || !perms.canDelete },
                     { grid: "invoices", label: "Search", icon: Search, color: "gray", onClick: () => setSearchModal(true) },
-                    { grid: "po", label: "Update POs", icon: Pencil, color: "orange", onClick: () => setPobModal({ open: true }), disabled: !selectedUnico },
-                    { grid: "credits", label: "Credit", icon: Plus, color: "green", onClick: () => { if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; } setCrdbModal({ open: true, mode: "Add", type: "C" }); }, disabled: !selectedUnico || !perms.canCreate },
-                    { grid: "credits", label: "Debit", icon: Plus, color: "red", onClick: () => { if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; } setCrdbModal({ open: true, mode: "Add", type: "D" }); }, disabled: !selectedUnico || !perms.canCreate },
                 ]}
-                onClearSelection={() => setUnico(null)}
+                onClearSelection={selectedUnico ? () => setUnico(null) : undefined}
             />
 
             {/* ── MODALS ──────────────────────────────────────────────────── */}
