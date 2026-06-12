@@ -1261,7 +1261,7 @@ function APSearchModal({ growers, onClose, onLocate }: {
 
     const handleFarmInput = (text: string) => {
         setFarmInput(text);
-        setFarmSend(text);   // free-type also goes to SP
+        setFarmSend("");     // clear until user picks from the list
         setDdOpen(true);
     };
 
@@ -1269,12 +1269,14 @@ function APSearchModal({ growers, onClose, onLocate }: {
         const name = String(g.grower || "").trim();
         const code = String(g.farm   || "").trim();
         setFarmInput(name);
-        setFarmSend(code);   // selected from list → send farm code
+        setFarmSend(code);
+        setError(null);
         setDdOpen(false);
     };
 
     const handleSearch = async () => {
         setDdOpen(false);
+        if (!farmSend.trim()) { setError("Select a vendor from the list before searching."); return; }
         setLoading(true); setError(null); setSelected(null);
         try {
             const params = new URLSearchParams();
@@ -1362,8 +1364,8 @@ function APSearchModal({ growers, onClose, onLocate }: {
                         </div>
                         <button
                             onClick={handleSearch}
-                            disabled={loading}
-                            className="flex items-center gap-1.5 bg-[#FB7506] hover:bg-orange-600 disabled:opacity-50 text-white px-4 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all h-[34px]"
+                            disabled={loading || !farmSend.trim()}
+                            className="flex items-center gap-1.5 bg-[#FB7506] hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all h-[34px]"
                         >
                             {loading ? <RefreshCcw size={12} className="animate-spin" /> : <Search size={12} />}
                             Search
