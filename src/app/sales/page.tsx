@@ -977,15 +977,34 @@ export default function SalesPage() {
                 {mainTab === "stock" && (
                 <div className="flex flex-col xl:flex-1 xl:overflow-hidden xl:min-h-0 gap-2 h-[calc(100svh-7.5rem)] xl:h-auto">
                     {activeInvoiceUq && h && (
-                        <div className="bg-[#374151] h-12 xl:h-10 px-3 flex items-center gap-4 shrink-0 rounded-md overflow-x-auto scrollbar-none">
-                            <span className="text-white font-black text-[10px] uppercase tracking-widest shrink-0">Invoice #{t(h.INVOICE_NO)}</span>
-                            <span className="text-white/70 text-[10px] shrink-0 max-w-[200px] truncate">{t(h.CUSTOMER)}</span>
-                            <span className="text-white/50 text-[10px] shrink-0">{fmtDate(h.INVOICE_DATE)}</span>
-                            <div className="w-px h-4 bg-white/20 shrink-0" />
-                            <span className="text-white/70 text-[10px] shrink-0">Cases: <span className="text-white font-black">{fmtI(h.TOTAL_CASES)}</span></span>
-                            <span className="text-white/70 text-[10px] shrink-0">Total: <span className="text-green-400 font-black">${fmt(h.TOTAL_INVOICE)}</span></span>
-                            <StatusBadge printed={bool(h.PRINTED)} voided={bool(h.VOID)} />
-                        </div>
+                        <>
+                            {/* Mobile: invoice summary card */}
+                            <div className="xl:hidden bg-white border border-gray-200 rounded-xl p-3 shrink-0 shadow-sm">
+                                <div className="flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                        <ShoppingCart size={14} className="text-[#FB7506] shrink-0" />
+                                        <span className="font-black text-[14px] text-blue-700 shrink-0">Invoice #{t(h.INVOICE_NO)}</span>
+                                        <StatusBadge printed={bool(h.PRINTED)} voided={bool(h.VOID)} />
+                                    </div>
+                                    <span className="text-[10px] text-gray-400 shrink-0">{fmtDate(h.INVOICE_DATE)}</span>
+                                </div>
+                                <p className="font-semibold text-[12px] text-gray-700 mt-1 truncate">{t(h.CUSTOMER)}</p>
+                                <div className="flex items-center gap-4 mt-1.5">
+                                    <span className="text-[11px] text-gray-500">Cases: <span className="font-black text-gray-800">{fmtI(h.TOTAL_CASES)}</span></span>
+                                    <span className="text-[11px] text-gray-500">Total: <span className="font-black text-green-700">${fmt(h.TOTAL_INVOICE)}</span></span>
+                                </div>
+                            </div>
+                            {/* Desktop: dark bar */}
+                            <div className="hidden xl:flex bg-[#374151] h-10 px-3 items-center gap-4 shrink-0 rounded-md overflow-x-auto scrollbar-none">
+                                <span className="text-white font-black text-[10px] uppercase tracking-widest shrink-0">Invoice #{t(h.INVOICE_NO)}</span>
+                                <span className="text-white/70 text-[10px] shrink-0 max-w-[200px] truncate">{t(h.CUSTOMER)}</span>
+                                <span className="text-white/50 text-[10px] shrink-0">{fmtDate(h.INVOICE_DATE)}</span>
+                                <div className="w-px h-4 bg-white/20 shrink-0" />
+                                <span className="text-white/70 text-[10px] shrink-0">Cases: <span className="text-white font-black">{fmtI(h.TOTAL_CASES)}</span></span>
+                                <span className="text-white/70 text-[10px] shrink-0">Total: <span className="text-green-400 font-black">${fmt(h.TOTAL_INVOICE)}</span></span>
+                                <StatusBadge printed={bool(h.PRINTED)} voided={bool(h.VOID)} />
+                            </div>
+                        </>
                     )}
                     <div className="flex flex-col bg-white rounded-md border border-black overflow-hidden flex-1 min-h-0">
                         <div className="bg-[#374151] h-12 xl:h-10 px-3 flex items-center gap-2 shrink-0">
@@ -1631,12 +1650,14 @@ export default function SalesPage() {
                     { grid: "invoice", label: "Print", icon: Printer, color: "blue", onClick: () => window.open(`/api/pos/invoice/print?uq=${activeInvoiceUq}`, "_blank"), disabled: !activeInvoiceUq },
                 ]}
             />
-            {/* ── Mobile FAB – New Invoice ──────────────────────────────── */}
+            {/* ── Mobile FAB – New Invoice (Invoice tab only) ───────────── */}
+            {mainTab === "invoice" && (
             <button
                 onClick={() => { setCcModal(true); setCcStep(1); setCcSearch(""); }}
-                className="md:hidden fixed bottom-20 right-4 z-50 w-14 h-14 rounded-full bg-[#FB7506] hover:bg-orange-500 active:bg-orange-600 text-white shadow-lg flex items-center justify-center transition-all">
+                className="md:hidden fixed bottom-20 right-4 z-50 w-14 h-14 rounded-full bg-green-600 hover:bg-green-500 active:bg-green-700 text-white shadow-lg flex items-center justify-center transition-all">
                 <Plus size={24} />
             </button>
+            )}
 
             <AppFooter areaLabel="Terminal" />
         </div>
