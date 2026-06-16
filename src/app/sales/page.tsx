@@ -98,7 +98,7 @@ export default function SalesPage() {
         setSalesmanInfo, setActiveInvoiceUq, setInvoiceDate,
     } = usePOSStore();
 
-    const [activeTab,          setActiveTab]          = useState<"lines"|"stock"|"history">("lines");
+    const [mainTab,            setMainTab]            = useState<"invoice"|"stock"|"history">("invoice");
     const [myInvoices,         setMyInvoices]         = useState(true);
     const [stockSearch,        setStockSearch]        = useState("");
     const [appliedStockSearch, setAppliedStockSearch] = useState("");
@@ -252,15 +252,15 @@ export default function SalesPage() {
 
     // When switching to history tab, auto-fill customer from active invoice header
     useEffect(() => {
-        if (activeTab === "history" && h?.CUSTOMER_UQ && histCustUq === "%") {
+        if (mainTab === "history" && h?.CUSTOMER_UQ && histCustUq === "%") {
             setHistCustUq(t(h.CUSTOMER_UQ));
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeTab]);
+    }, [mainTab]);
 
     const { data: histInvoices = EMPTY_ARR, isFetching: loadingHistList } = useQuery({
         queryKey: ["pos-hist-list", histCustUq, histFrom, histTo, salesmanUq],
-        enabled:  activeTab === "history" && !!salesmanUq,
+        enabled:  mainTab === "history" && !!salesmanUq,
         queryFn:  async () => {
             const p = new URLSearchParams({
                 customer_uq:  histCustUq,
@@ -276,7 +276,7 @@ export default function SalesPage() {
 
     const { data: histDetails = EMPTY_ARR } = useQuery({
         queryKey: ["pos-hist-detail", histInvoiceUq, histSubTab, histCustUq, salesmanUq],
-        enabled:  !!histInvoiceUq && activeTab === "history",
+        enabled:  !!histInvoiceUq && mainTab === "history",
         queryFn:  async () => {
             if (histSubTab === "details") {
                 const p = new URLSearchParams({ invoice_uq: histInvoiceUq!, salesman_uq: salesmanUq });
@@ -334,20 +334,20 @@ export default function SalesPage() {
     }, [salesmanUq, physicalWarehouseUq]);
 
     useEffect(() => {
-        if (activeTab === "stock") loadStock(1, appliedStockSearch, stockSortCol, stockSortDir, true);
+        if (mainTab === "stock") loadStock(1, appliedStockSearch, stockSortCol, stockSortDir, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeTab, appliedStockSearch, stockSortCol, stockSortDir, detailKey, physicalWarehouseUq]);
+    }, [mainTab, appliedStockSearch, stockSortCol, stockSortDir, detailKey, physicalWarehouseUq]);
 
     useEffect(() => {
         const el = sentinelRef.current;
-        if (!el || activeTab !== "stock") return;
+        if (!el || mainTab !== "stock") return;
         const obs = new IntersectionObserver(entries => {
             if (entries[0].isIntersecting && !stockLoading && stockHasMore)
                 loadStock(stockPage + 1, appliedStockSearch, stockSortCol, stockSortDir, false);
         }, { threshold: 0.1 });
         obs.observe(el);
         return () => obs.disconnect();
-    }, [activeTab, stockLoading, stockHasMore, stockPage, appliedStockSearch, stockSortCol, stockSortDir, loadStock]);
+    }, [mainTab, stockLoading, stockHasMore, stockPage, appliedStockSearch, stockSortCol, stockSortDir, loadStock]);
 
     const toggleStockSort = (col: string) => {
         if (stockSortCol === col) {
@@ -424,7 +424,7 @@ export default function SalesPage() {
             if (!r.ok || !j.success) throw new Error(j.error || "Failed");
             toast.success("Line added");
             setDetailKey(k => k+1);
-            setActiveTab("lines");
+            setMainTab("invoice");
         } catch(e: any) { toast.error(e.message); }
         finally { setWorking(false); }
     }, [activeInvoiceUq, isOpen]);
@@ -492,7 +492,7 @@ export default function SalesPage() {
             if (!r.ok || !j.success) throw new Error(j.error || "Failed");
             toast.success("Line added");
             setDetailKey(k => k+1);
-            setActiveTab("lines");
+            setMainTab("invoice");
             const stockUq = resolveStockUq(s, "stock");
             if (stockUq) fetchLiveStock(stockUq);
             setStockImageModal(null);
@@ -636,11 +636,23 @@ export default function SalesPage() {
             setInvoiceDate(ccDate);
             setListKey(k => k+1);
             setDetailKey(k => k+1);
-            setActiveTab("lines");
+            setMainTab("invoice");
             closeCcModal();
         } catch(e: any) { toast.error(e.message); }
         finally { setCcCreating(false); }
     };
+
+    const goToHistory = useCallback(() => {
+        if (h?.CUSTOMER_UQ) setHistCustUq(t(h.CUSTOMER_UQ));
+        if (h?.CUSTOMER) setHistCustSearch(t(h.CUSTOMER));
+        const today = new Date();
+        const to = today.toISOString().split("T")[0];
+        const from30 = new Date(today); from30.setDate(from30.getDate() - 30);
+        setHistFrom(from30.toISOString().split("T")[0]);
+        setHistTo(to);
+        setHistInvoiceUq(null);
+        setMainTab("history");
+    }, [h]);
 
     // ─────────────────────────────────────────────────────────────────────────
     return (
@@ -656,23 +668,41 @@ export default function SalesPage() {
                 }
             />
 
-            {/* ── Main split ───────────────────────────────────────────── */}
-            <div className="flex flex-col xl:flex-row flex-1 overflow-hidden px-2 pb-2 pt-2 gap-2 min-h-0">
+            {/* ── Main area ────────────────────────────────────────────── */}
+            <div className="flex flex-col flex-1 overflow-hidden px-2 pb-2 pt-2 gap-2 min-h-0">
 
-                {/* LEFT: Invoice list + date picker ────────────────────── */}
+                {/* Top-level tab bar */}
+                <div className="bg-[#374151] h-10 px-3 flex items-stretch shrink-0 rounded-md overflow-x-auto">
+                    {(["invoice", "stock", "history"] as const).map(tab => (
+                        <button key={tab} onClick={() => setMainTab(tab)}
+                            className={cn(
+                                "px-4 text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border-b-2 flex items-center",
+                                mainTab === tab ? "text-white border-[#FB7506]" : "text-white/50 hover:text-white border-transparent"
+                            )}
+                        >
+                            {tab === "invoice" && "Invoice"}
+                            {tab === "stock"   && "Available Stock"}
+                            {tab === "history" && "Invoice History"}
+                        </button>
+                    ))}
+                </div>
+
+                {/* ── TAB 1: Invoice ────────────────────────────────────── */}
+                {mainTab === "invoice" && (
+                <div className="flex flex-col xl:flex-row flex-1 overflow-hidden gap-2 min-h-0">
+
+                {/* LEFT: Invoice list */}
                 <div className="flex flex-col bg-white rounded-md border border-black overflow-hidden xl:w-[300px] xl:shrink-0 xl:flex-none max-h-[40vh] xl:max-h-none">
                     {/* List header */}
-                    <div className="bg-[#374151] px-3 py-2 flex items-center justify-between shrink-0">
+                    <div className="bg-[#374151] px-3 h-10 flex items-center justify-between shrink-0">
                         <div className="flex items-center gap-2">
                             <ClipboardList size={12} className="text-[#FB7506]" />
                             <span className="font-black text-[10px] text-white uppercase tracking-widest">Invoices</span>
                             {loadingList && <RefreshCcw size={10} className="animate-spin text-gray-400" />}
                         </div>
-                        <div className="flex items-center gap-1">
-                            <input type="date" value={invoiceDate} onChange={e => { setInvoiceDate(e.target.value); setListKey(k=>k+1); }}
-                                className="text-[10px] font-bold bg-white/10 text-white rounded px-1.5 py-0.5 border border-white/20 focus:outline-none focus:border-[#FB7506]"
-                            />
-                        </div>
+                        <input type="date" value={invoiceDate} onChange={e => { setInvoiceDate(e.target.value); setListKey(k=>k+1); }}
+                            className="text-[10px] font-bold bg-white/10 text-white rounded px-1.5 py-0.5 border border-white/20 focus:outline-none focus:border-[#FB7506]"
+                        />
                     </div>
                     {/* My / All toggle + New Invoice */}
                     <div className="px-2 py-1.5 border-b border-gray-100 shrink-0 flex flex-col gap-1.5">
@@ -724,7 +754,7 @@ export default function SalesPage() {
                             const voi  = bool(inv.VOID);
                             const closed = bool(inv.PRINTED);
                             return (
-                                <div key={i} onClick={() => { setActiveInvoiceUq(t(inv.UNICO)); setDetailKey(k=>k+1); setActiveTab("lines"); setHistCustUq(t(inv.CUSTOMER_UQ ?? "%")); setHistInvoiceUq(null); setActiveBar("invoice"); }}
+                                <div key={i} onClick={() => { setActiveInvoiceUq(t(inv.UNICO)); setDetailKey(k=>k+1); setHistCustUq(t(inv.CUSTOMER_UQ ?? "%")); setHistInvoiceUq(null); setActiveBar("invoice"); }}
                                     className={cn(
                                         "px-3 py-3 border-b cursor-pointer transition-all border-l-4",
                                         sel ? "bg-blue-50 border-l-[#FB7506]" : "border-l-transparent hover:bg-gray-50 hover:border-l-gray-300"
@@ -769,8 +799,8 @@ export default function SalesPage() {
                     </div>
                 </div>
 
-                {/* RIGHT: Invoice detail ───────────────────────────────── */}
-                <div className="flex-1 flex flex-col min-h-0 min-w-0 gap-2">
+                {/* RIGHT: Invoice detail */}
+                <div className="flex-1 flex flex-col min-h-0 min-w-0">
                     {!activeInvoiceUq ? (
                         <div className="flex-1 flex items-center justify-center bg-white rounded-md border border-black">
                             <div className="text-center text-gray-400">
@@ -780,10 +810,10 @@ export default function SalesPage() {
                             </div>
                         </div>
                     ) : (
-                        <>
-                            {/* ── Invoice Header card ───────────────────── */}
+                        <div className="flex flex-col flex-1 min-h-0 gap-2">
+                            {/* Invoice Header card */}
                             <div className="bg-white rounded-md border border-black overflow-hidden shrink-0">
-                                {/* Action bar — dark like PanelGrid header */}
+                                {/* Action bar */}
                                 <div className="bg-[#374151] h-10 px-3 flex items-center gap-1.5 shrink-0 overflow-x-auto">
                                     {isOpen && <>
                                         <ActionBtn icon={Lock}    label="Close"       onClick={handleCloseInvoice} disabled={working} variant="bar" />
@@ -798,9 +828,12 @@ export default function SalesPage() {
                                         <ActionBtn icon={FileText}   label="Pick List" onClick={() => {}} variant="bar" />
                                         <ActionBtn icon={CreditCard} label="Payment"   onClick={() => {}} variant="bar" />
                                     </>}
-                                    <div className="ml-auto shrink-0">
+                                    <div className="ml-auto flex items-center gap-2 shrink-0">
+                                        <button onClick={goToHistory} className="text-white hover:text-[#FB7506] transition-all p-1" title="Invoice History">
+                                            <History size={15} />
+                                        </button>
                                         <button className="text-white hover:text-[#FB7506] transition-all p-1" title="Transaction Log">
-                                            <RotateCcw size={16} />
+                                            <RotateCcw size={15} />
                                         </button>
                                     </div>
                                 </div>
@@ -829,46 +862,17 @@ export default function SalesPage() {
                                 )}
                             </div>
 
-                            {/* ── Tabs + content ────────────────────────── */}
+                            {/* Invoice Lines */}
                             <div className="flex-1 flex flex-col bg-white rounded-md border border-black overflow-hidden min-h-0">
-                                {/* Tab bar — dark, tabs with orange underline indicator */}
-                                <div className="bg-[#374151] h-10 px-3 flex items-stretch shrink-0 overflow-x-auto">
-                                    {(["lines", "stock", "history"] as const).map(tab => (
-                                        <button key={tab} onClick={() => setActiveTab(tab)}
-                                            className={cn(
-                                                "px-4 text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border-b-2 flex items-center",
-                                                activeTab === tab
-                                                    ? "text-white border-[#FB7506]"
-                                                    : "text-white/50 hover:text-white border-transparent"
-                                            )}
-                                        >
-                                            {tab === "lines"   && "Invoice Lines"}
-                                            {tab === "stock"   && "Available Stock"}
-                                            {tab === "history" && "Invoice History"}
-                                        </button>
-                                    ))}
-                                    {/* Tab-specific toolbar */}
-                                    <div className="ml-auto flex items-center gap-1.5 shrink-0">
-                                        {activeTab === "lines" && isOpen && <>
-                                            <ActionBtn icon={Plus} label="+ Add from Stock" onClick={() => setActiveTab("stock")} size="sm" variant="success" />
-                                            <ActionBtn icon={Scan} label="Barcode" onClick={() => { setScanModal(true); setTimeout(() => scanInputRef.current?.focus(), 100); }} size="sm" variant="bar" />
-                                        </>}
-                                        {activeTab === "stock" && <>
-                                            <div className="flex items-center gap-1 bg-white/10 border border-white/20 rounded px-2 py-1">
-                                                <Search size={10} className="text-white/50" />
-                                                <input value={stockSearch} onChange={e => setStockSearch(e.target.value)}
-                                                    onKeyDown={e => { if (e.key === "Enter") { setAppliedStockSearch(stockSearch); setStockPage(1); }}}
-                                                    placeholder="Search stock..." className="text-[10px] focus:outline-none w-28 bg-transparent text-white placeholder-white/40 font-bold" />
-                                                {stockSearch && <button onClick={() => { setStockSearch(""); setAppliedStockSearch(""); }}><X size={10} className="text-white/60" /></button>}
-                                            </div>
-                                            <span className="text-[10px] text-white/50 font-bold">{stockRows.length}/{stockTotal}</span>
-                                        </>}
-                                    </div>
+                                {/* Lines action bar */}
+                                <div className="bg-[#374151] h-10 px-3 flex items-center gap-1.5 shrink-0">
+                                    {isOpen && <>
+                                        <ActionBtn icon={Plus} label="+ Add from Stock" onClick={() => setMainTab("stock")} size="sm" variant="success" />
+                                        <ActionBtn icon={Scan} label="Barcode" onClick={() => { setScanModal(true); setTimeout(() => scanInputRef.current?.focus(), 100); }} size="sm" variant="bar" />
+                                    </>}
                                 </div>
-
-                                {/* ── Invoice Lines ─────────────────────── */}
-                                {activeTab === "lines" && (
-                                    <div className="flex-1 overflow-auto min-h-0">
+                                {/* Lines table */}
+                                <div className="flex-1 overflow-auto min-h-0">
                                         <PanelGridTable>
                                             <PanelGridThead>
                                                 <PanelGridTh>{""}</PanelGridTh>
@@ -928,233 +932,255 @@ export default function SalesPage() {
                                                 ))}
                                             </PanelGridTbody>
                                         </PanelGridTable>
-                                    </div>
-                                )}
-
-                                {/* ── Available Stock ───────────────────── */}
-                                {activeTab === "stock" && (
-                                    <div className="flex-1 overflow-auto min-h-0">
-                                        <PanelGridTable>
-                                            <PanelGridThead>
-                                                {[
-                                                    { col: "", label: "" },
-                                                    { col: "", label: isOpen ? "Add" : "" },
-                                                    { col: "description",  label: "Description" },
-                                                    { col: "farm",         label: "Farm" },
-                                                    { col: "grower",       label: "Vendor" },
-                                                    { col: "box_date",     label: "Date" },
-                                                    { col: "days",         label: "Days" },
-                                                    { col: "awbcode",      label: "AWB" },
-                                                    { col: "bunches_case", label: "Bch/Case" },
-                                                    { col: "units_bunch",  label: "U/Bch" },
-                                                    { col: "tunits_x_box", label: "U/Box" },
-                                                    { col: "total_units",  label: "T.Units" },
-                                                    { col: "price_x_unit", label: "Price" },
-                                                    { col: "wh_stock",     label: "Stock" },
-                                                    { col: "case_sh",      label: "Case" },
-                                                    { col: "gprofit",      label: "GPM%" },
-                                                    { col: "box_id",       label: "BoxID" },
-                                                ].map(({ col, label }) => (
-                                                    <PanelGridTh key={col + label}
-                                                        className={cn(col && "cursor-pointer hover:bg-gray-50 select-none")}
-                                                        onClick={col ? () => toggleStockSort(col) : undefined}>
-                                                        {label}{stockSortCol === col && <span className="ml-1">{stockSortDir === "ASC" ? "↑" : "↓"}</span>}
-                                                    </PanelGridTh>
-                                                ))}
-                                            </PanelGridThead>
-                                            <PanelGridTbody>
-                                                {stockLoading && stockRows.length === 0 && <PanelGridTr><PanelGridTd colSpan={17} className="py-8 text-center italic"><Loader2 size={13} className="animate-spin inline mr-1" />Loading...</PanelGridTd></PanelGridTr>}
-                                                {!stockLoading && stockRows.length === 0 && <PanelGridTr><PanelGridTd colSpan={17} className="py-8 text-center italic">No stock available</PanelGridTd></PanelGridTr>}
-                                                {stockRows.map((s: any, i: number) => (
-                                                    <PanelGridTr key={i} style={vfpRowStyle(s.BACK_COLOR ?? s.BACKCOLOR)}>
-                                                        <PanelGridTd>
-                                                            <img
-                                                                src={productImages[t(s.PRODUCT_UQ ?? s.BOX_PACK_UQ ?? "")] || DEFAULT_THUMB}
-                                                                alt="" width={32} height={32}
-                                                                className="w-8 h-8 object-cover rounded border border-gray-200 shrink-0 cursor-pointer hover:opacity-80 hover:ring-2 hover:ring-[#FB7506] transition-all"
-                                                                onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }}
-                                                                onClick={() => openStockModal(s, "stock", { box_qty: "1", price: fmt(s.PRICE_X_UNIT ?? 0) })}
-                                                            />
-                                                        </PanelGridTd>
-                                                        <PanelGridTd>
-                                                            {isOpen && <button onClick={() => handleAddLine(s)} disabled={working} className="flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-black bg-[#FB7506] hover:bg-orange-500 text-white rounded disabled:opacity-40"><Plus size={9} />Add</button>}
-                                                        </PanelGridTd>
-                                                        <PanelGridTd className="max-w-[200px] truncate font-medium">{t(s.DESCRIPTION)}</PanelGridTd>
-                                                        <PanelGridTd className="font-bold text-[#FB7506]">{t(s.FARM)}</PanelGridTd>
-                                                        <PanelGridTd className="max-w-[100px] truncate">{t(s.GROWER)}</PanelGridTd>
-                                                        <PanelGridTd>{fmtDate(s.BOX_DATE)}</PanelGridTd>
-                                                        <PanelGridTd align="right">{fmtI(s.DAYS)}</PanelGridTd>
-                                                        <PanelGridTd className="font-mono text-blue-700">{t(s.AWBCODE)}</PanelGridTd>
-                                                        <PanelGridTd align="right">{fmtI(s.BUNCHES_CASE)}</PanelGridTd>
-                                                        <PanelGridTd align="right">{fmtI(s.UNITS_BUNCH)}</PanelGridTd>
-                                                        <PanelGridTd align="right" className="font-semibold">{fmtI(s.TUNITS_X_BOX)}</PanelGridTd>
-                                                        <PanelGridTd align="right">{fmtI(s.TOTAL_UNITS)}</PanelGridTd>
-                                                        <PanelGridTd align="right" className="font-black text-green-700">${fmt(s.PRICE_X_UNIT)}</PanelGridTd>
-                                                        <PanelGridTd align="right" className="font-bold">{fmtI(s.WH_STOCK)}</PanelGridTd>
-                                                        <PanelGridTd>{t(s.CASE_SH ?? s.CASE_NAME)}</PanelGridTd>
-                                                        <PanelGridTd align="right" className={cn("font-bold", parseFloat(s.GPROFIT ?? 0) < 0 ? "text-red-600" : "")}>{fmt(s.GPROFIT)}%</PanelGridTd>
-                                                        <PanelGridTd className="font-mono text-[10px]">{t(s.BOX_ID)}</PanelGridTd>
-                                                    </PanelGridTr>
-                                                ))}
-                                                <PanelGridTr>
-                                                    <PanelGridTd colSpan={17}>
-                                                        <div ref={sentinelRef} className="flex items-center justify-center py-3 text-[10px] text-gray-400">
-                                                            {stockLoading && stockRows.length > 0 && <><Loader2 size={12} className="animate-spin mr-1" />Loading more...</>}
-                                                            {!stockLoading && !stockHasMore && stockRows.length > 0 && <span className="italic">All {stockTotal.toLocaleString()} items loaded</span>}
-                                                        </div>
-                                                    </PanelGridTd>
-                                                </PanelGridTr>
-                                            </PanelGridTbody>
-                                        </PanelGridTable>
-                                    </div>
-                                )}
-
-                                {/* ── Invoice History ───────────────────── */}
-                                {activeTab === "history" && (
-                                    <div className="flex flex-col flex-1 overflow-hidden min-h-0">
-                                        {/* History filters */}
-                                        <div className="px-3 py-2 flex flex-wrap items-center gap-2 border-b border-gray-100 shrink-0 bg-gray-50">
-                                            <div className="flex items-center gap-1">
-                                                <span className="text-[10px] font-bold text-gray-500">Customer:</span>
-                                                <input value={histCustSearch} onChange={e => setHistCustSearch(e.target.value)}
-                                                    placeholder="Search or leave blank for all"
-                                                    className="text-[10px] border border-gray-200 rounded px-2 py-1 focus:outline-none w-44" />
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                <span className="text-[10px] font-bold text-gray-500">From:</span>
-                                                <input type="date" value={histFrom} onChange={e => setHistFrom(e.target.value)} className="text-[10px] border border-gray-200 rounded px-2 py-1 focus:outline-none" />
-                                                <span className="text-[10px] font-bold text-gray-500">To:</span>
-                                                <input type="date" value={histTo}   onChange={e => setHistTo(e.target.value)}   className="text-[10px] border border-gray-200 rounded px-2 py-1 focus:outline-none" />
-                                            </div>
-                                            <button onClick={() => qc.invalidateQueries({ queryKey: ["pos-hist-list", histCustUq, histFrom, histTo, salesmanUq] })}
-                                                className="flex items-center gap-1 px-2 py-1 text-[10px] font-black bg-[#374151] text-white rounded hover:bg-gray-600">
-                                                <Search size={10} />Search
-                                            </button>
-                                        </div>
-                                        {/* History list + detail split */}
-                                        <div className="flex flex-1 overflow-hidden min-h-0 gap-2 p-2">
-                                            {/* History invoice list */}
-                                            <PanelGrid title="History" icon={History} recordCount={(histInvoices as any[]).length} className="w-[320px] shrink-0">
-                                                {(histInvoices as any[]).map((inv: any, i: number) => (
-                                                    <div key={i} onClick={() => setHistInvoiceUq(t(inv.UNICO))}
-                                                        className={cn("px-3 py-2 border-b cursor-pointer transition-colors text-[11px]",
-                                                            histInvoiceUq === t(inv.UNICO) ? "bg-blue-100" : "hover:bg-blue-50")}>
-                                                        <div className="flex justify-between">
-                                                            <span className="font-bold text-blue-700">#{t(inv.INVOICE_NO)}</span>
-                                                            <span className="text-gray-500">{fmtDate(inv.INVOICE_DATE)}</span>
-                                                        </div>
-                                                        <p className="truncate text-gray-700">{t(inv.CUSTOMER)}</p>
-                                                        <div className="flex justify-between text-[10px] text-gray-500 mt-0.5">
-                                                            <span>${fmt(inv.TOTAL_INVOICE)}</span>
-                                                            <span>Bal: ${fmt(inv.TOTAL_BALANCE)}</span>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                                {!loadingHistList && (histInvoices as any[]).length === 0 && <p className="p-6 text-center text-gray-400 italic text-[11px]">No invoices found</p>}
-                                            </PanelGrid>
-                                            {/* History detail */}
-                                            <PanelGrid
-                                                title="Invoice Detail"
-                                                icon={FileText}
-                                                className="flex-1 min-w-0"
-                                                headerRight={
-                                                    <div className="flex items-center gap-1">
-                                                        {(["details","credits","statement"] as const).map(sub => (
-                                                            <button key={sub} onClick={() => setHistSubTab(sub)}
-                                                                className={cn("px-2 py-0.5 text-[10px] font-black uppercase rounded transition-all",
-                                                                    histSubTab === sub ? "bg-[#FB7506] text-white" : "text-gray-400 hover:text-white")}>
-                                                                {sub}
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                }
-                                            >
-                                                {!histInvoiceUq && <p className="p-6 text-center text-gray-400 italic text-[11px]">Select an invoice</p>}
-                                                {histInvoiceUq && (histDetails as any[]).length === 0 && <p className="p-6 text-center text-gray-400 italic text-[11px]">No data</p>}
-                                                {histInvoiceUq && histSubTab === "details" && (histDetails as any[]).length > 0 && (
-                                                    <PanelGridTable>
-                                                        <PanelGridThead>
-                                                            <PanelGridTh>Product</PanelGridTh><PanelGridTh>Farm</PanelGridTh><PanelGridTh>Vendor</PanelGridTh>
-                                                            <PanelGridTh align="right">BoxQty</PanelGridTh><PanelGridTh align="right">UxBox</PanelGridTh>
-                                                            <PanelGridTh align="right">Price</PanelGridTh><PanelGridTh align="right">T.Units</PanelGridTh>
-                                                            <PanelGridTh align="right">Ext.Price</PanelGridTh><PanelGridTh align="right">Credits</PanelGridTh>
-                                                            <PanelGridTh>Case</PanelGridTh><PanelGridTh>AWB</PanelGridTh><PanelGridTh>Lot</PanelGridTh>
-                                                        </PanelGridThead>
-                                                        <PanelGridTbody>
-                                                            {(histDetails as any[]).map((r: any, i: number) => (
-                                                                <PanelGridTr key={i}>
-                                                                    <PanelGridTd className="max-w-[200px] truncate font-medium">{t(r.DESCRIPTION)}</PanelGridTd>
-                                                                    <PanelGridTd className="font-bold text-[#FB7506]">{t(r.FARM)}</PanelGridTd>
-                                                                    <PanelGridTd className="max-w-[100px] truncate">{t(r.GROWER ?? r.VENDOR)}</PanelGridTd>
-                                                                    <PanelGridTd align="right">{fmtI(r.BOX_QTY)}</PanelGridTd>
-                                                                    <PanelGridTd align="right">{fmtI(r.UNITS_X_BOX)}</PanelGridTd>
-                                                                    <PanelGridTd align="right" className="font-semibold">${fmt(r.PRICE ?? r.PRICE_X_U)}</PanelGridTd>
-                                                                    <PanelGridTd align="right">{fmtI(r.TOTAL_UNITS)}</PanelGridTd>
-                                                                    <PanelGridTd align="right" className="font-bold text-green-700">${fmt(r.EXT_PRICE)}</PanelGridTd>
-                                                                    <PanelGridTd align="right" className="text-red-600">{fmt(r.CREDITS)}</PanelGridTd>
-                                                                    <PanelGridTd>{t(r.CASE_SH ?? r.CASE_NAME)}</PanelGridTd>
-                                                                    <PanelGridTd className="font-mono text-blue-700">{t(r.AWBCODE ?? r.AWB)}</PanelGridTd>
-                                                                    <PanelGridTd>{t(r.LOTE ?? r.LOT)}</PanelGridTd>
-                                                                </PanelGridTr>
-                                                            ))}
-                                                        </PanelGridTbody>
-                                                    </PanelGridTable>
-                                                )}
-                                                {histInvoiceUq && histSubTab === "credits" && (histDetails as any[]).length > 0 && (
-                                                    <PanelGridTable>
-                                                        <PanelGridThead>
-                                                            <PanelGridTh>Product</PanelGridTh><PanelGridTh>Reason</PanelGridTh>
-                                                            <PanelGridTh align="right">Units</PanelGridTh><PanelGridTh align="right">Amount</PanelGridTh>
-                                                            <PanelGridTh>Details</PanelGridTh>
-                                                        </PanelGridThead>
-                                                        <PanelGridTbody>
-                                                            {(histDetails as any[]).map((r: any, i: number) => (
-                                                                <PanelGridTr key={i}>
-                                                                    <PanelGridTd className="max-w-[180px] truncate font-medium">{t(r.DESCRIPTION)}</PanelGridTd>
-                                                                    <PanelGridTd>{t(r.REASON)}</PanelGridTd>
-                                                                    <PanelGridTd align="right">{fmtI(r.CR_UNITS)}</PanelGridTd>
-                                                                    <PanelGridTd align="right" className="font-bold text-red-600">${fmt(r.CR_REQUEST ?? r.AMOUNT)}</PanelGridTd>
-                                                                    <PanelGridTd className="max-w-[200px] truncate">{t(r.DETAILS)}</PanelGridTd>
-                                                                </PanelGridTr>
-                                                            ))}
-                                                        </PanelGridTbody>
-                                                    </PanelGridTable>
-                                                )}
-                                                {histSubTab === "statement" && (histDetails as any[]).length > 0 && (
-                                                    <PanelGridTable>
-                                                        <PanelGridThead>
-                                                            <PanelGridTh>Date</PanelGridTh><PanelGridTh>Type</PanelGridTh><PanelGridTh>Invoice</PanelGridTh>
-                                                            <PanelGridTh align="right">Debits</PanelGridTh><PanelGridTh align="right">Credits</PanelGridTh>
-                                                            <PanelGridTh align="right">Balance</PanelGridTh>
-                                                            <PanelGridTh align="right">0-30</PanelGridTh><PanelGridTh align="right">30-60</PanelGridTh>
-                                                            <PanelGridTh align="right">60-90</PanelGridTh><PanelGridTh align="right">90+</PanelGridTh>
-                                                        </PanelGridThead>
-                                                        <PanelGridTbody>
-                                                            {(histDetails as any[]).map((r: any, i: number) => (
-                                                                <PanelGridTr key={i}>
-                                                                    <PanelGridTd>{t(r.FECHA ?? r.DATE)}</PanelGridTd>
-                                                                    <PanelGridTd>{t(r.TYPE)}</PanelGridTd>
-                                                                    <PanelGridTd className="font-bold text-blue-700">{t(r.INVOICE_NO)}</PanelGridTd>
-                                                                    <PanelGridTd align="right">${fmt(r.DEBITS)}</PanelGridTd>
-                                                                    <PanelGridTd align="right" className="text-green-700">${fmt(r.CREDITS)}</PanelGridTd>
-                                                                    <PanelGridTd align="right" className={cn("font-bold", parseFloat(r.BALANCE ?? 0) > 0 ? "text-red-600" : "text-green-600")}>${fmt(r.BALANCE)}</PanelGridTd>
-                                                                    <PanelGridTd align="right">${fmt(r.T0_30)}</PanelGridTd>
-                                                                    <PanelGridTd align="right">${fmt(r.T30_60)}</PanelGridTd>
-                                                                    <PanelGridTd align="right">${fmt(r.T60_90)}</PanelGridTd>
-                                                                    <PanelGridTd align="right">${fmt(r.T90_120 ?? r.T120)}</PanelGridTd>
-                                                                </PanelGridTr>
-                                                            ))}
-                                                        </PanelGridTbody>
-                                                    </PanelGridTable>
-                                                )}
-                                            </PanelGrid>
-                                        </div>
-                                    </div>
-                                )}
+                                </div>
                             </div>
-                        </>
+                        </div>
                     )}
                 </div>
+
+                </div>
+                )}
+
+                {/* ── TAB 2: Available Stock ────────────────────────────── */}
+                {mainTab === "stock" && (
+                <div className="flex flex-col flex-1 overflow-hidden min-h-0 gap-2">
+                    {activeInvoiceUq && h && (
+                        <div className="bg-[#374151] h-10 px-3 flex items-center gap-4 shrink-0 rounded-md overflow-x-auto">
+                            <span className="text-white font-black text-[10px] uppercase tracking-widest shrink-0">Invoice #{t(h.INVOICE_NO)}</span>
+                            <span className="text-white/70 text-[10px] shrink-0 max-w-[200px] truncate">{t(h.CUSTOMER)}</span>
+                            <span className="text-white/50 text-[10px] shrink-0">{fmtDate(h.INVOICE_DATE)}</span>
+                            <div className="w-px h-4 bg-white/20 shrink-0" />
+                            <span className="text-white/70 text-[10px] shrink-0">Cases: <span className="text-white font-black">{fmtI(h.TOTAL_CASES)}</span></span>
+                            <span className="text-white/70 text-[10px] shrink-0">Total: <span className="text-green-400 font-black">${fmt(h.TOTAL_INVOICE)}</span></span>
+                            <StatusBadge printed={bool(h.PRINTED)} voided={bool(h.VOID)} />
+                        </div>
+                    )}
+                    <div className="flex-1 flex flex-col bg-white rounded-md border border-black overflow-hidden min-h-0">
+                        <div className="bg-[#374151] h-10 px-3 flex items-center gap-2 shrink-0">
+                            <Package size={12} className="text-[#FB7506] shrink-0" />
+                            <span className="font-black text-[10px] text-white uppercase tracking-widest shrink-0">Available Stock</span>
+                            <span className="text-[10px] text-white/50 font-bold shrink-0">{stockRows.length}/{stockTotal}</span>
+                            <div className="flex items-center gap-1 bg-white/10 border border-white/20 rounded px-2 py-1 ml-2">
+                                <Search size={10} className="text-white/50 shrink-0" />
+                                <input value={stockSearch} onChange={e => setStockSearch(e.target.value)}
+                                    onKeyDown={e => { if (e.key === "Enter") { setAppliedStockSearch(stockSearch); setStockPage(1); }}}
+                                    placeholder="Search stock..." className="text-[10px] focus:outline-none w-36 bg-transparent text-white placeholder-white/40 font-bold" />
+                                {stockSearch && <button onClick={() => { setStockSearch(""); setAppliedStockSearch(""); }}><X size={10} className="text-white/60" /></button>}
+                            </div>
+                        </div>
+                        <div className="flex-1 overflow-auto min-h-0">
+                            <PanelGridTable>
+                                <PanelGridThead>
+                                    {[
+                                        { col: "", label: "" },
+                                        { col: "", label: isOpen ? "Add" : "" },
+                                        { col: "description",  label: "Description" },
+                                        { col: "farm",         label: "Farm" },
+                                        { col: "grower",       label: "Vendor" },
+                                        { col: "box_date",     label: "Date" },
+                                        { col: "days",         label: "Days" },
+                                        { col: "awbcode",      label: "AWB" },
+                                        { col: "bunches_case", label: "Bch/Case" },
+                                        { col: "units_bunch",  label: "U/Bch" },
+                                        { col: "tunits_x_box", label: "U/Box" },
+                                        { col: "total_units",  label: "T.Units" },
+                                        { col: "price_x_unit", label: "Price" },
+                                        { col: "wh_stock",     label: "Stock" },
+                                        { col: "case_sh",      label: "Case" },
+                                        { col: "gprofit",      label: "GPM%" },
+                                        { col: "box_id",       label: "BoxID" },
+                                    ].map(({ col, label }) => (
+                                        <PanelGridTh key={col + label}
+                                            className={cn(col && "cursor-pointer hover:bg-gray-50 select-none")}
+                                            onClick={col ? () => toggleStockSort(col) : undefined}>
+                                            {label}{stockSortCol === col && <span className="ml-1">{stockSortDir === "ASC" ? "↑" : "↓"}</span>}
+                                        </PanelGridTh>
+                                    ))}
+                                </PanelGridThead>
+                                <PanelGridTbody>
+                                    {stockLoading && stockRows.length === 0 && <PanelGridTr><PanelGridTd colSpan={17} className="py-8 text-center italic"><Loader2 size={13} className="animate-spin inline mr-1" />Loading...</PanelGridTd></PanelGridTr>}
+                                    {!stockLoading && stockRows.length === 0 && <PanelGridTr><PanelGridTd colSpan={17} className="py-8 text-center italic">No stock available</PanelGridTd></PanelGridTr>}
+                                    {stockRows.map((s: any, i: number) => (
+                                        <PanelGridTr key={i} style={vfpRowStyle(s.BACK_COLOR ?? s.BACKCOLOR)}>
+                                            <PanelGridTd>
+                                                <img
+                                                    src={productImages[t(s.PRODUCT_UQ ?? s.BOX_PACK_UQ ?? "")] || DEFAULT_THUMB}
+                                                    alt="" width={32} height={32}
+                                                    className="w-8 h-8 object-cover rounded border border-gray-200 shrink-0 cursor-pointer hover:opacity-80 hover:ring-2 hover:ring-[#FB7506] transition-all"
+                                                    onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }}
+                                                    onClick={() => openStockModal(s, "stock", { box_qty: "1", price: fmt(s.PRICE_X_UNIT ?? 0) })}
+                                                />
+                                            </PanelGridTd>
+                                            <PanelGridTd>
+                                                {isOpen && <button onClick={() => handleAddLine(s)} disabled={working} className="flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-black bg-[#FB7506] hover:bg-orange-500 text-white rounded disabled:opacity-40"><Plus size={9} />Add</button>}
+                                            </PanelGridTd>
+                                            <PanelGridTd className="max-w-[200px] truncate font-medium">{t(s.DESCRIPTION)}</PanelGridTd>
+                                            <PanelGridTd className="font-bold text-[#FB7506]">{t(s.FARM)}</PanelGridTd>
+                                            <PanelGridTd className="max-w-[100px] truncate">{t(s.GROWER)}</PanelGridTd>
+                                            <PanelGridTd>{fmtDate(s.BOX_DATE)}</PanelGridTd>
+                                            <PanelGridTd align="right">{fmtI(s.DAYS)}</PanelGridTd>
+                                            <PanelGridTd className="font-mono text-blue-700">{t(s.AWBCODE)}</PanelGridTd>
+                                            <PanelGridTd align="right">{fmtI(s.BUNCHES_CASE)}</PanelGridTd>
+                                            <PanelGridTd align="right">{fmtI(s.UNITS_BUNCH)}</PanelGridTd>
+                                            <PanelGridTd align="right" className="font-semibold">{fmtI(s.TUNITS_X_BOX)}</PanelGridTd>
+                                            <PanelGridTd align="right">{fmtI(s.TOTAL_UNITS)}</PanelGridTd>
+                                            <PanelGridTd align="right" className="font-black text-green-700">${fmt(s.PRICE_X_UNIT)}</PanelGridTd>
+                                            <PanelGridTd align="right" className="font-bold">{fmtI(s.WH_STOCK)}</PanelGridTd>
+                                            <PanelGridTd>{t(s.CASE_SH ?? s.CASE_NAME)}</PanelGridTd>
+                                            <PanelGridTd align="right" className={cn("font-bold", parseFloat(s.GPROFIT ?? 0) < 0 ? "text-red-600" : "")}>{fmt(s.GPROFIT)}%</PanelGridTd>
+                                            <PanelGridTd className="font-mono text-[10px]">{t(s.BOX_ID)}</PanelGridTd>
+                                        </PanelGridTr>
+                                    ))}
+                                    <PanelGridTr>
+                                        <PanelGridTd colSpan={17}>
+                                            <div ref={sentinelRef} className="flex items-center justify-center py-3 text-[10px] text-gray-400">
+                                                {stockLoading && stockRows.length > 0 && <><Loader2 size={12} className="animate-spin mr-1" />Loading more...</>}
+                                                {!stockLoading && !stockHasMore && stockRows.length > 0 && <span className="italic">All {stockTotal.toLocaleString()} items loaded</span>}
+                                            </div>
+                                        </PanelGridTd>
+                                    </PanelGridTr>
+                                </PanelGridTbody>
+                            </PanelGridTable>
+                        </div>
+                    </div>
+                </div>
+                )}
+
+                {/* ── TAB 3: Invoice History ─────────────────────────────── */}
+                {mainTab === "history" && (
+                <div className="flex flex-col flex-1 overflow-hidden min-h-0 gap-2">
+                    <div className="bg-[#374151] h-10 px-3 flex items-center gap-3 shrink-0 rounded-md overflow-x-auto">
+                        <span className="text-[10px] font-black text-white/60 uppercase tracking-widest shrink-0">Customer:</span>
+                        <input value={histCustSearch} onChange={e => setHistCustSearch(e.target.value)}
+                            placeholder="All customers"
+                            className="text-[10px] bg-white/10 text-white border border-white/20 rounded px-2 py-1 focus:outline-none w-40 placeholder-white/40 font-bold" />
+                        <span className="text-[10px] font-black text-white/60 uppercase tracking-widest shrink-0">From:</span>
+                        <input type="date" value={histFrom} onChange={e => setHistFrom(e.target.value)} className="text-[10px] bg-white/10 text-white border border-white/20 rounded px-2 py-1 focus:outline-none font-bold" />
+                        <span className="text-[10px] font-black text-white/60 uppercase tracking-widest shrink-0">To:</span>
+                        <input type="date" value={histTo} onChange={e => setHistTo(e.target.value)} className="text-[10px] bg-white/10 text-white border border-white/20 rounded px-2 py-1 focus:outline-none font-bold" />
+                        <button onClick={() => qc.invalidateQueries({ queryKey: ["pos-hist-list", histCustUq, histFrom, histTo, salesmanUq] })}
+                            className="flex items-center gap-1 px-2 py-1 text-[10px] font-black bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded transition-all">
+                            <Search size={10} />Search
+                        </button>
+                    </div>
+                    <div className="flex flex-1 overflow-hidden min-h-0 gap-2">
+                        <PanelGrid title="History" icon={History} recordCount={(histInvoices as any[]).length} className="w-[320px] shrink-0">
+                            {(histInvoices as any[]).map((inv: any, i: number) => (
+                                <div key={i} onClick={() => setHistInvoiceUq(t(inv.UNICO))}
+                                    className={cn("px-3 py-2 border-b cursor-pointer transition-colors text-[11px]",
+                                        histInvoiceUq === t(inv.UNICO) ? "bg-blue-100" : "hover:bg-blue-50")}>
+                                    <div className="flex justify-between">
+                                        <span className="font-bold text-blue-700">#{t(inv.INVOICE_NO)}</span>
+                                        <span className="text-gray-500">{fmtDate(inv.INVOICE_DATE)}</span>
+                                    </div>
+                                    <p className="truncate text-gray-700">{t(inv.CUSTOMER)}</p>
+                                    <div className="flex justify-between text-[10px] text-gray-500 mt-0.5">
+                                        <span>${fmt(inv.TOTAL_INVOICE)}</span>
+                                        <span>Bal: ${fmt(inv.TOTAL_BALANCE)}</span>
+                                    </div>
+                                </div>
+                            ))}
+                            {!loadingHistList && (histInvoices as any[]).length === 0 && <p className="p-6 text-center text-gray-400 italic text-[11px]">No invoices found</p>}
+                        </PanelGrid>
+                        <PanelGrid
+                            title="Invoice Detail"
+                            icon={FileText}
+                            className="flex-1 min-w-0"
+                            headerRight={
+                                <div className="flex items-center gap-1">
+                                    {(["details","credits","statement"] as const).map(sub => (
+                                        <button key={sub} onClick={() => setHistSubTab(sub)}
+                                            className={cn("px-2 py-0.5 text-[10px] font-black uppercase rounded transition-all",
+                                                histSubTab === sub ? "bg-[#FB7506] text-white" : "text-gray-400 hover:text-white")}>
+                                            {sub}
+                                        </button>
+                                    ))}
+                                </div>
+                            }
+                        >
+                            {!histInvoiceUq && <p className="p-6 text-center text-gray-400 italic text-[11px]">Select an invoice</p>}
+                            {histInvoiceUq && (histDetails as any[]).length === 0 && <p className="p-6 text-center text-gray-400 italic text-[11px]">No data</p>}
+                            {histInvoiceUq && histSubTab === "details" && (histDetails as any[]).length > 0 && (
+                                <PanelGridTable>
+                                    <PanelGridThead>
+                                        <PanelGridTh>Product</PanelGridTh><PanelGridTh>Farm</PanelGridTh><PanelGridTh>Vendor</PanelGridTh>
+                                        <PanelGridTh align="right">BoxQty</PanelGridTh><PanelGridTh align="right">UxBox</PanelGridTh>
+                                        <PanelGridTh align="right">Price</PanelGridTh><PanelGridTh align="right">T.Units</PanelGridTh>
+                                        <PanelGridTh align="right">Ext.Price</PanelGridTh><PanelGridTh align="right">Credits</PanelGridTh>
+                                        <PanelGridTh>Case</PanelGridTh><PanelGridTh>AWB</PanelGridTh><PanelGridTh>Lot</PanelGridTh>
+                                    </PanelGridThead>
+                                    <PanelGridTbody>
+                                        {(histDetails as any[]).map((r: any, i: number) => (
+                                            <PanelGridTr key={i}>
+                                                <PanelGridTd className="max-w-[200px] truncate font-medium">{t(r.DESCRIPTION)}</PanelGridTd>
+                                                <PanelGridTd className="font-bold text-[#FB7506]">{t(r.FARM)}</PanelGridTd>
+                                                <PanelGridTd className="max-w-[100px] truncate">{t(r.GROWER ?? r.VENDOR)}</PanelGridTd>
+                                                <PanelGridTd align="right">{fmtI(r.BOX_QTY)}</PanelGridTd>
+                                                <PanelGridTd align="right">{fmtI(r.UNITS_X_BOX)}</PanelGridTd>
+                                                <PanelGridTd align="right" className="font-semibold">${fmt(r.PRICE ?? r.PRICE_X_U)}</PanelGridTd>
+                                                <PanelGridTd align="right">{fmtI(r.TOTAL_UNITS)}</PanelGridTd>
+                                                <PanelGridTd align="right" className="font-bold text-green-700">${fmt(r.EXT_PRICE)}</PanelGridTd>
+                                                <PanelGridTd align="right" className="text-red-600">{fmt(r.CREDITS)}</PanelGridTd>
+                                                <PanelGridTd>{t(r.CASE_SH ?? r.CASE_NAME)}</PanelGridTd>
+                                                <PanelGridTd className="font-mono text-blue-700">{t(r.AWBCODE ?? r.AWB)}</PanelGridTd>
+                                                <PanelGridTd>{t(r.LOTE ?? r.LOT)}</PanelGridTd>
+                                            </PanelGridTr>
+                                        ))}
+                                    </PanelGridTbody>
+                                </PanelGridTable>
+                            )}
+                            {histInvoiceUq && histSubTab === "credits" && (histDetails as any[]).length > 0 && (
+                                <PanelGridTable>
+                                    <PanelGridThead>
+                                        <PanelGridTh>Product</PanelGridTh><PanelGridTh>Reason</PanelGridTh>
+                                        <PanelGridTh align="right">Units</PanelGridTh><PanelGridTh align="right">Amount</PanelGridTh>
+                                        <PanelGridTh>Details</PanelGridTh>
+                                    </PanelGridThead>
+                                    <PanelGridTbody>
+                                        {(histDetails as any[]).map((r: any, i: number) => (
+                                            <PanelGridTr key={i}>
+                                                <PanelGridTd className="max-w-[180px] truncate font-medium">{t(r.DESCRIPTION)}</PanelGridTd>
+                                                <PanelGridTd>{t(r.REASON)}</PanelGridTd>
+                                                <PanelGridTd align="right">{fmtI(r.CR_UNITS)}</PanelGridTd>
+                                                <PanelGridTd align="right" className="font-bold text-red-600">${fmt(r.CR_REQUEST ?? r.AMOUNT)}</PanelGridTd>
+                                                <PanelGridTd className="max-w-[200px] truncate">{t(r.DETAILS)}</PanelGridTd>
+                                            </PanelGridTr>
+                                        ))}
+                                    </PanelGridTbody>
+                                </PanelGridTable>
+                            )}
+                            {histSubTab === "statement" && (histDetails as any[]).length > 0 && (
+                                <PanelGridTable>
+                                    <PanelGridThead>
+                                        <PanelGridTh>Date</PanelGridTh><PanelGridTh>Type</PanelGridTh><PanelGridTh>Invoice</PanelGridTh>
+                                        <PanelGridTh align="right">Debits</PanelGridTh><PanelGridTh align="right">Credits</PanelGridTh>
+                                        <PanelGridTh align="right">Balance</PanelGridTh>
+                                        <PanelGridTh align="right">0-30</PanelGridTh><PanelGridTh align="right">30-60</PanelGridTh>
+                                        <PanelGridTh align="right">60-90</PanelGridTh><PanelGridTh align="right">90+</PanelGridTh>
+                                    </PanelGridThead>
+                                    <PanelGridTbody>
+                                        {(histDetails as any[]).map((r: any, i: number) => (
+                                            <PanelGridTr key={i}>
+                                                <PanelGridTd>{t(r.FECHA ?? r.DATE)}</PanelGridTd>
+                                                <PanelGridTd>{t(r.TYPE)}</PanelGridTd>
+                                                <PanelGridTd className="font-bold text-blue-700">{t(r.INVOICE_NO)}</PanelGridTd>
+                                                <PanelGridTd align="right">${fmt(r.DEBITS)}</PanelGridTd>
+                                                <PanelGridTd align="right" className="text-green-700">${fmt(r.CREDITS)}</PanelGridTd>
+                                                <PanelGridTd align="right" className={cn("font-bold", parseFloat(r.BALANCE ?? 0) > 0 ? "text-red-600" : "text-green-600")}>${fmt(r.BALANCE)}</PanelGridTd>
+                                                <PanelGridTd align="right">${fmt(r.T0_30)}</PanelGridTd>
+                                                <PanelGridTd align="right">${fmt(r.T30_60)}</PanelGridTd>
+                                                <PanelGridTd align="right">${fmt(r.T60_90)}</PanelGridTd>
+                                                <PanelGridTd align="right">${fmt(r.T90_120 ?? r.T120)}</PanelGridTd>
+                                            </PanelGridTr>
+                                        ))}
+                                    </PanelGridTbody>
+                                </PanelGridTable>
+                            )}
+                        </PanelGrid>
+                    </div>
+                </div>
+                )}
+
             </div>
 
             {/* ── Customer Call List Modal ──────────────────────────────── */}
