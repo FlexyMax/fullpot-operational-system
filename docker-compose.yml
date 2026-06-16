@@ -16,5 +16,5 @@ services:
     restart: always
     network_mode: host
     command: tunnel --no-autoupdate run
-    environment:
-      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    env_file:
+      - .env.production
