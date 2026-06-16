@@ -5,10 +5,10 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-    ArrowLeft, RefreshCcw, Loader2, Plus, Trash2, Edit2, Check,
+    RefreshCcw, Loader2, Plus, Trash2, Edit2, Check,
     Search, X, Lock, Unlock, FileText, Printer, CreditCard,
-    RotateCcw, Scan, Users, Package, Calendar, ChevronRight,
-    AlertCircle, CheckCircle, XCircle, ClipboardList, DollarSign,
+    RotateCcw, Scan, Users, Package, ChevronRight,
+    AlertCircle, CheckCircle, XCircle, ClipboardList,
     ShoppingCart, History,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -16,7 +16,11 @@ import { AppHeader } from "@/components/layout/AppHeader";
 import { AppFooter } from "@/components/layout/AppFooter";
 import { toast } from "sonner";
 import { usePagePermissions } from "@/lib/permissions";
+import { useAuditLog } from "@/lib/audit";
 import { usePOSStore } from "@/store/usePOSStore";
+import PanelGrid from "@/components/ui/PanelGrid";
+import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
+import { MobileActionBar } from "@/components/layout/MobileActionBar";
 const EMPTY_ARR: any[] = [];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -53,12 +57,6 @@ const vfpRowStyle = (c: any): CSSProperties | undefined => {
 const bool = (v: any) => v === true || v === 1 || String(v).toLowerCase() === "true";
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
-function Th({ children, className }: { children: any; className?: string }) {
-    return <th className={cn("px-2 py-1.5 text-left font-bold whitespace-nowrap text-gray-700 border-l border-gray-200 first:border-l-0 bg-gray-100 sticky top-0 z-10 text-[11px]", className)}>{children}</th>;
-}
-function Td({ children, className }: { children: any; className?: string }) {
-    return <td className={cn("px-2 py-1.5 whitespace-nowrap border-l border-gray-100 first:border-l-0 text-[12px]", className)}>{children}</td>;
-}
 function ActionBtn({ icon: Icon, label, onClick, disabled, variant = "default", size = "md" }: any) {
     return (
         <button onClick={onClick} disabled={disabled}
@@ -86,10 +84,11 @@ function StatusBadge({ printed, voided }: { printed: boolean; voided: boolean })
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function SalesPage() {
-    const { data: session, status } = useSession();
+    const { status } = useSession();
     const router = useRouter();
     const qc = useQueryClient();
-    const { canEdit, canDelete } = usePagePermissions("sales");
+    const { canDelete } = usePagePermissions("sales");
+    const { logAction } = useAuditLog("sales", "pos_invoices");
 
     const {
         salesmanUq, salesmanName, userUq, physicalWarehouseUq,
@@ -112,6 +111,7 @@ export default function SalesPage() {
     const [listKey,            setListKey]            = useState(0);
     const [detailKey,          setDetailKey]          = useState(0);
     const [listSearch,         setListSearch]         = useState("");
+    const [activeBar,          setActiveBar]          = useState<"invoice" | null>(null);
 
     // Customer Call List modal state
     const [ccModal,            setCcModal]            = useState(false);
@@ -119,7 +119,7 @@ export default function SalesPage() {
     const [ccSearch,           setCcSearch]           = useState("");
     const [ccCustomers,        setCcCustomers]        = useState<any[]>([]);
     const [ccTotal,            setCcTotal]            = useState(0);
-    const [ccPage,             setCcPage]             = useState(1);
+    const [,                   _setCcPage]            = useState(1);
     const [ccLoading,          setCcLoading]          = useState(false);
     const [ccSelectedCustomer, setCcSelectedCustomer] = useState<any>(null);
     const [ccShiptos,          setCcShiptos]          = useState<any[]>([]);
@@ -359,27 +359,26 @@ export default function SalesPage() {
     const h = invoiceHeader;
     const isOpen   = h && !bool(h.PRINTED) && !bool(h.VOID);
     const isClosed = h && bool(h.PRINTED) && !bool(h.VOID);
-    const isVoided = h && bool(h.VOID);
-
     // ── Invoice actions ───────────────────────────────────────────────────────
-    const invoiceAction = useCallback(async (endpoint: string, body: any, successMsg: string) => {
+    const invoiceAction = useCallback(async (endpoint: string, body: any, successMsg: string, auditLabel?: string) => {
         setWorking(true);
         try {
             const r = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
             const j = await r.json();
             if (!r.ok || !j.success) throw new Error(j.error || "Failed");
             toast.success(successMsg);
+            if (auditLabel && activeInvoiceUq) logAction("Edit", activeInvoiceUq, `${auditLabel}: ${successMsg}`);
             setDetailKey(k => k+1);
             setListKey(k => k+1);
         } catch(e: any) { toast.error(e.message); }
         finally { setWorking(false); }
-    }, []);
+    }, [activeInvoiceUq, logAction]);
 
-    const handleCloseInvoice = () => invoiceAction("/api/pos/invoice/close", { uq: activeInvoiceUq }, "Invoice closed");
-    const handleOpenInvoice  = () => invoiceAction("/api/pos/invoice/open",  { uq: activeInvoiceUq, salesman_uq: salesmanUq }, "Invoice reopened");
+    const handleCloseInvoice = () => invoiceAction("/api/pos/invoice/close", { uq: activeInvoiceUq }, "Invoice closed", "Close");
+    const handleOpenInvoice  = () => invoiceAction("/api/pos/invoice/open",  { uq: activeInvoiceUq, salesman_uq: salesmanUq }, "Invoice reopened", "Open");
     const handleVoidInvoice  = () => {
         toast("Void this invoice?", { duration: 8000,
-            action: { label: "Void", onClick: () => invoiceAction("/api/pos/invoice/void", { uq: activeInvoiceUq, reason: "Voided" }, "Invoice voided") },
+            action: { label: "Void", onClick: () => invoiceAction("/api/pos/invoice/void", { uq: activeInvoiceUq, reason: "Voided" }, "Invoice voided", "Void") },
             cancel: { label: "Cancel", onClick: () => {} },
         });
     };
@@ -392,7 +391,9 @@ export default function SalesPage() {
                     const j = await r.json();
                     if (!r.ok || !j.success) throw new Error(j.error || "Failed");
                     toast.success("Invoice deleted");
+                    logAction("Delete", activeInvoiceUq!, "Delete Invoice");
                     setActiveInvoiceUq(null);
+                    setActiveBar(null);
                     setListKey(k => k+1);
                 } catch(e: any) { toast.error(e.message); }
                 finally { setWorking(false); }
@@ -577,7 +578,7 @@ export default function SalesPage() {
             const rows = norm(Array.isArray(j.rows) ? j.rows : []);
             setCcTotal(j.total ?? 0);
             setCcCustomers(prev => append ? [...prev, ...rows] : rows);
-            setCcPage(page);
+            _setCcPage(page);
         } catch { /* ignore */ }
         finally { setCcLoading(false); }
     }, []);
@@ -721,7 +722,7 @@ export default function SalesPage() {
                             const voi  = bool(inv.VOID);
                             const closed = bool(inv.PRINTED);
                             return (
-                                <div key={i} onClick={() => { setActiveInvoiceUq(t(inv.UNICO)); setDetailKey(k=>k+1); setActiveTab("lines"); setHistCustUq(t(inv.CUSTOMER_UQ ?? "%")); setHistInvoiceUq(null); }}
+                                <div key={i} onClick={() => { setActiveInvoiceUq(t(inv.UNICO)); setDetailKey(k=>k+1); setActiveTab("lines"); setHistCustUq(t(inv.CUSTOMER_UQ ?? "%")); setHistInvoiceUq(null); setActiveBar("invoice"); }}
                                     className={cn(
                                         "px-3 py-3 border-b cursor-pointer transition-all border-l-4",
                                         sel ? "bg-blue-50 border-l-[#FB7506]" : "border-l-transparent hover:bg-gray-50 hover:border-l-gray-300"
@@ -856,160 +857,143 @@ export default function SalesPage() {
                                 {/* ── Invoice Lines ─────────────────────── */}
                                 {activeTab === "lines" && (
                                     <div className="flex-1 overflow-auto min-h-0">
-                                        <table className="min-w-full text-left">
-                                            <thead>
-                                                <tr>
-                                                    <Th>{" "}</Th>
-                                                    <Th>Farm</Th><Th>Description</Th><Th>Vendor</Th>
-                                                    <Th className="text-right">BoxQty</Th>
-                                                    <Th className="text-right">UxBox</Th>
-                                                    <Th className="text-right">Price</Th>
-                                                    <Th className="text-right">T.Units</Th>
-                                                    <Th className="text-right">Ext.Price</Th>
-                                                    <Th className="text-right">GPM%</Th>
-                                                    <Th>Case</Th><Th>Lot</Th><Th>AWB</Th>
-                                                    <Th>Days</Th>
-                                                    <Th className="text-center">Ready</Th>
-                                                    <Th className="text-center">Appr.</Th>
-                                                    {isOpen && <Th>{" "}</Th>}
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {loadingLines && <tr><td colSpan={16} className="p-6 text-center text-gray-400 italic"><Loader2 size={13} className="animate-spin inline mr-1" />Loading...</td></tr>}
-                                                {!loadingLines && (invoiceLines as any[]).length === 0 && <tr><td colSpan={16} className="p-8 text-center text-gray-400 italic">No lines — add from Available Stock</td></tr>}
-                                                {(invoiceLines as any[]).map((l: any, i: number) => {
-                                                    const bg = vfpRowStyle(l.BACK_COLOR ?? l.BACKCOLOR);
-                                                    return (
-                                                        <tr key={i} className={cn("border-b text-gray-600 hover:bg-blue-50 transition-colors", !bg && (i%2===0?"bg-white":"bg-gray-50"))}
-                                                            style={bg ?? undefined}>
-                                                            <Td>
-                                                                <img
-                                                                    src={productImages[t(l.PRODUCT_UQ)] || DEFAULT_THUMB}
-                                                                    alt="" width={32} height={32}
-                                                                    className={cn("w-8 h-8 object-cover rounded border border-gray-200 shrink-0 transition-all", isOpen && "cursor-pointer hover:opacity-80 hover:ring-2 hover:ring-[#FB7506]")}
-                                                                    onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }}
-                                                                    onClick={isOpen ? () => openStockModal(l, "lines", { box_qty: String(l.BOX_QTY ?? 1), price: String(parseMoney(l.PRICE ?? 0)) }) : undefined}
-                                                                />
-                                                            </Td>
-                                                            <Td className="font-bold text-[#FB7506]">{t(l.FARM)}</Td>
-                                                            <Td className="max-w-[200px] truncate font-medium">{t(l.DESCRIPTION)}</Td>
-                                                            <Td className="max-w-[100px] truncate">{t(l.GROWER)}</Td>
-                                                            <Td className="text-right font-semibold">{fmtI(l.BOX_QTY)}</Td>
-                                                            <Td className="text-right">{fmtI(l.UNITS_X_BOX)}</Td>
-                                                            <Td className="text-right font-semibold">${fmt(l.PRICE)}</Td>
-                                                            <Td className="text-right">{fmtI(l.TOTAL_UNITS)}</Td>
-                                                            <Td className="text-right font-bold text-green-700">{t(l.EXT_PRICE)}</Td>
-                                                            <Td className={cn("text-right font-bold", parseMoney(l.GPM) < 0 ? "text-red-600" : "text-gray-700")}>{fmt(l.GPM)}%</Td>
-                                                            <Td>{t(l.CASE_NAME ?? l.CASE_SH)}</Td>
-                                                            <Td>{t(l.LOTE)}</Td>
-                                                            <Td className="font-mono text-blue-700">{t(l.AWBCODE)}</Td>
-                                                            <Td>{fmtI(l.DAYS)}</Td>
-                                                            <Td className="text-center">{bool(l.READY_TRAN) ? <Check size={11} className="text-green-600 inline" /> : ""}</Td>
-                                                            <Td className="text-center">{bool(l.APPROVED) ? <CheckCircle size={11} className="text-green-600 inline" /> : <AlertCircle size={11} className="text-amber-500 inline" />}</Td>
-                                                            {isOpen && <Td>
-                                                                <div className="flex items-center gap-1">
-                                                                    <button onClick={() => openEditLine(l)} disabled={working}
-                                                                        className="text-blue-400 hover:text-blue-600 disabled:opacity-40 p-0.5" title="Edit line">
-                                                                        <Edit2 size={11} />
-                                                                    </button>
-                                                                    <button onClick={() => handleDeleteLine(t(l.UNICO))} disabled={working}
-                                                                        className="text-red-400 hover:text-red-600 disabled:opacity-40 p-0.5" title="Delete line">
-                                                                        <Trash2 size={11} />
-                                                                    </button>
-                                                                </div>
-                                                            </Td>}
-                                                        </tr>
-                                                    );
-                                                })}
-                                            </tbody>
-                                        </table>
+                                        <PanelGridTable>
+                                            <PanelGridThead>
+                                                <PanelGridTh>{""}</PanelGridTh>
+                                                <PanelGridTh>Farm</PanelGridTh>
+                                                <PanelGridTh>Description</PanelGridTh>
+                                                <PanelGridTh>Vendor</PanelGridTh>
+                                                <PanelGridTh align="right">BoxQty</PanelGridTh>
+                                                <PanelGridTh align="right">UxBox</PanelGridTh>
+                                                <PanelGridTh align="right">Price</PanelGridTh>
+                                                <PanelGridTh align="right">T.Units</PanelGridTh>
+                                                <PanelGridTh align="right">Ext.Price</PanelGridTh>
+                                                <PanelGridTh align="right">GPM%</PanelGridTh>
+                                                <PanelGridTh>Case</PanelGridTh>
+                                                <PanelGridTh>Lot</PanelGridTh>
+                                                <PanelGridTh>AWB</PanelGridTh>
+                                                <PanelGridTh>Days</PanelGridTh>
+                                                <PanelGridTh align="center">Ready</PanelGridTh>
+                                                <PanelGridTh align="center">Appr.</PanelGridTh>
+                                                {isOpen && <PanelGridTh>{""}</PanelGridTh>}
+                                            </PanelGridThead>
+                                            <PanelGridTbody>
+                                                {loadingLines && <PanelGridTr><PanelGridTd colSpan={16} className="py-6 text-center italic"><Loader2 size={13} className="animate-spin inline mr-1" />Loading...</PanelGridTd></PanelGridTr>}
+                                                {!loadingLines && (invoiceLines as any[]).length === 0 && <PanelGridTr><PanelGridTd colSpan={16} className="py-8 text-center italic">No lines — add from Available Stock</PanelGridTd></PanelGridTr>}
+                                                {(invoiceLines as any[]).map((l: any, i: number) => (
+                                                    <PanelGridTr key={i} style={vfpRowStyle(l.BACK_COLOR ?? l.BACKCOLOR)}>
+                                                        <PanelGridTd>
+                                                            <img
+                                                                src={productImages[t(l.PRODUCT_UQ)] || DEFAULT_THUMB}
+                                                                alt="" width={32} height={32}
+                                                                className={cn("w-8 h-8 object-cover rounded border border-gray-200 shrink-0 transition-all", isOpen && "cursor-pointer hover:opacity-80 hover:ring-2 hover:ring-[#FB7506]")}
+                                                                onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }}
+                                                                onClick={isOpen ? () => openStockModal(l, "lines", { box_qty: String(l.BOX_QTY ?? 1), price: String(parseMoney(l.PRICE ?? 0)) }) : undefined}
+                                                            />
+                                                        </PanelGridTd>
+                                                        <PanelGridTd className="font-bold text-[#FB7506]">{t(l.FARM)}</PanelGridTd>
+                                                        <PanelGridTd className="max-w-[200px] truncate font-medium">{t(l.DESCRIPTION)}</PanelGridTd>
+                                                        <PanelGridTd className="max-w-[100px] truncate">{t(l.GROWER)}</PanelGridTd>
+                                                        <PanelGridTd align="right" className="font-semibold">{fmtI(l.BOX_QTY)}</PanelGridTd>
+                                                        <PanelGridTd align="right">{fmtI(l.UNITS_X_BOX)}</PanelGridTd>
+                                                        <PanelGridTd align="right" className="font-semibold">${fmt(l.PRICE)}</PanelGridTd>
+                                                        <PanelGridTd align="right">{fmtI(l.TOTAL_UNITS)}</PanelGridTd>
+                                                        <PanelGridTd align="right" className="font-bold text-green-700">{t(l.EXT_PRICE)}</PanelGridTd>
+                                                        <PanelGridTd align="right" className={cn("font-bold", parseMoney(l.GPM) < 0 ? "text-red-600" : "")}>{fmt(l.GPM)}%</PanelGridTd>
+                                                        <PanelGridTd>{t(l.CASE_NAME ?? l.CASE_SH)}</PanelGridTd>
+                                                        <PanelGridTd>{t(l.LOTE)}</PanelGridTd>
+                                                        <PanelGridTd className="font-mono text-blue-700">{t(l.AWBCODE)}</PanelGridTd>
+                                                        <PanelGridTd>{fmtI(l.DAYS)}</PanelGridTd>
+                                                        <PanelGridTd align="center">{bool(l.READY_TRAN) ? <Check size={11} className="text-green-600 inline" /> : ""}</PanelGridTd>
+                                                        <PanelGridTd align="center">{bool(l.APPROVED) ? <CheckCircle size={11} className="text-green-600 inline" /> : <AlertCircle size={11} className="text-amber-500 inline" />}</PanelGridTd>
+                                                        {isOpen && <PanelGridTd>
+                                                            <div className="flex items-center gap-1">
+                                                                <button onClick={() => openEditLine(l)} disabled={working} className="text-blue-400 hover:text-blue-600 disabled:opacity-40 p-0.5" title="Edit"><Edit2 size={11} /></button>
+                                                                <button onClick={() => handleDeleteLine(t(l.UNICO))} disabled={working} className="text-red-400 hover:text-red-600 disabled:opacity-40 p-0.5" title="Delete"><Trash2 size={11} /></button>
+                                                            </div>
+                                                        </PanelGridTd>}
+                                                    </PanelGridTr>
+                                                ))}
+                                            </PanelGridTbody>
+                                        </PanelGridTable>
                                     </div>
                                 )}
 
                                 {/* ── Available Stock ───────────────────── */}
                                 {activeTab === "stock" && (
                                     <div className="flex-1 overflow-auto min-h-0">
-                                        <table className="min-w-full text-left">
-                                            <thead>
-                                                <tr>
-                                                    {[
-                                                        { col: "", label: "" },
-                                                        { col: "", label: isOpen ? "Add" : "" },
-                                                        { col: "description", label: "Description" },
-                                                        { col: "farm",        label: "Farm" },
-                                                        { col: "grower",      label: "Vendor" },
-                                                        { col: "box_date",    label: "Date" },
-                                                        { col: "days",        label: "Days" },
-                                                        { col: "awbcode",     label: "AWB" },
-                                                        { col: "bunches_case",label: "Bch/Case" },
-                                                        { col: "units_bunch", label: "U/Bch" },
-                                                        { col: "tunits_x_box",label: "U/Box" },
-                                                        { col: "total_units", label: "T.Units" },
-                                                        { col: "price_x_unit",label: "Price" },
-                                                        { col: "wh_stock",    label: "Stock" },
-                                                        { col: "case_sh",     label: "Case" },
-                                                        { col: "gprofit",     label: "GPM%" },
-                                                        { col: "box_id",      label: "BoxID" },
-                                                    ].map(({ col, label }) => (
-                                                        <th key={label}
-                                                            onClick={col ? () => toggleStockSort(col) : undefined}
-                                                            className={cn("px-2 py-1.5 text-left font-bold whitespace-nowrap text-gray-700 border-l border-gray-200 first:border-l-0 bg-gray-100 sticky top-0 z-10 text-[11px]", col && "cursor-pointer hover:bg-gray-200 select-none")}>
-                                                            {label}{stockSortCol === col && <span className="ml-1">{stockSortDir === "ASC" ? "↑" : "↓"}</span>}
-                                                        </th>
-                                                    ))}
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {stockLoading && stockRows.length === 0 && <tr><td colSpan={16} className="p-8 text-center text-gray-400 italic"><Loader2 size={13} className="animate-spin inline mr-1" />Loading...</td></tr>}
-                                                {!stockLoading && stockRows.length === 0 && <tr><td colSpan={16} className="p-8 text-center text-gray-400 italic">No stock available</td></tr>}
-                                                {stockRows.map((s: any, i: number) => {
-                                                    const bg = vfpRowStyle(s.BACK_COLOR ?? s.BACKCOLOR);
-                                                    return (
-                                                        <tr key={i} className={cn("border-b text-gray-600 hover:bg-blue-50 transition-colors", !bg && (i%2===0?"bg-white":"bg-gray-50"))}
-                                                            style={bg ?? undefined}>
-                                                            <Td>
-                                                                <img
-                                                                    src={productImages[t(s.PRODUCT_UQ ?? s.BOX_PACK_UQ ?? "")] || DEFAULT_THUMB}
-                                                                    alt="" width={32} height={32}
-                                                                    className="w-8 h-8 object-cover rounded border border-gray-200 shrink-0 cursor-pointer hover:opacity-80 hover:ring-2 hover:ring-[#FB7506] transition-all"
-                                                                    onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }}
-                                                                    onClick={() => openStockModal(s, "stock", { box_qty: "1", price: fmt(s.PRICE_X_UNIT ?? 0) })}
-                                                                />
-                                                            </Td>
-                                                            <Td>
-                                                                {isOpen && (
-                                                                    <button onClick={() => handleAddLine(s)} disabled={working}
-                                                                        className="flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-black bg-[#FB7506] hover:bg-orange-500 text-white rounded disabled:opacity-40">
-                                                                        <Plus size={9} />Add
-                                                                    </button>
-                                                                )}
-                                                            </Td>
-                                                            <Td className="max-w-[200px] truncate font-medium">{t(s.DESCRIPTION)}</Td>
-                                                            <Td className="font-bold text-[#FB7506]">{t(s.FARM)}</Td>
-                                                            <Td className="max-w-[100px] truncate">{t(s.GROWER)}</Td>
-                                                            <Td>{fmtDate(s.BOX_DATE)}</Td>
-                                                            <Td className="text-right">{fmtI(s.DAYS)}</Td>
-                                                            <Td className="font-mono text-blue-700">{t(s.AWBCODE)}</Td>
-                                                            <Td className="text-right">{fmtI(s.BUNCHES_CASE)}</Td>
-                                                            <Td className="text-right">{fmtI(s.UNITS_BUNCH)}</Td>
-                                                            <Td className="text-right font-semibold">{fmtI(s.TUNITS_X_BOX)}</Td>
-                                                            <Td className="text-right">{fmtI(s.TOTAL_UNITS)}</Td>
-                                                            <Td className="text-right font-black text-green-700">${fmt(s.PRICE_X_UNIT)}</Td>
-                                                            <Td className="text-right font-bold">{fmtI(s.WH_STOCK)}</Td>
-                                                            <Td>{t(s.CASE_SH ?? s.CASE_NAME)}</Td>
-                                                            <Td className={cn("text-right font-bold", parseFloat(s.GPROFIT ?? 0) < 0 ? "text-red-600" : "text-gray-700")}>{fmt(s.GPROFIT)}%</Td>
-                                                            <Td className="font-mono text-[10px]">{t(s.BOX_ID)}</Td>
-                                                        </tr>
-                                                    );
-                                                })}
-                                                <tr><td colSpan={16}>
-                                                    <div ref={sentinelRef} className="flex items-center justify-center py-3 text-[10px] text-gray-400">
-                                                        {stockLoading && stockRows.length > 0 && <><Loader2 size={12} className="animate-spin mr-1" />Loading more...</>}
-                                                        {!stockLoading && !stockHasMore && stockRows.length > 0 && <span className="italic">All {stockTotal.toLocaleString()} items loaded</span>}
-                                                    </div>
-                                                </td></tr>
-                                            </tbody>
-                                        </table>
+                                        <PanelGridTable>
+                                            <PanelGridThead>
+                                                {[
+                                                    { col: "", label: "" },
+                                                    { col: "", label: isOpen ? "Add" : "" },
+                                                    { col: "description",  label: "Description" },
+                                                    { col: "farm",         label: "Farm" },
+                                                    { col: "grower",       label: "Vendor" },
+                                                    { col: "box_date",     label: "Date" },
+                                                    { col: "days",         label: "Days" },
+                                                    { col: "awbcode",      label: "AWB" },
+                                                    { col: "bunches_case", label: "Bch/Case" },
+                                                    { col: "units_bunch",  label: "U/Bch" },
+                                                    { col: "tunits_x_box", label: "U/Box" },
+                                                    { col: "total_units",  label: "T.Units" },
+                                                    { col: "price_x_unit", label: "Price" },
+                                                    { col: "wh_stock",     label: "Stock" },
+                                                    { col: "case_sh",      label: "Case" },
+                                                    { col: "gprofit",      label: "GPM%" },
+                                                    { col: "box_id",       label: "BoxID" },
+                                                ].map(({ col, label }) => (
+                                                    <PanelGridTh key={col + label}
+                                                        className={cn(col && "cursor-pointer hover:bg-gray-50 select-none")}
+                                                        onClick={col ? () => toggleStockSort(col) : undefined}>
+                                                        {label}{stockSortCol === col && <span className="ml-1">{stockSortDir === "ASC" ? "↑" : "↓"}</span>}
+                                                    </PanelGridTh>
+                                                ))}
+                                            </PanelGridThead>
+                                            <PanelGridTbody>
+                                                {stockLoading && stockRows.length === 0 && <PanelGridTr><PanelGridTd colSpan={17} className="py-8 text-center italic"><Loader2 size={13} className="animate-spin inline mr-1" />Loading...</PanelGridTd></PanelGridTr>}
+                                                {!stockLoading && stockRows.length === 0 && <PanelGridTr><PanelGridTd colSpan={17} className="py-8 text-center italic">No stock available</PanelGridTd></PanelGridTr>}
+                                                {stockRows.map((s: any, i: number) => (
+                                                    <PanelGridTr key={i} style={vfpRowStyle(s.BACK_COLOR ?? s.BACKCOLOR)}>
+                                                        <PanelGridTd>
+                                                            <img
+                                                                src={productImages[t(s.PRODUCT_UQ ?? s.BOX_PACK_UQ ?? "")] || DEFAULT_THUMB}
+                                                                alt="" width={32} height={32}
+                                                                className="w-8 h-8 object-cover rounded border border-gray-200 shrink-0 cursor-pointer hover:opacity-80 hover:ring-2 hover:ring-[#FB7506] transition-all"
+                                                                onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }}
+                                                                onClick={() => openStockModal(s, "stock", { box_qty: "1", price: fmt(s.PRICE_X_UNIT ?? 0) })}
+                                                            />
+                                                        </PanelGridTd>
+                                                        <PanelGridTd>
+                                                            {isOpen && <button onClick={() => handleAddLine(s)} disabled={working} className="flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-black bg-[#FB7506] hover:bg-orange-500 text-white rounded disabled:opacity-40"><Plus size={9} />Add</button>}
+                                                        </PanelGridTd>
+                                                        <PanelGridTd className="max-w-[200px] truncate font-medium">{t(s.DESCRIPTION)}</PanelGridTd>
+                                                        <PanelGridTd className="font-bold text-[#FB7506]">{t(s.FARM)}</PanelGridTd>
+                                                        <PanelGridTd className="max-w-[100px] truncate">{t(s.GROWER)}</PanelGridTd>
+                                                        <PanelGridTd>{fmtDate(s.BOX_DATE)}</PanelGridTd>
+                                                        <PanelGridTd align="right">{fmtI(s.DAYS)}</PanelGridTd>
+                                                        <PanelGridTd className="font-mono text-blue-700">{t(s.AWBCODE)}</PanelGridTd>
+                                                        <PanelGridTd align="right">{fmtI(s.BUNCHES_CASE)}</PanelGridTd>
+                                                        <PanelGridTd align="right">{fmtI(s.UNITS_BUNCH)}</PanelGridTd>
+                                                        <PanelGridTd align="right" className="font-semibold">{fmtI(s.TUNITS_X_BOX)}</PanelGridTd>
+                                                        <PanelGridTd align="right">{fmtI(s.TOTAL_UNITS)}</PanelGridTd>
+                                                        <PanelGridTd align="right" className="font-black text-green-700">${fmt(s.PRICE_X_UNIT)}</PanelGridTd>
+                                                        <PanelGridTd align="right" className="font-bold">{fmtI(s.WH_STOCK)}</PanelGridTd>
+                                                        <PanelGridTd>{t(s.CASE_SH ?? s.CASE_NAME)}</PanelGridTd>
+                                                        <PanelGridTd align="right" className={cn("font-bold", parseFloat(s.GPROFIT ?? 0) < 0 ? "text-red-600" : "")}>{fmt(s.GPROFIT)}%</PanelGridTd>
+                                                        <PanelGridTd className="font-mono text-[10px]">{t(s.BOX_ID)}</PanelGridTd>
+                                                    </PanelGridTr>
+                                                ))}
+                                                <PanelGridTr>
+                                                    <PanelGridTd colSpan={17}>
+                                                        <div ref={sentinelRef} className="flex items-center justify-center py-3 text-[10px] text-gray-400">
+                                                            {stockLoading && stockRows.length > 0 && <><Loader2 size={12} className="animate-spin mr-1" />Loading more...</>}
+                                                            {!stockLoading && !stockHasMore && stockRows.length > 0 && <span className="italic">All {stockTotal.toLocaleString()} items loaded</span>}
+                                                        </div>
+                                                    </PanelGridTd>
+                                                </PanelGridTr>
+                                            </PanelGridTbody>
+                                        </PanelGridTable>
                                     </div>
                                 )}
 
@@ -1038,121 +1022,120 @@ export default function SalesPage() {
                                         {/* History list + detail split */}
                                         <div className="flex flex-1 overflow-hidden min-h-0 gap-2 p-2">
                                             {/* History invoice list */}
-                                            <div className="w-[320px] shrink-0 border border-gray-200 rounded overflow-hidden flex flex-col">
-                                                <div className="bg-[#374151] px-3 py-1.5 shrink-0">
-                                                    <span className="font-black text-[10px] text-white uppercase tracking-widest">History</span>
-                                                </div>
-                                                <div className="flex-1 overflow-auto">
-                                                    {(histInvoices as any[]).map((inv: any, i: number) => (
-                                                        <div key={i} onClick={() => setHistInvoiceUq(t(inv.UNICO))}
-                                                            className={cn("px-3 py-2 border-b cursor-pointer transition-colors text-[11px]",
-                                                                histInvoiceUq === t(inv.UNICO) ? "bg-blue-100" : "hover:bg-blue-50")}>
-                                                            <div className="flex justify-between">
-                                                                <span className="font-bold text-blue-700">#{t(inv.INVOICE_NO)}</span>
-                                                                <span className="text-gray-500">{fmtDate(inv.INVOICE_DATE)}</span>
-                                                            </div>
-                                                            <p className="truncate text-gray-700">{t(inv.CUSTOMER)}</p>
-                                                            <div className="flex justify-between text-[10px] text-gray-500 mt-0.5">
-                                                                <span>${fmt(inv.TOTAL_INVOICE)}</span>
-                                                                <span>Bal: ${fmt(inv.TOTAL_BALANCE)}</span>
-                                                            </div>
+                                            <PanelGrid title="History" icon={History} recordCount={(histInvoices as any[]).length} className="w-[320px] shrink-0">
+                                                {(histInvoices as any[]).map((inv: any, i: number) => (
+                                                    <div key={i} onClick={() => setHistInvoiceUq(t(inv.UNICO))}
+                                                        className={cn("px-3 py-2 border-b cursor-pointer transition-colors text-[11px]",
+                                                            histInvoiceUq === t(inv.UNICO) ? "bg-blue-100" : "hover:bg-blue-50")}>
+                                                        <div className="flex justify-between">
+                                                            <span className="font-bold text-blue-700">#{t(inv.INVOICE_NO)}</span>
+                                                            <span className="text-gray-500">{fmtDate(inv.INVOICE_DATE)}</span>
                                                         </div>
-                                                    ))}
-                                                    {!loadingHistList && (histInvoices as any[]).length === 0 && <p className="p-6 text-center text-gray-400 italic text-[11px]">No invoices found</p>}
-                                                </div>
-                                            </div>
+                                                        <p className="truncate text-gray-700">{t(inv.CUSTOMER)}</p>
+                                                        <div className="flex justify-between text-[10px] text-gray-500 mt-0.5">
+                                                            <span>${fmt(inv.TOTAL_INVOICE)}</span>
+                                                            <span>Bal: ${fmt(inv.TOTAL_BALANCE)}</span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                {!loadingHistList && (histInvoices as any[]).length === 0 && <p className="p-6 text-center text-gray-400 italic text-[11px]">No invoices found</p>}
+                                            </PanelGrid>
                                             {/* History detail */}
-                                            <div className="flex-1 border border-gray-200 rounded overflow-hidden flex flex-col min-w-0">
-                                                <div className="bg-[#374151] px-3 py-1.5 flex items-center gap-2 shrink-0">
-                                                    {(["details","credits","statement"] as const).map(sub => (
-                                                        <button key={sub} onClick={() => setHistSubTab(sub)}
-                                                            className={cn("px-2 py-0.5 text-[10px] font-black uppercase rounded transition-all",
-                                                                histSubTab === sub ? "bg-[#FB7506] text-white" : "text-gray-400 hover:text-white")}>
-                                                            {sub}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                                <div className="flex-1 overflow-auto min-h-0">
-                                                    {!histInvoiceUq && <p className="p-6 text-center text-gray-400 italic text-[11px]">Select an invoice</p>}
-                                                    {histInvoiceUq && (histDetails as any[]).length === 0 && <p className="p-6 text-center text-gray-400 italic text-[11px]">No data</p>}
-                                                    {histInvoiceUq && histSubTab === "details" && (histDetails as any[]).length > 0 && (
-                                                        <table className="min-w-full text-left">
-                                                            <thead><tr>
-                                                                <Th>Product</Th><Th>Farm</Th><Th>Vendor</Th>
-                                                                <Th className="text-right">BoxQty</Th><Th className="text-right">UxBox</Th>
-                                                                <Th className="text-right">Price</Th><Th className="text-right">T.Units</Th>
-                                                                <Th className="text-right">Ext.Price</Th><Th className="text-right">Credits</Th>
-                                                                <Th>Case</Th><Th>AWB</Th><Th>Lot</Th>
-                                                            </tr></thead>
-                                                            <tbody>
-                                                                {(histDetails as any[]).map((r: any, i: number) => (
-                                                                    <tr key={i} className={cn("border-b text-gray-600", i%2===0?"bg-white":"bg-gray-50")}>
-                                                                        <Td className="max-w-[200px] truncate font-medium">{t(r.DESCRIPTION)}</Td>
-                                                                        <Td className="font-bold text-[#FB7506]">{t(r.FARM)}</Td>
-                                                                        <Td className="max-w-[100px] truncate">{t(r.GROWER ?? r.VENDOR)}</Td>
-                                                                        <Td className="text-right">{fmtI(r.BOX_QTY)}</Td>
-                                                                        <Td className="text-right">{fmtI(r.UNITS_X_BOX)}</Td>
-                                                                        <Td className="text-right font-semibold">${fmt(r.PRICE ?? r.PRICE_X_U)}</Td>
-                                                                        <Td className="text-right">{fmtI(r.TOTAL_UNITS)}</Td>
-                                                                        <Td className="text-right font-bold text-green-700">${fmt(r.EXT_PRICE)}</Td>
-                                                                        <Td className="text-right text-red-600">{fmt(r.CREDITS)}</Td>
-                                                                        <Td>{t(r.CASE_SH ?? r.CASE_NAME)}</Td>
-                                                                        <Td className="font-mono text-blue-700">{t(r.AWBCODE ?? r.AWB)}</Td>
-                                                                        <Td>{t(r.LOTE ?? r.LOT)}</Td>
-                                                                    </tr>
-                                                                ))}
-                                                            </tbody>
-                                                        </table>
-                                                    )}
-                                                    {histInvoiceUq && histSubTab === "credits" && (histDetails as any[]).length > 0 && (
-                                                        <table className="min-w-full text-left">
-                                                            <thead><tr>
-                                                                <Th>Product</Th><Th>Reason</Th>
-                                                                <Th className="text-right">Units</Th><Th className="text-right">Amount</Th>
-                                                                <Th>Details</Th>
-                                                            </tr></thead>
-                                                            <tbody>
-                                                                {(histDetails as any[]).map((r: any, i: number) => (
-                                                                    <tr key={i} className={cn("border-b text-gray-600", i%2===0?"bg-white":"bg-gray-50")}>
-                                                                        <Td className="max-w-[180px] truncate font-medium">{t(r.DESCRIPTION)}</Td>
-                                                                        <Td>{t(r.REASON)}</Td>
-                                                                        <Td className="text-right">{fmtI(r.CR_UNITS)}</Td>
-                                                                        <Td className="text-right font-bold text-red-600">${fmt(r.CR_REQUEST ?? r.AMOUNT)}</Td>
-                                                                        <Td className="max-w-[200px] truncate">{t(r.DETAILS)}</Td>
-                                                                    </tr>
-                                                                ))}
-                                                            </tbody>
-                                                        </table>
-                                                    )}
-                                                    {histSubTab === "statement" && (histDetails as any[]).length > 0 && (
-                                                        <table className="min-w-full text-left">
-                                                            <thead><tr>
-                                                                <Th>Date</Th><Th>Type</Th><Th>Invoice</Th>
-                                                                <Th className="text-right">Debits</Th><Th className="text-right">Credits</Th>
-                                                                <Th className="text-right">Balance</Th>
-                                                                <Th className="text-right">0-30</Th><Th className="text-right">30-60</Th>
-                                                                <Th className="text-right">60-90</Th><Th className="text-right">90+</Th>
-                                                            </tr></thead>
-                                                            <tbody>
-                                                                {(histDetails as any[]).map((r: any, i: number) => (
-                                                                    <tr key={i} className={cn("border-b text-gray-600", i%2===0?"bg-white":"bg-gray-50")}>
-                                                                        <Td>{t(r.FECHA ?? r.DATE)}</Td>
-                                                                        <Td>{t(r.TYPE)}</Td>
-                                                                        <Td className="font-bold text-blue-700">{t(r.INVOICE_NO)}</Td>
-                                                                        <Td className="text-right">${fmt(r.DEBITS)}</Td>
-                                                                        <Td className="text-right text-green-700">${fmt(r.CREDITS)}</Td>
-                                                                        <Td className={cn("text-right font-bold", parseFloat(r.BALANCE ?? 0) > 0 ? "text-red-600" : "text-green-600")}>${fmt(r.BALANCE)}</Td>
-                                                                        <Td className="text-right">${fmt(r.T0_30)}</Td>
-                                                                        <Td className="text-right">${fmt(r.T30_60)}</Td>
-                                                                        <Td className="text-right">${fmt(r.T60_90)}</Td>
-                                                                        <Td className="text-right">${fmt(r.T90_120 ?? r.T120)}</Td>
-                                                                    </tr>
-                                                                ))}
-                                                            </tbody>
-                                                        </table>
-                                                    )}
-                                                </div>
-                                            </div>
+                                            <PanelGrid
+                                                title="Invoice Detail"
+                                                icon={FileText}
+                                                className="flex-1 min-w-0"
+                                                headerRight={
+                                                    <div className="flex items-center gap-1">
+                                                        {(["details","credits","statement"] as const).map(sub => (
+                                                            <button key={sub} onClick={() => setHistSubTab(sub)}
+                                                                className={cn("px-2 py-0.5 text-[10px] font-black uppercase rounded transition-all",
+                                                                    histSubTab === sub ? "bg-[#FB7506] text-white" : "text-gray-400 hover:text-white")}>
+                                                                {sub}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                }
+                                            >
+                                                {!histInvoiceUq && <p className="p-6 text-center text-gray-400 italic text-[11px]">Select an invoice</p>}
+                                                {histInvoiceUq && (histDetails as any[]).length === 0 && <p className="p-6 text-center text-gray-400 italic text-[11px]">No data</p>}
+                                                {histInvoiceUq && histSubTab === "details" && (histDetails as any[]).length > 0 && (
+                                                    <PanelGridTable>
+                                                        <PanelGridThead>
+                                                            <PanelGridTh>Product</PanelGridTh><PanelGridTh>Farm</PanelGridTh><PanelGridTh>Vendor</PanelGridTh>
+                                                            <PanelGridTh align="right">BoxQty</PanelGridTh><PanelGridTh align="right">UxBox</PanelGridTh>
+                                                            <PanelGridTh align="right">Price</PanelGridTh><PanelGridTh align="right">T.Units</PanelGridTh>
+                                                            <PanelGridTh align="right">Ext.Price</PanelGridTh><PanelGridTh align="right">Credits</PanelGridTh>
+                                                            <PanelGridTh>Case</PanelGridTh><PanelGridTh>AWB</PanelGridTh><PanelGridTh>Lot</PanelGridTh>
+                                                        </PanelGridThead>
+                                                        <PanelGridTbody>
+                                                            {(histDetails as any[]).map((r: any, i: number) => (
+                                                                <PanelGridTr key={i}>
+                                                                    <PanelGridTd className="max-w-[200px] truncate font-medium">{t(r.DESCRIPTION)}</PanelGridTd>
+                                                                    <PanelGridTd className="font-bold text-[#FB7506]">{t(r.FARM)}</PanelGridTd>
+                                                                    <PanelGridTd className="max-w-[100px] truncate">{t(r.GROWER ?? r.VENDOR)}</PanelGridTd>
+                                                                    <PanelGridTd align="right">{fmtI(r.BOX_QTY)}</PanelGridTd>
+                                                                    <PanelGridTd align="right">{fmtI(r.UNITS_X_BOX)}</PanelGridTd>
+                                                                    <PanelGridTd align="right" className="font-semibold">${fmt(r.PRICE ?? r.PRICE_X_U)}</PanelGridTd>
+                                                                    <PanelGridTd align="right">{fmtI(r.TOTAL_UNITS)}</PanelGridTd>
+                                                                    <PanelGridTd align="right" className="font-bold text-green-700">${fmt(r.EXT_PRICE)}</PanelGridTd>
+                                                                    <PanelGridTd align="right" className="text-red-600">{fmt(r.CREDITS)}</PanelGridTd>
+                                                                    <PanelGridTd>{t(r.CASE_SH ?? r.CASE_NAME)}</PanelGridTd>
+                                                                    <PanelGridTd className="font-mono text-blue-700">{t(r.AWBCODE ?? r.AWB)}</PanelGridTd>
+                                                                    <PanelGridTd>{t(r.LOTE ?? r.LOT)}</PanelGridTd>
+                                                                </PanelGridTr>
+                                                            ))}
+                                                        </PanelGridTbody>
+                                                    </PanelGridTable>
+                                                )}
+                                                {histInvoiceUq && histSubTab === "credits" && (histDetails as any[]).length > 0 && (
+                                                    <PanelGridTable>
+                                                        <PanelGridThead>
+                                                            <PanelGridTh>Product</PanelGridTh><PanelGridTh>Reason</PanelGridTh>
+                                                            <PanelGridTh align="right">Units</PanelGridTh><PanelGridTh align="right">Amount</PanelGridTh>
+                                                            <PanelGridTh>Details</PanelGridTh>
+                                                        </PanelGridThead>
+                                                        <PanelGridTbody>
+                                                            {(histDetails as any[]).map((r: any, i: number) => (
+                                                                <PanelGridTr key={i}>
+                                                                    <PanelGridTd className="max-w-[180px] truncate font-medium">{t(r.DESCRIPTION)}</PanelGridTd>
+                                                                    <PanelGridTd>{t(r.REASON)}</PanelGridTd>
+                                                                    <PanelGridTd align="right">{fmtI(r.CR_UNITS)}</PanelGridTd>
+                                                                    <PanelGridTd align="right" className="font-bold text-red-600">${fmt(r.CR_REQUEST ?? r.AMOUNT)}</PanelGridTd>
+                                                                    <PanelGridTd className="max-w-[200px] truncate">{t(r.DETAILS)}</PanelGridTd>
+                                                                </PanelGridTr>
+                                                            ))}
+                                                        </PanelGridTbody>
+                                                    </PanelGridTable>
+                                                )}
+                                                {histSubTab === "statement" && (histDetails as any[]).length > 0 && (
+                                                    <PanelGridTable>
+                                                        <PanelGridThead>
+                                                            <PanelGridTh>Date</PanelGridTh><PanelGridTh>Type</PanelGridTh><PanelGridTh>Invoice</PanelGridTh>
+                                                            <PanelGridTh align="right">Debits</PanelGridTh><PanelGridTh align="right">Credits</PanelGridTh>
+                                                            <PanelGridTh align="right">Balance</PanelGridTh>
+                                                            <PanelGridTh align="right">0-30</PanelGridTh><PanelGridTh align="right">30-60</PanelGridTh>
+                                                            <PanelGridTh align="right">60-90</PanelGridTh><PanelGridTh align="right">90+</PanelGridTh>
+                                                        </PanelGridThead>
+                                                        <PanelGridTbody>
+                                                            {(histDetails as any[]).map((r: any, i: number) => (
+                                                                <PanelGridTr key={i}>
+                                                                    <PanelGridTd>{t(r.FECHA ?? r.DATE)}</PanelGridTd>
+                                                                    <PanelGridTd>{t(r.TYPE)}</PanelGridTd>
+                                                                    <PanelGridTd className="font-bold text-blue-700">{t(r.INVOICE_NO)}</PanelGridTd>
+                                                                    <PanelGridTd align="right">${fmt(r.DEBITS)}</PanelGridTd>
+                                                                    <PanelGridTd align="right" className="text-green-700">${fmt(r.CREDITS)}</PanelGridTd>
+                                                                    <PanelGridTd align="right" className={cn("font-bold", parseFloat(r.BALANCE ?? 0) > 0 ? "text-red-600" : "text-green-600")}>${fmt(r.BALANCE)}</PanelGridTd>
+                                                                    <PanelGridTd align="right">${fmt(r.T0_30)}</PanelGridTd>
+                                                                    <PanelGridTd align="right">${fmt(r.T30_60)}</PanelGridTd>
+                                                                    <PanelGridTd align="right">${fmt(r.T60_90)}</PanelGridTd>
+                                                                    <PanelGridTd align="right">${fmt(r.T90_120 ?? r.T120)}</PanelGridTd>
+                                                                </PanelGridTr>
+                                                            ))}
+                                                        </PanelGridTbody>
+                                                    </PanelGridTable>
+                                                )}
+                                            </PanelGrid>
                                         </div>
                                     </div>
                                 )}
@@ -1196,30 +1179,29 @@ export default function SalesPage() {
                                     <span className="text-[10px] text-gray-400">{ccCustomers.length}/{ccTotal}</span>
                                 </div>
                                 <div className="flex-1 overflow-auto min-h-0">
-                                    <table className="min-w-full text-left text-[11px]">
-                                        <thead className="sticky top-0 bg-gray-100 border-b">
-                                            <tr>
-                                                <th className="px-3 py-1.5 font-bold text-gray-700">Customer</th>
-                                                <th className="px-3 py-1.5 font-bold text-gray-700">Contact</th>
-                                                <th className="px-3 py-1.5 font-bold text-gray-700">City</th>
-                                                <th className="px-3 py-1.5 font-bold text-gray-700">Phone</th>
-                                                <th className="px-3 py-1.5 font-bold text-gray-700">Last Sale</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
+                                    <PanelGridTable>
+                                        <PanelGridThead>
+                                            <PanelGridTh>Customer</PanelGridTh>
+                                            <PanelGridTh>Contact</PanelGridTh>
+                                            <PanelGridTh>City</PanelGridTh>
+                                            <PanelGridTh>Phone</PanelGridTh>
+                                            <PanelGridTh>Last Sale</PanelGridTh>
+                                        </PanelGridThead>
+                                        <PanelGridTbody>
                                             {ccCustomers.map((c: any, i: number) => (
-                                                <tr key={i} onClick={() => selectCcCustomer(c)}
-                                                    className="border-b cursor-pointer hover:bg-blue-50 transition-colors odd:bg-white even:bg-gray-50">
-                                                    <td className="px-3 py-1.5 font-medium text-gray-800">{t(c.CUST_CODE ?? c.CUSTOMER ?? c.CUST_NAME)}</td>
-                                                    <td className="px-3 py-1.5 text-gray-600">{t(c.CONTACT ?? c.CONTACT_NAME)}</td>
-                                                    <td className="px-3 py-1.5 text-gray-600">{t(c.CITY)}, {t(c.STATE)}</td>
-                                                    <td className="px-3 py-1.5 text-gray-600">{t(c.PHONE_1 ?? c.PHONE)}</td>
-                                                    <td className="px-3 py-1.5 text-gray-500">{fmtDate(c.LAST_SALE ?? c.LAST_INVOICE)}</td>
-                                                </tr>
+                                                <PanelGridTr key={i} onClick={() => selectCcCustomer(c)}>
+                                                    <PanelGridTd className="font-medium text-gray-800">{t(c.CUST_CODE ?? c.CUSTOMER ?? c.CUST_NAME)}</PanelGridTd>
+                                                    <PanelGridTd>{t(c.CONTACT ?? c.CONTACT_NAME)}</PanelGridTd>
+                                                    <PanelGridTd>{t(c.CITY)}, {t(c.STATE)}</PanelGridTd>
+                                                    <PanelGridTd>{t(c.PHONE_1 ?? c.PHONE)}</PanelGridTd>
+                                                    <PanelGridTd className="text-gray-500">{fmtDate(c.LAST_SALE ?? c.LAST_INVOICE)}</PanelGridTd>
+                                                </PanelGridTr>
                                             ))}
-                                            {!ccLoading && ccCustomers.length === 0 && <tr><td colSpan={5} className="p-8 text-center text-gray-400 italic">Type to search customers</td></tr>}
-                                        </tbody>
-                                    </table>
+                                            {!ccLoading && ccCustomers.length === 0 && (
+                                                <PanelGridTr><PanelGridTd colSpan={5} className="p-8 text-center text-gray-400 italic">Type to search customers</PanelGridTd></PanelGridTr>
+                                            )}
+                                        </PanelGridTbody>
+                                    </PanelGridTable>
                                 </div>
                             </>
                         )}
@@ -1514,6 +1496,24 @@ export default function SalesPage() {
                     </div>
                 );
             })()}
+
+            {/* ── Mobile Action Bar ────────────────────────────────────── */}
+            <MobileActionBar
+                activeGrid={activeBar}
+                onClearSelection={() => setActiveBar(null)}
+                items={[
+                    { grid: "invoice", label: isOpen ? "Close" : "Open", icon: isOpen ? Lock : Unlock, onClick: isOpen ? handleCloseInvoice : handleOpenInvoice, disabled: working || !activeInvoiceUq },
+                    { grid: "invoice", label: "Void", icon: XCircle, color: "red", onClick: handleVoidInvoice, disabled: working || !activeInvoiceUq || bool(h?.VOID) },
+                    { grid: "invoice", label: "Delete", icon: Trash2, color: "red", onClick: handleDeleteInvoice, disabled: working || !activeInvoiceUq || !canDelete },
+                    { grid: "invoice", label: "Print", icon: Printer, color: "blue", onClick: () => window.open(`/api/pos/invoice/print?uq=${activeInvoiceUq}`, "_blank"), disabled: !activeInvoiceUq },
+                ]}
+            />
+            {/* ── Mobile FAB – New Invoice ──────────────────────────────── */}
+            <button
+                onClick={() => { setCcModal(true); setCcStep(1); setCcSearch(""); }}
+                className="md:hidden fixed bottom-20 right-4 z-50 w-14 h-14 rounded-full bg-[#FB7506] hover:bg-orange-500 active:bg-orange-600 text-white shadow-lg flex items-center justify-center transition-all">
+                <Plus size={24} />
+            </button>
 
             <AppFooter areaLabel="Terminal" />
         </div>

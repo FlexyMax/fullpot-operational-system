@@ -35,13 +35,16 @@ export function PanelGridTh({
   children,
   className,
   align = "left",
+  onClick,
 }: {
   children: React.ReactNode;
   className?: string;
   align?: "left" | "right" | "center";
+  onClick?: () => void;
 }) {
   return (
     <th
+      onClick={onClick}
       className={cn(
         "bg-white text-gray-500 border border-black/5 border-b-2 border-b-gray-200",
         "px-2 py-[6px] font-black uppercase text-[10px] whitespace-nowrap",
@@ -62,12 +65,14 @@ export function PanelGridTbody({ children }: { children: React.ReactNode }) {
 export function PanelGridTr({
   children,
   className,
+  style,
   onClick,
   onDoubleClick,
   selected,
 }: {
   children: React.ReactNode;
   className?: string;
+  style?: React.CSSProperties;
   onClick?: () => void;
   onDoubleClick?: () => void;
   selected?: boolean;
@@ -76,6 +81,7 @@ export function PanelGridTr({
     <tr
       onClick={onClick}
       onDoubleClick={onDoubleClick}
+      style={style}
       className={cn(
         "border-b border-black/5 transition-colors cursor-pointer",
         selected ? "bg-blue-50 hover:bg-blue-100/80" : "hover:bg-black/5 bg-white",
