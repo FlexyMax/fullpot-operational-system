@@ -1,0 +1,20 @@
+services:
+  fullpot-operational:
+    build: .
+    container_name: fullpot-operational
+    restart: always
+    ports:
+      - "2053:3000"
+    env_file:
+      - .env.production
+    environment:
+      - NODE_ENV=production
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared-fullpot
+    restart: always
+    network_mode: host
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
