@@ -814,25 +814,28 @@ export default function SalesPage() {
                             {/* Invoice Header card */}
                             <div className="bg-white rounded-md border border-black overflow-hidden shrink-0">
                                 {/* Action bar */}
-                                <div className="bg-white h-10 px-3 flex items-center gap-1.5 shrink-0 overflow-x-auto border-b border-gray-200 shadow-sm">
+                                <div className="bg-[#374151] h-10 px-3 flex items-center gap-1.5 shrink-0 overflow-x-auto">
+                                    <ShoppingCart size={12} className="text-[#FB7506] shrink-0" />
+                                    <span className="font-black text-[10px] text-white uppercase tracking-widest shrink-0">Invoice</span>
+                                    <div className="w-px h-4 bg-white/20 shrink-0 mx-1" />
                                     {isOpen && <>
-                                        <ActionBtn icon={Lock}    label="Close"       onClick={handleCloseInvoice} disabled={working} variant="default" />
+                                        <ActionBtn icon={Lock}    label="Close"       onClick={handleCloseInvoice} disabled={working} variant="bar" />
                                         <ActionBtn icon={XCircle} label="Void"        onClick={handleVoidInvoice}  disabled={working} variant="orange" />
-                                        {canDelete && <ActionBtn icon={Trash2} label="Delete" onClick={handleDeleteInvoice} disabled={working} variant="danger" />}
-                                        <ActionBtn icon={Edit2}   label="Edit Header" onClick={() => {}} variant="default" />
+                                        {canDelete && <ActionBtn icon={Trash2} label="Delete" onClick={handleDeleteInvoice} disabled={working} variant="orange" />}
+                                        <ActionBtn icon={Edit2}   label="Edit Header" onClick={() => {}} variant="bar" />
                                     </>}
                                     {isClosed && <>
-                                        <ActionBtn icon={Unlock}     label="Open"      onClick={handleOpenInvoice}  disabled={working} variant="default" />
-                                        <div className="w-px h-4 bg-gray-200 shrink-0" />
-                                        <ActionBtn icon={Printer}    label="Print"     onClick={() => {}} variant="default" />
-                                        <ActionBtn icon={FileText}   label="Pick List" onClick={() => {}} variant="default" />
-                                        <ActionBtn icon={CreditCard} label="Payment"   onClick={() => {}} variant="default" />
+                                        <ActionBtn icon={Unlock}     label="Open"      onClick={handleOpenInvoice}  disabled={working} variant="bar" />
+                                        <div className="w-px h-4 bg-white/20 shrink-0" />
+                                        <ActionBtn icon={Printer}    label="Print"     onClick={() => {}} variant="bar" />
+                                        <ActionBtn icon={FileText}   label="Pick List" onClick={() => {}} variant="bar" />
+                                        <ActionBtn icon={CreditCard} label="Payment"   onClick={() => {}} variant="bar" />
                                     </>}
-                                    <div className="ml-auto flex items-center gap-2 shrink-0">
-                                        <button onClick={goToHistory} className="text-gray-400 hover:text-[#FB7506] transition-all p-1" title="Invoice History">
+                                    <div className="ml-auto flex items-center gap-1 shrink-0">
+                                        <button onClick={goToHistory} className="text-white hover:text-[#FB7506] transition-all p-1" title="Invoice History">
                                             <History size={15} />
                                         </button>
-                                        <button className="text-gray-400 hover:text-[#FB7506] transition-all p-1" title="Transaction Log">
+                                        <button className="text-white hover:text-[#FB7506] transition-all p-1" title="Transaction Log">
                                             <RotateCcw size={15} />
                                         </button>
                                     </div>
@@ -865,10 +868,13 @@ export default function SalesPage() {
                             {/* Invoice Lines */}
                             <div className="flex-1 flex flex-col bg-white rounded-md border border-black overflow-hidden min-h-0">
                                 {/* Lines action bar */}
-                                <div className="bg-white h-10 px-3 flex items-center gap-1.5 shrink-0 border-b border-gray-200 shadow-sm">
+                                <div className="bg-[#374151] h-10 px-3 flex items-center gap-1.5 shrink-0">
+                                    <ClipboardList size={12} className="text-[#FB7506] shrink-0" />
+                                    <span className="font-black text-[10px] text-white uppercase tracking-widest shrink-0">Invoice Lines</span>
                                     {isOpen && <>
+                                        <div className="w-px h-4 bg-white/20 shrink-0 mx-1" />
                                         <ActionBtn icon={Plus} label="+ Add from Stock" onClick={() => setMainTab("stock")} size="sm" variant="success" />
-                                        <ActionBtn icon={Scan} label="Barcode" onClick={() => { setScanModal(true); setTimeout(() => scanInputRef.current?.focus(), 100); }} size="sm" variant="default" />
+                                        <ActionBtn icon={Scan} label="Barcode" onClick={() => { setScanModal(true); setTimeout(() => scanInputRef.current?.focus(), 100); }} size="sm" variant="bar" />
                                     </>}
                                 </div>
                                 {/* Lines table */}
