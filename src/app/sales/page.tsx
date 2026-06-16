@@ -704,6 +704,32 @@ export default function SalesPage() {
                             className="text-[10px] font-bold bg-white/10 text-white rounded px-1.5 py-0.5 border border-white/20 focus:outline-none focus:border-[#FB7506]"
                         />
                     </div>
+                    {/* Date chips — mobile only */}
+                    <div className="xl:hidden overflow-x-auto scrollbar-none shrink-0 px-2 py-1.5 border-b border-gray-100">
+                        <div className="flex gap-1">
+                            {Array.from({ length: 30 }, (_, i) => {
+                                const d = new Date();
+                                d.setDate(d.getDate() - 14 + i);
+                                const ds = d.toISOString().split("T")[0];
+                                const isToday = ds === new Date().toISOString().split("T")[0];
+                                const isSel = ds === invoiceDate;
+                                const label = d.toLocaleDateString("en-US", { weekday: "short", month: "numeric", day: "numeric" });
+                                return (
+                                    <button key={ds}
+                                        onClick={() => { setInvoiceDate(ds); setListKey(k => k + 1); }}
+                                        className={cn(
+                                            "shrink-0 px-2 py-1 rounded text-[9px] font-black whitespace-nowrap transition-all",
+                                            isSel ? "bg-[#FB7506] text-white shadow-sm" :
+                                            isToday ? "bg-gray-800 text-white" :
+                                            "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                                        )}>
+                                        {label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
                     {/* My / All toggle + New Invoice */}
                     <div className="px-2 py-1.5 border-b border-gray-100 shrink-0 flex flex-col gap-1.5">
                         <div className="flex items-center bg-gray-100 rounded p-0.5">
@@ -949,9 +975,9 @@ export default function SalesPage() {
 
                 {/* ── TAB 2: Available Stock ────────────────────────────── */}
                 {mainTab === "stock" && (
-                <div className="flex flex-col flex-1 overflow-hidden min-h-0 gap-2">
+                <div className="flex flex-col xl:flex-1 xl:overflow-hidden xl:min-h-0 gap-2 h-[calc(100svh-7.5rem)] xl:h-auto">
                     {activeInvoiceUq && h && (
-                        <div className="bg-[#374151] h-10 px-3 flex items-center gap-4 shrink-0 rounded-md overflow-x-auto">
+                        <div className="bg-[#374151] h-12 xl:h-10 px-3 flex items-center gap-4 shrink-0 rounded-md overflow-x-auto scrollbar-none">
                             <span className="text-white font-black text-[10px] uppercase tracking-widest shrink-0">Invoice #{t(h.INVOICE_NO)}</span>
                             <span className="text-white/70 text-[10px] shrink-0 max-w-[200px] truncate">{t(h.CUSTOMER)}</span>
                             <span className="text-white/50 text-[10px] shrink-0">{fmtDate(h.INVOICE_DATE)}</span>
@@ -961,8 +987,8 @@ export default function SalesPage() {
                             <StatusBadge printed={bool(h.PRINTED)} voided={bool(h.VOID)} />
                         </div>
                     )}
-                    <div className="flex-1 flex flex-col bg-white rounded-md border border-black overflow-hidden min-h-0">
-                        <div className="bg-[#374151] h-10 px-3 flex items-center gap-2 shrink-0">
+                    <div className="flex flex-col bg-white rounded-md border border-black overflow-hidden flex-1 min-h-0">
+                        <div className="bg-[#374151] h-12 xl:h-10 px-3 flex items-center gap-2 shrink-0">
                             <Package size={12} className="text-[#FB7506] shrink-0" />
                             <span className="font-black text-[10px] text-white uppercase tracking-widest shrink-0">Available Stock</span>
                             <span className="text-[10px] text-white/50 font-bold shrink-0">{stockRows.length}/{stockTotal}</span>
@@ -974,7 +1000,60 @@ export default function SalesPage() {
                                 {stockSearch && <button onClick={() => { setStockSearch(""); setAppliedStockSearch(""); }}><X size={10} className="text-white/60" /></button>}
                             </div>
                         </div>
-                        <div className="flex-1 overflow-auto min-h-0">
+                        {/* ── Mobile cards (below xl) ── */}
+                        <div className="xl:hidden flex-1 overflow-auto min-h-0 p-2 flex flex-col gap-2">
+                            {stockLoading && stockRows.length === 0 && (
+                                <div className="flex items-center justify-center py-12 text-gray-400 italic text-[11px]">
+                                    <Loader2 size={14} className="animate-spin mr-1" />Loading...
+                                </div>
+                            )}
+                            {!stockLoading && stockRows.length === 0 && (
+                                <div className="flex items-center justify-center py-12 text-gray-400 italic text-[11px]">No stock available</div>
+                            )}
+                            {stockRows.map((s: any, i: number) => (
+                                <div key={i} className="bg-white border border-gray-200 rounded-xl flex gap-3 p-3 shadow-sm"
+                                    style={vfpRowStyle(s.BACK_COLOR ?? s.BACKCOLOR)}>
+                                    <img
+                                        src={productImages[t(s.PRODUCT_UQ ?? s.BOX_PACK_UQ ?? "")] || DEFAULT_THUMB}
+                                        alt="" width={72} height={72}
+                                        className="w-[72px] h-[72px] object-cover rounded-lg border border-gray-200 shrink-0 cursor-pointer hover:opacity-80 hover:ring-2 hover:ring-[#FB7506] transition-all"
+                                        onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }}
+                                        onClick={() => openStockModal(s, "stock", { box_qty: "1", price: fmt(s.PRICE_X_UNIT ?? 0) })}
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <p className="font-black text-[13px] text-gray-800 leading-snug line-clamp-2 flex-1">{t(s.DESCRIPTION)}</p>
+                                            {isOpen && (
+                                                <button onClick={() => handleAddLine(s)} disabled={working}
+                                                    className="shrink-0 flex items-center gap-1 px-3 py-1.5 text-[10px] font-black bg-[#FB7506] hover:bg-orange-500 text-white rounded-lg disabled:opacity-40 transition-all">
+                                                    <Plus size={11} />Add
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <span className="font-black text-[11px] text-[#FB7506]">{t(s.FARM)}</span>
+                                            <span className="text-[10px] text-gray-400 truncate">{t(s.GROWER)}</span>
+                                        </div>
+                                        <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                                            <span className="text-[13px] font-black text-green-700">${fmt(s.PRICE_X_UNIT)}</span>
+                                            <span className="text-[10px] text-gray-500">Stock: <span className="font-black text-gray-800">{fmtI(s.WH_STOCK)}</span></span>
+                                            <span className="text-[10px] text-gray-500">Days: <span className="font-bold">{fmtI(s.DAYS)}</span></span>
+                                            <span className="text-[10px] text-gray-400 font-mono">{fmtDate(s.BOX_DATE)}</span>
+                                            <span className={cn("text-[10px] font-bold", parseFloat(s.GPROFIT ?? 0) < 0 ? "text-red-500" : "text-gray-400")}>
+                                                GPM {fmt(s.GPROFIT)}%
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                            <div ref={sentinelRef} className="flex items-center justify-center py-4 text-[10px] text-gray-400">
+                                {stockLoading && stockRows.length > 0 && <><Loader2 size={12} className="animate-spin mr-1" />Loading more...</>}
+                                {!stockLoading && !stockHasMore && stockRows.length > 0 && <span className="italic">All {stockTotal.toLocaleString()} items loaded</span>}
+                            </div>
+                        </div>
+
+                        {/* ── Desktop table (xl+) ── */}
+                        <div className="hidden xl:block xl:flex-1 xl:overflow-auto xl:min-h-0">
                             <PanelGridTable>
                                 <PanelGridThead>
                                     {[

@@ -73,6 +73,13 @@ body {
 }
 
 /* ─── Grid / Table font standards (matches POS model) ─── */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @utility fos-grid-header-text {
   font-size: 13px;
   font-weight: 900;
