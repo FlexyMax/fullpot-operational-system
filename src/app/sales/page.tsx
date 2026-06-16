@@ -114,6 +114,7 @@ export default function SalesPage() {
     const [detailKey,          setDetailKey]          = useState(0);
     const [listSearch,         setListSearch]         = useState("");
     const [activeBar,          setActiveBar]          = useState<"invoice" | null>(null);
+    const [listModal,          setListModal]          = useState(false);
 
     // Customer Call List modal state
     const [ccModal,            setCcModal]            = useState(false);
@@ -691,10 +692,10 @@ export default function SalesPage() {
                 {mainTab === "invoice" && (
                 <div className="flex flex-col xl:flex-row xl:flex-1 xl:overflow-hidden xl:min-h-0 gap-2">
 
-                {/* LEFT: Invoice list */}
-                <div className="flex flex-col bg-white rounded-md border border-black overflow-hidden xl:w-[300px] xl:shrink-0 xl:flex-none h-[calc(100svh-7.5rem)] xl:h-auto">
+                {/* LEFT: Invoice list — desktop only */}
+                <div className="hidden xl:flex xl:flex-col bg-white rounded-md border border-black overflow-hidden xl:w-[300px] xl:shrink-0 xl:flex-none">
                     {/* List header */}
-                    <div className="bg-[#374151] px-3 h-12 xl:h-10 flex items-center justify-between shrink-0">
+                    <div className="bg-[#374151] px-3 h-10 flex items-center justify-between shrink-0">
                         <div className="flex items-center gap-2">
                             <ClipboardList size={12} className="text-[#FB7506]" />
                             <span className="font-black text-[10px] text-white uppercase tracking-widest">Invoices</span>
@@ -703,31 +704,6 @@ export default function SalesPage() {
                         <input type="date" value={invoiceDate} onChange={e => { setInvoiceDate(e.target.value); setListKey(k=>k+1); }}
                             className="text-[10px] font-bold bg-white/10 text-white rounded px-1.5 py-0.5 border border-white/20 focus:outline-none focus:border-[#FB7506]"
                         />
-                    </div>
-                    {/* Date chips — mobile only */}
-                    <div className="xl:hidden overflow-x-auto scrollbar-none shrink-0 px-2 py-1.5 border-b border-gray-100">
-                        <div className="flex gap-1">
-                            {Array.from({ length: 30 }, (_, i) => {
-                                const d = new Date();
-                                d.setDate(d.getDate() - 14 + i);
-                                const ds = d.toISOString().split("T")[0];
-                                const isToday = ds === new Date().toISOString().split("T")[0];
-                                const isSel = ds === invoiceDate;
-                                const label = d.toLocaleDateString("en-US", { weekday: "short", month: "numeric", day: "numeric" });
-                                return (
-                                    <button key={ds}
-                                        onClick={() => { setInvoiceDate(ds); setListKey(k => k + 1); }}
-                                        className={cn(
-                                            "shrink-0 px-2 py-1 rounded text-[9px] font-black whitespace-nowrap transition-all",
-                                            isSel ? "bg-[#FB7506] text-white shadow-sm" :
-                                            isToday ? "bg-gray-800 text-white" :
-                                            "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                                        )}>
-                                        {label}
-                                    </button>
-                                );
-                            })}
-                        </div>
                     </div>
 
                     {/* My / All toggle + New Invoice */}
@@ -762,8 +738,8 @@ export default function SalesPage() {
                         </div>
                     </div>
 
-                    {/* Invoice list */}
-                    <div className="flex-1 overflow-auto min-h-0">
+                    {/* Invoice list — card style */}
+                    <div className="flex-1 overflow-auto min-h-0 p-2 flex flex-col gap-1.5">
                         {(invoiceList as any[]).length === 0 && !loadingList && (
                             <div className="p-6 text-center text-gray-400 italic text-[11px]">No invoices for this date</div>
                         )}
@@ -782,41 +758,26 @@ export default function SalesPage() {
                             return (
                                 <div key={i} onClick={() => { setActiveInvoiceUq(t(inv.UNICO)); setDetailKey(k=>k+1); setHistCustUq(t(inv.CUSTOMER_UQ ?? "%")); setHistInvoiceUq(null); setActiveBar("invoice"); }}
                                     className={cn(
-                                        "px-3 py-3 border-b cursor-pointer transition-all border-l-4",
-                                        sel ? "bg-blue-50 border-l-[#FB7506]" : "border-l-transparent hover:bg-gray-50 hover:border-l-gray-300"
+                                        "border-2 rounded-xl p-2.5 cursor-pointer transition-all",
+                                        sel ? "border-[#FB7506] bg-orange-50 shadow-md" : "bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm"
                                     )}
                                     style={!sel && bg ? bg : undefined}
                                 >
-                                    {/* Invoice # + status */}
-                                    <div className="flex items-center justify-between gap-1 mb-1">
-                                        <span className={cn("font-black text-[14px]", sel ? "text-[#FB7506]" : "text-blue-700")}>
+                                    <div className="flex items-center justify-between gap-1">
+                                        <span className={cn("font-black text-[13px]", sel ? "text-[#FB7506]" : "text-blue-700")}>
                                             #{t(inv.INVOICE_NO)}
                                         </span>
                                         <StatusBadge printed={closed} voided={voi} />
                                     </div>
-                                    {/* Customer */}
-                                    <p className="text-[12px] font-semibold text-gray-800 truncate leading-snug">{t(inv.CUSTOMER)}</p>
-                                    {/* Date */}
-                                    <p className="text-[10px] text-gray-400 mt-0.5">{fmtDate(inv.INVOICE_DATE ?? inv.SHIP_DATE)}</p>
-                                    {/* Cases + Total + Balance — from header when selected */}
+                                    <p className="text-[11px] font-semibold text-gray-700 truncate mt-0.5">{t(inv.CUSTOMER)}</p>
+                                    <p className="text-[9px] text-gray-400 mt-0.5">{fmtDate(inv.INVOICE_DATE ?? inv.SHIP_DATE)}</p>
                                     {sel && h && (
-                                        <div className="flex items-center gap-3 mt-2 pt-2 border-t border-blue-200 flex-wrap">
-                                            <div className="flex flex-col items-center leading-none">
-                                                <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wide">Cases</span>
-                                                <span className="text-[13px] font-black text-gray-800 mt-0.5">{fmtI(h.TOTAL_CASES)}</span>
-                                            </div>
-                                            <div className="w-px h-6 bg-gray-200" />
-                                            <div className="flex flex-col items-center leading-none">
-                                                <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wide">Total</span>
-                                                <span className="text-[13px] font-black text-green-700 mt-0.5">${fmt(h.TOTAL_INVOICE)}</span>
-                                            </div>
-                                            {parseFloat(h.INVOICE_BALANCE ?? 0) > 0 && <>
-                                                <div className="w-px h-6 bg-gray-200" />
-                                                <div className="flex flex-col items-center leading-none">
-                                                    <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wide">Balance</span>
-                                                    <span className="text-[13px] font-black text-red-600 mt-0.5">${fmt(h.INVOICE_BALANCE)}</span>
-                                                </div>
-                                            </>}
+                                        <div className="flex items-center gap-3 mt-1.5 pt-1.5 border-t border-orange-200">
+                                            <span className="text-[9px] text-gray-500">Cases: <span className="font-black text-gray-800">{fmtI(h.TOTAL_CASES)}</span></span>
+                                            <span className="text-[9px] text-gray-500">Total: <span className="font-black text-green-700">${fmt(h.TOTAL_INVOICE)}</span></span>
+                                            {parseFloat(h.INVOICE_BALANCE ?? 0) > 0 && (
+                                                <span className="text-[9px] text-gray-500">Bal: <span className="font-black text-red-600">${fmt(h.INVOICE_BALANCE)}</span></span>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -829,10 +790,14 @@ export default function SalesPage() {
                 <div className="flex flex-col overflow-hidden h-[calc(100svh-7.5rem)] xl:flex-1 xl:min-h-0 xl:min-w-0">
                     {!activeInvoiceUq ? (
                         <div className="flex items-center justify-center bg-white rounded-md border border-black h-full">
-                            <div className="text-center text-gray-400">
-                                <ShoppingCart size={40} className="mx-auto mb-3 opacity-20" />
-                                <p className="text-sm font-bold uppercase tracking-widest">Select an invoice</p>
-                                <p className="text-xs mt-1">Or create a new one</p>
+                            <div className="text-center text-gray-400 px-6">
+                                <ShoppingCart size={48} className="mx-auto mb-4 opacity-20" />
+                                <p className="text-sm font-bold uppercase tracking-widest">No invoice selected</p>
+                                <p className="text-xs mt-1">Select an invoice to view details</p>
+                                <button onClick={() => setListModal(true)}
+                                    className="xl:hidden mt-5 flex items-center gap-2 mx-auto px-5 py-2.5 bg-[#374151] hover:bg-gray-600 text-white rounded-xl text-[11px] font-black uppercase tracking-widest transition-all shadow-md">
+                                    <ClipboardList size={14} />Select Invoice
+                                </button>
                             </div>
                         </div>
                     ) : (
@@ -1639,6 +1604,136 @@ export default function SalesPage() {
                 );
             })()}
 
+            {/* ── Invoice List Modal (mobile) ──────────────────────────── */}
+            {listModal && mainTab === "invoice" && (
+                <div className="xl:hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+                    onClick={() => setListModal(false)}>
+                    <div className="bg-[#f4f6f8] rounded-2xl shadow-2xl w-full max-w-lg max-h-[90dvh] flex flex-col overflow-hidden"
+                        onClick={e => e.stopPropagation()}>
+                        {/* Header */}
+                        <div className="bg-[#374151] px-4 h-12 flex items-center justify-between shrink-0 rounded-t-2xl">
+                            <div className="flex items-center gap-2">
+                                <ClipboardList size={12} className="text-[#FB7506]" />
+                                <span className="font-black text-[11px] text-white uppercase tracking-widest">Invoices</span>
+                                {loadingList && <RefreshCcw size={10} className="animate-spin text-gray-400" />}
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <input type="date" value={invoiceDate}
+                                    onChange={e => { setInvoiceDate(e.target.value); setListKey(k=>k+1); }}
+                                    className="text-[10px] font-bold bg-white/10 text-white rounded px-1.5 py-0.5 border border-white/20 focus:outline-none" />
+                                <button onClick={() => setListModal(false)}>
+                                    <X size={18} className="text-white/60 hover:text-white" />
+                                </button>
+                            </div>
+                        </div>
+                        {/* Date chips */}
+                        <div className="overflow-x-auto scrollbar-none shrink-0 px-2 py-1.5 bg-white border-b border-gray-100">
+                            <div className="flex gap-1">
+                                {Array.from({ length: 30 }, (_, i) => {
+                                    const d = new Date();
+                                    d.setDate(d.getDate() - 14 + i);
+                                    const ds = d.toISOString().split("T")[0];
+                                    const isToday = ds === new Date().toISOString().split("T")[0];
+                                    const isSel = ds === invoiceDate;
+                                    const label = d.toLocaleDateString("en-US", { weekday: "short", month: "numeric", day: "numeric" });
+                                    return (
+                                        <button key={ds}
+                                            onClick={() => { setInvoiceDate(ds); setListKey(k => k + 1); }}
+                                            className={cn(
+                                                "shrink-0 px-2 py-1 rounded text-[9px] font-black whitespace-nowrap transition-all",
+                                                isSel ? "bg-[#FB7506] text-white shadow-sm" :
+                                                isToday ? "bg-gray-800 text-white" :
+                                                "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                                            )}>
+                                            {label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                        {/* Controls */}
+                        <div className="px-3 py-2 bg-white border-b border-gray-100 shrink-0 flex flex-col gap-2">
+                            <div className="flex items-center bg-gray-100 rounded p-0.5">
+                                <button onClick={() => setMyInvoices(true)}
+                                    className={cn("flex-1 py-1 rounded text-[10px] font-black uppercase tracking-widest transition-all",
+                                        myInvoices ? "bg-[#FB7506] text-white shadow-sm" : "text-gray-500 hover:text-gray-800")}>
+                                    My Invoices
+                                </button>
+                                <button onClick={() => setMyInvoices(false)}
+                                    className={cn("flex-1 py-1 rounded text-[10px] font-black uppercase tracking-widest transition-all",
+                                        !myInvoices ? "bg-[#FB7506] text-white shadow-sm" : "text-gray-500 hover:text-gray-800")}>
+                                    All
+                                </button>
+                            </div>
+                            <button onClick={() => { openCcModal(); setListModal(false); }}
+                                className="w-full flex items-center justify-center gap-1.5 py-1.5 text-[10px] font-black uppercase tracking-widest bg-green-600 hover:bg-green-500 text-white rounded transition-all">
+                                <Plus size={11} /> New Invoice
+                            </button>
+                            <div className="flex items-center gap-1.5 bg-gray-100 rounded px-2 py-1">
+                                <Search size={11} className="text-gray-400 shrink-0" />
+                                <input value={listSearch} onChange={e => setListSearch(e.target.value)}
+                                    placeholder="Customer or invoice #..."
+                                    className="flex-1 text-[11px] bg-transparent focus:outline-none text-gray-700 placeholder-gray-400" />
+                                {listSearch && <button onClick={() => setListSearch("")}><X size={10} className="text-gray-400 hover:text-gray-600" /></button>}
+                            </div>
+                        </div>
+                        {/* Invoice cards */}
+                        <div className="flex-1 overflow-auto p-3 flex flex-col gap-2">
+                            {(invoiceList as any[]).length === 0 && !loadingList && (
+                                <div className="p-6 text-center text-gray-400 italic text-[11px]">No invoices for this date</div>
+                            )}
+                            {(invoiceList as any[])
+                                .filter((inv: any) => {
+                                    if (!listSearch.trim()) return true;
+                                    const q = listSearch.toLowerCase();
+                                    return t(inv.CUSTOMER).toLowerCase().includes(q) || t(inv.INVOICE_NO).toString().includes(q);
+                                })
+                                .map((inv: any, i: number) => {
+                                    const sel = t(inv.UNICO) === activeInvoiceUq;
+                                    const bg  = vfpRowStyle(inv.BACK_COLOR ?? inv.BACKCOLOR);
+                                    const voi = bool(inv.VOID);
+                                    const closed = bool(inv.PRINTED);
+                                    return (
+                                        <div key={i}
+                                            onClick={() => {
+                                                setActiveInvoiceUq(t(inv.UNICO));
+                                                setDetailKey(k => k+1);
+                                                setHistCustUq(t(inv.CUSTOMER_UQ ?? "%"));
+                                                setHistInvoiceUq(null);
+                                                setActiveBar("invoice");
+                                                setListModal(false);
+                                            }}
+                                            className={cn(
+                                                "border-2 rounded-xl p-3 cursor-pointer transition-all",
+                                                sel ? "border-[#FB7506] bg-orange-50 shadow-md" : "bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm"
+                                            )}
+                                            style={!sel && bg ? bg : undefined}
+                                        >
+                                            <div className="flex items-center justify-between gap-2">
+                                                <span className={cn("font-black text-[15px]", sel ? "text-[#FB7506]" : "text-blue-700")}>
+                                                    #{t(inv.INVOICE_NO)}
+                                                </span>
+                                                <StatusBadge printed={closed} voided={voi} />
+                                            </div>
+                                            <p className="text-[13px] font-semibold text-gray-700 mt-0.5 truncate">{t(inv.CUSTOMER)}</p>
+                                            <p className="text-[10px] text-gray-400 mt-0.5">{fmtDate(inv.INVOICE_DATE ?? inv.SHIP_DATE)}</p>
+                                            {sel && h && (
+                                                <div className="flex items-center gap-4 mt-2 pt-2 border-t border-orange-200">
+                                                    <span className="text-[11px] text-gray-500">Cases: <span className="font-black text-gray-800">{fmtI(h.TOTAL_CASES)}</span></span>
+                                                    <span className="text-[11px] text-gray-500">Total: <span className="font-black text-green-700">${fmt(h.TOTAL_INVOICE)}</span></span>
+                                                    {parseFloat(h.INVOICE_BALANCE ?? 0) > 0 && (
+                                                        <span className="text-[11px] text-gray-500">Bal: <span className="font-black text-red-600">${fmt(h.INVOICE_BALANCE)}</span></span>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* ── Mobile Action Bar ────────────────────────────────────── */}
             <MobileActionBar
                 activeGrid={activeBar}
@@ -1650,13 +1745,20 @@ export default function SalesPage() {
                     { grid: "invoice", label: "Print", icon: Printer, color: "blue", onClick: () => window.open(`/api/pos/invoice/print?uq=${activeInvoiceUq}`, "_blank"), disabled: !activeInvoiceUq },
                 ]}
             />
-            {/* ── Mobile FAB – New Invoice (Invoice tab only) ───────────── */}
+            {/* ── Mobile FABs (Invoice tab only) ───────────────────────── */}
             {mainTab === "invoice" && (
-            <button
-                onClick={() => { setCcModal(true); setCcStep(1); setCcSearch(""); }}
-                className="md:hidden fixed bottom-20 right-4 z-50 w-14 h-14 rounded-full bg-green-600 hover:bg-green-500 active:bg-green-700 text-white shadow-lg flex items-center justify-center transition-all">
-                <Plus size={24} />
-            </button>
+            <>
+                {/* Open invoice list */}
+                <button onClick={() => setListModal(true)}
+                    className="xl:hidden fixed bottom-36 right-4 z-50 w-12 h-12 rounded-full bg-[#374151] hover:bg-gray-600 active:bg-gray-700 text-white shadow-lg flex items-center justify-center transition-all">
+                    <ClipboardList size={20} />
+                </button>
+                {/* New invoice */}
+                <button onClick={() => { setCcModal(true); setCcStep(1); setCcSearch(""); }}
+                    className="xl:hidden fixed bottom-20 right-4 z-50 w-14 h-14 rounded-full bg-green-600 hover:bg-green-500 active:bg-green-700 text-white shadow-lg flex items-center justify-center transition-all">
+                    <Plus size={24} />
+                </button>
+            </>
             )}
 
             <AppFooter areaLabel="Terminal" />
