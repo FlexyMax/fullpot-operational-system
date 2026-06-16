@@ -784,17 +784,25 @@ export default function SalesPage() {
                             {/* ── Invoice Header card ───────────────────── */}
                             <div className="bg-white rounded-md border border-black overflow-hidden shrink-0">
                                 {/* Action bar — dark like PanelGrid header */}
-                                <div className="bg-[#374151] px-3 py-1.5 flex items-center gap-1.5 flex-wrap overflow-x-auto">
-                                    {isOpen && <ActionBtn icon={Lock}     label="Close"   onClick={handleCloseInvoice} disabled={working} variant="bar" />}
-                                    {isClosed && <ActionBtn icon={Unlock} label="Open"    onClick={handleOpenInvoice}  disabled={working} variant="bar" />}
-                                    {isOpen && <ActionBtn icon={XCircle}  label="Void"    onClick={handleVoidInvoice}  disabled={working} variant="bar-danger" />}
-                                    <ActionBtn icon={Trash2}  label="Delete"  onClick={handleDeleteInvoice}  disabled={working || !canDelete} variant="bar-danger" />
-                                    <div className="w-px h-4 bg-white/20 shrink-0" />
-                                    <ActionBtn icon={Printer}  label="Print"   onClick={() => {}} variant="bar" />
-                                    <ActionBtn icon={FileText} label="Pick List" onClick={() => {}} variant="bar" />
-                                    <ActionBtn icon={CreditCard} label="Payment" onClick={() => {}} variant="bar" />
-                                    <ActionBtn icon={Edit2}    label="Edit Header" onClick={() => {}} variant="bar" />
-                                    <ActionBtn icon={RotateCcw} label="Log"    onClick={() => {}} variant="bar" />
+                                <div className="bg-[#374151] h-10 px-3 flex items-center gap-1.5 shrink-0 overflow-x-auto">
+                                    {isOpen && <>
+                                        <ActionBtn icon={Lock}    label="Close"       onClick={handleCloseInvoice} disabled={working} variant="bar" />
+                                        <ActionBtn icon={XCircle} label="Void"        onClick={handleVoidInvoice}  disabled={working} variant="orange" />
+                                        {canDelete && <ActionBtn icon={Trash2} label="Delete" onClick={handleDeleteInvoice} disabled={working} variant="orange" />}
+                                        <ActionBtn icon={Edit2}   label="Edit Header" onClick={() => {}} variant="bar" />
+                                    </>}
+                                    {isClosed && <>
+                                        <ActionBtn icon={Unlock}     label="Open"      onClick={handleOpenInvoice}  disabled={working} variant="bar" />
+                                        <div className="w-px h-4 bg-white/20 shrink-0" />
+                                        <ActionBtn icon={Printer}    label="Print"     onClick={() => {}} variant="bar" />
+                                        <ActionBtn icon={FileText}   label="Pick List" onClick={() => {}} variant="bar" />
+                                        <ActionBtn icon={CreditCard} label="Payment"   onClick={() => {}} variant="bar" />
+                                    </>}
+                                    <div className="ml-auto shrink-0">
+                                        <button className="text-white hover:text-[#FB7506] transition-all p-1" title="Transaction Log">
+                                            <RotateCcw size={16} />
+                                        </button>
+                                    </div>
                                 </div>
                                 {/* Header fields */}
                                 {h && (
@@ -823,13 +831,15 @@ export default function SalesPage() {
 
                             {/* ── Tabs + content ────────────────────────── */}
                             <div className="flex-1 flex flex-col bg-white rounded-md border border-black overflow-hidden min-h-0">
-                                {/* Tab bar — dark like PanelGrid header */}
-                                <div className="bg-[#374151] px-3 py-1.5 flex items-center gap-2 shrink-0 overflow-x-auto">
+                                {/* Tab bar — dark, tabs with orange underline indicator */}
+                                <div className="bg-[#374151] h-10 px-3 flex items-stretch shrink-0 overflow-x-auto">
                                     {(["lines", "stock", "history"] as const).map(tab => (
                                         <button key={tab} onClick={() => setActiveTab(tab)}
                                             className={cn(
-                                                "px-2 py-0.5 text-[10px] font-black uppercase tracking-widest rounded whitespace-nowrap transition-all",
-                                                activeTab === tab ? "bg-[#FB7506] text-white" : "text-gray-400 hover:text-white"
+                                                "px-4 text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border-b-2 flex items-center",
+                                                activeTab === tab
+                                                    ? "text-white border-[#FB7506]"
+                                                    : "text-white/50 hover:text-white border-transparent"
                                             )}
                                         >
                                             {tab === "lines"   && "Invoice Lines"}
@@ -838,10 +848,10 @@ export default function SalesPage() {
                                         </button>
                                     ))}
                                     {/* Tab-specific toolbar */}
-                                    <div className="ml-auto flex items-center gap-1 shrink-0">
+                                    <div className="ml-auto flex items-center gap-1.5 shrink-0">
                                         {activeTab === "lines" && isOpen && <>
-                                            <ActionBtn icon={Plus}  label="Add from Stock" onClick={() => setActiveTab("stock")} size="sm" variant="orange" />
-                                            <ActionBtn icon={Scan}  label="Barcode"  onClick={() => { setScanModal(true); setTimeout(() => scanInputRef.current?.focus(), 100); }} size="sm" variant="bar" />
+                                            <ActionBtn icon={Plus} label="+ Add from Stock" onClick={() => setActiveTab("stock")} size="sm" variant="success" />
+                                            <ActionBtn icon={Scan} label="Barcode" onClick={() => { setScanModal(true); setTimeout(() => scanInputRef.current?.focus(), 100); }} size="sm" variant="bar" />
                                         </>}
                                         {activeTab === "stock" && <>
                                             <div className="flex items-center gap-1 bg-white/10 border border-white/20 rounded px-2 py-1">
