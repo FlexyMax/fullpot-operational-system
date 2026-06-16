@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-    RefreshCcw, Loader2, Plus, Trash2, Edit2, Check,
+    RefreshCcw, Loader2, Plus, Minus, Trash2, Edit2, Check,
     Search, X, Lock, Unlock, FileText, Printer, CreditCard,
     RotateCcw, Scan, Users, Package, ChevronRight,
     AlertCircle, CheckCircle, XCircle, ClipboardList,
@@ -1117,8 +1117,39 @@ export default function SalesPage() {
 
                 {/* ── TAB 3: Invoice History ─────────────────────────────── */}
                 {mainTab === "history" && (
-                <div className="flex flex-col flex-1 overflow-hidden min-h-0 gap-2">
-                    <div className="bg-[#374151] h-10 px-3 flex items-center gap-3 shrink-0 rounded-md overflow-x-auto">
+                <div className="flex flex-col xl:flex-1 xl:overflow-hidden xl:min-h-0 gap-2 h-[calc(100svh-7.5rem)] xl:h-auto">
+
+                    {/* Filter card — mobile */}
+                    <div className="xl:hidden bg-white border border-gray-200 rounded-xl p-3 shrink-0 shadow-sm">
+                        <div className="flex items-center gap-2 mb-2">
+                            <History size={14} className="text-[#FB7506] shrink-0" />
+                            <span className="font-black text-[12px] text-gray-800 uppercase tracking-widest flex-1 truncate">
+                                {histCustSearch || "All Customers"}
+                            </span>
+                            <button onClick={() => qc.invalidateQueries({ queryKey: ["pos-hist-list", histCustUq, histFrom, histTo, salesmanUq] })}
+                                className="flex items-center gap-1 px-3 py-1.5 text-[10px] font-black bg-[#374151] hover:bg-gray-600 text-white rounded-lg transition-all shrink-0">
+                                <Search size={10} />Search
+                            </button>
+                        </div>
+                        <input value={histCustSearch} onChange={e => setHistCustSearch(e.target.value)}
+                            placeholder="All customers..."
+                            className="w-full text-[12px] bg-gray-100 text-gray-800 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-[#FB7506] placeholder-gray-400 font-semibold mb-2" />
+                        <div className="flex items-center gap-2">
+                            <div className="flex-1 flex flex-col gap-0.5">
+                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">From</span>
+                                <input type="date" value={histFrom} onChange={e => setHistFrom(e.target.value)}
+                                    className="text-[11px] bg-gray-100 text-gray-700 border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-[#FB7506] font-bold w-full" />
+                            </div>
+                            <div className="flex-1 flex flex-col gap-0.5">
+                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">To</span>
+                                <input type="date" value={histTo} onChange={e => setHistTo(e.target.value)}
+                                    className="text-[11px] bg-gray-100 text-gray-700 border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-[#FB7506] font-bold w-full" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Filter bar — desktop */}
+                    <div className="hidden xl:flex bg-[#374151] h-10 px-3 items-center gap-3 shrink-0 rounded-md overflow-x-auto scrollbar-none">
                         <span className="text-[10px] font-black text-white/60 uppercase tracking-widest shrink-0">Customer:</span>
                         <input value={histCustSearch} onChange={e => setHistCustSearch(e.target.value)}
                             placeholder="All customers"
@@ -1132,7 +1163,108 @@ export default function SalesPage() {
                             <Search size={10} />Search
                         </button>
                     </div>
-                    <div className="flex flex-1 overflow-hidden min-h-0 gap-2">
+
+                    {/* Mobile: expandable invoice cards */}
+                    <div className="xl:hidden flex-1 overflow-auto flex flex-col gap-2 min-h-0">
+                        {!loadingHistList && (histInvoices as any[]).length === 0 && (
+                            <div className="p-8 text-center text-gray-400 italic text-[11px]">No invoices found</div>
+                        )}
+                        {(histInvoices as any[]).map((inv: any, i: number) => {
+                            const isExpanded = histInvoiceUq === t(inv.UNICO);
+                            return (
+                                <div key={i} className={cn(
+                                    "bg-white border-2 rounded-xl overflow-hidden transition-all shadow-sm",
+                                    isExpanded ? "border-[#FB7506]" : "border-gray-200"
+                                )}>
+                                    {/* Card header row */}
+                                    <div className="p-3">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-black text-[15px] text-blue-700">#{t(inv.INVOICE_NO)}</span>
+                                                    <span className="text-[10px] text-gray-400">{fmtDate(inv.INVOICE_DATE)}</span>
+                                                </div>
+                                                <p className="text-[12px] font-semibold text-gray-700 truncate mt-0.5">{t(inv.CUSTOMER)}</p>
+                                                <div className="flex items-center gap-4 mt-1">
+                                                    <span className="text-[11px] text-gray-500">Total: <span className="font-black text-green-700">${fmt(inv.TOTAL_INVOICE)}</span></span>
+                                                    {parseFloat(inv.TOTAL_BALANCE ?? 0) > 0 && (
+                                                        <span className="text-[11px] text-gray-500">Bal: <span className="font-black text-red-600">${fmt(inv.TOTAL_BALANCE)}</span></span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => setHistInvoiceUq(isExpanded ? null : t(inv.UNICO))}
+                                                className={cn(
+                                                    "shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-black text-lg transition-all",
+                                                    isExpanded ? "bg-[#FB7506] text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                                                )}>
+                                                {isExpanded ? <Minus size={16} /> : <Plus size={16} />}
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {/* Expanded detail */}
+                                    {isExpanded && (
+                                        <div className="border-t border-orange-200 bg-orange-50/40">
+                                            {/* Sub-tab selector */}
+                                            <div className="flex items-center gap-1 px-3 py-2 border-b border-orange-200">
+                                                {(["details","credits","statement"] as const).map(sub => (
+                                                    <button key={sub} onClick={() => setHistSubTab(sub)}
+                                                        className={cn("px-3 py-1 text-[10px] font-black uppercase rounded-lg transition-all",
+                                                            histSubTab === sub ? "bg-[#FB7506] text-white" : "bg-white text-gray-400 hover:text-gray-700 border border-gray-200")}>
+                                                        {sub}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            {/* Detail rows */}
+                                            <div className="overflow-x-auto max-h-[40dvh] overflow-y-auto">
+                                                {(histDetails as any[]).length === 0 && (
+                                                    <p className="p-4 text-center text-gray-400 italic text-[11px]">No data</p>
+                                                )}
+                                                {histSubTab === "details" && (histDetails as any[]).map((r: any, j: number) => (
+                                                    <div key={j} className="flex items-center gap-3 px-3 py-2 border-b border-orange-100 text-[11px]">
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="font-semibold text-gray-800 truncate">{t(r.DESCRIPTION)}</p>
+                                                            <div className="flex items-center gap-2 mt-0.5">
+                                                                <span className="font-bold text-[#FB7506]">{t(r.FARM)}</span>
+                                                                <span className="text-gray-400 truncate">{t(r.GROWER ?? r.VENDOR)}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-right shrink-0">
+                                                            <p className="font-black text-green-700">${fmt(r.EXT_PRICE)}</p>
+                                                            <p className="text-gray-400">{fmtI(r.BOX_QTY)} × ${fmt(r.PRICE ?? r.PRICE_X_U)}</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                {histSubTab === "credits" && (histDetails as any[]).map((r: any, j: number) => (
+                                                    <div key={j} className="flex items-center gap-3 px-3 py-2 border-b border-orange-100 text-[11px]">
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="font-semibold text-gray-800 truncate">{t(r.DESCRIPTION)}</p>
+                                                            <p className="text-gray-400 truncate">{t(r.REASON)}</p>
+                                                        </div>
+                                                        <span className="font-black text-red-600 shrink-0">${fmt(r.CR_REQUEST ?? r.AMOUNT)}</span>
+                                                    </div>
+                                                ))}
+                                                {histSubTab === "statement" && (histDetails as any[]).map((r: any, j: number) => (
+                                                    <div key={j} className="flex items-center gap-2 px-3 py-2 border-b border-orange-100 text-[11px]">
+                                                        <span className="text-gray-400 shrink-0 w-16 truncate">{t(r.FECHA ?? r.DATE)}</span>
+                                                        <span className="text-gray-500 shrink-0 w-14 truncate">{t(r.TYPE)}</span>
+                                                        <span className="font-bold text-blue-700 shrink-0">#{t(r.INVOICE_NO)}</span>
+                                                        <div className="flex-1" />
+                                                        <span className={cn("font-black shrink-0", parseFloat(r.BALANCE ?? 0) > 0 ? "text-red-600" : "text-green-600")}>
+                                                            ${fmt(r.BALANCE)}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {/* Desktop: two-panel layout */}
+                    <div className="hidden xl:flex xl:flex-1 xl:overflow-hidden xl:min-h-0 gap-2">
                         <PanelGrid title="History" icon={History} recordCount={(histInvoices as any[]).length} className="w-[320px] shrink-0">
                             {(histInvoices as any[]).map((inv: any, i: number) => (
                                 <div key={i} onClick={() => setHistInvoiceUq(t(inv.UNICO))}
@@ -1736,7 +1868,7 @@ export default function SalesPage() {
 
             {/* ── Mobile Action Bar ────────────────────────────────────── */}
             <MobileActionBar
-                activeGrid={activeBar}
+                activeGrid={mainTab === "invoice" ? activeBar : null}
                 onClearSelection={() => setActiveBar(null)}
                 items={[
                     { grid: "invoice", label: isOpen ? "Close" : "Open", icon: isOpen ? Lock : Unlock, onClick: isOpen ? handleCloseInvoice : handleOpenInvoice, disabled: working || !activeInvoiceUq },
