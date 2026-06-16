@@ -656,7 +656,7 @@ export default function SalesPage() {
 
     // ─────────────────────────────────────────────────────────────────────────
     return (
-        <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
+        <div className="flex flex-col bg-[#f4f6f8] font-sans text-[#333] xl:h-[100dvh] xl:overflow-hidden">
 
             <AppHeader
                 title="P.O.S."
@@ -669,7 +669,7 @@ export default function SalesPage() {
             />
 
             {/* ── Main area ────────────────────────────────────────────── */}
-            <div className="flex flex-col flex-1 overflow-hidden px-2 pb-2 pt-2 gap-2 min-h-0">
+            <div className="flex flex-col xl:flex-1 xl:overflow-hidden xl:min-h-0 px-2 pb-2 pt-2 gap-2">
 
                 {/* Top-level tab bar */}
                 <div className="bg-white h-10 px-3 flex items-stretch shrink-0 rounded-md overflow-x-auto border border-gray-200">
@@ -689,12 +689,12 @@ export default function SalesPage() {
 
                 {/* ── TAB 1: Invoice ────────────────────────────────────── */}
                 {mainTab === "invoice" && (
-                <div className="flex flex-col xl:flex-row flex-1 overflow-hidden gap-2 min-h-0">
+                <div className="flex flex-col xl:flex-row xl:flex-1 xl:overflow-hidden xl:min-h-0 gap-2">
 
                 {/* LEFT: Invoice list */}
-                <div className="flex flex-col bg-white rounded-md border border-black overflow-hidden xl:w-[300px] xl:shrink-0 xl:flex-none max-h-[40vh] xl:max-h-none">
+                <div className="flex flex-col bg-white rounded-md border border-black overflow-hidden xl:w-[300px] xl:shrink-0 xl:flex-none h-[calc(100svh-7.5rem)] xl:h-auto">
                     {/* List header */}
-                    <div className="bg-[#374151] px-3 h-10 flex items-center justify-between shrink-0">
+                    <div className="bg-[#374151] px-3 h-12 xl:h-10 flex items-center justify-between shrink-0">
                         <div className="flex items-center gap-2">
                             <ClipboardList size={12} className="text-[#FB7506]" />
                             <span className="font-black text-[10px] text-white uppercase tracking-widest">Invoices</span>
@@ -800,9 +800,9 @@ export default function SalesPage() {
                 </div>
 
                 {/* RIGHT: Invoice detail */}
-                <div className="flex-1 flex flex-col min-h-0 min-w-0">
+                <div className="flex flex-col overflow-hidden h-[calc(100svh-7.5rem)] xl:flex-1 xl:min-h-0 xl:min-w-0">
                     {!activeInvoiceUq ? (
-                        <div className="flex-1 flex items-center justify-center bg-white rounded-md border border-black">
+                        <div className="flex items-center justify-center bg-white rounded-md border border-black h-full">
                             <div className="text-center text-gray-400">
                                 <ShoppingCart size={40} className="mx-auto mb-3 opacity-20" />
                                 <p className="text-sm font-bold uppercase tracking-widest">Select an invoice</p>
@@ -810,11 +810,11 @@ export default function SalesPage() {
                             </div>
                         </div>
                     ) : (
-                        <div className="flex flex-col flex-1 min-h-0 gap-2">
+                        <div className="flex flex-col flex-1 min-h-0 xl:min-w-0 gap-2">
                             {/* Invoice Header card */}
                             <div className="bg-white rounded-md border border-black overflow-hidden shrink-0">
                                 {/* Action bar */}
-                                <div className="bg-[#374151] h-10 px-3 flex items-center gap-1.5 shrink-0 overflow-x-auto">
+                                <div className="bg-[#374151] h-12 xl:h-10 px-3 flex items-center gap-1.5 shrink-0 overflow-x-auto scrollbar-none">
                                     <ShoppingCart size={12} className="text-[#FB7506] shrink-0" />
                                     <span className="font-black text-[10px] text-white uppercase tracking-widest shrink-0">Invoice</span>
                                     <div className="w-px h-4 bg-white/20 shrink-0 mx-1" />
@@ -868,7 +868,7 @@ export default function SalesPage() {
                             {/* Invoice Lines */}
                             <div className="flex-1 flex flex-col bg-white rounded-md border border-black overflow-hidden min-h-0">
                                 {/* Lines action bar */}
-                                <div className="bg-[#374151] h-10 px-3 flex items-center gap-1.5 shrink-0">
+                                <div className="bg-[#374151] h-12 xl:h-10 px-3 flex items-center gap-1.5 shrink-0">
                                     <ClipboardList size={12} className="text-[#FB7506] shrink-0" />
                                     <span className="font-black text-[10px] text-white uppercase tracking-widest shrink-0">Invoice Lines</span>
                                     {isOpen && <>
