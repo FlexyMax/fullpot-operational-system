@@ -1198,7 +1198,7 @@ export default function SalesPage() {
                         {(histInvoices as any[]).map((inv: any, i: number) => {
                             const isExpanded = histInvoiceUq === t(inv.UNICO);
                             const custName   = t(inv.CUSTOMER) || t(inv.SALESMAN_CUSTOMER) || "";
-                            const total      = parseMoney(inv.TOTAL_INVOICE) || parseMoney(inv.AMMOUNT) || parseMoney(inv.IN_AMMOUNT) || 0;
+                            const total      = parseMoney(inv.AMMOUNT) || parseMoney(inv.TOTAL_INVOICE) || 0;
                             const balance    = parseMoney(inv.TOTAL_BALANCE) || parseMoney(inv.TOTAL_INV_BAL) || 0;
                             return (
                                 <div key={i} className={cn(
