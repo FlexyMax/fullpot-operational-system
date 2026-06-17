@@ -668,7 +668,7 @@ export default function SalesPage() {
 
     // ─────────────────────────────────────────────────────────────────────────
     return (
-        <div className="flex flex-col bg-[#f4f6f8] font-sans text-[#333] xl:h-[100dvh] xl:overflow-hidden">
+        <div className="flex flex-col h-[100dvh] overflow-hidden bg-[#f4f6f8] font-sans text-[#333]">
 
             <AppHeader
                 title="P.O.S."
@@ -681,7 +681,7 @@ export default function SalesPage() {
             />
 
             {/* ── Main area ────────────────────────────────────────────── */}
-            <div className="flex flex-col xl:flex-1 xl:overflow-hidden xl:min-h-0 px-2 pb-2 pt-2 gap-2">
+            <div className="flex flex-col flex-1 min-h-0 overflow-hidden px-2 pb-2 pt-2 gap-2">
 
                 {/* Top-level tab bar */}
                 <div className="bg-white h-10 px-3 flex items-stretch shrink-0 rounded-md overflow-x-auto border border-gray-200">
@@ -701,7 +701,7 @@ export default function SalesPage() {
 
                 {/* ── TAB 1: Invoice ────────────────────────────────────── */}
                 {mainTab === "invoice" && (
-                <div className="flex flex-col xl:flex-row xl:flex-1 xl:overflow-hidden xl:min-h-0 gap-2">
+                <div className="flex flex-col flex-1 min-h-0 overflow-hidden xl:flex-row gap-2">
 
                 {/* LEFT: Invoice list — desktop only */}
                 <div className="hidden xl:flex xl:flex-col bg-white rounded-md border border-black overflow-hidden xl:w-[300px] xl:shrink-0 xl:flex-none">
@@ -798,7 +798,7 @@ export default function SalesPage() {
                 </div>
 
                 {/* RIGHT: Invoice detail */}
-                <div className="flex flex-col overflow-hidden h-[calc(100svh-7.5rem)] xl:flex-1 xl:min-h-0 xl:min-w-0">
+                <div className="flex flex-col flex-1 min-h-0 overflow-hidden xl:min-w-0">
                     {!activeInvoiceUq ? (
                         <div className="flex items-center justify-center bg-white rounded-md border border-black h-full">
                             <div className="text-center text-gray-400 px-6">
@@ -951,7 +951,7 @@ export default function SalesPage() {
 
                 {/* ── TAB 2: Available Stock ────────────────────────────── */}
                 {mainTab === "stock" && (
-                <div className="flex flex-col xl:flex-1 xl:overflow-hidden xl:min-h-0 gap-2 h-[calc(100svh-7.5rem)] xl:h-auto">
+                <div className="flex flex-col flex-1 min-h-0 overflow-hidden gap-2">
                     {activeInvoiceUq && h && (
                         <>
                             {/* Mobile: invoice summary card */}
@@ -1128,7 +1128,7 @@ export default function SalesPage() {
 
                 {/* ── TAB 3: Invoice History ─────────────────────────────── */}
                 {mainTab === "history" && (
-                <div className="flex flex-col xl:flex-1 xl:overflow-hidden xl:min-h-0 gap-2 h-[calc(100svh-7.5rem)] xl:h-auto">
+                <div className="flex flex-col flex-1 min-h-0 overflow-hidden gap-2">
 
                     {/* Filter card — mobile */}
                     <div className="xl:hidden bg-white border border-gray-200 rounded-xl p-3 shrink-0 shadow-sm">
@@ -1210,11 +1210,13 @@ export default function SalesPage() {
                                                     <span className="font-black text-[15px] text-blue-700">#{t(inv.INVOICE_NO)}</span>
                                                     <span className="text-[10px] text-gray-400 font-semibold">{fmtDate(inv.INVOICE_DATE)}</span>
                                                 </div>
-                                                <p className="text-[12px] font-semibold text-gray-700 truncate mt-0.5">{t(inv.CUSTOMER)}</p>
+                                                {t(inv.CUSTOMER) && <p className="text-[12px] font-semibold text-gray-700 truncate mt-0.5">{t(inv.CUSTOMER)}</p>}
                                                 <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                                    {parseMoney(inv.TOTAL_INVOICE) > 0 && (
                                                     <span className="text-[11px] font-black text-green-700 bg-green-50 px-2 py-0.5 rounded-lg border border-green-200">
                                                         ${fmt(inv.TOTAL_INVOICE)}
                                                     </span>
+                                                    )}
                                                     {balance > 0 && (
                                                         <span className="text-[11px] font-black text-red-600 bg-red-50 px-2 py-0.5 rounded-lg border border-red-200">
                                                             Bal ${fmt(balance)}
