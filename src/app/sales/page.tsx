@@ -1199,8 +1199,7 @@ export default function SalesPage() {
                             const isExpanded = histInvoiceUq === t(inv.UNICO);
                             const custName   = t(inv.CUSTOMER) || t(inv.SALESMAN_CUSTOMER) || "";
                             const total      = parseMoney(inv.AMMOUNT) || parseMoney(inv.TOTAL_INVOICE) || 0;
-                            const paid       = parseMoney(inv.IN_AMMOUNT);
-                            const balance    = total > 0 ? Math.max(0, total - paid) : 0;
+                            const balance    = parseMoney(inv.TOTAL_BALANCE);
                             return (
                                 <div key={i} className={cn(
                                     "bg-white rounded-xl overflow-hidden transition-all shadow-sm border-l-4",
