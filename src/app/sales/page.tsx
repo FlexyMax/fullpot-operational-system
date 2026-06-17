@@ -272,7 +272,6 @@ export default function SalesPage() {
             });
             const r = await fetch(`/api/pos/history/invoices?${p}`);
             const j = await r.json();
-            if (Array.isArray(j) && j.length > 0) console.log('[HIST] first raw row:', j[0]);
             return norm(Array.isArray(j) ? j : []);
         },
     });
@@ -1198,8 +1197,6 @@ export default function SalesPage() {
                         )}
                         {(histInvoices as any[]).map((inv: any, i: number) => {
                             const isExpanded = histInvoiceUq === t(inv.UNICO);
-                            const custName   = t(inv.CUSTOMER) || t(inv.SALESMAN_CUSTOMER) || "";
-                            const total      = parseMoney(inv.AMMOUNT) || parseMoney(inv.TOTAL_INVOICE) || 0;
                             const balance    = parseMoney(inv.TOTAL_BALANCE);
                             return (
                                 <div key={i} className={cn(
@@ -1213,13 +1210,11 @@ export default function SalesPage() {
                                                     <span className="font-black text-[15px] text-blue-700">#{t(inv.INVOICE_NO)}</span>
                                                     <span className="text-[10px] text-gray-400 font-semibold">{fmtDate(inv.INVOICE_DATE)}</span>
                                                 </div>
-                                                {custName && <p className="text-[12px] font-semibold text-gray-700 truncate mt-0.5">{custName}</p>}
+                                                <p className="text-[12px] font-semibold text-gray-700 truncate mt-0.5">{t(inv.CUSTOMER)}</p>
                                                 <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                                                    {total > 0 && (
-                                                        <span className="text-[11px] font-black text-green-700 bg-green-50 px-2 py-0.5 rounded-lg border border-green-200">
-                                                            ${fmt(total)}
-                                                        </span>
-                                                    )}
+                                                    <span className="text-[11px] font-black text-green-700 bg-green-50 px-2 py-0.5 rounded-lg border border-green-200">
+                                                        ${fmt(inv.TOTAL_INVOICE)}
+                                                    </span>
                                                     {balance > 0 && (
                                                         <span className="text-[11px] font-black text-red-600 bg-red-50 px-2 py-0.5 rounded-lg border border-red-200">
                                                             Bal ${fmt(balance)}
