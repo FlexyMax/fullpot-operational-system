@@ -272,6 +272,7 @@ export default function SalesPage() {
             });
             const r = await fetch(`/api/pos/history/invoices?${p}`);
             const j = await r.json();
+            if (Array.isArray(j) && j.length > 0) console.log('[HIST] first raw row:', j[0]);
             return norm(Array.isArray(j) ? j : []);
         },
     });
