@@ -1200,38 +1200,36 @@ export default function SalesPage() {
                             const balance    = parseMoney(inv.TOTAL_BALANCE);
                             return (
                                 <div key={i} className={cn(
-                                    "bg-white rounded-xl overflow-hidden transition-all shadow-sm border-l-4",
+                                    "bg-white rounded-xl transition-all shadow-sm border-l-4",
                                     isExpanded ? "border-l-[#FB7506] border border-[#FB7506]" : balance > 0 ? "border-l-red-400 border border-gray-200" : "border-l-green-400 border border-gray-200"
                                 )}>
-                                    <div className="p-3">
-                                        <div className="flex items-start justify-between gap-2">
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-baseline gap-2 flex-wrap">
-                                                    <span className="font-black text-[15px] text-blue-700">#{t(inv.INVOICE_NO)}</span>
-                                                    <span className="text-[10px] text-gray-400 font-semibold">{fmtDate(inv.INVOICE_DATE)}</span>
-                                                </div>
-                                                {t(inv.CUSTOMER) && <p className="text-[12px] font-semibold text-gray-700 truncate mt-0.5">{t(inv.CUSTOMER)}</p>}
-                                                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                                                    {parseMoney(inv.TOTAL_INVOICE) > 0 && (
-                                                    <span className="text-[11px] font-black text-green-700 bg-green-50 px-2 py-0.5 rounded-lg border border-green-200">
-                                                        ${fmt(inv.TOTAL_INVOICE)}
-                                                    </span>
-                                                    )}
-                                                    {balance > 0 && (
-                                                        <span className="text-[11px] font-black text-red-600 bg-red-50 px-2 py-0.5 rounded-lg border border-red-200">
-                                                            Bal ${fmt(balance)}
-                                                        </span>
-                                                    )}
-                                                </div>
+                                    <div className="p-3 grid grid-cols-[1fr_auto] gap-3 items-start">
+                                        <div className="min-w-0">
+                                            <div className="flex items-baseline gap-2 flex-wrap">
+                                                <span className="font-black text-[15px] text-blue-700">#{t(inv.INVOICE_NO)}</span>
+                                                <span className="text-[10px] text-gray-400 font-semibold">{fmtDate(inv.INVOICE_DATE)}</span>
                                             </div>
-                                            <button onClick={() => setHistInvoiceUq(isExpanded ? null : t(inv.UNICO))}
-                                                className={cn(
-                                                    "shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all mt-0.5",
-                                                    isExpanded ? "bg-[#FB7506] text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                                                )}>
-                                                {isExpanded ? <Minus size={16} /> : <Plus size={16} />}
-                                            </button>
+                                            {t(inv.CUSTOMER) && <p className="text-[12px] font-semibold text-gray-700 truncate mt-1">{t(inv.CUSTOMER)}</p>}
+                                            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                                {parseMoney(inv.TOTAL_INVOICE) > 0 && (
+                                                <span className="text-[11px] font-black text-green-700 bg-green-50 px-2 py-0.5 rounded-lg border border-green-200">
+                                                    ${fmt(inv.TOTAL_INVOICE)}
+                                                </span>
+                                                )}
+                                                {balance > 0 && (
+                                                    <span className="text-[11px] font-black text-red-600 bg-red-50 px-2 py-0.5 rounded-lg border border-red-200">
+                                                        Bal ${fmt(balance)}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
+                                        <button onClick={() => setHistInvoiceUq(isExpanded ? null : t(inv.UNICO))}
+                                            className={cn(
+                                                "w-8 h-8 rounded-full flex items-center justify-center transition-all",
+                                                isExpanded ? "bg-[#FB7506] text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                                            )}>
+                                            {isExpanded ? <Minus size={16} /> : <Plus size={16} />}
+                                        </button>
                                     </div>
                                     {/* Expanded: Details / Credits only */}
                                     {isExpanded && (
