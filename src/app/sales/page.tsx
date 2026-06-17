@@ -1197,32 +1197,38 @@ export default function SalesPage() {
                         )}
                         {(histInvoices as any[]).map((inv: any, i: number) => {
                             const isExpanded = histInvoiceUq === t(inv.UNICO);
-                            const custName = t(inv.CUSTOMER ?? inv.CUSTOMER_NAME ?? inv.COMPANYNAME ?? "");
-                            const total    = inv.TOTAL_INVOICE ?? inv.TOTAL ?? inv.INVOICE_TOTAL ?? 0;
-                            const balance  = inv.TOTAL_BALANCE ?? inv.BALANCE ?? inv.INVOICE_BALANCE ?? 0;
+                            const custName   = t(inv.CUSTOMER ?? "");
+                            const total      = parseMoney(inv.TOTAL_INVOICE ?? inv.AMMOUNT ?? 0);
+                            const balance    = parseMoney(inv.TOTAL_BALANCE ?? inv.TOTAL_INV_BAL ?? 0);
                             return (
                                 <div key={i} className={cn(
-                                    "bg-white border-2 rounded-xl overflow-hidden transition-all shadow-sm",
-                                    isExpanded ? "border-[#FB7506]" : "border-gray-200"
+                                    "bg-white rounded-xl overflow-hidden transition-all shadow-sm border-l-4",
+                                    isExpanded ? "border-l-[#FB7506] border border-[#FB7506]" : balance > 0 ? "border-l-red-400 border border-gray-200" : "border-l-green-400 border border-gray-200"
                                 )}>
                                     <div className="p-3">
-                                        <div className="flex items-center justify-between gap-2">
+                                        <div className="flex items-start justify-between gap-2">
                                             <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2 flex-wrap">
+                                                <div className="flex items-baseline gap-2 flex-wrap">
                                                     <span className="font-black text-[15px] text-blue-700">#{t(inv.INVOICE_NO)}</span>
-                                                    <span className="text-[10px] text-gray-400">{fmtDate(inv.INVOICE_DATE)}</span>
+                                                    <span className="text-[10px] text-gray-400 font-semibold">{fmtDate(inv.INVOICE_DATE)}</span>
                                                 </div>
                                                 {custName && <p className="text-[12px] font-semibold text-gray-700 truncate mt-0.5">{custName}</p>}
-                                                <div className="flex items-center gap-4 mt-1 flex-wrap">
-                                                    <span className="text-[11px] text-gray-500">Total: <span className="font-black text-green-700">${fmt(total)}</span></span>
-                                                    {parseMoney(balance) > 0 && (
-                                                        <span className="text-[11px] text-gray-500">Bal: <span className="font-black text-red-600">${fmt(balance)}</span></span>
+                                                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                                    {total > 0 && (
+                                                        <span className="text-[11px] font-black text-green-700 bg-green-50 px-2 py-0.5 rounded-lg border border-green-200">
+                                                            ${fmt(total)}
+                                                        </span>
+                                                    )}
+                                                    {balance > 0 && (
+                                                        <span className="text-[11px] font-black text-red-600 bg-red-50 px-2 py-0.5 rounded-lg border border-red-200">
+                                                            Bal ${fmt(balance)}
+                                                        </span>
                                                     )}
                                                 </div>
                                             </div>
                                             <button onClick={() => setHistInvoiceUq(isExpanded ? null : t(inv.UNICO))}
                                                 className={cn(
-                                                    "shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all",
+                                                    "shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all mt-0.5",
                                                     isExpanded ? "bg-[#FB7506] text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
                                                 )}>
                                                 {isExpanded ? <Minus size={16} /> : <Plus size={16} />}
