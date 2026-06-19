@@ -295,12 +295,16 @@ export default function SystemAccessPage() {
                                     </span>
                                 )}
                             </div>
-                            {/* Right: Edit -or- Save + Cancel */}
-                            <div className="flex items-center gap-1.5 pr-2">
+                            {/* Right: Edit -or- Save + Cancel — hidden on mobile, surfaced via the bottom action bar instead */}
+                            <div className="hidden lg:flex items-center gap-1.5 pr-2">
                                 {!editMode ? (
-                                    <GridMenu items={[
-                                        { label: "Edit", icon: Pencil, color: "orange", onClick: handleEdit, disabled: !selectedUnico || !perms.canEdit },
-                                    ]} />
+                                    <button
+                                        onClick={handleEdit}
+                                        disabled={!selectedUnico || !perms.canEdit}
+                                        className="flex items-center gap-1.5 px-3 h-7 rounded-md font-black text-[10px] uppercase text-white transition-all shrink-0 bg-[#FB7506] hover:bg-orange-500 disabled:opacity-40 disabled:cursor-not-allowed"
+                                    >
+                                        <Pencil size={14} /> Edit
+                                    </button>
                                 ) : (
                                     <div className="flex gap-2 pr-2">
                                         <button
@@ -509,10 +513,43 @@ export default function SystemAccessPage() {
                 </div>
             </div>
 
+            {/* Mobile Action Bar — User Information actions (Edit / Save / Cancel) */}
+            <div className={cn(
+                "lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] transition-transform duration-300 ease-in-out pb-4 pt-2 px-2",
+                selectedUnico ? "translate-y-0" : "translate-y-full"
+            )}>
+                <div className="flex items-center gap-1 overflow-x-auto px-4 scrollbar-none justify-center">
+                    {!editMode ? (
+                        <button onClick={handleEdit} disabled={!selectedUnico || !perms.canEdit}
+                            className="flex flex-col items-center gap-1 text-gray-600 disabled:opacity-50 transition-colors hover:text-[#FB7506] min-w-[56px] shrink-0">
+                            <Pencil size={20} className={perms.canEdit ? "text-[#FB7506]" : "text-gray-400"} />
+                            <span className="text-[9px] font-black uppercase tracking-wider">Edit</span>
+                        </button>
+                    ) : (
+                        <>
+                            <button onClick={handleSave} disabled={saving || !perms.canEdit}
+                                className="flex flex-col items-center gap-1 text-gray-600 disabled:opacity-50 transition-colors hover:text-green-600 min-w-[56px] shrink-0">
+                                {saving ? <RefreshCcw size={20} className="text-green-500 animate-spin" /> : <Save size={20} className="text-green-500" />}
+                                <span className="text-[9px] font-black uppercase tracking-wider">{saving ? "Saving" : "Save"}</span>
+                            </button>
+                            <div className="w-px h-8 bg-gray-200 shrink-0 mx-2" />
+                            <button onClick={handleCancel}
+                                className="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-800 transition-colors min-w-[56px] shrink-0">
+                                <X size={20} />
+                                <span className="text-[9px] font-black uppercase tracking-wider">Cancel</span>
+                            </button>
+                        </>
+                    )}
+                </div>
+            </div>
+
             {/* Mobile floating button — opens user list */}
             <button
                 onClick={() => setMobileUsersOpen(true)}
-                className="lg:hidden fixed bottom-6 right-6 z-40 w-12 h-12 bg-[#FB7506] hover:bg-orange-600 text-white rounded-full shadow-xl flex items-center justify-center transition-all active:scale-95"
+                className={cn(
+                    "lg:hidden fixed right-6 z-40 w-12 h-12 bg-[#FB7506] hover:bg-orange-600 text-white rounded-full shadow-xl flex items-center justify-center transition-all active:scale-95",
+                    selectedUnico ? "bottom-24" : "bottom-6"
+                )}
                 title="Select User"
             >
                 <Users size={20} />
