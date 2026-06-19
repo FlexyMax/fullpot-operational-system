@@ -72,6 +72,8 @@ export const SCREEN_PANTA: Record<string, string> = {
 
     "inventory-entry":        "52961702",  // fallback — register in Module & Screen Setup to enforce real permissions
 
+    "business-intelligence":  "7331ED65",  // BUSINESS INTELLIGENCE (APP A-R)
+
     // Add new pages here after registering in Module & Screen Setup
 };
 

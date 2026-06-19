@@ -20,6 +20,7 @@ export const PANTA: Record<string, string> = {
     "sales-reps":             "52961702",  // fallback — register in pantalla table to get real UQ
     "vendors":                "52961702",  // fallback — register in pantalla table to get real UQ
     "inventory-entry":        "52961702",  // fallback — register in pantalla table to get real UQ
+    "business-intelligence":  "7331ED65",  // BUSINESS INTELLIGENCE (APP A-R)
     // Add new pages here as they are registered in the pantalla table
 };
 

@@ -7,7 +7,7 @@ import {
     ShoppingCart, Package, Users, Power, Search, Loader2,
     AlertCircle, Store, Settings, BarChart2, Receipt, DollarSign,
     Truck, ClipboardList, ScanLine, Building2, Grid3x3,
-    ChevronRight, Landmark, Calendar, Plane
+    ChevronRight, Landmark, Calendar, Plane, LineChart
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -46,6 +46,7 @@ function getRoute(appPage: string): string | null {
     if (p.includes('QUALITY') || p.includes('CALIDAD') || p.includes(' QC') || p === 'QC') return '/qc';
     if (p.includes('PBOOK2INV') || p.includes('PBOOK 2 INV') || p.includes('PREBOOK TO INV') || p.includes('PREBOOK2INV') || p.includes('PREBOOK_TO_INV') || p === 'PBOOK2INVOICE') return '/pbook2invoice';
     if (p.includes('STANDING ORDER') || p.includes('STANDING_ORDER') || p.includes('VENTAS_ORDENES') || p.includes('S.O.') || p === 'SO' || p.includes('SORDER')) return '/standing-orders';
+    if (p.includes('BUSINESS INTELLIGENCE') || p.includes('BUSINESS-INTELLIGENCE') || p.includes('INTELIGENCIA DE NEGOCIO') || p === 'BI') return '/business-intelligence';
     return null;
 }
 
@@ -57,6 +58,7 @@ function getIcon(appPage: string) {
     if (n.includes('RECEIVABLE') || n.includes('A/R')) return Landmark;
     if (n.includes('INVENTORY') || n.includes('STOCK') || n.includes('ITEM') || n.includes('PRODUCT') || n.includes('VARIETY')) return Package;
     if (n.includes('CUSTOMER') || n.includes('CLIENT')) return Users;
+    if (n.includes('BUSINESS INTELLIGENCE') || n.includes('BUSINESS-INTELLIGENCE') || n === 'BI') return LineChart;
     if (n.includes('REPORT') || n.includes('ANALYTIC')) return BarChart2;
     if (n.includes('PURCHASE') || n.includes('PREBOOK')) return ClipboardList;
     if (n.includes('SHIPPING') || n.includes('CARRIER') || n.includes('DISPATCH')) return Truck;

@@ -11,6 +11,8 @@ const baseConfig: sql.config = {
         enableArithAbort: true,
         connectTimeout: 30000,
     },
+    // Bumped from the mssql default of 15s — BI reports run heavy ad-hoc SPs over large date ranges.
+    requestTimeout: 120000,
     pool: {
         max: 10,
         min: 0,

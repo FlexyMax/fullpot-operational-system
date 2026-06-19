@@ -298,6 +298,7 @@ Every API route that performs a write operation should:
 | `access-definition` | `/system/access` | usuarios_accesos | 52961702 |
 | `companies-definition` | `/system/companies` | empresas | 52961702 |
 | `items-setup` | `/masters/items` | flower_products | 52961702 |
+| `business-intelligence` | `/business-intelligence` | flower_store_procedures | 7331ED65 |
 
 ---
 
