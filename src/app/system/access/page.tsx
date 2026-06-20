@@ -210,7 +210,7 @@ export default function SystemAccessPage() {
                 {/* ── Left: User List ──────────────────────────────────────── */}
                 <div className="hidden lg:flex w-[260px] shrink-0 flex-col gap-2">
                     <div className="flex flex-col flex-1 bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 border-b border-black/10 shrink-0 rounded-t-lg">
+                        <div className="h-10 bg-[#4F4F4F] flex items-center justify-between pl-3 pr-2 border-b border-black/10 shrink-0 rounded-t-lg">
                             <div className="flex items-center gap-2">
                                 <Users size={16} className="text-[#FB7506]" />
                                 <span className="fos-grid-header-text">Users</span>
@@ -270,7 +270,7 @@ export default function SystemAccessPage() {
 
                     {/* User Card */}
                     <div className="bg-white rounded-lg border border-gray-200 shadow-sm shrink-0">
-                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 border-b border-black/10 rounded-t-lg">
+                        <div className="h-10 bg-[#4F4F4F] flex items-center justify-between pl-3 border-b border-black/10 rounded-t-lg">
                             {/* Left: title + status badge */}
                             <div className="flex items-center gap-2">
                                 <UserCheck size={16} className="text-[#FB7506]" />
@@ -383,7 +383,7 @@ export default function SystemAccessPage() {
 
                     {/* Permissions Grid */}
                     <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-[300px] lg:min-h-0">
-                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 border-b border-black/10 shrink-0 rounded-t-lg">
+                        <div className="h-10 bg-[#4F4F4F] flex items-center justify-between pl-3 border-b border-black/10 shrink-0 rounded-t-lg">
                             <div className="flex items-center gap-2">
                                 <Shield size={16} className="text-[#FB7506]" />
                                 <span className="fos-grid-header-text">Screen Permissions</span>
@@ -572,7 +572,7 @@ export default function SystemAccessPage() {
             {mobileUsersOpen && (
                 <div className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden">
-                        <div className="h-10 bg-[#374151] flex items-center justify-between px-4 border-b border-black/10 shrink-0">
+                        <div className="h-10 bg-[#4F4F4F] flex items-center justify-between px-4 border-b border-black/10 shrink-0">
                             <div className="flex items-center gap-2">
                                 <Users size={16} className="text-[#FB7506]" />
                                 <span className="fos-grid-header-text">Select User</span>
@@ -688,7 +688,7 @@ function CopyAccessModal({ mode, currentUser, allUsers, onClose, onCopied }: {
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
-                <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 border-b border-black/10 shrink-0">
+                <div className="h-10 bg-[#4F4F4F] flex items-center justify-between pl-3 pr-2 border-b border-black/10 shrink-0">
                     <div className="flex items-center gap-2">
                         <Copy size={16} className="text-[#FB7506]" />
                         <span className="fos-grid-header-text">
