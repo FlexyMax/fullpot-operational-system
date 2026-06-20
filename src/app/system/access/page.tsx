@@ -296,7 +296,7 @@ export default function SystemAccessPage() {
                                         <Pencil size={14} /> Edit
                                     </button>
                                 ) : (
-                                    <div className="flex gap-2 pr-2 mr-10">
+                                    <div className="flex gap-2 pr-2 mr-20">
                                         <button
                                             onClick={handleSave}
                                             disabled={saving || !perms.canEdit}
