@@ -13,7 +13,6 @@ import { AppHeader } from "@/components/layout/AppHeader";
 import { AppFooter } from "@/components/layout/AppFooter";
 
 
-import { GridMenu } from "@/components/GridMenu";
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { AuditLogModal } from "@/components/AuditLogModal";
@@ -401,10 +400,20 @@ export default function SystemAccessPage() {
                                 {loadingPerms && <RefreshCcw size={16} className="text-gray-400 animate-spin" />}
                             </div>
                             {!editMode && selectedUnico && (
-                                <GridMenu items={[
-                                    { label: "Copy From", icon: Copy, color: "gray", onClick: () => setCopyModal({ mode: "from" }) },
-                                    { label: "Copy To",   icon: Copy, color: "gray", onClick: () => setCopyModal({ mode: "to" }) },
-                                ]} />
+                                <div className="hidden lg:flex items-center gap-1.5 pr-2">
+                                    <button
+                                        onClick={() => setCopyModal({ mode: "from" })}
+                                        className="flex items-center gap-1.5 px-3 h-7 rounded-md font-black text-[10px] uppercase text-white transition-all shrink-0 bg-gray-500 hover:bg-gray-400"
+                                    >
+                                        <Copy size={14} /> Copy From
+                                    </button>
+                                    <button
+                                        onClick={() => setCopyModal({ mode: "to" })}
+                                        className="flex items-center gap-1.5 px-3 h-7 rounded-md font-black text-[10px] uppercase text-white transition-all shrink-0 bg-gray-500 hover:bg-gray-400"
+                                    >
+                                        <Copy size={14} /> Copy To
+                                    </button>
+                                </div>
                             )}
                         </div>
 
@@ -513,18 +522,31 @@ export default function SystemAccessPage() {
                 </div>
             </div>
 
-            {/* Mobile Action Bar — User Information actions (Edit / Save / Cancel) */}
+            {/* Mobile Action Bar — User Information + Screen Permissions actions */}
             <div className={cn(
                 "lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] transition-transform duration-300 ease-in-out pb-4 pt-2 px-2",
                 selectedUnico ? "translate-y-0" : "translate-y-full"
             )}>
                 <div className="flex items-center gap-1 overflow-x-auto px-4 scrollbar-none justify-center">
                     {!editMode ? (
-                        <button onClick={handleEdit} disabled={!selectedUnico || !perms.canEdit}
-                            className="flex flex-col items-center gap-1 text-gray-600 disabled:opacity-50 transition-colors hover:text-[#FB7506] min-w-[56px] shrink-0">
-                            <Pencil size={20} className={perms.canEdit ? "text-[#FB7506]" : "text-gray-400"} />
-                            <span className="text-[9px] font-black uppercase tracking-wider">Edit</span>
-                        </button>
+                        <>
+                            <button onClick={handleEdit} disabled={!selectedUnico || !perms.canEdit}
+                                className="flex flex-col items-center gap-1 text-gray-600 disabled:opacity-50 transition-colors hover:text-[#FB7506] min-w-[56px] shrink-0">
+                                <Pencil size={20} className={perms.canEdit ? "text-[#FB7506]" : "text-gray-400"} />
+                                <span className="text-[9px] font-black uppercase tracking-wider">Edit</span>
+                            </button>
+                            <div className="w-px h-8 bg-gray-200 shrink-0 mx-2" />
+                            <button onClick={() => setCopyModal({ mode: "from" })} disabled={!selectedUnico}
+                                className="flex flex-col items-center gap-1 text-gray-600 disabled:opacity-50 transition-colors hover:text-gray-800 min-w-[56px] shrink-0">
+                                <Copy size={20} className="text-gray-500" />
+                                <span className="text-[9px] font-black uppercase tracking-wider">Copy From</span>
+                            </button>
+                            <button onClick={() => setCopyModal({ mode: "to" })} disabled={!selectedUnico}
+                                className="flex flex-col items-center gap-1 text-gray-600 disabled:opacity-50 transition-colors hover:text-gray-800 min-w-[56px] shrink-0">
+                                <Copy size={20} className="text-gray-500" />
+                                <span className="text-[9px] font-black uppercase tracking-wider">Copy To</span>
+                            </button>
+                        </>
                     ) : (
                         <>
                             <button onClick={handleSave} disabled={saving || !perms.canEdit}
