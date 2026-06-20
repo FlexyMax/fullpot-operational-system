@@ -6,17 +6,18 @@ import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
     Search, Pencil, Check, X, XCircle, RefreshCcw,
-    Users, Shield, Copy, Save, AlertCircle, CheckSquare, Square,
+    Users, Shield, Copy, Save, CheckSquare, Square,
     Building2, LayoutGrid, UserCheck, ChevronRight
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { AppFooter } from "@/components/layout/AppFooter";
-
+import { toast } from "sonner";
 
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { AuditLogModal } from "@/components/AuditLogModal";
 import { cn } from "@/lib/utils";
+import { useAccessStore } from "@/store/system/useAccessStore";
 const EMPTY_ARR: any[] = [];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -43,17 +44,19 @@ export default function SystemAccessPage() {
     const { logAction } = useAuditLog("access-definition", "usuarios_accesos");
     const perms = usePagePermissions("access-definition");
 
-    const [selectedUnico,  setSelectedUnico]  = useState<string | null>(null);
-    const [searchTerm,     setSearchTerm]     = useState("");
-    const [editMode,         setEditMode]         = useState(false);
-    const [mobileUsersOpen,  setMobileUsersOpen]  = useState(false);
-    const [filterCompany,    setFilterCompany]    = useState("");
-    const [filterModule,   setFilterModule]   = useState("");
-    const [localPerms,     setLocalPerms]     = useState<any[]>([]);
-    const [copyModal,      setCopyModal]      = useState<{ mode: "from" | "to" } | null>(null);
-    const [saving,         setSaving]         = useState(false);
-    const [editError,      setEditError]      = useState<string | null>(null);
-    const [saveMsg,        setSaveMsg]        = useState<string | null>(null);
+    const {
+        selectedUnico, setSelectedUnico,
+        searchTerm, setSearchTerm,
+        filterCompany, setFilterCompany,
+        filterModule, setFilterModule,
+        mobileUsersOpen, setMobileUsersOpen,
+        copyModal, setCopyModal,
+        clearFilters,
+    } = useAccessStore();
+
+    const [editMode,    setEditMode]    = useState(false);
+    const [localPerms,  setLocalPerms]  = useState<any[]>([]);
+    const [saving,      setSaving]      = useState(false);
 
     useEffect(() => {
         if (status === "unauthenticated") router.push("/login");
@@ -85,7 +88,7 @@ export default function SystemAccessPage() {
     useEffect(() => {
         setLocalPerms(permissions);
         setEditMode(false);
-        setFilterCompany(""); setFilterModule("");
+        clearFilters();
     }, [permissions]);
 
     // ── Auto-select first user ────────────────────────────────────────────────
@@ -119,10 +122,9 @@ export default function SystemAccessPage() {
     const handleEdit = async () => {
         if (!selectedUser) return;
         if (!selectedUser.activo) {
-            setEditError("User isn't active.");
+            toast.error("User isn't active.");
             return;
         }
-        setEditError(null);
         try {
             await fetch("/api/system/access/initialize", {
                 method: "POST",
@@ -132,14 +134,13 @@ export default function SystemAccessPage() {
             await refetchPerms();
             setEditMode(true);
         } catch (e: any) {
-            setEditError(e.message);
+            toast.error(e.message);
         }
     };
 
     const handleCancel = () => {
         setLocalPerms(permissions);
         setEditMode(false);
-        setEditError(null);
     };
 
     const handleSave = async () => {
@@ -153,13 +154,14 @@ export default function SystemAccessPage() {
             const data = await res.json();
             if (data.success) {
                 logAction("Edit", selectedUnico!);
-                setSaveMsg(`Saved ${data.updated} records.`);
-                setTimeout(() => setSaveMsg(null), 3000);
+                toast.success(`Saved ${data.updated} records.`);
                 setEditMode(false);
                 refetchPerms();
+            } else {
+                toast.error(data.error || "Save failed.");
             }
         } catch (e: any) {
-            setEditError(e.message);
+            toast.error(e.message);
         } finally {
             setSaving(false);
         }
@@ -192,7 +194,6 @@ export default function SystemAccessPage() {
     const handleSelectUser = (unico: string) => {
         if (editMode) return;
         setSelectedUnico(unico);
-        setEditError(null);
     };
 
     if (status === "loading") return null;
@@ -283,16 +284,6 @@ export default function SystemAccessPage() {
                                         {selectedUser.activo ? "Active" : "Inactive"}
                                     </span>
                                 )}
-                                {editError && (
-                                    <span className="flex items-center gap-1 text-amber-400 text-[10px] font-bold ml-1">
-                                        <AlertCircle size={12} />{editError}
-                                    </span>
-                                )}
-                                {saveMsg && (
-                                    <span className="flex items-center gap-1 text-green-400 text-[10px] font-bold ml-1">
-                                        <Check size={12} />{saveMsg}
-                                    </span>
-                                )}
                             </div>
                             {/* Right: Edit -or- Save + Cancel — hidden on mobile, surfaced via the bottom action bar instead */}
                             <div className="hidden lg:flex items-center gap-1.5 pr-2">
@@ -379,7 +370,7 @@ export default function SystemAccessPage() {
                         </div>
                         {(filterCompany || filterModule) && (
                             <button
-                                onClick={() => { setFilterCompany(""); setFilterModule(""); }}
+                                onClick={clearFilters}
                                 className="flex items-center gap-1 text-[10px] text-gray-500 hover:text-gray-700 font-bold transition-colors"
                             >
                                 <XCircle size={12} /> Clear filters
@@ -656,8 +647,6 @@ function CopyAccessModal({ mode, currentUser, allUsers, onClose, onCopied }: {
 }) {
     const [targetUq, setTargetUq]   = useState("");
     const [loading,  setLoading]    = useState(false);
-    const [error,    setError]      = useState<string | null>(null);
-    const [result,   setResult]     = useState<string | null>(null);
     const [search,   setSearch]     = useState("");
     const [ddOpen,   setDdOpen]     = useState(false);
     const [display,  setDisplay]    = useState("");
@@ -673,8 +662,8 @@ function CopyAccessModal({ mode, currentUser, allUsers, onClose, onCopied }: {
     }, [allUsers, search, currentUser.unico]);
 
     const handleConfirm = async () => {
-        if (!targetUq) { setError(mode === "from" ? "Source user is empty." : "Target user is empty."); return; }
-        setLoading(true); setError(null);
+        if (!targetUq) { toast.error(mode === "from" ? "Source user is empty." : "Target user is empty."); return; }
+        setLoading(true);
         try {
             const body = mode === "from"
                 ? { userfrom_uq: targetUq,            userto_uq:   currentUser.unico }
@@ -685,12 +674,12 @@ function CopyAccessModal({ mode, currentUser, allUsers, onClose, onCopied }: {
             });
             const data = await res.json();
             if (data.success) {
-                setResult(data.message || "Access copied successfully.");
-                setTimeout(() => onCopied(), 1500);
+                toast.success(data.message || "Access copied successfully.");
+                onCopied();
             } else {
-                setError(data.error || "Copy failed.");
+                toast.error(data.error || "Copy failed.");
             }
-        } catch (e: any) { setError(e.message); }
+        } catch (e: any) { toast.error(e.message); }
         finally { setLoading(false); }
     };
 
@@ -753,7 +742,7 @@ function CopyAccessModal({ mode, currentUser, allUsers, onClose, onCopied }: {
                                             onMouseDown={() => {
                                                 setTargetUq(u.unico);
                                                 setDisplay(String(u.full_name || "").trim());
-                                                setSearch(""); setDdOpen(false); setError(null);
+                                                setSearch(""); setDdOpen(false);
                                             }}
                                             className="px-3 py-2 text-sm hover:bg-blue-50 cursor-pointer border-b border-gray-50 last:border-b-0 flex items-center gap-2"
                                         >
@@ -768,9 +757,6 @@ function CopyAccessModal({ mode, currentUser, allUsers, onClose, onCopied }: {
                             </div>
                         )}
                     </div>
-
-                    {error  && <p className="text-xs text-red-500 font-bold flex items-center gap-1"><AlertCircle size={12} />{error}</p>}
-                    {result && <p className="text-xs text-green-600 font-bold flex items-center gap-1"><Check size={12} />{result}</p>}
 
                     <div className="flex justify-end gap-3 pt-2 pb-1">
                         <button onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50">Cancel</button>
