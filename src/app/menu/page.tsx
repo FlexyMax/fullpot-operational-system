@@ -153,8 +153,8 @@ export default function MenuPage() {
     return (
         <div className="h-[100dvh] bg-[#f4f6f8] flex flex-col font-sans text-[#333] overflow-hidden">
 
-            {/* Header — FlexyMax black standard */}
-            <header className="h-16 bg-[#000000] flex items-center justify-between px-3 md:px-6 shrink-0 text-white">
+            {/* Header — FlexyMax dark-gray standard */}
+            <header className="h-16 bg-[#333030] flex items-center justify-between px-3 md:px-6 shrink-0 text-white">
                 <div className="flex items-center gap-2 md:gap-3">
                     <div className="w-8 h-8 md:w-9 md:h-9 rounded-lg flex items-center justify-center" style={{ background: '#FB7506' }}>
                         <span className="text-white font-black text-[10px] md:text-xs leading-none">FOS</span>
@@ -357,8 +357,8 @@ export default function MenuPage() {
                 </div>
             </main>
 
-            {/* Footer — FlexyMax black standard */}
-            <footer className="h-10 bg-[#000000] px-4 md:px-6 flex items-center justify-center md:justify-between text-[11px] font-bold uppercase tracking-tight shrink-0">
+            {/* Footer — FlexyMax dark-gray standard */}
+            <footer className="h-10 bg-[#333030] px-4 md:px-6 flex items-center justify-center md:justify-between text-[11px] font-bold uppercase tracking-tight shrink-0">
                 <div className="hidden md:flex items-center gap-4 text-white/60">
                     <span>Server: Production</span>
                     <span className="text-white/20">|</span>

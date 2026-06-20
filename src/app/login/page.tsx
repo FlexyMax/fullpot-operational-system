@@ -117,7 +117,7 @@ export default function LoginPage() {
                     style={{ background: 'rgba(251,117,6,0.07)', filter: 'blur(90px)' }} />
 
                 {/* ── Header ───────────────────────────────────────────────── */}
-                <header className="fixed top-0 z-50 w-full h-16 bg-[#000000] flex items-center justify-between px-4 md:px-6 lg:px-12">
+                <header className="fixed top-0 z-50 w-full h-16 bg-[#333030] flex items-center justify-between px-4 md:px-6 lg:px-12">
                     <div className="flex items-center gap-2 md:gap-3">
                         <div className="w-8 h-8 md:w-9 md:h-9 rounded-lg flex items-center justify-center"
                             style={{ background: '#FB7506' }}>
@@ -245,7 +245,7 @@ export default function LoginPage() {
                 </main>
 
                 {/* ── Footer ───────────────────────────────────────────────── */}
-                <footer className="fixed bottom-0 z-50 w-full h-10 bg-[#000000] flex items-center justify-center px-6">
+                <footer className="fixed bottom-0 z-50 w-full h-10 bg-[#333030] flex items-center justify-center px-6">
                     <span className="text-[11px] font-bold text-white/90 uppercase tracking-[0.14em]">
                         FlexyMax ® {new Date().getFullYear()}
                     </span>

@@ -36,7 +36,7 @@ export function AppHeader({
   const router = useRouter();
 
   return (
-    <header className="h-16 bg-[#000000] flex items-center justify-between px-3 md:px-6 shrink-0 text-white">
+    <header className="h-16 bg-[#333030] flex items-center justify-between px-3 md:px-6 shrink-0 text-white">
       <div className="flex items-center gap-2 md:gap-3">
         {showBack && (
           <button
