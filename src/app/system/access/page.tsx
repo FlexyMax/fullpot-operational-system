@@ -199,7 +199,7 @@ export default function SystemAccessPage() {
     if (status === "loading") return null;
 
     return (
-        <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
+        <div className="flex flex-col h-[100dvh] bg-[#FBF9F8] overflow-hidden font-sans text-[#333]">
 
             <AppHeader title="System Access" />
 
@@ -209,7 +209,7 @@ export default function SystemAccessPage() {
 
                 {/* ── Left: User List ──────────────────────────────────────── */}
                 <div className="hidden lg:flex w-[260px] shrink-0 flex-col gap-2">
-                    <div className="flex flex-col flex-1 bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                    <div className="flex flex-col flex-1 bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden">
                         <div className="h-10 bg-[#4F4F4F] flex items-center justify-between pl-3 pr-2 border-b border-black/10 shrink-0 rounded-t-lg">
                             <div className="flex items-center gap-2">
                                 <Users size={16} className="text-[#FB7506]" />
@@ -217,7 +217,7 @@ export default function SystemAccessPage() {
                             </div>
                             {loadingUsers && <RefreshCcw size={16} className="text-gray-400 animate-spin" />}
                         </div>
-                        <div className="p-2 border-b border-gray-100 shrink-0">
+                        <div className="p-2 border-b border-[#DBD9D9] shrink-0">
                             <div className="relative">
                                 <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
                                 <input
@@ -229,7 +229,7 @@ export default function SystemAccessPage() {
                                 />
                             </div>
                         </div>
-                        <div className="text-[10px] font-black text-gray-400 uppercase tracking-wider px-2 py-0.5 bg-gray-50 border-b text-right">
+                        <div className="text-[10px] font-black text-gray-400 uppercase tracking-wider px-2 py-0.5 bg-gray-50 border-b border-[#DBD9D9] text-right">
                             {filteredUsers.length} users
                         </div>
                         <div className="overflow-y-auto flex-1">
@@ -241,9 +241,9 @@ export default function SystemAccessPage() {
                                         key={u.unico}
                                         onClick={() => handleSelectUser(u.unico)}
                                         className={cn(
-                                            "px-3 py-2 border-b border-gray-50 cursor-pointer transition-colors flex items-center gap-2",
+                                            "px-3 py-2 border-b border-[#DBD9D9] cursor-pointer transition-colors flex items-center gap-2",
                                             editMode ? "cursor-not-allowed opacity-60" : "",
-                                            isSelected ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "hover:bg-blue-50"
+                                            isSelected ? "!bg-[#FB7506]/10" : "hover:bg-blue-50"
                                         )}
                                     >
                                         <div className={cn(
@@ -269,7 +269,7 @@ export default function SystemAccessPage() {
                 <div className="flex-1 flex flex-col gap-2 min-w-0 lg:overflow-hidden">
 
                     {/* User Card */}
-                    <div className="bg-white rounded-lg border border-gray-200 shadow-sm shrink-0">
+                    <div className="bg-white rounded-lg border border-[#DBD9D9] shadow-sm shrink-0">
                         <div className="h-10 bg-[#4F4F4F] flex items-center justify-between pl-3 border-b border-black/10 rounded-t-lg">
                             {/* Left: title + status badge */}
                             <div className="flex items-center gap-2">
@@ -279,7 +279,7 @@ export default function SystemAccessPage() {
                                 {selectedUser && (
                                     <span className={cn(
                                         "text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded",
-                                        selectedUser.activo ? "bg-green-500 text-white" : "bg-red-500 text-white"
+                                        selectedUser.activo ? "bg-[#22C55E] text-white" : "bg-red-500 text-white"
                                     )}>
                                         {selectedUser.activo ? "Active" : "Inactive"}
                                     </span>
@@ -337,13 +337,14 @@ export default function SystemAccessPage() {
                     </div>
 
                     {/* Filter Bar */}
-                    <div className="bg-white rounded-lg border border-gray-200 shadow-sm shrink-0 px-3 py-2 flex items-center gap-3 flex-wrap">
+                    <div className="bg-white rounded-lg border border-[#DBD9D9] shadow-sm shrink-0 px-3 py-2 flex items-center gap-3 flex-wrap">
                         <div className="flex items-center gap-2">
                             <Building2 size={16} className="text-gray-400" />
                             <select
                                 value={filterCompany}
                                 onChange={e => setFilterCompany(e.target.value)}
                                 className="fos-input w-44 h-10 text-sm"
+                                style={{ backgroundColor: "#F5F3F3" }}
                             >
                                 <option value="">— All Companies —</option>
                                 {(companies as any[]).map((c: any) => (
@@ -359,6 +360,7 @@ export default function SystemAccessPage() {
                                 value={filterModule}
                                 onChange={e => setFilterModule(e.target.value)}
                                 className="fos-input w-44 h-10 text-sm"
+                                style={{ backgroundColor: "#F5F3F3" }}
                             >
                                 <option value="">— All Modules —</option>
                                 {(modules as any[]).map((m: any) => (
@@ -382,7 +384,7 @@ export default function SystemAccessPage() {
                     </div>
 
                     {/* Permissions Grid */}
-                    <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-[300px] lg:min-h-0">
+                    <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1 min-h-[300px] lg:min-h-0">
                         <div className="h-10 bg-[#4F4F4F] flex items-center justify-between pl-3 border-b border-black/10 shrink-0 rounded-t-lg">
                             <div className="flex items-center gap-2">
                                 <Shield size={16} className="text-[#FB7506]" />
@@ -447,15 +449,15 @@ export default function SystemAccessPage() {
                                 </div>
                             ) : (
                                 <table className="min-w-full text-xs text-left">
-                                    <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
+                                    <thead className="bg-[#4F4F4F] text-white font-bold sticky top-0 z-10">
                                         <tr>
                                             {PERM_FIELDS.map(f => (
-                                                <th key={f} className="p-2 text-center border-r border-gray-200 whitespace-nowrap">
+                                                <th key={f} className="p-2 text-center whitespace-nowrap">
                                                     {PERM_LABELS[f]}
                                                 </th>
                                             ))}
-                                            <th className="p-2 border-r border-gray-200 whitespace-nowrap">Screen</th>
-                                            <th className="p-2 border-r border-gray-200 whitespace-nowrap">Module</th>
+                                            <th className="p-2 whitespace-nowrap">Screen</th>
+                                            <th className="p-2 whitespace-nowrap">Module</th>
                                             <th className="p-2 whitespace-nowrap">Company</th>
                                         </tr>
                                     </thead>
@@ -467,8 +469,8 @@ export default function SystemAccessPage() {
                                                 <tr
                                                     key={p.unico}
                                                     className={cn(
-                                                        "border-b transition-colors",
-                                                        dimmed ? "opacity-40" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50"
+                                                        "border-b border-[#DBD9D9] transition-colors",
+                                                        dimmed ? "opacity-40" : "odd:bg-white even:bg-[#FBF9F8] hover:bg-blue-50"
                                                     )}
                                                 >
                                                     {PERM_FIELDS.map(field => {
@@ -476,7 +478,7 @@ export default function SystemAccessPage() {
                                                         const disabled = !editMode ||
                                                             (isVisitor && (field === "crear" || field === "editar" || field === "borrar"));
                                                         return (
-                                                            <td key={field} className="p-1.5 text-center border-r border-gray-100">
+                                                            <td key={field} className="p-1.5 text-center border-r border-[#DBD9D9]">
                                                                 <button
                                                                     onClick={() => togglePerm(p.unico, field)}
                                                                     disabled={disabled}
@@ -484,8 +486,8 @@ export default function SystemAccessPage() {
                                                                         "w-5 h-5 rounded flex items-center justify-center mx-auto transition-all",
                                                                         disabled ? "cursor-default" : "cursor-pointer hover:scale-110",
                                                                         checked
-                                                                            ? "bg-green-500 text-white"
-                                                                            : "bg-white border border-gray-300 text-transparent"
+                                                                            ? "bg-[#22C55E] text-white"
+                                                                            : "bg-white border border-[#DBD9D9] text-transparent"
                                                                     )}
                                                                 >
                                                                     <Check size={11} />
@@ -493,10 +495,10 @@ export default function SystemAccessPage() {
                                                             </td>
                                                         );
                                                     })}
-                                                    <td className="p-2 border-r border-gray-100 truncate max-w-[180px] font-medium">
+                                                    <td className="p-2 border-r border-[#DBD9D9] truncate max-w-[180px] font-medium">
                                                         {String(p.pantalla || "").trim()}
                                                     </td>
-                                                    <td className="p-2 border-r border-gray-100 truncate max-w-[150px] text-gray-500">
+                                                    <td className="p-2 border-r border-[#DBD9D9] truncate max-w-[150px] text-gray-500">
                                                         {String(p.modulo || "").trim()}
                                                     </td>
                                                     <td className="p-2 truncate max-w-[120px] text-gray-400">
@@ -603,8 +605,8 @@ export default function SystemAccessPage() {
                                         key={u.unico}
                                         onClick={() => { handleSelectUser(u.unico); setMobileUsersOpen(false); }}
                                         className={cn(
-                                            "px-4 py-3 border-b border-gray-50 flex items-center gap-3 cursor-pointer transition-colors",
-                                            isSelected ? "bg-blue-50" : "hover:bg-gray-50"
+                                            "px-4 py-3 border-b border-[#DBD9D9] flex items-center gap-3 cursor-pointer transition-colors",
+                                            isSelected ? "bg-[#FB7506]/10" : "hover:bg-gray-50"
                                         )}
                                     >
                                         <div className={cn("w-2 h-2 rounded-full shrink-0", u.activo ? "bg-green-400" : "bg-gray-300")} />
