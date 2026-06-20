@@ -210,10 +210,10 @@ export default function SystemAccessPage() {
                 {/* ── Left: User List ──────────────────────────────────────── */}
                 <div className="hidden lg:flex w-[260px] shrink-0 flex-col gap-2">
                     <div className="flex flex-col flex-1 bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden">
-                        <div className="h-10 bg-[#4F4F4F] flex items-center justify-between pl-3 pr-2 border-b border-black/10 shrink-0 rounded-t-lg">
+                        <div className="h-10 bg-[#F5F3F3] flex items-center justify-between pl-3 pr-2 border-b border-[#DBD9D9] shrink-0 rounded-t-lg">
                             <div className="flex items-center gap-2">
                                 <Users size={16} className="text-[#FB7506]" />
-                                <span className="fos-grid-header-text">Users</span>
+                                <span className="text-[13px] font-black uppercase tracking-tight text-[#4F4F4F]">Users</span>
                             </div>
                             {loadingUsers && <RefreshCcw size={16} className="text-gray-400 animate-spin" />}
                         </div>
@@ -270,11 +270,11 @@ export default function SystemAccessPage() {
 
                     {/* User Card */}
                     <div className="bg-white rounded-lg border border-[#DBD9D9] shadow-sm shrink-0">
-                        <div className="h-10 bg-[#4F4F4F] flex items-center justify-between pl-3 border-b border-black/10 rounded-t-lg">
+                        <div className="h-10 bg-white flex items-center justify-between pl-3 border-b border-[#DBD9D9] rounded-t-lg">
                             {/* Left: title + status badge */}
                             <div className="flex items-center gap-2">
                                 <UserCheck size={16} className="text-[#FB7506]" />
-                                <span className="fos-grid-header-text">User Information</span>
+                                <span className="text-[13px] font-black uppercase tracking-tight text-[#4F4F4F]">User Information</span>
                                 <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} />
                                 {selectedUser && (
                                     <span className={cn(
@@ -385,10 +385,10 @@ export default function SystemAccessPage() {
 
                     {/* Permissions Grid */}
                     <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1 min-h-[300px] lg:min-h-0">
-                        <div className="h-10 bg-[#4F4F4F] flex items-center justify-between pl-3 border-b border-black/10 shrink-0 rounded-t-lg">
+                        <div className="h-10 bg-white flex items-center justify-between pl-3 border-b border-[#DBD9D9] shrink-0 rounded-t-lg">
                             <div className="flex items-center gap-2">
                                 <Shield size={16} className="text-[#FB7506]" />
-                                <span className="fos-grid-header-text">Screen Permissions</span>
+                                <span className="text-[13px] font-black uppercase tracking-tight text-[#4F4F4F]">Screen Permissions</span>
                                 <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} />
                                 {loadingPerms && <RefreshCcw size={16} className="text-gray-400 animate-spin" />}
                             </div>
@@ -470,7 +470,7 @@ export default function SystemAccessPage() {
                                                     key={p.unico}
                                                     className={cn(
                                                         "border-b border-[#DBD9D9] transition-colors",
-                                                        dimmed ? "opacity-40" : "odd:bg-white even:bg-[#FBF9F8] hover:bg-blue-50"
+                                                        dimmed ? "opacity-40" : "bg-[#22C55E]/5 hover:bg-[#22C55E]/10"
                                                     )}
                                                 >
                                                     {PERM_FIELDS.map(field => {
@@ -495,13 +495,13 @@ export default function SystemAccessPage() {
                                                             </td>
                                                         );
                                                     })}
-                                                    <td className="p-2 border-r border-[#DBD9D9] truncate max-w-[180px] font-medium">
+                                                    <td className={cn("p-2 border-r border-[#DBD9D9] truncate max-w-[180px] font-semibold", !dimmed && "text-[#22C55E]")}>
                                                         {String(p.pantalla || "").trim()}
                                                     </td>
-                                                    <td className="p-2 border-r border-[#DBD9D9] truncate max-w-[150px] text-gray-500">
+                                                    <td className={cn("p-2 border-r border-[#DBD9D9] truncate max-w-[150px]", !dimmed ? "text-[#22C55E]" : "text-gray-500")}>
                                                         {String(p.modulo || "").trim()}
                                                     </td>
-                                                    <td className="p-2 truncate max-w-[120px] text-gray-400">
+                                                    <td className={cn("p-2 truncate max-w-[120px]", !dimmed ? "text-[#22C55E]" : "text-gray-400")}>
                                                         {String(p.empresa || "").trim()}
                                                     </td>
                                                 </tr>
