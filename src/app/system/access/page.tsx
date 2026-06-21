@@ -217,7 +217,7 @@ export default function SystemAccessPage() {
                             </div>
                             {loadingUsers && <RefreshCcw size={16} className="text-gray-400 animate-spin" />}
                         </div>
-                        <div className="p-2 border-b border-[#DBD9D9] shrink-0">
+                        <div className="p-2 border-b border-[#DBD9D9] shrink-0 bg-[#F5F3F3]">
                             <div className="relative">
                                 <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
                                 <input
@@ -225,8 +225,7 @@ export default function SystemAccessPage() {
                                     value={searchTerm}
                                     onChange={e => setSearchTerm(e.target.value)}
                                     placeholder="Search users..."
-                                    className="w-full pl-7 pr-2 h-9 text-sm border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506]"
-                                    style={{ backgroundColor: "#F5F3F3" }}
+                                    className="w-full pl-7 pr-2 h-9 text-sm border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506] bg-white"
                                 />
                             </div>
                         </div>
@@ -338,14 +337,13 @@ export default function SystemAccessPage() {
                     </div>
 
                     {/* Filter Bar */}
-                    <div className="bg-white rounded-lg border border-[#DBD9D9] shadow-sm shrink-0 px-3 py-2 flex items-center gap-3 flex-wrap">
+                    <div className="bg-[#F5F3F3] rounded-lg border border-[#DBD9D9] shadow-sm shrink-0 px-3 py-2 flex items-center gap-3 flex-wrap">
                         <div className="flex items-center gap-2">
                             <Building2 size={16} className="text-gray-400" />
                             <select
                                 value={filterCompany}
                                 onChange={e => setFilterCompany(e.target.value)}
                                 className="fos-input w-44 h-10 text-sm"
-                                style={{ backgroundColor: "#F5F3F3" }}
                             >
                                 <option value="">— All Companies —</option>
                                 {(companies as any[]).map((c: any) => (
@@ -361,7 +359,6 @@ export default function SystemAccessPage() {
                                 value={filterModule}
                                 onChange={e => setFilterModule(e.target.value)}
                                 className="fos-input w-44 h-10 text-sm"
-                                style={{ backgroundColor: "#F5F3F3" }}
                             >
                                 <option value="">— All Modules —</option>
                                 {(modules as any[]).map((m: any) => (
