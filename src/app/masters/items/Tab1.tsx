@@ -702,7 +702,7 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                     ]}>
                     <table className="min-w-full text-left">
                         <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
-                            <tr>
+                            <tr className="divide-x divide-[#DBD9D9]/30">
                                 <th className="p-2">Grade</th>
                                 <th className="p-2 w-16">Code</th>
                                 <th className="p-2 w-12 text-center">Show</th>
@@ -714,7 +714,7 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                                 const isSel = selGrade?.unico === g.unico;
                                 return (
                                     <tr key={g.unico} onClick={()=>setSelGrade(isSel ? null : g)}
-                                        className={cn("cursor-pointer transition-colors", isSel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
+                                        className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", isSel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                         <td className="p-2 font-medium">{t(g.grado)}</td>
                                         <td className="p-2 text-gray-500">{t(g.grade_sh)}</td>
                                         <td className="p-2 text-center">{g.display?<Check size={11} className="text-green-500 mx-auto"/>:"—"}</td>
@@ -736,7 +736,7 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                     ]}>
                     <table className="min-w-full text-left">
                         <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
-                            <tr>
+                            <tr className="divide-x divide-[#DBD9D9]/30">
                                 <th className="p-2">Color</th>
                                 <th className="p-2 w-16">Code</th>
                                 <th className="p-2 w-12 text-center">Show</th>
@@ -748,7 +748,7 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                                 const isSel = selColor?.unico === c.unico;
                                 return (
                                     <tr key={c.unico} onClick={()=>setSelColor(isSel ? null : c)}
-                                        className={cn("cursor-pointer transition-colors", isSel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
+                                        className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", isSel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                         <td className="p-2 font-medium">{t(c.color)}</td>
                                         <td className="p-2 text-gray-500">{t(c.color_sh)}</td>
                                         <td className="p-2 text-center">{c.display?<Check size={11} className="text-green-500 mx-auto"/>:"—"}</td>
@@ -772,7 +772,7 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                     ]}>
                     <table className="min-w-full text-left">
                         <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
-                            <tr>
+                            <tr className="divide-x divide-[#DBD9D9]/30">
                                 <th className="p-2">Name</th>
                                 <th className="p-2 w-16">Code</th>
                                 <th className="p-2 w-16 text-right">Factor</th>
@@ -784,7 +784,7 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                                 const isSel = selCase?.unico === c.unico;
                                 return (
                                     <tr key={c.unico} onClick={()=>setSelCase(isSel ? null : c)}
-                                        className={cn("cursor-pointer transition-colors", isSel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
+                                        className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", isSel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                         <td className="p-2 font-medium">{t(c.case_name)}</td>
                                         <td className="p-2 text-gray-500">{t(c.case_sh)}</td>
                                         <td className="p-2 text-right">{parseFloat(c.factor||0).toFixed(2)}</td>

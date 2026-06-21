@@ -111,7 +111,7 @@ export default function TransitBoxesTab() {
             <div className="overflow-auto flex-1">
                 <table className="min-w-full text-xs text-left">
                     <thead className="bg-[#4F4F4F] border-b border-[#DBD9D9] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
-                        <tr>
+                        <tr className="divide-x divide-[#DBD9D9]/30">
                             {["AvailableDate","InvoiceDate","Warehouse","AWBcode","Lot","Case","BoxQty","QtyTransit","QtyHold","Qty Adjust","Stock","Units Box","Total Units","Market","Description","AP Invoice","AP Amt"].map(h => (
                                 <th key={h} className="p-2 whitespace-nowrap">{h}</th>
                             ))}
@@ -123,7 +123,7 @@ export default function TransitBoxesTab() {
                         {(rows as any[]).map((row: any, i: number) => (
                             <tr key={row.unico ?? i}
                                 style={{ backgroundColor: row.backColor || undefined }}
-                                className="hover:bg-gray-50 transition-colors">
+                                className="hover:bg-gray-50 transition-colors divide-x divide-[#DBD9D9]">
                                 <td className="p-2 whitespace-nowrap">{t(row.AvailableDate)?.split("T")[0]}</td>
                                 <td className="p-2 whitespace-nowrap">{t(row.box_date)?.split("T")[0]}</td>
                                 <td className="p-2 whitespace-nowrap truncate max-w-[100px]">{t(row.Warehouse)}</td>

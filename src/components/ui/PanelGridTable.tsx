@@ -48,6 +48,7 @@ export function PanelGridTh({
       className={cn(
         "bg-[#4F4F4F] text-white",
         "px-2 py-[6px] font-bold uppercase text-[12px] whitespace-nowrap",
+        "border-r border-[#DBD9D9]/30 last:border-r-0",
         align === "right" && "text-right",
         align === "center" && "text-center",
         className
@@ -109,6 +110,7 @@ export function PanelGridTd({
       colSpan={colSpan}
       className={cn(
         "px-2 py-1 text-[13px] font-normal text-gray-700 whitespace-nowrap",
+        "border-r border-[#DBD9D9] last:border-r-0",
         align === "right" && "text-right",
         align === "center" && "text-center",
         className

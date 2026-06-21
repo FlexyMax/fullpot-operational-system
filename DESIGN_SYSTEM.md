@@ -24,6 +24,8 @@
 
 **Rule of thumb:** if it's a *section title* (panel header bar), it's white with dark text. If it's the *column header row of an actual data table*, it's the dark `#4F4F4F` bar with white text. Don't mix the two up.
 
+**Every grid needs both horizontal AND vertical divider lines — a full grid, not just row separators.** The canonical example is `system/access`'s "Screen Permissions" table: every column (`<th>`/`<td>`) has a `border-r border-[#DBD9D9]` divider in addition to the row's `border-b`, including inside the dark `<thead>` (use `border-r border-[#DBD9D9]/30` there since it's a light line on a dark background — full-opacity `#DBD9D9` in the light tbody). Drop the divider on the last column only (`last:border-r-0`) so it doesn't double up against the table's own outer border. **This was missed for a while** — several migrated tables (`PanelGridTable`'s `PanelGridTh`/`PanelGridTd`, AWBs, QC, Items, Prebook to Invoice) had their column dividers stripped out entirely when the header was darkened, leaving only horizontal lines. Fixed in `PanelGridTable.tsx` (2026-06-22), which auto-fixes every page using the shared component; hand-rolled tables need the divider added back individually.
+
 ---
 
 ## Typography scale

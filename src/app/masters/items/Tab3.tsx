@@ -52,7 +52,7 @@ function MiniGrid({ cols, rows, selUnico, onSelect, loading, empty, sentinel }: 
         <div className="overflow-auto flex-1">
             <table className="min-w-full text-left">
                 <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
-                    <tr>{cols.map((c: any) => <th key={c.key} className={cn("p-2 whitespace-nowrap", c.className)}>{c.label}</th>)}</tr>
+                    <tr className="divide-x divide-[#DBD9D9]/30">{cols.map((c: any) => <th key={c.key} className={cn("p-2 whitespace-nowrap", c.className)}>{c.label}</th>)}</tr>
                 </thead>
                 <tbody className="divide-y divide-[#DBD9D9] fos-grid-tbody">
                     {loading
@@ -63,7 +63,7 @@ function MiniGrid({ cols, rows, selUnico, onSelect, loading, empty, sentinel }: 
                                 const isSel = selUnico && selUnico === r.unico;
                                 return (
                                     <tr key={r.unico||i} onClick={() => onSelect?.(r)}
-                                        className={cn("cursor-pointer transition-colors", isSel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50/80")}>
+                                        className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", isSel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50/80")}>
                                         {cols.map((c: any) => (
                                             <td key={c.key} className={cn("p-2", c.className)}>
                                                 {c.render ? c.render(r[c.key], r) : t(r[c.key])}

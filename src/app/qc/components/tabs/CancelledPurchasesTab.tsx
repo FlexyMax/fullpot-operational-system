@@ -68,7 +68,7 @@ export default function CancelledPurchasesTab() {
                 <div className="flex-1 overflow-hidden">
                     <table className="w-full text-xs text-left">
                         <thead className="bg-[#4F4F4F] border-b border-[#DBD9D9] text-white text-[11px] font-bold uppercase sticky top-0">
-                            <tr>
+                            <tr className="divide-x divide-[#DBD9D9]/30">
                                 <th className="p-2">Date</th>
                                 <th className="p-2 text-right">Cancellations</th>
                             </tr>
@@ -79,7 +79,7 @@ export default function CancelledPurchasesTab() {
                             {pagedDates.map((d: any, i: number) => (
                                 <tr key={i}
                                     onClick={() => { setSelDate(d); setCancelPage(1); }}
-                                    className={cn("cursor-pointer transition-colors",
+                                    className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]",
                                         selDate?.canceldate === d.canceldate
                                             ? "bg-[#FB7506]/10 font-bold"
                                             : "hover:bg-gray-50")}>
@@ -130,7 +130,7 @@ export default function CancelledPurchasesTab() {
                 <div className="overflow-auto flex-1">
                     <table className="min-w-full text-xs text-left">
                         <thead className="bg-[#4F4F4F] border-b border-[#DBD9D9] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
-                            <tr>
+                            <tr className="divide-x divide-[#DBD9D9]/30">
                                 {["Reason","Customer","Pbook No","C.PO No","PB Date","WH Date","Description","SO. Price","Qty Order","Bunches/Case","UxPack","Grower"].map(h => (
                                     <th key={h} className="p-2 whitespace-nowrap">{h}</th>
                                 ))}
@@ -141,7 +141,7 @@ export default function CancelledPurchasesTab() {
                             {selDate && loadingCancel && <tr><td colSpan={12} className="p-6 text-center text-gray-400">Loading...</td></tr>}
                             {selDate && !loadingCancel && pagedCancels.length === 0 && <tr><td colSpan={12} className="p-6 text-center text-gray-400">No cancellations for this date.</td></tr>}
                             {pagedCancels.map((row: any, i: number) => (
-                                <tr key={row.unico ?? i} className="hover:bg-gray-50 transition-colors">
+                                <tr key={row.unico ?? i} className="hover:bg-gray-50 transition-colors divide-x divide-[#DBD9D9]">
                                     <td className="p-2 font-bold text-purple-600 whitespace-nowrap">{t(row.reason)}</td>
                                     <td className="p-2 whitespace-nowrap truncate max-w-[120px]">{t(row.customer)}</td>
                                     <td className="p-2 whitespace-nowrap">{t(row.pbook_no)}</td>

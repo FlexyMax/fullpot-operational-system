@@ -92,13 +92,13 @@ function ScanPanel({ title, icon: Icon, rows, loading }: { title: string; icon?:
             <div className="overflow-auto flex-1">
                 <table className="min-w-full text-xs">
                     <thead className="bg-[#4F4F4F] text-white font-bold text-[11px] uppercase sticky top-0">
-                        <tr>{["ScanTime","Barcode","Rack","Grower"].map(h => <th key={h} className="p-1.5 whitespace-nowrap">{h}</th>)}</tr>
+                        <tr className="divide-x divide-[#DBD9D9]/30">{["ScanTime","Barcode","Rack","Grower"].map(h => <th key={h} className="p-1.5 whitespace-nowrap">{h}</th>)}</tr>
                     </thead>
                     <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
                         {loading && <tr><td colSpan={4} className="p-4 text-center text-gray-400">Loading...</td></tr>}
                         {!loading && rows.length === 0 && <tr><td colSpan={4} className="p-4 text-center text-gray-300 italic">No scan data</td></tr>}
                         {(rows as any[]).map((r, i) => (
-                            <tr key={i} className="hover:bg-gray-50">
+                            <tr key={i} className="hover:bg-gray-50 divide-x divide-[#DBD9D9]">
                                 <td className="p-1.5 whitespace-nowrap text-[10px] text-green-600 font-semibold">{t(r.ScanTime)?.replace("T", " ").substring(0, 16)}</td>
                                 <td className="p-1.5 font-bold text-blue-600 text-[10px]">{t(r.barcode)}</td>
                                 <td className="p-1.5 text-[10px]">{t(r.rack)}</td>
@@ -274,7 +274,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                     <div className="overflow-auto flex-1">
                         <table className="min-w-full text-xs text-left">
                             <thead className="bg-[#4F4F4F] text-white font-bold text-[11px] uppercase sticky top-0 z-10">
-                                <tr>
+                                <tr className="divide-x divide-[#DBD9D9]/30">
                                     <th className="p-1.5 w-10">+QC</th>
                                     <th className="p-1.5 whitespace-nowrap">AvailableDate</th>
                                     <th className="p-1.5 whitespace-nowrap">InvoiceDate</th>
@@ -299,7 +299,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                                     return (
                                         <tr key={row.unico} onClick={() => handleSelectRow(row)}
                                             style={{ backgroundColor: isSelected ? undefined : (row.backColor || undefined) }}
-                                            className={cn("cursor-pointer transition-colors", isSelected ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
+                                            className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", isSelected ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                             <td className="p-1 text-center" onClick={e => e.stopPropagation()}>
                                                 {canCreate && (
                                                     <button onClick={() => onAddQC?.(row)}
@@ -371,7 +371,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                             <div className="overflow-auto flex-1">
                                 <table className="min-w-full text-xs text-left">
                                     <thead className="bg-[#4F4F4F] text-white font-bold text-[11px] uppercase sticky top-0">
-                                        <tr>{["Warehouse","Lot","Grower","inv_type","Days","QtyIn","QtyOut","QtyHold","WHStock","Stock","Flower CostxU","Landing CostxU","Total CostxU","PricexU","UnitsBox","BoxID","Actions"].map(h => (
+                                        <tr className="divide-x divide-[#DBD9D9]/30">{["Warehouse","Lot","Grower","inv_type","Days","QtyIn","QtyOut","QtyHold","WHStock","Stock","Flower CostxU","Landing CostxU","Total CostxU","PricexU","UnitsBox","BoxID","Actions"].map(h => (
                                             <th key={h} className="p-1.5 whitespace-nowrap">{h}</th>
                                         ))}</tr>
                                     </thead>
@@ -382,7 +382,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                                         {(stockRows as any[]).map((row: any) => (
                                             <tr key={row.unico} onClick={() => setSelStock(row)}
                                                 style={{ backgroundColor: row.backColor || undefined, color: row.foreColor || undefined }}
-                                                className={cn("cursor-pointer transition-colors", selStock?.unico === row.unico ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
+                                                className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", selStock?.unico === row.unico ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                                 <td className="p-1.5 whitespace-nowrap truncate max-w-[100px]">{t(row.warehouse)}</td>
                                                 <td className="p-1.5 text-right">{row.lote}</td>
                                                 <td className="p-1.5 whitespace-nowrap truncate max-w-[80px]">{t(row.grower)}</td>
@@ -422,7 +422,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                                 <div className="overflow-auto flex-1">
                                     <table className="min-w-full text-xs text-left">
                                         <thead className="bg-[#4F4F4F] text-white font-bold text-[11px] uppercase sticky top-0">
-                                            <tr>{["InvoiceNo","Invoice Date","Customer","Description","Lot","BoxQty","void","Status","ScanQty","UxBox","Price","TUnits","ExtPrice","Case"].map(h => (
+                                            <tr className="divide-x divide-[#DBD9D9]/30">{["InvoiceNo","Invoice Date","Customer","Description","Lot","BoxQty","void","Status","ScanQty","UxBox","Price","TUnits","ExtPrice","Case"].map(h => (
                                                 <th key={h} className="p-1.5 whitespace-nowrap">{h}</th>
                                             ))}</tr>
                                         </thead>
@@ -432,7 +432,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                                             {selRow && !loadingInvoice && (invoiceRows as any[]).length === 0 && <tr><td colSpan={14} className="p-6 text-center text-gray-300 italic">No invoiced lots.</td></tr>}
                                             {(invoiceRows as any[]).map((row: any) => (
                                                 <tr key={row.unico} onClick={() => setSelInvoice(row)}
-                                                    className={cn("cursor-pointer transition-colors", selInvoice?.unico === row.unico ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
+                                                    className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", selInvoice?.unico === row.unico ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                                     <td className="p-1.5 font-bold text-purple-600 whitespace-nowrap">{t(row.invoice_no)}</td>
                                                     <td className="p-1.5 whitespace-nowrap">{t(row.invoice_date)?.split("T")[0]}</td>
                                                     <td className="p-1.5 whitespace-nowrap truncate max-w-[100px]">{t(row.customer)}</td>

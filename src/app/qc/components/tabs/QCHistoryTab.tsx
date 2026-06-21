@@ -197,7 +197,7 @@ export default function QCHistoryTab({ onEditQC }: Props) {
                     <div className="overflow-auto flex-1">
                         <table className="w-full text-xs text-left">
                             <thead className="bg-[#4F4F4F] border-b border-[#DBD9D9] text-white text-[11px] font-bold uppercase sticky top-0">
-                                <tr>
+                                <tr className="divide-x divide-[#DBD9D9]/30">
                                     <th className="p-2">QC Date</th>
                                     <th className="p-2 text-right">Credits</th>
                                 </tr>
@@ -206,7 +206,7 @@ export default function QCHistoryTab({ onEditQC }: Props) {
                                 {loadingDates && <tr><td colSpan={2} className="p-4 text-center text-gray-400">Loading...</td></tr>}
                                 {pagedDates.map((d: any, i: number) => (
                                     <tr key={i} onClick={() => { setSelDate(d); setSelRow(null); }}
-                                        className={cn("cursor-pointer transition-colors",
+                                        className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]",
                                             selDate?.crdate === d.crdate ? "bg-[#FB7506]/10 font-bold" : "hover:bg-gray-50")}>
                                         <td className="p-2 whitespace-nowrap">{fmtDate(d.crdate)}</td>
                                         <td className="p-2 text-right">{d.records}</td>
@@ -235,7 +235,7 @@ export default function QCHistoryTab({ onEditQC }: Props) {
                     <div className="overflow-auto flex-1">
                         <table className="min-w-full text-xs text-left">
                             <thead className="bg-[#4F4F4F] border-b border-[#DBD9D9] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
-                                <tr>{["QC Date","Invoice Date","QC Boxes","QC Units","Qc Amount","Reason","Notes","Lot","AWBcode","Description","Box Qty"].map(h => (
+                                <tr className="divide-x divide-[#DBD9D9]/30">{["QC Date","Invoice Date","QC Boxes","QC Units","Qc Amount","Reason","Notes","Lot","AWBcode","Description","Box Qty"].map(h => (
                                     <th key={h} className="p-2 whitespace-nowrap">{h}</th>
                                 ))}</tr>
                             </thead>
@@ -245,7 +245,7 @@ export default function QCHistoryTab({ onEditQC }: Props) {
                                 {selDate && !loadingHistory && (historyRows as any[]).length === 0 && <tr><td colSpan={11} className="p-6 text-center text-gray-400">No QC records for this date.</td></tr>}
                                 {(historyRows as any[]).map((row: any, i: number) => (
                                     <tr key={row.unico ?? i} onClick={() => setSelRow(row)}
-                                        className={cn("cursor-pointer transition-colors", selRow?.unico === row.unico ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
+                                        className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", selRow?.unico === row.unico ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                         <td className="p-2 whitespace-nowrap">{fmtDate(row.cr_date)}</td>
                                         <td className="p-2 whitespace-nowrap">{fmtDate(row.invoice_no || row.awbdate)}</td>
                                         <td className="p-2 text-right">{row.cr_boxes}</td>

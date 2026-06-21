@@ -203,7 +203,7 @@ export default function QualityCreditsTab({ onAddQC, onEditQC }: Props) {
                 <div className="overflow-auto flex-1">
                     <table className="min-w-full text-xs text-left">
                         <thead className="bg-[#4F4F4F] border-b border-[#DBD9D9] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
-                            <tr>
+                            <tr className="divide-x divide-[#DBD9D9]/30">
                                 {["Description","Grower","Lot","Box Qty","Qty Transit","Qty Sold","Qty Adjust","Stock","Invoice Date","AvailableDate","AWBcode","Flo. U. Cost","Land. Cost x U","Total Cost x U","UnitsBo"].map(h => (
                                     <th key={h} className="p-2 whitespace-nowrap">{h}</th>
                                 ))}
@@ -215,7 +215,7 @@ export default function QualityCreditsTab({ onAddQC, onEditQC }: Props) {
                             {searchKey > 0 && !loadingSearch && rows.length === 0 && <tr><td colSpan={15} className="p-6 text-center text-gray-400">No results.</td></tr>}
                             {(rows as any[]).map((row: any) => (
                                 <tr key={row.unico} onClick={() => handleSelectRow(row)}
-                                    className={cn("cursor-pointer transition-colors", selRow?.unico === row.unico ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
+                                    className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", selRow?.unico === row.unico ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                     <td className="p-2 max-w-[200px] truncate font-medium">{t(row.description)}</td>
                                     <td className="p-2 whitespace-nowrap truncate max-w-[130px]">{t(row.grower)}</td>
                                     <td className="p-2 text-right">{row.lote}</td>
@@ -268,7 +268,7 @@ export default function QualityCreditsTab({ onAddQC, onEditQC }: Props) {
                 <div className="overflow-auto flex-1">
                     <table className="min-w-full text-xs text-left">
                         <thead className="bg-[#4F4F4F] border-b border-[#DBD9D9] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
-                            <tr>{["","QC Date","QC Boxes","QC Amount","Reason","Notes","QC Units","Apply Vendor","Apply Freight","Apply Labor","Apply Replace"].map(h => (
+                            <tr className="divide-x divide-[#DBD9D9]/30">{["","QC Date","QC Boxes","QC Amount","Reason","Notes","QC Units","Apply Vendor","Apply Freight","Apply Labor","Apply Replace"].map(h => (
                                 <th key={h} className="p-2 whitespace-nowrap">{h}</th>
                             ))}</tr>
                         </thead>
@@ -278,7 +278,7 @@ export default function QualityCreditsTab({ onAddQC, onEditQC }: Props) {
                             {selRow && !loadingCredits && (creditRows as any[]).length === 0 && <tr><td colSpan={11} className="p-4 text-center text-gray-400">No QC credits for this lot.</td></tr>}
                             {(creditRows as any[]).map((row: any) => (
                                 <tr key={row.unico} onClick={() => { setSelCredit(row); setLcQCID(row.unico); }}
-                                    className={cn("cursor-pointer transition-colors", selCredit?.unico === row.unico ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
+                                    className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", selCredit?.unico === row.unico ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                     {/* Inline Edit / Delete buttons */}
                                     <td className="p-1" onClick={e => e.stopPropagation()}>
                                         <div className="flex gap-1">

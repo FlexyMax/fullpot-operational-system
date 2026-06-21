@@ -54,14 +54,14 @@ type BottomTabId = typeof BOTTOM_TABS[number]["id"];
 // ─── Table cell helpers ────────────────────────────────────────────────────────
 function Th({ children, className }: { children: any; className?: string }) {
     return (
-        <th className={cn("p-2 text-left font-bold whitespace-nowrap", className)}>
+        <th className={cn("p-2 text-left font-bold whitespace-nowrap border-r border-[#DBD9D9]/30 last:border-r-0", className)}>
             {children}
         </th>
     );
 }
 function Td({ children, className }: { children: any; className?: string }) {
     return (
-        <td className={cn("p-2 whitespace-nowrap", className)}>
+        <td className={cn("p-2 whitespace-nowrap border-r border-[#DBD9D9] last:border-r-0", className)}>
             {children}
         </td>
     );
@@ -604,7 +604,7 @@ export default function Pbook2InvoicePage() {
                     <div className="overflow-y-auto flex-1">
                         <table className="min-w-full text-xs text-left">
                             <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
-                                <tr>
+                                <tr className="divide-x divide-[#DBD9D9]/30">
                                     <th className="p-2">{dateMode === "delivery" ? "Delivery Date" : "Arrival Date"}</th>
                                     <th className="p-2 text-right">Prebks</th>
                                     <th className="p-2 text-right">T.Box</th>
@@ -627,7 +627,7 @@ export default function Pbook2InvoicePage() {
                                     const bg = vfpColor(row.COLOR);
                                     return (
                                         <tr key={i} onClick={() => selectDate(dateKey)}
-                                            className={cn("cursor-pointer transition-colors",
+                                            className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]",
                                                 sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}
                                             style={!sel && bg ? { backgroundColor: bg } : undefined}
                                             title={t(row.TOOLTIP)}
@@ -680,7 +680,7 @@ export default function Pbook2InvoicePage() {
                     <div className="overflow-auto flex-1">
                         <table className="min-w-full text-xs text-left">
                             <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
-                                <tr>
+                                <tr className="divide-x divide-[#DBD9D9]/30">
                                     <th className="p-2">Customer</th>
                                     <th className="p-2 text-right">Prebks</th>
                                     <th className="p-2 text-right">CrLimit</th>
@@ -695,7 +695,7 @@ export default function Pbook2InvoicePage() {
                             </thead>
                             <tbody className="divide-y divide-[#DBD9D9]">
                                 <tr onClick={() => selectCustomer("%")}
-                                    className={cn("cursor-pointer transition-colors",
+                                    className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]",
                                         selectedCustUq === "%" ? "!bg-[#FB7506]/10" : "bg-white hover:bg-gray-50")}
                                 >
                                     <td className="p-2 font-bold text-gray-500 italic">ALL</td>
@@ -712,7 +712,7 @@ export default function Pbook2InvoicePage() {
                                     const bg = vfpColor(row.COLOR);
                                     return (
                                         <tr key={i} onClick={() => selectCustomer(uq)}
-                                            className={cn("cursor-pointer transition-colors text-gray-600",
+                                            className={cn("cursor-pointer transition-colors text-gray-600 divide-x divide-[#DBD9D9]",
                                                 sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}
                                             style={!sel && bg ? { backgroundColor: bg } : undefined}
                                             title={t(row.TOOLTIP)}
@@ -806,7 +806,7 @@ export default function Pbook2InvoicePage() {
                 <div className="flex-1 overflow-auto bg-white border border-t-0 border-[#DBD9D9] shadow-sm min-h-0 rounded-b-lg">
                     <table className="min-w-full text-xs text-left">
                         <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
-                            <tr>
+                            <tr className="divide-x divide-[#DBD9D9]/30">
                                 <th className="p-2 whitespace-nowrap">PO.No</th>
                                 <th className="p-2 whitespace-nowrap">SO.No</th>
                                 <th className="p-2 whitespace-nowrap">CustPO</th>
@@ -836,7 +836,7 @@ export default function Pbook2InvoicePage() {
                                 return (
                                     <tr key={i}
                                         onClick={() => setSelectedUnico(sel ? null : unico)}
-                                        className={cn("cursor-pointer transition-colors text-gray-600",
+                                        className={cn("cursor-pointer transition-colors text-gray-600 divide-x divide-[#DBD9D9]",
                                             sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}
                                         style={!sel && bg ? { backgroundColor: bg } : undefined}
                                     >

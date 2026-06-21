@@ -973,13 +973,13 @@ export default function AwbsPage() {
                         <table className="min-w-full text-left text-xs">
                             <thead className="bg-[#4F4F4F] border-b border-[#DBD9D9] text-white text-[11px] font-bold uppercase sticky top-0">
                                 <tr>{["AWBCode","Airline","Air Code","Box Date","Inv Date","Boxes","Units","Charge","Handling","Freight","Duties","Broker","Total"].map(h => (
-                                    <th key={h} className="p-2 whitespace-nowrap">{h}</th>
+                                    <th key={h} className="p-2 whitespace-nowrap border-r border-[#DBD9D9]/30 last:border-r-0">{h}</th>
                                 ))}</tr>
                             </thead>
                             <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
                                 {(awbs as any[]).map((row: any) => (
                                     <tr key={row.AWBCODE} onClick={() => handleSelectAwb(row)}
-                                        className={cn("cursor-pointer transition-colors", selAwb?.AWBCODE === row.AWBCODE ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
+                                        className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", selAwb?.AWBCODE === row.AWBCODE ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                         <td className="p-2 font-bold text-[#FB7506]">{t(row.AWBCODE)}</td>
                                         <td className="p-2">{t(row.AIRLINE)}</td>
                                         <td className="p-2">{t(row.AIRCODE)}</td>
@@ -1007,11 +1007,11 @@ export default function AwbsPage() {
 
                 {/* Tabs */}
                 <div className="bg-white rounded border border-[#DBD9D9] shadow-sm flex-1 flex flex-col min-h-0">
-                    <div className="flex border-b border-[#DBD9D9] shrink-0 overflow-x-auto">
+                    <div className="h-10 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-end px-2 gap-0.5 shrink-0 overflow-x-auto">
                         {TABS.map(tab => (
                             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                                className={cn("px-4 py-2 text-xs font-bold uppercase tracking-wide transition-colors whitespace-nowrap",
-                                    activeTab === tab.id ? "border-b-2 border-[#FB7506] text-[#FB7506]" : "text-gray-500 hover:text-gray-800")}>
+                                className={cn("flex items-center px-4 h-8 text-xs font-bold uppercase tracking-wide rounded-t transition-all whitespace-nowrap",
+                                    activeTab === tab.id ? "bg-white text-[#FB7506] border-b-2 border-[#FB7506]" : "text-gray-500 hover:text-[#FB7506] hover:bg-white/60")}>
                                 {tab.label}
                             </button>
                         ))}
@@ -1038,13 +1038,13 @@ export default function AwbsPage() {
                                         <table className="min-w-full text-left text-xs">
                                             <thead className="bg-[#4F4F4F] border-b border-[#DBD9D9] text-white text-[11px] font-bold uppercase sticky top-0">
                                                 <tr>{["Pack UQ","Packing No","Invoice No","AWBCode","Box Date","Inv Date","Grower","Farm","Boxes","Units","Charge","Handling","Freight"].map(h => (
-                                                    <th key={h} className="p-2 whitespace-nowrap">{h}</th>
+                                                    <th key={h} className="p-2 whitespace-nowrap border-r border-[#DBD9D9]/30 last:border-r-0">{h}</th>
                                                 ))}</tr>
                                             </thead>
                                             <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
                                                 {(vendors as any[]).map((row: any) => (
                                                     <tr key={row.PACK_UQ} onClick={() => setSelVendor(row)}
-                                                        className={cn("cursor-pointer transition-colors", selVendor?.PACK_UQ === row.PACK_UQ ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
+                                                        className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", selVendor?.PACK_UQ === row.PACK_UQ ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                                         <td className="p-2 font-mono text-[10px]">{t(row.PACK_UQ)}</td>
                                                         <td className="p-2 font-bold">{t(row.PACKING_NO)}</td>
                                                         <td className="p-2">{t(row.INVOICE_NO)}</td>
@@ -1089,13 +1089,13 @@ export default function AwbsPage() {
                                         <table className="min-w-full text-left text-xs">
                                             <thead className="bg-[#4F4F4F] border-b border-[#DBD9D9] text-white text-[11px] font-bold uppercase sticky top-0">
                                                 <tr>{["UNICO","OC Amount","Description","Date","O.Charges","Handling","Freight","Broker","Duties","Boxes","AP Type","Grower","AWBCode","Invoice"].map(h => (
-                                                    <th key={h} className="p-2 whitespace-nowrap">{h}</th>
+                                                    <th key={h} className="p-2 whitespace-nowrap border-r border-[#DBD9D9]/30 last:border-r-0">{h}</th>
                                                 ))}</tr>
                                             </thead>
                                             <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
                                                 {(chargesTab as any[]).map((row: any) => (
                                                     <tr key={row.UNICO} onClick={() => setSelCharge(row)}
-                                                        className={cn("cursor-pointer transition-colors", selCharge?.UNICO === row.UNICO ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
+                                                        className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", selCharge?.UNICO === row.UNICO ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                                         <td className="p-2 font-mono text-[10px]">{t(row.UNICO)}</td>
                                                         <td className="p-2 text-right">{fmt(row.OC_AMMOUNT)}</td>
                                                         <td className="p-2">{t(row.DESCRIPTION)}</td>
@@ -1139,13 +1139,13 @@ export default function AwbsPage() {
                                         <table className="min-w-full text-left text-xs">
                                             <thead className="bg-[#4F4F4F] border-b border-[#DBD9D9] text-white text-[11px] font-bold uppercase sticky top-0">
                                                 <tr>{["Ready","Order","UNICO","Sel","Lote","Market","P.Order","Customer","Qty","Box Date","Days","Box Qty","BoxNum","Units","F.Cost","FC.Cost"].map(h => (
-                                                    <th key={h} className="p-2 whitespace-nowrap">{h}</th>
+                                                    <th key={h} className="p-2 whitespace-nowrap border-r border-[#DBD9D9]/30 last:border-r-0">{h}</th>
                                                 ))}</tr>
                                             </thead>
                                             <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
                                                 {(boxes as any[]).map((row: any) => (
                                                     <tr key={row.UNICO} onClick={() => setSelBox(row)}
-                                                        className={cn("cursor-pointer transition-colors", selBox?.UNICO === row.UNICO ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
+                                                        className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", selBox?.UNICO === row.UNICO ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                                         <td className="p-2">{t(row.READY_TRAN)}</td>
                                                         <td className="p-2">{t(row.SORDER_NO)}</td>
                                                         <td className="p-2 font-mono text-[10px]">{t(row.UNICO)}</td>
@@ -1193,13 +1193,13 @@ export default function AwbsPage() {
                                         <table className="min-w-full text-left text-xs">
                                             <thead className="bg-[#4F4F4F] border-b border-[#DBD9D9] text-white text-[11px] font-bold uppercase sticky top-0">
                                                 <tr>{["UNICO","AP Type","Supplier","Charge Date","Apply From","Apply To","Total Box","Duties","O.Charges","Notes","Invoice","Timestamp"].map(h => (
-                                                    <th key={h} className="p-2 whitespace-nowrap">{h}</th>
+                                                    <th key={h} className="p-2 whitespace-nowrap border-r border-[#DBD9D9]/30 last:border-r-0">{h}</th>
                                                 ))}</tr>
                                             </thead>
                                             <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
                                                 {(byDate as any[]).map((row: any) => (
                                                     <tr key={row.UNICO} onClick={() => setSelByDate(row)}
-                                                        className={cn("cursor-pointer transition-colors", selByDate?.UNICO === row.UNICO ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
+                                                        className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", selByDate?.UNICO === row.UNICO ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                                         <td className="p-2 font-mono text-[10px]">{t(row.UNICO)}</td>
                                                         <td className="p-2">{t(row.AP_TYPE_UQ)}</td>
                                                         <td className="p-2">{t(row.SUPPLIER_UQ)}</td>
@@ -1241,13 +1241,13 @@ export default function AwbsPage() {
                                         <table className="min-w-full text-left text-xs">
                                             <thead className="bg-[#4F4F4F] border-b border-[#DBD9D9] text-white text-[11px] font-bold uppercase sticky top-0">
                                                 <tr>{Object.keys((varieties as any[])[0] ?? { UNICO: "", AWBCODE: "" }).map(h => (
-                                                    <th key={h} className="p-2 whitespace-nowrap">{h}</th>
+                                                    <th key={h} className="p-2 whitespace-nowrap border-r border-[#DBD9D9]/30 last:border-r-0">{h}</th>
                                                 ))}</tr>
                                             </thead>
                                             <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
                                                 {(varieties as any[]).map((row: any, i: number) => (
                                                     <tr key={row.UNICO ?? i} onClick={() => setSelVariety(row)}
-                                                        className={cn("cursor-pointer transition-colors", selVariety?.UNICO === row.UNICO ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
+                                                        className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", selVariety?.UNICO === row.UNICO ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                                         {Object.values(row).map((v: any, j: number) => <td key={j} className="p-2">{t(v)}</td>)}
                                                     </tr>
                                                 ))}
