@@ -1,17 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
-import { executeQuery } from "@/lib/db";
+import { executeQuery, executeProcedure } from "@/lib/db";
 import crypto from "crypto";
 
 const txt   = (v: any) => String(v ?? "").replace(/'/g, "''");
 const bToN  = (v: any) => (v ? 1 : 0);
 
+// sp_NC_empresas_lista returns columns in mixed case as written in its SELECT
+// (UNICO, NOMBRE, RUC, BASEDATOS, dsn, pais, email, ciudad, telefono1, telefono2, active) —
+// remap to the lowercase field names the rest of this page already expects.
 export async function GET() {
     try {
-        const r = await executeQuery(
-            "SELECT * FROM empresas ORDER BY nombre",
-            true
-        );
-        return NextResponse.json(r.recordset);
+        const r = await executeProcedure("sp_NC_empresas_lista", { llactive: false }, true);
+        const companies = (r.recordset ?? []).map((row: any) => ({
+            unico:     row.UNICO,
+            ruc:       row.RUC,
+            nombre:    row.NOMBRE,
+            basedatos: row.BASEDATOS,
+            dsn:       row.dsn,
+            pais:      row.pais,
+            ciudad:    row.ciudad,
+            telefono1: row.telefono1,
+            email:     row.email,
+            active:    row.active,
+        }));
+        return NextResponse.json(companies);
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });
     }

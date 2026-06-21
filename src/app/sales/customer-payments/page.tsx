@@ -439,7 +439,7 @@ export default function CustomerPaymentsPage() {
                     </div>
 
                     {/* Search / filter toolbar */}
-                    <div className="bg-white border-b border-gray-200 px-3 py-2 flex items-center gap-2 shrink-0 shadow-sm flex-wrap">
+                    <div className="bg-[#F5F3F3] border border-[#DBD9D9] rounded-lg px-3 py-2 flex items-center gap-2 shrink-0 shadow-sm flex-wrap">
                         <div className="relative flex-1 max-w-sm">
                             <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
                             <input type="text" value={custSearch} onChange={e => setCustSearch(e.target.value)}
