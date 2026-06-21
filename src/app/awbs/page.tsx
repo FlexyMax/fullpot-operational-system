@@ -82,7 +82,7 @@ function Btn({ icon: Icon, label, color = "gray", onClick, disabled = false }: a
     };
     return (
         <button onClick={onClick} disabled={disabled}
-            className={cn("flex items-center gap-1.5 px-3 py-1.5 text-xs text-white font-black uppercase tracking-wide rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0", cls[color] || cls.gray)}>
+            className={cn("flex items-center gap-1.5 px-3 h-7 text-[14px] text-white font-semibold uppercase tracking-wide rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0", cls[color] || cls.gray)}>
             {Icon && <Icon size={13}/>}{label}
         </button>
     );
@@ -907,13 +907,13 @@ export default function AwbsPage() {
 
     // ── 7. Render ─────────────────────────────────────────────────────────────
     return (
-        <div className="flex flex-col h-[100dvh] bg-gray-50 overflow-hidden">
+        <div className="flex flex-col h-[100dvh] bg-[#FBF9F8] overflow-hidden">
 
             {/* Header */}
             <AppHeader title="AWBs — Air Waybill Costs" icon={Plane} useBack extraRight={perms.loading ? <Loader2 size={14} className="animate-spin text-white/60"/> : undefined} />
 
             {/* Filter bar */}
-            <div className="bg-white border-b px-4 py-2 flex flex-wrap items-center gap-3 shrink-0">
+            <div className="bg-[#F5F3F3] border border-[#DBD9D9] rounded-lg px-4 py-2.5 flex flex-wrap items-center gap-3 shrink-0 mx-2 mt-2">
                 <div className="flex items-center gap-1.5 text-xs">
                     <label className="text-[9px] font-black text-gray-400 uppercase">From</label>
                     <input type="date" value={ldDate} onChange={e => setLdDate(e.target.value)} className="fos-input py-1 w-36"/>
@@ -947,13 +947,13 @@ export default function AwbsPage() {
             <div className="flex-1 flex flex-col min-h-0 p-3 gap-3">
 
                 {/* AWB grid */}
-                <div className="bg-white rounded-b border shadow-sm overflow-auto" style={{ maxHeight: "35vh" }}>
-                    <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
+                <div className="bg-white rounded-b border border-[#DBD9D9] shadow-sm overflow-auto" style={{ maxHeight: "35vh" }}>
+                    <div className="h-10 bg-white flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg border-b border-[#DBD9D9]">
                         <div className="flex items-center gap-2">
                             <Plane size={15} className="text-[#FB7506]"/>
-                            <span className="fos-grid-header-text">AWBs</span>
+                            <span className="text-[#4F4F4F] text-[14px] font-bold uppercase">AWBs</span>
                             {selAwb && (
-                                <span className="text-xs text-gray-300 ml-2">
+                                <span className="text-xs text-gray-500 ml-2">
                                     {t(selAwb.AWBCODE)} — {t(selAwb.AIRLINE)} — {fmtDate(selAwb.BOX_DATE)}
                                 </span>
                             )}
@@ -971,15 +971,15 @@ export default function AwbsPage() {
                         <div className="flex items-center gap-2 text-gray-400 text-xs p-4"><Loader2 size={14} className="animate-spin"/>Loading AWBs...</div>
                     ) : (
                         <table className="min-w-full text-left text-xs">
-                            <thead className="bg-[#374151] border-b fos-grid-thead text-white sticky top-0">
+                            <thead className="bg-[#4F4F4F] border-b border-[#DBD9D9] text-white text-[11px] font-bold uppercase sticky top-0">
                                 <tr>{["AWBCode","Airline","Air Code","Box Date","Inv Date","Boxes","Units","Charge","Handling","Freight","Duties","Broker","Total"].map(h => (
-                                    <th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
+                                    <th key={h} className="p-2 whitespace-nowrap">{h}</th>
                                 ))}</tr>
                             </thead>
-                            <tbody className="fos-grid-tbody divide-y divide-gray-100">
+                            <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
                                 {(awbs as any[]).map((row: any) => (
                                     <tr key={row.AWBCODE} onClick={() => handleSelectAwb(row)}
-                                        className={cn("cursor-pointer transition-colors", selAwb?.AWBCODE === row.AWBCODE ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50")}>
+                                        className={cn("cursor-pointer transition-colors", selAwb?.AWBCODE === row.AWBCODE ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                         <td className="p-2 font-bold text-[#FB7506]">{t(row.AWBCODE)}</td>
                                         <td className="p-2">{t(row.AIRLINE)}</td>
                                         <td className="p-2">{t(row.AIRCODE)}</td>
@@ -1006,8 +1006,8 @@ export default function AwbsPage() {
                 </div>
 
                 {/* Tabs */}
-                <div className="bg-white rounded border shadow-sm flex-1 flex flex-col min-h-0">
-                    <div className="flex border-b shrink-0 overflow-x-auto">
+                <div className="bg-white rounded border border-[#DBD9D9] shadow-sm flex-1 flex flex-col min-h-0">
+                    <div className="flex border-b border-[#DBD9D9] shrink-0 overflow-x-auto">
                         {TABS.map(tab => (
                             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                                 className={cn("px-4 py-2 text-xs font-bold uppercase tracking-wide transition-colors whitespace-nowrap",
@@ -1022,10 +1022,10 @@ export default function AwbsPage() {
                         {/* Tab 1: Vendors x Awb */}
                         {activeTab === "vendors" && (
                             <div className="flex flex-col h-full">
-                                <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
+                                <div className="h-10 bg-white flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg border-b border-[#DBD9D9]">
                                     <div className="flex items-center gap-2">
                                         <FileText size={15} className="text-[#FB7506]"/>
-                                        <span className="fos-grid-header-text">Vendor Invoices x AWB</span>
+                                        <span className="text-[#4F4F4F] text-[14px] font-bold uppercase">Vendor Invoices x AWB</span>
                                     </div>
                                     <GridMenu items={[
                                         { label: "Add Invoice Charge", icon: Plus, color: "green", onClick: () => { if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; } setInvoiceChargesModal(true); }, disabled: !selVendor || !perms.canCreate },
@@ -1036,15 +1036,15 @@ export default function AwbsPage() {
                                 {!loadingVendors && (
                                     <div className="overflow-auto flex-1">
                                         <table className="min-w-full text-left text-xs">
-                                            <thead className="bg-[#374151] border-b fos-grid-thead text-white sticky top-0">
+                                            <thead className="bg-[#4F4F4F] border-b border-[#DBD9D9] text-white text-[11px] font-bold uppercase sticky top-0">
                                                 <tr>{["Pack UQ","Packing No","Invoice No","AWBCode","Box Date","Inv Date","Grower","Farm","Boxes","Units","Charge","Handling","Freight"].map(h => (
-                                                    <th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
+                                                    <th key={h} className="p-2 whitespace-nowrap">{h}</th>
                                                 ))}</tr>
                                             </thead>
-                                            <tbody className="fos-grid-tbody divide-y divide-gray-100">
+                                            <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
                                                 {(vendors as any[]).map((row: any) => (
                                                     <tr key={row.PACK_UQ} onClick={() => setSelVendor(row)}
-                                                        className={cn("cursor-pointer transition-colors", selVendor?.PACK_UQ === row.PACK_UQ ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50")}>
+                                                        className={cn("cursor-pointer transition-colors", selVendor?.PACK_UQ === row.PACK_UQ ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                                         <td className="p-2 font-mono text-[10px]">{t(row.PACK_UQ)}</td>
                                                         <td className="p-2 font-bold">{t(row.PACKING_NO)}</td>
                                                         <td className="p-2">{t(row.INVOICE_NO)}</td>
@@ -1072,10 +1072,10 @@ export default function AwbsPage() {
                         {/* Tab 2: Charges Applied by Awb */}
                         {activeTab === "charges" && (
                             <div className="flex flex-col h-full">
-                                <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
+                                <div className="h-10 bg-white flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg border-b border-[#DBD9D9]">
                                     <div className="flex items-center gap-2">
                                         <DollarSign size={15} className="text-[#FB7506]"/>
-                                        <span className="fos-grid-header-text">AWB's Direct Cost by Prorate by AWB</span>
+                                        <span className="text-[#4F4F4F] text-[14px] font-bold uppercase">AWB's Direct Cost by Prorate by AWB</span>
                                     </div>
                                     <GridMenu items={[
                                         { label: "Add", icon: Plus, color: "green", onClick: () => { if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; } setSelCharge(null); setChargesModal({ mode: "add" }); }, disabled: !selAwb || !perms.canCreate },
@@ -1087,15 +1087,15 @@ export default function AwbsPage() {
                                 {!loadingCharges && (
                                     <div className="overflow-auto flex-1">
                                         <table className="min-w-full text-left text-xs">
-                                            <thead className="bg-[#374151] border-b fos-grid-thead text-white sticky top-0">
+                                            <thead className="bg-[#4F4F4F] border-b border-[#DBD9D9] text-white text-[11px] font-bold uppercase sticky top-0">
                                                 <tr>{["UNICO","OC Amount","Description","Date","O.Charges","Handling","Freight","Broker","Duties","Boxes","AP Type","Grower","AWBCode","Invoice"].map(h => (
-                                                    <th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
+                                                    <th key={h} className="p-2 whitespace-nowrap">{h}</th>
                                                 ))}</tr>
                                             </thead>
-                                            <tbody className="fos-grid-tbody divide-y divide-gray-100">
+                                            <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
                                                 {(chargesTab as any[]).map((row: any) => (
                                                     <tr key={row.UNICO} onClick={() => setSelCharge(row)}
-                                                        className={cn("cursor-pointer transition-colors", selCharge?.UNICO === row.UNICO ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50")}>
+                                                        className={cn("cursor-pointer transition-colors", selCharge?.UNICO === row.UNICO ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                                         <td className="p-2 font-mono text-[10px]">{t(row.UNICO)}</td>
                                                         <td className="p-2 text-right">{fmt(row.OC_AMMOUNT)}</td>
                                                         <td className="p-2">{t(row.DESCRIPTION)}</td>
@@ -1124,10 +1124,10 @@ export default function AwbsPage() {
                         {/* Tab 3: Boxes x AWB */}
                         {activeTab === "boxes" && (
                             <div className="flex flex-col h-full">
-                                <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
+                                <div className="h-10 bg-white flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg border-b border-[#DBD9D9]">
                                     <div className="flex items-center gap-2">
                                         <Package size={15} className="text-[#FB7506]"/>
-                                        <span className="fos-grid-header-text">Boxes x AWB</span>
+                                        <span className="text-[#4F4F4F] text-[14px] font-bold uppercase">Boxes x AWB</span>
                                     </div>
                                     <GridMenu items={[
                                         { label: "Edit", icon: Pencil, color: "orange", onClick: () => { if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } setBoxesModal(true); }, disabled: !selBox || !perms.canEdit },
@@ -1137,15 +1137,15 @@ export default function AwbsPage() {
                                 {!loadingBoxes && (
                                     <div className="overflow-auto flex-1">
                                         <table className="min-w-full text-left text-xs">
-                                            <thead className="bg-[#374151] border-b fos-grid-thead text-white sticky top-0">
+                                            <thead className="bg-[#4F4F4F] border-b border-[#DBD9D9] text-white text-[11px] font-bold uppercase sticky top-0">
                                                 <tr>{["Ready","Order","UNICO","Sel","Lote","Market","P.Order","Customer","Qty","Box Date","Days","Box Qty","BoxNum","Units","F.Cost","FC.Cost"].map(h => (
-                                                    <th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
+                                                    <th key={h} className="p-2 whitespace-nowrap">{h}</th>
                                                 ))}</tr>
                                             </thead>
-                                            <tbody className="fos-grid-tbody divide-y divide-gray-100">
+                                            <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
                                                 {(boxes as any[]).map((row: any) => (
                                                     <tr key={row.UNICO} onClick={() => setSelBox(row)}
-                                                        className={cn("cursor-pointer transition-colors", selBox?.UNICO === row.UNICO ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50")}>
+                                                        className={cn("cursor-pointer transition-colors", selBox?.UNICO === row.UNICO ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                                         <td className="p-2">{t(row.READY_TRAN)}</td>
                                                         <td className="p-2">{t(row.SORDER_NO)}</td>
                                                         <td className="p-2 font-mono text-[10px]">{t(row.UNICO)}</td>
@@ -1176,10 +1176,10 @@ export default function AwbsPage() {
                         {/* Tab 4: Charges Applied by Date */}
                         {activeTab === "by-date" && (
                             <div className="flex flex-col h-full">
-                                <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
+                                <div className="h-10 bg-white flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg border-b border-[#DBD9D9]">
                                     <div className="flex items-center gap-2">
                                         <Calendar size={15} className="text-[#FB7506]"/>
-                                        <span className="fos-grid-header-text">AWB's Direct Cost Prorate by Date</span>
+                                        <span className="text-[#4F4F4F] text-[14px] font-bold uppercase">AWB's Direct Cost Prorate by Date</span>
                                     </div>
                                     <GridMenu items={[
                                         { label: "Add", icon: Plus, color: "green", onClick: () => { if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; } setSelByDate(null); setFreightsModal({ mode: "add" }); }, disabled: !perms.canCreate },
@@ -1191,15 +1191,15 @@ export default function AwbsPage() {
                                 {!loadingByDate && (
                                     <div className="overflow-auto flex-1">
                                         <table className="min-w-full text-left text-xs">
-                                            <thead className="bg-[#374151] border-b fos-grid-thead text-white sticky top-0">
+                                            <thead className="bg-[#4F4F4F] border-b border-[#DBD9D9] text-white text-[11px] font-bold uppercase sticky top-0">
                                                 <tr>{["UNICO","AP Type","Supplier","Charge Date","Apply From","Apply To","Total Box","Duties","O.Charges","Notes","Invoice","Timestamp"].map(h => (
-                                                    <th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
+                                                    <th key={h} className="p-2 whitespace-nowrap">{h}</th>
                                                 ))}</tr>
                                             </thead>
-                                            <tbody className="fos-grid-tbody divide-y divide-gray-100">
+                                            <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
                                                 {(byDate as any[]).map((row: any) => (
                                                     <tr key={row.UNICO} onClick={() => setSelByDate(row)}
-                                                        className={cn("cursor-pointer transition-colors", selByDate?.UNICO === row.UNICO ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50")}>
+                                                        className={cn("cursor-pointer transition-colors", selByDate?.UNICO === row.UNICO ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                                         <td className="p-2 font-mono text-[10px]">{t(row.UNICO)}</td>
                                                         <td className="p-2">{t(row.AP_TYPE_UQ)}</td>
                                                         <td className="p-2">{t(row.SUPPLIER_UQ)}</td>
@@ -1225,10 +1225,10 @@ export default function AwbsPage() {
                         {/* Tab 5: Varieties */}
                         {activeTab === "varieties" && (
                             <div className="flex flex-col h-full">
-                                <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
+                                <div className="h-10 bg-white flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg border-b border-[#DBD9D9]">
                                     <div className="flex items-center gap-2">
                                         <BarChart2 size={15} className="text-[#FB7506]"/>
-                                        <span className="fos-grid-header-text">Varieties x AWB</span>
+                                        <span className="text-[#4F4F4F] text-[14px] font-bold uppercase">Varieties x AWB</span>
                                     </div>
                                     <GridMenu items={[
                                         { label: "Add", icon: Plus, color: "green", onClick: handleAddVariety, disabled: !selAwb || !perms.canCreate },
@@ -1239,15 +1239,15 @@ export default function AwbsPage() {
                                 {!loadingVarieties && (
                                     <div className="overflow-auto flex-1">
                                         <table className="min-w-full text-left text-xs">
-                                            <thead className="bg-[#374151] border-b fos-grid-thead text-white sticky top-0">
+                                            <thead className="bg-[#4F4F4F] border-b border-[#DBD9D9] text-white text-[11px] font-bold uppercase sticky top-0">
                                                 <tr>{Object.keys((varieties as any[])[0] ?? { UNICO: "", AWBCODE: "" }).map(h => (
-                                                    <th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
+                                                    <th key={h} className="p-2 whitespace-nowrap">{h}</th>
                                                 ))}</tr>
                                             </thead>
-                                            <tbody className="fos-grid-tbody divide-y divide-gray-100">
+                                            <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
                                                 {(varieties as any[]).map((row: any, i: number) => (
                                                     <tr key={row.UNICO ?? i} onClick={() => setSelVariety(row)}
-                                                        className={cn("cursor-pointer transition-colors", selVariety?.UNICO === row.UNICO ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50")}>
+                                                        className={cn("cursor-pointer transition-colors", selVariety?.UNICO === row.UNICO ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                                         {Object.values(row).map((v: any, j: number) => <td key={j} className="p-2">{t(v)}</td>)}
                                                     </tr>
                                                 ))}
