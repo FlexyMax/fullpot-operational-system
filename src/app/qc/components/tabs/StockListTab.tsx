@@ -328,14 +328,14 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
             {/* ── Bottom: sub-tabs ────────────────────────────── */}
             <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-[2] min-h-0">
                 {/* Sub-tab bar */}
-                <div className="flex border-b bg-white shrink-0">
+                <div className="h-10 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-end px-2 shrink-0 gap-0.5">
                     {[
                         { id: "warehouse-stock" as SubTab, label: "Warehouse Stock" },
                         { id: "invoiced-lots"   as SubTab, label: "Invoiced Stock Lots" },
                     ].map(s => (
                         <button key={s.id} onClick={() => setSubTab(s.id)}
-                            className={cn("px-4 py-1.5 text-[10px] font-black uppercase tracking-wider transition-colors border-b-2",
-                                subTab === s.id ? "border-[#FB7506] text-[#FB7506]" : "border-transparent text-gray-500 hover:text-gray-800")}>
+                            className={cn("flex items-center px-3 h-8 text-[10px] font-black uppercase tracking-wider rounded-t transition-all",
+                                subTab === s.id ? "bg-white text-[#FB7506] border-b-2 border-[#FB7506]" : "text-gray-500 hover:text-[#FB7506] hover:bg-white/60")}>
                             {s.label}
                         </button>
                     ))}

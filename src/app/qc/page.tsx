@@ -105,7 +105,7 @@ function QCPage() {
     };
 
     return (
-        <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] font-sans text-[#333] overflow-hidden">
+        <div className="flex flex-col h-[100dvh] bg-[#FBF9F8] font-sans text-[#333] overflow-hidden">
 
             {/* ── Header ──────────────────────────────────────────────── */}
             <AppHeader title="Quality Control" extraRight={perms.loading ? <Loader2 size={14} className="animate-spin text-white/60"/> : undefined} />
@@ -114,17 +114,17 @@ function QCPage() {
 
             {/* ── Main area ─────────────────────────────────────────── */}
             <div className="flex flex-col flex-1 p-2 gap-2 overflow-hidden">
-                <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1">
+                <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1">
 
                     {/* Tab bar */}
-                    <div className="h-10 bg-[#374151] flex items-end px-2 shrink-0 gap-0.5 overflow-x-auto">
+                    <div className="h-10 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-end px-2 shrink-0 gap-0.5 overflow-x-auto">
                         {TABS.map(tab => (
                             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                                 className={cn(
                                     "flex items-center gap-1.5 px-3 h-8 text-[10px] font-black uppercase tracking-wider rounded-t transition-all whitespace-nowrap",
                                     activeTab === tab.id
-                                        ? "bg-[#f4f6f8] text-[#FB7506] border-b-2 border-[#FB7506]"
-                                        : "text-gray-400 hover:text-white hover:bg-white/10"
+                                        ? "bg-white text-[#FB7506] border-b-2 border-[#FB7506]"
+                                        : "text-gray-500 hover:text-[#FB7506] hover:bg-white/60"
                                 )}>
                                 <tab.icon size={11}/>
                                 {tab.label}
@@ -133,7 +133,7 @@ function QCPage() {
                     </div>
 
                     {/* Tab content */}
-                    <div className="flex-1 overflow-auto bg-[#f4f6f8] p-2">
+                    <div className="flex-1 overflow-auto bg-[#FBF9F8] p-2">
                         {activeTab === "stock"        && <StockListTab onSendToWarehouse={handleSendToWarehouse} onEditTransfer={handleEditTransfer} onAddQC={handleAddQC}/>}
                         {activeTab === "transit"      && <TransitBoxesTab/>}
                         {activeTab === "cancellations" && <CancelledPurchasesTab/>}

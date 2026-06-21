@@ -55,17 +55,17 @@ function ActionMenu({ onEdit, onDelete, hasSelection, canEdit, canDelete }: any)
                 <Menu size={16}/>
             </button>
             {mounted && open && createPortal(
-                <div style={{ position: "fixed", top: pos.top, right: pos.right, zIndex: 9999 }}
-                    className="w-48 bg-white border border-gray-200 shadow-xl rounded-lg py-1 text-[11px]">
+                <div style={{ position: "fixed", top: pos.top, right: pos.right, zIndex: 100, minWidth: 220 }}
+                    className="bg-white border border-gray-200 shadow-xl rounded-sm py-1 overflow-hidden">
                     <button disabled={!hasSelection || !canEdit}
                         onClick={() => { onEdit?.(); setOpen(false); }}
-                        className="w-full text-left px-4 py-2.5 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 font-semibold text-[#FB7506]">
-                        <Pencil size={13}/> Edit QCCredit
+                        className="w-full text-left px-4 py-2.5 text-[14px] font-semibold uppercase hover:bg-[#FB7506]/10 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-3 text-[#FB7506]">
+                        <Pencil size={16}/> Edit QC Credit
                     </button>
                     <button disabled={!hasSelection || !canDelete}
                         onClick={() => { onDelete?.(); setOpen(false); }}
-                        className="w-full text-left px-4 py-2.5 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 font-semibold text-red-500">
-                        <Trash2 size={13}/> Delete QC Credit
+                        className="w-full text-left px-4 py-2.5 text-[14px] font-semibold uppercase hover:bg-[#FB7506]/10 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-3 text-red-500">
+                        <Trash2 size={16}/> Delete QC Credit
                     </button>
                 </div>,
                 document.body
@@ -154,11 +154,11 @@ export default function QCHistoryTab({ onEditQC }: Props) {
         <div className="flex flex-col h-full gap-1.5">
 
             {/* ── Top header row ─────────────────────────────── */}
-            <div className="flex items-stretch bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden shrink-0 h-9">
-                <div className="bg-[#374151] flex items-center px-3 flex-1">
-                    <span className="text-white text-[10px] font-black uppercase tracking-widest">QC Stock Search</span>
+            <div className="flex items-stretch bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0 h-9">
+                <div className="bg-white flex items-center px-3 flex-1">
+                    <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">QC Stock Search</span>
                 </div>
-                <button onClick={() => refetchDates()} className="px-3 border-l border-gray-200 text-green-500 hover:text-green-600 shrink-0">
+                <button onClick={() => refetchDates()} className="px-3 border-l border-[#DBD9D9] text-green-500 hover:text-green-600 shrink-0">
                     <RefreshCw size={14} className={loadingDates ? "animate-spin" : ""}/>
                 </button>
                 <ActionMenu
@@ -173,9 +173,9 @@ export default function QCHistoryTab({ onEditQC }: Props) {
             <div className="flex gap-2 flex-1 min-h-0">
 
                 {/* Left: date panel */}
-                <div className="w-52 flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden shrink-0">
+                <div className="w-52 flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0">
                     {/* Pagination */}
-                    <div className="h-8 border-b border-gray-200 flex items-center justify-between px-2 bg-gray-50 text-[10px] text-gray-500 shrink-0">
+                    <div className="h-8 border-b border-[#DBD9D9] flex items-center justify-between px-2 bg-[#F5F3F3] text-[10px] text-gray-500 shrink-0">
                         <button onClick={() => setDatePage(p => Math.max(1, p - 1))} disabled={datePage <= 1} className="p-0.5 rounded hover:bg-gray-200 disabled:opacity-30">‹</button>
                         <span>Page <b>{datePage}</b> of {totalDatePages}</span>
                         <button onClick={() => setDatePage(p => Math.min(totalDatePages, p + 1))} disabled={datePage >= totalDatePages} className="p-0.5 rounded hover:bg-gray-200 disabled:opacity-30">›</button>
@@ -183,18 +183,18 @@ export default function QCHistoryTab({ onEditQC }: Props) {
 
                     <div className="overflow-auto flex-1">
                         <table className="w-full text-xs text-left">
-                            <thead className="bg-white border-b sticky top-0">
-                                <tr className="fos-grid-thead text-gray-700">
-                                    <th className="p-2 font-bold">QC Date</th>
-                                    <th className="p-2 font-bold text-right">Credits</th>
+                            <thead className="bg-[#4F4F4F] border-b border-[#DBD9D9] text-white text-[11px] font-bold uppercase sticky top-0">
+                                <tr>
+                                    <th className="p-2">QC Date</th>
+                                    <th className="p-2 text-right">Credits</th>
                                 </tr>
                             </thead>
-                            <tbody className="fos-grid-tbody divide-y divide-gray-100">
+                            <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
                                 {loadingDates && <tr><td colSpan={2} className="p-4 text-center text-gray-400">Loading...</td></tr>}
                                 {pagedDates.map((d: any, i: number) => (
                                     <tr key={i} onClick={() => { setSelDate(d); setSelRow(null); }}
                                         className={cn("cursor-pointer transition-colors",
-                                            selDate?.crdate === d.crdate ? "bg-gray-200 font-bold" : "hover:bg-gray-50")}>
+                                            selDate?.crdate === d.crdate ? "bg-[#FB7506]/10 font-bold" : "hover:bg-gray-50")}>
                                         <td className="p-2 whitespace-nowrap">{fmtDate(d.crdate)}</td>
                                         <td className="p-2 text-right">{d.records}</td>
                                     </tr>
@@ -205,9 +205,9 @@ export default function QCHistoryTab({ onEditQC }: Props) {
                 </div>
 
                 {/* Right: history grid */}
-                <div className="flex flex-col flex-1 bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                <div className="flex flex-col flex-1 bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden">
                     {/* Toolbar */}
-                    <div className="h-9 border-b border-gray-200 flex items-center px-3 gap-4 shrink-0 bg-white justify-between text-xs">
+                    <div className="h-9 border-b border-[#DBD9D9] flex items-center px-3 gap-4 shrink-0 bg-white justify-between text-xs">
                         <div className="flex items-center gap-1.5 text-gray-400">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                             <input placeholder="Search..." className="outline-none text-[11px] w-40 text-black placeholder-gray-400"/>
@@ -221,18 +221,18 @@ export default function QCHistoryTab({ onEditQC }: Props) {
                     {/* Grid */}
                     <div className="overflow-auto flex-1">
                         <table className="min-w-full text-xs text-left">
-                            <thead className="bg-white border-b sticky top-0 z-10 fos-grid-thead text-gray-700">
+                            <thead className="bg-[#4F4F4F] border-b border-[#DBD9D9] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                                 <tr>{["QC Date","Invoice Date","QC Boxes","QC Units","Qc Amount","Reason","Notes","Lot","AWBcode","Description","Box Qty"].map(h => (
-                                    <th key={h} className="p-2 border-r border-gray-100 last:border-r-0 whitespace-nowrap font-bold">{h}</th>
+                                    <th key={h} className="p-2 whitespace-nowrap">{h}</th>
                                 ))}</tr>
                             </thead>
-                            <tbody className="fos-grid-tbody divide-y divide-gray-100">
+                            <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
                                 {!selDate && <tr><td colSpan={11} className="p-6 text-center text-gray-400">Select a date on the left.</td></tr>}
                                 {selDate && loadingHistory && <tr><td colSpan={11} className="p-6 text-center text-gray-400">Loading...</td></tr>}
                                 {selDate && !loadingHistory && (historyRows as any[]).length === 0 && <tr><td colSpan={11} className="p-6 text-center text-gray-400">No QC records for this date.</td></tr>}
                                 {(historyRows as any[]).map((row: any, i: number) => (
                                     <tr key={row.unico ?? i} onClick={() => setSelRow(row)}
-                                        className={cn("cursor-pointer transition-colors", selRow?.unico === row.unico ? "!bg-blue-50 ring-1 ring-inset ring-blue-300" : "hover:bg-gray-50")}>
+                                        className={cn("cursor-pointer transition-colors", selRow?.unico === row.unico ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                         <td className="p-2 whitespace-nowrap">{fmtDate(row.cr_date)}</td>
                                         <td className="p-2 whitespace-nowrap">{fmtDate(row.invoice_no || row.awbdate)}</td>
                                         <td className="p-2 text-right">{row.cr_boxes}</td>

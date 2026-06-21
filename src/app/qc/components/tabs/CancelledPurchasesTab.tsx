@@ -51,14 +51,14 @@ export default function CancelledPurchasesTab() {
         <div className="flex h-full gap-2">
 
             {/* ── Left: dates ───────────────────────────────── */}
-            <div className="w-56 flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden shrink-0">
-                <div className="h-9 bg-[#374151] flex items-center gap-2 px-3 shrink-0">
+            <div className="w-56 flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0">
+                <div className="h-9 bg-white border-b border-[#DBD9D9] flex items-center gap-2 px-3 shrink-0">
                     <Calendar size={12} className="text-[#FB7506]"/>
-                    <span className="text-white text-[10px] font-black uppercase tracking-widest">Purchases Cancellations Date</span>
+                    <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">Purchases Cancellations Date</span>
                 </div>
 
                 {/* Date pagination toolbar */}
-                <div className="h-8 border-b border-gray-200 flex items-center justify-between px-2 bg-white text-[10px] text-gray-500 shrink-0">
+                <div className="h-8 border-b border-[#DBD9D9] flex items-center justify-between px-2 bg-white text-[10px] text-gray-500 shrink-0">
                     <button onClick={() => setDatePage(p => Math.max(1, p - 1))} disabled={datePage <= 1} className="p-0.5 rounded hover:bg-gray-100 disabled:opacity-30">‹</button>
                     <span>Page <b>{datePage}</b> of {totalDatePages}</span>
                     <button onClick={() => setDatePage(p => Math.min(totalDatePages, p + 1))} disabled={datePage >= totalDatePages} className="p-0.5 rounded hover:bg-gray-100 disabled:opacity-30">›</button>
@@ -67,13 +67,13 @@ export default function CancelledPurchasesTab() {
                 {/* Dates grid */}
                 <div className="flex-1 overflow-hidden">
                     <table className="w-full text-xs text-left">
-                        <thead className="bg-white border-b sticky top-0">
-                            <tr className="fos-grid-thead text-gray-700">
-                                <th className="p-2 font-bold">Date</th>
-                                <th className="p-2 font-bold text-right">Cancellations</th>
+                        <thead className="bg-[#4F4F4F] border-b border-[#DBD9D9] text-white text-[11px] font-bold uppercase sticky top-0">
+                            <tr>
+                                <th className="p-2">Date</th>
+                                <th className="p-2 text-right">Cancellations</th>
                             </tr>
                         </thead>
-                        <tbody className="fos-grid-tbody divide-y divide-gray-100">
+                        <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
                             {loadingDates && <tr><td colSpan={2} className="p-4 text-center text-gray-400">Loading...</td></tr>}
                             {!loadingDates && (dateRows as any[]).length === 0 && <tr><td colSpan={2} className="p-4 text-center text-gray-400">No data</td></tr>}
                             {pagedDates.map((d: any, i: number) => (
@@ -81,7 +81,7 @@ export default function CancelledPurchasesTab() {
                                     onClick={() => { setSelDate(d); setCancelPage(1); }}
                                     className={cn("cursor-pointer transition-colors",
                                         selDate?.canceldate === d.canceldate
-                                            ? "bg-gray-200 font-bold"
+                                            ? "bg-[#FB7506]/10 font-bold"
                                             : "hover:bg-gray-50")}>
                                     <td className="p-2 whitespace-nowrap">{fmtDate(d.cancel_date)}</td>
                                     <td className="p-2 text-right">{d.records}</td>
@@ -93,17 +93,17 @@ export default function CancelledPurchasesTab() {
             </div>
 
             {/* ── Right: cancellations ──────────────────────── */}
-            <div className="flex flex-col flex-1 bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+            <div className="flex flex-col flex-1 bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden">
                 {/* Header bar */}
                 <div className="flex items-center justify-between shrink-0">
-                    <div className="h-9 bg-[#374151] flex items-center gap-2 px-3 flex-1">
-                        <span className="text-white text-[10px] font-black uppercase tracking-widest">Purchase Cancelations by Date</span>
-                        <RefreshCw size={11} className="text-gray-400"/>
+                    <div className="h-9 bg-white border-b border-[#DBD9D9] flex items-center gap-2 px-3 flex-1">
+                        <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">Purchase Cancelations by Date</span>
+                        <RefreshCw size={11} className="text-gray-400 cursor-pointer hover:text-[#FB7506]"/>
                     </div>
                 </div>
 
                 {/* Toolbar */}
-                <div className="h-9 border-b border-gray-200 flex items-center px-3 gap-4 shrink-0 bg-white justify-between text-xs">
+                <div className="h-9 border-b border-[#DBD9D9] flex items-center px-3 gap-4 shrink-0 bg-white justify-between text-xs">
                     <div className="flex items-center gap-2 text-gray-400">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                         <input type="text" placeholder="Search..." className="outline-none text-[11px] w-40 text-black placeholder-gray-400"/>
@@ -128,14 +128,14 @@ export default function CancelledPurchasesTab() {
                 {/* Data grid */}
                 <div className="overflow-auto flex-1">
                     <table className="min-w-full text-xs text-left">
-                        <thead className="bg-white border-b sticky top-0 z-10">
-                            <tr className="fos-grid-thead text-gray-700">
+                        <thead className="bg-[#4F4F4F] border-b border-[#DBD9D9] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
+                            <tr>
                                 {["Reason","Customer","Pbook No","C.PO No","PB Date","WH Date","Description","SO. Price","Qty Order","Bunches/Case","UxPack","Grower"].map(h => (
-                                    <th key={h} className="p-2 border-r border-gray-100 last:border-r-0 whitespace-nowrap font-bold">{h}</th>
+                                    <th key={h} className="p-2 whitespace-nowrap">{h}</th>
                                 ))}
                             </tr>
                         </thead>
-                        <tbody className="fos-grid-tbody divide-y divide-gray-100">
+                        <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
                             {!selDate && <tr><td colSpan={12} className="p-6 text-center text-gray-400">Select a date on the left.</td></tr>}
                             {selDate && loadingCancel && <tr><td colSpan={12} className="p-6 text-center text-gray-400">Loading...</td></tr>}
                             {selDate && !loadingCancel && pagedCancels.length === 0 && <tr><td colSpan={12} className="p-6 text-center text-gray-400">No cancellations for this date.</td></tr>}

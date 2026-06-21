@@ -45,14 +45,14 @@ export default function TransitBoxesTab() {
     const rows         = allRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
     return (
-        <div className="flex flex-col h-full bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+        <div className="flex flex-col h-full bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden">
 
             {/* ── Unified header row ─────────────────────────── */}
-            <div className="flex items-stretch shrink-0 border-b border-gray-200">
-                {/* Left: dark title */}
-                <div className="h-9 bg-[#374151] flex items-center gap-2 px-3 shrink-0 min-w-[280px]">
-                    <span className="text-white text-[10px] font-black uppercase tracking-widest">Boxes in Transit Delivery Date</span>
-                    <RefreshCw size={11} className="text-gray-400 cursor-pointer hover:text-white flex-shrink-0" onClick={() => refetch()}/>
+            <div className="flex items-stretch shrink-0 border-b border-[#DBD9D9]">
+                {/* Left: title */}
+                <div className="h-9 bg-white border-r border-[#DBD9D9] flex items-center gap-2 px-3 shrink-0 min-w-[280px]">
+                    <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">Boxes in Transit Delivery Date</span>
+                    <RefreshCw size={11} className="text-gray-400 cursor-pointer hover:text-[#FB7506] flex-shrink-0" onClick={() => refetch()}/>
                 </div>
 
                 {/* Right: filters */}
@@ -84,7 +84,7 @@ export default function TransitBoxesTab() {
             </div>
 
             {/* ── Grid toolbar ───────────────────────────────── */}
-            <div className="h-9 border-b border-gray-200 flex items-center px-3 gap-4 shrink-0 bg-white justify-between text-xs">
+            <div className="h-9 border-b border-[#DBD9D9] flex items-center px-3 gap-4 shrink-0 bg-white justify-between text-xs">
                 <div className="flex items-center gap-1.5 text-gray-400">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                     <input type="text" placeholder="Search..." className="outline-none text-[11px] w-32 text-black placeholder-gray-400"/>
@@ -109,14 +109,14 @@ export default function TransitBoxesTab() {
             {/* ── Data grid ──────────────────────────────────── */}
             <div className="overflow-auto flex-1">
                 <table className="min-w-full text-xs text-left">
-                    <thead className="bg-white border-b sticky top-0 z-10">
-                        <tr className="fos-grid-thead text-gray-700">
+                    <thead className="bg-[#4F4F4F] border-b border-[#DBD9D9] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
+                        <tr>
                             {["AvailableDate","InvoiceDate","Warehouse","AWBcode","Lot","Case","BoxQty","QtyTransit","QtyHold","Qty Adjust","Stock","Units Box","Total Units","Market","Description","AP Invoice","AP Amt"].map(h => (
-                                <th key={h} className="p-2 border-r border-gray-100 last:border-r-0 whitespace-nowrap font-bold">{h}</th>
+                                <th key={h} className="p-2 whitespace-nowrap">{h}</th>
                             ))}
                         </tr>
                     </thead>
-                    <tbody className="fos-grid-tbody divide-y divide-gray-100">
+                    <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
                         {loading && <tr><td colSpan={17} className="p-8 text-center text-gray-400">Loading...</td></tr>}
                         {!loading && rows.length === 0 && <tr><td colSpan={17} className="p-8 text-center text-gray-400">No transit boxes for the selected year.</td></tr>}
                         {(rows as any[]).map((row: any, i: number) => (

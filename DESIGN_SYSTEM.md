@@ -54,6 +54,8 @@ Implement with explicit Tailwind arbitrary values (`text-[14px] font-bold`, etc.
 - **Standalone filter/search toolbar above a `PanelGrid`** (a page-level bar that isn't inside `PanelGrid`'s own header — e.g. Customer Payments' search+Bal filters row, System Users' search box): `bg-[#F5F3F3] border border-[#DBD9D9] rounded-lg`, with the same horizontal margin as the `PanelGrid` below it (`mx-2`) and a small top margin (`mt-2`) so it doesn't sit flush against `AppHeader` or whatever's above it. Don't leave it full-bleed with just a `border-b` divider — it should read as its own rounded card, same as the reference page's "Filter Bar".
 - **Checkboxes:** checked = `bg-[#22C55E] text-white`; unchecked = `bg-white border border-[#DBD9D9] text-transparent`.
 - **Top-level / detail tab bar** (e.g. POS's Invoice/Available Stock/Invoice History, Accounts Payable's Terms/PO/Prebooks/Credits & Debits): the bar itself sits on `bg-[#F5F3F3] border border-[#DBD9D9]` (same container-gray token as the filter bar) so the tabs read as a distinct toolbar instead of blending into the white page. Active tab gets a `bg-white` chip (or just `text-[#FB7506] border-b-2 border-[#FB7506]` for underline-style tabs) to stand out against the gray bar; inactive tabs use `text-gray-500 hover:text-[#FB7506]`. This supersedes the old "dark hand-rolled tab bars are out of scope" gap below — tab bars now get the light-gray treatment, not dark.
+- **Nested tab bars must match their parent tab bar.** If a page has a tab bar inside a tab bar (e.g. QC's top-level Stock List/Transit Boxes/... bar, with a second Warehouse Stock/Invoiced Stock Lots bar nested below it), both get the *same* height (`h-10` bar, `h-8` buttons) and the same `bg-[#F5F3F3] border border-[#DBD9D9]` treatment — don't leave an inner tab bar shorter or on plain white just because it's nested one level deeper.
+- **Grid action menu (hamburger dropdown):** use the shared `GridMenu` (`src/components/GridMenu.tsx`) or replicate its pattern — trigger button is whatever color fits the panel (often solid `bg-[#FB7506]`), but the dropdown itself **must** render through `createPortal(..., document.body)` with `position: fixed` anchored to the trigger's `getBoundingClientRect()`. Without the portal, the dropdown is a descendant of the scrollable grid container and gets visually clipped/hidden behind the rows the moment the list scrolls or the container's `overflow-auto` kicks in. Dropdown items: `px-4 py-2.5 text-[14px] font-semibold uppercase`, `hover:bg-[#FB7506]/10`, `rounded-sm` panel, `border border-gray-200`, `z-[100]` — matching `PanelGrid`'s own `MenuDropdown`. Any page-local copy of this pattern (e.g. QC's `QualityCreditsTab`/`QCHistoryTab` `ActionMenu`) should match the same item styling even if it keeps its own trigger button.
 
 ---
 
@@ -88,13 +90,27 @@ Remaining work:
 ### Hand-rolled pages migrated so far (not PanelGrid-based, fixed individually)
 
 - `flexy2qb` Dashboard tab — done (2026-06-21).
-- `qc` (Quality Control) — `StockListTab` done (2026-06-21): filter bar, panel
-  titles (were dark `#374151`, now white per the panel-title rule), the actual
-  data-table headers (were light, now dark `#4F4F4F` — this page had the two
-  reversed), borders, peach row selection. **Still pending:** `DashboardTab`,
+- `qc` (Quality Control) — fully done (2026-06-21): the page shell's top-level
+  tab bar and outer page background, plus all 5 active tabs (`StockListTab`,
   `TransitBoxesTab`, `CancelledPurchasesTab`, `QualityCreditsTab`,
-  `QCHistoryTab`, and the `QCModal`/`BoxTransferModal` modals — none of those
-  have been touched yet.
+  `QCHistoryTab`) — filter bars, panel titles (were dark `#374151`, now white
+  per the panel-title rule), the actual data-table headers (were light, now
+  dark `#4F4F4F`), borders, peach row selection, and (in `QualityCreditsTab`/
+  `QCHistoryTab`) the local `ActionMenu` dropdown typography aligned to the
+  `PanelGrid` `MenuDropdown` standard. `StockListTab`'s nested Warehouse
+  Stock/Invoiced Stock Lots sub-tab bar was also resized/recolored to match
+  the page's top-level tab bar (see the nested-tab-bar rule above). **Out of
+  scope, left untouched:** `QCModal`/`BoxTransferModal` (modals, per the gap
+  below) and `DashboardTab.tsx` — this file is dead code, no longer imported
+  by `qc/page.tsx` since "Dashboard" was dropped from `TABS`.
+- `GridMenu` (`src/components/GridMenu.tsx`, shared by ~12 pages incl. AWBs,
+  Vendors, Customers, Freights, Items, Pbook2Invoice, Inventory Entry) — fixed
+  (2026-06-21) to render its dropdown through a portal with fixed positioning
+  (previously `position: absolute` inside the scrollable grid, so it got
+  clipped/hidden once the grid had `overflow-auto`), and restyled its items to
+  the `PanelGrid` `MenuDropdown` standard (14px semibold uppercase, peach
+  hover, `rounded-sm`). The trigger button's own look (solid orange square)
+  was left as-is — only the dropdown panel changed.
 - `awbs` (AWBs — Air Waybill Costs) — done (2026-06-21): page background,
   standalone filter toolbar, the `Btn` helper (`h-7`/14px/font-semibold
   regardless of color), the main AWB grid panel + all 5 detail tabs (Vendors,

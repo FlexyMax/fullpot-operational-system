@@ -66,13 +66,13 @@ function ActionMenu({ onAdd, onEdit, onDelete, hasSelection, canCreate, canEdit,
                 <Menu size={16}/>
             </button>
             {mounted && open && createPortal(
-                <div style={{ position: "fixed", top: pos.top, right: pos.right, zIndex: 9999 }}
-                    className="w-52 bg-white border border-gray-200 shadow-xl rounded-lg py-1 text-[11px]">
+                <div style={{ position: "fixed", top: pos.top, right: pos.right, zIndex: 100, minWidth: 220 }}
+                    className="bg-white border border-gray-200 shadow-xl rounded-sm py-1 overflow-hidden">
                     {items.map((item, i) => (
                         <button key={i} disabled={item.disabled}
                             onClick={() => { item.onClick?.(); setOpen(false); }}
-                            className={cn("w-full text-left px-4 py-2.5 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 font-semibold", item.color)}>
-                            <item.icon size={14}/>{item.label}
+                            className={cn("w-full text-left px-4 py-2.5 text-[14px] font-semibold uppercase hover:bg-[#FB7506]/10 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-3", item.color)}>
+                            <item.icon size={16}/>{item.label}
                         </button>
                     ))}
                 </div>,
@@ -152,23 +152,23 @@ export default function QualityCreditsTab({ onAddQC, onEditQC }: Props) {
         <div className="flex flex-col h-full gap-1.5">
 
             {/* ── Top header ─────────────────────────────────── */}
-            <div className="flex items-stretch bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden shrink-0">
-                <div className="h-9 bg-[#374151] flex items-center px-3 flex-1">
-                    <span className="text-white text-[10px] font-black uppercase tracking-widest">QC Stock Search</span>
+            <div className="flex items-stretch bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0">
+                <div className="h-9 bg-white flex items-center px-3 flex-1">
+                    <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">QC Stock Search</span>
                 </div>
                 <input value={search} onChange={e => setSearch(e.target.value)}
                     onKeyDown={e => e.key === "Enter" && (setPage(1), setSearchKey(k => k + 1))}
-                    placeholder="Search" className="px-3 text-[11px] outline-none border-l border-gray-200 flex-1 max-w-xs"/>
+                    placeholder="Search" className="px-3 text-[11px] outline-none border-l border-[#DBD9D9] flex-1 max-w-xs"/>
                 <button onClick={() => { setPage(1); setSearchKey(k => k + 1); }}
-                    className="px-3 text-green-500 hover:text-green-600 border-l border-gray-200 shrink-0">
+                    className="px-3 text-green-500 hover:text-green-600 border-l border-[#DBD9D9] shrink-0">
                     <RefreshCw size={14} className={loadingSearch ? "animate-spin" : ""}/>
                 </button>
             </div>
 
             {/* ── Main QC inventory grid ──────────────────────── */}
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden flex-[3] min-h-0">
+            <div className="bg-white rounded-lg border border-[#DBD9D9] shadow-sm flex flex-col overflow-hidden flex-[3] min-h-0">
                 {/* Toolbar */}
-                <div className="h-9 border-b border-gray-200 flex items-center px-3 gap-4 shrink-0 bg-white justify-between text-xs">
+                <div className="h-9 border-b border-[#DBD9D9] flex items-center px-3 gap-4 shrink-0 bg-white justify-between text-xs">
                     <div className="flex items-center gap-1.5 text-gray-400">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                         <input placeholder="Search..." className="outline-none text-[11px] w-32 text-black placeholder-gray-400"/>
@@ -189,20 +189,20 @@ export default function QualityCreditsTab({ onAddQC, onEditQC }: Props) {
                 {/* Grid */}
                 <div className="overflow-auto flex-1">
                     <table className="min-w-full text-xs text-left">
-                        <thead className="bg-white border-b sticky top-0 z-10 fos-grid-thead text-gray-700">
+                        <thead className="bg-[#4F4F4F] border-b border-[#DBD9D9] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                             <tr>
                                 {["Description","Grower","Lot","Box Qty","Qty Transit","Qty Sold","Qty Adjust","Stock","Invoice Date","AvailableDate","AWBcode","Flo. U. Cost","Land. Cost x U","Total Cost x U","UnitsBo"].map(h => (
-                                    <th key={h} className="p-2 border-r border-gray-100 last:border-r-0 whitespace-nowrap font-bold">{h}</th>
+                                    <th key={h} className="p-2 whitespace-nowrap">{h}</th>
                                 ))}
                             </tr>
                         </thead>
-                        <tbody className="fos-grid-tbody divide-y divide-gray-100">
+                        <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
                             {searchKey === 0 && <tr><td colSpan={15} className="p-8 text-center text-gray-400">Enter a search term and press Enter or click the refresh button.</td></tr>}
                             {searchKey > 0 && loadingSearch && <tr><td colSpan={15} className="p-6 text-center text-gray-400">Loading...</td></tr>}
                             {searchKey > 0 && !loadingSearch && rows.length === 0 && <tr><td colSpan={15} className="p-6 text-center text-gray-400">No results.</td></tr>}
                             {(rows as any[]).map((row: any) => (
                                 <tr key={row.unico} onClick={() => handleSelectRow(row)}
-                                    className={cn("cursor-pointer transition-colors", selRow?.unico === row.unico ? "!bg-blue-50 ring-1 ring-inset ring-blue-300" : "hover:bg-gray-50")}>
+                                    className={cn("cursor-pointer transition-colors", selRow?.unico === row.unico ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                     <td className="p-2 max-w-[200px] truncate font-medium">{t(row.description)}</td>
                                     <td className="p-2 whitespace-nowrap truncate max-w-[130px]">{t(row.grower)}</td>
                                     <td className="p-2 text-right">{row.lote}</td>
@@ -226,11 +226,11 @@ export default function QualityCreditsTab({ onAddQC, onEditQC }: Props) {
             </div>
 
             {/* ── Quality Credits by Lot ──────────────────────── */}
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden flex-[2] min-h-0">
+            <div className="bg-white rounded-lg border border-[#DBD9D9] shadow-sm flex flex-col overflow-hidden flex-[2] min-h-0">
                 {/* Header + action menu */}
-                <div className="flex items-stretch shrink-0 h-9">
-                    <div className="bg-[#374151] flex items-center px-3 flex-1">
-                        <span className="text-white text-[10px] font-black uppercase tracking-widest">Quality Credits by Lot</span>
+                <div className="flex items-stretch shrink-0 h-9 border-b border-[#DBD9D9]">
+                    <div className="bg-white flex items-center px-3 flex-1">
+                        <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">Quality Credits by Lot</span>
                     </div>
                     <ActionMenu
                         onAdd={() => { if (!selRow) { toast.error("Select a lot first."); return; } onAddQC?.(selRow); }}
@@ -242,7 +242,7 @@ export default function QualityCreditsTab({ onAddQC, onEditQC }: Props) {
                 </div>
 
                 {/* Toolbar */}
-                <div className="h-9 border-b border-gray-200 flex items-center px-3 gap-4 shrink-0 bg-white justify-between text-xs">
+                <div className="h-9 border-b border-[#DBD9D9] flex items-center px-3 gap-4 shrink-0 bg-white justify-between text-xs">
                     <div className="flex items-center gap-1.5 text-gray-400">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                         <input placeholder="Search..." className="outline-none text-[11px] w-32 text-black placeholder-gray-400"/>
@@ -253,18 +253,18 @@ export default function QualityCreditsTab({ onAddQC, onEditQC }: Props) {
                 {/* Credits grid */}
                 <div className="overflow-auto flex-1">
                     <table className="min-w-full text-xs text-left">
-                        <thead className="bg-white border-b sticky top-0 z-10 fos-grid-thead text-gray-700">
+                        <thead className="bg-[#4F4F4F] border-b border-[#DBD9D9] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                             <tr>{["","QC Date","QC Boxes","QC Amount","Reason","Notes","QC Units","Apply Vendor","Apply Freight","Apply Labor","Apply Replace"].map(h => (
-                                <th key={h} className="p-2 border-r border-gray-100 last:border-r-0 whitespace-nowrap font-bold">{h}</th>
+                                <th key={h} className="p-2 whitespace-nowrap">{h}</th>
                             ))}</tr>
                         </thead>
-                        <tbody className="fos-grid-tbody divide-y divide-gray-100">
+                        <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
                             {!selRow && <tr><td colSpan={10} className="p-6 text-center text-gray-400">Select a lot from the grid above.</td></tr>}
                             {selRow && loadingCredits && <tr><td colSpan={10} className="p-4 text-center text-gray-400">Loading...</td></tr>}
                             {selRow && !loadingCredits && (creditRows as any[]).length === 0 && <tr><td colSpan={11} className="p-4 text-center text-gray-400">No QC credits for this lot.</td></tr>}
                             {(creditRows as any[]).map((row: any) => (
                                 <tr key={row.unico} onClick={() => { setSelCredit(row); setLcQCID(row.unico); }}
-                                    className={cn("cursor-pointer transition-colors", selCredit?.unico === row.unico ? "!bg-blue-50 ring-1 ring-inset ring-blue-300" : "hover:bg-gray-50")}>
+                                    className={cn("cursor-pointer transition-colors", selCredit?.unico === row.unico ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                     {/* Inline Edit / Delete buttons */}
                                     <td className="p-1" onClick={e => e.stopPropagation()}>
                                         <div className="flex gap-1">
