@@ -343,7 +343,7 @@ export default function SystemAccessPage() {
                             <select
                                 value={filterCompany}
                                 onChange={e => setFilterCompany(e.target.value)}
-                                className="fos-input w-44 h-10 text-sm"
+                                className="fos-input w-44 h-10 text-sm bg-white"
                             >
                                 <option value="">— All Companies —</option>
                                 {(companies as any[]).map((c: any) => (
@@ -358,7 +358,7 @@ export default function SystemAccessPage() {
                             <select
                                 value={filterModule}
                                 onChange={e => setFilterModule(e.target.value)}
-                                className="fos-input w-44 h-10 text-sm"
+                                className="fos-input w-44 h-10 text-sm bg-white"
                             >
                                 <option value="">— All Modules —</option>
                                 {(modules as any[]).map((m: any) => (

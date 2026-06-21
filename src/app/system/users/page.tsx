@@ -95,7 +95,7 @@ export default function UsersDefinitionPage() {
                 <div className="relative">
                     <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-                        placeholder="Search users..." className="pl-7 pr-3 py-1.5 text-xs border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506] w-80" />
+                        placeholder="Search users..." className="pl-7 pr-3 py-1.5 text-xs border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506] w-80 bg-white" />
                 </div>
             </div>
 

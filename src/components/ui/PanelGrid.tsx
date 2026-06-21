@@ -205,7 +205,7 @@ export default function PanelGrid({
                   placeholder={searchPlaceholder}
                   value={searchValue}
                   onChange={(e) => onSearchChange(e.target.value)}
-                  className="bg-white text-[#4F4F4F] placeholder:text-gray-400 text-[10px] pl-7 pr-2 py-1 rounded outline-none w-24 sm:w-32 focus:w-32 sm:focus:w-40 transition-all font-bold"
+                  className="bg-white text-[#4F4F4F] placeholder:text-gray-400 text-[11px] pl-7 pr-2 py-1.5 rounded outline-none w-36 sm:w-48 focus:w-48 sm:focus:w-64 transition-all font-bold"
                 />
               </div>
             </div>
