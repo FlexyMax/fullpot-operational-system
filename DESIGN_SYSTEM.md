@@ -28,6 +28,27 @@
 
 ---
 
+## Font family
+
+**The app font is Inter**, set once in `src/app/globals.css`:
+
+```css
+@theme {
+  --font-sans: "Inter", "system-ui", "Avenir", "Helvetica", "Arial", "sans-serif";
+}
+body {
+  font-family: var(--font-sans);
+}
+```
+
+This makes Tailwind's `font-sans` utility (and the unstyled default, since it's set on `<body>`) resolve to Inter everywhere. **Don't add a per-page font override** — pages that explicitly set `font-sans` on their root `<div>` (POS, QC, AWBs, Prebook to Invoice, ...) are redundant but harmless, since it resolves to the same Inter stack inherited from `<body>`.
+
+**Known quirk, not a bug to "fix" by adding more fonts:** `src/app/layout.tsx` also loads `Geist`/`Geist Mono` via `next/font/google` and applies their CSS variables (`--font-geist-sans`, `--font-geist-mont`) to `<body>`'s className. **Neither variable is actually referenced by any `font-family` rule** — `globals.css`'s `--font-sans` override (Inter) wins. So the "Failed to download `Geist`/`Geist Mono` from Google Fonts" warnings seen in `next dev` logs are harmless noise, not a rendering problem — the page never tries to render in Geist. If those fonts are ever wired up for real (e.g. a future rebrand), update this section *and* check every page for a stray `font-sans` override fighting the new family.
+
+Monospace (`font-mono`) is intentionally used for alphanumeric codes/IDs (AWB codes, lot numbers, etc.) — that's a deliberate exception, not a font-family inconsistency.
+
+---
+
 ## Typography scale
 
 | Use | Weight | Size | Case |
