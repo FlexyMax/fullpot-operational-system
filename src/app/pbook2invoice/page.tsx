@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, Fragment, type CSSProperties } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -11,7 +11,7 @@ import {
     Package, BookOpen, ClipboardList,
     FilePen, Paperclip, StickyNote, RefreshCw,
     UserCog, Scissors, Plus, Copy, Printer, Minus,
-    FileX, Link2,
+    FileX, Link2, ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -35,11 +35,18 @@ const fmtDate = (v: any) => {
     const d = new Date(s);
     return isNaN(d.getTime()) ? s : d.toLocaleDateString("en-US");
 };
-const vfpColor = (c: any) => {
+// Subtle 6%-tint + colored left border, matching POS's vfpRowStyle (not a solid fill)
+const vfpRowStyle = (c: any): CSSProperties | undefined => {
     const n = parseInt(c ?? 0);
-    if (!n || n < 0) return undefined;
+    if (!n || n <= 0) return undefined;
     const r = n & 0xFF; const g = (n >> 8) & 0xFF; const b = (n >> 16) & 0xFF;
-    return `rgb(${r},${g},${b})`;
+    const rgb = `${r},${g},${b}`;
+    return {
+        borderLeftColor: `rgb(${rgb})`,
+        borderLeftWidth: "3px",
+        borderLeftStyle: "solid",
+        backgroundColor: `rgba(${rgb},0.06)`,
+    };
 };
 
 const BOTTOM_TABS = [
@@ -143,7 +150,6 @@ function InvoicedTab({ rows }: { rows: any[] }) {
                     </tbody>
                 </table>
             </div>
-            <AppFooter areaLabel="Prebook to Invoice" />
         </div>
     );
 }
@@ -568,70 +574,72 @@ export default function Pbook2InvoicePage() {
             {/* ── Dark header ─────────────────────────────────────────────── */}
             <AppHeader title="Prebook to Invoice" extraRight={working ? <Loader2 size={14} className="animate-spin text-white/60" /> : undefined} />
 
-            {/* ── TOP PANELS: Dates (left) + Customers (right) ────────────── */}
-            <div className="flex gap-2 px-2 pt-2 shrink-0 h-96">
-
-                {/* Dates panel */}
-                <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden w-[700px] shrink-0">
-                    <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
-                        <div className="flex items-center gap-2">
-                            <Calendar size={15} className="text-[#FB7506]" />
-                            <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">
-                                Date Picker [Closed Prebooks]
-                            </span>
-                            {loadingDates && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
-                        </div>
-                        <div className="flex items-center gap-1">
-                            {(["delivery", "shipping"] as const).map(m => (
-                                <button key={m} onClick={() => switchMode(m)}
-                                    className={cn(
-                                        "px-2.5 h-6 rounded text-[12px] font-semibold uppercase tracking-wide transition-all",
-                                        dateMode === m
-                                            ? "bg-[#FB7506] text-white"
-                                            : "text-gray-500 hover:text-[#FB7506] hover:bg-gray-100"
-                                    )}
-                                >
-                                    {m === "delivery" ? "Delivery" : "Arrival"}
-                                </button>
-                            ))}
-                            <button onClick={() => setDatesKey(k => k + 1)}
-                                className="ml-1 flex items-center gap-1 bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] text-[12px] font-semibold px-2.5 h-6 rounded transition-all"
-                            >
-                                <RefreshCcw size={11} /> Refresh
-                            </button>
-                        </div>
+            {/* ── Date Picker — expands per-row to nest the Customers grid ── */}
+            <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden mx-2 mt-2 shrink-0 max-h-[420px]">
+                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
+                    <div className="flex items-center gap-2">
+                        <Calendar size={15} className="text-[#FB7506]" />
+                        <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">
+                            Date Picker [Closed Prebooks]
+                        </span>
+                        {loadingDates && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
                     </div>
-                    <div className="overflow-y-auto flex-1">
-                        <table className="min-w-full text-xs text-left">
-                            <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
-                                <tr className="divide-x divide-[#DBD9D9]/30">
-                                    <th className="p-2">{dateMode === "delivery" ? "Delivery Date" : "Arrival Date"}</th>
-                                    <th className="p-2 text-right">Prebks</th>
-                                    <th className="p-2 text-right">T.Box</th>
-                                    <th className="p-2 text-right">T.Purch</th>
-                                    <th className="p-2 text-right">T.Ship</th>
-                                    <th className="p-2 text-right">Invoice</th>
-                                    <th className="p-2 text-right">Ext.Price</th>
-                                    <th className="p-2 text-right">Cost</th>
-                                    <th className="p-2 text-right">G.Profit%</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-[#DBD9D9]">
-                                {dateRows.length === 0 && !loadingDates && (
-                                    <tr><td colSpan={9} className="p-6 text-center text-gray-400 italic">No dates available</td></tr>
+                    <div className="flex items-center gap-1">
+                        {(["delivery", "shipping"] as const).map(m => (
+                            <button key={m} onClick={() => switchMode(m)}
+                                className={cn(
+                                    "px-2.5 h-6 rounded text-[12px] font-semibold uppercase tracking-wide transition-all",
+                                    dateMode === m
+                                        ? "bg-[#FB7506] text-white"
+                                        : "text-gray-500 hover:text-[#FB7506] hover:bg-gray-100"
                                 )}
-                                {dateRows.map((row: any, i: number) => {
-                                    const raw = t(row.PB_DATE ?? row.WHOUSE_DATE ?? "");
-                                    const dateKey = raw.substring(0, 10);
-                                    const sel = selectedDate === dateKey;
-                                    const bg = vfpColor(row.COLOR);
-                                    return (
-                                        <tr key={i} onClick={() => selectDate(dateKey)}
+                            >
+                                {m === "delivery" ? "Delivery" : "Arrival"}
+                            </button>
+                        ))}
+                        <button onClick={() => setDatesKey(k => k + 1)}
+                            className="ml-1 flex items-center gap-1 bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] text-[12px] font-semibold px-2.5 h-6 rounded transition-all"
+                        >
+                            <RefreshCcw size={11} /> Refresh
+                        </button>
+                    </div>
+                </div>
+                <div className="overflow-y-auto flex-1">
+                    <table className="min-w-full text-xs text-left">
+                        <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
+                            <tr className="divide-x divide-[#DBD9D9]/30">
+                                <th className="p-2 w-8" />
+                                <th className="p-2">{dateMode === "delivery" ? "Delivery Date" : "Arrival Date"}</th>
+                                <th className="p-2 text-right">Prebks</th>
+                                <th className="p-2 text-right">T.Box</th>
+                                <th className="p-2 text-right">T.Purch</th>
+                                <th className="p-2 text-right">T.Ship</th>
+                                <th className="p-2 text-right">Invoice</th>
+                                <th className="p-2 text-right">Ext.Price</th>
+                                <th className="p-2 text-right">Cost</th>
+                                <th className="p-2 text-right">G.Profit%</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#DBD9D9]">
+                            {dateRows.length === 0 && !loadingDates && (
+                                <tr><td colSpan={10} className="p-6 text-center text-gray-400 italic">No dates available</td></tr>
+                            )}
+                            {dateRows.map((row: any, i: number) => {
+                                const raw = t(row.PB_DATE ?? row.WHOUSE_DATE ?? "");
+                                const dateKey = raw.substring(0, 10);
+                                const sel = selectedDate === dateKey;
+                                const rowStyle = vfpRowStyle(row.COLOR);
+                                return (
+                                    <Fragment key={i}>
+                                        <tr onClick={() => selectDate(dateKey)}
                                             className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]",
                                                 sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}
-                                            style={!sel && bg ? { backgroundColor: bg } : undefined}
+                                            style={!sel ? rowStyle : undefined}
                                             title={t(row.TOOLTIP)}
                                         >
+                                            <td className="p-2 text-center">
+                                                <ChevronRight size={14} className={cn("inline-block text-gray-400 transition-transform", sel && "rotate-90 text-[#FB7506]")} />
+                                            </td>
                                             <td className="p-2 font-medium">{fmtDate(raw)}</td>
                                             <td className="p-2 text-right">{fmtI(row.RECORDS)}</td>
                                             <td className="p-2 text-right">{fmtI(row.QTY_ORDER)}</td>
@@ -642,97 +650,101 @@ export default function Pbook2InvoicePage() {
                                             <td className="p-2 text-right">{fmt(row.TOTAL_PURCHASE)}</td>
                                             <td className="p-2 text-right">{fmt(row.PROFIT)}%</td>
                                         </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                {/* Customers panel */}
-                <div className="flex-1 flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden min-w-0">
-                    <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
-                        <div className="flex items-center gap-2">
-                            <Users size={15} className="text-[#FB7506]" />
-                            <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] truncate">
-                                Customers {selectedDate ? `— ${fmtDate(selectedDate)}` : ""}
-                            </span>
-                            {loadingCustomers && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
-                        </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                            <button onClick={handleMakeInvoice} disabled={!selectedDate || working}
-                                className="flex items-center gap-1 px-3 h-7 text-[14px] font-semibold uppercase tracking-wide bg-red-600 hover:bg-red-500 text-white rounded-md disabled:opacity-40 transition-all whitespace-nowrap"
-                            >
-                                <Check size={14} /> Make Invoices
-                            </button>
-                            <button onClick={() => {}} disabled={!selectedDate}
-                                className="flex items-center gap-1 px-3 h-7 text-[14px] font-semibold uppercase tracking-wide bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] rounded-md disabled:opacity-40 transition-all whitespace-nowrap"
-                            >
-                                <Printer size={14} /> Without Invoice
-                            </button>
-                            <button onClick={() => {}} disabled={!selectedDate}
-                                className="flex items-center gap-1 px-3 h-7 text-[14px] font-semibold uppercase tracking-wide bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] rounded-md disabled:opacity-40 transition-all whitespace-nowrap"
-                            >
-                                <Link2 size={14} /> Invoices
-                            </button>
-                        </div>
-                    </div>
-                    <div className="overflow-auto flex-1">
-                        <table className="min-w-full text-xs text-left">
-                            <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
-                                <tr className="divide-x divide-[#DBD9D9]/30">
-                                    <th className="p-2">Customer</th>
-                                    <th className="p-2 text-right">Prebks</th>
-                                    <th className="p-2 text-right">CrLimit</th>
-                                    <th className="p-2 text-right">T.Box</th>
-                                    <th className="p-2 text-right">T.Purch</th>
-                                    <th className="p-2 text-right">T.Ship</th>
-                                    <th className="p-2 text-right">Invoice</th>
-                                    <th className="p-2 text-right">Ext.Price</th>
-                                    <th className="p-2 text-right">Cost</th>
-                                    <th className="p-2 text-right">G.Profit%</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-[#DBD9D9]">
-                                <tr onClick={() => selectCustomer("%")}
-                                    className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]",
-                                        selectedCustUq === "%" ? "!bg-[#FB7506]/10" : "bg-white hover:bg-gray-50")}
-                                >
-                                    <td className="p-2 font-bold text-gray-500 italic">ALL</td>
-                                    <td className="p-2" /><td className="p-2" />
-                                    <td className="p-2" /><td className="p-2" />
-                                    <td className="p-2" /><td className="p-2" />
-                                    <td className="p-2" /><td className="p-2" />
-                                    <td className="p-2" />
-                                </tr>
-                                {!selectedDate && <tr><td colSpan={10} className="p-4 text-center text-gray-400 italic">Select a date</td></tr>}
-                                {(customers as any[]).filter((row: any) => t(row.CUSTOMER_UQ ?? "") !== "%").map((row: any, i: number) => {
-                                    const uq = t(row.CUSTOMER_UQ ?? "");
-                                    const sel = selectedCustUq === uq;
-                                    const bg = vfpColor(row.COLOR);
-                                    return (
-                                        <tr key={i} onClick={() => selectCustomer(uq)}
-                                            className={cn("cursor-pointer transition-colors text-gray-600 divide-x divide-[#DBD9D9]",
-                                                sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}
-                                            style={!sel && bg ? { backgroundColor: bg } : undefined}
-                                            title={t(row.TOOLTIP)}
-                                        >
-                                            <td className="p-2 font-medium">{t(row.CUSTOMER)}</td>
-                                            <td className="p-2 text-right">{fmtI(row.RECORDS)}</td>
-                                            <td className="p-2 text-right">{fmt(row.CREDIT_LIMIT)}</td>
-                                            <td className="p-2 text-right">{fmtI(row.QTY_ORDER)}</td>
-                                            <td className="p-2 text-right">{fmtI(row.QTY_PORDER)}</td>
-                                            <td className="p-2 text-right">{fmtI(row.QTY_SHIP)}</td>
-                                            <td className="p-2 text-right font-semibold">{fmtI(row.QTY_INVOICE)}</td>
-                                            <td className="p-2 text-right">{fmt(row.TOTAL_SALE)}</td>
-                                            <td className="p-2 text-right">{fmt(row.TOTAL_PURCHASE)}</td>
-                                            <td className="p-2 text-right">{fmt(row.PROFIT)}%</td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
+                                        {sel && (
+                                            <tr>
+                                                <td colSpan={10} className="p-0 bg-[#FBF9F8]">
+                                                    {/* ── Nested: Customers for this date ─────────────── */}
+                                                    <div className="border-t border-[#DBD9D9]">
+                                                        <div className="h-9 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0">
+                                                            <div className="flex items-center gap-2 min-w-0">
+                                                                <Users size={13} className="text-[#FB7506] shrink-0" />
+                                                                <span className="text-[13px] font-bold uppercase tracking-tight text-[#4F4F4F] truncate">
+                                                                    Customers — {fmtDate(dateKey)}
+                                                                </span>
+                                                                {loadingCustomers && <RefreshCcw size={10} className="text-gray-400 animate-spin shrink-0" />}
+                                                            </div>
+                                                            <div className="flex items-center gap-1.5 shrink-0">
+                                                                <button onClick={handleMakeInvoice} disabled={!selectedDate || working}
+                                                                    className="flex items-center gap-1 px-3 h-7 text-[14px] font-semibold uppercase tracking-wide bg-red-600 hover:bg-red-500 text-white rounded-md disabled:opacity-40 transition-all whitespace-nowrap"
+                                                                >
+                                                                    <Check size={14} /> Make Invoices
+                                                                </button>
+                                                                <button onClick={() => {}} disabled={!selectedDate}
+                                                                    className="flex items-center gap-1 px-3 h-7 text-[14px] font-semibold uppercase tracking-wide bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] rounded-md disabled:opacity-40 transition-all whitespace-nowrap"
+                                                                >
+                                                                    <Printer size={14} /> Without Invoice
+                                                                </button>
+                                                                <button onClick={() => {}} disabled={!selectedDate}
+                                                                    className="flex items-center gap-1 px-3 h-7 text-[14px] font-semibold uppercase tracking-wide bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] rounded-md disabled:opacity-40 transition-all whitespace-nowrap"
+                                                                >
+                                                                    <Link2 size={14} /> Invoices
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        <div className="max-h-64 overflow-auto">
+                                                            <table className="min-w-full text-xs text-left">
+                                                                <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
+                                                                    <tr className="divide-x divide-[#DBD9D9]/30">
+                                                                        <th className="p-2">Customer</th>
+                                                                        <th className="p-2 text-right">Prebks</th>
+                                                                        <th className="p-2 text-right">CrLimit</th>
+                                                                        <th className="p-2 text-right">T.Box</th>
+                                                                        <th className="p-2 text-right">T.Purch</th>
+                                                                        <th className="p-2 text-right">T.Ship</th>
+                                                                        <th className="p-2 text-right">Invoice</th>
+                                                                        <th className="p-2 text-right">Ext.Price</th>
+                                                                        <th className="p-2 text-right">Cost</th>
+                                                                        <th className="p-2 text-right">G.Profit%</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody className="divide-y divide-[#DBD9D9]">
+                                                                    <tr onClick={() => selectCustomer("%")}
+                                                                        className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]",
+                                                                            selectedCustUq === "%" ? "!bg-[#FB7506]/10" : "bg-white hover:bg-gray-50")}
+                                                                    >
+                                                                        <td className="p-2 font-bold text-gray-500 italic">ALL</td>
+                                                                        <td className="p-2" /><td className="p-2" />
+                                                                        <td className="p-2" /><td className="p-2" />
+                                                                        <td className="p-2" /><td className="p-2" />
+                                                                        <td className="p-2" /><td className="p-2" />
+                                                                        <td className="p-2" />
+                                                                    </tr>
+                                                                    {(customers as any[]).filter((row: any) => t(row.CUSTOMER_UQ ?? "") !== "%").map((row: any, j: number) => {
+                                                                        const uq = t(row.CUSTOMER_UQ ?? "");
+                                                                        const selCust = selectedCustUq === uq;
+                                                                        const custRowStyle = vfpRowStyle(row.COLOR);
+                                                                        return (
+                                                                            <tr key={j} onClick={() => selectCustomer(uq)}
+                                                                                className={cn("cursor-pointer transition-colors text-gray-600 divide-x divide-[#DBD9D9]",
+                                                                                    selCust ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}
+                                                                                style={!selCust ? custRowStyle : undefined}
+                                                                                title={t(row.TOOLTIP)}
+                                                                            >
+                                                                                <td className="p-2 font-medium">{t(row.CUSTOMER)}</td>
+                                                                                <td className="p-2 text-right">{fmtI(row.RECORDS)}</td>
+                                                                                <td className="p-2 text-right">{fmt(row.CREDIT_LIMIT)}</td>
+                                                                                <td className="p-2 text-right">{fmtI(row.QTY_ORDER)}</td>
+                                                                                <td className="p-2 text-right">{fmtI(row.QTY_PORDER)}</td>
+                                                                                <td className="p-2 text-right">{fmtI(row.QTY_SHIP)}</td>
+                                                                                <td className="p-2 text-right font-semibold">{fmtI(row.QTY_INVOICE)}</td>
+                                                                                <td className="p-2 text-right">{fmt(row.TOTAL_SALE)}</td>
+                                                                                <td className="p-2 text-right">{fmt(row.TOTAL_PURCHASE)}</td>
+                                                                                <td className="p-2 text-right">{fmt(row.PROFIT)}%</td>
+                                                                            </tr>
+                                                                        );
+                                                                    })}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </Fragment>
+                                );
+                            })}
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -802,11 +814,12 @@ export default function Pbook2InvoicePage() {
                     </div>
                 </div>
 
-                {/* Lines table */}
+                {/* Lines table — expands per-row to nest the detail tabs */}
                 <div className="flex-1 overflow-auto bg-white border border-t-0 border-[#DBD9D9] shadow-sm min-h-0 rounded-b-lg">
                     <table className="min-w-full text-xs text-left">
                         <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                             <tr className="divide-x divide-[#DBD9D9]/30">
+                                <th className="p-2 w-8" />
                                 <th className="p-2 whitespace-nowrap">PO.No</th>
                                 <th className="p-2 whitespace-nowrap">SO.No</th>
                                 <th className="p-2 whitespace-nowrap">CustPO</th>
@@ -832,81 +845,88 @@ export default function Pbook2InvoicePage() {
                                 const unico = t(row.UNICO ?? row.PBOOK_BOX_UQ ?? "");
                                 const sel = selectedUnico === unico;
                                 const toInv = parseFloat(row.TO_INVOICE ?? 0);
-                                const bg = vfpColor(row.BACK_COLOR ?? row.BACKCOLOR);
+                                const rowStyle = vfpRowStyle(row.BACK_COLOR ?? row.BACKCOLOR);
                                 return (
-                                    <tr key={i}
-                                        onClick={() => setSelectedUnico(sel ? null : unico)}
-                                        className={cn("cursor-pointer transition-colors text-gray-600 divide-x divide-[#DBD9D9]",
-                                            sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}
-                                        style={!sel && bg ? { backgroundColor: bg } : undefined}
-                                    >
-                                        <td className="p-2 whitespace-nowrap">{t(row.SORDER_NO ?? row.PO_NO)}</td>
-                                        <td className="p-2 whitespace-nowrap font-semibold text-blue-700">{t(row.PBOOK_NO ?? row.SO_NO)}</td>
-                                        <td className="p-2 whitespace-nowrap">{t(row.CPORDER_NO ?? row.CUST_PO)}</td>
-                                        <td className="p-2 whitespace-nowrap">{t(row.INVOICE_NO ?? row.INVOICE)}</td>
-                                        <td className="p-2 whitespace-nowrap max-w-[160px] truncate">{t(row.DESCRIPTION ?? row.PRODUCT)}</td>
-                                        <td className="p-2 whitespace-nowrap">{t(row.CASE_SH ?? row.CASE)}</td>
-                                        <td className="p-2 whitespace-nowrap text-right">{fmtI(row.UP_X_PACK)}</td>
-                                        <td className="p-2 whitespace-nowrap text-right">{fmtI(row.PACKS_X_CASE)}</td>
-                                        <td className="p-2 whitespace-nowrap text-right">{fmtI(row.UNITS_X_BOX ?? row.UNITS_X_CASE)}</td>
-                                        <td className="p-2 whitespace-nowrap text-right">{fmtI(row.QTY_ORDER ?? row.QTY_SORDER)}</td>
-                                        <td className="p-2 whitespace-nowrap text-right">{fmtI(row.QTY_PORDER)}</td>
-                                        <td className={cn("p-2 whitespace-nowrap text-right font-bold", toInv > 0 ? "text-red-600" : "")}>{fmtI(row.TO_INVOICE)}</td>
-                                        <td className="p-2 whitespace-nowrap text-right font-semibold">{fmt(row.SO_PRICE ?? row.PRICE)}</td>
-                                        <td className="p-2 whitespace-nowrap">{fmtDate(row.PB_DATE ?? row.SHIP_DATE)}</td>
-                                        <td className="p-2 whitespace-nowrap font-medium">{t(row.CUSTOMER)}</td>
-                                        <td className="p-2 whitespace-nowrap text-right">{fmtI(row.BOXES_ADJUST ?? row.QUALITY)}</td>
-                                        <td className="p-2 whitespace-nowrap">{t(row.WAREHOUSE ?? row.WHOUSE)}</td>
-                                        <td className="p-2 whitespace-nowrap text-gray-400">{t(row.PCCODE ?? row.BOX_ID)}</td>
-                                    </tr>
+                                    <Fragment key={i}>
+                                        <tr
+                                            onClick={() => setSelectedUnico(sel ? null : unico)}
+                                            className={cn("cursor-pointer transition-colors text-gray-600 divide-x divide-[#DBD9D9]",
+                                                sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}
+                                            style={!sel ? rowStyle : undefined}
+                                        >
+                                            <td className="p-2 text-center">
+                                                <ChevronRight size={14} className={cn("inline-block text-gray-400 transition-transform", sel && "rotate-90 text-[#FB7506]")} />
+                                            </td>
+                                            <td className="p-2 whitespace-nowrap">{t(row.SORDER_NO ?? row.PO_NO)}</td>
+                                            <td className="p-2 whitespace-nowrap font-semibold text-blue-700">{t(row.PBOOK_NO ?? row.SO_NO)}</td>
+                                            <td className="p-2 whitespace-nowrap">{t(row.CPORDER_NO ?? row.CUST_PO)}</td>
+                                            <td className="p-2 whitespace-nowrap">{t(row.INVOICE_NO ?? row.INVOICE)}</td>
+                                            <td className="p-2 whitespace-nowrap max-w-[160px] truncate">{t(row.DESCRIPTION ?? row.PRODUCT)}</td>
+                                            <td className="p-2 whitespace-nowrap">{t(row.CASE_SH ?? row.CASE)}</td>
+                                            <td className="p-2 whitespace-nowrap text-right">{fmtI(row.UP_X_PACK)}</td>
+                                            <td className="p-2 whitespace-nowrap text-right">{fmtI(row.PACKS_X_CASE)}</td>
+                                            <td className="p-2 whitespace-nowrap text-right">{fmtI(row.UNITS_X_BOX ?? row.UNITS_X_CASE)}</td>
+                                            <td className="p-2 whitespace-nowrap text-right">{fmtI(row.QTY_ORDER ?? row.QTY_SORDER)}</td>
+                                            <td className="p-2 whitespace-nowrap text-right">{fmtI(row.QTY_PORDER)}</td>
+                                            <td className={cn("p-2 whitespace-nowrap text-right font-bold", toInv > 0 ? "text-red-600" : "")}>{fmtI(row.TO_INVOICE)}</td>
+                                            <td className="p-2 whitespace-nowrap text-right font-semibold">{fmt(row.SO_PRICE ?? row.PRICE)}</td>
+                                            <td className="p-2 whitespace-nowrap">{fmtDate(row.PB_DATE ?? row.SHIP_DATE)}</td>
+                                            <td className="p-2 whitespace-nowrap font-medium">{t(row.CUSTOMER)}</td>
+                                            <td className="p-2 whitespace-nowrap text-right">{fmtI(row.BOXES_ADJUST ?? row.QUALITY)}</td>
+                                            <td className="p-2 whitespace-nowrap">{t(row.WAREHOUSE ?? row.WHOUSE)}</td>
+                                            <td className="p-2 whitespace-nowrap text-gray-400">{t(row.PCCODE ?? row.BOX_ID)}</td>
+                                        </tr>
+                                        {sel && (
+                                            <tr>
+                                                <td colSpan={19} className="p-0 bg-[#FBF9F8]">
+                                                    {/* ── Nested: detail tabs for this line ───────────── */}
+                                                    <div className="flex flex-col border-t border-[#DBD9D9] h-[230px]">
+                                                        <div className="h-10 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-end px-2 shrink-0 gap-0.5">
+                                                            {BOTTOM_TABS.map(tab => (
+                                                                <button key={tab.id}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setActiveTab(tab.id);
+                                                                        if (tab.id === "stockom" && selectedUnico) fetchStockOm();
+                                                                    }}
+                                                                    className={cn(
+                                                                        "flex items-center gap-1.5 px-3 h-8 text-[10px] font-black uppercase tracking-wider rounded-t transition-all",
+                                                                        activeTab === tab.id
+                                                                            ? "bg-white text-[#FB7506] border-b-2 border-[#FB7506]"
+                                                                            : "text-gray-500 hover:text-[#FB7506] hover:bg-white/60"
+                                                                    )}
+                                                                >
+                                                                    <tab.icon size={11} />
+                                                                    {tab.label}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                        <div className="flex-1 overflow-hidden flex flex-col bg-white" onClick={(e) => e.stopPropagation()}>
+                                                            {activeTab === "invoiced"  && <InvoicedTab      rows={detail?.invoiced      ?? []} />}
+                                                            {activeTab === "assigned"  && <AssignedStockTab rows={detail?.stockAssigned ?? []} />}
+                                                            {activeTab === "purchase"  && <PurchaseTab      rows={detail?.purchase      ?? []} />}
+                                                            {activeTab === "stockom"   && <StockOmTab       rows={stockOm} loading={loadingStockOm} />}
+                                                            {activeTab === "similar"   && <SimilarTab       rows={detail?.stockSimilar  ?? []} />}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </Fragment>
                                 );
                             })}
                             {!loadingLines && !selectedDate && (
-                                <tr><td colSpan={18} className="p-10 text-center text-gray-400 italic">Select a date to load prebook lines</td></tr>
+                                <tr><td colSpan={19} className="p-10 text-center text-gray-400 italic">Select a date to load prebook lines</td></tr>
                             )}
                             {!loadingLines && selectedDate && (lines as any[]).length === 0 && (
-                                <tr><td colSpan={18} className="p-10 text-center text-gray-400 italic">No prebook lines found</td></tr>
+                                <tr><td colSpan={19} className="p-10 text-center text-gray-400 italic">No prebook lines found</td></tr>
                             )}
                         </tbody>
                     </table>
                 </div>
 
-                {/* ── Bottom detail tabs ──────────────────────────────────── */}
-                <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden h-[230px] shrink-0 mt-1">
-                    <div className="h-10 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-end px-2 shrink-0 gap-0.5">
-                        {BOTTOM_TABS.map(tab => (
-                            <button key={tab.id}
-                                onClick={() => {
-                                    setActiveTab(tab.id);
-                                    if (tab.id === "stockom" && selectedUnico) fetchStockOm();
-                                }}
-                                className={cn(
-                                    "flex items-center gap-1.5 px-3 h-8 text-[10px] font-black uppercase tracking-wider rounded-t transition-all",
-                                    activeTab === tab.id
-                                        ? "bg-white text-[#FB7506] border-b-2 border-[#FB7506]"
-                                        : "text-gray-500 hover:text-[#FB7506] hover:bg-white/60"
-                                )}
-                            >
-                                <tab.icon size={11} />
-                                {tab.label}
-                            </button>
-                        ))}
-                        {!selectedUnico && (
-                            <span className="ml-auto text-[9px] font-black text-gray-500 uppercase tracking-widest self-center pr-2">
-                                Select a line to see details
-                            </span>
-                        )}
-                    </div>
-                    <div className="flex-1 overflow-hidden flex flex-col bg-white">
-                        {activeTab === "invoiced"  && <InvoicedTab      rows={detail?.invoiced      ?? []} />}
-                        {activeTab === "assigned"  && <AssignedStockTab rows={detail?.stockAssigned ?? []} />}
-                        {activeTab === "purchase"  && <PurchaseTab      rows={detail?.purchase      ?? []} />}
-                        {activeTab === "stockom"   && <StockOmTab       rows={stockOm} loading={loadingStockOm} />}
-                        {activeTab === "similar"   && <SimilarTab       rows={detail?.stockSimilar  ?? []} />}
-                    </div>
-                </div>
-
             </div>
+            <AppFooter areaLabel="Prebook to Invoice" />
         </div>
     );
 }
