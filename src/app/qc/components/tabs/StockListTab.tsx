@@ -39,7 +39,7 @@ function HelpIcon() {
 function GridToolbar({ total, page, totalPages, onPage }:
     { total: number; page: number; totalPages: number; onPage: (p: number) => void }) {
     return (
-        <div className="h-9 border-b border-gray-200 flex items-center px-3 gap-3 shrink-0 bg-white text-xs justify-between">
+        <div className="h-9 border-b border-[#DBD9D9] flex items-center px-3 gap-3 shrink-0 bg-white text-xs justify-between">
             <div className="flex items-center gap-2 text-gray-400 min-w-0">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 <input type="text" placeholder="Search..." className="outline-none text-[11px] w-32 text-black placeholder-gray-400"/>
@@ -64,10 +64,10 @@ function GridToolbar({ total, page, totalPages, onPage }:
 // ── Sub-grid toolbar (header bar) ─────────────────────────────────────────────
 function SubGridHeader({ title, actions }: { title: string; actions?: React.ReactNode }) {
     return (
-        <div className="h-8 bg-[#374151] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
-            <span className="text-white text-[10px] font-black uppercase tracking-widest truncate">{title}</span>
+        <div className="h-8 bg-white flex items-center justify-between px-3 shrink-0 rounded-t-lg border-b border-[#DBD9D9]">
+            <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">{title}</span>
             <div className="flex items-center gap-2 shrink-0">
-                <RefreshCw size={12} className="text-gray-400 cursor-pointer hover:text-white"/>
+                <RefreshCw size={12} className="text-gray-400 cursor-pointer hover:text-[#FB7506]"/>
                 {actions}
             </div>
         </div>
@@ -76,18 +76,18 @@ function SubGridHeader({ title, actions }: { title: string; actions?: React.Reac
 
 function ScanPanel({ title, rows, loading }: { title: string; rows: any[]; loading: boolean }) {
     return (
-        <div className="w-80 flex flex-col border-l border-gray-200 shrink-0 overflow-hidden">
-            <div className="h-8 bg-[#374151] flex items-center justify-between px-3 shrink-0">
-                <span className="text-white text-[10px] font-black uppercase tracking-widest">{title}</span>
-                <RefreshCw size={12} className="text-gray-400"/>
+        <div className="w-80 flex flex-col border-l border-[#DBD9D9] shrink-0 overflow-hidden">
+            <div className="h-8 bg-white flex items-center justify-between px-3 shrink-0 border-b border-[#DBD9D9]">
+                <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight">{title}</span>
+                <RefreshCw size={12} className="text-gray-400 cursor-pointer hover:text-[#FB7506]"/>
             </div>
             <GridToolbar total={rows.length} page={1} totalPages={1} onPage={() => {}}/>
             <div className="overflow-auto flex-1">
                 <table className="min-w-full text-xs">
-                    <thead className="bg-white border-b fos-grid-thead text-gray-700 sticky top-0">
-                        <tr>{["ScanTime","Barcode","Rack","Grower"].map(h => <th key={h} className="p-1.5 border-r border-gray-100 last:border-r-0 whitespace-nowrap font-bold text-gray-600">{h}</th>)}</tr>
+                    <thead className="bg-[#4F4F4F] text-white font-bold text-[11px] uppercase sticky top-0">
+                        <tr>{["ScanTime","Barcode","Rack","Grower"].map(h => <th key={h} className="p-1.5 whitespace-nowrap">{h}</th>)}</tr>
                     </thead>
-                    <tbody className="fos-grid-tbody divide-y divide-gray-100">
+                    <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
                         {loading && <tr><td colSpan={4} className="p-4 text-center text-gray-400">Loading...</td></tr>}
                         {!loading && rows.length === 0 && <tr><td colSpan={4} className="p-4 text-center text-gray-300 italic">No scan data</td></tr>}
                         {(rows as any[]).map((r, i) => (
@@ -205,7 +205,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
         <div className="flex flex-col h-full gap-1.5 text-xs">
 
             {/* ── Filter bar ─────────────────────────────────── */}
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm px-3 py-2 flex items-center gap-3 shrink-0">
+            <div className="bg-[#F5F3F3] rounded-lg border border-[#DBD9D9] shadow-sm px-3 py-2 flex items-center gap-3 shrink-0">
                 <div className="flex items-center gap-1.5">
                     <HelpIcon/>
                     <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="fos-input py-1 w-32 text-[11px]"/>
@@ -249,12 +249,12 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
             </div>
 
             {/* ── Main split: packing grid + Lots Scan IN ─────── */}
-            <div className="flex bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-[3] min-h-0">
+            <div className="flex bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-[3] min-h-0">
                 {/* Packing grid */}
                 <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-                    <div className="h-8 bg-[#374151] flex items-center justify-between px-3 shrink-0">
-                        <span className="text-white text-[10px] font-black uppercase tracking-widest">Packing List Boxes</span>
-                        <RefreshCw size={12} className="text-gray-400 cursor-pointer hover:text-white" onClick={() => refetchPacking()}/>
+                    <div className="h-8 bg-white flex items-center justify-between px-3 shrink-0 border-b border-[#DBD9D9]">
+                        <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight">Packing List Boxes</span>
+                        <RefreshCw size={12} className="text-gray-400 cursor-pointer hover:text-[#FB7506]" onClick={() => refetchPacking()}/>
                     </div>
                     <GridToolbar
                         total={totalRecords}
@@ -263,22 +263,22 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                     />
                     <div className="overflow-auto flex-1">
                         <table className="min-w-full text-xs text-left">
-                            <thead className="bg-white border-b sticky top-0 z-10">
-                                <tr className="fos-grid-thead text-gray-700">
-                                    <th className="p-1.5 w-10 border-r border-gray-100">+QC</th>
-                                    <th className="p-1.5 border-r border-gray-100 whitespace-nowrap">AvailableDate</th>
-                                    <th className="p-1.5 border-r border-gray-100 whitespace-nowrap">InvoiceDate</th>
-                                    <th className="p-1.5 border-r border-gray-100 whitespace-nowrap">PbookDate</th>
-                                    <th className="p-1.5 border-r border-gray-100 whitespace-nowrap">Warehouse</th>
-                                    <th className="p-1.5 border-r border-gray-100 whitespace-nowrap">ReadyTran</th>
-                                    <th className="p-1.5 border-r border-gray-100 min-w-[220px]">Description</th>
-                                    <th className="p-1.5 border-r border-gray-100 whitespace-nowrap">SOrder No</th>
-                                    <th className="p-1.5 border-r border-gray-100 whitespace-nowrap">AWBCode</th>
-                                    <th className="p-1.5 border-r border-gray-100 text-right">Lot</th>
+                            <thead className="bg-[#4F4F4F] text-white font-bold text-[11px] uppercase sticky top-0 z-10">
+                                <tr>
+                                    <th className="p-1.5 w-10">+QC</th>
+                                    <th className="p-1.5 whitespace-nowrap">AvailableDate</th>
+                                    <th className="p-1.5 whitespace-nowrap">InvoiceDate</th>
+                                    <th className="p-1.5 whitespace-nowrap">PbookDate</th>
+                                    <th className="p-1.5 whitespace-nowrap">Warehouse</th>
+                                    <th className="p-1.5 whitespace-nowrap">ReadyTran</th>
+                                    <th className="p-1.5 min-w-[220px]">Description</th>
+                                    <th className="p-1.5 whitespace-nowrap">SOrder No</th>
+                                    <th className="p-1.5 whitespace-nowrap">AWBCode</th>
+                                    <th className="p-1.5 text-right">Lot</th>
                                     <th className="p-1.5 text-right">BoxQty</th>
                                 </tr>
                             </thead>
-                            <tbody className="fos-grid-tbody divide-y divide-gray-100">
+                            <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
                                 {loadingPacking && <tr><td colSpan={11} className="p-6 text-center text-gray-400">Loading...</td></tr>}
                                 {!loadingPacking && packingRows.length === 0 && (
                                     <tr><td colSpan={11} className="p-6 text-center text-gray-400">No results for the selected filters.</td></tr>
@@ -289,7 +289,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                                     return (
                                         <tr key={row.unico} onClick={() => handleSelectRow(row)}
                                             style={{ backgroundColor: isSelected ? undefined : (row.backColor || undefined) }}
-                                            className={cn("cursor-pointer transition-colors", isSelected ? "!bg-blue-100 ring-1 ring-inset ring-blue-300" : "hover:bg-gray-50")}>
+                                            className={cn("cursor-pointer transition-colors", isSelected ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                             <td className="p-1 text-center" onClick={e => e.stopPropagation()}>
                                                 {canCreate && (
                                                     <button onClick={() => onAddQC?.(row)}
@@ -326,7 +326,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
             </div>
 
             {/* ── Bottom: sub-tabs ────────────────────────────── */}
-            <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-[2] min-h-0">
+            <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-[2] min-h-0">
                 {/* Sub-tab bar */}
                 <div className="flex border-b bg-white shrink-0">
                     {[
@@ -360,19 +360,19 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                             <GridToolbar total={(stockRows as any[]).length} page={1} totalPages={1} onPage={() => {}}/>
                             <div className="overflow-auto flex-1">
                                 <table className="min-w-full text-xs text-left">
-                                    <thead className="bg-white border-b fos-grid-thead text-gray-700 sticky top-0">
+                                    <thead className="bg-[#4F4F4F] text-white font-bold text-[11px] uppercase sticky top-0">
                                         <tr>{["Warehouse","Lot","Grower","inv_type","Days","QtyIn","QtyOut","QtyHold","WHStock","Stock","Flower CostxU","Landing CostxU","Total CostxU","PricexU","UnitsBox","BoxID","Actions"].map(h => (
-                                            <th key={h} className="p-1.5 border-r border-gray-100 last:border-r-0 whitespace-nowrap font-bold text-gray-600">{h}</th>
+                                            <th key={h} className="p-1.5 whitespace-nowrap">{h}</th>
                                         ))}</tr>
                                     </thead>
-                                    <tbody className="fos-grid-tbody divide-y divide-gray-100">
+                                    <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
                                         {!selRow && <tr><td colSpan={17} className="p-6 text-center text-gray-400">Select a packing row above.</td></tr>}
                                         {selRow && loadingStock && <tr><td colSpan={17} className="p-6 text-center text-gray-400">Loading...</td></tr>}
                                         {selRow && !loadingStock && (stockRows as any[]).length === 0 && <tr><td colSpan={17} className="p-6 text-center text-gray-300 italic">No warehouse stock for this box.</td></tr>}
                                         {(stockRows as any[]).map((row: any) => (
                                             <tr key={row.unico} onClick={() => setSelStock(row)}
                                                 style={{ backgroundColor: row.backColor || undefined, color: row.foreColor || undefined }}
-                                                className={cn("cursor-pointer transition-colors", selStock?.unico === row.unico ? "!bg-blue-100 ring-1 ring-inset ring-blue-300" : "hover:bg-gray-50")}>
+                                                className={cn("cursor-pointer transition-colors", selStock?.unico === row.unico ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                                 <td className="p-1.5 whitespace-nowrap truncate max-w-[100px]">{t(row.warehouse)}</td>
                                                 <td className="p-1.5 text-right">{row.lote}</td>
                                                 <td className="p-1.5 whitespace-nowrap truncate max-w-[80px]">{t(row.grower)}</td>
@@ -411,18 +411,18 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                                 <GridToolbar total={(invoiceRows as any[]).length} page={1} totalPages={1} onPage={() => {}}/>
                                 <div className="overflow-auto flex-1">
                                     <table className="min-w-full text-xs text-left">
-                                        <thead className="bg-white border-b fos-grid-thead text-gray-700 sticky top-0">
+                                        <thead className="bg-[#4F4F4F] text-white font-bold text-[11px] uppercase sticky top-0">
                                             <tr>{["InvoiceNo","Invoice Date","Customer","Description","Lot","BoxQty","void","Status","ScanQty","UxBox","Price","TUnits","ExtPrice","Case"].map(h => (
-                                                <th key={h} className="p-1.5 border-r border-gray-100 last:border-r-0 whitespace-nowrap font-bold text-gray-600">{h}</th>
+                                                <th key={h} className="p-1.5 whitespace-nowrap">{h}</th>
                                             ))}</tr>
                                         </thead>
-                                        <tbody className="fos-grid-tbody divide-y divide-gray-100">
+                                        <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
                                             {!selRow && <tr><td colSpan={14} className="p-6 text-center text-gray-400">Select a packing row above.</td></tr>}
                                             {selRow && loadingInvoice && <tr><td colSpan={14} className="p-6 text-center text-gray-400">Loading...</td></tr>}
                                             {selRow && !loadingInvoice && (invoiceRows as any[]).length === 0 && <tr><td colSpan={14} className="p-6 text-center text-gray-300 italic">No invoiced lots.</td></tr>}
                                             {(invoiceRows as any[]).map((row: any) => (
                                                 <tr key={row.unico} onClick={() => setSelInvoice(row)}
-                                                    className={cn("cursor-pointer transition-colors", selInvoice?.unico === row.unico ? "!bg-blue-100 ring-1 ring-inset ring-blue-300" : "hover:bg-gray-50")}>
+                                                    className={cn("cursor-pointer transition-colors", selInvoice?.unico === row.unico ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                                     <td className="p-1.5 font-bold text-purple-600 whitespace-nowrap">{t(row.invoice_no)}</td>
                                                     <td className="p-1.5 whitespace-nowrap">{t(row.invoice_date)?.split("T")[0]}</td>
                                                     <td className="p-1.5 whitespace-nowrap truncate max-w-[100px]">{t(row.customer)}</td>

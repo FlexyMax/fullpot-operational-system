@@ -378,7 +378,7 @@ export default function CustomerPaymentsPage() {
                     <button
                         onClick={() => creditCount > 0 && setCreditModal(true)}
                         disabled={creditCount === 0}
-                        className="relative flex items-center gap-1.5 px-2 sm:px-3 py-1.5 bg-green-700 hover:bg-green-600 disabled:opacity-40 text-white text-[14px] font-semibold uppercase rounded transition-colors shrink-0"
+                        className="relative flex items-center gap-1.5 px-2 sm:px-3 h-7 bg-green-700 hover:bg-green-600 disabled:opacity-40 text-white text-[14px] font-semibold uppercase rounded transition-colors shrink-0"
                     >
                         <Bell size={12} />
                         <span className="hidden sm:inline">Approve Credits</span>
@@ -448,7 +448,7 @@ export default function CustomerPaymentsPage() {
                         <div className="flex items-center gap-2 shrink-0">
                             {([{v:"ALL",l:"All"},{v:"BAL>0",l:"Bal > 0"},{v:"BAL=0",l:"Bal = 0"}] as const).map(opt=>(
                                 <button key={opt.v} onClick={()=>setCustBalance(opt.v as any)}
-                                    className={cn("px-3 py-2 text-[14px] font-semibold uppercase rounded border transition-colors",
+                                    className={cn("px-3 h-7 text-[14px] font-semibold uppercase rounded border transition-colors",
                                         custBalance===opt.v ? "bg-[#FB7506] text-white border-[#FB7506]" : "border-gray-300 text-gray-500 hover:bg-gray-100 bg-white")}>
                                     {opt.l}
                                 </button>
@@ -457,25 +457,25 @@ export default function CustomerPaymentsPage() {
                         {/* Desktop-only global actions */}
                         <div className="hidden md:flex items-center gap-2 shrink-0 ml-auto">
                             <button onClick={()=>setInvSearchModal(true)}
-                                className="flex items-center gap-1.5 px-3 py-2 text-[14px] font-semibold uppercase rounded border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors bg-white">
+                                className="flex items-center gap-1.5 px-3 h-7 text-[14px] font-semibold uppercase rounded border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors bg-white">
                                 <Search size={10}/>Inv Search
                             </button>
                             <button onClick={handleHoldNoSales}
-                                className="flex items-center gap-1.5 px-3 py-2 text-[14px] font-semibold uppercase rounded border border-gray-200 text-orange-500 hover:bg-orange-50 whitespace-nowrap transition-colors bg-white">
+                                className="flex items-center gap-1.5 px-3 h-7 text-[14px] font-semibold uppercase rounded border border-gray-200 text-orange-500 hover:bg-orange-50 whitespace-nowrap transition-colors bg-white">
                                 <AlertCircle size={10}/>Hold No Sales
                             </button>
-                            <div className="flex items-center">
+                            <div className="flex items-center h-7">
                                 <button onClick={handlePrintAll} disabled={!perms.canReport}
-                                    className="flex items-center gap-1.5 px-3 py-2 text-[14px] font-semibold uppercase rounded-l border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors disabled:opacity-40 bg-white">
+                                    className="flex items-center gap-1.5 px-3 h-7 text-[14px] font-semibold uppercase rounded-l border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors disabled:opacity-40 bg-white">
                                     <Printer size={10}/>Print All
                                 </button>
                                 <select value={stmtDestination} onChange={e=>setStmtDestination(parseInt(e.target.value))}
-                                    className="h-full text-[14px] font-semibold border border-l-0 border-gray-200 rounded-r px-2 outline-none bg-white text-gray-600">
+                                    className="h-7 text-[14px] font-semibold border border-l-0 border-gray-200 rounded-r px-2 outline-none bg-white text-gray-600">
                                     <option value={1}>PRN</option><option value={2}>EMAIL</option><option value={3}>FAX</option>
                                 </select>
                             </div>
                             <button onClick={()=>setSalesmanModal(true)} disabled={!perms.canReport}
-                                className="flex items-center gap-1.5 px-3 py-2 text-[14px] font-semibold uppercase rounded border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors disabled:opacity-40 bg-white">
+                                className="flex items-center gap-1.5 px-3 h-7 text-[14px] font-semibold uppercase rounded border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors disabled:opacity-40 bg-white">
                                 <Users size={10}/>By Salesman
                             </button>
                         </div>
@@ -562,7 +562,7 @@ export default function CustomerPaymentsPage() {
                             </PanelGridTable>
                             {hasMoreCust && !fetchingMoreCust && (
                                 <div className="text-center py-2">
-                                    <button onClick={() => fetchMoreCust()} className="px-4 py-1.5 bg-[#FB7506] text-white text-[14px] font-semibold uppercase rounded hover:bg-orange-600 transition-colors">
+                                    <button onClick={() => fetchMoreCust()} className="px-4 h-7 bg-[#FB7506] text-white text-[14px] font-semibold uppercase rounded hover:bg-orange-600 transition-colors">
                                         Load More
                                     </button>
                                 </div>

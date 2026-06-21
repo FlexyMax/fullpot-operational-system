@@ -545,7 +545,7 @@ export default function PaymentAuthorizationsPage() {
 
     // ── Balance filter buttons (shared style) ─────────────────────────────────
     const BalBtn = ({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) => (
-        <button onClick={onClick} className={cn("px-3 py-2 text-[14px] font-semibold uppercase rounded transition-colors",
+        <button onClick={onClick} className={cn("px-3 h-7 text-[14px] font-semibold uppercase rounded transition-colors",
             active ? "bg-[#FB7506] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200")}>
             {label}
         </button>
@@ -813,7 +813,7 @@ export default function PaymentAuthorizationsPage() {
                                 <div className="flex items-center gap-2">
                                     <input type="date" value={store.ldPaymentsFrom}
                                         onChange={e => { store.setLdPaymentsFrom(e.target.value); setSelOutcomeRow(null); }}
-                                        className="bg-white text-gray-700 border border-gray-300 text-[14px] font-semibold rounded px-2 py-1.5 outline-none cursor-pointer"
+                                        className="bg-white text-gray-700 border border-gray-300 text-[14px] font-semibold rounded px-2 h-7 outline-none cursor-pointer"
                                     />
                                     <div className="flex gap-2">
                                         {([[-1, "All"], [0, "Pending"], [1, "Paid"]] as const).map(([val, lbl]) => (

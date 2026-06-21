@@ -267,13 +267,13 @@ export default function AccountsPayablePage() {
             <AppHeader title="Accounts Payable" />
 
             {/* ── Toolbar ─────────────────────────────────────────────────── */}
-            <div className="h-10 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-center px-4 gap-3 shrink-0 shadow-sm">
+            <div className="bg-[#F5F3F3] border border-[#DBD9D9] rounded-lg flex items-center px-4 py-2.5 gap-3 shrink-0 shadow-sm mx-2 mt-2">
                 <div className="flex items-center gap-2">
                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Year:</span>
                     <select
                         value={selectedYear}
                         onChange={e => { const y = parseInt(e.target.value); setYear(y); setCalYear(y); }}
-                        className="bg-white border border-gray-200 text-gray-700 text-[14px] font-semibold rounded px-2 py-1 outline-none focus:ring-1 focus:ring-[#FB7506]"
+                        className="bg-white border border-gray-200 text-gray-700 text-[14px] font-semibold rounded px-2 h-7 outline-none focus:ring-1 focus:ring-[#FB7506]"
                     >
                         {years.length > 0
                             ? years.map((y: any) => {
@@ -287,21 +287,21 @@ export default function AccountsPayablePage() {
                 <div className="w-px h-5 bg-gray-200" />
                 <button
                     onClick={() => { qc.invalidateQueries({ queryKey: ["ap-dates"] }); qc.invalidateQueries({ queryKey: ["ap-invoices"] }); }}
-                    className="flex items-center gap-1.5 bg-white hover:bg-gray-100 border border-gray-200 px-3 py-2 rounded text-[14px] font-semibold uppercase text-gray-600 transition-all"
+                    className="flex items-center gap-1.5 bg-white hover:bg-gray-100 border border-gray-200 px-3 h-7 rounded text-[14px] font-semibold uppercase text-gray-600 transition-all"
                 >
                     <RefreshCcw size={11} /> Refresh
                 </button>
                 <div className="w-px h-5 bg-gray-200" />
                 <button
                     onClick={() => setSummaryModal(true)}
-                    className="flex items-center gap-1.5 bg-white hover:bg-gray-100 border border-gray-200 px-3 py-2 rounded text-[14px] font-semibold uppercase text-gray-600 transition-all"
+                    className="flex items-center gap-1.5 bg-white hover:bg-gray-100 border border-gray-200 px-3 h-7 rounded text-[14px] font-semibold uppercase text-gray-600 transition-all"
                     title="Vendor Summary Report"
                 >
                     <BarChart2 size={11} /> Summary
                 </button>
                 <button
                     onClick={() => setPendingAPModal(true)}
-                    className="flex items-center gap-1.5 bg-white hover:bg-gray-100 border border-gray-200 px-3 py-2 rounded text-[14px] font-semibold uppercase text-gray-600 transition-all"
+                    className="flex items-center gap-1.5 bg-white hover:bg-gray-100 border border-gray-200 px-3 h-7 rounded text-[14px] font-semibold uppercase text-gray-600 transition-all"
                     title="Pending Accounts Payable Report"
                 >
                     <Clock size={11} /> Pending AP

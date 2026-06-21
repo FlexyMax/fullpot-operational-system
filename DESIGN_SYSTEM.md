@@ -37,6 +37,8 @@
 
 Implement with explicit Tailwind arbitrary values (`text-[14px] font-bold`, etc.) rather than the legacy `fos-grid-header-text` utility — that utility hardcodes white text for dark header bars and doesn't fit the new light-header panels.
 
+**Button height — use `h-7` (28px fixed), not `py-*` padding.** `py-2`/`py-1.5` at 14px renders taller than 28px and looks oversized next to the reference (`PanelGrid`'s single-action button, e.g. "Print", which is `px-3 h-7`). Every button on the 14px scale should be `h-7` with horizontal padding only (`px-2.5`/`px-3`), not vertical padding.
+
 ---
 
 ## Component patterns
@@ -80,3 +82,14 @@ Remaining work:
    its custom markup, so every screen — including the original reference page —
    shares one implementation. Same idea applies to any other page found to be
    hand-rolling grid/panel markup instead of using the shared components.
+
+### Hand-rolled pages migrated so far (not PanelGrid-based, fixed individually)
+
+- `flexy2qb` Dashboard tab — done (2026-06-21).
+- `qc` (Quality Control) — `StockListTab` done (2026-06-21): filter bar, panel
+  titles (were dark `#374151`, now white per the panel-title rule), the actual
+  data-table headers (were light, now dark `#4F4F4F` — this page had the two
+  reversed), borders, peach row selection. **Still pending:** `DashboardTab`,
+  `TransitBoxesTab`, `CancelledPurchasesTab`, `QualityCreditsTab`,
+  `QCHistoryTab`, and the `QCModal`/`BoxTransferModal` modals — none of those
+  have been touched yet.
