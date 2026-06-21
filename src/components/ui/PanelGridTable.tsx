@@ -13,8 +13,8 @@ export function PanelGridTable({ children, className }: PanelGridTableProps) {
   return (
     <table
       className={cn(
-        "w-full border-collapse text-left",
-        "border border-black/5",
+        "w-full border-collapse text-left text-[13px] font-normal",
+        "border border-[#DBD9D9]",
         className
       )}
     >
@@ -26,7 +26,7 @@ export function PanelGridTable({ children, className }: PanelGridTableProps) {
 export function PanelGridThead({ children }: { children: React.ReactNode }) {
   return (
     <thead className="sticky top-0 z-10">
-      <tr className="border-b-2 border-gray-200">{children}</tr>
+      <tr className="bg-[#4F4F4F]">{children}</tr>
     </thead>
   );
 }
@@ -46,8 +46,8 @@ export function PanelGridTh({
     <th
       onClick={onClick}
       className={cn(
-        "bg-white text-gray-500 border border-black/5 border-b-2 border-b-gray-200",
-        "px-2 py-[6px] font-black uppercase text-[10px] whitespace-nowrap",
+        "bg-[#4F4F4F] text-white",
+        "px-2 py-[6px] font-bold uppercase text-[12px] whitespace-nowrap",
         align === "right" && "text-right",
         align === "center" && "text-center",
         className
@@ -83,8 +83,8 @@ export function PanelGridTr({
       onDoubleClick={onDoubleClick}
       style={style}
       className={cn(
-        "border-b border-black/5 transition-colors cursor-pointer",
-        selected ? "bg-blue-50 hover:bg-blue-100/80" : "hover:bg-black/5 bg-white",
+        "border-b border-[#DBD9D9] transition-colors cursor-pointer",
+        selected ? "bg-[#FB7506]/10 hover:bg-[#FB7506]/15" : "hover:bg-gray-50 bg-white",
         className
       )}
     >
@@ -108,7 +108,7 @@ export function PanelGridTd({
     <td
       colSpan={colSpan}
       className={cn(
-        "px-2 py-1 text-[11px] text-gray-700 whitespace-nowrap",
+        "px-2 py-1 text-[13px] font-normal text-gray-700 whitespace-nowrap",
         align === "right" && "text-right",
         align === "center" && "text-center",
         className
@@ -121,7 +121,7 @@ export function PanelGridTd({
 
 export function PanelGridTfoot({ children }: { children: React.ReactNode }) {
   return (
-    <tfoot className="bg-gray-100 border-t-2 border-gray-300 sticky bottom-0 z-10">
+    <tfoot className="bg-gray-100 border-t-2 border-[#DBD9D9] sticky bottom-0 z-10">
       {children}
     </tfoot>
   );

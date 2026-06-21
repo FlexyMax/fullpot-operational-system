@@ -114,7 +114,7 @@ function MenuDropdown({
               }}
               disabled={item.disabled}
               className={cn(
-                "w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-bold transition-colors text-left",
+                "w-full flex items-center gap-3 px-4 py-2.5 text-[14px] font-semibold uppercase transition-colors text-left",
                 item.disabled
                   ? "opacity-40 cursor-not-allowed text-gray-400"
                   : "hover:bg-[#FB7506]/10 text-gray-700"
@@ -178,15 +178,15 @@ export default function PanelGrid({
   return (
     <div
       className={cn(
-        "flex flex-col rounded-md bg-white border border-black overflow-hidden",
+        "flex flex-col rounded-md bg-white border border-[#DBD9D9] overflow-hidden",
         className
       )}
     >
       {/* Header */}
-      <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 border-b border-black/10">
+      <div className="h-10 bg-white flex items-center justify-between px-3 shrink-0 border-b border-[#DBD9D9]">
         <div className="flex items-center gap-2 min-w-0">
           <Icon size={16} className="text-[#FB7506] shrink-0" />
-          <span className="text-white text-[13px] font-bold uppercase tracking-[0.1em] truncate">
+          <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">
             {title}
             {recordCount !== undefined && (
               <span className="ml-1">({recordCount})</span>
@@ -198,13 +198,13 @@ export default function PanelGrid({
           {/* Search */}
           {onSearchChange && (
             <div className="relative">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-black/30" />
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
               <input
                 type="text"
                 placeholder={searchPlaceholder}
                 value={searchValue}
                 onChange={(e) => onSearchChange(e.target.value)}
-                className="bg-white/50 text-black placeholder:text-black/30 text-[10px] pl-7 pr-2 py-1 rounded-md border border-black/20 outline-none w-24 sm:w-32 focus:w-32 sm:focus:w-40 focus:bg-white transition-all font-bold"
+                className="bg-[#F5F3F3] text-[#4F4F4F] placeholder:text-gray-400 text-[10px] pl-7 pr-2 py-1 rounded-md border border-[#DBD9D9] outline-none w-24 sm:w-32 focus:w-32 sm:focus:w-40 focus:bg-white transition-all font-bold"
               />
             </div>
           )}
@@ -213,7 +213,7 @@ export default function PanelGrid({
           {onLog && (
             <button
               onClick={onLog}
-              className="text-white hover:text-[#FB7506] transition-all p-1"
+              className="text-gray-400 hover:text-[#FB7506] transition-all p-1"
               title="Transaction Log"
             >
               <History size={16} />
@@ -224,7 +224,7 @@ export default function PanelGrid({
           {onRefresh && (
             <button
               onClick={onRefresh}
-              className="text-white hover:text-[#FB7506] transition-all hover:rotate-180 duration-500 p-1"
+              className="text-gray-400 hover:text-[#FB7506] transition-all hover:rotate-180 duration-500 p-1"
               title="Refresh"
             >
               <RefreshCcw size={16} className={cn(refreshing && "animate-spin")} />
@@ -237,7 +237,7 @@ export default function PanelGrid({
               onClick={singleItem.onClick}
               disabled={singleItem.disabled}
               className={cn(
-                "px-3 h-7 rounded-md font-black text-[10px] flex items-center gap-1.5 text-white transition-all shrink-0 uppercase",
+                "px-3 h-7 rounded-md font-semibold text-[14px] flex items-center gap-1.5 text-white transition-all shrink-0 uppercase",
                 btnBgMap[singleItem.color || "orange"],
                 singleItem.disabled && "opacity-40 cursor-not-allowed"
               )}
@@ -257,7 +257,7 @@ export default function PanelGrid({
                 ref={menuBtnRef}
                 onClick={() => setMenuOpen((v) => !v)}
                 className={cn(
-                  "h-10 w-10 flex items-center justify-center hover:bg-white/10 transition-colors",
+                  "h-10 w-10 flex items-center justify-center hover:bg-gray-100 transition-colors",
                   menuOpen ? "flex-row gap-[5px]" : "flex-col gap-[5px]"
                 )}
                 title="Menu"
@@ -290,7 +290,7 @@ export default function PanelGrid({
 
       {/* Record count bar */}
       {recordCount !== undefined && (
-        <div className="bg-white border-b p-1 text-right text-[10px] text-gray-400 font-bold italic pr-4">
+        <div className="bg-white border-b border-[#DBD9D9] p-1 text-right text-[10px] text-gray-400 font-bold italic pr-4">
           {recordCount} Records
         </div>
       )}
