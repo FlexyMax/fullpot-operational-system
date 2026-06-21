@@ -53,6 +53,7 @@ Implement with explicit Tailwind arbitrary values (`text-[14px] font-bold`, etc.
 - **Filter/search container:** the wrapping `<div>` gets `bg-[#F5F3F3]`; the `<input>`/`<select>` inside stays white (`bg-white` or rely on `.fos-input`'s built-in white default).
 - **Standalone filter/search toolbar above a `PanelGrid`** (a page-level bar that isn't inside `PanelGrid`'s own header — e.g. Customer Payments' search+Bal filters row, System Users' search box): `bg-[#F5F3F3] border border-[#DBD9D9] rounded-lg`, with the same horizontal margin as the `PanelGrid` below it (`mx-2`) and a small top margin (`mt-2`) so it doesn't sit flush against `AppHeader` or whatever's above it. Don't leave it full-bleed with just a `border-b` divider — it should read as its own rounded card, same as the reference page's "Filter Bar".
 - **Checkboxes:** checked = `bg-[#22C55E] text-white`; unchecked = `bg-white border border-[#DBD9D9] text-transparent`.
+- **Top-level / detail tab bar** (e.g. POS's Invoice/Available Stock/Invoice History, Accounts Payable's Terms/PO/Prebooks/Credits & Debits): the bar itself sits on `bg-[#F5F3F3] border border-[#DBD9D9]` (same container-gray token as the filter bar) so the tabs read as a distinct toolbar instead of blending into the white page. Active tab gets a `bg-white` chip (or just `text-[#FB7506] border-b-2 border-[#FB7506]` for underline-style tabs) to stand out against the gray bar; inactive tabs use `text-gray-500 hover:text-[#FB7506]`. This supersedes the old "dark hand-rolled tab bars are out of scope" gap below — tab bars now get the light-gray treatment, not dark.
 
 ---
 
@@ -63,6 +64,7 @@ These exist on `system/access/page.tsx` but were intentionally left out of scope
 - Mobile-only modals (Select User, Copy Access) still use the old dark `#4F4F4F` modal header with `fos-grid-header-text`.
 - Input/button borders outside of grids (search inputs, the edit-mode "Toggle column" helper bar, plain modal Cancel buttons) still use Tailwind's default `border-gray-200/100`.
 - Mobile action bar icon+label buttons keep the app-wide compact `text-[9px]` convention — don't bump these to the 14px button scale, it would break the established mobile pattern shared with every other page (Customers, Sales, etc.).
+- **Modal headers stay dark** (`bg-[#374151]`, `fos-grid-header-text`/white text) — this is the one dark-bar exception that's still intentional. Confirmed across QC's `QCModal`/`BoxTransferModal`, AWBS's `Modal` wrapper (and its internal report/charges tables), and POS's New-Invoice/Scan/Edit-Line/Image-gallery modals.
 
 ---
 
@@ -93,3 +95,23 @@ Remaining work:
   `TransitBoxesTab`, `CancelledPurchasesTab`, `QualityCreditsTab`,
   `QCHistoryTab`, and the `QCModal`/`BoxTransferModal` modals — none of those
   have been touched yet.
+- `awbs` (AWBs — Air Waybill Costs) — done (2026-06-21): page background,
+  standalone filter toolbar, the `Btn` helper (`h-7`/14px/font-semibold
+  regardless of color), the main AWB grid panel + all 5 detail tabs (Vendors,
+  Charges, Boxes, Charges by Date, Varieties) — dark→white panel titles, light
+  →dark `#4F4F4F` table headers, `#DBD9D9` borders, peach row selection. The
+  `Modal` wrapper and its two internal tables (`AwbsInvoiceChargesModal`,
+  `ReportModal`) were left dark, per the modal-headers gap above.
+- `sales` (POS) — done (2026-06-21): top-level tab bar (Invoice/Available
+  Stock/Invoice History) moved onto the gray container token, plus the
+  Invoices-list header, Invoice action bar, Invoice Lines action bar, the
+  Stock-tab's active-invoice info strip, Available Stock panel header, and the
+  History tab's desktop filter bar — all converted dark→white/gray, with the
+  `ActionBtn` "bar"/"bar-danger" variants recolored for light backgrounds
+  (`bg-gray-100`/`bg-red-50` instead of `bg-white/10`/`bg-red-500/70`). One
+  stray blue row-selection (Invoice History desktop list) fixed to peach.
+  **Still pending:** the mobile-only cards/filter bars (left on the existing
+  compact convention) and the modals (New Invoice/CC, Barcode Scan, Edit Line,
+  Image Gallery) — all dark headers, out of scope per the gap above.
+- `accounts-payable` — detail tab bar (Terms/PO/Prebooks/Credits & Debits)
+  moved onto the gray container token, matching POS — done (2026-06-21).

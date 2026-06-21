@@ -69,8 +69,8 @@ function ActionBtn({ icon: Icon, label, onClick, disabled, variant = "default", 
                 variant === "default"     && "bg-white hover:bg-gray-100 border border-gray-200 text-gray-700",
                 variant === "dark"        && "bg-[#374151] hover:bg-gray-600 text-white",
                 variant === "orange"      && "bg-[#FB7506] hover:bg-orange-500 text-white",
-                variant === "bar"         && "bg-white/10 hover:bg-white/20 border border-white/20 text-white",
-                variant === "bar-danger"  && "bg-red-500/70 hover:bg-red-500 border border-red-400/40 text-white",
+                variant === "bar"         && "bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-700",
+                variant === "bar-danger"  && "bg-red-50 hover:bg-red-100 border border-red-200 text-red-600",
             )}
         >
             {Icon && <Icon size={size === "sm" ? 9 : 11} />}
@@ -684,12 +684,12 @@ export default function SalesPage() {
             <div className="flex flex-col flex-1 min-h-0 overflow-hidden px-2 pb-2 pt-2 gap-2">
 
                 {/* Top-level tab bar */}
-                <div className="bg-white h-10 px-3 flex items-stretch shrink-0 rounded-md overflow-x-auto border border-gray-200">
+                <div className="bg-[#F5F3F3] h-10 px-3 flex items-stretch shrink-0 rounded-md overflow-x-auto border border-[#DBD9D9]">
                     {(["invoice", "stock", "history"] as const).map(tab => (
                         <button key={tab} onClick={() => setMainTab(tab)}
                             className={cn(
                                 "px-4 text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border-b-2 flex items-center",
-                                mainTab === tab ? "text-[#374151] border-[#FB7506]" : "text-gray-400 hover:text-gray-700 border-transparent"
+                                mainTab === tab ? "text-[#4F4F4F] border-[#FB7506]" : "text-gray-500 hover:text-[#FB7506] border-transparent"
                             )}
                         >
                             {tab === "invoice" && "Invoice"}
@@ -706,14 +706,14 @@ export default function SalesPage() {
                 {/* LEFT: Invoice list — desktop only */}
                 <div className="hidden xl:flex xl:flex-col bg-white rounded-md border border-black overflow-hidden xl:w-[300px] xl:shrink-0 xl:flex-none">
                     {/* List header */}
-                    <div className="bg-[#374151] px-3 h-10 flex items-center justify-between shrink-0">
+                    <div className="bg-white px-3 h-10 flex items-center justify-between shrink-0 border-b border-[#DBD9D9]">
                         <div className="flex items-center gap-2">
                             <ClipboardList size={12} className="text-[#FB7506]" />
-                            <span className="font-black text-[10px] text-white uppercase tracking-widest">Invoices</span>
+                            <span className="font-black text-[10px] text-[#4F4F4F] uppercase tracking-widest">Invoices</span>
                             {loadingList && <RefreshCcw size={10} className="animate-spin text-gray-400" />}
                         </div>
                         <input type="date" value={invoiceDate} onChange={e => { setInvoiceDate(e.target.value); setListKey(k=>k+1); }}
-                            className="text-[10px] font-bold bg-white/10 text-white rounded px-1.5 py-0.5 border border-white/20 focus:outline-none focus:border-[#FB7506]"
+                            className="text-[10px] font-bold bg-white text-gray-700 rounded px-1.5 py-0.5 border border-gray-200 focus:outline-none focus:border-[#FB7506]"
                         />
                     </div>
 
@@ -816,10 +816,10 @@ export default function SalesPage() {
                             {/* Invoice Header card */}
                             <div className="bg-white rounded-md border border-black overflow-hidden shrink-0">
                                 {/* Action bar */}
-                                <div className="bg-[#374151] h-12 xl:h-10 px-3 flex items-center gap-1.5 shrink-0 overflow-x-auto scrollbar-none">
+                                <div className="bg-white border-b border-[#DBD9D9] h-12 xl:h-10 px-3 flex items-center gap-1.5 shrink-0 overflow-x-auto scrollbar-none">
                                     <ShoppingCart size={12} className="text-[#FB7506] shrink-0" />
-                                    <span className="font-black text-[10px] text-white uppercase tracking-widest shrink-0">Invoice</span>
-                                    <div className="w-px h-4 bg-white/20 shrink-0 mx-1" />
+                                    <span className="font-black text-[10px] text-[#4F4F4F] uppercase tracking-widest shrink-0">Invoice</span>
+                                    <div className="w-px h-4 bg-gray-200 shrink-0 mx-1" />
                                     {isOpen && <>
                                         <ActionBtn icon={Lock}    label="Close"       onClick={handleCloseInvoice} disabled={working} variant="bar" />
                                         <ActionBtn icon={XCircle} label="Void"        onClick={handleVoidInvoice}  disabled={working} variant="orange" />
@@ -828,16 +828,16 @@ export default function SalesPage() {
                                     </>}
                                     {isClosed && <>
                                         <ActionBtn icon={Unlock}     label="Open"      onClick={handleOpenInvoice}  disabled={working} variant="bar" />
-                                        <div className="w-px h-4 bg-white/20 shrink-0" />
+                                        <div className="w-px h-4 bg-gray-200 shrink-0" />
                                         <ActionBtn icon={Printer}    label="Print"     onClick={() => {}} variant="bar" />
                                         <ActionBtn icon={FileText}   label="Pick List" onClick={() => {}} variant="bar" />
                                         <ActionBtn icon={CreditCard} label="Payment"   onClick={() => {}} variant="bar" />
                                     </>}
                                     <div className="ml-auto flex items-center gap-1 shrink-0">
-                                        <button onClick={goToHistory} className="text-white hover:text-[#FB7506] transition-all p-1" title="Invoice History">
+                                        <button onClick={goToHistory} className="text-gray-500 hover:text-[#FB7506] transition-all p-1" title="Invoice History">
                                             <History size={15} />
                                         </button>
-                                        <button className="text-white hover:text-[#FB7506] transition-all p-1" title="Transaction Log">
+                                        <button className="text-gray-500 hover:text-[#FB7506] transition-all p-1" title="Transaction Log">
                                             <RotateCcw size={15} />
                                         </button>
                                     </div>
@@ -870,11 +870,11 @@ export default function SalesPage() {
                             {/* Invoice Lines */}
                             <div className="flex-1 flex flex-col bg-white rounded-md border border-black overflow-hidden min-h-0">
                                 {/* Lines action bar */}
-                                <div className="bg-[#374151] h-12 xl:h-10 px-3 flex items-center gap-1.5 shrink-0">
+                                <div className="bg-white border-b border-[#DBD9D9] h-12 xl:h-10 px-3 flex items-center gap-1.5 shrink-0">
                                     <ClipboardList size={12} className="text-[#FB7506] shrink-0" />
-                                    <span className="font-black text-[10px] text-white uppercase tracking-widest shrink-0">Invoice Lines</span>
+                                    <span className="font-black text-[10px] text-[#4F4F4F] uppercase tracking-widest shrink-0">Invoice Lines</span>
                                     {isOpen && <>
-                                        <div className="w-px h-4 bg-white/20 shrink-0 mx-1" />
+                                        <div className="w-px h-4 bg-gray-200 shrink-0 mx-1" />
                                         <ActionBtn icon={Plus} label="+ Add from Stock" onClick={() => setMainTab("stock")} size="sm" variant="success" />
                                         <ActionBtn icon={Scan} label="Barcode" onClick={() => { setScanModal(true); setTimeout(() => scanInputRef.current?.focus(), 100); }} size="sm" variant="bar" />
                                     </>}
@@ -971,28 +971,28 @@ export default function SalesPage() {
                                 </div>
                             </div>
                             {/* Desktop: dark bar */}
-                            <div className="hidden xl:flex bg-[#374151] h-10 px-3 items-center gap-4 shrink-0 rounded-md overflow-x-auto scrollbar-none">
-                                <span className="text-white font-black text-[10px] uppercase tracking-widest shrink-0">Invoice #{t(h.INVOICE_NO)}</span>
-                                <span className="text-white/70 text-[10px] shrink-0 max-w-[200px] truncate">{t(h.CUSTOMER)}</span>
-                                <span className="text-white/50 text-[10px] shrink-0">{fmtDate(h.INVOICE_DATE)}</span>
-                                <div className="w-px h-4 bg-white/20 shrink-0" />
-                                <span className="text-white/70 text-[10px] shrink-0">Cases: <span className="text-white font-black">{fmtI(h.TOTAL_CASES)}</span></span>
-                                <span className="text-white/70 text-[10px] shrink-0">Total: <span className="text-green-400 font-black">${fmt(h.TOTAL_INVOICE)}</span></span>
+                            <div className="hidden xl:flex bg-[#F5F3F3] border border-[#DBD9D9] h-10 px-3 items-center gap-4 shrink-0 rounded-md overflow-x-auto scrollbar-none">
+                                <span className="text-[#4F4F4F] font-black text-[10px] uppercase tracking-widest shrink-0">Invoice #{t(h.INVOICE_NO)}</span>
+                                <span className="text-gray-500 text-[10px] shrink-0 max-w-[200px] truncate">{t(h.CUSTOMER)}</span>
+                                <span className="text-gray-400 text-[10px] shrink-0">{fmtDate(h.INVOICE_DATE)}</span>
+                                <div className="w-px h-4 bg-gray-300 shrink-0" />
+                                <span className="text-gray-500 text-[10px] shrink-0">Cases: <span className="text-[#4F4F4F] font-black">{fmtI(h.TOTAL_CASES)}</span></span>
+                                <span className="text-gray-500 text-[10px] shrink-0">Total: <span className="text-green-600 font-black">${fmt(h.TOTAL_INVOICE)}</span></span>
                                 <StatusBadge printed={bool(h.PRINTED)} voided={bool(h.VOID)} />
                             </div>
                         </>
                     )}
                     <div className="flex flex-col bg-white rounded-md border border-black overflow-hidden flex-1 min-h-0">
-                        <div className="bg-[#374151] h-12 xl:h-10 px-3 flex items-center gap-2 shrink-0">
+                        <div className="bg-white border-b border-[#DBD9D9] h-12 xl:h-10 px-3 flex items-center gap-2 shrink-0">
                             <Package size={12} className="text-[#FB7506] shrink-0" />
-                            <span className="font-black text-[10px] text-white uppercase tracking-widest shrink-0">Available Stock</span>
-                            <span className="text-[10px] text-white/50 font-bold shrink-0">{stockRows.length}/{stockTotal}</span>
-                            <div className="flex items-center gap-1 bg-white/10 border border-white/20 rounded px-2 py-1 ml-2">
-                                <Search size={10} className="text-white/50 shrink-0" />
+                            <span className="font-black text-[10px] text-[#4F4F4F] uppercase tracking-widest shrink-0">Available Stock</span>
+                            <span className="text-[10px] text-gray-400 font-bold shrink-0">{stockRows.length}/{stockTotal}</span>
+                            <div className="flex items-center gap-1 bg-[#F5F3F3] border border-[#DBD9D9] rounded px-2 py-1 ml-2">
+                                <Search size={10} className="text-gray-400 shrink-0" />
                                 <input value={stockSearch} onChange={e => setStockSearch(e.target.value)}
                                     onKeyDown={e => { if (e.key === "Enter") { setAppliedStockSearch(stockSearch); setStockPage(1); }}}
-                                    placeholder="Search stock..." className="text-[10px] focus:outline-none w-36 bg-transparent text-white placeholder-white/40 font-bold" />
-                                {stockSearch && <button onClick={() => { setStockSearch(""); setAppliedStockSearch(""); }}><X size={10} className="text-white/60" /></button>}
+                                    placeholder="Search stock..." className="text-[10px] focus:outline-none w-36 bg-transparent text-gray-700 placeholder-gray-400 font-bold" />
+                                {stockSearch && <button onClick={() => { setStockSearch(""); setAppliedStockSearch(""); }}><X size={10} className="text-gray-400" /></button>}
                             </div>
                         </div>
                         {/* ── Mobile cards (below xl) ── */}
@@ -1160,17 +1160,17 @@ export default function SalesPage() {
                     </div>
 
                     {/* Filter bar — desktop */}
-                    <div className="hidden xl:flex bg-[#374151] h-10 px-3 items-center gap-3 shrink-0 rounded-md overflow-x-auto scrollbar-none">
-                        <span className="text-[10px] font-black text-white/60 uppercase tracking-widest shrink-0">Customer:</span>
+                    <div className="hidden xl:flex bg-[#F5F3F3] border border-[#DBD9D9] h-10 px-3 items-center gap-3 shrink-0 rounded-md overflow-x-auto scrollbar-none">
+                        <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest shrink-0">Customer:</span>
                         <input value={histCustSearch} onChange={e => setHistCustSearch(e.target.value)}
                             placeholder="All customers"
-                            className="text-[10px] bg-white/10 text-white border border-white/20 rounded px-2 py-1 focus:outline-none w-40 placeholder-white/40 font-bold" />
-                        <span className="text-[10px] font-black text-white/60 uppercase tracking-widest shrink-0">From:</span>
-                        <input type="date" value={histFrom} onChange={e => setHistFrom(e.target.value)} className="text-[10px] bg-white/10 text-white border border-white/20 rounded px-2 py-1 focus:outline-none font-bold" />
-                        <span className="text-[10px] font-black text-white/60 uppercase tracking-widest shrink-0">To:</span>
-                        <input type="date" value={histTo} onChange={e => setHistTo(e.target.value)} className="text-[10px] bg-white/10 text-white border border-white/20 rounded px-2 py-1 focus:outline-none font-bold" />
+                            className="text-[10px] bg-white text-gray-700 border border-gray-200 rounded px-2 py-1 focus:outline-none w-40 placeholder-gray-400 font-bold" />
+                        <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest shrink-0">From:</span>
+                        <input type="date" value={histFrom} onChange={e => setHistFrom(e.target.value)} className="text-[10px] bg-white text-gray-700 border border-gray-200 rounded px-2 py-1 focus:outline-none font-bold" />
+                        <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest shrink-0">To:</span>
+                        <input type="date" value={histTo} onChange={e => setHistTo(e.target.value)} className="text-[10px] bg-white text-gray-700 border border-gray-200 rounded px-2 py-1 focus:outline-none font-bold" />
                         <button onClick={() => qc.invalidateQueries({ queryKey: ["pos-hist-list", histCustUq, histFrom, histTo, salesmanUq] })}
-                            className="flex items-center gap-1 px-2 py-1 text-[10px] font-black bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded transition-all">
+                            className="flex items-center gap-1 px-2 py-1 text-[10px] font-black bg-white hover:bg-gray-100 border border-gray-200 text-gray-700 rounded transition-all">
                             <Search size={10} />Search
                         </button>
                     </div>
@@ -1328,7 +1328,7 @@ export default function SalesPage() {
                             {(histInvoices as any[]).map((inv: any, i: number) => (
                                 <div key={i} onClick={() => setHistInvoiceUq(t(inv.UNICO))}
                                     className={cn("px-3 py-2 border-b cursor-pointer transition-colors text-[11px]",
-                                        histInvoiceUq === t(inv.UNICO) ? "bg-blue-100" : "hover:bg-blue-50")}>
+                                        histInvoiceUq === t(inv.UNICO) ? "bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                     <div className="flex justify-between">
                                         <span className="font-bold text-blue-700">#{t(inv.INVOICE_NO)}</span>
                                         <span className="text-gray-500">{fmtDate(inv.INVOICE_DATE)}</span>

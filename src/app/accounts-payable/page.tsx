@@ -455,7 +455,7 @@ export default function AccountsPayablePage() {
                     {/* Detail Tabs */}
                     <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-[300px] lg:min-h-0">
                         {/* Tab Bar */}
-                        <div className="h-10 bg-[#374151] flex items-end px-2 shrink-0 gap-0.5">
+                        <div className="h-10 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-end px-2 shrink-0 gap-0.5">
                             {([
                                 { id: "terms",    label: "Terms",            icon: BookOpen      },
                                 { id: "po",       label: "PO",               icon: ClipboardList },
@@ -468,8 +468,8 @@ export default function AccountsPayablePage() {
                                     className={cn(
                                         "flex items-center gap-1.5 px-4 h-7 text-[10px] font-black uppercase tracking-wider rounded-t transition-all",
                                         activeTab === tab.id
-                                            ? "bg-[#f4f6f8] text-[#FB7506] border-b-2 border-[#FB7506]"
-                                            : "text-gray-400 hover:text-white hover:bg-white/10"
+                                            ? "bg-white text-[#FB7506] border-b-2 border-[#FB7506]"
+                                            : "text-gray-500 hover:text-[#FB7506] hover:bg-white/60"
                                     )}
                                 >
                                     <tab.icon size={11} />
