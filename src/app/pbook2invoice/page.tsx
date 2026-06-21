@@ -680,8 +680,8 @@ export default function Pbook2InvoicePage() {
                                         <tr>
                                             <td colSpan={19} className="p-0 bg-[#FBF9F8]">
                                                 {/* ── Nested level 3: detail tabs for this line ───── */}
-                                                <div className="mx-4 my-2 rounded-lg border border-[#DBD9D9] overflow-hidden bg-white shadow-sm flex flex-col h-[230px]">
-                                                    <div className="h-10 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-end px-2 shrink-0 gap-0.5">
+                                                <div className="mx-4 my-2 rounded-lg border border-[#DBD9D9] overflow-hidden bg-white shadow-sm">
+                                                    <div className="h-10 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-end px-2 gap-0.5">
                                                         {BOTTOM_TABS.map(tab => (
                                                             <button key={tab.id}
                                                                 onClick={(e) => {
@@ -701,7 +701,7 @@ export default function Pbook2InvoicePage() {
                                                             </button>
                                                         ))}
                                                     </div>
-                                                    <div className="flex-1 overflow-hidden flex flex-col bg-white" onClick={(e) => e.stopPropagation()}>
+                                                    <div className="h-[190px] overflow-hidden bg-white" onClick={(e) => e.stopPropagation()}>
                                                         {activeTab === "invoiced"  && <InvoicedTab      rows={detail?.invoiced      ?? []} />}
                                                         {activeTab === "assigned"  && <AssignedStockTab rows={detail?.stockAssigned ?? []} />}
                                                         {activeTab === "purchase"  && <PurchaseTab      rows={detail?.purchase      ?? []} />}
