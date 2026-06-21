@@ -197,15 +197,17 @@ export default function PanelGrid({
         <div className="flex items-center gap-2 ml-auto shrink-0">
           {/* Search */}
           {onSearchChange && (
-            <div className="relative">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
-              <input
-                type="text"
-                placeholder={searchPlaceholder}
-                value={searchValue}
-                onChange={(e) => onSearchChange(e.target.value)}
-                className="bg-[#F5F3F3] text-[#4F4F4F] placeholder:text-gray-400 text-[10px] pl-7 pr-2 py-1 rounded-md border border-[#DBD9D9] outline-none w-24 sm:w-32 focus:w-32 sm:focus:w-40 focus:bg-white transition-all font-bold"
-              />
+            <div className="bg-[#F5F3F3] border border-[#DBD9D9] rounded-md p-1">
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder={searchPlaceholder}
+                  value={searchValue}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  className="bg-white text-[#4F4F4F] placeholder:text-gray-400 text-[10px] pl-7 pr-2 py-1 rounded outline-none w-24 sm:w-32 focus:w-32 sm:focus:w-40 transition-all font-bold"
+                />
+              </div>
             </div>
           )}
 
