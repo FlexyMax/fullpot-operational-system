@@ -445,37 +445,37 @@ export default function CustomerPaymentsPage() {
                             <input type="text" value={custSearch} onChange={e => setCustSearch(e.target.value)}
                                 placeholder="Search customers..." className="pl-7 pr-3 py-1.5 text-xs border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506] w-full bg-white" />
                         </div>
-                        <div className="flex items-center gap-1 shrink-0">
+                        <div className="flex items-center gap-2 shrink-0">
                             {([{v:"ALL",l:"All"},{v:"BAL>0",l:"Bal > 0"},{v:"BAL=0",l:"Bal = 0"}] as const).map(opt=>(
                                 <button key={opt.v} onClick={()=>setCustBalance(opt.v as any)}
-                                    className={cn("px-2.5 py-1.5 text-[14px] font-semibold uppercase rounded border transition-colors",
+                                    className={cn("px-3 py-2 text-[14px] font-semibold uppercase rounded border transition-colors",
                                         custBalance===opt.v ? "bg-[#FB7506] text-white border-[#FB7506]" : "border-gray-300 text-gray-500 hover:bg-gray-100 bg-white")}>
                                     {opt.l}
                                 </button>
                             ))}
                         </div>
                         {/* Desktop-only global actions */}
-                        <div className="hidden md:flex items-center gap-1 shrink-0 ml-auto">
+                        <div className="hidden md:flex items-center gap-2 shrink-0 ml-auto">
                             <button onClick={()=>setInvSearchModal(true)}
-                                className="flex items-center gap-1 px-2 py-1.5 text-[14px] font-semibold uppercase rounded border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors bg-white">
+                                className="flex items-center gap-1.5 px-3 py-2 text-[14px] font-semibold uppercase rounded border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors bg-white">
                                 <Search size={10}/>Inv Search
                             </button>
                             <button onClick={handleHoldNoSales}
-                                className="flex items-center gap-1 px-2 py-1.5 text-[14px] font-semibold uppercase rounded border border-gray-200 text-orange-500 hover:bg-orange-50 whitespace-nowrap transition-colors bg-white">
+                                className="flex items-center gap-1.5 px-3 py-2 text-[14px] font-semibold uppercase rounded border border-gray-200 text-orange-500 hover:bg-orange-50 whitespace-nowrap transition-colors bg-white">
                                 <AlertCircle size={10}/>Hold No Sales
                             </button>
                             <div className="flex items-center">
                                 <button onClick={handlePrintAll} disabled={!perms.canReport}
-                                    className="flex items-center gap-1 px-2 py-1.5 text-[14px] font-semibold uppercase rounded-l border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors disabled:opacity-40 bg-white">
+                                    className="flex items-center gap-1.5 px-3 py-2 text-[14px] font-semibold uppercase rounded-l border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors disabled:opacity-40 bg-white">
                                     <Printer size={10}/>Print All
                                 </button>
                                 <select value={stmtDestination} onChange={e=>setStmtDestination(parseInt(e.target.value))}
-                                    className="h-[30px] text-[14px] font-semibold border border-l-0 border-gray-200 rounded-r px-1 outline-none bg-white text-gray-600">
+                                    className="h-full text-[14px] font-semibold border border-l-0 border-gray-200 rounded-r px-2 outline-none bg-white text-gray-600">
                                     <option value={1}>PRN</option><option value={2}>EMAIL</option><option value={3}>FAX</option>
                                 </select>
                             </div>
                             <button onClick={()=>setSalesmanModal(true)} disabled={!perms.canReport}
-                                className="flex items-center gap-1 px-2 py-1.5 text-[14px] font-semibold uppercase rounded border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors disabled:opacity-40 bg-white">
+                                className="flex items-center gap-1.5 px-3 py-2 text-[14px] font-semibold uppercase rounded border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors disabled:opacity-40 bg-white">
                                 <Users size={10}/>By Salesman
                             </button>
                         </div>
