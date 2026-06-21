@@ -51,7 +51,7 @@ export default function DashboardTab() {
         <div className="flex flex-col h-full gap-3">
 
             {/* ── Filter bar ──────────────────────────────────────────── */}
-            <div className="bg-white px-4 py-2.5 rounded-lg border border-gray-200 shadow-sm flex items-center justify-between shrink-0">
+            <div className="bg-[#F5F3F3] px-4 py-2.5 rounded-lg border border-[#DBD9D9] shadow-sm flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-6">
                     {CUSTOMER_TYPES.map(t => (
                         <label key={t.id} className="flex items-center gap-1.5 cursor-pointer group select-none">
@@ -59,7 +59,7 @@ export default function DashboardTab() {
                                 {customerType === t.id && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                             </div>
                             <input type="radio" name="customerType" value={t.id} checked={customerType === t.id} onChange={e => setCustomerType(e.target.value)} className="hidden" />
-                            <span className="text-[11px] font-black uppercase tracking-wider text-gray-600">{t.label}</span>
+                            <span className="text-[12px] font-bold uppercase tracking-wider text-gray-600">{t.label}</span>
                         </label>
                     ))}
                 </div>
@@ -74,7 +74,7 @@ export default function DashboardTab() {
             </div>
 
             {/* ── Chart ───────────────────────────────────────────────── */}
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 flex flex-col" style={{ minHeight: 320 }}>
+            <div className="bg-white rounded-lg border border-[#DBD9D9] shadow-sm p-4 flex flex-col" style={{ minHeight: 320 }}>
                 <p className="text-center text-sm font-bold text-gray-700 mb-1">A/R Top 20 Customer&apos;s Balance</p>
                 <div className="flex-1 w-full" style={{ minHeight: 260 }}>
                     {isFetching ? (
@@ -116,12 +116,12 @@ export default function DashboardTab() {
             </div>
 
             {/* ── Summary table ───────────────────────────────────────── */}
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-auto flex-1 min-h-0">
-                <table className="min-w-full text-xs text-left">
-                    <thead className="bg-[#374151] text-white font-bold sticky top-0">
+            <div className="bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-auto flex-1 min-h-0">
+                <table className="min-w-full text-[13px] font-normal text-left">
+                    <thead className="bg-[#4F4F4F] text-white font-bold text-[12px] uppercase sticky top-0">
                         <tr>
                             {["Customer","AR15","AR30","AR45","AR60","AR75","AR90","AR105","AR120","AR>120","Total AR"].map(h => (
-                                <th key={h} className="p-2 border-r border-gray-600/50 whitespace-nowrap">{h}</th>
+                                <th key={h} className="p-2 whitespace-nowrap">{h}</th>
                             ))}
                         </tr>
                     </thead>
@@ -132,10 +132,10 @@ export default function DashboardTab() {
                             <tr><td colSpan={11} className="p-8 text-center text-gray-400 italic">No data available</td></tr>
                         ) : (
                             (dashboardData as any[]).map((row, i) => (
-                                <tr key={i} className="border-b odd:bg-white even:bg-gray-50 hover:bg-blue-50">
-                                    <td className="p-2 border-r border-gray-100 font-medium max-w-[180px] truncate">{row.cust_code}</td>
+                                <tr key={i} className="border-b border-[#DBD9D9] odd:bg-white even:bg-[#FBF9F8] hover:bg-blue-50">
+                                    <td className="p-2 border-r border-[#DBD9D9] font-medium max-w-[180px] truncate">{row.cust_code}</td>
                                     {["AR15","AR30","AR45","AR60","AR75","AR90","AR105","AR120","ARGT120","AR_Total"].map(k => (
-                                        <td key={k} className={`p-2 border-r border-gray-100 text-right ${k === "AR_Total" ? "font-black text-[#FB7506]" : ""}`}>
+                                        <td key={k} className={`p-2 border-r border-[#DBD9D9] text-right ${k === "AR_Total" ? "font-black text-[#FB7506]" : ""}`}>
                                             ${Number(row[k] || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                         </td>
                                     ))}

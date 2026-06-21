@@ -354,7 +354,7 @@ function CompanyFormModal({ mode, form, setForm, onSave, onClose, saving }: any)
                             <div className="flex flex-col gap-2">
                                 <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Logo</span>
                                 <button onClick={() => fileRef.current?.click()}
-                                    className="flex items-center gap-1.5 bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded text-[9px] font-black uppercase tracking-wide transition-all">
+                                    className="flex items-center gap-1.5 bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded text-[14px] font-semibold uppercase transition-all">
                                     <Camera size={10} /> Insert Picture
                                 </button>
                                 <input ref={fileRef} type="file" accept="image/*" className="hidden"
@@ -368,10 +368,10 @@ function CompanyFormModal({ mode, form, setForm, onSave, onClose, saving }: any)
                     </div>
                 </div>
                 <div className="h-14 bg-gray-50 border-t border-gray-200 flex items-center justify-end px-4 gap-3 shrink-0">
-                    <button onClick={onClose} className="px-4 py-2 rounded border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-100 transition-colors">
+                    <button onClick={onClose} className="px-4 py-2 rounded border border-gray-200 text-[14px] font-semibold text-gray-600 hover:bg-gray-100 transition-colors">
                         Cancel
                     </button>
-                    <button onClick={() => onSave(form, logoFile)} disabled={saving} className="flex items-center gap-2 px-6 py-2 rounded bg-[#FB7506] hover:bg-orange-600 disabled:opacity-50 text-white text-xs font-black uppercase tracking-wider transition-all">
+                    <button onClick={() => onSave(form, logoFile)} disabled={saving} className="flex items-center gap-2 px-6 py-2 rounded bg-[#FB7506] hover:bg-orange-600 disabled:opacity-50 text-white text-[14px] font-semibold uppercase transition-all">
                         {saving ? <RefreshCcw size={14} className="animate-spin" /> : <Save size={14} />}
                         {saving ? "..." : "Save"}
                     </button>

@@ -378,7 +378,7 @@ export default function CustomerPaymentsPage() {
                     <button
                         onClick={() => creditCount > 0 && setCreditModal(true)}
                         disabled={creditCount === 0}
-                        className="relative flex items-center gap-1.5 px-2 sm:px-3 py-1.5 bg-green-700 hover:bg-green-600 disabled:opacity-40 text-white text-[10px] sm:text-xs font-black uppercase rounded transition-colors shrink-0"
+                        className="relative flex items-center gap-1.5 px-2 sm:px-3 py-1.5 bg-green-700 hover:bg-green-600 disabled:opacity-40 text-white text-[14px] font-semibold uppercase rounded transition-colors shrink-0"
                     >
                         <Bell size={12} />
                         <span className="hidden sm:inline">Approve Credits</span>
@@ -409,31 +409,31 @@ export default function CustomerPaymentsPage() {
                     <div className="md:hidden bg-white border-b border-gray-100 px-3 py-1.5 flex items-center gap-1.5 shrink-0 overflow-x-auto scrollbar-none">
                         {creditCount > 0 && (
                             <button onClick={()=>setCreditModal(true)}
-                                className="relative flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase rounded border border-green-300 bg-green-50 text-green-700 whitespace-nowrap transition-colors shrink-0">
+                                className="relative flex items-center gap-1 px-2.5 py-1.5 text-[14px] font-semibold uppercase rounded border border-green-300 bg-green-50 text-green-700 whitespace-nowrap transition-colors shrink-0">
                                 <Bell size={10}/>Approve Credits
                                 <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center">{creditCount}</span>
                             </button>
                         )}
                         <button onClick={()=>setInvSearchModal(true)}
-                            className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase rounded border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors shrink-0">
+                            className="flex items-center gap-1 px-2.5 py-1.5 text-[14px] font-semibold uppercase rounded border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors shrink-0">
                             <Search size={10}/>Inv Search
                         </button>
                         <button onClick={handleHoldNoSales}
-                            className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase rounded border border-gray-200 text-orange-500 hover:bg-orange-50 whitespace-nowrap transition-colors shrink-0">
+                            className="flex items-center gap-1 px-2.5 py-1.5 text-[14px] font-semibold uppercase rounded border border-gray-200 text-orange-500 hover:bg-orange-50 whitespace-nowrap transition-colors shrink-0">
                             <AlertCircle size={10}/>Hold No Sales
                         </button>
                         <div className="flex items-center shrink-0">
                             <button onClick={handlePrintAll} disabled={!perms.canReport}
-                                className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase rounded-l border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors disabled:opacity-40">
+                                className="flex items-center gap-1 px-2.5 py-1.5 text-[14px] font-semibold uppercase rounded-l border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors disabled:opacity-40">
                                 <Printer size={10}/>Print All
                             </button>
                             <select value={stmtDestination} onChange={e=>setStmtDestination(parseInt(e.target.value))}
-                                className="h-[30px] text-[10px] font-bold border border-l-0 border-gray-200 rounded-r px-1 outline-none bg-white text-gray-600">
+                                className="h-[30px] text-[14px] font-semibold border border-l-0 border-gray-200 rounded-r px-1 outline-none bg-white text-gray-600">
                                 <option value={1}>PRN</option><option value={2}>EMAIL</option><option value={3}>FAX</option>
                             </select>
                         </div>
                         <button onClick={()=>setSalesmanModal(true)} disabled={!perms.canReport}
-                            className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase rounded border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors shrink-0 disabled:opacity-40">
+                            className="flex items-center gap-1 px-2.5 py-1.5 text-[14px] font-semibold uppercase rounded border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors shrink-0 disabled:opacity-40">
                             <Users size={10}/>By Salesman
                         </button>
                     </div>
@@ -448,7 +448,7 @@ export default function CustomerPaymentsPage() {
                         <div className="flex items-center gap-1 shrink-0">
                             {([{v:"ALL",l:"All"},{v:"BAL>0",l:"Bal > 0"},{v:"BAL=0",l:"Bal = 0"}] as const).map(opt=>(
                                 <button key={opt.v} onClick={()=>setCustBalance(opt.v as any)}
-                                    className={cn("px-2.5 py-1.5 text-[10px] font-black uppercase rounded border transition-colors",
+                                    className={cn("px-2.5 py-1.5 text-[14px] font-semibold uppercase rounded border transition-colors",
                                         custBalance===opt.v ? "bg-[#FB7506] text-white border-[#FB7506]" : "border-gray-300 text-gray-500 hover:bg-gray-100 bg-white")}>
                                     {opt.l}
                                 </button>
@@ -457,25 +457,25 @@ export default function CustomerPaymentsPage() {
                         {/* Desktop-only global actions */}
                         <div className="hidden md:flex items-center gap-1 shrink-0 ml-auto">
                             <button onClick={()=>setInvSearchModal(true)}
-                                className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-black uppercase rounded border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors bg-white">
+                                className="flex items-center gap-1 px-2 py-1.5 text-[14px] font-semibold uppercase rounded border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors bg-white">
                                 <Search size={10}/>Inv Search
                             </button>
                             <button onClick={handleHoldNoSales}
-                                className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-black uppercase rounded border border-gray-200 text-orange-500 hover:bg-orange-50 whitespace-nowrap transition-colors bg-white">
+                                className="flex items-center gap-1 px-2 py-1.5 text-[14px] font-semibold uppercase rounded border border-gray-200 text-orange-500 hover:bg-orange-50 whitespace-nowrap transition-colors bg-white">
                                 <AlertCircle size={10}/>Hold No Sales
                             </button>
                             <div className="flex items-center">
                                 <button onClick={handlePrintAll} disabled={!perms.canReport}
-                                    className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-black uppercase rounded-l border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors disabled:opacity-40 bg-white">
+                                    className="flex items-center gap-1 px-2 py-1.5 text-[14px] font-semibold uppercase rounded-l border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors disabled:opacity-40 bg-white">
                                     <Printer size={10}/>Print All
                                 </button>
                                 <select value={stmtDestination} onChange={e=>setStmtDestination(parseInt(e.target.value))}
-                                    className="h-[30px] text-[10px] font-bold border border-l-0 border-gray-200 rounded-r px-1 outline-none bg-white text-gray-600">
+                                    className="h-[30px] text-[14px] font-semibold border border-l-0 border-gray-200 rounded-r px-1 outline-none bg-white text-gray-600">
                                     <option value={1}>PRN</option><option value={2}>EMAIL</option><option value={3}>FAX</option>
                                 </select>
                             </div>
                             <button onClick={()=>setSalesmanModal(true)} disabled={!perms.canReport}
-                                className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-black uppercase rounded border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors disabled:opacity-40 bg-white">
+                                className="flex items-center gap-1 px-2 py-1.5 text-[14px] font-semibold uppercase rounded border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors disabled:opacity-40 bg-white">
                                 <Users size={10}/>By Salesman
                             </button>
                         </div>
@@ -562,7 +562,7 @@ export default function CustomerPaymentsPage() {
                             </PanelGridTable>
                             {hasMoreCust && !fetchingMoreCust && (
                                 <div className="text-center py-2">
-                                    <button onClick={() => fetchMoreCust()} className="px-4 py-1.5 bg-[#FB7506] text-white text-[10px] font-black uppercase rounded hover:bg-orange-600 transition-colors">
+                                    <button onClick={() => fetchMoreCust()} className="px-4 py-1.5 bg-[#FB7506] text-white text-[14px] font-semibold uppercase rounded hover:bg-orange-600 transition-colors">
                                         Load More
                                     </button>
                                 </div>
