@@ -775,20 +775,20 @@ export default function VendorsPage() {
                     headerRight={
                         <div className="hidden md:flex items-center gap-1.5 h-full px-2 overflow-x-auto scrollbar-none shrink-0">
                             <button onClick={() => setStmtModal(true)} disabled={!selectedUq}
-                                className="flex items-center gap-1.5 h-6 px-2.5 bg-gray-100 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed text-gray-700 rounded text-[10px] font-black uppercase tracking-wider transition-colors whitespace-nowrap">
-                                <FileText size={12} /> Statement
+                                className="flex items-center gap-1.5 h-7 px-3 bg-white border border-[#DBD9D9] hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed text-[#4F4F4F] rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors whitespace-nowrap">
+                                <FileText size={14} /> Statement
                             </button>
                             <button onClick={() => setPendingModal(true)} disabled={!selectedUq}
-                                className="flex items-center gap-1.5 h-6 px-2.5 bg-gray-100 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed text-gray-700 rounded text-[10px] font-black uppercase tracking-wider transition-colors whitespace-nowrap">
-                                <AlertCircle size={12} /> Pending Invoices
+                                className="flex items-center gap-1.5 h-7 px-3 bg-white border border-[#DBD9D9] hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed text-[#4F4F4F] rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors whitespace-nowrap">
+                                <AlertCircle size={14} /> Pending Invoices
                             </button>
                             <button onClick={() => setClassesModal(true)} disabled={!selectedUq}
-                                className="flex items-center gap-1.5 h-6 px-2.5 bg-gray-100 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed text-gray-700 rounded text-[10px] font-black uppercase tracking-wider transition-colors whitespace-nowrap">
-                                <Settings2 size={12} /> Classes
+                                className="flex items-center gap-1.5 h-7 px-3 bg-white border border-[#DBD9D9] hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed text-[#4F4F4F] rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors whitespace-nowrap">
+                                <Settings2 size={14} /> Classes
                             </button>
                             <button onClick={() => setWsModal(true)} disabled={!selectedUq}
-                                className="flex items-center gap-1.5 h-6 px-2.5 bg-gray-100 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed text-gray-700 rounded text-[10px] font-black uppercase tracking-wider transition-colors whitespace-nowrap">
-                                <Globe size={12} /> Web
+                                className="flex items-center gap-1.5 h-7 px-3 bg-white border border-[#DBD9D9] hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed text-[#4F4F4F] rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors whitespace-nowrap">
+                                <Globe size={14} /> Web
                             </button>
                         </div>
                     }

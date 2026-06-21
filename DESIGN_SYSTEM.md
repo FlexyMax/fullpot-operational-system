@@ -126,8 +126,32 @@ Remaining work:
   `ActionBtn` "bar"/"bar-danger" variants recolored for light backgrounds
   (`bg-gray-100`/`bg-red-50` instead of `bg-white/10`/`bg-red-500/70`). One
   stray blue row-selection (Invoice History desktop list) fixed to peach.
+  Second pass (2026-06-21): every desktop panel wrapper in the Invoice/Stock
+  tabs was using `border border-black` instead of the `#DBD9D9` token (5
+  instances — Invoices list, "no invoice" placeholder, Invoice header card,
+  Invoice Lines panel, Available Stock panel) — fixed. `ActionBtn`'s default
+  size (used by Open/Print/Pick List/Payment etc.) bumped from
+  `px-2.5 py-1 text-[10px] font-black` to the `h-7`/14px/font-semibold button
+  standard. "My Invoices"/"All" toggle and "+ New Invoice" bumped the same way,
+  and their wrapping containers moved onto `bg-[#F5F3F3] border-[#DBD9D9]`.
   **Still pending:** the mobile-only cards/filter bars (left on the existing
   compact convention) and the modals (New Invoice/CC, Barcode Scan, Edit Line,
   Image Gallery) — all dark headers, out of scope per the gap above.
 - `accounts-payable` — detail tab bar (Terms/PO/Prebooks/Credits & Debits)
   moved onto the gray container token, matching POS — done (2026-06-21).
+- `vendors` — the desktop Statement/Pending Invoices/Classes/Web buttons in
+  `PanelGrid`'s `headerRight` were `h-6 text-[10px] font-black` on solid gray;
+  bumped to the secondary-action-button pattern (`h-7`, `bg-white border
+  border-[#DBD9D9] text-[#4F4F4F]`, 14px semibold) — done (2026-06-21).
+- `masters/items` — fully done (2026-06-21): the page shell (background, tab
+  bar onto the gray-container token), `Tab1` (Hierarchy: tree panel + the 3
+  `RightCard` panels for Grades/Colors/Cases — dark→white titles, light→dark
+  `#4F4F4F` table headers, peach selection, borders; `RightCard`'s own
+  hamburger dropdown was `position: absolute` inside the scrollable panel —
+  same clipping bug as the old `GridMenu` — fixed with the same portal
+  pattern), `Tab2` (All Products: toolbar `Btn` helper bumped to `h-7`/14px,
+  product grid thead/borders/selection migrated), and `Tab3` (Varieties/
+  Components: toolbar, both panel headers, and the shared `MiniGrid` table).
+  Modals across all three tabs were left dark, per the gap below.
+  `DualListModal`/quota/PO-prices/stock/prebook/product/image modals are
+  numerous in this module — none were touched.

@@ -61,19 +61,19 @@ function ActionBtn({ icon: Icon, label, onClick, disabled, variant = "default", 
     return (
         <button onClick={onClick} disabled={disabled}
             className={cn(
-                "flex items-center gap-1 font-black uppercase tracking-widest rounded transition-all disabled:opacity-40 whitespace-nowrap shrink-0",
-                size === "sm" ? "px-2 py-0.5 text-[9px]" : "px-2.5 py-1 text-[10px]",
+                "flex items-center gap-1.5 font-semibold uppercase tracking-wide rounded-md transition-all disabled:opacity-40 whitespace-nowrap shrink-0",
+                size === "sm" ? "px-2 h-6 text-[12px]" : "px-3 h-7 text-[14px]",
                 variant === "danger"      && "bg-red-600 hover:bg-red-500 text-white",
                 variant === "success"     && "bg-green-600 hover:bg-green-500 text-white",
                 variant === "warning"     && "bg-amber-500 hover:bg-amber-400 text-white",
-                variant === "default"     && "bg-white hover:bg-gray-100 border border-gray-200 text-gray-700",
+                variant === "default"     && "bg-white hover:bg-gray-100 border border-[#DBD9D9] text-gray-700",
                 variant === "dark"        && "bg-[#374151] hover:bg-gray-600 text-white",
                 variant === "orange"      && "bg-[#FB7506] hover:bg-orange-500 text-white",
                 variant === "bar"         && "bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-700",
                 variant === "bar-danger"  && "bg-red-50 hover:bg-red-100 border border-red-200 text-red-600",
             )}
         >
-            {Icon && <Icon size={size === "sm" ? 9 : 11} />}
+            {Icon && <Icon size={size === "sm" ? 11 : 13} />}
             {label}
         </button>
     );
@@ -704,7 +704,7 @@ export default function SalesPage() {
                 <div className="flex flex-col flex-1 min-h-0 overflow-hidden xl:flex-row gap-2">
 
                 {/* LEFT: Invoice list — desktop only */}
-                <div className="hidden xl:flex xl:flex-col bg-white rounded-md border border-black overflow-hidden xl:w-[300px] xl:shrink-0 xl:flex-none">
+                <div className="hidden xl:flex xl:flex-col bg-white rounded-md border border-[#DBD9D9] overflow-hidden xl:w-[300px] xl:shrink-0 xl:flex-none">
                     {/* List header */}
                     <div className="bg-white px-3 h-10 flex items-center justify-between shrink-0 border-b border-[#DBD9D9]">
                         <div className="flex items-center gap-2">
@@ -713,32 +713,32 @@ export default function SalesPage() {
                             {loadingList && <RefreshCcw size={10} className="animate-spin text-gray-400" />}
                         </div>
                         <input type="date" value={invoiceDate} onChange={e => { setInvoiceDate(e.target.value); setListKey(k=>k+1); }}
-                            className="text-[10px] font-bold bg-white text-gray-700 rounded px-1.5 py-0.5 border border-gray-200 focus:outline-none focus:border-[#FB7506]"
+                            className="text-[10px] font-bold bg-white text-gray-700 rounded px-1.5 py-0.5 border border-[#DBD9D9] focus:outline-none focus:border-[#FB7506]"
                         />
                     </div>
 
                     {/* My / All toggle + New Invoice */}
-                    <div className="px-2 py-1.5 border-b border-gray-100 shrink-0 flex flex-col gap-1.5">
-                        <div className="flex items-center bg-gray-100 rounded p-0.5">
+                    <div className="px-2 py-1.5 border-b border-[#DBD9D9] shrink-0 flex flex-col gap-1.5">
+                        <div className="flex items-center bg-[#F5F3F3] border border-[#DBD9D9] rounded-md p-0.5">
                             <button onClick={() => setMyInvoices(true)}
-                                className={cn("flex-1 py-1 rounded text-[10px] font-black uppercase tracking-widest transition-all",
+                                className={cn("flex-1 h-7 rounded text-[14px] font-semibold uppercase tracking-wide transition-all",
                                     myInvoices ? "bg-[#FB7506] text-white shadow-sm" : "text-gray-500 hover:text-gray-800")}>
                                 My Invoices
                             </button>
                             <button onClick={() => setMyInvoices(false)}
-                                className={cn("flex-1 py-1 rounded text-[10px] font-black uppercase tracking-widest transition-all",
+                                className={cn("flex-1 h-7 rounded text-[14px] font-semibold uppercase tracking-wide transition-all",
                                     !myInvoices ? "bg-[#FB7506] text-white shadow-sm" : "text-gray-500 hover:text-gray-800")}>
                                 All
                             </button>
                         </div>
                         <button onClick={openCcModal}
-                            className="w-full flex items-center justify-center gap-1.5 py-1.5 text-[10px] font-black uppercase tracking-widest bg-green-600 hover:bg-green-500 text-white rounded transition-all">
-                            <Plus size={11} /> New Invoice
+                            className="w-full flex items-center justify-center gap-1.5 h-7 text-[14px] font-semibold uppercase tracking-wide bg-green-600 hover:bg-green-500 text-white rounded-md transition-all">
+                            <Plus size={14} /> New Invoice
                         </button>
                     </div>
                     {/* Search */}
-                    <div className="px-2 py-1.5 border-b border-gray-100 shrink-0">
-                        <div className="flex items-center gap-1.5 bg-gray-100 rounded px-2 py-1">
+                    <div className="px-2 py-1.5 border-b border-[#DBD9D9] shrink-0">
+                        <div className="flex items-center gap-1.5 bg-[#F5F3F3] border border-[#DBD9D9] rounded-md px-2 py-1">
                             <Search size={11} className="text-gray-400 shrink-0" />
                             <input
                                 value={listSearch} onChange={e => setListSearch(e.target.value)}
@@ -770,7 +770,7 @@ export default function SalesPage() {
                                 <div key={i} onClick={() => { setActiveInvoiceUq(t(inv.UNICO)); setDetailKey(k=>k+1); setHistCustUq(t(inv.CUSTOMER_UQ ?? "%")); setHistInvoiceUq(null); setActiveBar("invoice"); }}
                                     className={cn(
                                         "border-2 rounded-xl p-2.5 cursor-pointer transition-all",
-                                        sel ? "border-[#FB7506] bg-orange-50 shadow-md" : "bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm"
+                                        sel ? "border-[#FB7506] bg-orange-50 shadow-md" : "bg-white border-[#DBD9D9] hover:border-gray-300 hover:shadow-sm"
                                     )}
                                     style={!sel && bg ? bg : undefined}
                                 >
@@ -800,7 +800,7 @@ export default function SalesPage() {
                 {/* RIGHT: Invoice detail */}
                 <div className="flex flex-col flex-1 min-h-0 overflow-hidden xl:min-w-0">
                     {!activeInvoiceUq ? (
-                        <div className="flex items-center justify-center bg-white rounded-md border border-black h-full">
+                        <div className="flex items-center justify-center bg-white rounded-md border border-[#DBD9D9] h-full">
                             <div className="text-center text-gray-400 px-6">
                                 <ShoppingCart size={48} className="mx-auto mb-4 opacity-20" />
                                 <p className="text-sm font-bold uppercase tracking-widest">No invoice selected</p>
@@ -814,7 +814,7 @@ export default function SalesPage() {
                     ) : (
                         <div className="flex flex-col flex-1 min-h-0 xl:min-w-0 gap-2">
                             {/* Invoice Header card */}
-                            <div className="bg-white rounded-md border border-black overflow-hidden shrink-0">
+                            <div className="bg-white rounded-md border border-[#DBD9D9] overflow-hidden shrink-0">
                                 {/* Action bar */}
                                 <div className="bg-white border-b border-[#DBD9D9] h-12 xl:h-10 px-3 flex items-center gap-1.5 shrink-0 overflow-x-auto scrollbar-none">
                                     <ShoppingCart size={12} className="text-[#FB7506] shrink-0" />
@@ -845,7 +845,7 @@ export default function SalesPage() {
                                 {/* Header fields */}
                                 {h && (
                                     <div className="px-4 py-2.5 grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-1 text-[11px]">
-                                        <div className="col-span-2 sm:col-span-4 flex items-center gap-3 pb-1.5 border-b border-gray-100">
+                                        <div className="col-span-2 sm:col-span-4 flex items-center gap-3 pb-1.5 border-b border-[#DBD9D9]">
                                             <span className="font-black text-[14px] text-blue-700">Invoice #{t(h.INVOICE_NO)}</span>
                                             <StatusBadge printed={bool(h.PRINTED)} voided={bool(h.VOID)} />
                                             <span className="text-gray-500 text-[11px]">{fmtDate(h.INVOICE_DATE)}</span>
@@ -858,7 +858,7 @@ export default function SalesPage() {
                                         <div><span className="font-bold text-gray-500">Address:</span> <span className="truncate">{t(h.SHIP_ADDRESS)} {t(h.SHIP_CITY)}, {t(h.SHIP_STATE)} {t(h.SHIP_ZIP)}</span></div>
                                         <div><span className="font-bold text-gray-500">PO#:</span> <span>{t(h.CPORDER_NO)}</span></div>
                                         <div><span className="font-bold text-gray-500">Zone:</span> <span>{t(h.ZONE)}</span></div>
-                                        <div className="col-span-2 sm:col-span-4 flex gap-6 pt-1.5 border-t border-gray-100">
+                                        <div className="col-span-2 sm:col-span-4 flex gap-6 pt-1.5 border-t border-[#DBD9D9]">
                                             <div><span className="font-bold text-gray-500">Cases:</span> <span className="font-black text-gray-800">{fmtI(h.TOTAL_CASES)}</span></div>
                                             <div><span className="font-bold text-gray-500">Total:</span> <span className="font-black text-green-700">${fmt(h.TOTAL_INVOICE)}</span></div>
                                             <div><span className="font-bold text-gray-500">Balance:</span> <span className={cn("font-black", parseFloat(h.INVOICE_BALANCE ?? 0) > 0 ? "text-red-600" : "text-green-600")}>${fmt(h.INVOICE_BALANCE)}</span></div>
@@ -868,7 +868,7 @@ export default function SalesPage() {
                             </div>
 
                             {/* Invoice Lines */}
-                            <div className="flex-1 flex flex-col bg-white rounded-md border border-black overflow-hidden min-h-0">
+                            <div className="flex-1 flex flex-col bg-white rounded-md border border-[#DBD9D9] overflow-hidden min-h-0">
                                 {/* Lines action bar */}
                                 <div className="bg-white border-b border-[#DBD9D9] h-12 xl:h-10 px-3 flex items-center gap-1.5 shrink-0">
                                     <ClipboardList size={12} className="text-[#FB7506] shrink-0" />
@@ -910,7 +910,7 @@ export default function SalesPage() {
                                                             <img
                                                                 src={productImages[t(l.PRODUCT_UQ)] || DEFAULT_THUMB}
                                                                 alt="" width={32} height={32}
-                                                                className={cn("w-8 h-8 object-cover rounded border border-gray-200 shrink-0 transition-all", isOpen && "cursor-pointer hover:opacity-80 hover:ring-2 hover:ring-[#FB7506]")}
+                                                                className={cn("w-8 h-8 object-cover rounded border border-[#DBD9D9] shrink-0 transition-all", isOpen && "cursor-pointer hover:opacity-80 hover:ring-2 hover:ring-[#FB7506]")}
                                                                 onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }}
                                                                 onClick={isOpen ? () => openStockModal(l, "lines", { box_qty: String(l.BOX_QTY ?? 1), price: String(parseMoney(l.PRICE ?? 0)) }) : undefined}
                                                             />
@@ -982,7 +982,7 @@ export default function SalesPage() {
                             </div>
                         </>
                     )}
-                    <div className="flex flex-col bg-white rounded-md border border-black overflow-hidden flex-1 min-h-0">
+                    <div className="flex flex-col bg-white rounded-md border border-[#DBD9D9] overflow-hidden flex-1 min-h-0">
                         <div className="bg-white border-b border-[#DBD9D9] h-12 xl:h-10 px-3 flex items-center gap-2 shrink-0">
                             <Package size={12} className="text-[#FB7506] shrink-0" />
                             <span className="font-black text-[10px] text-[#4F4F4F] uppercase tracking-widest shrink-0">Available Stock</span>
@@ -1086,7 +1086,7 @@ export default function SalesPage() {
                                                 <img
                                                     src={productImages[t(s.PRODUCT_UQ ?? s.BOX_PACK_UQ ?? "")] || DEFAULT_THUMB}
                                                     alt="" width={32} height={32}
-                                                    className="w-8 h-8 object-cover rounded border border-gray-200 shrink-0 cursor-pointer hover:opacity-80 hover:ring-2 hover:ring-[#FB7506] transition-all"
+                                                    className="w-8 h-8 object-cover rounded border border-[#DBD9D9] shrink-0 cursor-pointer hover:opacity-80 hover:ring-2 hover:ring-[#FB7506] transition-all"
                                                     onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }}
                                                     onClick={() => openStockModal(s, "stock", { box_qty: "1", price: fmt(s.PRICE_X_UNIT ?? 0) })}
                                                 />

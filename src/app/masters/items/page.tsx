@@ -25,18 +25,18 @@ export default function ItemsSetupPage() {
     if (status === "loading") return null;
 
     return (
-        <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
+        <div className="flex flex-col h-[100dvh] bg-[#FBF9F8] overflow-hidden font-sans text-[#333]">
 
             <AppHeader title="Items" />
 
             {/* Tab bar — below header */}
-            <div className="h-10 bg-[#374151] flex items-end px-2 gap-0.5 shrink-0">
+            <div className="h-10 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-end px-2 gap-0.5 shrink-0">
                 {([1,2,3] as const).map(tab => (
                     <button key={tab} onClick={()=>setActiveTab(tab)}
-                        className={cn("px-4 h-7 text-xs font-black uppercase tracking-wider rounded transition-all",
+                        className={cn("flex items-center px-4 h-8 text-xs font-black uppercase tracking-wider rounded-t transition-all",
                             activeTab===tab
-                                ? "bg-[#f4f6f8] text-[#FB7506]"
-                                : "text-gray-400 hover:text-white hover:bg-white/10")}>
+                                ? "bg-white text-[#FB7506] border-b-2 border-[#FB7506]"
+                                : "text-gray-500 hover:text-[#FB7506] hover:bg-white/60")}>
                         {tab===1 ? "Tab 1 — Hierarchy" : tab===2 ? "Tab 2 — All Products" : "Tab 3 — Varieties / Components"}
                     </button>
                 ))}

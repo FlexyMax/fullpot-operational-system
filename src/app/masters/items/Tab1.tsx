@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     ChevronRight, Plus, Pencil, Trash2, Save, X, RefreshCcw,
@@ -77,30 +78,44 @@ function RightCard({ icon: Icon, title, loading, recordId, menuItems, children }
         green:{icon:"text-green-600",text:"text-green-700"}, blue:{icon:"text-blue-500",text:"text-gray-800"},
         red:{icon:"text-red-500",text:"text-gray-800"}, gray:{icon:"text-gray-500",text:"text-gray-700"},
     };
+    const btnRef = useRef<HTMLButtonElement>(null);
+    const [pos, setPos] = useState({ top: 0, right: 0 });
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => { setMounted(true); }, []);
+    const toggle = () => {
+        if (!open && btnRef.current) {
+            const r = btnRef.current.getBoundingClientRect();
+            setPos({ top: r.bottom + 4, right: window.innerWidth - r.right });
+        }
+        setOpen(o=>!o);
+    };
     return (
-        <div className="flex flex-col overflow-hidden flex-1 min-h-0 rounded-lg border border-gray-200 shadow-sm bg-white">
-            <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0 rounded-t-lg">
+        <div className="flex flex-col overflow-hidden flex-1 min-h-0 rounded-lg border border-[#DBD9D9] shadow-sm bg-white">
+            <div className="h-10 bg-white flex items-center justify-between pl-3 pr-0 shrink-0 border-b border-[#DBD9D9]">
                 <div className="flex items-center gap-2">
                     <Icon size={15} className="text-[#FB7506]"/>
-                    <span className="fos-grid-header-text">{title}</span>
+                    <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">{title}</span>
                     <AuditLogModal recordId={recordId} disabled={!recordId}/>
                     {loading && <RefreshCcw size={11} className="text-gray-400 animate-spin"/>}
                 </div>
-                <div className="relative">
-                    <button onClick={()=>setOpen(o=>!o)} className="h-10 bg-[#FB7506] hover:bg-orange-600 w-24 flex items-center justify-center rounded-tr-lg cursor-pointer">
-                        <Menu size={20} className="text-white"/>
-                    </button>
-                    {open && <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-gray-200 rounded-lg shadow-2xl z-50" onMouseLeave={()=>setOpen(false)}>
+                <button ref={btnRef} onClick={toggle} className="h-10 bg-[#FB7506] hover:bg-orange-600 w-24 flex items-center justify-center rounded-tr-lg cursor-pointer">
+                    <Menu size={20} className="text-white"/>
+                </button>
+                {mounted && open && createPortal(
+                    <div style={{ position: "fixed", top: pos.top, right: pos.right, zIndex: 100, minWidth: 220 }}
+                        className="bg-white border border-gray-200 rounded-sm shadow-xl py-1 overflow-hidden" onMouseLeave={()=>setOpen(false)}>
                         {menuItems.map((item: any, i: number) => {
                             const c = COLORS[item.color]||COLORS.gray;
-                            return <button key={i} onClick={()=>{item.onClick();setOpen(false);}} disabled={!!item.disabled}
-                                className={cn("w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 disabled:opacity-40 transition-colors", i<menuItems.length-1&&"border-b border-gray-100")}>
-                                <item.icon size={18} className={c.icon}/>
-                                <span className={cn("text-sm font-bold",c.text)}>{item.label}</span>
+                            const isDisabled = !!item.disabled;
+                            return <button key={i} onClick={()=>{item.onClick();setOpen(false);}} disabled={isDisabled}
+                                className={cn("w-full flex items-center gap-3 px-4 py-2.5 text-[14px] font-semibold uppercase hover:bg-[#FB7506]/10 disabled:opacity-40 transition-colors text-left")}>
+                                <item.icon size={16} className={c.icon}/>
+                                <span className={c.text}>{item.label}</span>
                             </button>;
                         })}
-                    </div>}
-                </div>
+                    </div>,
+                    document.body
+                )}
             </div>
             <div className="overflow-auto flex-1">{children}</div>
         </div>
@@ -490,25 +505,25 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
     return (
         <div className="flex flex-col md:flex-row gap-1.5 flex-1 p-1.5 overflow-y-auto md:overflow-hidden">
             {/* ── Left: Hierarchy Tree — below cards on mobile, left on desktop ─ */}
-            <div className="order-last md:order-first flex flex-col overflow-hidden bg-white rounded-lg border border-gray-200 shadow-sm shrink-0 h-[85vh] md:h-auto md:flex-1 md:min-h-0 md:w-[58%] md:flex-none">
+            <div className="order-last md:order-first flex flex-col overflow-hidden bg-white rounded-lg border border-[#DBD9D9] shadow-sm shrink-0 h-[85vh] md:h-auto md:flex-1 md:min-h-0 md:w-[58%] md:flex-none">
                 {/* Tree header */}
-                <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 shrink-0">
+                <div className="h-10 bg-white flex items-center justify-between pl-3 pr-3 shrink-0 border-b border-[#DBD9D9]">
                     <div className="flex items-center gap-2">
                         <Tag size={15} className="text-[#FB7506]"/>
-                        <span className="fos-grid-header-text">Item Hierarchy</span>
+                        <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">Item Hierarchy</span>
                         {loadingCl && <RefreshCcw size={11} className="text-gray-400 animate-spin"/>}
                     </div>
                     <button onClick={()=>openModal("class","add",undefined,{...EMPTY_CLASS})} disabled={!perms.canCreate}
-                        className="h-10 bg-[#FB7506] hover:bg-orange-600 disabled:opacity-40 text-white px-4 flex items-center gap-2 rounded-tr-lg cursor-pointer">
-                        <Plus size={16}/><span className="text-xs font-black uppercase">Add Class</span>
+                        className="h-7 bg-[#FB7506] hover:bg-orange-500 disabled:opacity-40 text-white px-3 flex items-center gap-1.5 rounded-md cursor-pointer">
+                        <Plus size={14}/><span className="text-[14px] font-semibold uppercase">Add Class</span>
                     </button>
                 </div>
                 {/* Search */}
-                <div className="px-2 py-1.5 border-b border-gray-100 shrink-0">
+                <div className="px-2 py-1.5 bg-[#F5F3F3] border-b border-[#DBD9D9] shrink-0">
                     <div className="relative">
                         <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"/>
                         <input value={classSearch} onChange={e=>setClassSearch(e.target.value)} placeholder="Filter classes..."
-                            className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded-md outline-none focus:ring-1 focus:ring-[#FB7506]"/>
+                            className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-[#DBD9D9] rounded-md outline-none focus:ring-1 focus:ring-[#FB7506]"/>
                     </div>
                 </div>
                 {/* Tree scroll */}
@@ -518,9 +533,9 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                         const isLoadCl  = loadingNode.has(cls.unico);
                         const subclasses: any[] = subclaMap[cls.unico] || [];
                         return (
-                            <div key={cls.unico} className="rounded-lg overflow-hidden border border-black/10">
+                            <div key={cls.unico} className="rounded-lg overflow-hidden border border-[#DBD9D9]">
                                 {/* Class row */}
-                                <div className={cn("h-14 bg-gray-100 flex items-center gap-2.5 px-3 cursor-pointer hover:bg-gray-200 transition-colors select-none border-b border-gray-200",
+                                <div className={cn("h-14 bg-gray-100 flex items-center gap-2.5 px-3 cursor-pointer hover:bg-gray-200 transition-colors select-none border-b border-[#DBD9D9]",
                                     isExpCl && "rounded-b-none")}
                                     onClick={()=>toggleClass(cls)}>
                                     <ChevronRight size={16} className={cn("text-[#FB7506] transition-transform shrink-0", isExpCl && "rotate-90")}/>
@@ -542,7 +557,7 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                                 </div>
                                 {/* Subclasses — indented with left border */}
                                 {isExpCl && (
-                                    <div className="bg-white border-t border-gray-200 pl-3 pr-0 divide-y divide-gray-200">
+                                    <div className="bg-white border-t border-[#DBD9D9] pl-3 pr-0 divide-y divide-[#DBD9D9]">
                                         {subclasses.length === 0 && !isLoadCl && (
                                             <div className="px-8 py-2 text-xs text-gray-400 italic">No subclasses</div>
                                         )}
@@ -554,8 +569,8 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                                             return (
                                                 <div key={sub.unico}>
                                                     {/* Subclass row */}
-                                                    <div className={cn("h-12 bg-white flex items-center gap-2 px-4 cursor-pointer select-none transition-colors hover:bg-gray-50 border-b border-gray-100",
-                                                        isSel && "bg-blue-50 ring-1 ring-inset ring-blue-100")}
+                                                    <div className={cn("h-12 bg-white flex items-center gap-2 px-4 cursor-pointer select-none transition-colors hover:bg-gray-50 border-b border-[#DBD9D9]",
+                                                        isSel && "!bg-[#FB7506]/10")}
                                                         onClick={()=>toggleSubclass(sub)}>
                                                         <ChevronRight size={14} className={cn("transition-transform shrink-0", isExpSc ? "text-[#FB7506] rotate-90" : "text-gray-400")}/>
                                                         {isLoadSc ? <RefreshCcw size={13} className="text-[#FB7506] animate-spin shrink-0"/> : <Layers size={13} className="text-gray-400 shrink-0"/>}
@@ -586,11 +601,11 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                                                                     <div key={vr.unico} className="border-b border-gray-100 last:border-b-0">
                                                                         {/* Variety row */}
                                                                         <div className={cn("h-11 bg-gray-50 flex items-center gap-2 px-3 cursor-pointer transition-colors select-none hover:bg-gray-100",
-                                                                            isSelVr && "bg-blue-50 ring-1 ring-inset ring-blue-100")}
+                                                                            isSelVr && "!bg-[#FB7506]/10")}
                                                                             onClick={()=>toggleVariety(vr)}>
                                                                             <ChevronRight size={13} className={cn("transition-transform shrink-0", isExpVr?"text-[#FB7506] rotate-90":"text-gray-300")}/>
                                                                             {isLoadVr ? <RefreshCcw size={12} className="text-[#FB7506] animate-spin shrink-0"/> : <div className="w-2 h-2 rounded-full bg-gray-400 shrink-0"/>}
-                                                                            <span className={cn("text-[13px] font-medium flex-1 truncate", isSelVr?"text-blue-700":"text-gray-700")}>{t(vr.variety)}</span>
+                                                                            <span className={cn("text-[13px] font-medium flex-1 truncate", isSelVr?"text-[#FB7506]":"text-gray-700")}>{t(vr.variety)}</span>
                                                                             <span className="text-[11px] text-gray-400 shrink-0">{t(vr.color)}</span>
                                                                             {isExpVr && products.length > 0 && <span className="text-[11px] text-gray-500 bg-white border border-gray-200 px-2 py-0.5 rounded-full shrink-0">{products.length} items</span>}
                                                                             {vr.active && <Check size={13} strokeWidth={3} className="text-green-600 shrink-0"/>}
@@ -673,23 +688,23 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                         { label:"Delete Grade", icon:Trash2, color:"red",   onClick:()=>{ if(selGrade) openModal("grade","delete",selGrade); }, disabled:!selGrade },
                     ]}>
                     <table className="min-w-full text-left">
-                        <thead className="bg-gray-100 border-b border-gray-200 text-gray-700 sticky top-0 z-10">
-                            <tr className="fos-grid-thead">
-                                <th className="p-2 border-r border-gray-200">Grade</th>
-                                <th className="p-2 border-r border-gray-200 w-16">Code</th>
-                                <th className="p-2 border-r border-gray-200 w-12 text-center">Show</th>
+                        <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
+                            <tr>
+                                <th className="p-2">Grade</th>
+                                <th className="p-2 w-16">Code</th>
+                                <th className="p-2 w-12 text-center">Show</th>
                                 <th className="p-2 w-12 text-center">Nat.</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100 fos-grid-tbody">
+                        <tbody className="divide-y divide-[#DBD9D9] fos-grid-tbody">
                             {(grades as any[]).map((g:any) => {
                                 const isSel = selGrade?.unico === g.unico;
                                 return (
                                     <tr key={g.unico} onClick={()=>setSelGrade(isSel ? null : g)}
-                                        className={cn("cursor-pointer transition-colors", isSel ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50")}>
-                                        <td className="p-2 font-medium border-r border-gray-100">{t(g.grado)}</td>
-                                        <td className="p-2 text-gray-500 border-r border-gray-100">{t(g.grade_sh)}</td>
-                                        <td className="p-2 text-center border-r border-gray-100">{g.display?<Check size={11} className="text-green-500 mx-auto"/>:"—"}</td>
+                                        className={cn("cursor-pointer transition-colors", isSel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
+                                        <td className="p-2 font-medium">{t(g.grado)}</td>
+                                        <td className="p-2 text-gray-500">{t(g.grade_sh)}</td>
+                                        <td className="p-2 text-center">{g.display?<Check size={11} className="text-green-500 mx-auto"/>:"—"}</td>
                                         <td className="p-2 text-center">{g.fnational?<Check size={11} className="text-blue-400 mx-auto"/>:"—"}</td>
                                     </tr>
                                 );
@@ -707,23 +722,23 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                         { label:"Delete Color", icon:Trash2, color:"red",   onClick:()=>{ if(selColor) openModal("color","delete",selColor); }, disabled:!selColor },
                     ]}>
                     <table className="min-w-full text-left">
-                        <thead className="bg-gray-100 border-b border-gray-200 text-gray-700 sticky top-0 z-10">
-                            <tr className="fos-grid-thead">
-                                <th className="p-2 border-r border-gray-200">Color</th>
-                                <th className="p-2 border-r border-gray-200 w-16">Code</th>
-                                <th className="p-2 border-r border-gray-200 w-12 text-center">Show</th>
+                        <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
+                            <tr>
+                                <th className="p-2">Color</th>
+                                <th className="p-2 w-16">Code</th>
+                                <th className="p-2 w-12 text-center">Show</th>
                                 <th className="p-2 w-12 text-center">Mix</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100 fos-grid-tbody">
+                        <tbody className="divide-y divide-[#DBD9D9] fos-grid-tbody">
                             {(colors as any[]).map((c:any) => {
                                 const isSel = selColor?.unico === c.unico;
                                 return (
                                     <tr key={c.unico} onClick={()=>setSelColor(isSel ? null : c)}
-                                        className={cn("cursor-pointer transition-colors", isSel ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50")}>
-                                        <td className="p-2 font-medium border-r border-gray-100">{t(c.color)}</td>
-                                        <td className="p-2 text-gray-500 border-r border-gray-100">{t(c.color_sh)}</td>
-                                        <td className="p-2 text-center border-r border-gray-100">{c.display?<Check size={11} className="text-green-500 mx-auto"/>:"—"}</td>
+                                        className={cn("cursor-pointer transition-colors", isSel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
+                                        <td className="p-2 font-medium">{t(c.color)}</td>
+                                        <td className="p-2 text-gray-500">{t(c.color_sh)}</td>
+                                        <td className="p-2 text-center">{c.display?<Check size={11} className="text-green-500 mx-auto"/>:"—"}</td>
                                         <td className="p-2 text-center">{c.mix?<Check size={11} className="text-blue-400 mx-auto"/>:"—"}</td>
                                     </tr>
                                 );
@@ -743,23 +758,23 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                         { label:"Delete Case", icon:Trash2, color:"red",   onClick:()=>{ if(selCase) openModal("case","delete",selCase); }, disabled:!selCase },
                     ]}>
                     <table className="min-w-full text-left">
-                        <thead className="bg-gray-100 border-b border-gray-200 text-gray-700 sticky top-0 z-10">
-                            <tr className="fos-grid-thead">
-                                <th className="p-2 border-r border-gray-200">Name</th>
-                                <th className="p-2 border-r border-gray-200 w-16">Code</th>
-                                <th className="p-2 border-r border-gray-200 w-16 text-right">Factor</th>
+                        <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
+                            <tr>
+                                <th className="p-2">Name</th>
+                                <th className="p-2 w-16">Code</th>
+                                <th className="p-2 w-16 text-right">Factor</th>
                                 <th className="p-2 w-12 text-center">Show</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100 fos-grid-tbody">
+                        <tbody className="divide-y divide-[#DBD9D9] fos-grid-tbody">
                             {(cases as any[]).map((c:any) => {
                                 const isSel = selCase?.unico === c.unico;
                                 return (
                                     <tr key={c.unico} onClick={()=>setSelCase(isSel ? null : c)}
-                                        className={cn("cursor-pointer transition-colors", isSel ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50")}>
-                                        <td className="p-2 font-medium border-r border-gray-100">{t(c.case_name)}</td>
-                                        <td className="p-2 text-gray-500 border-r border-gray-100">{t(c.case_sh)}</td>
-                                        <td className="p-2 text-right border-r border-gray-100">{parseFloat(c.factor||0).toFixed(2)}</td>
+                                        className={cn("cursor-pointer transition-colors", isSel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
+                                        <td className="p-2 font-medium">{t(c.case_name)}</td>
+                                        <td className="p-2 text-gray-500">{t(c.case_sh)}</td>
+                                        <td className="p-2 text-right">{parseFloat(c.factor||0).toFixed(2)}</td>
                                         <td className="p-2 text-center">{c.display?<Check size={11} className="text-green-500 mx-auto"/>:"—"}</td>
                                     </tr>
                                 );

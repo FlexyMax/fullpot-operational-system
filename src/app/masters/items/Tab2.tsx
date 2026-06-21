@@ -46,8 +46,8 @@ function Btn({ icon:Icon, label, color="gray", onClick, disabled=false, sm=false
     const cls: Record<string,string> = { green:"bg-green-600 hover:bg-green-700", blue:"bg-blue-600 hover:bg-blue-700", red:"bg-red-600 hover:bg-red-700", gray:"bg-gray-600 hover:bg-gray-700", amber:"bg-amber-500 hover:bg-amber-600", purple:"bg-purple-600 hover:bg-purple-700" };
     return (
         <button onClick={onClick} disabled={disabled}
-            className={cn("flex items-center gap-1.5 text-white font-black uppercase tracking-wide disabled:opacity-40 disabled:cursor-not-allowed rounded transition-colors shrink-0",
-                sm ? "px-2.5 py-1 text-[10px]" : "px-3 py-1.5 text-xs", cls[color]||cls.gray)}>
+            className={cn("flex items-center gap-1.5 text-white font-semibold uppercase tracking-wide disabled:opacity-40 disabled:cursor-not-allowed rounded transition-colors shrink-0",
+                sm ? "px-2.5 h-6 text-[12px]" : "px-3 h-7 text-[14px]", cls[color]||cls.gray)}>
             {Icon && <Icon size={sm?11:13}/>}{label}
         </button>
     );
@@ -1101,7 +1101,7 @@ export default function Tab2() {
     return (
         <div className="flex flex-col flex-1 overflow-hidden">
             {/* Toolbar */}
-            <div className="bg-gray-100 border-b border-gray-200 px-2 py-1 shrink-0 space-y-1">
+            <div className="bg-[#F5F3F3] border-b border-[#DBD9D9] px-2 py-1 shrink-0 space-y-1">
                 {/* Row 1 */}
                 <div className="flex flex-wrap items-center gap-1">
                     <Btn icon={Plus}    label="Add"    color="green"  onClick={()=>openModal("add")}    disabled={!perms.canCreate}/>
@@ -1166,11 +1166,11 @@ export default function Tab2() {
             </div>
 
             {/* Search + error */}
-            <div className="px-2 py-1 border-b border-gray-200 bg-white flex items-center gap-2 shrink-0">
+            <div className="px-2 py-1 border-b border-[#DBD9D9] bg-white flex items-center gap-2 shrink-0">
                 <div className="relative flex-1 max-w-xs">
                     <Search size={11} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400"/>
                     <input value={searchText} onChange={e=>setSearchText(e.target.value)} placeholder="Search products (description, EDI code, class)..."
-                        className="w-full pl-7 pr-2 py-1 text-[10px] border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506]"/>
+                        className="w-full pl-7 pr-2 py-1 text-[10px] bg-white border border-[#DBD9D9] rounded outline-none focus:ring-1 focus:ring-[#FB7506]"/>
                 </div>
                 {(loadingP||fetchingMoreProds) && <RefreshCcw size={11} className="text-gray-400 animate-spin"/>}
                 <span className="text-[9px] text-gray-400 shrink-0">{products.length.toLocaleString()} / {totalRecords.toLocaleString()} products</span>
@@ -1185,57 +1185,57 @@ export default function Tab2() {
             {/* Products Grid */}
             <div className="flex-1 overflow-auto">
                 <table className="min-w-full text-left">
-                    <thead className="bg-gray-100 border-b border-gray-200 text-gray-700 sticky top-0 z-10">
-                        <tr className="fos-grid-thead">
-                            <th className="px-2 py-2 whitespace-nowrap border-r border-gray-200 text-center w-10">Img</th>
-                            <th className="px-3 py-2 whitespace-nowrap border-r border-gray-200 sticky left-0 bg-gray-100 min-w-[220px]">Description</th>
-                            <th className="px-3 py-2 whitespace-nowrap border-r border-gray-200 text-center w-16">PriceStem</th>
-                            <th className="px-3 py-2 whitespace-nowrap border-r border-gray-200 text-right w-16">Packs</th>
-                            <th className="px-3 py-2 whitespace-nowrap border-r border-gray-200 text-right w-18">Units/Pack</th>
-                            <th className="px-3 py-2 whitespace-nowrap border-r border-gray-200 text-right w-18">UnitsSale</th>
-                            <th className="px-3 py-2 whitespace-nowrap border-r border-gray-200 w-18">Case</th>
-                            <th className="px-3 py-2 whitespace-nowrap border-r border-gray-200 w-24">BoxCode</th>
-                            <th className="px-3 py-2 whitespace-nowrap border-r border-gray-200 w-24">EDICode</th>
-                            <th className="px-3 py-2 whitespace-nowrap border-r border-gray-200 w-32">UPC</th>
-                            <th className="px-3 py-2 whitespace-nowrap border-r border-gray-200 text-right w-18">Retail</th>
-                            <th className="px-3 py-2 whitespace-nowrap border-r border-gray-200 text-right w-18">Weight</th>
-                            <th className="px-3 py-2 whitespace-nowrap border-r border-gray-200 text-right w-18">Rotation</th>
-                            <th className="px-3 py-2 whitespace-nowrap border-r border-gray-200 text-center w-14">Web</th>
-                            <th className="px-3 py-2 whitespace-nowrap border-r border-gray-200 text-center w-14">Active</th>
-                            <th className="px-3 py-2 whitespace-nowrap border-r border-gray-200 text-center w-14">Inven.</th>
+                    <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
+                        <tr>
+                            <th className="px-2 py-2 whitespace-nowrap border-r border-[#DBD9D9]/30 text-center w-10">Img</th>
+                            <th className="px-3 py-2 whitespace-nowrap border-r border-[#DBD9D9]/30 sticky left-0 bg-[#4F4F4F] min-w-[220px]">Description</th>
+                            <th className="px-3 py-2 whitespace-nowrap border-r border-[#DBD9D9]/30 text-center w-16">PriceStem</th>
+                            <th className="px-3 py-2 whitespace-nowrap border-r border-[#DBD9D9]/30 text-right w-16">Packs</th>
+                            <th className="px-3 py-2 whitespace-nowrap border-r border-[#DBD9D9]/30 text-right w-18">Units/Pack</th>
+                            <th className="px-3 py-2 whitespace-nowrap border-r border-[#DBD9D9]/30 text-right w-18">UnitsSale</th>
+                            <th className="px-3 py-2 whitespace-nowrap border-r border-[#DBD9D9]/30 w-18">Case</th>
+                            <th className="px-3 py-2 whitespace-nowrap border-r border-[#DBD9D9]/30 w-24">BoxCode</th>
+                            <th className="px-3 py-2 whitespace-nowrap border-r border-[#DBD9D9]/30 w-24">EDICode</th>
+                            <th className="px-3 py-2 whitespace-nowrap border-r border-[#DBD9D9]/30 w-32">UPC</th>
+                            <th className="px-3 py-2 whitespace-nowrap border-r border-[#DBD9D9]/30 text-right w-18">Retail</th>
+                            <th className="px-3 py-2 whitespace-nowrap border-r border-[#DBD9D9]/30 text-right w-18">Weight</th>
+                            <th className="px-3 py-2 whitespace-nowrap border-r border-[#DBD9D9]/30 text-right w-18">Rotation</th>
+                            <th className="px-3 py-2 whitespace-nowrap border-r border-[#DBD9D9]/30 text-center w-14">Web</th>
+                            <th className="px-3 py-2 whitespace-nowrap border-r border-[#DBD9D9]/30 text-center w-14">Active</th>
+                            <th className="px-3 py-2 whitespace-nowrap border-r border-[#DBD9D9]/30 text-center w-14">Inven.</th>
                             <th className="px-3 py-2 whitespace-nowrap w-32">Customer</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 fos-grid-tbody">
+                    <tbody className="divide-y divide-[#DBD9D9] fos-grid-tbody">
                         {products.map((p:any) => {
                             const isSel = selProduct?.unico === p.unico;
                             return (
                                 <tr key={p.unico} onClick={()=>setSelProduct(p)} onDoubleClick={()=>openModal("edit")}
-                                    className={cn("cursor-pointer transition-colors", isSel ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50/80")}>
-                                    <td className="px-2 py-1 border-r border-gray-100 text-center w-10" onClick={e => e.stopPropagation()}>
+                                    className={cn("cursor-pointer transition-colors", isSel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50/80")}>
+                                    <td className="px-2 py-1 border-r border-[#DBD9D9] text-center w-10" onClick={e => e.stopPropagation()}>
                                         <img
                                             src={productImages[t(p.unico)] || DEFAULT_THUMB}
                                             alt="" width={28} height={28}
-                                            className="w-7 h-7 object-cover rounded border border-gray-200 cursor-pointer hover:opacity-80 hover:ring-2 hover:ring-[#FB7506] transition-all inline-block"
+                                            className="w-7 h-7 object-cover rounded border border-[#DBD9D9] cursor-pointer hover:opacity-80 hover:ring-2 hover:ring-[#FB7506] transition-all inline-block"
                                             onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }}
                                             onClick={() => setImageModal(p)}
                                         />
                                     </td>
-                                    <td className={cn("px-3 py-2 border-r border-gray-100 font-medium truncate max-w-[220px] sticky left-0", isSel ? "bg-blue-50" : "bg-white")} title={t(p.description_uq||p.description)}>{t(p.description)}</td>
-                                    <td className="px-3 py-2 border-r border-gray-100 text-center">{p.stem_pack ? <Check size={11} className="text-green-500 mx-auto"/> : "—"}</td>
-                                    <td className="px-3 py-2 border-r border-gray-100 text-right">{t(p.up_x_case)}</td>
-                                    <td className="px-3 py-2 border-r border-gray-100 text-right">{t(p.up_x_pack)}</td>
-                                    <td className="px-3 py-2 border-r border-gray-100 text-right">{t(p.total_units)}</td>
-                                    <td className="px-3 py-2 border-r border-gray-100 text-gray-500">{t(p.case_sh)}</td>
-                                    <td className="px-3 py-2 border-r border-gray-100 text-gray-400">{t(p.boxcode)}</td>
-                                    <td className="px-3 py-2 border-r border-gray-100 text-gray-400">{t(p.old_code)}</td>
-                                    <td className="px-3 py-2 border-r border-gray-100 text-gray-400">{t(p.upc)}</td>
-                                    <td className="px-3 py-2 border-r border-gray-100 text-right">{n2(p.retail_price)}</td>
-                                    <td className="px-3 py-2 border-r border-gray-100 text-right">{n2(p.weight)}</td>
-                                    <td className="px-3 py-2 border-r border-gray-100 text-right">{t(p.rotation)}</td>
-                                    <td className="px-3 py-2 border-r border-gray-100 text-center">{p.web    ? <Check size={11} className="text-green-500 mx-auto"/> : "—"}</td>
-                                    <td className="px-3 py-2 border-r border-gray-100 text-center">{p.active ? <Check size={11} className="text-green-500 mx-auto"/> : "—"}</td>
-                                    <td className="px-3 py-2 border-r border-gray-100 text-center">{p.inv_track ? <Check size={11} className="text-blue-400 mx-auto"/> : "—"}</td>
+                                    <td className={cn("px-3 py-2 border-r border-[#DBD9D9] font-medium truncate max-w-[220px] sticky left-0", isSel ? "bg-[#FB7506]/10" : "bg-white")} title={t(p.description_uq||p.description)}>{t(p.description)}</td>
+                                    <td className="px-3 py-2 border-r border-[#DBD9D9] text-center">{p.stem_pack ? <Check size={11} className="text-green-500 mx-auto"/> : "—"}</td>
+                                    <td className="px-3 py-2 border-r border-[#DBD9D9] text-right">{t(p.up_x_case)}</td>
+                                    <td className="px-3 py-2 border-r border-[#DBD9D9] text-right">{t(p.up_x_pack)}</td>
+                                    <td className="px-3 py-2 border-r border-[#DBD9D9] text-right">{t(p.total_units)}</td>
+                                    <td className="px-3 py-2 border-r border-[#DBD9D9] text-gray-500">{t(p.case_sh)}</td>
+                                    <td className="px-3 py-2 border-r border-[#DBD9D9] text-gray-400">{t(p.boxcode)}</td>
+                                    <td className="px-3 py-2 border-r border-[#DBD9D9] text-gray-400">{t(p.old_code)}</td>
+                                    <td className="px-3 py-2 border-r border-[#DBD9D9] text-gray-400">{t(p.upc)}</td>
+                                    <td className="px-3 py-2 border-r border-[#DBD9D9] text-right">{n2(p.retail_price)}</td>
+                                    <td className="px-3 py-2 border-r border-[#DBD9D9] text-right">{n2(p.weight)}</td>
+                                    <td className="px-3 py-2 border-r border-[#DBD9D9] text-right">{t(p.rotation)}</td>
+                                    <td className="px-3 py-2 border-r border-[#DBD9D9] text-center">{p.web    ? <Check size={11} className="text-green-500 mx-auto"/> : "—"}</td>
+                                    <td className="px-3 py-2 border-r border-[#DBD9D9] text-center">{p.active ? <Check size={11} className="text-green-500 mx-auto"/> : "—"}</td>
+                                    <td className="px-3 py-2 border-r border-[#DBD9D9] text-center">{p.inv_track ? <Check size={11} className="text-blue-400 mx-auto"/> : "—"}</td>
                                     <td className="px-3 py-2 text-gray-400 truncate max-w-[128px]">{t(p.customer)}</td>
                                 </tr>
                             );

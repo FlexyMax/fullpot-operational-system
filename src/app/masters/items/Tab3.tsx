@@ -39,8 +39,8 @@ function Btn({ icon:Icon, label, color="gray", onClick, disabled=false, sm=false
     const cls: Record<string,string> = { green:"bg-green-600 hover:bg-green-700", blue:"bg-blue-600 hover:bg-blue-700", red:"bg-red-600 hover:bg-red-700", gray:"bg-gray-600 hover:bg-gray-700", amber:"bg-amber-500 hover:bg-amber-600", purple:"bg-purple-600 hover:bg-purple-700" };
     return (
         <button onClick={onClick} disabled={disabled}
-            className={cn("flex items-center gap-1.5 text-white font-black uppercase tracking-wide rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0",
-                sm ? "px-2.5 py-1 text-[10px]" : "px-3 py-1.5 text-xs", cls[color]||cls.gray)}>
+            className={cn("flex items-center gap-1.5 text-white font-semibold uppercase tracking-wide rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0",
+                sm ? "px-2.5 h-6 text-[12px]" : "px-3 h-7 text-[14px]", cls[color]||cls.gray)}>
             {Icon && <Icon size={sm?11:13}/>}{label}
         </button>
     );
@@ -51,10 +51,10 @@ function MiniGrid({ cols, rows, selUnico, onSelect, loading, empty, sentinel }: 
     return (
         <div className="overflow-auto flex-1">
             <table className="min-w-full text-left">
-                <thead className="bg-gray-100 border-b border-gray-200 text-gray-700 sticky top-0 z-10">
-                    <tr className="fos-grid-thead">{cols.map((c: any) => <th key={c.key} className={cn("p-2 whitespace-nowrap border-r border-gray-200 last:border-r-0", c.className)}>{c.label}</th>)}</tr>
+                <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
+                    <tr>{cols.map((c: any) => <th key={c.key} className={cn("p-2 whitespace-nowrap", c.className)}>{c.label}</th>)}</tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 fos-grid-tbody">
+                <tbody className="divide-y divide-[#DBD9D9] fos-grid-tbody">
                     {loading
                         ? <tr><td colSpan={cols.length} className="p-4 text-center text-gray-300 italic text-xs">Loading...</td></tr>
                         : rows.length === 0
@@ -63,9 +63,9 @@ function MiniGrid({ cols, rows, selUnico, onSelect, loading, empty, sentinel }: 
                                 const isSel = selUnico && selUnico === r.unico;
                                 return (
                                     <tr key={r.unico||i} onClick={() => onSelect?.(r)}
-                                        className={cn("cursor-pointer transition-colors", isSel ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50/80")}>
+                                        className={cn("cursor-pointer transition-colors", isSel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50/80")}>
                                         {cols.map((c: any) => (
-                                            <td key={c.key} className={cn("p-2 border-r border-gray-100 last:border-r-0", c.className)}>
+                                            <td key={c.key} className={cn("p-2", c.className)}>
                                                 {c.render ? c.render(r[c.key], r) : t(r[c.key])}
                                             </td>
                                         ))}
@@ -524,7 +524,7 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety }: Tab3Pro
     return (
         <div className="flex flex-col flex-1 overflow-hidden">
             {/* Toolbar */}
-            <div className="bg-gray-100 border-b border-gray-200 px-2 py-1 shrink-0 flex items-center gap-2">
+            <div className="bg-[#F5F3F3] border-b border-[#DBD9D9] px-2 py-1 shrink-0 flex items-center gap-2">
                 <GridMenu items={[
                     { label: "Insert", icon: Plus, color: "green", onClick: ()=>openVarietyModal("add"), disabled: !perms.canCreate },
                     { label: "Update", icon: Pencil, color: "orange", onClick: ()=>openVarietyModal("edit"), disabled: !selVariety||!perms.canEdit },
@@ -568,10 +568,10 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety }: Tab3Pro
             {/* Two-panel layout */}
             <div className="flex-1 flex gap-1.5 p-1.5 overflow-hidden">
                 {/* Left: Varieties by Subclass */}
-                <div className="w-2/5 bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden">
-                    <div className="h-10 bg-[#374151] flex items-center px-3 shrink-0">
+                <div className="w-2/5 bg-white rounded-lg border border-[#DBD9D9] shadow-sm flex flex-col overflow-hidden">
+                    <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center px-3 shrink-0">
                         <Layers size={15} className="text-[#FB7506] mr-2"/>
-                        <span className="fos-grid-header-text">
+                        <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">
                             Varieties {selSubclass ? `— ${t(selSubclass.subclase)}` : ""}
                         </span>
                         {loadingVr && <RefreshCcw size={11} className="text-gray-400 animate-spin ml-2"/>}
@@ -593,19 +593,19 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety }: Tab3Pro
                 </div>
 
                 {/* Right: Components search */}
-                <div className="flex-1 bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden">
-                    <div className="h-10 bg-[#374151] flex items-center px-3 gap-2 shrink-0">
+                <div className="flex-1 bg-white rounded-lg border border-[#DBD9D9] shadow-sm flex flex-col overflow-hidden">
+                    <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center px-3 gap-2 shrink-0">
                         <Search size={15} className="text-[#FB7506]"/>
-                        <span className="fos-grid-header-text">Components / Search</span>
+                        <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">Components / Search</span>
                         {(loadComp||fetchingMoreComp) && <RefreshCcw size={11} className="text-gray-400 animate-spin"/>}
                         {compTotal > 0 && <span className="text-gray-400 text-[10px] ml-1">{components.length}/{compTotal}</span>}
                     </div>
-                    <div className="p-1.5 border-b border-gray-100 shrink-0">
+                    <div className="p-1.5 bg-[#F5F3F3] border-b border-[#DBD9D9] shrink-0">
                         <div className="relative">
                             <Search size={9} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400"/>
                             <input value={compSearch} onChange={e=>setCompSearch(e.target.value)}
                                 placeholder="Search: Class  Subclass  Color  Variety  Item  Component"
-                                className="w-full pl-6 pr-2 py-0.5 text-[10px] border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506]"/>
+                                className="w-full pl-6 pr-2 py-0.5 text-[10px] bg-white border border-[#DBD9D9] rounded outline-none focus:ring-1 focus:ring-[#FB7506]"/>
                         </div>
                     </div>
                     <MiniGrid
