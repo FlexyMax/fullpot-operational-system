@@ -210,10 +210,10 @@ export default function SystemAccessPage() {
                 {/* ── Left: User List ──────────────────────────────────────── */}
                 <div className="hidden lg:flex w-[260px] shrink-0 flex-col gap-2">
                     <div className="flex flex-col flex-1 bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden">
-                        <div className="h-10 bg-[#F5F3F3] flex items-center justify-between pl-3 pr-2 border-b border-[#DBD9D9] shrink-0 rounded-t-lg">
+                        <div className="h-10 bg-white flex items-center justify-between pl-3 pr-2 border-b border-[#DBD9D9] shrink-0 rounded-t-lg">
                             <div className="flex items-center gap-2">
                                 <Users size={16} className="text-[#FB7506]" />
-                                <span className="text-[13px] font-black uppercase tracking-tight text-[#4F4F4F]">Users</span>
+                                <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">Users</span>
                             </div>
                             {loadingUsers && <RefreshCcw size={16} className="text-gray-400 animate-spin" />}
                         </div>
@@ -226,6 +226,7 @@ export default function SystemAccessPage() {
                                     onChange={e => setSearchTerm(e.target.value)}
                                     placeholder="Search users..."
                                     className="w-full pl-7 pr-2 h-9 text-sm border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506]"
+                                    style={{ backgroundColor: "#F5F3F3" }}
                                 />
                             </div>
                         </div>
@@ -251,7 +252,7 @@ export default function SystemAccessPage() {
                                             isActive ? "bg-green-400" : "bg-gray-300"
                                         )} />
                                         <div className="min-w-0">
-                                            <p className="text-xs font-semibold text-gray-800 truncate">
+                                            <p className="text-[13px] font-normal text-gray-800 truncate">
                                                 {String(u.full_name || "").trim()}
                                             </p>
                                             <p className="text-[9px] text-gray-400 truncate">
@@ -274,7 +275,7 @@ export default function SystemAccessPage() {
                             {/* Left: title + status badge */}
                             <div className="flex items-center gap-2">
                                 <UserCheck size={16} className="text-[#FB7506]" />
-                                <span className="text-[13px] font-black uppercase tracking-tight text-[#4F4F4F]">User Information</span>
+                                <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">User Information</span>
                                 <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} />
                                 {selectedUser && (
                                     <span className={cn(
@@ -291,7 +292,7 @@ export default function SystemAccessPage() {
                                     <button
                                         onClick={handleEdit}
                                         disabled={!selectedUnico || !perms.canEdit}
-                                        className="flex items-center gap-1.5 px-3 h-7 rounded-md font-black text-[10px] uppercase text-white transition-all shrink-0 bg-[#FB7506] hover:bg-orange-500 disabled:opacity-40 disabled:cursor-not-allowed"
+                                        className="flex items-center gap-1.5 px-3 h-7 rounded-md font-semibold text-[14px] uppercase text-white transition-all shrink-0 bg-[#FB7506] hover:bg-orange-500 disabled:opacity-40 disabled:cursor-not-allowed"
                                     >
                                         <Pencil size={14} /> Edit
                                     </button>
@@ -300,14 +301,14 @@ export default function SystemAccessPage() {
                                         <button
                                             onClick={handleSave}
                                             disabled={saving || !perms.canEdit}
-                                            className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all"
+                                            className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-3 py-1.5 rounded font-semibold text-[14px] uppercase transition-all"
                                         >
                                             {saving ? <RefreshCcw size={14} className="animate-spin" /> : <Save size={14} />}
                                             {saving ? "Saving..." : "Save"}
                                         </button>
                                         <button
                                             onClick={handleCancel}
-                                            className="flex items-center gap-1.5 bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all"
+                                            className="flex items-center gap-1.5 bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded font-semibold text-[14px] uppercase transition-all"
                                         >
                                             <X size={14} /> Cancel
                                         </button>
@@ -318,7 +319,7 @@ export default function SystemAccessPage() {
                         {!selectedUser ? (
                             <div className="p-4 text-xs text-gray-400 italic text-center">Select a user from the list</div>
                         ) : (
-                            <div className="p-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
+                            <div className="p-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                                 {[
                                     { label: "Code",       value: selectedUser.unico },
                                     { label: "Username",   value: String(selectedUser.usuario || "").trim() },
@@ -328,8 +329,8 @@ export default function SystemAccessPage() {
                                     { label: "Password",   value: "••••••••" },
                                 ].map(f => (
                                     <div key={f.label} className="flex flex-col gap-0.5">
-                                        <span className="text-[11px] font-black text-gray-500 uppercase tracking-wider">{f.label}</span>
-                                        <span className="font-semibold text-gray-700 truncate">{f.value || "—"}</span>
+                                        <span className="text-[12px] font-bold text-gray-500 uppercase tracking-wider">{f.label}</span>
+                                        <span className="text-[13px] font-normal text-gray-700 truncate">{f.value || "—"}</span>
                                     </div>
                                 ))}
                             </div>
@@ -388,7 +389,7 @@ export default function SystemAccessPage() {
                         <div className="h-10 bg-white flex items-center justify-between pl-3 border-b border-[#DBD9D9] shrink-0 rounded-t-lg">
                             <div className="flex items-center gap-2">
                                 <Shield size={16} className="text-[#FB7506]" />
-                                <span className="text-[13px] font-black uppercase tracking-tight text-[#4F4F4F]">Screen Permissions</span>
+                                <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">Screen Permissions</span>
                                 <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} />
                                 {loadingPerms && <RefreshCcw size={16} className="text-gray-400 animate-spin" />}
                             </div>
@@ -396,13 +397,13 @@ export default function SystemAccessPage() {
                                 <div className="hidden lg:flex items-center gap-1.5 pr-2">
                                     <button
                                         onClick={() => setCopyModal({ mode: "from" })}
-                                        className="flex items-center gap-1.5 px-3 h-7 rounded-md font-black text-[10px] uppercase text-white transition-all shrink-0 bg-gray-500 hover:bg-gray-400"
+                                        className="flex items-center gap-1.5 px-3 h-7 rounded-md font-semibold text-[14px] uppercase text-[#4F4F4F] transition-all shrink-0 bg-white border border-[#DBD9D9] hover:bg-gray-50"
                                     >
                                         <Copy size={14} /> Copy From
                                     </button>
                                     <button
                                         onClick={() => setCopyModal({ mode: "to" })}
-                                        className="flex items-center gap-1.5 px-3 h-7 rounded-md font-black text-[10px] uppercase text-white transition-all shrink-0 bg-gray-500 hover:bg-gray-400"
+                                        className="flex items-center gap-1.5 px-3 h-7 rounded-md font-semibold text-[14px] uppercase text-[#4F4F4F] transition-all shrink-0 bg-white border border-[#DBD9D9] hover:bg-gray-50"
                                     >
                                         <Copy size={14} /> Copy To
                                     </button>
@@ -448,8 +449,8 @@ export default function SystemAccessPage() {
                                     {loadingPerms ? "Loading permissions..." : "No permissions found"}
                                 </div>
                             ) : (
-                                <table className="min-w-full text-xs text-left">
-                                    <thead className="bg-[#4F4F4F] text-white font-bold sticky top-0 z-10">
+                                <table className="min-w-full text-[13px] font-normal text-left">
+                                    <thead className="bg-[#4F4F4F] text-white font-bold text-[12px] uppercase sticky top-0 z-10">
                                         <tr>
                                             {PERM_FIELDS.map(f => (
                                                 <th key={f} className="p-2 text-center whitespace-nowrap">
@@ -495,7 +496,7 @@ export default function SystemAccessPage() {
                                                             </td>
                                                         );
                                                     })}
-                                                    <td className={cn("p-2 border-r border-[#DBD9D9] truncate max-w-[180px] font-semibold", !dimmed && "text-[#22C55E]")}>
+                                                    <td className={cn("p-2 border-r border-[#DBD9D9] truncate max-w-[180px] font-normal", !dimmed && "text-[#22C55E]")}>
                                                         {String(p.pantalla || "").trim()}
                                                     </td>
                                                     <td className={cn("p-2 border-r border-[#DBD9D9] truncate max-w-[150px]", !dimmed ? "text-[#22C55E]" : "text-gray-500")}>
