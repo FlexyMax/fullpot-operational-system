@@ -308,7 +308,7 @@ export default function CarriersDefinitionPage() {
                                 title="Invoices"
                                 className={cn(
                                     "flex items-center gap-1 px-2 h-7 rounded text-[10px] font-black uppercase tracking-wider transition-all",
-                                    selUnico ? "bg-white/20 text-white hover:bg-white/30" : "text-gray-500 cursor-not-allowed opacity-40"
+                                    selUnico ? "bg-gray-100 text-gray-700 hover:bg-gray-200" : "text-gray-500 cursor-not-allowed opacity-40"
                                 )}
                             >
                                 <FileText size={12} />
@@ -320,7 +320,7 @@ export default function CarriersDefinitionPage() {
                                 title="Customers"
                                 className={cn(
                                     "flex items-center gap-1 px-2 h-7 rounded text-[10px] font-black uppercase tracking-wider transition-all",
-                                    selUnico ? "bg-white/20 text-white hover:bg-white/30" : "text-gray-500 cursor-not-allowed opacity-40"
+                                    selUnico ? "bg-gray-100 text-gray-700 hover:bg-gray-200" : "text-gray-500 cursor-not-allowed opacity-40"
                                 )}
                             >
                                 <Users size={12} />

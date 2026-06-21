@@ -775,19 +775,19 @@ export default function VendorsPage() {
                     headerRight={
                         <div className="hidden md:flex items-center gap-1.5 h-full px-2 overflow-x-auto scrollbar-none shrink-0">
                             <button onClick={() => setStmtModal(true)} disabled={!selectedUq}
-                                className="flex items-center gap-1.5 h-6 px-2.5 bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded text-[10px] font-black uppercase tracking-wider transition-colors whitespace-nowrap">
+                                className="flex items-center gap-1.5 h-6 px-2.5 bg-gray-100 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed text-gray-700 rounded text-[10px] font-black uppercase tracking-wider transition-colors whitespace-nowrap">
                                 <FileText size={12} /> Statement
                             </button>
                             <button onClick={() => setPendingModal(true)} disabled={!selectedUq}
-                                className="flex items-center gap-1.5 h-6 px-2.5 bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded text-[10px] font-black uppercase tracking-wider transition-colors whitespace-nowrap">
+                                className="flex items-center gap-1.5 h-6 px-2.5 bg-gray-100 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed text-gray-700 rounded text-[10px] font-black uppercase tracking-wider transition-colors whitespace-nowrap">
                                 <AlertCircle size={12} /> Pending Invoices
                             </button>
                             <button onClick={() => setClassesModal(true)} disabled={!selectedUq}
-                                className="flex items-center gap-1.5 h-6 px-2.5 bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded text-[10px] font-black uppercase tracking-wider transition-colors whitespace-nowrap">
+                                className="flex items-center gap-1.5 h-6 px-2.5 bg-gray-100 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed text-gray-700 rounded text-[10px] font-black uppercase tracking-wider transition-colors whitespace-nowrap">
                                 <Settings2 size={12} /> Classes
                             </button>
                             <button onClick={() => setWsModal(true)} disabled={!selectedUq}
-                                className="flex items-center gap-1.5 h-6 px-2.5 bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded text-[10px] font-black uppercase tracking-wider transition-colors whitespace-nowrap">
+                                className="flex items-center gap-1.5 h-6 px-2.5 bg-gray-100 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed text-gray-700 rounded text-[10px] font-black uppercase tracking-wider transition-colors whitespace-nowrap">
                                 <Globe size={12} /> Web
                             </button>
                         </div>

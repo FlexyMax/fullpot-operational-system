@@ -1351,7 +1351,7 @@ export default function SalesPage() {
                                     {(["details","credits","statement"] as const).map(sub => (
                                         <button key={sub} onClick={() => setHistSubTab(sub)}
                                             className={cn("px-2 py-0.5 text-[10px] font-black uppercase rounded transition-all",
-                                                histSubTab === sub ? "bg-[#FB7506] text-white" : "text-gray-400 hover:text-white")}>
+                                                histSubTab === sub ? "bg-[#FB7506] text-white" : "text-gray-400 hover:text-[#FB7506]")}>
                                             {sub}
                                         </button>
                                     ))}

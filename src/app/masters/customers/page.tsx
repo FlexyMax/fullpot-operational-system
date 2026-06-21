@@ -391,7 +391,7 @@ export default function CustomersSetupPage() {
                             disabled={!selCust}
                             className={cn(
                                 "flex items-center gap-1.5 px-2 py-1 text-xs font-bold transition-all rounded",
-                                selCust ? "text-gray-300 hover:text-white hover:bg-white/10" : "text-gray-500 opacity-40 cursor-not-allowed"
+                                selCust ? "text-gray-600 hover:text-[#FB7506] hover:bg-gray-100" : "text-gray-500 opacity-40 cursor-not-allowed"
                             )}
                             title="View Statement"
                         >

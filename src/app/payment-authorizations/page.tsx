@@ -360,6 +360,12 @@ export default function PaymentAuthorizationsPage() {
         if (status === "unauthenticated") router.push("/login");
     }, [status, router]);
 
+    // Hide the mobile action bar when switching tabs — it's scoped to whatever
+    // row was selected on the previous tab, not the one you just switched to.
+    useEffect(() => {
+        setActiveBar(null);
+    }, [activeTab]);
+
     // ── Queries ───────────────────────────────────────────────────────────────
     const { data: growersList = EMPTY_ARR } = useQuery({
         queryKey: ["pa-growers"],
@@ -540,7 +546,7 @@ export default function PaymentAuthorizationsPage() {
     // ── Balance filter buttons (shared style) ─────────────────────────────────
     const BalBtn = ({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) => (
         <button onClick={onClick} className={cn("px-2 py-0.5 text-[9px] font-black uppercase rounded transition-colors",
-            active ? "bg-[#FB7506] text-white" : "bg-white/10 text-white/70 hover:bg-white/20")}>
+            active ? "bg-[#FB7506] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200")}>
             {label}
         </button>
     );
@@ -807,7 +813,7 @@ export default function PaymentAuthorizationsPage() {
                                 <div className="flex items-center gap-2">
                                     <input type="date" value={store.ldPaymentsFrom}
                                         onChange={e => { store.setLdPaymentsFrom(e.target.value); setSelOutcomeRow(null); }}
-                                        className="bg-white/10 text-white border border-white/20 text-[10px] rounded px-2 py-1 outline-none cursor-pointer"
+                                        className="bg-white text-gray-700 border border-gray-300 text-[10px] rounded px-2 py-1 outline-none cursor-pointer"
                                     />
                                     <div className="flex gap-0.5">
                                         {([[-1, "All"], [0, "Pending"], [1, "Paid"]] as const).map(([val, lbl]) => (

@@ -391,8 +391,8 @@ export default function AccountsPayablePage() {
                         onLog={selectedUnico ? () => {} : undefined}
                         headerRight={
                             <div className="flex items-center gap-0.5">
-                                <button onClick={() => setSearchModal(true)} title="Search" className="p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded transition-colors"><Search size={13} /></button>
-                                <button onClick={exportToCSV} disabled={!invoices.length || !perms.canReport} title="Export CSV" className="p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"><Download size={13} /></button>
+                                <button onClick={() => setSearchModal(true)} title="Search" className="p-1.5 text-gray-400 hover:text-[#FB7506] hover:bg-gray-100 rounded transition-colors"><Search size={13} /></button>
+                                <button onClick={exportToCSV} disabled={!invoices.length || !perms.canReport} title="Export CSV" className="p-1.5 text-gray-400 hover:text-[#FB7506] hover:bg-gray-100 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"><Download size={13} /></button>
                                 <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} bareButton />
                             </div>
                         }

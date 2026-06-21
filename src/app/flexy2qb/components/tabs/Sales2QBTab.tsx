@@ -72,7 +72,7 @@ export default function Sales2QBTab() {
             <div className="w-full md:w-[220px] shrink-0 md:h-full h-40 min-h-0 flex flex-col">
                 <PanelGrid title="Dates" icon={Calendar} refreshing={loadingDates}
                     headerRight={<select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))}
-                        className="bg-white/10 text-white border border-white/20 text-[10px] font-black rounded px-2 py-1 outline-none">
+                        className="bg-white text-gray-700 border border-gray-300 text-[10px] font-black rounded px-2 py-1 outline-none">
                         {yrOpts.map((y: { v: string }) => <option key={y.v} value={y.v}>{y.v}</option>)}
                     </select>}
                     className="flex-1 flex flex-col min-h-0">
