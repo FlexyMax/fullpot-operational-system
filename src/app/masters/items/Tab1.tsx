@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     ChevronRight, Plus, Pencil, Trash2, Save, X, RefreshCcw,
-    Check, XCircle, Search, Tag, Layers, Box, Palette, Package, Menu
+    Check, XCircle, Search, Tag, Layers, Box, Palette, Package
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AuditLogModal } from "@/components/AuditLogModal";
@@ -98,8 +98,21 @@ function RightCard({ icon: Icon, title, loading, recordId, menuItems, children }
                     <AuditLogModal recordId={recordId} disabled={!recordId}/>
                     {loading && <RefreshCcw size={11} className="text-gray-400 animate-spin"/>}
                 </div>
-                <button ref={btnRef} onClick={toggle} className="h-10 bg-[#FB7506] hover:bg-orange-600 w-24 flex items-center justify-center rounded-tr-lg cursor-pointer">
-                    <Menu size={20} className="text-white"/>
+                <button ref={btnRef} onClick={toggle}
+                    className={cn("h-10 w-10 flex items-center justify-center hover:bg-gray-100 rounded-tr-lg cursor-pointer transition-colors", open ? "flex-row gap-[5px]" : "flex-col gap-[5px]")}>
+                    {open ? (
+                        <>
+                            <span className="block h-5 w-[2px] bg-[#FB7506] rounded-full" />
+                            <span className="block h-5 w-[2px] bg-[#FB7506] rounded-full" />
+                            <span className="block h-5 w-[2px] bg-[#FB7506] rounded-full" />
+                        </>
+                    ) : (
+                        <>
+                            <span className="block w-5 h-[2px] bg-[#FB7506] rounded-full" />
+                            <span className="block w-5 h-[2px] bg-[#FB7506] rounded-full" />
+                            <span className="block w-5 h-[2px] bg-[#FB7506] rounded-full" />
+                        </>
+                    )}
                 </button>
                 {mounted && open && createPortal(
                     <div style={{ position: "fixed", top: pos.top, right: pos.right, zIndex: 100, minWidth: 220 }}

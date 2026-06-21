@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { RefreshCw, X, ChevronDown, Download } from "lucide-react";
+import { RefreshCw, X, ChevronDown, Download, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
 const EMPTY_ARR: any[] = [];
 
@@ -51,6 +51,7 @@ export default function TransitBoxesTab() {
             <div className="flex items-stretch shrink-0 border-b border-[#DBD9D9]">
                 {/* Left: title */}
                 <div className="h-9 bg-white border-r border-[#DBD9D9] flex items-center gap-2 px-3 shrink-0 min-w-[280px]">
+                    <Truck size={14} className="text-[#FB7506] shrink-0"/>
                     <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">Boxes in Transit Delivery Date</span>
                     <RefreshCw size={11} className="text-gray-400 cursor-pointer hover:text-[#FB7506] flex-shrink-0" onClick={() => refetch()}/>
                 </div>

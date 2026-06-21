@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { RefreshCw, Download, Calendar } from "lucide-react";
+import { RefreshCw, Download, Calendar, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 const EMPTY_ARR: any[] = [];
 
@@ -97,6 +97,7 @@ export default function CancelledPurchasesTab() {
                 {/* Header bar */}
                 <div className="flex items-center justify-between shrink-0">
                     <div className="h-9 bg-white border-b border-[#DBD9D9] flex items-center gap-2 px-3 flex-1">
+                        <XCircle size={14} className="text-[#FB7506] shrink-0"/>
                         <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">Purchase Cancelations by Date</span>
                         <RefreshCw size={11} className="text-gray-400 cursor-pointer hover:text-[#FB7506]"/>
                     </div>

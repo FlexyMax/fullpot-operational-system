@@ -43,7 +43,7 @@ Implement with explicit Tailwind arbitrary values (`text-[14px] font-bold`, etc.
 
 ## Component patterns
 
-- **Panel header bar:** `h-10 bg-white flex items-center justify-between pl-3 border-b border-[#DBD9D9] rounded-t-lg`, icon in `#FB7506`, title per the type scale above. A sidebar/list panel (like "Users") may use `bg-[#F5F3F3]` instead of white for its title bar — keep the rest of the page's panels white.
+- **Panel header bar:** `h-10 bg-white flex items-center justify-between pl-3 border-b border-[#DBD9D9] rounded-t-lg`, icon in `#FB7506`, title per the type scale above. A sidebar/list panel (like "Users") may use `bg-[#F5F3F3]` instead of white for its title bar — keep the rest of the page's panels white. **The leading icon is not optional** — every panel/section title across the app has one (`<Icon size={14-16} className="text-[#FB7506] shrink-0"/>` immediately before the `<span>`). QC's tabs shipped several titles with no icon at all ("QC Stock Search", "Quality Credits by Lot", "Boxes in Transit Delivery Date", "Packing List Boxes", the `ScanPanel`/`SubGridHeader` titles in `StockListTab`) — all fixed (2026-06-21), but check for this specifically whenever migrating a hand-rolled panel: a title with no icon is a miss, not a valid variant.
 - **Primary action button** (e.g. "Edit"): solid `bg-[#FB7506] hover:bg-orange-500`, white text, `rounded-md`, `h-7`, per the button type scale.
 - **Save button:** `bg-green-600 hover:bg-green-700`, white text.
 - **Cancel button:** `bg-gray-500 hover:bg-gray-600`, white text.
@@ -55,7 +55,9 @@ Implement with explicit Tailwind arbitrary values (`text-[14px] font-bold`, etc.
 - **Checkboxes:** checked = `bg-[#22C55E] text-white`; unchecked = `bg-white border border-[#DBD9D9] text-transparent`.
 - **Top-level / detail tab bar** (e.g. POS's Invoice/Available Stock/Invoice History, Accounts Payable's Terms/PO/Prebooks/Credits & Debits): the bar itself sits on `bg-[#F5F3F3] border border-[#DBD9D9]` (same container-gray token as the filter bar) so the tabs read as a distinct toolbar instead of blending into the white page. Active tab gets a `bg-white` chip (or just `text-[#FB7506] border-b-2 border-[#FB7506]` for underline-style tabs) to stand out against the gray bar; inactive tabs use `text-gray-500 hover:text-[#FB7506]`. This supersedes the old "dark hand-rolled tab bars are out of scope" gap below — tab bars now get the light-gray treatment, not dark.
 - **Nested tab bars must match their parent tab bar.** If a page has a tab bar inside a tab bar (e.g. QC's top-level Stock List/Transit Boxes/... bar, with a second Warehouse Stock/Invoiced Stock Lots bar nested below it), both get the *same* height (`h-10` bar, `h-8` buttons) and the same `bg-[#F5F3F3] border border-[#DBD9D9]` treatment — don't leave an inner tab bar shorter or on plain white just because it's nested one level deeper.
-- **Grid action menu (hamburger dropdown):** use the shared `GridMenu` (`src/components/GridMenu.tsx`) or replicate its pattern — trigger button is whatever color fits the panel (often solid `bg-[#FB7506]`), but the dropdown itself **must** render through `createPortal(..., document.body)` with `position: fixed` anchored to the trigger's `getBoundingClientRect()`. Without the portal, the dropdown is a descendant of the scrollable grid container and gets visually clipped/hidden behind the rows the moment the list scrolls or the container's `overflow-auto` kicks in. Dropdown items: `px-4 py-2.5 text-[14px] font-semibold uppercase`, `hover:bg-[#FB7506]/10`, `rounded-sm` panel, `border border-gray-200`, `z-[100]` — matching `PanelGrid`'s own `MenuDropdown`. Any page-local copy of this pattern (e.g. QC's `QualityCreditsTab`/`QCHistoryTab` `ActionMenu`) should match the same item styling even if it keeps its own trigger button.
+- **Grid action menu (hamburger dropdown):** use the shared `GridMenu` (`src/components/GridMenu.tsx`) or replicate its pattern in full — both the trigger and the dropdown are standardized, not just the dropdown.
+  - **Trigger** — the "3 lines" icon button, exactly like `PanelGrid`'s own hamburger: `h-10 w-10 flex items-center justify-center hover:bg-gray-100`, containing three `2px`-thick `bg-[#FB7506]` line segments that are horizontal when closed and rotate to vertical when open (`flex-col gap-[5px]` ↔ `flex-row gap-[5px]`). **Not** a solid orange square button with a lucide `Menu` (☰) icon — that was the old pattern and is now a known miss to look for (it was wrong in `GridMenu.tsx` itself, QC's `QualityCreditsTab`/`QCHistoryTab` local `ActionMenu`, and Items' `Tab1.tsx` `RightCard` — all fixed 2026-06-21). Width can stay `w-10`/`h-10` even when the trigger docks into a panel's top-right corner (`rounded-tr-lg`, `pr-0` on the parent header) — don't widen it back out to fit a label, the icon-only button is the standard.
+  - **Dropdown** — must render through `createPortal(..., document.body)` with `position: fixed` anchored to the trigger's `getBoundingClientRect()`. Without the portal, the dropdown is a descendant of the scrollable grid container and gets visually clipped/hidden behind the rows the moment the list scrolls or the container's `overflow-auto` kicks in. Dropdown items: `px-4 py-2.5 text-[14px] font-semibold uppercase`, `hover:bg-[#FB7506]/10`, `rounded-sm` panel, `border border-gray-200`, `z-[100]` — matching `PanelGrid`'s own `MenuDropdown`. Any page-local copy of this pattern should match the same trigger and item styling.
 
 ---
 
@@ -109,8 +111,12 @@ Remaining work:
   (previously `position: absolute` inside the scrollable grid, so it got
   clipped/hidden once the grid had `overflow-auto`), and restyled its items to
   the `PanelGrid` `MenuDropdown` standard (14px semibold uppercase, peach
-  hover, `rounded-sm`). The trigger button's own look (solid orange square)
-  was left as-is — only the dropdown panel changed.
+  hover, `rounded-sm`). Second pass (2026-06-21): the trigger itself was also
+  wrong — solid orange `w-24` square with a lucide `Menu` icon — replaced with
+  the real "3 lines" trigger (`h-10 w-10`, transparent/`hover:bg-gray-100`,
+  animated horizontal↔vertical orange bars), matching `PanelGrid` exactly.
+  Same trigger fix applied to QC's local `ActionMenu` copies
+  (`QualityCreditsTab`, `QCHistoryTab`) and Items' `Tab1.tsx` `RightCard`.
 - `awbs` (AWBs — Air Waybill Costs) — done (2026-06-21): page background,
   standalone filter toolbar, the `Btn` helper (`h-7`/14px/font-semibold
   regardless of color), the main AWB grid panel + all 5 detail tabs (Vendors,

@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
-import { RefreshCw, Download, Menu, Pencil, Trash2 } from "lucide-react";
+import { RefreshCw, Download, Pencil, Trash2, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useQCContext } from "../../context/QCContext";
@@ -51,8 +51,20 @@ function ActionMenu({ onEdit, onDelete, hasSelection, canEdit, canDelete }: any)
     return (
         <>
             <button ref={btnRef} onClick={toggle}
-                className="bg-[#FB7506] hover:bg-orange-500 text-white px-6 h-full flex items-center justify-center transition-colors shrink-0">
-                <Menu size={16}/>
+                className={cn("h-full w-10 flex items-center justify-center hover:bg-gray-100 transition-colors shrink-0", open ? "flex-row gap-[5px]" : "flex-col gap-[5px]")}>
+                {open ? (
+                    <>
+                        <span className="block h-5 w-[2px] bg-[#FB7506] rounded-full" />
+                        <span className="block h-5 w-[2px] bg-[#FB7506] rounded-full" />
+                        <span className="block h-5 w-[2px] bg-[#FB7506] rounded-full" />
+                    </>
+                ) : (
+                    <>
+                        <span className="block w-5 h-[2px] bg-[#FB7506] rounded-full" />
+                        <span className="block w-5 h-[2px] bg-[#FB7506] rounded-full" />
+                        <span className="block w-5 h-[2px] bg-[#FB7506] rounded-full" />
+                    </>
+                )}
             </button>
             {mounted && open && createPortal(
                 <div style={{ position: "fixed", top: pos.top, right: pos.right, zIndex: 100, minWidth: 220 }}
@@ -155,7 +167,8 @@ export default function QCHistoryTab({ onEditQC }: Props) {
 
             {/* ── Top header row ─────────────────────────────── */}
             <div className="flex items-stretch bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0 h-9">
-                <div className="bg-white flex items-center px-3 flex-1">
+                <div className="bg-white flex items-center gap-2 px-3 flex-1">
+                    <Search size={14} className="text-[#FB7506] shrink-0"/>
                     <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">QC Stock Search</span>
                 </div>
                 <button onClick={() => refetchDates()} className="px-3 border-l border-[#DBD9D9] text-green-500 hover:text-green-600 shrink-0">

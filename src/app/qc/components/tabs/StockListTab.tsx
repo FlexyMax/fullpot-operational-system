@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { RefreshCw, Download, ChevronDown, X, Trash2, Pencil, ArrowRight } from "lucide-react";
+import { RefreshCw, Download, ChevronDown, X, Trash2, Pencil, ArrowRight, Package, Warehouse, FileText, ScanLine } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useQCContext } from "../../context/QCContext";
@@ -62,10 +63,13 @@ function GridToolbar({ total, page, totalPages, onPage }:
 }
 
 // ── Sub-grid toolbar (header bar) ─────────────────────────────────────────────
-function SubGridHeader({ title, actions }: { title: string; actions?: React.ReactNode }) {
+function SubGridHeader({ title, icon: Icon, actions }: { title: string; icon?: LucideIcon; actions?: React.ReactNode }) {
     return (
         <div className="h-8 bg-white flex items-center justify-between px-3 shrink-0 rounded-t-lg border-b border-[#DBD9D9]">
-            <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">{title}</span>
+            <div className="flex items-center gap-2 min-w-0">
+                {Icon && <Icon size={14} className="text-[#FB7506] shrink-0"/>}
+                <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">{title}</span>
+            </div>
             <div className="flex items-center gap-2 shrink-0">
                 <RefreshCw size={12} className="text-gray-400 cursor-pointer hover:text-[#FB7506]"/>
                 {actions}
@@ -74,11 +78,14 @@ function SubGridHeader({ title, actions }: { title: string; actions?: React.Reac
     );
 }
 
-function ScanPanel({ title, rows, loading }: { title: string; rows: any[]; loading: boolean }) {
+function ScanPanel({ title, icon: Icon, rows, loading }: { title: string; icon?: LucideIcon; rows: any[]; loading: boolean }) {
     return (
         <div className="w-80 flex flex-col border-l border-[#DBD9D9] shrink-0 overflow-hidden">
             <div className="h-8 bg-white flex items-center justify-between px-3 shrink-0 border-b border-[#DBD9D9]">
-                <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight">{title}</span>
+                <div className="flex items-center gap-2 min-w-0">
+                    {Icon && <Icon size={14} className="text-[#FB7506] shrink-0"/>}
+                    <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">{title}</span>
+                </div>
                 <RefreshCw size={12} className="text-gray-400 cursor-pointer hover:text-[#FB7506]"/>
             </div>
             <GridToolbar total={rows.length} page={1} totalPages={1} onPage={() => {}}/>
@@ -253,7 +260,10 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                 {/* Packing grid */}
                 <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
                     <div className="h-8 bg-white flex items-center justify-between px-3 shrink-0 border-b border-[#DBD9D9]">
-                        <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight">Packing List Boxes</span>
+                        <div className="flex items-center gap-2 min-w-0">
+                            <Package size={14} className="text-[#FB7506] shrink-0"/>
+                            <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">Packing List Boxes</span>
+                        </div>
                         <RefreshCw size={12} className="text-gray-400 cursor-pointer hover:text-[#FB7506]" onClick={() => refetchPacking()}/>
                     </div>
                     <GridToolbar
@@ -322,7 +332,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                 </div>
 
                 {/* Right: Lots Scan IN */}
-                <ScanPanel title="Lots Scan IN" rows={scanInRows as any[]} loading={loadingScanIn}/>
+                <ScanPanel title="Lots Scan IN" icon={ScanLine} rows={scanInRows as any[]} loading={loadingScanIn}/>
             </div>
 
             {/* ── Bottom: sub-tabs ────────────────────────────── */}
@@ -347,7 +357,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                     {/* Warehouse Stock */}
                     {subTab === "warehouse-stock" && (
                         <div className="flex flex-col flex-1 overflow-hidden">
-                            <SubGridHeader title="Packing List Boxes transferred to Stock"
+                            <SubGridHeader title="Packing List Boxes transferred to Stock" icon={Warehouse}
                                 actions={
                                     canCreate && selRow ? (
                                         <button onClick={() => onSendToWarehouse?.(selRow)}
@@ -407,7 +417,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                     {subTab === "invoiced-lots" && (
                         <>
                             <div className="flex flex-col flex-1 overflow-hidden">
-                                <SubGridHeader title="Invoiced Stock Lots"/>
+                                <SubGridHeader title="Invoiced Stock Lots" icon={FileText}/>
                                 <GridToolbar total={(invoiceRows as any[]).length} page={1} totalPages={1} onPage={() => {}}/>
                                 <div className="overflow-auto flex-1">
                                     <table className="min-w-full text-xs text-left">
@@ -444,7 +454,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                                 </div>
                             </div>
                             {/* Invoice Lots Scan OUT panel */}
-                            <ScanPanel title="Invoice Lots Scan OUT" rows={scanOutRows as any[]} loading={loadingScanOut}/>
+                            <ScanPanel title="Invoice Lots Scan OUT" icon={ScanLine} rows={scanOutRows as any[]} loading={loadingScanOut}/>
                         </>
                     )}
                 </div>

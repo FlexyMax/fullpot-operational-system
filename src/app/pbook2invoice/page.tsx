@@ -54,14 +54,14 @@ type BottomTabId = typeof BOTTOM_TABS[number]["id"];
 // ─── Table cell helpers ────────────────────────────────────────────────────────
 function Th({ children, className }: { children: any; className?: string }) {
     return (
-        <th className={cn("p-2 text-left font-bold whitespace-nowrap text-gray-700 border-l border-gray-200 first:border-l-0", className)}>
+        <th className={cn("p-2 text-left font-bold whitespace-nowrap", className)}>
             {children}
         </th>
     );
 }
 function Td({ children, className }: { children: any; className?: string }) {
     return (
-        <td className={cn("p-2 whitespace-nowrap border-l border-gray-100 first:border-l-0", className)}>
+        <td className={cn("p-2 whitespace-nowrap", className)}>
             {children}
         </td>
     );
@@ -72,14 +72,14 @@ function TBtn({ icon: Icon, label, onClick, disabled, variant = "default" }: any
     return (
         <button onClick={onClick} disabled={disabled}
             className={cn(
-                "flex items-center gap-1.5 px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest border transition-all disabled:opacity-40 disabled:cursor-not-allowed",
+                "flex items-center gap-1.5 px-3 h-7 rounded-md text-[14px] font-semibold uppercase tracking-wide border transition-all disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap shrink-0",
                 variant === "danger"  && "bg-red-50 hover:bg-red-100 border-red-200 text-red-600",
                 variant === "warning" && "bg-amber-50 hover:bg-amber-100 border-amber-200 text-amber-600",
                 variant === "success" && "bg-green-600 hover:bg-green-700 border-transparent text-white",
-                variant === "default" && "bg-gray-100 hover:bg-gray-200 border-gray-200 text-gray-600",
+                variant === "default" && "bg-white hover:bg-gray-50 border-[#DBD9D9] text-[#4F4F4F]",
             )}
         >
-            <Icon size={11} />{label}
+            <Icon size={14} />{label}
         </button>
     );
 }
@@ -88,9 +88,9 @@ function TBtn({ icon: Icon, label, onClick, disabled, variant = "default" }: any
 function SBtn({ icon: Icon, label, onClick, disabled }: any) {
     return (
         <button onClick={onClick} disabled={disabled}
-            className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest bg-white/10 hover:bg-white/20 text-white rounded border border-white/20 disabled:opacity-40 transition-all whitespace-nowrap"
+            className="flex items-center gap-1 px-2.5 h-6 text-[12px] font-semibold uppercase tracking-wide bg-white hover:bg-gray-50 text-[#4F4F4F] rounded border border-[#DBD9D9] disabled:opacity-40 transition-all whitespace-nowrap"
         >
-            {Icon && <Icon size={10} />}{label}
+            {Icon && <Icon size={11} />}{label}
         </button>
     );
 }
@@ -99,16 +99,17 @@ function SBtn({ icon: Icon, label, onClick, disabled }: any) {
 function InvoicedTab({ rows }: { rows: any[] }) {
     return (
         <div className="flex flex-col h-full">
-            <div className="flex items-center gap-2 px-3 py-1 bg-green-800 shrink-0">
-                <span className="font-black text-[10px] text-white uppercase tracking-widest">Invoiced Prebooks</span>
+            <div className="flex items-center gap-2 px-3 h-9 bg-white border-b border-[#DBD9D9] shrink-0">
+                <Receipt size={14} className="text-[#FB7506] shrink-0"/>
+                <span className="font-bold text-[14px] text-[#4F4F4F] uppercase tracking-tight">Invoiced Prebooks</span>
                 <SBtn icon={X}       label="Close"     onClick={() => {}} />
                 <SBtn icon={Printer} label="Invoice"   onClick={() => {}} />
                 <SBtn icon={Printer} label="Pick List" onClick={() => {}} />
-                <div className="ml-auto"><Lock size={11} className="text-white/60" /></div>
+                <div className="ml-auto"><Lock size={11} className="text-gray-400" /></div>
             </div>
             <div className="flex-1 overflow-auto">
                 <table className="min-w-full text-xs text-left">
-                    <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
+                    <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                         <tr>
                             <Th>Lot</Th><Th>InvoiceDate</Th><Th>Invoice</Th>
                             <Th className="text-right">Boxes</Th><Th className="text-right">UxCase</Th>
@@ -118,9 +119,9 @@ function InvoicedTab({ rows }: { rows: any[] }) {
                             <Th className="text-right">Days</Th><Th>Status</Th><Th>SoldProduct</Th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-[#DBD9D9]">
                         {rows.map((r, i) => (
-                            <tr key={i} className="border-b odd:bg-white even:bg-gray-50 hover:bg-blue-50 text-gray-600">
+                            <tr key={i} className="hover:bg-gray-50 text-gray-600">
                                 <Td>{t(r.LOT)}</Td>
                                 <Td>{fmtDate(r.INVOICE_DATE ?? r.INV_DATE ?? r.LDINV_DATE)}</Td>
                                 <Td className="font-semibold text-blue-700">{t(r.INVOICE ?? r.INVOICE_NO)}</Td>
@@ -150,8 +151,9 @@ function InvoicedTab({ rows }: { rows: any[] }) {
 function AssignedStockTab({ rows }: { rows: any[] }) {
     return (
         <div className="flex flex-col h-full">
-            <div className="flex items-center gap-2 px-3 py-1 bg-gray-900 shrink-0">
-                <span className="font-black text-[10px] text-white uppercase tracking-widest">Preassigned Stock</span>
+            <div className="flex items-center gap-2 px-3 h-9 bg-white border-b border-[#DBD9D9] shrink-0">
+                <Package size={14} className="text-[#FB7506] shrink-0"/>
+                <span className="font-bold text-[14px] text-[#4F4F4F] uppercase tracking-tight">Preassigned Stock</span>
                 <div className="ml-auto flex gap-2">
                     <SBtn icon={Plus}  label="Assign to Prebook box" onClick={() => {}} />
                     <SBtn icon={Minus} label="Unassign Lot"          onClick={() => {}} />
@@ -159,7 +161,7 @@ function AssignedStockTab({ rows }: { rows: any[] }) {
             </div>
             <div className="flex-1 overflow-auto">
                 <table className="min-w-full text-xs text-left">
-                    <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
+                    <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                         <tr>
                             <Th>Customer</Th><Th>Warehouse</Th><Th>Vendor</Th>
                             <Th className="text-right">Stock</Th><Th className="text-right">UxPack</Th>
@@ -170,9 +172,9 @@ function AssignedStockTab({ rows }: { rows: any[] }) {
                             <Th className="text-right">UnitCost</Th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-[#DBD9D9]">
                         {rows.map((r, i) => (
-                            <tr key={i} className="border-b odd:bg-white even:bg-gray-50 hover:bg-blue-50 text-gray-600">
+                            <tr key={i} className="hover:bg-gray-50 text-gray-600">
                                 <Td>{t(r.CUSTOMER)}</Td>
                                 <Td>{t(r.WAREHOUSE ?? r.WHOUSE)}</Td>
                                 <Td>{t(r.VENDOR ?? r.GROWER)}</Td>
@@ -201,21 +203,22 @@ function AssignedStockTab({ rows }: { rows: any[] }) {
 function PurchaseTab({ rows }: { rows: any[] }) {
     return (
         <div className="flex flex-col h-full">
-            <div className="flex items-center gap-2 px-3 py-1 bg-gray-700 shrink-0">
-                <span className="font-black text-[10px] text-white uppercase tracking-widest">Purchase by Prebook Box</span>
+            <div className="flex items-center gap-2 px-3 h-9 bg-white border-b border-[#DBD9D9] shrink-0">
+                <ClipboardList size={14} className="text-[#FB7506] shrink-0"/>
+                <span className="font-bold text-[14px] text-[#4F4F4F] uppercase tracking-tight">Purchase by Prebook Box</span>
             </div>
             <div className="flex-1 overflow-auto">
                 <table className="min-w-full text-xs text-left">
-                    <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
+                    <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                         <tr>
                             <Th>PO No.</Th><Th>Product</Th><Th>Vendor</Th>
                             <Th className="text-right">Boxes</Th><Th className="text-right">UxCase</Th>
                             <Th className="text-right">Cost</Th><Th>Status</Th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-[#DBD9D9]">
                         {rows.map((r, i) => (
-                            <tr key={i} className="border-b odd:bg-white even:bg-gray-50 hover:bg-blue-50 text-gray-600">
+                            <tr key={i} className="hover:bg-gray-50 text-gray-600">
                                 <Td className="font-semibold">{t(r.PO_NO ?? r.PURCHASE_NO ?? r.SORDER_NO)}</Td>
                                 <Td>{t(r.PRODUCT ?? r.DESCRIPTION)}</Td>
                                 <Td>{t(r.VENDOR ?? r.GROWER)}</Td>
@@ -236,15 +239,16 @@ function PurchaseTab({ rows }: { rows: any[] }) {
 function StockOmTab({ rows, loading }: { rows: any[]; loading: boolean }) {
     return (
         <div className="flex flex-col h-full">
-            <div className="flex items-center gap-2 px-3 py-1 bg-blue-700 shrink-0">
-                <span className="font-black text-[10px] text-white uppercase tracking-widest">Stock Open Market</span>
+            <div className="flex items-center gap-2 px-3 h-9 bg-white border-b border-[#DBD9D9] shrink-0">
+                <ShoppingCart size={14} className="text-[#FB7506] shrink-0"/>
+                <span className="font-bold text-[14px] text-[#4F4F4F] uppercase tracking-tight">Stock Open Market</span>
                 <div className="ml-auto">
                     <SBtn icon={Plus} label="Assign to Prebook box" onClick={() => {}} />
                 </div>
             </div>
             <div className="flex-1 overflow-auto">
                 <table className="min-w-full text-xs text-left">
-                    <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
+                    <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                         <tr>
                             <Th>Customer</Th><Th>Warehouse</Th><Th>Vendor</Th>
                             <Th>Case</Th><Th className="text-right">UxPack</Th><Th className="text-right">PxCase</Th><Th className="text-right">UxCase</Th>
@@ -255,10 +259,10 @@ function StockOmTab({ rows, loading }: { rows: any[]; loading: boolean }) {
                             <Th className="text-right">GPM</Th><Th>BoxId</Th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-[#DBD9D9]">
                         {loading && <tr><td colSpan={18} className="p-6 text-center text-gray-400 italic"><Loader2 size={14} className="animate-spin inline mr-2" />Loading...</td></tr>}
                         {!loading && rows.map((r, i) => (
-                            <tr key={i} className="border-b odd:bg-white even:bg-gray-50 hover:bg-blue-50 text-gray-600">
+                            <tr key={i} className="hover:bg-gray-50 text-gray-600">
                                 <Td>{t(r.CUSTOMER)}</Td>
                                 <Td>{t(r.WAREHOUSE ?? r.WHOUSE)}</Td>
                                 <Td>{t(r.VENDOR ?? r.GROWER)}</Td>
@@ -290,15 +294,16 @@ function StockOmTab({ rows, loading }: { rows: any[]; loading: boolean }) {
 function SimilarTab({ rows }: { rows: any[] }) {
     return (
         <div className="flex flex-col h-full">
-            <div className="flex items-center gap-2 px-3 py-1 bg-red-700 shrink-0">
-                <span className="font-black text-[10px] text-white uppercase tracking-widest">Stock Open Market and Similar Products</span>
+            <div className="flex items-center gap-2 px-3 h-9 bg-white border-b border-[#DBD9D9] shrink-0">
+                <BookOpen size={14} className="text-[#FB7506] shrink-0"/>
+                <span className="font-bold text-[14px] text-[#4F4F4F] uppercase tracking-tight">Stock Open Market and Similar Products</span>
                 <div className="ml-auto">
                     <SBtn icon={Plus} label="Assign to Prebook box" onClick={() => {}} />
                 </div>
             </div>
             <div className="flex-1 overflow-auto">
                 <table className="min-w-full text-xs text-left">
-                    <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
+                    <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                         <tr>
                             <Th>Customer</Th><Th>Warehouse</Th><Th>Vendor</Th>
                             <Th>Case</Th><Th className="text-right">UxPack</Th><Th className="text-right">PxCase</Th><Th className="text-right">UxCase</Th>
@@ -308,9 +313,9 @@ function SimilarTab({ rows }: { rows: any[] }) {
                             <Th>Description</Th><Th className="text-right">UnitCost</Th><Th className="text-right">G</Th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-[#DBD9D9]">
                         {rows.map((r, i) => (
-                            <tr key={i} className="border-b odd:bg-white even:bg-gray-50 hover:bg-blue-50 text-gray-600">
+                            <tr key={i} className="hover:bg-gray-50 text-gray-600">
                                 <Td>{t(r.CUSTOMER)}</Td>
                                 <Td>{t(r.WAREHOUSE ?? r.WHOUSE)}</Td>
                                 <Td>{t(r.VENDOR ?? r.GROWER)}</Td>
@@ -558,7 +563,7 @@ export default function Pbook2InvoicePage() {
     const selectedLine = (lines as any[]).find((l: any) => t(l.UNICO ?? l.PBOOK_BOX_UQ) === selectedUnico);
 
     return (
-        <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
+        <div className="flex flex-col h-[100dvh] bg-[#FBF9F8] overflow-hidden font-sans text-[#333]">
 
             {/* ── Dark header ─────────────────────────────────────────────── */}
             <AppHeader title="Prebook to Invoice" extraRight={working ? <Loader2 size={14} className="animate-spin text-white/60" /> : undefined} />
@@ -567,11 +572,11 @@ export default function Pbook2InvoicePage() {
             <div className="flex gap-2 px-2 pt-2 shrink-0 h-96">
 
                 {/* Dates panel */}
-                <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden w-[700px] shrink-0">
-                    <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
+                <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden w-[700px] shrink-0">
+                    <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
                         <div className="flex items-center gap-2">
-                            <Calendar size={13} className="text-[#FB7506]" />
-                            <span className="font-black text-[10px] uppercase tracking-widest text-white">
+                            <Calendar size={15} className="text-[#FB7506]" />
+                            <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">
                                 Date Picker [Closed Prebooks]
                             </span>
                             {loadingDates && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
@@ -580,38 +585,38 @@ export default function Pbook2InvoicePage() {
                             {(["delivery", "shipping"] as const).map(m => (
                                 <button key={m} onClick={() => switchMode(m)}
                                     className={cn(
-                                        "px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest transition-all",
+                                        "px-2.5 h-6 rounded text-[12px] font-semibold uppercase tracking-wide transition-all",
                                         dateMode === m
                                             ? "bg-[#FB7506] text-white"
-                                            : "text-gray-400 hover:text-white hover:bg-white/10"
+                                            : "text-gray-500 hover:text-[#FB7506] hover:bg-gray-100"
                                     )}
                                 >
                                     {m === "delivery" ? "Delivery" : "Arrival"}
                                 </button>
                             ))}
                             <button onClick={() => setDatesKey(k => k + 1)}
-                                className="ml-1 flex items-center gap-1 bg-white/10 hover:bg-white/20 text-white text-[10px] font-black px-2 py-0.5 rounded transition-all"
+                                className="ml-1 flex items-center gap-1 bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] text-[12px] font-semibold px-2.5 h-6 rounded transition-all"
                             >
-                                <RefreshCcw size={10} /> Refresh
+                                <RefreshCcw size={11} /> Refresh
                             </button>
                         </div>
                     </div>
                     <div className="overflow-y-auto flex-1">
                         <table className="min-w-full text-xs text-left">
-                            <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
+                            <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                                 <tr>
                                     <th className="p-2">{dateMode === "delivery" ? "Delivery Date" : "Arrival Date"}</th>
-                                    <th className="p-2 text-right border-l border-gray-200">Prebks</th>
-                                    <th className="p-2 text-right border-l border-gray-200">T.Box</th>
-                                    <th className="p-2 text-right border-l border-gray-200">T.Purch</th>
-                                    <th className="p-2 text-right border-l border-gray-200">T.Ship</th>
-                                    <th className="p-2 text-right border-l border-gray-200">Invoice</th>
-                                    <th className="p-2 text-right border-l border-gray-200">Ext.Price</th>
-                                    <th className="p-2 text-right border-l border-gray-200">Cost</th>
-                                    <th className="p-2 text-right border-l border-gray-200">G.Profit%</th>
+                                    <th className="p-2 text-right">Prebks</th>
+                                    <th className="p-2 text-right">T.Box</th>
+                                    <th className="p-2 text-right">T.Purch</th>
+                                    <th className="p-2 text-right">T.Ship</th>
+                                    <th className="p-2 text-right">Invoice</th>
+                                    <th className="p-2 text-right">Ext.Price</th>
+                                    <th className="p-2 text-right">Cost</th>
+                                    <th className="p-2 text-right">G.Profit%</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody className="divide-y divide-[#DBD9D9]">
                                 {dateRows.length === 0 && !loadingDates && (
                                     <tr><td colSpan={9} className="p-6 text-center text-gray-400 italic">No dates available</td></tr>
                                 )}
@@ -622,20 +627,20 @@ export default function Pbook2InvoicePage() {
                                     const bg = vfpColor(row.COLOR);
                                     return (
                                         <tr key={i} onClick={() => selectDate(dateKey)}
-                                            className={cn("border-b cursor-pointer transition-colors",
-                                                sel ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50")}
+                                            className={cn("cursor-pointer transition-colors",
+                                                sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}
                                             style={!sel && bg ? { backgroundColor: bg } : undefined}
                                             title={t(row.TOOLTIP)}
                                         >
                                             <td className="p-2 font-medium">{fmtDate(raw)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100">{fmtI(row.RECORDS)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100">{fmtI(row.QTY_ORDER)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100">{fmtI(row.QTY_PORDER)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100">{fmtI(row.QTY_SHIP)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100 font-semibold">{fmtI(row.QTY_INVOICE)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100">{fmt(row.TOTAL_SALE)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100">{fmt(row.TOTAL_PURCHASE)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100">{fmt(row.PROFIT)}%</td>
+                                            <td className="p-2 text-right">{fmtI(row.RECORDS)}</td>
+                                            <td className="p-2 text-right">{fmtI(row.QTY_ORDER)}</td>
+                                            <td className="p-2 text-right">{fmtI(row.QTY_PORDER)}</td>
+                                            <td className="p-2 text-right">{fmtI(row.QTY_SHIP)}</td>
+                                            <td className="p-2 text-right font-semibold">{fmtI(row.QTY_INVOICE)}</td>
+                                            <td className="p-2 text-right">{fmt(row.TOTAL_SALE)}</td>
+                                            <td className="p-2 text-right">{fmt(row.TOTAL_PURCHASE)}</td>
+                                            <td className="p-2 text-right">{fmt(row.PROFIT)}%</td>
                                         </tr>
                                     );
                                 })}
@@ -645,60 +650,60 @@ export default function Pbook2InvoicePage() {
                 </div>
 
                 {/* Customers panel */}
-                <div className="flex-1 flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden min-w-0">
-                    <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
+                <div className="flex-1 flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden min-w-0">
+                    <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
                         <div className="flex items-center gap-2">
-                            <Users size={13} className="text-[#FB7506]" />
-                            <span className="font-black text-[10px] uppercase tracking-widest text-white">
+                            <Users size={15} className="text-[#FB7506]" />
+                            <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] truncate">
                                 Customers {selectedDate ? `— ${fmtDate(selectedDate)}` : ""}
                             </span>
                             {loadingCustomers && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
                         </div>
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 shrink-0">
                             <button onClick={handleMakeInvoice} disabled={!selectedDate || working}
-                                className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest bg-red-600 hover:bg-red-500 text-white rounded disabled:opacity-40 transition-all whitespace-nowrap"
+                                className="flex items-center gap-1 px-3 h-7 text-[14px] font-semibold uppercase tracking-wide bg-red-600 hover:bg-red-500 text-white rounded-md disabled:opacity-40 transition-all whitespace-nowrap"
                             >
-                                <Check size={10} /> Make Invoices
+                                <Check size={14} /> Make Invoices
                             </button>
                             <button onClick={() => {}} disabled={!selectedDate}
-                                className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest bg-white/10 hover:bg-white/20 text-white rounded border border-white/20 disabled:opacity-40 transition-all whitespace-nowrap"
+                                className="flex items-center gap-1 px-3 h-7 text-[14px] font-semibold uppercase tracking-wide bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] rounded-md disabled:opacity-40 transition-all whitespace-nowrap"
                             >
-                                <Printer size={10} /> Without Invoice
+                                <Printer size={14} /> Without Invoice
                             </button>
                             <button onClick={() => {}} disabled={!selectedDate}
-                                className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest bg-white/10 hover:bg-white/20 text-white rounded border border-white/20 disabled:opacity-40 transition-all whitespace-nowrap"
+                                className="flex items-center gap-1 px-3 h-7 text-[14px] font-semibold uppercase tracking-wide bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] rounded-md disabled:opacity-40 transition-all whitespace-nowrap"
                             >
-                                <Link2 size={10} /> Invoices
+                                <Link2 size={14} /> Invoices
                             </button>
                         </div>
                     </div>
                     <div className="overflow-auto flex-1">
                         <table className="min-w-full text-xs text-left">
-                            <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
+                            <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                                 <tr>
                                     <th className="p-2">Customer</th>
-                                    <th className="p-2 text-right border-l border-gray-200">Prebks</th>
-                                    <th className="p-2 text-right border-l border-gray-200">CrLimit</th>
-                                    <th className="p-2 text-right border-l border-gray-200">T.Box</th>
-                                    <th className="p-2 text-right border-l border-gray-200">T.Purch</th>
-                                    <th className="p-2 text-right border-l border-gray-200">T.Ship</th>
-                                    <th className="p-2 text-right border-l border-gray-200">Invoice</th>
-                                    <th className="p-2 text-right border-l border-gray-200">Ext.Price</th>
-                                    <th className="p-2 text-right border-l border-gray-200">Cost</th>
-                                    <th className="p-2 text-right border-l border-gray-200">G.Profit%</th>
+                                    <th className="p-2 text-right">Prebks</th>
+                                    <th className="p-2 text-right">CrLimit</th>
+                                    <th className="p-2 text-right">T.Box</th>
+                                    <th className="p-2 text-right">T.Purch</th>
+                                    <th className="p-2 text-right">T.Ship</th>
+                                    <th className="p-2 text-right">Invoice</th>
+                                    <th className="p-2 text-right">Ext.Price</th>
+                                    <th className="p-2 text-right">Cost</th>
+                                    <th className="p-2 text-right">G.Profit%</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody className="divide-y divide-[#DBD9D9]">
                                 <tr onClick={() => selectCustomer("%")}
-                                    className={cn("border-b cursor-pointer transition-colors",
-                                        selectedCustUq === "%" ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "bg-white hover:bg-blue-50")}
+                                    className={cn("cursor-pointer transition-colors",
+                                        selectedCustUq === "%" ? "!bg-[#FB7506]/10" : "bg-white hover:bg-gray-50")}
                                 >
                                     <td className="p-2 font-bold text-gray-500 italic">ALL</td>
-                                    <td className="p-2 border-l border-gray-100" /><td className="p-2 border-l border-gray-100" />
-                                    <td className="p-2 border-l border-gray-100" /><td className="p-2 border-l border-gray-100" />
-                                    <td className="p-2 border-l border-gray-100" /><td className="p-2 border-l border-gray-100" />
-                                    <td className="p-2 border-l border-gray-100" /><td className="p-2 border-l border-gray-100" />
-                                    <td className="p-2 border-l border-gray-100" />
+                                    <td className="p-2" /><td className="p-2" />
+                                    <td className="p-2" /><td className="p-2" />
+                                    <td className="p-2" /><td className="p-2" />
+                                    <td className="p-2" /><td className="p-2" />
+                                    <td className="p-2" />
                                 </tr>
                                 {!selectedDate && <tr><td colSpan={10} className="p-4 text-center text-gray-400 italic">Select a date</td></tr>}
                                 {(customers as any[]).filter((row: any) => t(row.CUSTOMER_UQ ?? "") !== "%").map((row: any, i: number) => {
@@ -707,21 +712,21 @@ export default function Pbook2InvoicePage() {
                                     const bg = vfpColor(row.COLOR);
                                     return (
                                         <tr key={i} onClick={() => selectCustomer(uq)}
-                                            className={cn("border-b cursor-pointer transition-colors text-gray-600",
-                                                sel ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50")}
+                                            className={cn("cursor-pointer transition-colors text-gray-600",
+                                                sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}
                                             style={!sel && bg ? { backgroundColor: bg } : undefined}
                                             title={t(row.TOOLTIP)}
                                         >
                                             <td className="p-2 font-medium">{t(row.CUSTOMER)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100">{fmtI(row.RECORDS)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100">{fmt(row.CREDIT_LIMIT)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100">{fmtI(row.QTY_ORDER)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100">{fmtI(row.QTY_PORDER)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100">{fmtI(row.QTY_SHIP)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100 font-semibold">{fmtI(row.QTY_INVOICE)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100">{fmt(row.TOTAL_SALE)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100">{fmt(row.TOTAL_PURCHASE)}</td>
-                                            <td className="p-2 text-right border-l border-gray-100">{fmt(row.PROFIT)}%</td>
+                                            <td className="p-2 text-right">{fmtI(row.RECORDS)}</td>
+                                            <td className="p-2 text-right">{fmt(row.CREDIT_LIMIT)}</td>
+                                            <td className="p-2 text-right">{fmtI(row.QTY_ORDER)}</td>
+                                            <td className="p-2 text-right">{fmtI(row.QTY_PORDER)}</td>
+                                            <td className="p-2 text-right">{fmtI(row.QTY_SHIP)}</td>
+                                            <td className="p-2 text-right font-semibold">{fmtI(row.QTY_INVOICE)}</td>
+                                            <td className="p-2 text-right">{fmt(row.TOTAL_SALE)}</td>
+                                            <td className="p-2 text-right">{fmt(row.TOTAL_PURCHASE)}</td>
+                                            <td className="p-2 text-right">{fmt(row.PROFIT)}%</td>
                                         </tr>
                                     );
                                 })}
@@ -732,20 +737,20 @@ export default function Pbook2InvoicePage() {
             </div>
 
             {/* ── ACTION BUTTON BAR (below top panels, full width) ─────────── */}
-            <div className="h-9 bg-white border border-gray-200 flex items-center px-3 gap-1 shrink-0 shadow-sm overflow-x-auto mx-2 rounded-lg mt-2">
+            <div className="h-11 bg-white border border-[#DBD9D9] flex items-center px-3 gap-1.5 shrink-0 shadow-sm overflow-x-auto mx-2 rounded-lg mt-2">
                 <TBtn icon={FilePen}      label="Change PO"      onClick={() => {}} disabled={!selectedUnico} />
                 <TBtn icon={Paperclip}    label="Attach Invoice"  onClick={() => {}} disabled={!selectedUnico} />
-                <div className="w-px h-5 bg-gray-200 mx-0.5 shrink-0" />
+                <div className="w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
                 <TBtn icon={RotateCcw}    label="Reset Inv."      onClick={handleResetInv} disabled={!selectedDate || working} variant="warning" />
                 <TBtn icon={Receipt}      label="Invoice"         onClick={() => {}} disabled={!selectedUnico} />
                 <TBtn icon={List}         label="Pick List"       onClick={() => {}} disabled={!selectedDate} />
                 <TBtn icon={StickyNote}   label="Notes"           onClick={() => {}} disabled={!selectedUnico} />
                 <TBtn icon={ShoppingCart} label="Stock OM"        onClick={() => { setActiveTab("stockom"); if (selectedUnico) fetchStockOm(); }} disabled={!selectedUnico} />
-                <div className="w-px h-5 bg-gray-200 mx-0.5 shrink-0" />
+                <div className="w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
                 <TBtn icon={Search}       label="Search"          onClick={() => {}} />
                 <TBtn icon={RefreshCw}    label="Update"          onClick={() => { setLinesKey(k => k + 1); }} disabled={!selectedDate} />
                 <TBtn icon={UserCog}      label="Change Cust."    onClick={() => {}} disabled={!selectedUnico} />
-                <div className="w-px h-5 bg-gray-200 mx-0.5 shrink-0" />
+                <div className="w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
                 <TBtn icon={Trash2}       label="Void Line"       onClick={handleVoidLine} disabled={!selectedUnico || !canDelete || working} variant="danger" />
                 <TBtn icon={Scissors}     label="Partial Invoice" onClick={() => {}} disabled={!selectedUnico} />
             </div>
@@ -753,17 +758,17 @@ export default function Pbook2InvoicePage() {
             {/* ── LINES + TABS (full width, flex-1) ───────────────────────── */}
             <div className="flex flex-col flex-1 overflow-hidden px-2 pb-2 pt-0 gap-0 min-h-0">
 
-                {/* Orange header bar — "Closed Prebook box by date and customer" */}
-                <div className="h-9 bg-[#FB7506] flex items-center justify-between px-3 shrink-0 mt-2 rounded-t-lg">
+                {/* Header bar — "Closed Prebook box by date and customer" */}
+                <div className="h-10 bg-white border border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 mt-2 rounded-t-lg">
                     <div className="flex items-center gap-2">
-                        <Lock size={13} className="text-white" />
-                        <span className="font-black text-[10px] uppercase tracking-widest text-white">
+                        <Lock size={15} className="text-[#FB7506]" />
+                        <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">
                             Closed Prebook box by date and customer
                         </span>
-                        {loadingLines && <RefreshCcw size={10} className="text-white/70 animate-spin" />}
+                        {loadingLines && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
                     </div>
                     <div className="flex items-center gap-2">
-                        <div className="flex items-center bg-white rounded px-2 py-0.5 gap-1 w-56">
+                        <div className="flex items-center bg-[#F5F3F3] border border-[#DBD9D9] rounded px-2 py-1 gap-1 w-56">
                             <Search size={11} className="text-gray-400 shrink-0" />
                             <input
                                 value={productSearch}
@@ -778,51 +783,51 @@ export default function Pbook2InvoicePage() {
                                 </button>
                             )}
                         </div>
-                        <span className="text-[9px] font-black text-white/70 whitespace-nowrap">{(lines as any[]).length} rows</span>
+                        <span className="text-[10px] font-bold text-gray-400 whitespace-nowrap">{(lines as any[]).length} rows</span>
                         <button onClick={() => {}}
-                            className="flex items-center gap-1.5 bg-gray-700 hover:bg-gray-600 text-white px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap"
+                            className="flex items-center gap-1.5 bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] px-3 h-7 rounded-md text-[14px] font-semibold uppercase tracking-wide transition-all whitespace-nowrap"
                         >
-                            <List size={11} /> Prebook Line
+                            <List size={14} /> Prebook Line
                         </button>
                         <button onClick={() => {}} disabled={!selectedDate}
-                            className="flex items-center gap-1.5 bg-white hover:bg-gray-100 text-gray-700 px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed transition-all whitespace-nowrap"
+                            className="flex items-center gap-1.5 bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] px-3 h-7 rounded-md text-[14px] font-semibold uppercase tracking-wide disabled:opacity-40 disabled:cursor-not-allowed transition-all whitespace-nowrap"
                         >
-                            <Copy size={11} /> Gen. Invoices
+                            <Copy size={14} /> Gen. Invoices
                         </button>
                         <button onClick={handleMakeInvoice} disabled={!selectedUnico || !canEdit || working}
-                            className="flex items-center gap-1.5 bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed transition-all whitespace-nowrap"
+                            className="flex items-center gap-1.5 bg-green-600 hover:bg-green-500 text-white px-3 h-7 rounded-md text-[14px] font-semibold uppercase tracking-wide disabled:opacity-40 disabled:cursor-not-allowed transition-all whitespace-nowrap"
                         >
-                            <Check size={11} /> Make Invoice
+                            <Check size={14} /> Make Invoice
                         </button>
                     </div>
                 </div>
 
                 {/* Lines table */}
-                <div className="flex-1 overflow-auto bg-white border border-t-0 border-gray-200 shadow-sm min-h-0 rounded-b-lg">
+                <div className="flex-1 overflow-auto bg-white border border-t-0 border-[#DBD9D9] shadow-sm min-h-0 rounded-b-lg">
                     <table className="min-w-full text-xs text-left">
-                        <thead className="bg-gray-100 border-b text-gray-700 font-bold sticky top-0 z-10">
+                        <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                             <tr>
                                 <th className="p-2 whitespace-nowrap">PO.No</th>
-                                <th className="p-2 whitespace-nowrap border-l border-gray-200">SO.No</th>
-                                <th className="p-2 whitespace-nowrap border-l border-gray-200">CustPO</th>
-                                <th className="p-2 whitespace-nowrap border-l border-gray-200">Invoice</th>
-                                <th className="p-2 whitespace-nowrap border-l border-gray-200">Description</th>
-                                <th className="p-2 whitespace-nowrap border-l border-gray-200">Case</th>
-                                <th className="p-2 whitespace-nowrap text-right border-l border-gray-200">UxPack</th>
-                                <th className="p-2 whitespace-nowrap text-right border-l border-gray-200">PxCase</th>
-                                <th className="p-2 whitespace-nowrap text-right border-l border-gray-200">UxCase</th>
-                                <th className="p-2 whitespace-nowrap text-right border-l border-gray-200">Qty_SOrder</th>
-                                <th className="p-2 whitespace-nowrap text-right border-l border-gray-200">Qty_POrder</th>
-                                <th className="p-2 whitespace-nowrap text-right border-l border-gray-200 text-red-600">To_invoice</th>
-                                <th className="p-2 whitespace-nowrap text-right border-l border-gray-200">S.Price</th>
-                                <th className="p-2 whitespace-nowrap border-l border-gray-200">C.Ship-Date</th>
-                                <th className="p-2 whitespace-nowrap border-l border-gray-200">Customer</th>
-                                <th className="p-2 whitespace-nowrap text-right border-l border-gray-200">Quality</th>
-                                <th className="p-2 whitespace-nowrap border-l border-gray-200">WHouse</th>
-                                <th className="p-2 whitespace-nowrap border-l border-gray-200">BoxId</th>
+                                <th className="p-2 whitespace-nowrap">SO.No</th>
+                                <th className="p-2 whitespace-nowrap">CustPO</th>
+                                <th className="p-2 whitespace-nowrap">Invoice</th>
+                                <th className="p-2 whitespace-nowrap">Description</th>
+                                <th className="p-2 whitespace-nowrap">Case</th>
+                                <th className="p-2 whitespace-nowrap text-right">UxPack</th>
+                                <th className="p-2 whitespace-nowrap text-right">PxCase</th>
+                                <th className="p-2 whitespace-nowrap text-right">UxCase</th>
+                                <th className="p-2 whitespace-nowrap text-right">Qty_SOrder</th>
+                                <th className="p-2 whitespace-nowrap text-right">Qty_POrder</th>
+                                <th className="p-2 whitespace-nowrap text-right">To_invoice</th>
+                                <th className="p-2 whitespace-nowrap text-right">S.Price</th>
+                                <th className="p-2 whitespace-nowrap">C.Ship-Date</th>
+                                <th className="p-2 whitespace-nowrap">Customer</th>
+                                <th className="p-2 whitespace-nowrap text-right">Quality</th>
+                                <th className="p-2 whitespace-nowrap">WHouse</th>
+                                <th className="p-2 whitespace-nowrap">BoxId</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody className="divide-y divide-[#DBD9D9]">
                             {(lines as any[]).map((row: any, i: number) => {
                                 const unico = t(row.UNICO ?? row.PBOOK_BOX_UQ ?? "");
                                 const sel = selectedUnico === unico;
@@ -831,28 +836,28 @@ export default function Pbook2InvoicePage() {
                                 return (
                                     <tr key={i}
                                         onClick={() => setSelectedUnico(sel ? null : unico)}
-                                        className={cn("border-b cursor-pointer transition-colors text-gray-600",
-                                            sel ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50")}
+                                        className={cn("cursor-pointer transition-colors text-gray-600",
+                                            sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}
                                         style={!sel && bg ? { backgroundColor: bg } : undefined}
                                     >
                                         <td className="p-2 whitespace-nowrap">{t(row.SORDER_NO ?? row.PO_NO)}</td>
-                                        <td className="p-2 whitespace-nowrap border-l border-gray-100 font-semibold text-blue-700">{t(row.PBOOK_NO ?? row.SO_NO)}</td>
-                                        <td className="p-2 whitespace-nowrap border-l border-gray-100">{t(row.CPORDER_NO ?? row.CUST_PO)}</td>
-                                        <td className="p-2 whitespace-nowrap border-l border-gray-100">{t(row.INVOICE_NO ?? row.INVOICE)}</td>
-                                        <td className="p-2 whitespace-nowrap border-l border-gray-100 max-w-[160px] truncate">{t(row.DESCRIPTION ?? row.PRODUCT)}</td>
-                                        <td className="p-2 whitespace-nowrap border-l border-gray-100">{t(row.CASE_SH ?? row.CASE)}</td>
-                                        <td className="p-2 whitespace-nowrap border-l border-gray-100 text-right">{fmtI(row.UP_X_PACK)}</td>
-                                        <td className="p-2 whitespace-nowrap border-l border-gray-100 text-right">{fmtI(row.PACKS_X_CASE)}</td>
-                                        <td className="p-2 whitespace-nowrap border-l border-gray-100 text-right">{fmtI(row.UNITS_X_BOX ?? row.UNITS_X_CASE)}</td>
-                                        <td className="p-2 whitespace-nowrap border-l border-gray-100 text-right">{fmtI(row.QTY_ORDER ?? row.QTY_SORDER)}</td>
-                                        <td className="p-2 whitespace-nowrap border-l border-gray-100 text-right">{fmtI(row.QTY_PORDER)}</td>
-                                        <td className={cn("p-2 whitespace-nowrap border-l border-gray-100 text-right font-bold", toInv > 0 ? "text-red-600" : "")}>{fmtI(row.TO_INVOICE)}</td>
-                                        <td className="p-2 whitespace-nowrap border-l border-gray-100 text-right font-semibold">{fmt(row.SO_PRICE ?? row.PRICE)}</td>
-                                        <td className="p-2 whitespace-nowrap border-l border-gray-100">{fmtDate(row.PB_DATE ?? row.SHIP_DATE)}</td>
-                                        <td className="p-2 whitespace-nowrap border-l border-gray-100 font-medium">{t(row.CUSTOMER)}</td>
-                                        <td className="p-2 whitespace-nowrap border-l border-gray-100 text-right">{fmtI(row.BOXES_ADJUST ?? row.QUALITY)}</td>
-                                        <td className="p-2 whitespace-nowrap border-l border-gray-100">{t(row.WAREHOUSE ?? row.WHOUSE)}</td>
-                                        <td className="p-2 whitespace-nowrap border-l border-gray-100 text-gray-400">{t(row.PCCODE ?? row.BOX_ID)}</td>
+                                        <td className="p-2 whitespace-nowrap font-semibold text-blue-700">{t(row.PBOOK_NO ?? row.SO_NO)}</td>
+                                        <td className="p-2 whitespace-nowrap">{t(row.CPORDER_NO ?? row.CUST_PO)}</td>
+                                        <td className="p-2 whitespace-nowrap">{t(row.INVOICE_NO ?? row.INVOICE)}</td>
+                                        <td className="p-2 whitespace-nowrap max-w-[160px] truncate">{t(row.DESCRIPTION ?? row.PRODUCT)}</td>
+                                        <td className="p-2 whitespace-nowrap">{t(row.CASE_SH ?? row.CASE)}</td>
+                                        <td className="p-2 whitespace-nowrap text-right">{fmtI(row.UP_X_PACK)}</td>
+                                        <td className="p-2 whitespace-nowrap text-right">{fmtI(row.PACKS_X_CASE)}</td>
+                                        <td className="p-2 whitespace-nowrap text-right">{fmtI(row.UNITS_X_BOX ?? row.UNITS_X_CASE)}</td>
+                                        <td className="p-2 whitespace-nowrap text-right">{fmtI(row.QTY_ORDER ?? row.QTY_SORDER)}</td>
+                                        <td className="p-2 whitespace-nowrap text-right">{fmtI(row.QTY_PORDER)}</td>
+                                        <td className={cn("p-2 whitespace-nowrap text-right font-bold", toInv > 0 ? "text-red-600" : "")}>{fmtI(row.TO_INVOICE)}</td>
+                                        <td className="p-2 whitespace-nowrap text-right font-semibold">{fmt(row.SO_PRICE ?? row.PRICE)}</td>
+                                        <td className="p-2 whitespace-nowrap">{fmtDate(row.PB_DATE ?? row.SHIP_DATE)}</td>
+                                        <td className="p-2 whitespace-nowrap font-medium">{t(row.CUSTOMER)}</td>
+                                        <td className="p-2 whitespace-nowrap text-right">{fmtI(row.BOXES_ADJUST ?? row.QUALITY)}</td>
+                                        <td className="p-2 whitespace-nowrap">{t(row.WAREHOUSE ?? row.WHOUSE)}</td>
+                                        <td className="p-2 whitespace-nowrap text-gray-400">{t(row.PCCODE ?? row.BOX_ID)}</td>
                                     </tr>
                                 );
                             })}
@@ -867,8 +872,8 @@ export default function Pbook2InvoicePage() {
                 </div>
 
                 {/* ── Bottom detail tabs ──────────────────────────────────── */}
-                <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden h-[230px] shrink-0 mt-1">
-                    <div className="h-10 bg-[#374151] flex items-end px-2 shrink-0 gap-0.5">
+                <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden h-[230px] shrink-0 mt-1">
+                    <div className="h-10 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-end px-2 shrink-0 gap-0.5">
                         {BOTTOM_TABS.map(tab => (
                             <button key={tab.id}
                                 onClick={() => {
@@ -876,10 +881,10 @@ export default function Pbook2InvoicePage() {
                                     if (tab.id === "stockom" && selectedUnico) fetchStockOm();
                                 }}
                                 className={cn(
-                                    "flex items-center gap-1.5 px-3 h-7 text-[10px] font-black uppercase tracking-wider rounded-t transition-all",
+                                    "flex items-center gap-1.5 px-3 h-8 text-[10px] font-black uppercase tracking-wider rounded-t transition-all",
                                     activeTab === tab.id
-                                        ? "bg-[#f4f6f8] text-[#FB7506] border-b-2 border-[#FB7506]"
-                                        : "text-gray-400 hover:text-white hover:bg-white/10"
+                                        ? "bg-white text-[#FB7506] border-b-2 border-[#FB7506]"
+                                        : "text-gray-500 hover:text-[#FB7506] hover:bg-white/60"
                                 )}
                             >
                                 <tab.icon size={11} />
@@ -892,7 +897,7 @@ export default function Pbook2InvoicePage() {
                             </span>
                         )}
                     </div>
-                    <div className="flex-1 overflow-hidden flex flex-col bg-[#f4f6f8]">
+                    <div className="flex-1 overflow-hidden flex flex-col bg-white">
                         {activeTab === "invoiced"  && <InvoicedTab      rows={detail?.invoiced      ?? []} />}
                         {activeTab === "assigned"  && <AssignedStockTab rows={detail?.stockAssigned ?? []} />}
                         {activeTab === "purchase"  && <PurchaseTab      rows={detail?.purchase      ?? []} />}

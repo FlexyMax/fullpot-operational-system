@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { RefreshCw, Download, Menu, Plus, Pencil, Trash2 } from "lucide-react";
+import { RefreshCw, Download, Plus, Pencil, Trash2, Search, Award } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useQCContext } from "../../context/QCContext";
@@ -62,8 +62,20 @@ function ActionMenu({ onAdd, onEdit, onDelete, hasSelection, canCreate, canEdit,
     return (
         <>
             <button ref={btnRef} onClick={toggle}
-                className="h-full bg-[#FB7506] hover:bg-orange-500 text-white px-6 flex items-center justify-center shrink-0 transition-colors">
-                <Menu size={16}/>
+                className={cn("h-full w-10 flex items-center justify-center hover:bg-gray-100 shrink-0 transition-colors", open ? "flex-row gap-[5px]" : "flex-col gap-[5px]")}>
+                {open ? (
+                    <>
+                        <span className="block h-5 w-[2px] bg-[#FB7506] rounded-full" />
+                        <span className="block h-5 w-[2px] bg-[#FB7506] rounded-full" />
+                        <span className="block h-5 w-[2px] bg-[#FB7506] rounded-full" />
+                    </>
+                ) : (
+                    <>
+                        <span className="block w-5 h-[2px] bg-[#FB7506] rounded-full" />
+                        <span className="block w-5 h-[2px] bg-[#FB7506] rounded-full" />
+                        <span className="block w-5 h-[2px] bg-[#FB7506] rounded-full" />
+                    </>
+                )}
             </button>
             {mounted && open && createPortal(
                 <div style={{ position: "fixed", top: pos.top, right: pos.right, zIndex: 100, minWidth: 220 }}
@@ -153,7 +165,8 @@ export default function QualityCreditsTab({ onAddQC, onEditQC }: Props) {
 
             {/* ── Top header ─────────────────────────────────── */}
             <div className="flex items-stretch bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0">
-                <div className="h-9 bg-white flex items-center px-3 flex-1">
+                <div className="h-9 bg-white flex items-center gap-2 px-3 flex-1">
+                    <Search size={14} className="text-[#FB7506] shrink-0"/>
                     <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">QC Stock Search</span>
                 </div>
                 <input value={search} onChange={e => setSearch(e.target.value)}
@@ -229,7 +242,8 @@ export default function QualityCreditsTab({ onAddQC, onEditQC }: Props) {
             <div className="bg-white rounded-lg border border-[#DBD9D9] shadow-sm flex flex-col overflow-hidden flex-[2] min-h-0">
                 {/* Header + action menu */}
                 <div className="flex items-stretch shrink-0 h-9 border-b border-[#DBD9D9]">
-                    <div className="bg-white flex items-center px-3 flex-1">
+                    <div className="bg-white flex items-center gap-2 px-3 flex-1">
+                        <Award size={14} className="text-[#FB7506] shrink-0"/>
                         <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">Quality Credits by Lot</span>
                     </div>
                     <ActionMenu

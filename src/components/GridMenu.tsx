@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface GridMenuItem {
@@ -62,10 +61,25 @@ export function GridMenu({
         ref={btnRef}
         onClick={toggle}
         disabled={globalDisabled}
-        className="h-10 bg-[#FB7506] hover:bg-orange-600 text-white w-24 flex items-center justify-center transition-colors border-none cursor-pointer shadow-inner rounded-tr-lg disabled:opacity-50"
+        className={cn(
+          "h-10 w-10 flex items-center justify-center hover:bg-gray-100 transition-colors rounded-tr-lg disabled:opacity-50",
+          open ? "flex-row gap-[5px]" : "flex-col gap-[5px]"
+        )}
         title="Menu"
       >
-        <Menu size={20} />
+        {open ? (
+          <>
+            <span className="block h-5 w-[2px] bg-[#FB7506] rounded-full" />
+            <span className="block h-5 w-[2px] bg-[#FB7506] rounded-full" />
+            <span className="block h-5 w-[2px] bg-[#FB7506] rounded-full" />
+          </>
+        ) : (
+          <>
+            <span className="block w-5 h-[2px] bg-[#FB7506] rounded-full" />
+            <span className="block w-5 h-[2px] bg-[#FB7506] rounded-full" />
+            <span className="block w-5 h-[2px] bg-[#FB7506] rounded-full" />
+          </>
+        )}
       </button>
       {mounted && open && createPortal(
         <div
