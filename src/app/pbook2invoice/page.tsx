@@ -80,7 +80,7 @@ function TBtn({ icon: Icon, label, onClick, disabled, variant = "default" }: any
         <button onClick={onClick} disabled={disabled}
             className={cn(
                 "flex items-center gap-1.5 px-3 h-7 rounded-md text-[14px] font-semibold uppercase tracking-wide border transition-all disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap shrink-0",
-                variant === "danger"  && "bg-red-50 hover:bg-red-100 border-red-200 text-red-600",
+                variant === "danger"  && "bg-[#FB7506]/10 hover:bg-[#FB7506]/20 border-[#FB7506]/30 text-[#FB7506]",
                 variant === "warning" && "bg-amber-50 hover:bg-amber-100 border-amber-200 text-amber-600",
                 variant === "success" && "bg-green-600 hover:bg-green-700 border-transparent text-white",
                 variant === "default" && "bg-white hover:bg-gray-50 border-[#DBD9D9] text-[#4F4F4F]",
@@ -95,9 +95,9 @@ function TBtn({ icon: Icon, label, onClick, disabled, variant = "default" }: any
 function SBtn({ icon: Icon, label, onClick, disabled }: any) {
     return (
         <button onClick={onClick} disabled={disabled}
-            className="flex items-center gap-1 px-2.5 h-6 text-[12px] font-semibold uppercase tracking-wide bg-white hover:bg-gray-50 text-[#4F4F4F] rounded border border-[#DBD9D9] disabled:opacity-40 transition-all whitespace-nowrap"
+            className="flex items-center gap-1.5 px-3 h-7 text-[14px] font-semibold uppercase tracking-wide bg-white hover:bg-gray-50 text-[#4F4F4F] rounded-md border border-[#DBD9D9] disabled:opacity-40 transition-all whitespace-nowrap"
         >
-            {Icon && <Icon size={11} />}{label}
+            {Icon && <Icon size={14} />}{label}
         </button>
     );
 }
@@ -106,7 +106,7 @@ function SBtn({ icon: Icon, label, onClick, disabled }: any) {
 function InvoicedTab({ rows }: { rows: any[] }) {
     return (
         <div>
-            <div className="flex items-center gap-2 px-3 h-9 bg-white border-b border-[#DBD9D9] shrink-0">
+            <div className="flex items-center gap-2 px-3 h-10 bg-white border-b border-[#DBD9D9] shrink-0">
                 <Receipt size={14} className="text-[#FB7506] shrink-0"/>
                 <span className="font-bold text-[14px] text-[#4F4F4F] uppercase tracking-tight">Invoiced Prebooks</span>
                 <SBtn icon={X}       label="Close"     onClick={() => {}} />
@@ -114,7 +114,7 @@ function InvoicedTab({ rows }: { rows: any[] }) {
                 <SBtn icon={Printer} label="Pick List" onClick={() => {}} />
                 <div className="ml-auto"><Lock size={11} className="text-gray-400" /></div>
             </div>
-            <div className="h-[255px] overflow-y-auto">
+            <div className="h-[230px] overflow-y-auto">
                 <table className="min-w-full text-xs text-left">
                     <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                         <tr>
@@ -157,7 +157,7 @@ function InvoicedTab({ rows }: { rows: any[] }) {
 function AssignedStockTab({ rows }: { rows: any[] }) {
     return (
         <div>
-            <div className="flex items-center gap-2 px-3 h-9 bg-white border-b border-[#DBD9D9] shrink-0">
+            <div className="flex items-center gap-2 px-3 h-10 bg-white border-b border-[#DBD9D9] shrink-0">
                 <Package size={14} className="text-[#FB7506] shrink-0"/>
                 <span className="font-bold text-[14px] text-[#4F4F4F] uppercase tracking-tight">Preassigned Stock</span>
                 <div className="ml-auto flex gap-2">
@@ -165,7 +165,7 @@ function AssignedStockTab({ rows }: { rows: any[] }) {
                     <SBtn icon={Minus} label="Unassign Lot"          onClick={() => {}} />
                 </div>
             </div>
-            <div className="h-[255px] overflow-y-auto">
+            <div className="h-[230px] overflow-y-auto">
                 <table className="min-w-full text-xs text-left">
                     <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                         <tr>
@@ -209,11 +209,11 @@ function AssignedStockTab({ rows }: { rows: any[] }) {
 function PurchaseTab({ rows }: { rows: any[] }) {
     return (
         <div>
-            <div className="flex items-center gap-2 px-3 h-9 bg-white border-b border-[#DBD9D9] shrink-0">
+            <div className="flex items-center gap-2 px-3 h-10 bg-white border-b border-[#DBD9D9] shrink-0">
                 <ClipboardList size={14} className="text-[#FB7506] shrink-0"/>
                 <span className="font-bold text-[14px] text-[#4F4F4F] uppercase tracking-tight">Purchase by Prebook Box</span>
             </div>
-            <div className="h-[255px] overflow-y-auto">
+            <div className="h-[230px] overflow-y-auto">
                 <table className="min-w-full text-xs text-left">
                     <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                         <tr>
@@ -245,14 +245,14 @@ function PurchaseTab({ rows }: { rows: any[] }) {
 function StockOmTab({ rows, loading }: { rows: any[]; loading: boolean }) {
     return (
         <div>
-            <div className="flex items-center gap-2 px-3 h-9 bg-white border-b border-[#DBD9D9] shrink-0">
+            <div className="flex items-center gap-2 px-3 h-10 bg-white border-b border-[#DBD9D9] shrink-0">
                 <ShoppingCart size={14} className="text-[#FB7506] shrink-0"/>
                 <span className="font-bold text-[14px] text-[#4F4F4F] uppercase tracking-tight">Stock Open Market</span>
                 <div className="ml-auto">
                     <SBtn icon={Plus} label="Assign to Prebook box" onClick={() => {}} />
                 </div>
             </div>
-            <div className="h-[255px] overflow-y-auto">
+            <div className="h-[230px] overflow-y-auto">
                 <table className="min-w-full text-xs text-left">
                     <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                         <tr>
@@ -300,14 +300,14 @@ function StockOmTab({ rows, loading }: { rows: any[]; loading: boolean }) {
 function SimilarTab({ rows }: { rows: any[] }) {
     return (
         <div>
-            <div className="flex items-center gap-2 px-3 h-9 bg-white border-b border-[#DBD9D9] shrink-0">
+            <div className="flex items-center gap-2 px-3 h-10 bg-white border-b border-[#DBD9D9] shrink-0">
                 <BookOpen size={14} className="text-[#FB7506] shrink-0"/>
                 <span className="font-bold text-[14px] text-[#4F4F4F] uppercase tracking-tight">Stock Open Market and Similar Products</span>
                 <div className="ml-auto">
                     <SBtn icon={Plus} label="Assign to Prebook box" onClick={() => {}} />
                 </div>
             </div>
-            <div className="h-[255px] overflow-y-auto">
+            <div className="h-[230px] overflow-y-auto">
                 <table className="min-w-full text-xs text-left">
                     <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                         <tr>
@@ -587,11 +587,11 @@ export default function Pbook2InvoicePage() {
                             </span>
                             {loadingDates && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5">
                             {(["delivery", "shipping"] as const).map(m => (
                                 <button key={m} onClick={() => switchMode(m)}
                                     className={cn(
-                                        "px-2.5 h-6 rounded text-[12px] font-semibold uppercase tracking-wide transition-all",
+                                        "px-3 h-7 rounded-md text-[14px] font-semibold uppercase tracking-wide transition-all",
                                         dateMode === m
                                             ? "bg-[#FB7506] text-white"
                                             : "text-gray-500 hover:text-[#FB7506] hover:bg-gray-100"
@@ -601,9 +601,9 @@ export default function Pbook2InvoicePage() {
                                 </button>
                             ))}
                             <button onClick={() => setDatesKey(k => k + 1)}
-                                className="ml-1 flex items-center gap-1 bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] text-[12px] font-semibold px-2.5 h-6 rounded transition-all"
+                                className="ml-1 flex items-center gap-1.5 bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] text-[14px] font-semibold px-3 h-7 rounded-md transition-all"
                             >
-                                <RefreshCcw size={11} /> Refresh
+                                <RefreshCcw size={14} /> Refresh
                             </button>
                         </div>
                     </div>
@@ -667,7 +667,7 @@ export default function Pbook2InvoicePage() {
                         </div>
                         <div className="flex items-center gap-1.5 shrink-0">
                             <button onClick={handleMakeInvoice} disabled={!selectedDate || working}
-                                className="flex items-center gap-1 px-3 h-7 text-[14px] font-semibold uppercase tracking-wide bg-red-600 hover:bg-red-500 text-white rounded-md disabled:opacity-40 transition-all whitespace-nowrap"
+                                className="flex items-center gap-1.5 px-3 h-7 text-[14px] font-semibold uppercase tracking-wide bg-green-600 hover:bg-green-500 text-white rounded-md disabled:opacity-40 disabled:cursor-not-allowed transition-all whitespace-nowrap"
                             >
                                 <Check size={14} /> Make Invoices
                             </button>
@@ -747,7 +747,7 @@ export default function Pbook2InvoicePage() {
             </div>
 
             {/* ── ACTION BUTTON BAR — sticks to the top once scrolled past the Date/Customer row, so the grids below keep the buttons in reach ── */}
-            <div className="sticky top-0 z-20 h-11 bg-white border border-[#DBD9D9] flex items-center px-3 gap-1.5 shrink-0 shadow-sm overflow-x-auto mx-2 rounded-lg mt-2">
+            <div className="sticky top-0 z-20 h-11 bg-[#F5F3F3] border border-[#DBD9D9] flex items-center px-3 gap-1.5 shrink-0 shadow-sm overflow-x-auto mx-2 rounded-lg mt-2">
                 <TBtn icon={FilePen}      label="Change PO"      onClick={() => {}} disabled={!selectedUnico} />
                 <TBtn icon={Paperclip}    label="Attach Invoice"  onClick={() => {}} disabled={!selectedUnico} />
                 <div className="w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
@@ -766,7 +766,7 @@ export default function Pbook2InvoicePage() {
             </div>
 
             {/* ── Closed Prebook box by date and customer (Lines) — separate panel, not nested in any grid ── */}
-            <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden mx-2 mt-2 h-[480px] shrink-0">
+            <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden mx-2 mt-2 h-[432px] shrink-0">
                 <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0">
                     <div className="flex items-center gap-2 min-w-0">
                         <Lock size={15} className="text-[#FB7506] shrink-0" />
