@@ -578,7 +578,7 @@ export default function Pbook2InvoicePage() {
             <div className="flex gap-2 mx-2 mt-2 shrink-0 max-h-[280px]">
 
                 {/* Left: Date Picker */}
-                <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1 min-w-0">
+                <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-[0.9] min-w-0">
                     <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
                         <div className="flex items-center gap-2">
                             <Calendar size={15} className="text-[#FB7506]" />
@@ -656,7 +656,7 @@ export default function Pbook2InvoicePage() {
                 </div>
 
                 {/* Right: Customers for the selected date */}
-                <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1 min-w-0">
+                <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-[1.1] min-w-0">
                     <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
                         <div className="flex items-center gap-2 min-w-0">
                             <Users size={15} className="text-[#FB7506] shrink-0" />
