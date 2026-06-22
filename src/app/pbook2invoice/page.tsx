@@ -619,7 +619,6 @@ export default function Pbook2InvoicePage() {
                 <table className="min-w-full text-xs text-left">
                     <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                         <tr className="divide-x divide-[#DBD9D9]/30">
-                            <th className="p-2 w-8" />
                             <th className="p-2 whitespace-nowrap">PO.No</th>
                             <th className="p-2 whitespace-nowrap">SO.No</th>
                             <th className="p-2 whitespace-nowrap">CustPO</th>
@@ -647,76 +646,35 @@ export default function Pbook2InvoicePage() {
                             const toInv = parseFloat(row.TO_INVOICE ?? 0);
                             const rowStyle = vfpRowStyle(row.BACK_COLOR ?? row.BACKCOLOR);
                             return (
-                                <Fragment key={i}>
-                                    <tr
-                                        onClick={() => setSelectedUnico(sel ? null : unico)}
-                                        className={cn("cursor-pointer transition-colors text-gray-600 divide-x divide-[#DBD9D9]",
-                                            sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}
-                                        style={!sel ? rowStyle : undefined}
-                                    >
-                                        <td className="p-2 text-center">
-                                            <ChevronRight size={14} className={cn("inline-block text-gray-400 transition-transform", sel && "rotate-90 text-[#FB7506]")} />
-                                        </td>
-                                        <td className="p-2 whitespace-nowrap">{t(row.SORDER_NO ?? row.PO_NO)}</td>
-                                        <td className="p-2 whitespace-nowrap font-semibold text-blue-700">{t(row.PBOOK_NO ?? row.SO_NO)}</td>
-                                        <td className="p-2 whitespace-nowrap">{t(row.CPORDER_NO ?? row.CUST_PO)}</td>
-                                        <td className="p-2 whitespace-nowrap">{t(row.INVOICE_NO ?? row.INVOICE)}</td>
-                                        <td className="p-2 whitespace-nowrap max-w-[160px] truncate">{t(row.DESCRIPTION ?? row.PRODUCT)}</td>
-                                        <td className="p-2 whitespace-nowrap">{t(row.CASE_SH ?? row.CASE)}</td>
-                                        <td className="p-2 whitespace-nowrap text-right">{fmtI(row.UP_X_PACK)}</td>
-                                        <td className="p-2 whitespace-nowrap text-right">{fmtI(row.PACKS_X_CASE)}</td>
-                                        <td className="p-2 whitespace-nowrap text-right">{fmtI(row.UNITS_X_BOX ?? row.UNITS_X_CASE)}</td>
-                                        <td className="p-2 whitespace-nowrap text-right">{fmtI(row.QTY_ORDER ?? row.QTY_SORDER)}</td>
-                                        <td className="p-2 whitespace-nowrap text-right">{fmtI(row.QTY_PORDER)}</td>
-                                        <td className={cn("p-2 whitespace-nowrap text-right font-bold", toInv > 0 ? "text-red-600" : "")}>{fmtI(row.TO_INVOICE)}</td>
-                                        <td className="p-2 whitespace-nowrap text-right font-semibold">{fmt(row.SO_PRICE ?? row.PRICE)}</td>
-                                        <td className="p-2 whitespace-nowrap">{fmtDate(row.PB_DATE ?? row.SHIP_DATE)}</td>
-                                        <td className="p-2 whitespace-nowrap font-medium">{t(row.CUSTOMER)}</td>
-                                        <td className="p-2 whitespace-nowrap text-right">{fmtI(row.BOXES_ADJUST ?? row.QUALITY)}</td>
-                                        <td className="p-2 whitespace-nowrap">{t(row.WAREHOUSE ?? row.WHOUSE)}</td>
-                                        <td className="p-2 whitespace-nowrap text-gray-400">{t(row.PCCODE ?? row.BOX_ID)}</td>
-                                    </tr>
-                                    {sel && (
-                                        <tr>
-                                            <td colSpan={19} className="p-0 bg-[#FBF9F8]">
-                                                {/* ── Nested level 3: detail tabs for this line ───── */}
-                                                <div className="mx-4 my-2 rounded-lg border border-[#DBD9D9] overflow-hidden bg-white shadow-sm">
-                                                    <div className="h-10 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-end px-2 gap-0.5">
-                                                        {BOTTOM_TABS.map(tab => (
-                                                            <button key={tab.id}
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setActiveTab(tab.id);
-                                                                    if (tab.id === "stockom" && selectedUnico) fetchStockOm();
-                                                                }}
-                                                                className={cn(
-                                                                    "flex items-center gap-1.5 px-3 h-8 text-[10px] font-black uppercase tracking-wider rounded-t transition-all",
-                                                                    activeTab === tab.id
-                                                                        ? "bg-white text-[#FB7506] border-b-2 border-[#FB7506]"
-                                                                        : "text-gray-500 hover:text-[#FB7506] hover:bg-white/60"
-                                                                )}
-                                                            >
-                                                                <tab.icon size={11} />
-                                                                {tab.label}
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                    <div className="bg-white" onClick={(e) => e.stopPropagation()}>
-                                                        {activeTab === "invoiced"  && <InvoicedTab      rows={detail?.invoiced      ?? []} />}
-                                                        {activeTab === "assigned"  && <AssignedStockTab rows={detail?.stockAssigned ?? []} />}
-                                                        {activeTab === "purchase"  && <PurchaseTab      rows={detail?.purchase      ?? []} />}
-                                                        {activeTab === "stockom"   && <StockOmTab       rows={stockOm} loading={loadingStockOm} />}
-                                                        {activeTab === "similar"   && <SimilarTab       rows={detail?.stockSimilar  ?? []} />}
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )}
-                                </Fragment>
+                                <tr key={i}
+                                    onClick={() => setSelectedUnico(sel ? null : unico)}
+                                    className={cn("cursor-pointer transition-colors text-gray-600 divide-x divide-[#DBD9D9]",
+                                        sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}
+                                    style={!sel ? rowStyle : undefined}
+                                >
+                                    <td className="p-2 whitespace-nowrap">{t(row.SORDER_NO ?? row.PO_NO)}</td>
+                                    <td className="p-2 whitespace-nowrap font-semibold text-blue-700">{t(row.PBOOK_NO ?? row.SO_NO)}</td>
+                                    <td className="p-2 whitespace-nowrap">{t(row.CPORDER_NO ?? row.CUST_PO)}</td>
+                                    <td className="p-2 whitespace-nowrap">{t(row.INVOICE_NO ?? row.INVOICE)}</td>
+                                    <td className="p-2 whitespace-nowrap max-w-[160px] truncate">{t(row.DESCRIPTION ?? row.PRODUCT)}</td>
+                                    <td className="p-2 whitespace-nowrap">{t(row.CASE_SH ?? row.CASE)}</td>
+                                    <td className="p-2 whitespace-nowrap text-right">{fmtI(row.UP_X_PACK)}</td>
+                                    <td className="p-2 whitespace-nowrap text-right">{fmtI(row.PACKS_X_CASE)}</td>
+                                    <td className="p-2 whitespace-nowrap text-right">{fmtI(row.UNITS_X_BOX ?? row.UNITS_X_CASE)}</td>
+                                    <td className="p-2 whitespace-nowrap text-right">{fmtI(row.QTY_ORDER ?? row.QTY_SORDER)}</td>
+                                    <td className="p-2 whitespace-nowrap text-right">{fmtI(row.QTY_PORDER)}</td>
+                                    <td className={cn("p-2 whitespace-nowrap text-right font-bold", toInv > 0 ? "text-red-600" : "")}>{fmtI(row.TO_INVOICE)}</td>
+                                    <td className="p-2 whitespace-nowrap text-right font-semibold">{fmt(row.SO_PRICE ?? row.PRICE)}</td>
+                                    <td className="p-2 whitespace-nowrap">{fmtDate(row.PB_DATE ?? row.SHIP_DATE)}</td>
+                                    <td className="p-2 whitespace-nowrap font-medium">{t(row.CUSTOMER)}</td>
+                                    <td className="p-2 whitespace-nowrap text-right">{fmtI(row.BOXES_ADJUST ?? row.QUALITY)}</td>
+                                    <td className="p-2 whitespace-nowrap">{t(row.WAREHOUSE ?? row.WHOUSE)}</td>
+                                    <td className="p-2 whitespace-nowrap text-gray-400">{t(row.PCCODE ?? row.BOX_ID)}</td>
+                                </tr>
                             );
                         })}
                         {!loadingLines && (lines as any[]).length === 0 && (
-                            <tr><td colSpan={19} className="p-10 text-center text-gray-400 italic">No prebook lines found</td></tr>
+                            <tr><td colSpan={18} className="p-10 text-center text-gray-400 italic">No prebook lines found</td></tr>
                         )}
                     </tbody>
                 </table>
@@ -938,6 +896,41 @@ export default function Pbook2InvoicePage() {
                 <div className="w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
                 <TBtn icon={Trash2}       label="Void Line"       onClick={handleVoidLine} disabled={!selectedUnico || !canDelete || working} variant="danger" />
                 <TBtn icon={Scissors}     label="Partial Invoice" onClick={() => {}} disabled={!selectedUnico} />
+            </div>
+
+            {/* ── Detail tabs for the selected line — separate panel, not nested in any grid ── */}
+            <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden mx-2 mt-2 mb-2 shrink-0">
+                <div className="h-10 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-end px-2 gap-0.5 shrink-0">
+                    {BOTTOM_TABS.map(tab => (
+                        <button key={tab.id}
+                            onClick={() => {
+                                setActiveTab(tab.id);
+                                if (tab.id === "stockom" && selectedUnico) fetchStockOm();
+                            }}
+                            className={cn(
+                                "flex items-center gap-1.5 px-3 h-8 text-[10px] font-black uppercase tracking-wider rounded-t transition-all",
+                                activeTab === tab.id
+                                    ? "bg-white text-[#FB7506] border-b-2 border-[#FB7506]"
+                                    : "text-gray-500 hover:text-[#FB7506] hover:bg-white/60"
+                            )}
+                        >
+                            <tab.icon size={11} />
+                            {tab.label}
+                        </button>
+                    ))}
+                    {!selectedUnico && (
+                        <span className="ml-auto text-[9px] font-black text-gray-500 uppercase tracking-widest self-center pr-2">
+                            Select a line to see details
+                        </span>
+                    )}
+                </div>
+                <div>
+                    {activeTab === "invoiced"  && <InvoicedTab      rows={detail?.invoiced      ?? []} />}
+                    {activeTab === "assigned"  && <AssignedStockTab rows={detail?.stockAssigned ?? []} />}
+                    {activeTab === "purchase"  && <PurchaseTab      rows={detail?.purchase      ?? []} />}
+                    {activeTab === "stockom"   && <StockOmTab       rows={stockOm} loading={loadingStockOm} />}
+                    {activeTab === "similar"   && <SimilarTab       rows={detail?.stockSimilar  ?? []} />}
+                </div>
             </div>
 
             <AppFooter areaLabel="Prebook to Invoice" />
