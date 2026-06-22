@@ -114,7 +114,7 @@ function InvoicedTab({ rows }: { rows: any[] }) {
                 <SBtn icon={Printer} label="Pick List" onClick={() => {}} />
                 <div className="ml-auto"><Lock size={11} className="text-gray-400" /></div>
             </div>
-            <div className="max-h-[300px] overflow-y-auto">
+            <div className="h-[300px] overflow-y-auto">
                 <table className="min-w-full text-xs text-left">
                     <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                         <tr>
@@ -165,7 +165,7 @@ function AssignedStockTab({ rows }: { rows: any[] }) {
                     <SBtn icon={Minus} label="Unassign Lot"          onClick={() => {}} />
                 </div>
             </div>
-            <div className="max-h-[300px] overflow-y-auto">
+            <div className="h-[300px] overflow-y-auto">
                 <table className="min-w-full text-xs text-left">
                     <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                         <tr>
@@ -213,7 +213,7 @@ function PurchaseTab({ rows }: { rows: any[] }) {
                 <ClipboardList size={14} className="text-[#FB7506] shrink-0"/>
                 <span className="font-bold text-[14px] text-[#4F4F4F] uppercase tracking-tight">Purchase by Prebook Box</span>
             </div>
-            <div className="max-h-[300px] overflow-y-auto">
+            <div className="h-[300px] overflow-y-auto">
                 <table className="min-w-full text-xs text-left">
                     <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                         <tr>
@@ -252,7 +252,7 @@ function StockOmTab({ rows, loading }: { rows: any[]; loading: boolean }) {
                     <SBtn icon={Plus} label="Assign to Prebook box" onClick={() => {}} />
                 </div>
             </div>
-            <div className="max-h-[300px] overflow-y-auto">
+            <div className="h-[300px] overflow-y-auto">
                 <table className="min-w-full text-xs text-left">
                     <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                         <tr>
@@ -307,7 +307,7 @@ function SimilarTab({ rows }: { rows: any[] }) {
                     <SBtn icon={Plus} label="Assign to Prebook box" onClick={() => {}} />
                 </div>
             </div>
-            <div className="max-h-[300px] overflow-y-auto">
+            <div className="h-[300px] overflow-y-auto">
                 <table className="min-w-full text-xs text-left">
                     <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                         <tr>
