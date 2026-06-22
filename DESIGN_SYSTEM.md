@@ -196,6 +196,44 @@ Remaining work:
   Modals across all three tabs were left dark, per the gap below.
   `DualListModal`/quota/PO-prices/stock/prebook/product/image modals are
   numerous in this module — none were touched.
+- `inventory-entry` — fully done (2026-06-22), the biggest single-page
+  migration so far (1800+ lines, 5 tabs): page shell `#f4f6f8` → `#FBF9F8`,
+  top tab bar dark `#374151` → gray-container `#F5F3F3` standard (white
+  active chip). Every panel header across all 5 tabs (Date Picker, AWB List,
+  Vendors, Boxes Detail, Products List, PL Control, AWB Search, PO List ×2
+  table views) went from dark `#374151` titles to white `h-10` headers with
+  a leading `#FB7506` icon and `#4F4F4F` title text; every `<thead>` went
+  from light `bg-gray-100` to the dark `#4F4F4F`/white standard with full
+  horizontal+vertical grid lines; every row selection went from
+  `bg-blue-100 ring-2 ring-blue-300` to `!bg-[#FB7506]/10` (no ring); every
+  `odd:bg-white even:bg-gray-50` striping was dropped in favor of plain
+  `divide-y`/`hover:bg-gray-50`, matching how every other migrated grid in
+  the app behaves (this page was the last one still striping rows).
+  **Vendors (16 buttons) and Boxes Detail (10 buttons) toolbars** were
+  crammed directly into their dark header bars — converted to the
+  `GridMenu` dropdown pattern instead (the file already had a dead, unused
+  `import { GridMenu }` left over from an earlier incomplete pass at this —
+  a sign worth noticing next time an import looks unused on a page that's
+  otherwise mid-migration). Grouped related actions with `separator: true`
+  and colored by category (orange for the primary/most-used action, blue
+  for warehouse-movement actions, purple for filter/setup, gray for
+  stubbed/"coming soon" report buttons, red reserved for the one real
+  delete action) — mirrors exactly how `awbs/page.tsx` already used
+  `GridMenu` for its own AWB/Vendor-Invoice toolbars, which was the
+  reference for this conversion. Smaller per-tab toolbars (Products List,
+  PL Control, AWB Search, PO List — 2-4 buttons each) stayed inline in the
+  white header instead, restyled to the `h-7`/`text-[14px]`/`font-semibold`
+  button scale.
+  The one red button on the page ("Close" packing, PL Control tab) became
+  the tinted-orange danger style, matching Prebook to Invoice's "Void
+  Line" precedent — red is for status badges/data flags only, never
+  buttons. Data-semantic colors that aren't button chrome (delayed-row red
+  tint, WH/CHECK status text, Confirm/Diff/Ship column colors) were left
+  alone since they're conveying row/cell state, not UI affordance.
+  **Out of scope, left dark per the modal-header exception**: the 3 inline
+  modals (Packing, Box Entry, Change AWB) and all 13 standalone
+  `components/inventory-entry/Modal*.tsx` files — none of their internals
+  were touched this round.
 - `login` — (2026-06-22) the photo background had a `linear-gradient(to left, ...)`
   veil stacked on top of the global dark veil, darkening only the right side
   where the glass login card sits; removed so the photo reads the same

@@ -651,7 +651,7 @@ export default function InventoryEntryPage() {
     const fInput = "fos-input h-7 text-xs";
 
     return (
-        <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
+        <div className="flex flex-col h-[100dvh] bg-[#FBF9F8] overflow-hidden font-sans text-[#333]">
 
             <AppHeader title="Inventory Entry" />
 
@@ -659,10 +659,10 @@ export default function InventoryEntryPage() {
             <div className="flex flex-col flex-1 gap-2 p-2 overflow-hidden">
 
                 {/* ── Tab Container ── */}
-                <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1">
+                <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1">
 
                     {/* ── Tab bar ── */}
-                    <div className="h-10 bg-[#374151] flex items-end px-2 shrink-0 gap-0.5">
+                    <div className="h-10 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-end px-2 shrink-0 gap-0.5">
                         {([
                             { key: "awbpackings", label: "AWB's Packings" },
                             { key: "products",    label: "Products List" },
@@ -673,8 +673,8 @@ export default function InventoryEntryPage() {
                             <button key={tab.key}
                                 onClick={() => { setActiveTab(tab.key as LeftTab); setTabLoaded(prev => ({ ...prev, [tab.key]: true })); }}
                                 className={cn(
-                                    "flex items-center gap-1.5 px-4 h-8 text-[10px] font-black uppercase tracking-wider rounded-t transition-all whitespace-nowrap shrink-0",
-                                    activeTab === tab.key ? "bg-[#f4f6f8] text-[#FB7506] border-b-2 border-[#FB7506]" : "text-gray-400 hover:text-white hover:bg-white/10"
+                                    "flex items-center gap-1.5 px-4 h-8 text-[12px] font-bold uppercase tracking-wide rounded-t transition-all whitespace-nowrap shrink-0",
+                                    activeTab === tab.key ? "bg-white text-[#FB7506] border-b-2 border-[#FB7506]" : "text-gray-500 hover:text-[#FB7506] hover:bg-white/60"
                                 )}>
                                 {tab.label}
                             </button>
@@ -682,7 +682,7 @@ export default function InventoryEntryPage() {
                     </div>
 
                     {/* ── Tab Content ── */}
-                    <div className="flex-1 overflow-auto bg-[#f4f6f8] p-2 relative">
+                    <div className="flex-1 overflow-auto bg-[#FBF9F8] p-2 relative">
 
                     {/* ══ Tab 1: AWB's Packings ══ */}
                     {activeTab === "awbpackings" && (
@@ -691,24 +691,24 @@ export default function InventoryEntryPage() {
                             {/* Row 1: Date Picker + AWB List */}
                             <div className="flex gap-2 shrink-0" style={{ height: "28%" }}>
                                 {/* Date Picker */}
-                                <div className="w-[30%] flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden shrink-0">
-                                    <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0">
+                                <div className="w-[30%] flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0">
+                                    <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0">
                                         <div className="flex items-center gap-2">
-                                            <Calendar size={13} className="text-[#FB7506]" />
-                                            <span className="font-black text-[10px] uppercase tracking-widest text-white">Date Picker</span>
+                                            <Calendar size={14} className="text-[#FB7506]" />
+                                            <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">Date Picker</span>
                                         </div>
                                         {loadingDates && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
                                     </div>
                                     <div className="flex-1 overflow-y-auto">
                                         <table className="w-full text-xs">
-                                            <thead className="bg-gray-100 text-gray-700 font-bold sticky top-0 z-10">
-                                                <tr>
+                                            <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
+                                                <tr className="divide-x divide-[#DBD9D9]/30">
                                                     {["G.Ship Date","AWBs","Pcs","Dly"].map(h => (
-                                                        <th key={h} className="p-2 border-r border-gray-600/50 whitespace-nowrap">{h}</th>
+                                                        <th key={h} className="p-2 whitespace-nowrap">{h}</th>
                                                     ))}
                                                 </tr>
                                             </thead>
-                                            <tbody>
+                                            <tbody className="divide-y divide-[#DBD9D9]">
                                                 {(awbDates as any[]).length === 0 ? (
                                                     <tr><td colSpan={4} className="p-4 text-center text-gray-400 italic">No dates</td></tr>
                                                 ) : (awbDates as any[]).map((row: any, i: number) => {
@@ -719,10 +719,10 @@ export default function InventoryEntryPage() {
                                                     return (
                                                         <tr key={i}
                                                             onClick={() => { setLddate(d); setLcawb("%"); setLcawbcode(""); setLcpack_uq(""); setLcpk_box_uq(""); }}
-                                                            className={cn("cursor-pointer border-b border-gray-100 transition-colors", sel ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : dly > 0 ? "bg-red-50 hover:bg-red-100" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50")}>
-                                                            <td className={cn("p-2 border-r border-gray-100 whitespace-nowrap", sel ? "text-blue-700" : dly > 0 ? "text-red-700" : "text-gray-700")}>{displayDate}</td>
-                                                            <td className="p-2 border-r border-gray-100 text-right">{t(row.RECORDS ?? row.AWBS ?? row.AWB_COUNT ?? "")}</td>
-                                                            <td className="p-2 border-r border-gray-100 text-right">{t(row.PIECES ?? "")}</td>
+                                                            className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", sel ? "!bg-[#FB7506]/10" : dly > 0 ? "bg-red-50 hover:bg-red-100" : "hover:bg-gray-50")}>
+                                                            <td className={cn("p-2 whitespace-nowrap", dly > 0 && !sel ? "text-red-700" : "text-gray-700")}>{displayDate}</td>
+                                                            <td className="p-2 text-right">{t(row.RECORDS ?? row.AWBS ?? row.AWB_COUNT ?? "")}</td>
+                                                            <td className="p-2 text-right">{t(row.PIECES ?? "")}</td>
                                                             <td className={cn("p-2 text-right", dly > 0 ? "text-red-600" : "text-gray-300")}>{dly || ""}</td>
                                                         </tr>
                                                     );
@@ -733,24 +733,24 @@ export default function InventoryEntryPage() {
                                 </div>
 
                                 {/* AWB List */}
-                                <div className="flex-1 flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden min-w-0">
-                                    <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0">
+                                <div className="flex-1 flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden min-w-0">
+                                    <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0">
                                         <div className="flex items-center gap-2">
-                                            <Plane size={13} className="text-[#FB7506]" />
-                                            <span className="font-black text-[10px] uppercase tracking-widest text-white">AWB List &mdash; {lddate}</span>
+                                            <Plane size={14} className="text-[#FB7506]" />
+                                            <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">AWB List &mdash; {lddate}</span>
                                         </div>
                                         {loadingAwb && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
                                     </div>
                                     <div className="flex-1 overflow-auto">
                                         <table className="min-w-full text-xs text-left">
-                                            <thead className="bg-gray-100 text-gray-700 font-bold sticky top-0 z-10">
-                                                <tr>
+                                            <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
+                                                <tr className="divide-x divide-[#DBD9D9]/30">
                                                     {["AWB","Rec.","WHStatus","Pieces","FBoxes","Delayed","InWHouse"].map(h => (
-                                                        <th key={h} className="p-2 border-r border-gray-600/50 whitespace-nowrap">{h}</th>
+                                                        <th key={h} className="p-2 whitespace-nowrap">{h}</th>
                                                     ))}
                                                 </tr>
                                             </thead>
-                                            <tbody>
+                                            <tbody className="divide-y divide-[#DBD9D9]">
                                                 {(awbByDate as any[]).length === 0 && !loadingAwb ? (
                                                     <tr><td colSpan={7} className="p-4 text-center text-gray-400 italic">No AWBs for this date</td></tr>
                                                 ) : (awbByDate as any[]).map((row: any, i: number) => {
@@ -759,13 +759,13 @@ export default function InventoryEntryPage() {
                                                     const dly  = Number(row.DELAYED ?? 0);
                                                     return (
                                                         <tr key={i} onClick={() => handleSelectAwb(row)}
-                                                            className={cn("border-b cursor-pointer transition-colors", sel ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50")}>
-                                                            <td className={cn("p-2 border-r border-gray-100", sel ? "text-blue-700" : "")}>{code}</td>
-                                                            <td className="p-2 border-r border-gray-100 text-right">{t(row.RECORDS)}</td>
-                                                            <td className={cn("p-2 border-r border-gray-100 text-center", t(row.WHSTATUS) === "WH" ? "text-green-600" : t(row.WHSTATUS) === "CHECK" ? "text-blue-500" : "text-gray-500")}>{t(row.WHSTATUS)}</td>
-                                                            <td className="p-2 border-r border-gray-100 text-right">{t(row.BOXES ?? row.PIECES ?? "")}</td>
-                                                            <td className="p-2 border-r border-gray-100 text-right">{t(row.FULL_BOXES ?? "")}</td>
-                                                            <td className={cn("p-2 border-r border-gray-100 text-right", dly > 0 ? "text-red-500" : "text-gray-300")}>{dly || ""}</td>
+                                                            className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
+                                                            <td className="p-2 font-semibold text-[#FB7506]">{code}</td>
+                                                            <td className="p-2 text-right">{t(row.RECORDS)}</td>
+                                                            <td className={cn("p-2 text-center", t(row.WHSTATUS) === "WH" ? "text-green-600" : t(row.WHSTATUS) === "CHECK" ? "text-blue-500" : "text-gray-500")}>{t(row.WHSTATUS)}</td>
+                                                            <td className="p-2 text-right">{t(row.BOXES ?? row.PIECES ?? "")}</td>
+                                                            <td className="p-2 text-right">{t(row.FULL_BOXES ?? "")}</td>
+                                                            <td className={cn("p-2 text-right", dly > 0 ? "text-red-500" : "text-gray-300")}>{dly || ""}</td>
                                                             <td className="p-2 text-right">{t(row.QTY_TRANSFER ?? row.IN_WHOUSE ?? "")}</td>
                                                         </tr>
                                                     );
@@ -773,73 +773,60 @@ export default function InventoryEntryPage() {
                                             </tbody>
                                         </table>
                                     </div>
-                                    <div className="px-3 py-1 border-t border-gray-200 bg-gray-50 shrink-0">
-                                        <span className="text-[10px] font-bold text-gray-400">{(awbByDate as any[]).length} AWBs</span>
+                                    <div className="px-3 py-1 border-t border-[#DBD9D9] bg-[#F5F3F3] shrink-0">
+                                        <span className="text-[10px] font-bold text-gray-500">{(awbByDate as any[]).length} AWBs</span>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Row 2: Vendors / Packings */}
-                            <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden shrink-0" style={{ height: "24%" }}>
-                                <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 gap-2">
-                                    <div className="flex items-center gap-2 shrink-0">
-                                        <Package size={13} className="text-[#FB7506]" />
-                                        <span className="font-black text-[10px] uppercase tracking-widest text-white">Vendors{lcawbcode ? ` — ${lcawbcode}` : ""}</span>
-                                        {loadingPacking && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
-                                    </div>
-                                    <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
-                                        {[
-                                            { label: "AWB Cust. PO", icon: FileText, action: () => toast.info("AWB Cust. PO — coming soon.") },
-                                            { label: "Label Laser",  icon: FileText, action: () => toast.info("Label Laser — coming soon.") },
-                                            { label: "Packing",      icon: Package,  action: () => toast.info("Packing — coming soon.") },
-                                            { label: "Send to Whouse", icon: ArrowRight, active: true, action: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalSendWH(true); } },
-                                            { label: "WH Totals",    icon: BarChart2, action: () => setModalWhTotals(true) },
-                                            { label: "COff",         icon: FileText, action: () => toast.info("COff — coming soon.") },
-                                            { label: "PDF Label",    icon: FileText, action: () => toast.info("PDF Label — coming soon.") },
-                                            { label: "Z300",         icon: FileText, action: () => toast.info("Z300 — coming soon.") },
-                                            { label: "Z 4M",         icon: FileText, action: () => toast.info("Z 4M — coming soon.") },
-                                            { label: "RPK",          icon: FileText, action: () => toast.info("RPK — coming soon.") },
-                                            { label: "Copy",         icon: Copy,     action: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalCopy(true); } },
-                                            { label: "Del Details",  icon: Trash2,   action: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalDelDetails(true); } },
-                                            { label: "Header 2",     icon: FileText, action: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalHeader2(true); } },
-                                            { label: "Filter Grower",  icon: Flower2,       action: () => setModalFiltGrowers(true) },
-                                            { label: "Filter Cust.",   icon: ShoppingCart,  action: () => setModalFiltCust(true) },
-                                            { label: "AWB Setup",      icon: Plane,         action: () => setModalAWBSetup(true) },
-                                        ].map((btn, idx) => (
-                                            <button key={idx} onClick={btn.action}
-                                                className={cn(
-                                                    "flex items-center gap-1 px-2 py-1 text-[10px] font-bold rounded border whitespace-nowrap shrink-0 transition-colors",
-                                                    btn.active
-                                                        ? "bg-blue-700 text-white border-blue-800 hover:bg-blue-800"
-                                                        : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
-                                                )}>
-                                                {btn.icon && <btn.icon size={10} />}
-                                                {btn.label}
-                                            </button>
-                                        ))}
+                            <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0" style={{ height: "24%" }}>
+                                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between pl-3 pr-0 shrink-0 gap-2">
+                                    <div className="flex items-center gap-2 shrink-0 min-w-0">
+                                        <Package size={14} className="text-[#FB7506] shrink-0" />
+                                        <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] truncate">Vendors{lcawbcode ? ` — ${lcawbcode}` : ""}</span>
+                                        {loadingPacking && <RefreshCcw size={10} className="text-gray-400 animate-spin shrink-0" />}
                                         {filterGrowerUq && (
-                                            <span className="text-[10px] text-blue-600 font-bold border border-blue-300 rounded px-1.5 py-0.5 bg-blue-50 shrink-0">
+                                            <span className="text-[10px] text-[#FB7506] font-bold border border-[#FB7506]/30 rounded px-1.5 py-0.5 bg-[#FB7506]/10 shrink-0">
                                                 Grower ✓
                                             </span>
                                         )}
                                         {filterCustomer && (
-                                            <span className="text-[10px] text-blue-600 font-bold border border-blue-300 rounded px-1.5 py-0.5 bg-blue-50 shrink-0">
+                                            <span className="text-[10px] text-[#FB7506] font-bold border border-[#FB7506]/30 rounded px-1.5 py-0.5 bg-[#FB7506]/10 shrink-0">
                                                 Cust ✓
                                             </span>
                                         )}
-                                        <span className="text-[10px] font-bold text-gray-400 ml-2 shrink-0">{(packingXAwb as any[]).length} records</span>
+                                        <span className="text-[10px] font-bold text-gray-400 shrink-0">{(packingXAwb as any[]).length} records</span>
                                     </div>
+                                    <GridMenu items={[
+                                        { label: "Send to Whouse", icon: ArrowRight, color: "orange", onClick: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalSendWH(true); } },
+                                        { label: "WH Totals", icon: BarChart2, color: "blue", onClick: () => setModalWhTotals(true) },
+                                        { label: "Copy", icon: Copy, color: "blue", onClick: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalCopy(true); }, separator: true },
+                                        { label: "AWB Cust. PO", icon: FileText, color: "gray", onClick: () => toast.info("AWB Cust. PO — coming soon.") },
+                                        { label: "Label Laser", icon: FileText, color: "gray", onClick: () => toast.info("Label Laser — coming soon.") },
+                                        { label: "Packing", icon: Package, color: "gray", onClick: () => toast.info("Packing — coming soon.") },
+                                        { label: "COff", icon: FileText, color: "gray", onClick: () => toast.info("COff — coming soon.") },
+                                        { label: "PDF Label", icon: FileText, color: "gray", onClick: () => toast.info("PDF Label — coming soon.") },
+                                        { label: "Z300", icon: FileText, color: "gray", onClick: () => toast.info("Z300 — coming soon.") },
+                                        { label: "Z 4M", icon: FileText, color: "gray", onClick: () => toast.info("Z 4M — coming soon.") },
+                                        { label: "RPK", icon: FileText, color: "gray", onClick: () => toast.info("RPK — coming soon.") },
+                                        { label: "Header 2", icon: FileText, color: "gray", onClick: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalHeader2(true); }, separator: true },
+                                        { label: "Filter Grower", icon: Flower2, color: "purple", onClick: () => setModalFiltGrowers(true) },
+                                        { label: "Filter Cust.", icon: ShoppingCart, color: "purple", onClick: () => setModalFiltCust(true) },
+                                        { label: "AWB Setup", icon: Plane, color: "purple", onClick: () => setModalAWBSetup(true), separator: true },
+                                        { label: "Del Details", icon: Trash2, color: "red", onClick: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalDelDetails(true); } },
+                                    ]} />
                                 </div>
                                 <div className="flex-1 overflow-auto">
                                     <table className="min-w-full text-xs text-left whitespace-nowrap">
-                                        <thead className="bg-gray-100 text-gray-700 font-bold sticky top-0 z-10">
-                                            <tr>
+                                        <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
+                                            <tr className="divide-x divide-[#DBD9D9]/30">
                                                 {["Vendor","FullBxs","Pieces","Delayed","T.Units","T.Cost","T.Charge","Invoice","Packing","PWHouse","WHStatus","Available","Status","Offer","COT","Received","Comments"].map(h => (
-                                                    <th key={h} className="p-2 border-r border-gray-600/50 whitespace-nowrap">{h}</th>
+                                                    <th key={h} className="p-2 whitespace-nowrap">{h}</th>
                                                 ))}
                                             </tr>
                                         </thead>
-                                        <tbody>
+                                        <tbody className="divide-y divide-[#DBD9D9]">
                                             {(() => {
                                             const filtered = packingXAwb as any[];  // SP already filters by lcawb
                                             if (filtered.length === 0 && !loadingPacking) return (
@@ -853,24 +840,24 @@ export default function InventoryEntryPage() {
                                                 const avail = t(row.AVAILABLE_DATE ?? row.AVAILABLE ?? "").substring(0, 10);
                                                 return (
                                                     <tr key={i} onClick={() => handleSelectPacking(row)}
-                                                        className={cn("border-b cursor-pointer transition-colors", sel ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50")}
-                                                        style={subtleColorFromInt(row.COLOR)}>
-                                                        <td className={cn("p-2 border-r border-gray-100 max-w-[120px] truncate", sel ? "text-blue-700" : "")}>{t(row.GROWER)}</td>
-                                                        <td className="p-2 border-r border-gray-100 text-right">{t(row.TOTAL_BOXES ?? row.FULL_BOXES ?? "")}</td>
-                                                        <td className="p-2 border-r border-gray-100 text-right">{t(row.TOTAL_PIECES)}</td>
-                                                        <td className={cn("p-2 border-r border-gray-100 text-right", Number(row.DELAYED ?? 0) > 0 ? "text-red-500" : "text-gray-300")}>{t(row.DELAYED ?? "") || ""}</td>
-                                                        <td className="p-2 border-r border-gray-100 text-right">{t(row.TOTAL_UNITS)}</td>
-                                                        <td className="p-2 border-r border-gray-100 text-right">{fmt2(row.TOTAL_COST ?? row.FLOWER_COST ?? 0)}</td>
-                                                        <td className="p-2 border-r border-gray-100 text-right">{fmt2(row.T_CHARGE ?? row.TOTAL_CHARGE ?? 0)}</td>
-                                                        <td className="p-2 border-r border-gray-100">{t(row.INVOICE_NO)}</td>
-                                                        <td className="p-2 border-r border-gray-100">{t(row.PACKING_NO)}</td>
-                                                        <td className="p-2 border-r border-gray-100">{t(row.WHOUSE ?? row.WPHYSICAL ?? row.PWHOUSE ?? row.WP_NAME ?? "")}</td>
-                                                        <td className={cn("p-2 border-r border-gray-100", whst === "WH" ? "text-green-600" : whst === "CHECK" ? "text-blue-500" : "text-gray-500")}>{whst}</td>
-                                                        <td className="p-2 border-r border-gray-100">{avail}</td>
-                                                        <td className={cn("p-2 border-r border-gray-100", st === "CLOSED" ? "text-red-500" : st === "OPEN" ? "text-green-600" : "text-gray-400")}>{st}</td>
-                                                        <td className="p-2 border-r border-gray-100">{t(row.OFFER ?? "")}</td>
-                                                        <td className="p-2 border-r border-gray-100">{t(row.CUTOFF ?? row.COT ?? "").substring(0, 10)}</td>
-                                                        <td className="p-2 border-r border-gray-100">{t(row.RECEIVED ?? "")}</td>
+                                                        className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}
+                                                        style={!sel ? subtleColorFromInt(row.COLOR) : undefined}>
+                                                        <td className="p-2 max-w-[120px] truncate font-medium">{t(row.GROWER)}</td>
+                                                        <td className="p-2 text-right">{t(row.TOTAL_BOXES ?? row.FULL_BOXES ?? "")}</td>
+                                                        <td className="p-2 text-right">{t(row.TOTAL_PIECES)}</td>
+                                                        <td className={cn("p-2 text-right", Number(row.DELAYED ?? 0) > 0 ? "text-red-500" : "text-gray-300")}>{t(row.DELAYED ?? "") || ""}</td>
+                                                        <td className="p-2 text-right">{t(row.TOTAL_UNITS)}</td>
+                                                        <td className="p-2 text-right">{fmt2(row.TOTAL_COST ?? row.FLOWER_COST ?? 0)}</td>
+                                                        <td className="p-2 text-right">{fmt2(row.T_CHARGE ?? row.TOTAL_CHARGE ?? 0)}</td>
+                                                        <td className="p-2">{t(row.INVOICE_NO)}</td>
+                                                        <td className="p-2">{t(row.PACKING_NO)}</td>
+                                                        <td className="p-2">{t(row.WHOUSE ?? row.WPHYSICAL ?? row.PWHOUSE ?? row.WP_NAME ?? "")}</td>
+                                                        <td className={cn("p-2", whst === "WH" ? "text-green-600" : whst === "CHECK" ? "text-blue-500" : "text-gray-500")}>{whst}</td>
+                                                        <td className="p-2">{avail}</td>
+                                                        <td className={cn("p-2", st === "CLOSED" ? "text-red-500" : st === "OPEN" ? "text-green-600" : "text-gray-400")}>{st}</td>
+                                                        <td className="p-2">{t(row.OFFER ?? "")}</td>
+                                                        <td className="p-2">{t(row.CUTOFF ?? row.COT ?? "").substring(0, 10)}</td>
+                                                        <td className="p-2">{t(row.RECEIVED ?? "")}</td>
                                                         <td className="p-2 text-gray-500 max-w-[120px] truncate">{t(row.DETAILS ?? row.COMMENTS ?? "")}</td>
                                                     </tr>
                                                 );
@@ -882,67 +869,50 @@ export default function InventoryEntryPage() {
                             </div>
 
                             {/* Row 3: Boxes Detail */}
-                            <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-0">
-                                <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 gap-2">
-                                    <div className="flex items-center gap-2 shrink-0">
-                                        <Boxes size={13} className="text-[#FB7506]" />
-                                        <span className="font-black text-[10px] uppercase tracking-widest text-white">
+                            <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1 min-h-0">
+                                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between pl-3 pr-0 shrink-0 gap-2">
+                                    <div className="flex items-center gap-2 shrink-0 min-w-0">
+                                        <Boxes size={14} className="text-[#FB7506] shrink-0" />
+                                        <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] truncate">
                                             Boxes Detail{selPacking ? ` — ${t(selPacking.GROWER)}` : ""}
                                         </span>
-                                        {loadingPackingDetails && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
-                                    </div>
-                                    <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
-                                        <span className="text-[10px] font-black text-[#FB7506] uppercase tracking-wide truncate max-w-[160px]">
+                                        {loadingPackingDetails && <RefreshCcw size={10} className="text-gray-400 animate-spin shrink-0" />}
+                                        <span className="text-[11px] font-bold text-[#FB7506] uppercase tracking-wide truncate max-w-[160px]">
                                             {selBox ? t(selBox.DESCRIPTION ?? selBox.PRODUCT ?? selBox.VARIETY ?? "") : selPacking ? t(selPacking.GROWER) : ""}
                                         </span>
-                                        <div className="w-px h-3 bg-gray-600 mx-1" />
-                                        {[
-                                            { label: "Transform Inventory", icon: ArrowRight, action: () => toast.info("Transform Inventory — coming soon.") },
-                                            { label: "Change Prices",       icon: Pencil,     action: () => toast.info("Change Prices — coming soon.") },
-                                            { label: "RePacking",           icon: Package,    action: () => toast.info("RePacking — coming soon.") },
-                                            { label: "WHControl",           icon: Warehouse,  action: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalBoxWHCtrl(true); } },
-                                            { label: "Move Box",            icon: ArrowRight, action: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalBoxMove(true); } },
-                                            { label: "WH Transfer",         icon: Warehouse,  action: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalTransfer(true); } },
-                                            { label: "Add from PO",         icon: ClipboardList, action: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalBoxPO(true); } },
-                                        ].map((btn, idx) => (
-                                            <button key={idx} onClick={btn.action}
-                                                className="flex items-center gap-1 px-2 py-1 text-[10px] font-bold rounded border bg-white text-gray-700 border-gray-200 hover:bg-gray-50 whitespace-nowrap shrink-0 transition-colors">
-                                                {btn.icon && <btn.icon size={10} />}
-                                                {btn.label}
-                                            </button>
-                                        ))}
-                                        <div className="w-px h-3 bg-gray-600 mx-1" />
-                                        <span className="text-[10px] font-bold text-gray-300">From Label:</span>
-                                        <input className="w-8 h-5 text-[10px] border border-gray-300 rounded px-1 bg-white" defaultValue="0" readOnly />
-                                        <span className="text-[10px] font-bold text-gray-300">To Label:</span>
-                                        <input className="w-8 h-5 text-[10px] border border-gray-300 rounded px-1 bg-white" defaultValue="0" readOnly />
-                                        <div className="w-px h-3 bg-gray-600 mx-1" />
-                                        {[
-                                            { label: "Zebra by Lot", icon: FileText },
-                                            { label: "Meto by Lot", icon: FileText },
-                                            { label: "Selection", icon: FileText },
-                                        ].map((btn, idx) => (
-                                            <button key={idx} onClick={() => toast.info(`${btn.label} — coming soon.`)}
-                                                className="flex items-center gap-1 px-2 py-1 text-[10px] font-bold rounded border bg-white text-gray-700 border-gray-200 hover:bg-gray-50 whitespace-nowrap shrink-0 transition-colors">
-                                                {btn.icon && <btn.icon size={10} />}
-                                                {btn.label}
-                                            </button>
-                                        ))}
-                                        <span className="text-[10px] font-bold text-gray-400 ml-2 shrink-0">
+                                    </div>
+                                    <div className="flex items-center gap-2 shrink-0 pr-2">
+                                        <span className="text-[10px] font-bold text-gray-400 whitespace-nowrap">From Label:</span>
+                                        <input className="w-10 h-7 text-[11px] border border-[#DBD9D9] rounded px-1.5 bg-white" defaultValue="0" readOnly />
+                                        <span className="text-[10px] font-bold text-gray-400 whitespace-nowrap">To Label:</span>
+                                        <input className="w-10 h-7 text-[11px] border border-[#DBD9D9] rounded px-1.5 bg-white" defaultValue="0" readOnly />
+                                        <span className="text-[10px] font-bold text-gray-400 whitespace-nowrap">
                                             {(packingDetails as any[]).length} boxes
                                         </span>
+                                        <GridMenu items={[
+                                            { label: "Transform Inventory", icon: ArrowRight, color: "orange", onClick: () => toast.info("Transform Inventory — coming soon.") },
+                                            { label: "Change Prices", icon: Pencil, color: "blue", onClick: () => toast.info("Change Prices — coming soon.") },
+                                            { label: "RePacking", icon: Package, color: "blue", onClick: () => toast.info("RePacking — coming soon."), separator: true },
+                                            { label: "WHControl", icon: Warehouse, color: "blue", onClick: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalBoxWHCtrl(true); } },
+                                            { label: "Move Box", icon: ArrowRight, color: "blue", onClick: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalBoxMove(true); } },
+                                            { label: "WH Transfer", icon: Warehouse, color: "blue", onClick: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalTransfer(true); } },
+                                            { label: "Add from PO", icon: ClipboardList, color: "green", onClick: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalBoxPO(true); }, separator: true },
+                                            { label: "Zebra by Lot", icon: FileText, color: "gray", onClick: () => toast.info("Zebra by Lot — coming soon.") },
+                                            { label: "Meto by Lot", icon: FileText, color: "gray", onClick: () => toast.info("Meto by Lot — coming soon.") },
+                                            { label: "Selection", icon: FileText, color: "gray", onClick: () => toast.info("Selection — coming soon.") },
+                                        ]} />
                                     </div>
                                 </div>
                                 <div className="flex-1 overflow-auto">
                                     <table className="min-w-full text-xs text-left whitespace-nowrap">
-                                        <thead className="bg-gray-100 text-gray-700 font-bold sticky top-0 z-10">
-                                            <tr>
+                                        <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
+                                            <tr className="divide-x divide-[#DBD9D9]/30">
                                                 {["Dly","Rdy","Lot","Pcs","Stock","BxCase","UxBunch","T.Units","U.Price","Case","Description","Customer","BoxId","PB","Std.","C.POrder","C.Cost","T.Cost","S.U.Price","Days","FCost","CCost","TCost"].map(h => (
-                                                    <th key={h} className="p-2 border-r border-gray-600/50 whitespace-nowrap">{h}</th>
+                                                    <th key={h} className="p-2 whitespace-nowrap">{h}</th>
                                                 ))}
                                             </tr>
                                         </thead>
-                                        <tbody>
+                                        <tbody className="divide-y divide-[#DBD9D9]">
                                             {!lcpack_uq ? (
                                                 <tr><td colSpan={23} className="p-4 text-center text-gray-400 italic">Select a vendor to view boxes</td></tr>
                                             ) : (packingDetails as any[]).length === 0 && !loadingPackingDetails ? (
@@ -956,30 +926,30 @@ export default function InventoryEntryPage() {
                                                     const stk  = Number(row.STOCK ?? row.WH_STOCK ?? 0);
                                                     return (
                                                         <tr key={i} onClick={() => handleSelectBox(row)}
-                                                            className={cn("border-b cursor-pointer transition-colors", sel ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50")}
-                                                            style={subtleColorFromInt(row.BACKCOLOR)}>
-                                                            <td className={cn("p-2 border-r border-gray-100 text-center", dly > 0 ? "text-red-600" : "text-gray-300")}>{dly || ""}</td>
-                                                            <td className={cn("p-2 border-r border-gray-100", rdy ? "text-green-600" : "text-gray-300")}>{rdy}</td>
-                                                            <td className="p-2 border-r border-gray-100">{t(row.LOTE ?? row.BOXNUM ?? "")}</td>
-                                                            <td className="p-2 border-r border-gray-100 text-right">{t(row.TOTAL_PIECES ?? row.PIECES ?? row.BOXNUM ?? "")}</td>
-                                                            <td className={cn("p-2 border-r border-gray-100 text-right", stk < 0 ? "text-red-500" : stk > 0 ? "text-green-600" : "text-gray-300")}>{stk || ""}</td>
-                                                            <td className="p-2 border-r border-gray-100 text-right">{t(row.BOX_QTY ?? "")}</td>
-                                                            <td className="p-2 border-r border-gray-100 text-right">{t(row.UP_X_PACK ?? row.UP_X_CASE ?? row.TUNITS_X_BOX ?? "")}</td>
-                                                            <td className="p-2 border-r border-gray-100 text-right">{t(row.TOTAL_UNITS)}</td>
-                                                            <td className="p-2 border-r border-gray-100 text-right">{fmt4(row.PRICE_X_U ?? row.PRICE ?? row.U_PRICE ?? 0)}</td>
-                                                            <td className="p-2 border-r border-gray-100">{t(row.CASE_SH ?? row.CASE_NAME ?? row.CASE ?? "")}</td>
-                                                            <td className={cn("p-2 border-r border-gray-100 max-w-[150px] truncate", sel ? "text-blue-700" : "")} title={desc}>{desc}</td>
-                                                            <td className="p-2 border-r border-gray-100 max-w-[60px] truncate">{t(row.CUSTOMER ?? "")}</td>
-                                                            <td className="p-2 border-r border-gray-100 text-right">{t(row.BOXID ?? row.BOX_ID ?? "")}</td>
-                                                            <td className="p-2 border-r border-gray-100 text-center">{Boolean(row.PB) ? "Y" : ""}</td>
-                                                            <td className="p-2 border-r border-gray-100 text-center">{Boolean(row.STD) ? "Y" : ""}</td>
-                                                            <td className="p-2 border-r border-gray-100">{t(row.CPORDER_NO ?? row.SORDER_NO ?? "")}</td>
-                                                            <td className="p-2 border-r border-gray-100 text-right">{fmt4(row.C_COST_X_U ?? 0)}</td>
-                                                            <td className="p-2 border-r border-gray-100 text-right">{fmt2(row.TOTAL_COST ?? row.T_COST_X_U ?? row.T_COST ?? row.TCOST ?? 0)}</td>
-                                                            <td className="p-2 border-r border-gray-100 text-right">{fmt4(row.SPRICE_X_UNIT ?? row.S_U_PRICE ?? row.PRICE ?? 0)}</td>
-                                                            <td className={cn("p-2 border-r border-gray-100 text-right", Number(row.DAYS ?? 0) < 0 ? "text-red-500" : "text-gray-500")}>{t(row.DAYS ?? "")}</td>
-                                                            <td className="p-2 border-r border-gray-100 text-right">{fmt2(row.F_FCOST_X_U ?? row.F_COST_X_U ?? row.FCOST ?? 0)}</td>
-                                                            <td className="p-2 border-r border-gray-100 text-right">{fmt2(row.C_COST_X_U ?? row.CCOST ?? 0)}</td>
+                                                            className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}
+                                                            style={!sel ? subtleColorFromInt(row.BACKCOLOR) : undefined}>
+                                                            <td className={cn("p-2 text-center", dly > 0 ? "text-red-600" : "text-gray-300")}>{dly || ""}</td>
+                                                            <td className={cn("p-2", rdy ? "text-green-600" : "text-gray-300")}>{rdy}</td>
+                                                            <td className="p-2">{t(row.LOTE ?? row.BOXNUM ?? "")}</td>
+                                                            <td className="p-2 text-right">{t(row.TOTAL_PIECES ?? row.PIECES ?? row.BOXNUM ?? "")}</td>
+                                                            <td className={cn("p-2 text-right", stk < 0 ? "text-red-500" : stk > 0 ? "text-green-600" : "text-gray-300")}>{stk || ""}</td>
+                                                            <td className="p-2 text-right">{t(row.BOX_QTY ?? "")}</td>
+                                                            <td className="p-2 text-right">{t(row.UP_X_PACK ?? row.UP_X_CASE ?? row.TUNITS_X_BOX ?? "")}</td>
+                                                            <td className="p-2 text-right">{t(row.TOTAL_UNITS)}</td>
+                                                            <td className="p-2 text-right">{fmt4(row.PRICE_X_U ?? row.PRICE ?? row.U_PRICE ?? 0)}</td>
+                                                            <td className="p-2">{t(row.CASE_SH ?? row.CASE_NAME ?? row.CASE ?? "")}</td>
+                                                            <td className="p-2 max-w-[150px] truncate" title={desc}>{desc}</td>
+                                                            <td className="p-2 max-w-[60px] truncate">{t(row.CUSTOMER ?? "")}</td>
+                                                            <td className="p-2 text-right">{t(row.BOXID ?? row.BOX_ID ?? "")}</td>
+                                                            <td className="p-2 text-center">{Boolean(row.PB) ? "Y" : ""}</td>
+                                                            <td className="p-2 text-center">{Boolean(row.STD) ? "Y" : ""}</td>
+                                                            <td className="p-2">{t(row.CPORDER_NO ?? row.SORDER_NO ?? "")}</td>
+                                                            <td className="p-2 text-right">{fmt4(row.C_COST_X_U ?? 0)}</td>
+                                                            <td className="p-2 text-right">{fmt2(row.TOTAL_COST ?? row.T_COST_X_U ?? row.T_COST ?? row.TCOST ?? 0)}</td>
+                                                            <td className="p-2 text-right">{fmt4(row.SPRICE_X_UNIT ?? row.S_U_PRICE ?? row.PRICE ?? 0)}</td>
+                                                            <td className={cn("p-2 text-right", Number(row.DAYS ?? 0) < 0 ? "text-red-500" : "text-gray-500")}>{t(row.DAYS ?? "")}</td>
+                                                            <td className="p-2 text-right">{fmt2(row.F_FCOST_X_U ?? row.F_COST_X_U ?? row.FCOST ?? 0)}</td>
+                                                            <td className="p-2 text-right">{fmt2(row.C_COST_X_U ?? row.CCOST ?? 0)}</td>
                                                             <td className="p-2 text-right">{fmt2(row.TOTAL_COST ?? row.T_COST_X_U ?? row.TCOST ?? row.T_COST ?? 0)}</td>
                                                         </tr>
                                                     );
@@ -995,43 +965,45 @@ export default function InventoryEntryPage() {
                     {/* ══ Tab 2: Products List ══ */}
                     {activeTab === "products" && (
                         <div className="flex flex-col h-full min-h-0">
-                            <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-0">
+                            <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1 min-h-0">
 
                                 {/* Header */}
-                                <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 gap-2">
+                                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 gap-2">
                                     <div className="flex items-center gap-2 shrink-0">
-                                        <Flower2 size={13} className="text-[#FB7506]" />
-                                        <span className="font-black text-[10px] uppercase tracking-widest text-white">Products List</span>
+                                        <Flower2 size={14} className="text-[#FB7506]" />
+                                        <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">Products List</span>
                                         {loadingProds && <RefreshCcw size={10} className="animate-spin text-gray-400" />}
                                         {prodTotal > 0 && (
-                                            <span className="text-[10px] font-bold text-gray-300 ml-2">
+                                            <span className="text-[10px] font-bold text-gray-400 ml-2">
                                                 {prodAccRows.length} / {prodTotal} records
                                             </span>
                                         )}
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0">
-                                        <input
-                                            type="text"
-                                            value={prodSearchInput}
-                                            onChange={e => setProdSearchInput(e.target.value)}
-                                            onKeyDown={e => { if (e.key === "Enter") { setProdAccRows([]); setProdSearch(prodSearchInput); setProdPage(1); } }}
-                                            placeholder="Search products..."
-                                            className="h-7 text-xs border border-gray-300 rounded px-2 bg-white w-48 shrink-0"
-                                        />
+                                        <div className="flex items-center bg-[#F5F3F3] border border-[#DBD9D9] rounded px-2 py-1 gap-1 w-48">
+                                            <Search size={11} className="text-gray-400 shrink-0" />
+                                            <input
+                                                type="text"
+                                                value={prodSearchInput}
+                                                onChange={e => setProdSearchInput(e.target.value)}
+                                                onKeyDown={e => { if (e.key === "Enter") { setProdAccRows([]); setProdSearch(prodSearchInput); setProdPage(1); } }}
+                                                placeholder="Search products..."
+                                                className="text-[11px] text-gray-700 placeholder-gray-400 outline-none flex-1 min-w-0 bg-transparent"
+                                            />
+                                            {prodSearch && (
+                                                <button onClick={() => { setProdAccRows([]); setProdSearch(""); setProdSearchInput(""); setProdPage(1); }}>
+                                                    <X size={11} className="text-gray-400 hover:text-gray-700" />
+                                                </button>
+                                            )}
+                                        </div>
                                         <button
                                             onClick={() => { setProdAccRows([]); setProdSearch(prodSearchInput); setProdPage(1); }}
-                                            className="flex items-center gap-1 h-7 px-3 bg-[#FB7506] hover:bg-orange-600 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors shrink-0">
-                                            <Search size={11} /> Search
+                                            className="flex items-center gap-1.5 h-7 px-3 bg-[#FB7506] hover:bg-orange-500 text-white rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
+                                            <Search size={14} /> Search
                                         </button>
-                                        {prodSearch && (
-                                            <button onClick={() => { setProdAccRows([]); setProdSearch(""); setProdSearchInput(""); setProdPage(1); }}
-                                                className="h-7 px-2 text-[10px] font-bold text-gray-400 hover:text-gray-700 shrink-0">
-                                                <X size={11} />
-                                            </button>
-                                        )}
                                         <button onClick={() => toast.info("Add to Packing — coming soon.")}
-                                            className="flex items-center gap-1 h-7 px-2 bg-green-700 hover:bg-green-800 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors shrink-0">
-                                            <Plus size={11} /> Add to Packing
+                                            className="flex items-center gap-1.5 h-7 px-3 bg-green-600 hover:bg-green-500 text-white rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
+                                            <Plus size={14} /> Add to Packing
                                         </button>
                                     </div>
                                 </div>
@@ -1039,28 +1011,28 @@ export default function InventoryEntryPage() {
                                 {/* Grid */}
                                 <div className="flex-1 overflow-auto">
                                     <table className="min-w-full text-xs text-left whitespace-nowrap">
-                                        <thead className="bg-gray-100 text-gray-700 font-bold sticky top-0 z-10">
-                                            <tr>
+                                        <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
+                                            <tr className="divide-x divide-[#DBD9D9]/30">
                                                 {["Description","Class","Subclass","Variety","Color","Grade","Stems/Bunch","Bunches/Case","Units","Sales Price","Case"].map(h => (
-                                                    <th key={h} className="p-2 border-r border-gray-600/50 last:border-r-0 whitespace-nowrap">{h}</th>
+                                                    <th key={h} className="p-2 whitespace-nowrap">{h}</th>
                                                 ))}
                                             </tr>
                                         </thead>
-                                        <tbody>
+                                        <tbody className="divide-y divide-[#DBD9D9]">
                                             {prodAccRows.length === 0 && !loadingProds ? (
                                                 <tr><td colSpan={11} className="p-4 text-center text-gray-400 italic">No products found</td></tr>
                                             ) : (prodAccRows as any[]).map((row: any, i: number) => (
-                                                <tr key={i} className="border-b transition-colors odd:bg-white even:bg-gray-50 hover:bg-blue-50 cursor-pointer">
-                                                    <td className="p-2 border-r border-gray-100 max-w-[200px] truncate">{t(row.DESCRIPTION ?? row.DESC ?? row.PRODUCT_DESC ?? row.PRODUCT ?? "")}</td>
-                                                    <td className="p-2 border-r border-gray-100">{t(row.CLASS ?? row.CLASE ?? "")}</td>
-                                                    <td className="p-2 border-r border-gray-100">{t(row.SUBCLASS ?? row.SUBCLASE ?? "")}</td>
-                                                    <td className="p-2 border-r border-gray-100">{t(row.VARIETY ?? row.VARIEDAD ?? "")}</td>
-                                                    <td className="p-2 border-r border-gray-100">{t(row.COLOR ?? "")}</td>
-                                                    <td className="p-2 border-r border-gray-100">{t(row.GRADE ?? row.GRADO ?? "")}</td>
-                                                    <td className="p-2 border-r border-gray-100 text-right">{t(row.STEMS_BUNCH ?? row.STEMS_X_BUNCH ?? row.BUNCHES_X_CASE ?? "")}</td>
-                                                    <td className="p-2 border-r border-gray-100 text-right">{t(row.BUNCHES_CASE ?? row.BUNCHES_X_CASE ?? row.UP_X_CASE ?? "")}</td>
-                                                    <td className="p-2 border-r border-gray-100 text-right">{t(row.TOTAL_UNITS ?? row.UNITS ?? "")}</td>
-                                                    <td className="p-2 border-r border-gray-100 text-right">{fmt2(row.SALES_PRICE ?? row.PRICE ?? row.UNIT_PRICE ?? 0)}</td>
+                                                <tr key={i} className="cursor-pointer transition-colors hover:bg-gray-50 divide-x divide-[#DBD9D9]">
+                                                    <td className="p-2 max-w-[200px] truncate">{t(row.DESCRIPTION ?? row.DESC ?? row.PRODUCT_DESC ?? row.PRODUCT ?? "")}</td>
+                                                    <td className="p-2">{t(row.CLASS ?? row.CLASE ?? "")}</td>
+                                                    <td className="p-2">{t(row.SUBCLASS ?? row.SUBCLASE ?? "")}</td>
+                                                    <td className="p-2">{t(row.VARIETY ?? row.VARIEDAD ?? "")}</td>
+                                                    <td className="p-2">{t(row.COLOR ?? "")}</td>
+                                                    <td className="p-2">{t(row.GRADE ?? row.GRADO ?? "")}</td>
+                                                    <td className="p-2 text-right">{t(row.STEMS_BUNCH ?? row.STEMS_X_BUNCH ?? row.BUNCHES_X_CASE ?? "")}</td>
+                                                    <td className="p-2 text-right">{t(row.BUNCHES_CASE ?? row.BUNCHES_X_CASE ?? row.UP_X_CASE ?? "")}</td>
+                                                    <td className="p-2 text-right">{t(row.TOTAL_UNITS ?? row.UNITS ?? "")}</td>
+                                                    <td className="p-2 text-right">{fmt2(row.SALES_PRICE ?? row.PRICE ?? row.UNIT_PRICE ?? 0)}</td>
                                                     <td className="p-2">{t(row.CASE_NAME ?? row.CASE ?? row.PACK ?? "")}</td>
                                                 </tr>
                                             ))}
@@ -1081,45 +1053,45 @@ export default function InventoryEntryPage() {
                     {/* ══ Tab 3: PL Control ══ */}
                     {activeTab === "plcontrol" && (
                         <div className="flex flex-col gap-2 h-full">
-                            <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-0">
-                                <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 gap-2">
+                            <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1 min-h-0">
+                                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 gap-2">
                                     <div className="flex items-center gap-2 shrink-0">
-                                        <ClipboardList size={13} className="text-[#FB7506]" />
-                                        <span className="font-black text-[10px] uppercase tracking-widest text-white">Packing List Control</span>
+                                        <ClipboardList size={14} className="text-[#FB7506]" />
+                                        <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">Packing List Control</span>
                                     </div>
-                                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+                                    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
                                         <input type="date" value={lddate} onChange={e => setLddate(e.target.value)}
-                                            className="h-7 text-xs border border-gray-300 rounded px-1.5 bg-white shrink-0" />
+                                            className="h-7 text-[12px] border border-[#DBD9D9] rounded-md px-1.5 bg-white shrink-0" />
                                         <button onClick={handleRefresh}
-                                            className="flex items-center gap-1 h-7 px-2 bg-gray-600 hover:bg-gray-700 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors shrink-0">
-                                            <RefreshCcw size={11} className={loadingPLC ? "animate-spin" : ""} /> Refresh
+                                            className="flex items-center gap-1.5 h-7 px-3 bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
+                                            <RefreshCcw size={14} className={loadingPLC ? "animate-spin" : ""} /> Refresh
                                         </button>
-                                        <div className="w-px h-3 bg-gray-600 mx-1" />
+                                        <div className="w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
                                         <button onClick={() => toast.info("Update Available Date — coming soon.")}
-                                            className="flex items-center gap-1 h-7 px-2 bg-[#FB7506] hover:bg-orange-600 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors shrink-0">
+                                            className="flex items-center gap-1.5 h-7 px-3 bg-[#FB7506] hover:bg-orange-500 text-white rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
                                             Update Available
                                         </button>
                                         <button onClick={() => packAction("open", "Open")} disabled={!lcpack_uq || !perms.canEdit}
-                                            className="flex items-center gap-1 h-7 px-2 bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors shrink-0">
-                                            <Check size={11} /> Open
+                                            className="flex items-center gap-1.5 h-7 px-3 bg-green-600 hover:bg-green-500 disabled:opacity-40 text-white rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
+                                            <Check size={14} /> Open
                                         </button>
                                         <button onClick={() => packAction("close", "Close")} disabled={!lcpack_uq || !perms.canEdit}
-                                            className="flex items-center gap-1 h-7 px-2 bg-red-500 hover:bg-red-600 disabled:opacity-40 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors shrink-0">
-                                            <X size={11} /> Close
+                                            className="flex items-center gap-1.5 h-7 px-3 bg-[#FB7506]/10 hover:bg-[#FB7506]/20 border border-[#FB7506]/30 disabled:opacity-40 text-[#FB7506] rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
+                                            <X size={14} /> Close
                                         </button>
                                         <span className="text-[10px] font-bold text-gray-400 ml-2 shrink-0">{(plControlAll as any[]).length} pkgs</span>
                                     </div>
                                 </div>
                                 <div className="flex-1 overflow-auto">
                                     <table className="min-w-full text-xs text-left whitespace-nowrap">
-                                        <thead className="bg-gray-100 text-gray-700 font-bold sticky top-0 z-10">
-                                            <tr>
+                                        <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
+                                            <tr className="divide-x divide-[#DBD9D9]/30">
                                                 {["Ctrl","Grower","Airline","AWB","Date","Invoice","Packing","Pcs","Total$","Whouse","Details","St."].map(h => (
-                                                    <th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
+                                                    <th key={h} className="p-2 whitespace-nowrap">{h}</th>
                                                 ))}
                                             </tr>
                                         </thead>
-                                        <tbody>
+                                        <tbody className="divide-y divide-[#DBD9D9]">
                                             {(plControlAll as any[]).length === 0 ? (
                                                 <tr><td colSpan={12} className="p-4 text-center text-gray-400 italic">No packings for this date</td></tr>
                                             ) : (plControlAll as any[]).map((row: any, i: number) => {
@@ -1128,19 +1100,19 @@ export default function InventoryEntryPage() {
                                                 const st  = t(row.STATUS ?? row.PSTATUS ?? "");
                                                 return (
                                                     <tr key={i} onClick={() => handleSelectPacking(row)}
-                                                        className={cn("border-b cursor-pointer transition-colors", sel ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50")}
-                                                        style={subtleColorFromInt(row.COLOR)}>
-                                                        <td className="p-2 border-r border-gray-100 text-orange-600">{t(row.GROWER_CONTROL ?? row.CTRL ?? "")}</td>
-                                                        <td className={cn("p-2 border-r border-gray-100 max-w-[100px] truncate", sel ? "text-blue-700" : "")}>{t(row.GROWER)}</td>
-                                                        <td className="p-2 border-r border-gray-100">{t(row.AIRLINE ?? row.AIRLINE_UQ ?? "")}</td>
-                                                        <td className="p-2 border-r border-gray-100">{t(row.AWBCODE)}</td>
-                                                        <td className="p-2 border-r border-gray-100">{t(row.BOX_DATE ?? row.DATE_INVO ?? "").substring(0, 10)}</td>
-                                                        <td className="p-2 border-r border-gray-100">{t(row.INVOICE_NO)}</td>
-                                                        <td className="p-2 border-r border-gray-100">{t(row.PACKING_NO)}</td>
-                                                        <td className="p-2 border-r border-gray-100 text-right">{t(row.TOTAL_PIECES)}</td>
-                                                        <td className="p-2 border-r border-gray-100 text-right">{fmt2(row.TOTAL_INVOICE ?? row.TOTAL_COST ?? 0)}</td>
-                                                        <td className="p-2 border-r border-gray-100">{t(row.WHOUSE ?? row.WPHYSICAL ?? row.PWHOUSE ?? "")}</td>
-                                                        <td className="p-2 border-r border-gray-100 text-gray-400 max-w-[100px] truncate">{t(row.DETAILS ?? row.COMMENTS ?? "")}</td>
+                                                        className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}
+                                                        style={!sel ? subtleColorFromInt(row.COLOR) : undefined}>
+                                                        <td className="p-2 text-[#FB7506] font-semibold">{t(row.GROWER_CONTROL ?? row.CTRL ?? "")}</td>
+                                                        <td className="p-2 max-w-[100px] truncate font-medium">{t(row.GROWER)}</td>
+                                                        <td className="p-2">{t(row.AIRLINE ?? row.AIRLINE_UQ ?? "")}</td>
+                                                        <td className="p-2">{t(row.AWBCODE)}</td>
+                                                        <td className="p-2">{t(row.BOX_DATE ?? row.DATE_INVO ?? "").substring(0, 10)}</td>
+                                                        <td className="p-2">{t(row.INVOICE_NO)}</td>
+                                                        <td className="p-2">{t(row.PACKING_NO)}</td>
+                                                        <td className="p-2 text-right">{t(row.TOTAL_PIECES)}</td>
+                                                        <td className="p-2 text-right">{fmt2(row.TOTAL_INVOICE ?? row.TOTAL_COST ?? 0)}</td>
+                                                        <td className="p-2">{t(row.WHOUSE ?? row.WPHYSICAL ?? row.PWHOUSE ?? "")}</td>
+                                                        <td className="p-2 text-gray-400 max-w-[100px] truncate">{t(row.DETAILS ?? row.COMMENTS ?? "")}</td>
                                                         <td className={cn("p-2", st === "CLOSED" ? "text-red-500" : st === "OPEN" ? "text-green-600" : "text-gray-400")}>{st}</td>
                                                     </tr>
                                                 );
@@ -1155,39 +1127,41 @@ export default function InventoryEntryPage() {
                     {/* ══ Tab 4: AWB Search ══ */}
                     {activeTab === "awbsearch" && (
                         <div className="flex flex-col h-full min-h-0">
-                            <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-0">
+                            <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1 min-h-0">
 
                                 {/* Header */}
-                                <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 gap-2">
+                                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 gap-2">
                                     <div className="flex items-center gap-2 shrink-0">
-                                        <Search size={13} className="text-[#FB7506]" />
-                                        <span className="font-black text-[10px] uppercase tracking-widest text-white">Packing Box Search</span>
+                                        <Search size={14} className="text-[#FB7506]" />
+                                        <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">Packing Box Search</span>
                                         {loadingSearch && <RefreshCcw size={10} className="animate-spin text-gray-400" />}
                                         {awbTotal > 0 && (
-                                            <span className="text-[10px] font-bold text-gray-300 ml-2">
+                                            <span className="text-[10px] font-bold text-gray-400 ml-2">
                                                 {awbAccRows.length} / {awbTotal} records
                                             </span>
                                         )}
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0">
-                                        <input type="text" value={awbSearchInput}
-                                            onChange={e => setAwbSearchInput(e.target.value)}
-                                            onKeyDown={e => { if (e.key === "Enter") { setAwbAccRows([]); setAwbSearchQ(awbSearchInput); setAwbSearchPage(1); } }}
-                                            placeholder="AWB code, PO#, product..."
-                                            className="h-7 text-xs border border-gray-300 rounded px-2 bg-white w-44 shrink-0" />
+                                        <div className="flex items-center bg-[#F5F3F3] border border-[#DBD9D9] rounded px-2 py-1 gap-1 w-48">
+                                            <Search size={11} className="text-gray-400 shrink-0" />
+                                            <input type="text" value={awbSearchInput}
+                                                onChange={e => setAwbSearchInput(e.target.value)}
+                                                onKeyDown={e => { if (e.key === "Enter") { setAwbAccRows([]); setAwbSearchQ(awbSearchInput); setAwbSearchPage(1); } }}
+                                                placeholder="AWB code, PO#, product..."
+                                                className="text-[11px] text-gray-700 placeholder-gray-400 outline-none flex-1 min-w-0 bg-transparent" />
+                                            {awbSearchQ && (
+                                                <button onClick={() => { setAwbAccRows([]); setAwbTotal(0); setAwbSearchQ(""); setAwbSearchInput(""); setAwbSearchPage(1); }}>
+                                                    <X size={11} className="text-gray-400 hover:text-gray-700" />
+                                                </button>
+                                            )}
+                                        </div>
                                         <button onClick={() => { setAwbAccRows([]); setAwbSearchQ(awbSearchInput); setAwbSearchPage(1); }}
-                                            className="flex items-center gap-1 h-7 px-3 bg-[#FB7506] hover:bg-orange-600 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors shrink-0">
-                                            <Search size={11} /> Search
+                                            className="flex items-center gap-1.5 h-7 px-3 bg-[#FB7506] hover:bg-orange-500 text-white rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
+                                            <Search size={14} /> Search
                                         </button>
-                                        {awbSearchQ && (
-                                            <button onClick={() => { setAwbAccRows([]); setAwbTotal(0); setAwbSearchQ(""); setAwbSearchInput(""); setAwbSearchPage(1); }}
-                                                className="h-7 px-2 text-[10px] font-bold text-gray-400 hover:text-gray-700 shrink-0">
-                                                <X size={11} />
-                                            </button>
-                                        )}
                                         <button onClick={() => toast.info("Invoices — coming soon.")}
-                                            className="flex items-center gap-1 h-7 px-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded text-[10px] font-black uppercase tracking-wide transition-colors shrink-0">
-                                            <FileText size={11} /> Invoices
+                                            className="flex items-center gap-1.5 h-7 px-3 bg-white hover:bg-gray-50 text-[#4F4F4F] border border-[#DBD9D9] rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
+                                            <FileText size={14} /> Invoices
                                         </button>
                                     </div>
                                 </div>
@@ -1195,30 +1169,30 @@ export default function InventoryEntryPage() {
                                 {/* Grid */}
                                 <div className="flex-1 overflow-auto">
                                     <table className="min-w-full text-xs text-left whitespace-nowrap">
-                                        <thead className="bg-gray-100 text-gray-700 font-bold sticky top-0 z-10">
-                                            <tr>
+                                        <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
+                                            <tr className="divide-x divide-[#DBD9D9]/30">
                                                 {["Lot","AWB","Date","Grower","Description","Case","Qty","Units","Price","Stock"].map(h => (
-                                                    <th key={h} className="p-2 border-r border-gray-600/50 last:border-r-0 whitespace-nowrap">{h}</th>
+                                                    <th key={h} className="p-2 whitespace-nowrap">{h}</th>
                                                 ))}
                                             </tr>
                                         </thead>
-                                        <tbody>
+                                        <tbody className="divide-y divide-[#DBD9D9]">
                                             {awbAccRows.length === 0 && !loadingSearch ? (
                                                 <tr><td colSpan={10} className="p-4 text-center text-gray-400 italic">Type to search — AWB code, lot#, or product name</td></tr>
                                             ) : (awbAccRows as any[]).map((row: any, i: number) => {
                                                 const stk = Number(row.STOCK ?? 0);
                                                 return (
-                                                <tr key={i} className="border-b cursor-pointer transition-colors odd:bg-white even:bg-gray-50 hover:bg-blue-50"
+                                                <tr key={i} className="cursor-pointer transition-colors hover:bg-gray-50 divide-x divide-[#DBD9D9]"
                                                     onClick={() => handleSelectPacking(row)}>
-                                                    <td className="p-2 border-r border-gray-100">{t(row.LOTE ?? "")}</td>
-                                                    <td className="p-2 border-r border-gray-100">{t(row.AWBCODE)}</td>
-                                                    <td className="p-2 border-r border-gray-100">{fmtDate(row.BOX_DATE ?? row.AVAILABLE_DATE ?? "")}</td>
-                                                    <td className="p-2 border-r border-gray-100 max-w-[100px] truncate">{t(row.GROWER ?? "")}</td>
-                                                    <td className="p-2 border-r border-gray-100 max-w-[180px] truncate">{t(row.DESCRIPTION ?? "")}</td>
-                                                    <td className="p-2 border-r border-gray-100">{t(row.CASE_SH ?? row.CASE_NAME ?? "")}</td>
-                                                    <td className="p-2 border-r border-gray-100 text-right">{t(row.BOX_QTY ?? "")}</td>
-                                                    <td className="p-2 border-r border-gray-100 text-right">{t(row.TOTAL_UNITS ?? "")}</td>
-                                                    <td className="p-2 border-r border-gray-100 text-right">{fmt4(row.PRICE_X_U ?? 0)}</td>
+                                                    <td className="p-2">{t(row.LOTE ?? "")}</td>
+                                                    <td className="p-2 font-semibold text-[#FB7506]">{t(row.AWBCODE)}</td>
+                                                    <td className="p-2">{fmtDate(row.BOX_DATE ?? row.AVAILABLE_DATE ?? "")}</td>
+                                                    <td className="p-2 max-w-[100px] truncate">{t(row.GROWER ?? "")}</td>
+                                                    <td className="p-2 max-w-[180px] truncate">{t(row.DESCRIPTION ?? "")}</td>
+                                                    <td className="p-2">{t(row.CASE_SH ?? row.CASE_NAME ?? "")}</td>
+                                                    <td className="p-2 text-right">{t(row.BOX_QTY ?? "")}</td>
+                                                    <td className="p-2 text-right">{t(row.TOTAL_UNITS ?? "")}</td>
+                                                    <td className="p-2 text-right">{fmt4(row.PRICE_X_U ?? 0)}</td>
                                                     <td className={cn("p-2 text-right", stk < 0 ? "text-red-500" : stk > 0 ? "text-green-600" : "text-gray-300")}>{stk || ""}</td>
                                                 </tr>
                                                 );
@@ -1239,21 +1213,21 @@ export default function InventoryEntryPage() {
                     {/* ══ Tab 5: PO List ══ */}
                     {activeTab === "polist" && (
                         <div className="flex flex-col gap-2 h-full">
-                            <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 min-h-0">
-                                <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0 gap-2">
+                            <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1 min-h-0">
+                                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 gap-2">
                                     <div className="flex items-center gap-2 shrink-0">
-                                        <ShoppingCart size={13} className="text-[#FB7506]" />
-                                        <span className="font-black text-[10px] uppercase tracking-widest text-white">Purchase Orders</span>
+                                        <ShoppingCart size={14} className="text-[#FB7506]" />
+                                        <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">Purchase Orders</span>
                                     </div>
-                                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+                                    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
                                         <input type="date" value={ldship_date} onChange={e => { setLdship_date(e.target.value); setPoGrower(""); }}
-                                            className="h-7 text-xs border border-gray-300 rounded px-1.5 bg-white shrink-0" />
+                                            className="h-7 text-[12px] border border-[#DBD9D9] rounded-md px-1.5 bg-white shrink-0" />
                                         <button onClick={() => toast.info("Refresh — coming soon.")}
-                                            className="flex items-center gap-1 h-7 px-2 bg-gray-600 hover:bg-gray-700 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors shrink-0">
-                                            <RefreshCcw size={11} /> Refresh
+                                            className="flex items-center gap-1.5 h-7 px-3 bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
+                                            <RefreshCcw size={14} /> Refresh
                                         </button>
                                         <select value={poGrower} onChange={e => setPoGrower(e.target.value)}
-                                            className="h-7 text-xs border border-gray-300 rounded px-1.5 bg-white max-w-[140px] shrink-0">
+                                            className="h-7 text-[12px] border border-[#DBD9D9] rounded-md px-1.5 bg-white max-w-[140px] shrink-0">
                                             <option value="">All Vendors</option>
                                             {poRows.map((r: any, i: number) => {
                                                 const uq = t(r.GROWER_UQ ?? r.GRO_UQ ?? r.VENDOR_UQ ?? r.GROW_UQ ?? "") || String(i);
@@ -1262,39 +1236,39 @@ export default function InventoryEntryPage() {
                                         </select>
                                         {poGrower && (
                                             <button onClick={() => setPoGrower("")}
-                                                className="text-[10px] text-[#FB7506] hover:text-orange-700 font-black shrink-0">
+                                                className="text-[12px] text-[#FB7506] hover:text-orange-600 font-semibold shrink-0">
                                                 &larr; Back
                                             </button>
                                         )}
                                         <button onClick={() => toast.info("Add P.O to Inventory — coming soon.")}
-                                            className="flex items-center gap-1 h-7 px-2 bg-green-700 hover:bg-green-800 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors shrink-0">
-                                            <Plus size={11} /> Add P.O
+                                            className="flex items-center gap-1.5 h-7 px-3 bg-green-600 hover:bg-green-500 text-white rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
+                                            <Plus size={14} /> Add P.O
                                         </button>
                                     </div>
                                 </div>
                                 <div className="flex-1 overflow-auto">
                                     {!poGrower ? (
                                         <table className="min-w-full text-xs text-left">
-                                            <thead className="bg-gray-100 text-gray-700 font-bold sticky top-0 z-10">
-                                                <tr>
+                                            <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
+                                                <tr className="divide-x divide-[#DBD9D9]/30">
                                                     {["Grower","Ship Date","POrders","Shipped","Arrived","Amount"].map(h => (
-                                                        <th key={h} className="p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
+                                                        <th key={h} className="p-2 whitespace-nowrap">{h}</th>
                                                     ))}
                                                 </tr>
                                             </thead>
-                                            <tbody>
+                                            <tbody className="divide-y divide-[#DBD9D9]">
                                                 {poRows.length === 0 ? (
                                                     <tr><td colSpan={6} className="p-4 text-center text-gray-400 italic">No purchase orders for this date</td></tr>
                                                 ) : (poRows as any[]).map((row: any, i: number) => {
                                                     const uq = t(row.GROWER_UQ ?? row.GRO_UQ ?? row.VENDOR_UQ ?? row.GROW_UQ ?? "") || String(i);
                                                     return (
                                                     <tr key={i} onClick={() => setPoGrower(uq)}
-                                                        className="border-b cursor-pointer transition-colors odd:bg-white even:bg-gray-50 hover:bg-blue-50">
-                                                        <td className="p-2 border-r border-gray-100 max-w-[120px] truncate">{t(row.GROWER)}</td>
-                                                        <td className="p-2 border-r border-gray-100">{t(row.SHIP_DATE ?? "").substring(0, 10)}</td>
-                                                        <td className="p-2 border-r border-gray-100 text-right">{t(row.QTY_PORDER)}</td>
-                                                        <td className="p-2 border-r border-gray-100 text-right">{t(row.QTY_SHIP)}</td>
-                                                        <td className="p-2 border-r border-gray-100 text-right">{t(row.QTY_ARRIVED)}</td>
+                                                        className="cursor-pointer transition-colors hover:bg-gray-50 divide-x divide-[#DBD9D9]">
+                                                        <td className="p-2 max-w-[120px] truncate font-medium">{t(row.GROWER)}</td>
+                                                        <td className="p-2">{t(row.SHIP_DATE ?? "").substring(0, 10)}</td>
+                                                        <td className="p-2 text-right">{t(row.QTY_PORDER)}</td>
+                                                        <td className="p-2 text-right">{t(row.QTY_SHIP)}</td>
+                                                        <td className="p-2 text-right">{t(row.QTY_ARRIVED)}</td>
                                                         <td className="p-2 text-right">{fmt2(row.EXT_PRICE)}</td>
                                                     </tr>
                                                     );
@@ -1303,30 +1277,30 @@ export default function InventoryEntryPage() {
                                         </table>
                                     ) : (
                                         <table className="min-w-full text-xs text-left whitespace-nowrap">
-                                            <thead className="bg-gray-100 text-gray-700 font-bold sticky top-0 z-10">
-                                                <tr>
+                                            <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
+                                                <tr className="divide-x divide-[#DBD9D9]/30">
                                                     {["Farm","P.Order","S.Order","Customer","Case","Description","T.Units","Ordered","Confirm","Diff","Ship"].map((h, hi) => (
-                                                        <th key={h} className={cn("p-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap", hi >= 6 ? "text-center w-16" : "")}>{h}</th>
+                                                        <th key={h} className={cn("p-2 whitespace-nowrap", hi >= 6 ? "text-center w-16" : "")}>{h}</th>
                                                     ))}
                                                 </tr>
                                             </thead>
-                                            <tbody>
+                                            <tbody className="divide-y divide-[#DBD9D9]">
                                                 {loadingPOG ? (
                                                     <tr><td colSpan={11} className="p-4 text-center"><RefreshCcw size={14} className="animate-spin mx-auto text-gray-400" /></td></tr>
                                                 ) : (poByGrower as any[]).length === 0 ? (
                                                     <tr><td colSpan={11} className="p-4 text-center text-gray-400 italic">No orders</td></tr>
                                                 ) : (poByGrower as any[]).map((row: any, i: number) => (
-                                                    <tr key={i} className="border-b transition-colors odd:bg-white even:bg-gray-50 hover:bg-blue-50">
-                                                        <td className="p-2 border-r border-gray-100 text-gray-500 w-12">{t(row.FARM ?? "")}</td>
-                                                        <td className="p-2 border-r border-gray-100">{t(row.PORDER ?? row.PORDER_NO ?? "")}</td>
-                                                        <td className="p-2 border-r border-gray-100 text-gray-500">{t(row.SORDER_NO ?? "")}</td>
-                                                        <td className="p-2 border-r border-gray-100 max-w-[130px] truncate">{t(row.CUSTOMER ?? "")}</td>
-                                                        <td className="p-2 border-r border-gray-100">{t(row.CASE_NAME ?? row.PACK ?? "")}</td>
-                                                        <td className="p-2 border-r border-gray-100 max-w-[180px] truncate">{t(row.DESCRIPTION ?? row.VARIETY ?? "")}</td>
-                                                        <td className="p-2 border-r border-gray-100 text-center w-16">{t(row.TOTAL_UNITS ?? "")}</td>
-                                                        <td className="p-2 border-r border-gray-100 text-center w-16">{t(row.QTY_PORDER ?? "")}</td>
-                                                        <td className="p-2 border-r border-gray-100 text-center w-16 text-green-600">{t(row.QTY_CONFIRM ?? "")}</td>
-                                                        <td className="p-2 border-r border-gray-100 text-center w-16 text-orange-500">{t(row.QTY_DIFF ?? "")}</td>
+                                                    <tr key={i} className="transition-colors hover:bg-gray-50 divide-x divide-[#DBD9D9]">
+                                                        <td className="p-2 text-gray-500 w-12">{t(row.FARM ?? "")}</td>
+                                                        <td className="p-2">{t(row.PORDER ?? row.PORDER_NO ?? "")}</td>
+                                                        <td className="p-2 text-gray-500">{t(row.SORDER_NO ?? "")}</td>
+                                                        <td className="p-2 max-w-[130px] truncate">{t(row.CUSTOMER ?? "")}</td>
+                                                        <td className="p-2">{t(row.CASE_NAME ?? row.PACK ?? "")}</td>
+                                                        <td className="p-2 max-w-[180px] truncate">{t(row.DESCRIPTION ?? row.VARIETY ?? "")}</td>
+                                                        <td className="p-2 text-center w-16">{t(row.TOTAL_UNITS ?? "")}</td>
+                                                        <td className="p-2 text-center w-16">{t(row.QTY_PORDER ?? "")}</td>
+                                                        <td className="p-2 text-center w-16 text-green-600">{t(row.QTY_CONFIRM ?? "")}</td>
+                                                        <td className="p-2 text-center w-16 text-[#FB7506]">{t(row.QTY_DIFF ?? "")}</td>
                                                         <td className="p-2 text-center w-16 text-blue-600">{t(row.QTY_SHIP ?? "")}</td>
                                                     </tr>
                                                 ))}
