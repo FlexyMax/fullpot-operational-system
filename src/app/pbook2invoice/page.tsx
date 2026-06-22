@@ -569,7 +569,7 @@ export default function Pbook2InvoicePage() {
     const selectedLine = (lines as any[]).find((l: any) => t(l.UNICO ?? l.PBOOK_BOX_UQ) === selectedUnico);
 
     return (
-        <div className="flex flex-col h-[100dvh] bg-[#FBF9F8] overflow-hidden font-sans text-[#333]">
+        <div className="flex flex-col min-h-screen bg-[#FBF9F8] font-sans text-[#333]">
 
             {/* ── Dark header ─────────────────────────────────────────────── */}
             <AppHeader title="Prebook to Invoice" extraRight={working ? <Loader2 size={14} className="animate-spin text-white/60" /> : undefined} />
@@ -746,8 +746,8 @@ export default function Pbook2InvoicePage() {
                 </div>
             </div>
 
-            {/* ── ACTION BUTTON BAR (below top panels, full width) ─────────── */}
-            <div className="h-11 bg-white border border-[#DBD9D9] flex items-center px-3 gap-1.5 shrink-0 shadow-sm overflow-x-auto mx-2 rounded-lg mt-2">
+            {/* ── ACTION BUTTON BAR — sticks to the top once scrolled past the Date/Customer row, so the grids below keep the buttons in reach ── */}
+            <div className="sticky top-0 z-20 h-11 bg-white border border-[#DBD9D9] flex items-center px-3 gap-1.5 shrink-0 shadow-sm overflow-x-auto mx-2 rounded-lg mt-2">
                 <TBtn icon={FilePen}      label="Change PO"      onClick={() => {}} disabled={!selectedUnico} />
                 <TBtn icon={Paperclip}    label="Attach Invoice"  onClick={() => {}} disabled={!selectedUnico} />
                 <div className="w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
@@ -766,7 +766,7 @@ export default function Pbook2InvoicePage() {
             </div>
 
             {/* ── Closed Prebook box by date and customer (Lines) — separate panel, not nested in any grid ── */}
-            <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden mx-2 mt-2 flex-1 min-h-0">
+            <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden mx-2 mt-2 h-[600px] shrink-0">
                 <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0">
                     <div className="flex items-center gap-2 min-w-0">
                         <Lock size={15} className="text-[#FB7506] shrink-0" />
