@@ -105,7 +105,7 @@ function SBtn({ icon: Icon, label, onClick, disabled }: any) {
 // ─── Bottom tab sub-components ─────────────────────────────────────────────────
 function InvoicedTab({ rows }: { rows: any[] }) {
     return (
-        <div className="flex flex-col h-full">
+        <div>
             <div className="flex items-center gap-2 px-3 h-9 bg-white border-b border-[#DBD9D9] shrink-0">
                 <Receipt size={14} className="text-[#FB7506] shrink-0"/>
                 <span className="font-bold text-[14px] text-[#4F4F4F] uppercase tracking-tight">Invoiced Prebooks</span>
@@ -114,7 +114,7 @@ function InvoicedTab({ rows }: { rows: any[] }) {
                 <SBtn icon={Printer} label="Pick List" onClick={() => {}} />
                 <div className="ml-auto"><Lock size={11} className="text-gray-400" /></div>
             </div>
-            <div className="flex-1 overflow-auto">
+            <div className="max-h-[300px] overflow-y-auto">
                 <table className="min-w-full text-xs text-left">
                     <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                         <tr>
@@ -156,7 +156,7 @@ function InvoicedTab({ rows }: { rows: any[] }) {
 
 function AssignedStockTab({ rows }: { rows: any[] }) {
     return (
-        <div className="flex flex-col h-full">
+        <div>
             <div className="flex items-center gap-2 px-3 h-9 bg-white border-b border-[#DBD9D9] shrink-0">
                 <Package size={14} className="text-[#FB7506] shrink-0"/>
                 <span className="font-bold text-[14px] text-[#4F4F4F] uppercase tracking-tight">Preassigned Stock</span>
@@ -165,7 +165,7 @@ function AssignedStockTab({ rows }: { rows: any[] }) {
                     <SBtn icon={Minus} label="Unassign Lot"          onClick={() => {}} />
                 </div>
             </div>
-            <div className="flex-1 overflow-auto">
+            <div className="max-h-[300px] overflow-y-auto">
                 <table className="min-w-full text-xs text-left">
                     <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                         <tr>
@@ -208,12 +208,12 @@ function AssignedStockTab({ rows }: { rows: any[] }) {
 
 function PurchaseTab({ rows }: { rows: any[] }) {
     return (
-        <div className="flex flex-col h-full">
+        <div>
             <div className="flex items-center gap-2 px-3 h-9 bg-white border-b border-[#DBD9D9] shrink-0">
                 <ClipboardList size={14} className="text-[#FB7506] shrink-0"/>
                 <span className="font-bold text-[14px] text-[#4F4F4F] uppercase tracking-tight">Purchase by Prebook Box</span>
             </div>
-            <div className="flex-1 overflow-auto">
+            <div className="max-h-[300px] overflow-y-auto">
                 <table className="min-w-full text-xs text-left">
                     <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                         <tr>
@@ -244,7 +244,7 @@ function PurchaseTab({ rows }: { rows: any[] }) {
 
 function StockOmTab({ rows, loading }: { rows: any[]; loading: boolean }) {
     return (
-        <div className="flex flex-col h-full">
+        <div>
             <div className="flex items-center gap-2 px-3 h-9 bg-white border-b border-[#DBD9D9] shrink-0">
                 <ShoppingCart size={14} className="text-[#FB7506] shrink-0"/>
                 <span className="font-bold text-[14px] text-[#4F4F4F] uppercase tracking-tight">Stock Open Market</span>
@@ -252,7 +252,7 @@ function StockOmTab({ rows, loading }: { rows: any[]; loading: boolean }) {
                     <SBtn icon={Plus} label="Assign to Prebook box" onClick={() => {}} />
                 </div>
             </div>
-            <div className="flex-1 overflow-auto">
+            <div className="max-h-[300px] overflow-y-auto">
                 <table className="min-w-full text-xs text-left">
                     <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                         <tr>
@@ -299,7 +299,7 @@ function StockOmTab({ rows, loading }: { rows: any[]; loading: boolean }) {
 
 function SimilarTab({ rows }: { rows: any[] }) {
     return (
-        <div className="flex flex-col h-full">
+        <div>
             <div className="flex items-center gap-2 px-3 h-9 bg-white border-b border-[#DBD9D9] shrink-0">
                 <BookOpen size={14} className="text-[#FB7506] shrink-0"/>
                 <span className="font-bold text-[14px] text-[#4F4F4F] uppercase tracking-tight">Stock Open Market and Similar Products</span>
@@ -307,7 +307,7 @@ function SimilarTab({ rows }: { rows: any[] }) {
                     <SBtn icon={Plus} label="Assign to Prebook box" onClick={() => {}} />
                 </div>
             </div>
-            <div className="flex-1 overflow-auto">
+            <div className="max-h-[300px] overflow-y-auto">
                 <table className="min-w-full text-xs text-left">
                     <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                         <tr>
@@ -701,7 +701,7 @@ export default function Pbook2InvoicePage() {
                                                             </button>
                                                         ))}
                                                     </div>
-                                                    <div className="h-[190px] overflow-hidden bg-white" onClick={(e) => e.stopPropagation()}>
+                                                    <div className="bg-white" onClick={(e) => e.stopPropagation()}>
                                                         {activeTab === "invoiced"  && <InvoicedTab      rows={detail?.invoiced      ?? []} />}
                                                         {activeTab === "assigned"  && <AssignedStockTab rows={detail?.stockAssigned ?? []} />}
                                                         {activeTab === "purchase"  && <PurchaseTab      rows={detail?.purchase      ?? []} />}
