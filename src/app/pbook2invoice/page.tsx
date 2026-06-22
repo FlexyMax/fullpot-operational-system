@@ -568,120 +568,6 @@ export default function Pbook2InvoicePage() {
 
     const selectedLine = (lines as any[]).find((l: any) => t(l.UNICO ?? l.PBOOK_BOX_UQ) === selectedUnico);
 
-    // ── Nested level 2: "Closed Prebook box by date and customer" (Lines) ──────
-    // Rendered inside whichever customer row (incl. "ALL") is currently expanded.
-    const renderLinesPanel = () => (
-        <div className="mx-4 my-2 rounded-lg border border-[#DBD9D9] overflow-hidden bg-white shadow-sm">
-            <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0">
-                <div className="flex items-center gap-2 min-w-0">
-                    <Lock size={14} className="text-[#FB7506] shrink-0" />
-                    <span className="text-[13px] font-bold uppercase tracking-tight text-[#4F4F4F] truncate">
-                        Closed Prebook box by date and customer
-                    </span>
-                    {loadingLines && <RefreshCcw size={10} className="text-gray-400 animate-spin shrink-0" />}
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                    <div className="flex items-center bg-[#F5F3F3] border border-[#DBD9D9] rounded px-2 py-1 gap-1 w-56">
-                        <Search size={11} className="text-gray-400 shrink-0" />
-                        <input
-                            value={productSearch}
-                            onChange={e => setProductSearch(e.target.value)}
-                            onKeyDown={e => { if (e.key === "Enter") setAppliedSearch(productSearch); }}
-                            placeholder="Search product..."
-                            className="text-[11px] text-gray-700 placeholder-gray-400 outline-none flex-1 min-w-0 bg-transparent"
-                        />
-                        {productSearch && (
-                            <button onClick={() => { setProductSearch(""); setAppliedSearch(""); }}>
-                                <X size={11} className="text-gray-400 hover:text-gray-700" />
-                            </button>
-                        )}
-                    </div>
-                    <span className="text-[10px] font-bold text-gray-400 whitespace-nowrap">{(lines as any[]).length} rows</span>
-                    <button onClick={() => {}}
-                        className="flex items-center gap-1.5 bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] px-3 h-7 rounded-md text-[14px] font-semibold uppercase tracking-wide transition-all whitespace-nowrap"
-                    >
-                        <List size={14} /> Prebook Line
-                    </button>
-                    <button onClick={() => {}} disabled={!selectedDate}
-                        className="flex items-center gap-1.5 bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] px-3 h-7 rounded-md text-[14px] font-semibold uppercase tracking-wide disabled:opacity-40 disabled:cursor-not-allowed transition-all whitespace-nowrap"
-                    >
-                        <Copy size={14} /> Gen. Invoices
-                    </button>
-                    <button onClick={handleMakeInvoice} disabled={!selectedUnico || !canEdit || working}
-                        className="flex items-center gap-1.5 bg-green-600 hover:bg-green-500 text-white px-3 h-7 rounded-md text-[14px] font-semibold uppercase tracking-wide disabled:opacity-40 disabled:cursor-not-allowed transition-all whitespace-nowrap"
-                    >
-                        <Check size={14} /> Make Invoice
-                    </button>
-                </div>
-            </div>
-
-            <div className="max-h-80 overflow-auto">
-                <table className="min-w-full text-xs text-left">
-                    <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
-                        <tr className="divide-x divide-[#DBD9D9]/30">
-                            <th className="p-2 whitespace-nowrap">PO.No</th>
-                            <th className="p-2 whitespace-nowrap">SO.No</th>
-                            <th className="p-2 whitespace-nowrap">CustPO</th>
-                            <th className="p-2 whitespace-nowrap">Invoice</th>
-                            <th className="p-2 whitespace-nowrap">Description</th>
-                            <th className="p-2 whitespace-nowrap">Case</th>
-                            <th className="p-2 whitespace-nowrap text-right">UxPack</th>
-                            <th className="p-2 whitespace-nowrap text-right">PxCase</th>
-                            <th className="p-2 whitespace-nowrap text-right">UxCase</th>
-                            <th className="p-2 whitespace-nowrap text-right">Qty_SOrder</th>
-                            <th className="p-2 whitespace-nowrap text-right">Qty_POrder</th>
-                            <th className="p-2 whitespace-nowrap text-right">To_invoice</th>
-                            <th className="p-2 whitespace-nowrap text-right">S.Price</th>
-                            <th className="p-2 whitespace-nowrap">C.Ship-Date</th>
-                            <th className="p-2 whitespace-nowrap">Customer</th>
-                            <th className="p-2 whitespace-nowrap text-right">Quality</th>
-                            <th className="p-2 whitespace-nowrap">WHouse</th>
-                            <th className="p-2 whitespace-nowrap">BoxId</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#DBD9D9]">
-                        {(lines as any[]).map((row: any, i: number) => {
-                            const unico = t(row.UNICO ?? row.PBOOK_BOX_UQ ?? "");
-                            const sel = selectedUnico === unico;
-                            const toInv = parseFloat(row.TO_INVOICE ?? 0);
-                            const rowStyle = vfpRowStyle(row.BACK_COLOR ?? row.BACKCOLOR);
-                            return (
-                                <tr key={i}
-                                    onClick={() => setSelectedUnico(sel ? null : unico)}
-                                    className={cn("cursor-pointer transition-colors text-gray-600 divide-x divide-[#DBD9D9]",
-                                        sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}
-                                    style={!sel ? rowStyle : undefined}
-                                >
-                                    <td className="p-2 whitespace-nowrap">{t(row.SORDER_NO ?? row.PO_NO)}</td>
-                                    <td className="p-2 whitespace-nowrap font-semibold text-blue-700">{t(row.PBOOK_NO ?? row.SO_NO)}</td>
-                                    <td className="p-2 whitespace-nowrap">{t(row.CPORDER_NO ?? row.CUST_PO)}</td>
-                                    <td className="p-2 whitespace-nowrap">{t(row.INVOICE_NO ?? row.INVOICE)}</td>
-                                    <td className="p-2 whitespace-nowrap max-w-[160px] truncate">{t(row.DESCRIPTION ?? row.PRODUCT)}</td>
-                                    <td className="p-2 whitespace-nowrap">{t(row.CASE_SH ?? row.CASE)}</td>
-                                    <td className="p-2 whitespace-nowrap text-right">{fmtI(row.UP_X_PACK)}</td>
-                                    <td className="p-2 whitespace-nowrap text-right">{fmtI(row.PACKS_X_CASE)}</td>
-                                    <td className="p-2 whitespace-nowrap text-right">{fmtI(row.UNITS_X_BOX ?? row.UNITS_X_CASE)}</td>
-                                    <td className="p-2 whitespace-nowrap text-right">{fmtI(row.QTY_ORDER ?? row.QTY_SORDER)}</td>
-                                    <td className="p-2 whitespace-nowrap text-right">{fmtI(row.QTY_PORDER)}</td>
-                                    <td className={cn("p-2 whitespace-nowrap text-right font-bold", toInv > 0 ? "text-red-600" : "")}>{fmtI(row.TO_INVOICE)}</td>
-                                    <td className="p-2 whitespace-nowrap text-right font-semibold">{fmt(row.SO_PRICE ?? row.PRICE)}</td>
-                                    <td className="p-2 whitespace-nowrap">{fmtDate(row.PB_DATE ?? row.SHIP_DATE)}</td>
-                                    <td className="p-2 whitespace-nowrap font-medium">{t(row.CUSTOMER)}</td>
-                                    <td className="p-2 whitespace-nowrap text-right">{fmtI(row.BOXES_ADJUST ?? row.QUALITY)}</td>
-                                    <td className="p-2 whitespace-nowrap">{t(row.WAREHOUSE ?? row.WHOUSE)}</td>
-                                    <td className="p-2 whitespace-nowrap text-gray-400">{t(row.PCCODE ?? row.BOX_ID)}</td>
-                                </tr>
-                            );
-                        })}
-                        {!loadingLines && (lines as any[]).length === 0 && (
-                            <tr><td colSpan={18} className="p-10 text-center text-gray-400 italic">No prebook lines found</td></tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    );
-
     return (
         <div className="flex flex-col h-[100dvh] bg-[#FBF9F8] overflow-hidden font-sans text-[#333]">
 
@@ -689,7 +575,7 @@ export default function Pbook2InvoicePage() {
             <AppHeader title="Prebook to Invoice" extraRight={working ? <Loader2 size={14} className="animate-spin text-white/60" /> : undefined} />
 
             {/* ── Date Picker — expands per-row to nest the Customers grid ── */}
-            <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden mx-2 mt-2 flex-1 min-h-0">
+            <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden mx-2 mt-2 shrink-0 max-h-[280px]">
                 <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
                     <div className="flex items-center gap-2">
                         <Calendar size={15} className="text-[#FB7506]" />
@@ -799,7 +685,6 @@ export default function Pbook2InvoicePage() {
                                                             <table className="min-w-full text-xs text-left">
                                                                 <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                                                                     <tr className="divide-x divide-[#DBD9D9]/30">
-                                                                        <th className="p-2 w-8" />
                                                                         <th className="p-2">Customer</th>
                                                                         <th className="p-2 text-right">Prebks</th>
                                                                         <th className="p-2 text-right">CrLimit</th>
@@ -813,55 +698,39 @@ export default function Pbook2InvoicePage() {
                                                                     </tr>
                                                                 </thead>
                                                                 <tbody className="divide-y divide-[#DBD9D9]">
-                                                                    <Fragment>
-                                                                        <tr onClick={() => selectCustomer("%")}
-                                                                            className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]",
-                                                                                selectedCustUq === "%" ? "!bg-[#FB7506]/10" : "bg-white hover:bg-gray-50")}
-                                                                        >
-                                                                            <td className="p-2 text-center">
-                                                                                <ChevronRight size={14} className={cn("inline-block text-gray-400 transition-transform", selectedCustUq === "%" && "rotate-90 text-[#FB7506]")} />
-                                                                            </td>
-                                                                            <td className="p-2 font-bold text-gray-500 italic">ALL</td>
-                                                                            <td className="p-2" /><td className="p-2" />
-                                                                            <td className="p-2" /><td className="p-2" />
-                                                                            <td className="p-2" /><td className="p-2" />
-                                                                            <td className="p-2" /><td className="p-2" />
-                                                                            <td className="p-2" />
-                                                                        </tr>
-                                                                        {selectedCustUq === "%" && (
-                                                                            <tr><td colSpan={11} className="p-0 bg-[#FBF9F8]">{renderLinesPanel()}</td></tr>
-                                                                        )}
-                                                                    </Fragment>
+                                                                    <tr onClick={() => selectCustomer("%")}
+                                                                        className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]",
+                                                                            selectedCustUq === "%" ? "!bg-[#FB7506]/10" : "bg-white hover:bg-gray-50")}
+                                                                    >
+                                                                        <td className="p-2 font-bold text-gray-500 italic">ALL</td>
+                                                                        <td className="p-2" /><td className="p-2" />
+                                                                        <td className="p-2" /><td className="p-2" />
+                                                                        <td className="p-2" /><td className="p-2" />
+                                                                        <td className="p-2" /><td className="p-2" />
+                                                                        <td className="p-2" />
+                                                                    </tr>
                                                                     {(customers as any[]).filter((row: any) => t(row.CUSTOMER_UQ ?? "") !== "%").map((row: any, j: number) => {
                                                                         const uq = t(row.CUSTOMER_UQ ?? "");
                                                                         const selCust = selectedCustUq === uq;
                                                                         const custRowStyle = vfpRowStyle(row.COLOR);
                                                                         return (
-                                                                            <Fragment key={j}>
-                                                                                <tr onClick={() => selectCustomer(uq)}
-                                                                                    className={cn("cursor-pointer transition-colors text-gray-600 divide-x divide-[#DBD9D9]",
-                                                                                        selCust ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}
-                                                                                    style={!selCust ? custRowStyle : undefined}
-                                                                                    title={t(row.TOOLTIP)}
-                                                                                >
-                                                                                    <td className="p-2 text-center">
-                                                                                        <ChevronRight size={14} className={cn("inline-block text-gray-400 transition-transform", selCust && "rotate-90 text-[#FB7506]")} />
-                                                                                    </td>
-                                                                                    <td className="p-2 font-medium">{t(row.CUSTOMER)}</td>
-                                                                                    <td className="p-2 text-right">{fmtI(row.RECORDS)}</td>
-                                                                                    <td className="p-2 text-right">{fmt(row.CREDIT_LIMIT)}</td>
-                                                                                    <td className="p-2 text-right">{fmtI(row.QTY_ORDER)}</td>
-                                                                                    <td className="p-2 text-right">{fmtI(row.QTY_PORDER)}</td>
-                                                                                    <td className="p-2 text-right">{fmtI(row.QTY_SHIP)}</td>
-                                                                                    <td className="p-2 text-right font-semibold">{fmtI(row.QTY_INVOICE)}</td>
-                                                                                    <td className="p-2 text-right">{fmt(row.TOTAL_SALE)}</td>
-                                                                                    <td className="p-2 text-right">{fmt(row.TOTAL_PURCHASE)}</td>
-                                                                                    <td className="p-2 text-right">{fmt(row.PROFIT)}%</td>
-                                                                                </tr>
-                                                                                {selCust && (
-                                                                                    <tr><td colSpan={11} className="p-0 bg-[#FBF9F8]">{renderLinesPanel()}</td></tr>
-                                                                                )}
-                                                                            </Fragment>
+                                                                            <tr key={j} onClick={() => selectCustomer(uq)}
+                                                                                className={cn("cursor-pointer transition-colors text-gray-600 divide-x divide-[#DBD9D9]",
+                                                                                    selCust ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}
+                                                                                style={!selCust ? custRowStyle : undefined}
+                                                                                title={t(row.TOOLTIP)}
+                                                                            >
+                                                                                <td className="p-2 font-medium">{t(row.CUSTOMER)}</td>
+                                                                                <td className="p-2 text-right">{fmtI(row.RECORDS)}</td>
+                                                                                <td className="p-2 text-right">{fmt(row.CREDIT_LIMIT)}</td>
+                                                                                <td className="p-2 text-right">{fmtI(row.QTY_ORDER)}</td>
+                                                                                <td className="p-2 text-right">{fmtI(row.QTY_PORDER)}</td>
+                                                                                <td className="p-2 text-right">{fmtI(row.QTY_SHIP)}</td>
+                                                                                <td className="p-2 text-right font-semibold">{fmtI(row.QTY_INVOICE)}</td>
+                                                                                <td className="p-2 text-right">{fmt(row.TOTAL_SALE)}</td>
+                                                                                <td className="p-2 text-right">{fmt(row.TOTAL_PURCHASE)}</td>
+                                                                                <td className="p-2 text-right">{fmt(row.PROFIT)}%</td>
+                                                                            </tr>
                                                                         );
                                                                     })}
                                                                 </tbody>
@@ -896,6 +765,117 @@ export default function Pbook2InvoicePage() {
                 <div className="w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
                 <TBtn icon={Trash2}       label="Void Line"       onClick={handleVoidLine} disabled={!selectedUnico || !canDelete || working} variant="danger" />
                 <TBtn icon={Scissors}     label="Partial Invoice" onClick={() => {}} disabled={!selectedUnico} />
+            </div>
+
+            {/* ── Closed Prebook box by date and customer (Lines) — separate panel, not nested in any grid ── */}
+            <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden mx-2 mt-2 flex-1 min-h-0">
+                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <Lock size={15} className="text-[#FB7506] shrink-0" />
+                        <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] truncate">
+                            Closed Prebook box by date and customer
+                        </span>
+                        {loadingLines && <RefreshCcw size={10} className="text-gray-400 animate-spin shrink-0" />}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center bg-[#F5F3F3] border border-[#DBD9D9] rounded px-2 py-1 gap-1 w-56">
+                            <Search size={11} className="text-gray-400 shrink-0" />
+                            <input
+                                value={productSearch}
+                                onChange={e => setProductSearch(e.target.value)}
+                                onKeyDown={e => { if (e.key === "Enter") setAppliedSearch(productSearch); }}
+                                placeholder="Search product..."
+                                className="text-[11px] text-gray-700 placeholder-gray-400 outline-none flex-1 min-w-0 bg-transparent"
+                            />
+                            {productSearch && (
+                                <button onClick={() => { setProductSearch(""); setAppliedSearch(""); }}>
+                                    <X size={11} className="text-gray-400 hover:text-gray-700" />
+                                </button>
+                            )}
+                        </div>
+                        <span className="text-[10px] font-bold text-gray-400 whitespace-nowrap">{(lines as any[]).length} rows</span>
+                        <button onClick={() => {}}
+                            className="flex items-center gap-1.5 bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] px-3 h-7 rounded-md text-[14px] font-semibold uppercase tracking-wide transition-all whitespace-nowrap"
+                        >
+                            <List size={14} /> Prebook Line
+                        </button>
+                        <button onClick={() => {}} disabled={!selectedDate}
+                            className="flex items-center gap-1.5 bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] px-3 h-7 rounded-md text-[14px] font-semibold uppercase tracking-wide disabled:opacity-40 disabled:cursor-not-allowed transition-all whitespace-nowrap"
+                        >
+                            <Copy size={14} /> Gen. Invoices
+                        </button>
+                        <button onClick={handleMakeInvoice} disabled={!selectedUnico || !canEdit || working}
+                            className="flex items-center gap-1.5 bg-green-600 hover:bg-green-500 text-white px-3 h-7 rounded-md text-[14px] font-semibold uppercase tracking-wide disabled:opacity-40 disabled:cursor-not-allowed transition-all whitespace-nowrap"
+                        >
+                            <Check size={14} /> Make Invoice
+                        </button>
+                    </div>
+                </div>
+
+                <div className="flex-1 overflow-auto">
+                    <table className="min-w-full text-xs text-left">
+                        <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
+                            <tr className="divide-x divide-[#DBD9D9]/30">
+                                <th className="p-2 whitespace-nowrap">PO.No</th>
+                                <th className="p-2 whitespace-nowrap">SO.No</th>
+                                <th className="p-2 whitespace-nowrap">CustPO</th>
+                                <th className="p-2 whitespace-nowrap">Invoice</th>
+                                <th className="p-2 whitespace-nowrap">Description</th>
+                                <th className="p-2 whitespace-nowrap">Case</th>
+                                <th className="p-2 whitespace-nowrap text-right">UxPack</th>
+                                <th className="p-2 whitespace-nowrap text-right">PxCase</th>
+                                <th className="p-2 whitespace-nowrap text-right">UxCase</th>
+                                <th className="p-2 whitespace-nowrap text-right">Qty_SOrder</th>
+                                <th className="p-2 whitespace-nowrap text-right">Qty_POrder</th>
+                                <th className="p-2 whitespace-nowrap text-right">To_invoice</th>
+                                <th className="p-2 whitespace-nowrap text-right">S.Price</th>
+                                <th className="p-2 whitespace-nowrap">C.Ship-Date</th>
+                                <th className="p-2 whitespace-nowrap">Customer</th>
+                                <th className="p-2 whitespace-nowrap text-right">Quality</th>
+                                <th className="p-2 whitespace-nowrap">WHouse</th>
+                                <th className="p-2 whitespace-nowrap">BoxId</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#DBD9D9]">
+                            {(lines as any[]).map((row: any, i: number) => {
+                                const unico = t(row.UNICO ?? row.PBOOK_BOX_UQ ?? "");
+                                const sel = selectedUnico === unico;
+                                const toInv = parseFloat(row.TO_INVOICE ?? 0);
+                                const rowStyle = vfpRowStyle(row.BACK_COLOR ?? row.BACKCOLOR);
+                                return (
+                                    <tr key={i}
+                                        onClick={() => setSelectedUnico(sel ? null : unico)}
+                                        className={cn("cursor-pointer transition-colors text-gray-600 divide-x divide-[#DBD9D9]",
+                                            sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}
+                                        style={!sel ? rowStyle : undefined}
+                                    >
+                                        <td className="p-2 whitespace-nowrap">{t(row.SORDER_NO ?? row.PO_NO)}</td>
+                                        <td className="p-2 whitespace-nowrap font-semibold text-blue-700">{t(row.PBOOK_NO ?? row.SO_NO)}</td>
+                                        <td className="p-2 whitespace-nowrap">{t(row.CPORDER_NO ?? row.CUST_PO)}</td>
+                                        <td className="p-2 whitespace-nowrap">{t(row.INVOICE_NO ?? row.INVOICE)}</td>
+                                        <td className="p-2 whitespace-nowrap max-w-[160px] truncate">{t(row.DESCRIPTION ?? row.PRODUCT)}</td>
+                                        <td className="p-2 whitespace-nowrap">{t(row.CASE_SH ?? row.CASE)}</td>
+                                        <td className="p-2 whitespace-nowrap text-right">{fmtI(row.UP_X_PACK)}</td>
+                                        <td className="p-2 whitespace-nowrap text-right">{fmtI(row.PACKS_X_CASE)}</td>
+                                        <td className="p-2 whitespace-nowrap text-right">{fmtI(row.UNITS_X_BOX ?? row.UNITS_X_CASE)}</td>
+                                        <td className="p-2 whitespace-nowrap text-right">{fmtI(row.QTY_ORDER ?? row.QTY_SORDER)}</td>
+                                        <td className="p-2 whitespace-nowrap text-right">{fmtI(row.QTY_PORDER)}</td>
+                                        <td className={cn("p-2 whitespace-nowrap text-right font-bold", toInv > 0 ? "text-red-600" : "")}>{fmtI(row.TO_INVOICE)}</td>
+                                        <td className="p-2 whitespace-nowrap text-right font-semibold">{fmt(row.SO_PRICE ?? row.PRICE)}</td>
+                                        <td className="p-2 whitespace-nowrap">{fmtDate(row.PB_DATE ?? row.SHIP_DATE)}</td>
+                                        <td className="p-2 whitespace-nowrap font-medium">{t(row.CUSTOMER)}</td>
+                                        <td className="p-2 whitespace-nowrap text-right">{fmtI(row.BOXES_ADJUST ?? row.QUALITY)}</td>
+                                        <td className="p-2 whitespace-nowrap">{t(row.WAREHOUSE ?? row.WHOUSE)}</td>
+                                        <td className="p-2 whitespace-nowrap text-gray-400">{t(row.PCCODE ?? row.BOX_ID)}</td>
+                                    </tr>
+                                );
+                            })}
+                            {!loadingLines && (lines as any[]).length === 0 && (
+                                <tr><td colSpan={18} className="p-10 text-center text-gray-400 italic">No prebook lines found</td></tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             {/* ── Detail tabs for the selected line — separate panel, not nested in any grid ── */}
