@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Lock, User, AlertCircle, Loader2, ShieldCheck, KeyRound } from "lucide-react";
+import { Lock, User, AlertCircle, Loader2, ShieldCheck, KeyRound, Power } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
 
@@ -103,11 +103,8 @@ export default function LoginPage() {
                         className="w-full h-full object-cover"
                         style={{ objectPosition: 'center' }}
                     />
-                    {/* Global dark veil so the whole photo is moody */}
+                    {/* Global dark veil so the whole photo is moody — same opacity across the full width */}
                     <div className="absolute inset-0" style={{ background: 'rgba(10,8,8,0.45)' }} />
-                    {/* Right-side gradient → darkens where the panel sits */}
-                    <div className="absolute inset-0"
-                        style={{ background: 'linear-gradient(to left, rgba(12,10,10,0.82) 0%, rgba(12,10,10,0.55) 35%, rgba(12,10,10,0.10) 65%, transparent 100%)' }} />
                     {/* Grid overlay */}
                     <div className="absolute inset-0 login-grid-bg" />
                 </div>
@@ -124,14 +121,20 @@ export default function LoginPage() {
                             <span className="text-white font-black text-[10px] md:text-xs leading-none">FOS</span>
                         </div>
                         <div className="w-px h-4 md:h-5 bg-white/20" />
-                        <span className="font-bold text-white text-xs md:text-sm uppercase tracking-tight hidden md:inline">FullPot Operational System</span>
+                        <span className="font-bold text-white text-xl md:text-2xl uppercase tracking-tight hidden md:inline">FullPot Operational System</span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
                             style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
                             <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
                             <span className="text-[10px] font-bold text-white/80 uppercase tracking-widest">System Online</span>
                         </div>
+                        <button
+                            title="Power"
+                            className="w-8 h-8 rounded-full flex items-center justify-center bg-[#FB7506] hover:bg-[#ff8c2a] text-white transition-all shadow-sm hover:shadow-md"
+                        >
+                            <Power size={14} strokeWidth={2.5} />
+                        </button>
                     </div>
                 </header>
 

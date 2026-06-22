@@ -53,6 +53,7 @@ Monospace (`font-mono`) is intentionally used for alphanumeric codes/IDs (AWB co
 
 | Use | Weight | Size | Case |
 |---|---|---|---|
+| Screen titles (the page name in the dark top header bar, e.g. "SYSTEM ACCESS", "PREBOOK TO INVOICE") | Bold (700) | 20px–24px | Uppercase |
 | Panel/section titles (e.g. "USER INFORMATION", "SCREEN PERMISSIONS") | Bold (700) | 14px | Uppercase |
 | Data labels (e.g. "CODE", "USERNAME", "LEVEL") and table header row (Access/Create/Screen/...) | Bold (700) | 12px | Uppercase |
 | Table content and sidebar list names (e.g. "CUSTOMER PAYMENTS", a user's name in a list) | Regular (400) | 13px | As-is |
@@ -190,3 +191,15 @@ Remaining work:
   Modals across all three tabs were left dark, per the gap below.
   `DualListModal`/quota/PO-prices/stock/prebook/product/image modals are
   numerous in this module — none were touched.
+- `login` — (2026-06-22) the photo background had a `linear-gradient(to left, ...)`
+  veil stacked on top of the global dark veil, darkening only the right side
+  where the glass login card sits; removed so the photo reads the same
+  brightness everywhere (it changed to one that no longer needed the extra
+  darkening to keep the card legible). The custom top header's title text
+  was bumped from `text-xs md:text-sm` to the new Screen-titles scale
+  (`text-xl md:text-2xl`, 20–24px Bold) and it now has the same orange
+  circular `Power`-icon button as `AppHeader`'s logout button, next to
+  "System Online" — purely visual parity here since there's no session to
+  sign out of pre-login, so it has no `onClick`. Note this page hand-rolls
+  its own `<header>`/`<footer>` instead of using `AppHeader.tsx` — keep
+  both in sync if the shared header's title scale or button changes.
