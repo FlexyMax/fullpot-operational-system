@@ -235,6 +235,35 @@ Remaining work:
   modals (Packing, Box Entry, Change AWB) and all 13 standalone
   `components/inventory-entry/Modal*.tsx` files — none of their internals
   were touched this round.
+  **Real report PDFs (2026-06-23):** most of this page's buttons were VFP
+  `REPORT FORM`/label-printer triggers with no web equivalent. Cross-referenced
+  the original VFP source (`FOS_VFP_Original/Inventory/*.prg`, readable via
+  `grep -a` despite the `.prg` extension — these are exported `.scx`/`.fpt`
+  binaries, not plain text) to find which stored procedure and `.frx` each
+  button calls, then read each SP's live definition on the production DB via
+  `OBJECT_DEFINITION()` (read-only, no execution needed — every reporting SP
+  hardcodes its `reporte = '....frx'` value in its final `SELECT`, so the
+  exact report file is just sitting in the SP text) to get the real column
+  list per report instead of guessing from the `.frx`'s field names alone.
+  Built a generic `ReportPDF` component (`src/components/reports/ReportPDF.tsx`,
+  `@react-pdf/renderer`) — company letterhead (real values from
+  `flower_definitions.d_company`/`d_iaddress`/etc., not fabricated), a
+  `#4F4F4F` column header matching the app's own table style, one level of
+  grouping with a subtotal row, page footer — driving 9 routes under
+  `/api/inventory-entry/reports/*`. Buttons `window.open()` the route directly;
+  the browser's native PDF viewer is the preview/print surface, same role as
+  VFP's `REPORT FORM ... PREVIEW`. Wired: Packing (Date Picker/Vendors),
+  AWB Cust. PO (Date Picker/Vendors), Products, NS Summary, No Scanned,
+  Delayed, AWB (full report) and WH Instructions (AWB List), COff (Vendors).
+  **Not done**: the thermal/laser label buttons (Z300, Z4M, Meto, RPK,
+  Zebra/Meto by Lot, Label Laser, Customer PO ship-to labels) — these resolve
+  to `.lbx` label files, not `.frx` reports (confirmed the same way, via SP
+  definition), and were scoped as a separate "generate the label text/ZPL
+  file and let the browser download it" follow-up, not PDF. Customer PO
+  ship-to labels are extra: each customer has its own `.lbx` template
+  (`flower_customer_shipto.labels_report`), so that one isn't a single fixed
+  layout. Boxes Detail's own report/label buttons (the row below Vendors)
+  are a further follow-up, explicitly deferred by the user to its own round.
 - `login` — (2026-06-22) the photo background had a `linear-gradient(to left, ...)`
   veil stacked on top of the global dark veil, darkening only the right side
   where the glass login card sits; removed so the photo reads the same

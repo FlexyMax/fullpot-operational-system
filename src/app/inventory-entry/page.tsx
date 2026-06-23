@@ -371,6 +371,8 @@ export default function InventoryEntryPage() {
     }, [awbDates]);
 
     // ── Handlers ──────────────────────────────────────────────────────────────
+    const openReport = (path: string) => window.open(path, "_blank");
+
     const handleTabClick = (tab: LeftTab) => {
         setActiveTab(tab);
         setTabLoaded(prev => ({ ...prev, [tab]: true }));
@@ -704,12 +706,12 @@ export default function InventoryEntryPage() {
                                                 <RefreshCcw size={12} /> Refresh
                                             </button>
                                             <GridMenu items={[
-                                                { label: "Packing Date", icon: FileText, color: "gray", onClick: () => toast.info("Packing Date report — coming soon.") },
-                                                { label: "AWB Cust. PO", icon: FileText, color: "gray", onClick: () => toast.info("AWB Cust. PO report — coming soon.") },
-                                                { label: "Products", icon: FileText, color: "gray", onClick: () => toast.info("Products report — coming soon.") },
-                                                { label: "NS Summary", icon: FileText, color: "gray", onClick: () => toast.info("No-Scan Summary report — coming soon.") },
-                                                { label: "No Scanned", icon: FileText, color: "gray", onClick: () => toast.info("No Scanned report — coming soon.") },
-                                                { label: "Delayed", icon: FileText, color: "gray", onClick: () => toast.info("Delayed report — coming soon.") },
+                                                { label: "Packing Date", icon: FileText, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/packing-arrived?date=${lddate}&awb=%25&pack_uq=%25&wphysical_uq=%25`) },
+                                                { label: "AWB Cust. PO", icon: FileText, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/awb-cporder?date=${lddate}&awb=%25&pack_uq=%25`) },
+                                                { label: "Products", icon: FileText, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/products?date=${lddate}&awb=%25&grower_uq=%25`) },
+                                                { label: "NS Summary", icon: FileText, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/no-scanned-summary`) },
+                                                { label: "No Scanned", icon: FileText, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/no-scanned?date=${lddate}`) },
+                                                { label: "Delayed", icon: FileText, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/delayed?date=${lddate}`) },
                                             ]} />
                                         </div>
                                     </div>
@@ -756,7 +758,8 @@ export default function InventoryEntryPage() {
                                         </div>
                                         <GridMenu items={[
                                             { label: "Total By Whouse", icon: BarChart2, color: "blue", onClick: () => setModalWhTotals(true) },
-                                            { label: "WH Instructions", icon: FileText, color: "gray", onClick: () => toast.info("WH Instructions — coming soon.") },
+                                            { label: "AWB Report", icon: FileText, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/awb-full?awb=${encodeURIComponent(lcawbcode)}`), disabled: !lcawbcode },
+                                            { label: "WH Instructions", icon: FileText, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/wh-instructions?date=${lddate}&awb=${encodeURIComponent(lcawbcode)}`), disabled: !lcawbcode },
                                         ]} />
                                     </div>
                                     <div className="flex-1 overflow-auto">
@@ -823,10 +826,10 @@ export default function InventoryEntryPage() {
                                         { label: "Change AWB", icon: Pencil, color: "blue", onClick: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setChgAwbForm({ awbcode: lcawbcode, airline_uq: "", date_invo: today() }); setModalChgAwb(true); }, disabled: !perms.canEdit },
                                         { label: "WH Totals", icon: BarChart2, color: "blue", onClick: () => setModalWhTotals(true) },
                                         { label: "Copy", icon: Copy, color: "blue", onClick: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalCopy(true); }, separator: true },
-                                        { label: "AWB Cust. PO", icon: FileText, color: "gray", onClick: () => toast.info("AWB Cust. PO — coming soon.") },
+                                        { label: "AWB Cust. PO", icon: FileText, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/awb-cporder?date=${lddate}&awb=${encodeURIComponent(lcawbcode || "%")}&pack_uq=${encodeURIComponent(lcpack_uq)}`), disabled: !lcpack_uq },
                                         { label: "Label Laser", icon: FileText, color: "gray", onClick: () => toast.info("Label Laser — coming soon.") },
-                                        { label: "Packing", icon: Package, color: "gray", onClick: () => toast.info("Packing — coming soon.") },
-                                        { label: "COff", icon: FileText, color: "gray", onClick: () => toast.info("COff — coming soon.") },
+                                        { label: "Packing", icon: Package, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/packing-arrived?date=${lddate}&awb=${encodeURIComponent(lcawbcode || "%")}&pack_uq=${encodeURIComponent(lcpack_uq)}&wphysical_uq=%25`), disabled: !lcpack_uq },
+                                        { label: "COff", icon: FileText, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/cut-off?date=${lddate}&awb=${encodeURIComponent(lcawbcode || "%")}&pack_uq=${encodeURIComponent(lcpack_uq)}`), disabled: !lcpack_uq },
                                         { label: "PDF Label", icon: FileText, color: "gray", onClick: () => toast.info("PDF Label — coming soon.") },
                                         { label: "Z300", icon: FileText, color: "gray", onClick: () => toast.info("Z300 — coming soon.") },
                                         { label: "Z 4M", icon: FileText, color: "gray", onClick: () => toast.info("Z 4M — coming soon.") },
