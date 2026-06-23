@@ -308,7 +308,7 @@ export default function InventoryEntryPage() {
         staleTime: 0,
     });
 
-    const { data: awbDates = EMPTY_ARR, isFetching: loadingDates } = useQuery({
+    const { data: awbDates = EMPTY_ARR, isFetching: loadingDates, refetch: refetchDates } = useQuery({
         queryKey: ["ie-awb-dates"],
         queryFn:  () => fetch("/api/inventory-entry/awb-dates").then(r => r.json()).then(d => norm(Array.isArray(d) ? d : [])),
         staleTime: 1000 * 60 * 5,
@@ -692,12 +692,26 @@ export default function InventoryEntryPage() {
                             <div className="flex gap-2 shrink-0" style={{ height: "28%" }}>
                                 {/* Date Picker */}
                                 <div className="w-[30%] flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0">
-                                    <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0">
+                                    <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between pl-3 pr-0 shrink-0">
                                         <div className="flex items-center gap-2">
                                             <Calendar size={14} className="text-[#FB7506]" />
                                             <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">Date Picker</span>
+                                            {loadingDates && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
                                         </div>
-                                        {loadingDates && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
+                                        <div className="flex items-center gap-1 pr-1">
+                                            <button onClick={() => refetchDates()}
+                                                className="flex items-center gap-1 h-7 px-2 text-[12px] font-semibold text-[#4F4F4F] hover:bg-gray-100 rounded-md transition-colors">
+                                                <RefreshCcw size={12} /> Refresh
+                                            </button>
+                                            <GridMenu items={[
+                                                { label: "Packing Date", icon: FileText, color: "gray", onClick: () => toast.info("Packing Date report — coming soon.") },
+                                                { label: "AWB Cust. PO", icon: FileText, color: "gray", onClick: () => toast.info("AWB Cust. PO report — coming soon.") },
+                                                { label: "Products", icon: FileText, color: "gray", onClick: () => toast.info("Products report — coming soon.") },
+                                                { label: "NS Summary", icon: FileText, color: "gray", onClick: () => toast.info("No-Scan Summary report — coming soon.") },
+                                                { label: "No Scanned", icon: FileText, color: "gray", onClick: () => toast.info("No Scanned report — coming soon.") },
+                                                { label: "Delayed", icon: FileText, color: "gray", onClick: () => toast.info("Delayed report — coming soon.") },
+                                            ]} />
+                                        </div>
                                     </div>
                                     <div className="flex-1 overflow-y-auto">
                                         <table className="w-full text-xs">
@@ -734,12 +748,16 @@ export default function InventoryEntryPage() {
 
                                 {/* AWB List */}
                                 <div className="flex-1 flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden min-w-0">
-                                    <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0">
+                                    <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between pl-3 pr-0 shrink-0">
                                         <div className="flex items-center gap-2">
                                             <Plane size={14} className="text-[#FB7506]" />
                                             <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">AWB List &mdash; {lddate}</span>
+                                            {loadingAwb && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
                                         </div>
-                                        {loadingAwb && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
+                                        <GridMenu items={[
+                                            { label: "Total By Whouse", icon: BarChart2, color: "blue", onClick: () => setModalWhTotals(true) },
+                                            { label: "WH Instructions", icon: FileText, color: "gray", onClick: () => toast.info("WH Instructions — coming soon.") },
+                                        ]} />
                                     </div>
                                     <div className="flex-1 overflow-auto">
                                         <table className="min-w-full text-xs text-left">
@@ -800,6 +818,9 @@ export default function InventoryEntryPage() {
                                     </div>
                                     <GridMenu items={[
                                         { label: "Send to Whouse", icon: ArrowRight, color: "orange", onClick: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalSendWH(true); } },
+                                        { label: "Open", icon: Check, color: "green", onClick: () => packAction("open", "Open"), disabled: !lcpack_uq || !perms.canEdit },
+                                        { label: "Close", icon: X, color: "amber", onClick: () => packAction("close", "Close"), disabled: !lcpack_uq || !perms.canEdit },
+                                        { label: "Change AWB", icon: Pencil, color: "blue", onClick: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setChgAwbForm({ awbcode: lcawbcode, airline_uq: "", date_invo: today() }); setModalChgAwb(true); }, disabled: !perms.canEdit },
                                         { label: "WH Totals", icon: BarChart2, color: "blue", onClick: () => setModalWhTotals(true) },
                                         { label: "Copy", icon: Copy, color: "blue", onClick: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalCopy(true); }, separator: true },
                                         { label: "AWB Cust. PO", icon: FileText, color: "gray", onClick: () => toast.info("AWB Cust. PO — coming soon.") },
