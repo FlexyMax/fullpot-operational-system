@@ -1,5 +1,9 @@
-import { Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
+import { Document, Page, View, Text, StyleSheet, Font } from "@react-pdf/renderer";
 import type { CompanyInfo } from "@/lib/reports/companyInfo";
+
+// Default hyphenation breaks long words mid-syllable (e.g. "EX-TRA") to fit a
+// narrow column — wrap at spaces only instead, never split inside a word.
+Font.registerHyphenationCallback(word => [word]);
 
 const ACCENT = "#FB7506";
 const DARK = "#4F4F4F";
@@ -57,12 +61,24 @@ const fmt = (v: any) => {
     return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
+// SQL Server CHAR columns come back space-padded to their fixed width (seen
+// directly on flower_definitions.d_company, etc.) — left untrimmed, that
+// padding reads as one long unbreakable "word" to the text layout engine,
+// which then force-wraps/hyphenates it for no visible reason.
+const cell = (v: any) => String(v ?? "").trim();
+
+// flexGrow alone sizes a cell off its own content first and only then grows it —
+// that makes columns drift out of alignment between the header row and rows with
+// different content lengths. flexBasis: 0 forces every cell in a column to the
+// same proportional width regardless of what text it holds.
+const colFlex = (width: number) => ({ flexGrow: width, flexBasis: 0 as const, flexShrink: 1 });
+
 function Row({ row, columns }: { row: any; columns: ReportColumn[] }) {
     return (
         <View style={styles.tr}>
             {columns.map(c => (
-                <Text key={c.key} style={[styles.td, { flexGrow: c.width, textAlign: c.align ?? "left" }]}>
-                    {c.render ? c.render(row) : String(row[c.key] ?? "")}
+                <Text key={c.key} style={[styles.td, colFlex(c.width), { textAlign: c.align ?? "left" }]}>
+                    {c.render ? c.render(row) : cell(row[c.key])}
                 </Text>
             ))}
         </View>
@@ -104,7 +120,7 @@ export function ReportPDF({ company, title, subtitle, columns, rows, group, land
                 <View style={styles.table}>
                     <View style={styles.theadRow}>
                         {columns.map(c => (
-                            <Text key={c.key} style={[styles.th, { flexGrow: c.width, textAlign: c.align ?? "left" }]}>{c.label}</Text>
+                            <Text key={c.key} style={[styles.th, colFlex(c.width), { textAlign: c.align ?? "left" }]}>{c.label}</Text>
                         ))}
                     </View>
 
@@ -118,13 +134,13 @@ export function ReportPDF({ company, title, subtitle, columns, rows, group, land
                                 <View style={styles.subtotalRow}>
                                     {columns.map((c, ci) => {
                                         if (ci === 0) {
-                                            return <Text key={c.key} style={[styles.subtotalLabel, { flexGrow: c.width }]}>{group.totalLabel ? group.totalLabel(g.rows[0]) : "TOTAL"}</Text>;
+                                            return <Text key={c.key} style={[styles.subtotalLabel, colFlex(c.width)]}>{group.totalLabel ? group.totalLabel(g.rows[0]) : "TOTAL"}</Text>;
                                         }
                                         if (group.totals!.includes(c.key)) {
                                             const sum = g.rows.reduce((acc, r) => acc + (parseFloat(r[c.key]) || 0), 0);
-                                            return <Text key={c.key} style={[styles.subtotalLabel, { flexGrow: c.width, textAlign: c.align ?? "left" }]}>{fmt(sum)}</Text>;
+                                            return <Text key={c.key} style={[styles.subtotalLabel, colFlex(c.width), { textAlign: c.align ?? "left" }]}>{fmt(sum)}</Text>;
                                         }
-                                        return <Text key={c.key} style={[styles.subtotalLabel, { flexGrow: c.width }]} />;
+                                        return <Text key={c.key} style={[styles.subtotalLabel, colFlex(c.width)]} />;
                                     })}
                                 </View>
                             )}
