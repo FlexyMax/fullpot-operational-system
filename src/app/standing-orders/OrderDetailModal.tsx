@@ -5,8 +5,9 @@ import { useQuery } from "@tanstack/react-query";
 import {
     X, Loader2, Check, Trash2, Edit2, Plus,
     Calendar, Package, ShoppingCart, FileText,
-    UserCog, Tractor, Printer, Lock,
+    UserCog, Tractor, Printer, Lock, ClipboardList,
 } from "lucide-react";
+import { GridMenu } from "@/components/GridMenu";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { HeaderModal }         from "./HeaderModal";
@@ -37,16 +38,16 @@ const bool = (v: any) => v === true || v === 1 || String(v).toLowerCase() === "t
 const WEEK_COLS: [string,string][] = [["MON","Mon"],["TUE","Tue"],["WED","Wed"],["THU","Thu"],["FRI","Fri"],["SAT","Sat"],["SUN","Sun"]];
 
 function Th({ children, className }: { children: any; className?: string }) {
-    return <th className={cn("p-2 text-left font-bold whitespace-nowrap text-gray-700 border-l border-gray-200 first:border-l-0 bg-gray-100 sticky top-0 z-10", className)}>{children}</th>;
+    return <th className={cn("p-2 text-left font-bold whitespace-nowrap", className)}>{children}</th>;
 }
 function Td({ children, className }: { children: any; className?: string }) {
-    return <td className={cn("p-2 whitespace-nowrap border-l border-gray-100 first:border-l-0", className)}>{children}</td>;
+    return <td className={cn("p-2 whitespace-nowrap", className)}>{children}</td>;
 }
 function FieldRow({ label, value, className }: { label: string; value?: string; className?: string }) {
     return (
-        <div className={cn("flex items-center gap-1 min-w-0", className)}>
+        <div className={cn("flex items-center gap-1.5 min-w-0", className)}>
             <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide shrink-0">{label}:</span>
-            <span className="text-[11px] text-gray-800 truncate">{value || "—"}</span>
+            <span className="text-[12px] text-[#333] truncate">{value || "—"}</span>
         </div>
     );
 }
@@ -54,12 +55,13 @@ function ABtn({ icon: Icon, label, onClick, disabled, variant = "default" }: any
     return (
         <button onClick={onClick} disabled={disabled}
             className={cn(
-                "flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest rounded border transition-all disabled:opacity-40 whitespace-nowrap shrink-0",
-                variant === "danger"  && "bg-red-600 hover:bg-red-500 border-transparent text-white",
+                "flex items-center gap-1.5 h-7 px-3 text-[14px] font-semibold uppercase tracking-wide rounded-md border transition-all disabled:opacity-40 whitespace-nowrap shrink-0",
+                variant === "danger"  && "bg-[#FB7506]/10 hover:bg-[#FB7506]/20 border-[#FB7506]/30 text-[#FB7506]",
+                variant === "primary" && "bg-[#FB7506] hover:bg-orange-500 border-transparent text-white",
                 variant === "green"   && "bg-green-600 hover:bg-green-500 border-transparent text-white",
-                variant === "default" && "bg-white hover:bg-gray-100 border-white/30 text-gray-800",
+                variant === "default" && "bg-white hover:bg-gray-50 border-[#DBD9D9] text-[#4F4F4F]",
             )}
-        >{Icon && <Icon size={10} />}{label}</button>
+        >{Icon && <Icon size={14} />}{label}</button>
     );
 }
 
@@ -180,119 +182,103 @@ export function OrderDetailModal({ soUnico, orderRow, lookups, canEdit, canDelet
             "bg-white flex flex-col overflow-hidden",
             mode === "modal"
                 ? "rounded-lg shadow-2xl w-full max-w-5xl max-h-[96vh]"
-                : "w-full h-full rounded-lg border border-gray-200 shadow-sm"
+                : "w-full h-full rounded-lg border border-[#DBD9D9] shadow-sm"
         )}>
 
-                {/* ── Dark header ─────────────────────────────────────── */}
-                <div className="bg-[#374151] px-4 py-2.5 flex items-center justify-between shrink-0 rounded-t-lg">
-                    <div className="flex items-center gap-3 min-w-0">
-                        <span className="font-black text-[11px] text-white uppercase tracking-widest shrink-0">
+                {/* ── Panel header ─────────────────────────────────────── */}
+                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <FileText size={14} className="text-[#FB7506] shrink-0" />
+                        <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] shrink-0">
                             Order #{t(orderRow?.SORDER_NO ?? h?.SORDER_NO)}
                         </span>
-                        <span className="text-[11px] font-bold text-[#FB7506] truncate">
-                            {t(orderRow?.CUSTOMER ?? h?.CUSTOMER ?? "Loading...")}
+                        <span className="text-[12px] font-semibold text-gray-500 truncate">
+                            — {t(orderRow?.CUSTOMER ?? h?.CUSTOMER ?? "Loading...")}
                         </span>
-                        {loadingDetail && <Loader2 size={11} className="animate-spin text-white/50 shrink-0" />}
+                        {loadingDetail && <Loader2 size={11} className="animate-spin text-gray-400 shrink-0" />}
                     </div>
-                    <button onClick={onClose} className="text-white/60 hover:text-white shrink-0 ml-2"><X size={15} /></button>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-700 shrink-0 ml-2 p-1"><X size={16} /></button>
                 </div>
 
-                {/* ── Orange action bar ───────────────────────────────── */}
-                <div className="bg-[#FB7506] px-3 py-1.5 flex items-center gap-1.5 shrink-0 overflow-x-auto">
+                {/* ── Action bar (gray container) ──────────────────────── */}
+                <div className="bg-[#F5F3F3] border-b border-[#DBD9D9] px-3 py-1.5 flex items-center gap-1.5 shrink-0 overflow-x-auto">
                     <ABtn icon={Edit2}   label="Edit Order"     onClick={() => setHeaderModal("edit")}  disabled={!canEdit || loadingDetail} />
-                    <ABtn icon={Trash2}  label="Delete"         onClick={handleDeleteOrder}              disabled={!canDelete || working} variant="danger" />
-                    <div className="w-px h-4 bg-white/30 shrink-0" />
                     <ABtn icon={Calendar} label="Set Weeks"     onClick={() => setWeeksModal(true)} />
                     <ABtn icon={Printer}  label="Print"         onClick={() => {}} />
-                    <div className="w-px h-4 bg-white/30 shrink-0" />
+                    <div className="w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
                     <ABtn icon={UserCog}  label="Change Cust."  onClick={() => setChangeCustomerModal(true)} />
                     <ABtn icon={UserCog}  label="Change Sales."  onClick={() => setChangeSalesmanModal(true)} />
-                    <div className="w-px h-4 bg-white/30 shrink-0" />
-                    <button onClick={handleToFarm} disabled={working}
-                        className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest bg-red-600 hover:bg-red-500 text-white rounded border-transparent disabled:opacity-40 transition-all whitespace-nowrap shrink-0">
-                        <Tractor size={10} /> SO to Farm
-                    </button>
+                    <div className="w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
+                    <ABtn icon={Tractor} label="SO to Farm"    onClick={handleToFarm} disabled={working} variant="primary" />
+                    <ABtn icon={Trash2}  label="Delete"         onClick={handleDeleteOrder} disabled={!canDelete || working} variant="danger" />
                 </div>
 
                 {/* ── Scrollable content ──────────────────────────────── */}
                 <div className="flex-1 overflow-y-auto min-h-0 space-y-2 p-3">
 
-                    {/* Customer info */}
-                    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-1 px-4 py-2">
-                            <FieldRow label="Salesman"  value={t(h?.SALESMAN_NAME)}         className="col-span-2" />
-                            <FieldRow label="Terms"     value={t(h?.CONDITION)}             className="col-span-2" />
-                            <FieldRow label="Day"       value={t(h?.SO_DAY).trim()} />
-                            <FieldRow label="Warehouse" value={t(h?.WAREHOUSE)}             className="col-span-2" />
+                    {/* Order info — consolidated single card */}
+                    <div className="bg-white rounded-lg border border-[#DBD9D9] overflow-hidden p-3 space-y-2">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-1.5">
+                            <FieldRow label="CP Order"   value={t(h?.CPORDER_NO)} />
+                            <FieldRow label="Add Date"   value={fmtDate(h?.SO_DATE)} />
+                            <FieldRow label="Start Date" value={fmtDate(h?.SO_STDATE)} />
+                            <FieldRow label="End Date"   value={fmtDate(h?.SO_ENDATE)} />
+                            <FieldRow label="Salesman"  value={t(h?.SALESMAN_NAME)} className="col-span-2" />
+                            <FieldRow label="Warehouse" value={t(h?.WAREHOUSE)}     className="col-span-2" />
+                            <FieldRow label="Terms"     value={t(h?.CONDITION)} />
                             <FieldRow label="Cargo"     value={t(h?.AGENCY)} />
                             <FieldRow label="Factor"    value={t(h?.APPLYFOR ?? "1")} />
                             <FieldRow label="FOB Miami" value={bool(h?.FOBMIAMI) ? "Yes" : "No"} />
-                            <FieldRow label="Active"    value={bool(h?.ACTIVE) ? "Yes" : "No"} />
-                            <FieldRow label="Instructions" value={t(h?.INSTRUCTIONS)}       className="col-span-4" />
+                            <FieldRow label="Active"    value={bool(h?.ACTIVE) ? "Yes" : "No"} className="col-span-3" />
                         </div>
-                    </div>
 
-                    {/* Order fields */}
-                    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden p-3 space-y-2">
-                        <div className="flex items-center gap-6 pb-1.5 border-b border-gray-100 flex-wrap text-[11px]">
-                            <FieldRow label="Order No."  value={t(h?.SORDER_NO)} />
-                            <FieldRow label="CP Order"   value={t(h?.CPORDER_NO)} />
-                            <FieldRow label="Add Date"   value={fmtDate(h?.SO_DATE)} />
-                        </div>
-                        <div className="flex items-center gap-0 bg-green-800 rounded px-3 py-1 flex-wrap overflow-x-auto">
-                            <span className="text-[10px] font-black text-white uppercase tracking-widest mr-3 shrink-0">Week Day:</span>
+                        <div className="flex items-center gap-2 bg-[#F5F3F3] border border-[#DBD9D9] rounded-md px-3 py-1.5 flex-wrap overflow-x-auto">
+                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mr-1 shrink-0">Week Day:</span>
                             {WEEK_COLS.map(([key, label]) => (
-                                <label key={key} className="flex items-center gap-1 mr-3 shrink-0">
-                                    <div className={cn("w-3 h-3 rounded-sm border border-white/50 shrink-0", bool(h?.[key]) ? "bg-white" : "bg-transparent")} />
-                                    <span className="text-[10px] font-bold text-white">{label}</span>
-                                </label>
+                                <span key={key}
+                                    className={cn("px-2 h-5 flex items-center rounded text-[10px] font-bold uppercase shrink-0",
+                                        bool(h?.[key]) ? "bg-[#FB7506] text-white" : "text-gray-400")}>
+                                    {label}
+                                </span>
                             ))}
                         </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-1 text-[11px]">
-                            <FieldRow label="Start Date"  value={fmtDate(h?.SO_STDATE)} />
-                            <FieldRow label="End Date"    value={fmtDate(h?.SO_ENDATE)} />
-                            <div /><div />
-                            <FieldRow label="Ship"        value={t(h?.SHIP_NAME)}    className="col-span-2" />
-                            <FieldRow label="Address"     value={t(h?.SHIP_ADDRESS)} className="col-span-2" />
-                            <FieldRow label="City"        value={t(h?.SHIP_CITY)} />
-                            <FieldRow label="State"       value={t(h?.SHIP_STATE)} />
-                            <FieldRow label="Zip"         value={t(h?.SHIP_ZIP)} />
-                            <FieldRow label="Phone"       value={t(h?.SHIP_PHONE)} />
+
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-1.5">
+                            <FieldRow label="Ship"    value={t(h?.SHIP_NAME)}    className="col-span-2" />
+                            <FieldRow label="Address" value={t(h?.SHIP_ADDRESS)} className="col-span-2" />
+                            <FieldRow label="City/State/Zip" value={[t(h?.SHIP_CITY), t(h?.SHIP_STATE)].filter(Boolean).join(", ") + (t(h?.SHIP_ZIP) ? ` ${t(h?.SHIP_ZIP)}` : "")} className="col-span-2" />
+                            <FieldRow label="Phone"   value={t(h?.SHIP_PHONE)} className="col-span-2" />
                         </div>
+
+                        {t(h?.INSTRUCTIONS) && (
+                            <FieldRow label="Instructions" value={t(h?.INSTRUCTIONS)} />
+                        )}
                     </div>
 
                     {/* S.O. Details */}
-                    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                        {/* Detail toolbar */}
-                        <div className="bg-[#FB7506] px-3 py-1.5 flex items-center justify-between gap-2 flex-wrap overflow-x-auto">
-                            <div className="flex items-center gap-1.5 shrink-0">
-                                <Lock size={11} className="text-white/70" />
-                                <span className="font-black text-[10px] text-white uppercase tracking-widest">S.O. Details</span>
+                    <div className="bg-white rounded-lg border border-[#DBD9D9] overflow-hidden">
+                        {/* Detail header */}
+                        <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between pl-3 pr-0 shrink-0">
+                            <div className="flex items-center gap-2 shrink-0">
+                                <ClipboardList size={14} className="text-[#FB7506]" />
+                                <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">S.O. Details</span>
                             </div>
-                            <div className="flex items-center gap-1 flex-wrap">
-                                <button onClick={() => setBoxCompModal(true)} disabled={!selectedLineUnico}
-                                    className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest bg-red-600 hover:bg-red-500 text-white rounded disabled:opacity-40 whitespace-nowrap">
-                                    <Package size={10} /> Box Comp.
-                                </button>
-                                <button onClick={() => setProductsModal(true)}
-                                    className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest bg-white hover:bg-gray-100 border-white/30 text-gray-800 rounded whitespace-nowrap">
-                                    <ShoppingCart size={10} /> Products
-                                </button>
-                                <button onClick={() => setFutureStockModal(true)}
-                                    className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest bg-white hover:bg-gray-100 border-white/30 text-gray-800 rounded whitespace-nowrap">
-                                    <FileText size={10} /> Future Stock
-                                </button>
-                                <div className="w-px h-4 bg-white/30 shrink-0" />
-                                <ABtn icon={Plus}   label="Add Line"    onClick={() => setLineModal("new")}  disabled={!canEdit} />
-                                <ABtn icon={Edit2}  label="Edit Line"   onClick={() => setLineModal("edit")} disabled={!selectedLineUnico || !canEdit} />
-                                <ABtn icon={Trash2} label="Del. Line"   onClick={handleDeleteLine}           disabled={!selectedLineUnico || !canDelete || working} variant="danger" />
+                            <div className="flex items-center gap-2 pr-2 shrink-0">
+                                <ABtn icon={Plus} label="Add Line" onClick={() => setLineModal("new")} disabled={!canEdit} variant="green" />
+                                <GridMenu items={[
+                                    { label: "Edit Line", icon: Edit2, color: "orange", onClick: () => setLineModal("edit"), disabled: !selectedLineUnico || !canEdit },
+                                    { label: "Box Comp.", icon: Package, color: "blue", onClick: () => setBoxCompModal(true), disabled: !selectedLineUnico },
+                                    { label: "Products", icon: ShoppingCart, color: "blue", onClick: () => setProductsModal(true) },
+                                    { label: "Future Stock", icon: FileText, color: "blue", onClick: () => setFutureStockModal(true), separator: true },
+                                    { label: "Del. Line", icon: Trash2, color: "red", onClick: handleDeleteLine, disabled: !selectedLineUnico || !canDelete || working },
+                                ]} />
                             </div>
                         </div>
                         {/* Lines table */}
                         <div className="overflow-auto max-h-[280px]">
                             <table className="min-w-full text-xs text-left">
-                                <thead>
-                                    <tr>
+                                <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
+                                    <tr className="divide-x divide-[#DBD9D9]/30">
                                         <Th>Product</Th><Th>Case</Th>
                                         <Th className="text-right">Qty</Th>
                                         <Th className="text-right">Purch.</Th>
@@ -305,14 +291,14 @@ export function OrderDetailModal({ soUnico, orderRow, lookups, canEdit, canDelet
                                         <Th className="text-center">Act</Th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody className="divide-y divide-[#DBD9D9]">
                                     {lines.map((l: any, i: number) => {
                                         const uq = t(l.UNICO ?? "");
                                         const sel = selectedLineUnico === uq;
                                         return (
                                             <tr key={i} onClick={() => setSelectedLineUnico(sel ? null : uq)}
-                                                className={cn("border-b cursor-pointer transition-colors text-gray-600",
-                                                    sel ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50")}
+                                                className={cn("cursor-pointer transition-colors text-gray-600 divide-x divide-[#DBD9D9]",
+                                                    sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}
                                             >
                                                 <Td className="max-w-[180px] truncate font-medium">{t(l.DESCRIPTION ?? l.DETAILS)}</Td>
                                                 <Td>{t(l.CASE_SH)}</Td>
@@ -338,17 +324,17 @@ export function OrderDetailModal({ soUnico, orderRow, lookups, canEdit, canDelet
                     </div>
 
                     {/* Vendors */}
-                    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                        <div className="bg-[#FB7506] px-3 py-1.5 flex items-center gap-2 shrink-0">
-                            <Lock size={11} className="text-white/70" />
-                            <span className="font-black text-[10px] text-white uppercase tracking-widest">Vendors Orders</span>
-                            {loadingVendors && <Loader2 size={10} className="animate-spin text-white/60" />}
-                            {!selectedLineUnico && <span className="text-[9px] text-white/60 font-bold ml-1">— select a line above</span>}
+                    <div className="bg-white rounded-lg border border-[#DBD9D9] overflow-hidden">
+                        <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center gap-2 px-3 shrink-0">
+                            <Lock size={14} className="text-[#FB7506]" />
+                            <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">Vendors Orders</span>
+                            {loadingVendors && <Loader2 size={10} className="animate-spin text-gray-400" />}
+                            {!selectedLineUnico && <span className="text-[10px] text-gray-400 font-bold ml-1">— select a line above</span>}
                         </div>
                         <div className="overflow-auto max-h-[160px]">
                             <table className="min-w-full text-xs text-left">
-                                <thead>
-                                    <tr>
+                                <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
+                                    <tr className="divide-x divide-[#DBD9D9]/30">
                                         <Th>Vendor</Th>
                                         <Th className="text-right">Qty Ord.</Th>
                                         <Th className="text-right">Qty Conf.</Th>
@@ -358,9 +344,9 @@ export function OrderDetailModal({ soUnico, orderRow, lookups, canEdit, canDelet
                                         <Th>Details</Th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody className="divide-y divide-[#DBD9D9]">
                                     {(vendors as any[]).map((v: any, i: number) => (
-                                        <tr key={i} className="border-b odd:bg-white even:bg-gray-50 text-gray-600">
+                                        <tr key={i} className="text-gray-600 hover:bg-gray-50 transition-colors divide-x divide-[#DBD9D9]">
                                             <Td className="font-medium">{t(v.GROWER ?? v.VENDOR)}</Td>
                                             <Td className="text-right">{fmtI(v.QTY_ORDER)}</Td>
                                             <Td className="text-right">{fmtI(v.QTY_CONFIRMED)}</Td>

@@ -67,6 +67,7 @@ Implement with explicit Tailwind arbitrary values (`text-[14px] font-bold`, etc.
 
 ## Component patterns
 
+- **A master-detail list page should auto-select the first record once the list loads, not wait for a click.** Standing Orders loaded with the Orders List populated but the detail panel showing a generic "Select an order" placeholder until the user clicked a row — extra, avoidable friction on a page whose whole point is showing order detail. Fixed by selecting `orders[0]` automatically the first time the list query resolves (a `useRef` guard so it only fires once, not on every refilter — if the user's filter later excludes the selected row, the placeholder is allowed to come back rather than force-reselecting something the user didn't ask for). Set the selection state directly rather than routing through the row-click handler, so this doesn't also force a mobile detail modal open on page load — on mobile the row just shows selected/highlighted in the list, same as a real click would, but no modal pops automatically. **Apply this on any other list+detail page that currently waits for a click before showing anything** (Prebook to Invoice's Date/Customer panels are the same shape and should get this treatment too, in a future round).
 - **Avoid nesting one grid inside another's table row — prefer side-by-side or stacked sibling panels driven by shared selection state.** Prebook to Invoice (Date → Customer → Lines → detail-tabs master-detail drill-down) went through several iterations before landing here, each one informative:
   1. All three levels nested inside table rows (Date → Customer → Lines → Tabs, 3 levels of `<tr><td>` nesting).
   2. Detail-tabs panel pulled out to a standalone panel below; Lines still nested under Customer.
@@ -246,3 +247,27 @@ Remaining work:
   sign out of pre-login, so it has no `onClick`. Note this page hand-rolls
   its own `<header>`/`<footer>` instead of using `AppHeader.tsx` — keep
   both in sync if the shared header's title scale or button changes.
+- `standing-orders` — (2026-06-22) the Orders List grid itself was already
+  on-standard (it's `PanelGrid`/`PanelGridTable`-based, per the Rollout note
+  above), but the detail panel (`OrderDetailModal.tsx`, the hand-rolled
+  component that renders to its right) was not: dark `#374151` header +
+  orange action bar, blue ring row selection, `odd`/`even` striping, light
+  `<thead>`. Fully migrated to the standard — white `h-10` header, gray
+  `#F5F3F3` action bar (red `Delete`/`SO to Farm` recolored: `SO to Farm` is
+  now the solid-orange primary action, `Delete` is the tinted-orange danger
+  style), dark `#4F4F4F` `<thead>`s with full grid lines, peach selection.
+  The "S.O. Details" sub-panel's 6 buttons were folded into the page-icon +
+  `GridMenu` pattern (`Add Line` stays visible as the primary green action
+  outside the menu, the other 5 — Edit Line/Box Comp./Products/Future
+  Stock/Del. Line — moved into the dropdown), matching how AWBS and
+  `inventory-entry` already handle a sub-panel with several actions.
+  Also consolidated two separate info cards (Customer Info + Order Fields)
+  into one denser card and dropped two fields that were duplicating
+  information shown elsewhere on screen: "Order No." (already in the panel
+  header as "Order #NNN") and "Day" (already conveyed, with more precision,
+  by the Week Day chip row below it — a single order can recur on more than
+  one day, so the chip row was always the more complete source of truth).
+  The Week Day row itself moved off a `bg-green-800` strip with white
+  checkbox squares onto the standard gray-container token with `#FB7506`
+  filled chips for active days, matching the orange-chip pattern used
+  elsewhere instead of an unrelated one-off green.

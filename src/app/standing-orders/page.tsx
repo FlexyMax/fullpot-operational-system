@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useSession }        from "next-auth/react";
 import { useRouter }         from "next/navigation";
 import { useQuery }          from "@tanstack/react-query";
@@ -32,13 +32,6 @@ const fmtDate = (v: any) => {
 };
 
 const DAYS = ["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY","SUNDAY"];
-
-function Th({ children, className }: { children: any; className?: string }) {
-    return <th className={cn("px-3 py-2 text-left font-bold whitespace-nowrap text-gray-600 border-b border-gray-200 bg-gray-50 sticky top-0 z-10 text-[11px]", className)}>{children}</th>;
-}
-function Td({ children, className }: { children: any; className?: string }) {
-    return <td className={cn("px-3 py-2 whitespace-nowrap text-[12px]", className)}>{children}</td>;
-}
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function StandingOrdersPage() {
@@ -116,6 +109,17 @@ export default function StandingOrdersPage() {
         carriers:      lookups?.carriers      ?? [],
     };
 
+    // ── Auto-select the first order once the list first loads, so the detail
+    //    panel shows real data immediately instead of an empty placeholder.
+    const autoSelected = useRef(false);
+    useEffect(() => {
+        if (autoSelected.current || orders.length === 0) return;
+        autoSelected.current = true;
+        const first = orders[0];
+        setSelectedUnico(t(first.UNICO ?? ""));
+        setSelectedRow(first);
+    }, [orders]);
+
     if (status === "loading") return null;
     if (status === "unauthenticated") { router.push("/login"); return null; }
 
@@ -134,22 +138,22 @@ export default function StandingOrdersPage() {
     };
 
     return (
-        <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
+        <div className="flex flex-col h-[100dvh] bg-[#FBF9F8] overflow-hidden font-sans text-[#333]">
 
             <AppHeader title="Standing Orders" />
 
             {/* ── Filter + New Order bar ────────────────────────────────────── */}
-            <div className="bg-white border-b border-gray-200 px-3 py-2 flex flex-wrap items-center gap-2 shrink-0 shadow-sm">
+            <div className="bg-[#F5F3F3] border border-[#DBD9D9] rounded-lg mx-2 mt-2 px-3 py-2 flex flex-wrap items-center gap-2 shrink-0">
                 {/* All / My Orders */}
-                <div className="flex items-center bg-gray-100 rounded p-0.5 shrink-0">
+                <div className="flex items-center bg-white border border-[#DBD9D9] rounded-md p-0.5 shrink-0">
                     <button onClick={() => setMyOrders(false)}
-                        className={cn("px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-widest transition-all",
-                            !myOrders ? "bg-[#FB7506] text-white shadow-sm" : "text-gray-500 hover:text-gray-800")}>
+                        className={cn("px-3 h-6 rounded text-[12px] font-semibold uppercase tracking-wide transition-all",
+                            !myOrders ? "bg-[#FB7506] text-white" : "text-gray-500 hover:text-gray-800")}>
                         All Orders
                     </button>
                     <button onClick={() => setMyOrders(true)}
-                        className={cn("px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-widest transition-all",
-                            myOrders ? "bg-[#FB7506] text-white shadow-sm" : "text-gray-500 hover:text-gray-800")}>
+                        className={cn("px-3 h-6 rounded text-[12px] font-semibold uppercase tracking-wide transition-all",
+                            myOrders ? "bg-[#FB7506] text-white" : "text-gray-500 hover:text-gray-800")}>
                         My Orders
                     </button>
                 </div>
@@ -157,7 +161,7 @@ export default function StandingOrdersPage() {
                 {/* Day filter */}
                 <div className="flex items-center gap-1 shrink-0">
                     <select value={dayFilter} onChange={e => setDayFilter(e.target.value)}
-                        className="text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded px-2 py-1.5 bg-white text-gray-700 cursor-pointer">
+                        className="text-[12px] font-semibold uppercase tracking-wide border border-[#DBD9D9] rounded-md px-2 h-7 bg-white text-gray-700 cursor-pointer">
                         <option value="%">All Days</option>
                         {DAYS.map(d => <option key={d} value={d}>{d[0] + d.slice(1).toLowerCase()}</option>)}
                     </select>
@@ -165,7 +169,7 @@ export default function StandingOrdersPage() {
                 </div>
 
                 {/* Search */}
-                <div className="flex items-center bg-gray-100 rounded px-2 py-1.5 gap-1.5 flex-1 min-w-[140px] max-w-xs">
+                <div className="flex items-center bg-white border border-[#DBD9D9] rounded-md px-2 h-7 gap-1.5 flex-1 min-w-[140px] max-w-xs">
                     <Search size={11} className="text-gray-400 shrink-0" />
                     <input value={textSearch} onChange={e => setTextSearch(e.target.value)}
                         placeholder="Customer, order #, salesman..."
@@ -175,18 +179,18 @@ export default function StandingOrdersPage() {
                 </div>
 
                 <button onClick={() => setListKey(k => k + 1)} disabled={loadingOrders}
-                    className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-black uppercase tracking-widest bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-600 rounded transition-all shrink-0">
-                    <RefreshCcw size={10} className={loadingOrders ? "animate-spin" : ""} /> Refresh
+                    className="flex items-center gap-1.5 h-7 px-3 text-[14px] font-semibold uppercase tracking-wide bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] rounded-md transition-all shrink-0">
+                    <RefreshCcw size={14} className={loadingOrders ? "animate-spin" : ""} /> Refresh
                 </button>
 
-                <span className="text-[10px] text-gray-400 font-bold shrink-0 hidden sm:block">
+                <span className="text-[10px] text-gray-500 font-bold shrink-0 hidden sm:block">
                     {orders.length} / {(ordersRaw as any[]).length}
                 </span>
 
                 {canEdit && (
                     <button onClick={() => setNewOrderModal(true)}
-                        className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest bg-green-600 hover:bg-green-500 text-white rounded transition-all shrink-0">
-                        <Plus size={12} /> New Order
+                        className="ml-auto flex items-center gap-1.5 h-7 px-3 text-[14px] font-semibold uppercase tracking-wide bg-green-600 hover:bg-green-500 text-white rounded-md transition-all shrink-0">
+                        <Plus size={14} /> New Order
                     </button>
                 )}
             </div>
@@ -262,7 +266,7 @@ export default function StandingOrdersPage() {
 
                 {/* Desktop placeholder when no order selected */}
                 {(!selectedUnico || showModal) && (
-                    <div className="hidden xl:flex flex-1 items-center justify-center bg-white rounded-lg border border-gray-200 shadow-sm min-h-0">
+                    <div className="hidden xl:flex flex-1 items-center justify-center bg-white rounded-lg border border-[#DBD9D9] shadow-sm min-h-0">
                         <div className="text-center text-gray-400">
                             <ClipboardList size={36} className="mx-auto mb-3 opacity-30" />
                             <p className="text-sm font-bold uppercase tracking-widest">Select an order</p>
