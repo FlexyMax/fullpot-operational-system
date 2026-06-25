@@ -9,7 +9,7 @@ import {
     Search, X, Save, ChevronDown, Calendar, FileText,
     AlertCircle, Check, Copy, ArrowRight, Warehouse,
     ClipboardList, Boxes, BarChart2, Plane,
-    ShoppingCart, Flower2,
+    ShoppingCart, Flower2, Layers,
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import AppFooter from "@/components/layout/AppFooter";
@@ -31,6 +31,14 @@ import { ModalAWBSetup }             from "@/components/inventory-entry/ModalAWB
 import { ModalDeletePackingDetails } from "@/components/inventory-entry/ModalDeletePackingDetails";
 import { ModalHeader2 }              from "@/components/inventory-entry/ModalHeader2";
 import { ModalWarehouseTransfer }    from "@/components/inventory-entry/ModalWarehouseTransfer";
+import { ModalBoxNotes }             from "@/components/inventory-entry/ModalBoxNotes";
+import { ModalBoxComposition }       from "@/components/inventory-entry/ModalBoxComposition";
+import { ModalBoxTransform }         from "@/components/inventory-entry/ModalBoxTransform";
+import { ModalBoxRepacking }         from "@/components/inventory-entry/ModalBoxRepacking";
+import { ModalAddProductToPacking }  from "@/components/inventory-entry/ModalAddProductToPacking";
+import { ModalAvailableDate }        from "@/components/inventory-entry/ModalAvailableDate";
+import { ModalAddPOToInventory }     from "@/components/inventory-entry/ModalAddPOToInventory";
+import { AuditLogModal }             from "@/components/AuditLogModal";
 const EMPTY_ARR: any[] = [];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -129,6 +137,10 @@ const AUDIT_MAP: Record<string, { table: string; ext: string }> = {
     "to-whouse":       { table: "flower_packing_stock",       ext: "Send Packing to Warehouse FlexyMaxApp" },
     "change-prices":   { table: "flower_packing_box",         ext: "Update Box Prices FlexyMaxApp" },
     "whcontrol":       { table: "flower_packing_box",         ext: "Update WH Control FlexyMaxApp" },
+    "box-notes":       { table: "flower_packing_box",         ext: "Update Box Notes FlexyMaxApp" },
+    "box-composition": { table: "flower_packing_box_bunches_composition", ext: "Update Box Composition FlexyMaxApp" },
+    "available-date":  { table: "flower_packing",             ext: "Update Available Date FlexyMaxApp" },
+    "from-porder":     { table: "flower_packing",             ext: "Add P.O to Inventory FlexyMaxApp" },
 };
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
@@ -203,6 +215,19 @@ export default function InventoryEntryPage() {
     const [modalDelDetails,  setModalDelDetails]  = useState(false);
     const [modalHeader2,     setModalHeader2]     = useState(false);
     const [modalTransfer,    setModalTransfer]    = useState(false);
+    const [modalNotes,        setModalNotes]        = useState(false);
+    const [modalComposition,  setModalComposition]  = useState(false);
+    const [modalTransform,    setModalTransform]    = useState(false);
+    const [modalRepacking,    setModalRepacking]    = useState(false);
+    const [modalAvailDate,    setModalAvailDate]    = useState(false);
+    const [modalAddPO,        setModalAddPO]        = useState(false);
+    const [modalAddProdPack,  setModalAddProdPack]  = useState(false);
+    const [selectedProduct,   setSelectedProduct]   = useState<any>(null);
+
+    // ── Change Prices inline-edit mode (Boxes Detail grid) ────────────────────
+    const [changePricesMode, setChangePricesMode] = useState(false);
+    const [priceEdits,       setPriceEdits]       = useState<Record<string, number>>({});
+    const [savingPrices,     setSavingPrices]     = useState(false);
 
     // ── Filter state ──────────────────────────────────────────────────────────
     const [filterGrowerUq,  setFilterGrowerUq]  = useState("");
@@ -634,6 +659,42 @@ export default function InventoryEntryPage() {
         finally { setChgAwbSaving(false); }
     };
 
+    // ── Change Prices (inline edit on Boxes Detail grid) ──────────────────────
+    const handleToggleChangePrices = () => {
+        if (changePricesMode) {
+            handleSaveChangedPrices();
+        } else {
+            setPriceEdits({});
+            setChangePricesMode(true);
+        }
+    };
+
+    const handleSaveChangedPrices = async () => {
+        const entries = Object.entries(priceEdits);
+        if (entries.length === 0) { setChangePricesMode(false); return; }
+        setSavingPrices(true);
+        try {
+            for (const [unico, price_x_unit] of entries) {
+                const res = await fetch(`/api/inventory-entry/boxes/${unico}/price`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ price_x_unit, user_uq: (session?.user as any)?.id || "" }),
+                });
+                const d = await res.json();
+                if (!d.success) throw new Error(d.error || `Price update failed for ${unico}`);
+                logAction("Edit", unico, AUDIT_MAP["change-prices"].ext);
+            }
+            toast.success(`${entries.length} price(s) updated.`);
+            setPriceEdits({});
+            setChangePricesMode(false);
+            qc.invalidateQueries({ queryKey: ["ie-packing-details", lcpack_uq] });
+        } catch (e: any) {
+            toast.error(e.message);
+        } finally {
+            setSavingPrices(false);
+        }
+    };
+
     // ── Shared row style ──────────────────────────────────────────────────────
     const rowStyle = (color: string) => {
         const c = t(color).toLowerCase();
@@ -913,17 +974,27 @@ export default function InventoryEntryPage() {
                                         <span className="text-[10px] font-bold text-gray-400 whitespace-nowrap">
                                             {(packingDetails as any[]).length} boxes
                                         </span>
+                                        {changePricesMode && (
+                                            <button onClick={handleToggleChangePrices} disabled={savingPrices}
+                                                className="flex items-center gap-1.5 h-7 px-3 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white rounded-md text-[12px] font-bold uppercase tracking-wide transition-colors shrink-0">
+                                                {savingPrices ? <RefreshCcw size={12} className="animate-spin" /> : <Check size={12} />}
+                                                {savingPrices ? "Saving..." : `OK (${Object.keys(priceEdits).length})`}
+                                            </button>
+                                        )}
+                                        <AuditLogModal recordId={lcpk_box_uq} disabled={!lcpk_box_uq} size="sm" />
                                         <GridMenu items={[
-                                            { label: "Transform Inventory", icon: ArrowRight, color: "orange", onClick: () => toast.info("Transform Inventory — coming soon.") },
-                                            { label: "Change Prices", icon: Pencil, color: "blue", onClick: () => toast.info("Change Prices — coming soon.") },
-                                            { label: "RePacking", icon: Package, color: "blue", onClick: () => toast.info("RePacking — coming soon."), separator: true },
+                                            { label: "Transform Inventory", icon: ArrowRight, color: "orange", onClick: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalTransform(true); } },
+                                            { label: "Change Prices", icon: Pencil, color: "blue", onClick: handleToggleChangePrices },
+                                            { label: "RePacking", icon: Package, color: "blue", onClick: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalRepacking(true); }, separator: true },
                                             { label: "WHControl", icon: Warehouse, color: "blue", onClick: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalBoxWHCtrl(true); } },
                                             { label: "Move Box", icon: ArrowRight, color: "blue", onClick: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalBoxMove(true); } },
                                             { label: "WH Transfer", icon: Warehouse, color: "blue", onClick: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalTransfer(true); } },
                                             { label: "Add from PO", icon: ClipboardList, color: "green", onClick: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalBoxPO(true); }, separator: true },
+                                            { label: "Notes", icon: FileText, color: "purple", onClick: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalNotes(true); } },
+                                            { label: "Composition", icon: Layers, color: "purple", onClick: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalComposition(true); }, separator: true },
                                             { label: "Zebra by Lot", icon: FileText, color: "gray", onClick: () => toast.info("Zebra by Lot — coming soon.") },
                                             { label: "Meto by Lot", icon: FileText, color: "gray", onClick: () => toast.info("Meto by Lot — coming soon.") },
-                                            { label: "Selection", icon: FileText, color: "gray", onClick: () => toast.info("Selection — coming soon.") },
+                                            { label: "Selection", icon: Trash2, color: "red", onClick: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalDelDetails(true); } },
                                         ]} />
                                     </div>
                                 </div>
@@ -970,7 +1041,15 @@ export default function InventoryEntryPage() {
                                                             <td className="p-2">{t(row.CPORDER_NO ?? row.SORDER_NO ?? "")}</td>
                                                             <td className="p-2 text-right">{fmt4(row.C_COST_X_U ?? 0)}</td>
                                                             <td className="p-2 text-right">{fmt2(row.TOTAL_COST ?? row.T_COST_X_U ?? row.T_COST ?? row.TCOST ?? 0)}</td>
-                                                            <td className="p-2 text-right">{fmt4(row.SPRICE_X_UNIT ?? row.S_U_PRICE ?? row.PRICE ?? 0)}</td>
+                                                            <td className="p-1 text-right" onClick={e => changePricesMode && e.stopPropagation()}>
+                                                                {changePricesMode ? (
+                                                                    <input
+                                                                        type="number" step="0.0001" defaultValue={row.SPRICE_X_UNIT ?? row.S_U_PRICE ?? row.PRICE ?? 0}
+                                                                        onChange={e => setPriceEdits(p => ({ ...p, [uq]: parseFloat(e.target.value) || 0 }))}
+                                                                        className="w-20 h-6 text-xs text-right border border-[#FB7506] rounded px-1 bg-orange-50"
+                                                                    />
+                                                                ) : fmt4(row.SPRICE_X_UNIT ?? row.S_U_PRICE ?? row.PRICE ?? 0)}
+                                                            </td>
                                                             <td className={cn("p-2 text-right", Number(row.DAYS ?? 0) < 0 ? "text-red-500" : "text-gray-500")}>{t(row.DAYS ?? "")}</td>
                                                             <td className="p-2 text-right">{fmt2(row.F_FCOST_X_U ?? row.F_COST_X_U ?? row.FCOST ?? 0)}</td>
                                                             <td className="p-2 text-right">{fmt2(row.C_COST_X_U ?? row.CCOST ?? 0)}</td>
@@ -1025,7 +1104,8 @@ export default function InventoryEntryPage() {
                                             className="flex items-center gap-1.5 h-7 px-3 bg-[#FB7506] hover:bg-orange-500 text-white rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
                                             <Search size={14} /> Search
                                         </button>
-                                        <button onClick={() => toast.info("Add to Packing — coming soon.")}
+                                        <button
+                                            onClick={() => { if (!lcpack_uq) { toast.error("Select a packing in AWB's Packings first."); return; } if (!selectedProduct) { toast.error("Select a product first."); return; } setModalAddProdPack(true); }}
                                             className="flex items-center gap-1.5 h-7 px-3 bg-green-600 hover:bg-green-500 text-white rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
                                             <Plus size={14} /> Add to Packing
                                         </button>
@@ -1046,7 +1126,8 @@ export default function InventoryEntryPage() {
                                             {prodAccRows.length === 0 && !loadingProds ? (
                                                 <tr><td colSpan={11} className="p-4 text-center text-gray-400 italic">No products found</td></tr>
                                             ) : (prodAccRows as any[]).map((row: any, i: number) => (
-                                                <tr key={i} className="cursor-pointer transition-colors hover:bg-gray-50 divide-x divide-[#DBD9D9]">
+                                                <tr key={i} onClick={() => setSelectedProduct(row)}
+                                                    className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", t(selectedProduct?.UNICO) === t(row.UNICO) ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                                     <td className="p-2 max-w-[200px] truncate">{t(row.DESCRIPTION ?? row.DESC ?? row.PRODUCT_DESC ?? row.PRODUCT ?? "")}</td>
                                                     <td className="p-2">{t(row.CLASS ?? row.CLASE ?? "")}</td>
                                                     <td className="p-2">{t(row.SUBCLASS ?? row.SUBCLASE ?? "")}</td>
@@ -1091,8 +1172,8 @@ export default function InventoryEntryPage() {
                                             <RefreshCcw size={14} className={loadingPLC ? "animate-spin" : ""} /> Refresh
                                         </button>
                                         <div className="w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
-                                        <button onClick={() => toast.info("Update Available Date — coming soon.")}
-                                            className="flex items-center gap-1.5 h-7 px-3 bg-[#FB7506] hover:bg-orange-500 text-white rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
+                                        <button onClick={() => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalAvailDate(true); }} disabled={!lcpack_uq || !perms.canEdit}
+                                            className="flex items-center gap-1.5 h-7 px-3 bg-[#FB7506] hover:bg-orange-500 disabled:opacity-40 text-white rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
                                             Update Available
                                         </button>
                                         <button onClick={() => packAction("open", "Open")} disabled={!lcpack_uq || !perms.canEdit}
@@ -1246,9 +1327,9 @@ export default function InventoryEntryPage() {
                                     <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
                                         <input type="date" value={ldship_date} onChange={e => { setLdship_date(e.target.value); setPoGrower(""); }}
                                             className="h-7 text-[12px] border border-[#DBD9D9] rounded-md px-1.5 bg-white shrink-0" />
-                                        <button onClick={() => toast.info("Refresh — coming soon.")}
+                                        <button onClick={() => { qc.invalidateQueries({ queryKey: ["ie-po-summary", ldship_date] }); if (poGrower) qc.invalidateQueries({ queryKey: ["ie-po-grower", poGrower, ldship_date] }); }}
                                             className="flex items-center gap-1.5 h-7 px-3 bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
-                                            <RefreshCcw size={14} /> Refresh
+                                            <RefreshCcw size={14} className={loadingPO ? "animate-spin" : ""} /> Refresh
                                         </button>
                                         <select value={poGrower} onChange={e => setPoGrower(e.target.value)}
                                             className="h-7 text-[12px] border border-[#DBD9D9] rounded-md px-1.5 bg-white max-w-[140px] shrink-0">
@@ -1264,7 +1345,7 @@ export default function InventoryEntryPage() {
                                                 &larr; Back
                                             </button>
                                         )}
-                                        <button onClick={() => toast.info("Add P.O to Inventory — coming soon.")}
+                                        <button onClick={() => setModalAddPO(true)}
                                             className="flex items-center gap-1.5 h-7 px-3 bg-green-600 hover:bg-green-500 text-white rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
                                             <Plus size={14} /> Add P.O
                                         </button>
@@ -1803,6 +1884,75 @@ export default function InventoryEntryPage() {
                 warehouses={warehouses}
                 userId={(session?.user as any)?.id || ""}
                 onSuccess={() => { refetchBoxes(); logAction("Edit", lcpk_box_uq, AUDIT_MAP["transfer-box"].ext); }}
+            />
+
+            {/* ─── Box Notes Modal ──────────────────────────────────────────────────── */}
+            <ModalBoxNotes
+                open={modalNotes}
+                onClose={() => setModalNotes(false)}
+                boxUnico={lcpk_box_uq}
+                onSuccess={() => { qc.invalidateQueries({ queryKey: ["ie-packing-details", lcpack_uq] }); logAction("Edit", lcpk_box_uq, AUDIT_MAP["box-notes"].ext); }}
+            />
+
+            {/* ─── Box Composition Modal ────────────────────────────────────────────── */}
+            <ModalBoxComposition
+                open={modalComposition}
+                onClose={() => setModalComposition(false)}
+                boxUnico={lcpk_box_uq}
+                boxLabel={selBox ? t(selBox.DESCRIPTION ?? selBox.PRODUCT ?? "") : ""}
+                onSuccess={() => { qc.invalidateQueries({ queryKey: ["ie-packing-details", lcpack_uq] }); logAction("Edit", lcpk_box_uq, AUDIT_MAP["box-composition"].ext); }}
+            />
+
+            {/* ─── Transform Inventory Modal ────────────────────────────────────────── */}
+            <ModalBoxTransform
+                open={modalTransform}
+                onClose={() => setModalTransform(false)}
+                boxUnico={lcpk_box_uq}
+                boxLabel={selBox ? t(selBox.DESCRIPTION ?? selBox.PRODUCT ?? "") : ""}
+                growers={growers}
+                warehouses={warehouses}
+                userId={(session?.user as any)?.id || ""}
+                onSuccess={() => { refetchBoxes(); qc.invalidateQueries({ queryKey: ["ie-packing-details", lcpack_uq] }); logAction("Edit", lcpk_box_uq, AUDIT_MAP["transform"].ext); }}
+            />
+
+            {/* ─── RePacking Modal ──────────────────────────────────────────────────── */}
+            <ModalBoxRepacking
+                open={modalRepacking}
+                onClose={() => setModalRepacking(false)}
+                boxUnico={lcpk_box_uq}
+                boxLabel={selBox ? t(selBox.DESCRIPTION ?? selBox.PRODUCT ?? "") : ""}
+                growers={growers}
+                warehouses={warehouses}
+                cases={cases}
+                userId={(session?.user as any)?.id || ""}
+                onSuccess={() => { refetchBoxes(); qc.invalidateQueries({ queryKey: ["ie-packing-details", lcpack_uq] }); logAction("Edit", lcpk_box_uq, AUDIT_MAP["repacking"].ext); }}
+            />
+
+            {/* ─── Add Product to Packing Modal ─────────────────────────────────────── */}
+            <ModalAddProductToPacking
+                open={modalAddProdPack}
+                onClose={() => setModalAddProdPack(false)}
+                packUq={lcpack_uq}
+                product={selectedProduct}
+                cases={cases}
+                userId={(session?.user as any)?.id || ""}
+                onSuccess={() => { qc.invalidateQueries({ queryKey: ["ie-packing-details", lcpack_uq] }); logAction("Insert", lcpack_uq, AUDIT_MAP["insert-box"].ext); }}
+            />
+
+            {/* ─── Update Available Date Modal ──────────────────────────────────────── */}
+            <ModalAvailableDate
+                open={modalAvailDate}
+                onClose={() => setModalAvailDate(false)}
+                packUq={lcpack_uq}
+                userId={(session?.user as any)?.id || ""}
+                onSuccess={() => { refetchPLC(); qc.invalidateQueries({ queryKey: ["ie-packing-x-awb"] }); logAction("Edit", lcpack_uq, AUDIT_MAP["available-date"].ext); }}
+            />
+
+            {/* ─── Add P.O to Inventory Modal ───────────────────────────────────────── */}
+            <ModalAddPOToInventory
+                open={modalAddPO}
+                onClose={() => setModalAddPO(false)}
+                onSuccess={() => { qc.invalidateQueries({ queryKey: ["ie-po-summary", ldship_date] }); logAction("Insert", "from_porder", AUDIT_MAP["from-porder"].ext); }}
             />
             <AppFooter areaLabel="Inventory" />
         </div>
