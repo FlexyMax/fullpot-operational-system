@@ -81,6 +81,30 @@ const subtleColorFromInt = (n: any): CSSProperties | undefined => {
     };
 };
 
+// ─── Toolbar button (visible, above-the-grid actions — counterpart to GridMenu's dropdown items) ──
+function TBtn({ icon: Icon, label, onClick, disabled, color = "default" }: {
+    icon: React.ComponentType<{ size?: number; className?: string }>;
+    label: string; onClick: () => void; disabled?: boolean;
+    color?: "default" | "green" | "orange" | "red" | "blue" | "amber" | "purple";
+}) {
+    return (
+        <button onClick={onClick} disabled={disabled}
+            className={cn(
+                "flex items-center gap-1.5 px-3 h-7 rounded-md text-[14px] font-semibold uppercase tracking-wide border transition-all disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap shrink-0",
+                color === "default" && "bg-white hover:bg-gray-50 border-[#DBD9D9] text-[#4F4F4F]",
+                color === "green"   && "bg-green-600 hover:bg-green-700 border-transparent text-white",
+                color === "orange"  && "bg-[#FB7506] hover:bg-orange-600 border-transparent text-white",
+                color === "red"     && "bg-[#FB7506]/10 hover:bg-[#FB7506]/20 border-[#FB7506]/30 text-[#FB7506]",
+                color === "blue"    && "bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700",
+                color === "amber"   && "bg-amber-50 hover:bg-amber-100 border-amber-200 text-amber-600",
+                color === "purple"  && "bg-purple-50 hover:bg-purple-100 border-purple-200 text-purple-700",
+            )}
+        >
+            <Icon size={14} />{label}
+        </button>
+    );
+}
+
 // ─── Empty forms ──────────────────────────────────────────────────────────────
 const EMPTY_PACKING: any = {
     unico: "", grower_uq: "", packing_no: "", invoice_date: today(),
@@ -699,14 +723,16 @@ export default function InventoryEntryPage() {
                         <div className="flex flex-col gap-2 h-full">
 
                             {/* Row 1: Date Picker + AWB List */}
-                            <div className="flex gap-2 shrink-0" style={{ height: "28%" }}>
+                            <div className="flex gap-2 shrink-0 max-h-[280px]">
                                 {/* Date Picker */}
                                 <div className="w-[30%] flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0">
                                     <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between pl-3 pr-0 shrink-0">
-                                        <div className="flex items-center gap-2">
-                                            <Calendar size={14} className="text-[#FB7506]" />
-                                            <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">Date Picker</span>
-                                            {loadingDates && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <Calendar size={14} className="text-[#FB7506] shrink-0" />
+                                            <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] truncate">
+                                                Date Picker <span className="text-gray-400">({(awbDates as any[]).length})</span>
+                                            </span>
+                                            {loadingDates && <RefreshCcw size={10} className="text-gray-400 animate-spin shrink-0" />}
                                         </div>
                                         <div className="flex items-center gap-1 pr-1">
                                             <button onClick={() => refetchDates()}
@@ -759,10 +785,12 @@ export default function InventoryEntryPage() {
                                 {/* AWB List */}
                                 <div className="flex-1 flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden min-w-0">
                                     <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between pl-3 pr-0 shrink-0">
-                                        <div className="flex items-center gap-2">
-                                            <Plane size={14} className="text-[#FB7506]" />
-                                            <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">AWB List &mdash; {lddate}</span>
-                                            {loadingAwb && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <Plane size={14} className="text-[#FB7506] shrink-0" />
+                                            <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] truncate">
+                                                AWB List &mdash; {lddate} <span className="text-gray-400">({(awbByDate as any[]).length})</span>
+                                            </span>
+                                            {loadingAwb && <RefreshCcw size={10} className="text-gray-400 animate-spin shrink-0" />}
                                         </div>
                                         <GridMenu items={[
                                             { label: "Total By Whouse", icon: BarChart2, color: "blue", onClick: () => setModalWhTotals(true) },
@@ -802,18 +830,27 @@ export default function InventoryEntryPage() {
                                             </tbody>
                                         </table>
                                     </div>
-                                    <div className="px-3 py-1 border-t border-[#DBD9D9] bg-[#F5F3F3] shrink-0">
-                                        <span className="text-[10px] font-bold text-gray-500">{(awbByDate as any[]).length} AWBs</span>
-                                    </div>
                                 </div>
                             </div>
 
+                            {/* Vendors toolbar — common per-packing actions surfaced as buttons (full set still in the grid's menu) */}
+                            <div className="flex items-center gap-1.5 px-2 h-9 bg-[#F5F3F3] border border-[#DBD9D9] rounded-lg shrink-0 overflow-x-auto">
+                                <TBtn icon={Check}       label="Open"          color="green"  onClick={() => packAction("open", "Open")} disabled={!lcpack_uq || !perms.canEdit} />
+                                <TBtn icon={X}           label="Close"        color="amber"  onClick={() => packAction("close", "Close")} disabled={!lcpack_uq || !perms.canEdit} />
+                                <TBtn icon={Pencil}      label="Change AWB"   color="blue"   onClick={() => handleOpenChangeAwb()} disabled={!perms.canEdit || !lcpack_uq} />
+                                <TBtn icon={ArrowRight}  label="Send to WH"   color="orange" onClick={() => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalSendWH(true); }} />
+                                <TBtn icon={BarChart2}   label="WH Totals"    color="blue"   onClick={() => setModalWhTotals(true)} />
+                                <TBtn icon={Copy}        label="Copy"         color="blue"   onClick={() => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalCopy(true); }} disabled={!lcpack_uq} />
+                            </div>
+
                             {/* Row 2: Vendors / Packings */}
-                            <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0" style={{ height: "24%" }}>
+                            <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0 max-h-[240px]">
                                 <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between pl-3 pr-0 shrink-0 gap-2">
                                     <div className="flex items-center gap-2 shrink-0 min-w-0">
                                         <Package size={14} className="text-[#FB7506] shrink-0" />
-                                        <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] truncate">Vendors{lcawbcode ? ` — ${lcawbcode}` : ""}</span>
+                                        <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] truncate">
+                                            Vendors{lcawbcode ? ` — ${lcawbcode}` : ""} <span className="text-gray-400">({(packingXAwb as any[]).length})</span>
+                                        </span>
                                         {loadingPacking && <RefreshCcw size={10} className="text-gray-400 animate-spin shrink-0" />}
                                         {filterGrowerUq && (
                                             <span className="text-[10px] text-[#FB7506] font-bold border border-[#FB7506]/30 rounded px-1.5 py-0.5 bg-[#FB7506]/10 shrink-0">
@@ -825,15 +862,8 @@ export default function InventoryEntryPage() {
                                                 Cust ✓
                                             </span>
                                         )}
-                                        <span className="text-[10px] font-bold text-gray-400 shrink-0">{(packingXAwb as any[]).length} records</span>
                                     </div>
                                     <GridMenu items={[
-                                        { label: "Send to Whouse", icon: ArrowRight, color: "orange", onClick: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalSendWH(true); } },
-                                        { label: "Open", icon: Check, color: "green", onClick: () => packAction("open", "Open"), disabled: !lcpack_uq || !perms.canEdit },
-                                        { label: "Close", icon: X, color: "amber", onClick: () => packAction("close", "Close"), disabled: !lcpack_uq || !perms.canEdit },
-                                        { label: "Change AWB", icon: Pencil, color: "blue", onClick: () => handleOpenChangeAwb(), disabled: !perms.canEdit || !lcpack_uq },
-                                        { label: "WH Totals", icon: BarChart2, color: "blue", onClick: () => setModalWhTotals(true) },
-                                        { label: "Copy", icon: Copy, color: "blue", onClick: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalCopy(true); }, separator: true },
                                         { label: "AWB Cust. PO", icon: FileText, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/awb-cporder?date=${lddate}&awb=${encodeURIComponent(lcawbcode || "%")}&pack_uq=${encodeURIComponent(lcpack_uq)}`), disabled: !lcpack_uq },
                                         { label: "Label Laser", icon: FileText, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/label-laser?pack_uq=${encodeURIComponent(lcpack_uq)}`), disabled: !lcpack_uq },
                                         { label: "Packing", icon: Package, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/packing-arrived?date=${lddate}&awb=${encodeURIComponent(lcawbcode || "%")}&pack_uq=${encodeURIComponent(lcpack_uq)}&wphysical_uq=%25`), disabled: !lcpack_uq },
@@ -900,13 +930,23 @@ export default function InventoryEntryPage() {
                                 </div>
                             </div>
 
+                            {/* Boxes Detail toolbar — common per-box actions surfaced as buttons (full set still in the grid's menu) */}
+                            <div className="flex items-center gap-1.5 px-2 h-9 bg-[#F5F3F3] border border-[#DBD9D9] rounded-lg shrink-0 overflow-x-auto">
+                                <TBtn icon={Plus}        label="Add Box"      color="green"  onClick={() => handleAddBox()} />
+                                <TBtn icon={Pencil}      label="Edit Box"     color="default" onClick={() => handleOpenEditBox()} disabled={!lcpk_box_uq} />
+                                <TBtn icon={Warehouse}   label="WHControl"    color="blue"   onClick={() => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalBoxWHCtrl(true); }} disabled={!lcpk_box_uq} />
+                                <TBtn icon={ArrowRight}  label="Move Box"     color="blue"   onClick={() => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalBoxMove(true); }} disabled={!lcpk_box_uq} />
+                                <TBtn icon={Warehouse}   label="WH Transfer"  color="blue"   onClick={() => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalTransfer(true); }} disabled={!lcpk_box_uq} />
+                                <TBtn icon={ClipboardList} label="Add from PO" color="green" onClick={() => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalBoxPO(true); }} disabled={!lcpack_uq} />
+                            </div>
+
                             {/* Row 3: Boxes Detail */}
                             <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1 min-h-0">
                                 <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between pl-3 pr-0 shrink-0 gap-2">
                                     <div className="flex items-center gap-2 shrink-0 min-w-0">
                                         <Boxes size={14} className="text-[#FB7506] shrink-0" />
                                         <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] truncate">
-                                            Boxes Detail{selPacking ? ` — ${t(selPacking.GROWER)}` : ""}
+                                            Boxes Detail{selPacking ? ` — ${t(selPacking.GROWER)}` : ""} <span className="text-gray-400">({(packingDetails as any[]).length})</span>
                                         </span>
                                         {loadingPackingDetails && <RefreshCcw size={10} className="text-gray-400 animate-spin shrink-0" />}
                                         <span className="text-[11px] font-bold text-[#FB7506] uppercase tracking-wide truncate max-w-[160px]">
@@ -918,9 +958,6 @@ export default function InventoryEntryPage() {
                                         <input className="w-10 h-7 text-[11px] border border-[#DBD9D9] rounded px-1.5 bg-white" defaultValue="0" readOnly />
                                         <span className="text-[10px] font-bold text-gray-400 whitespace-nowrap">To Label:</span>
                                         <input className="w-10 h-7 text-[11px] border border-[#DBD9D9] rounded px-1.5 bg-white" defaultValue="0" readOnly />
-                                        <span className="text-[10px] font-bold text-gray-400 whitespace-nowrap">
-                                            {(packingDetails as any[]).length} boxes
-                                        </span>
                                         {changePricesMode && (
                                             <button onClick={handleToggleChangePrices} disabled={savingPrices}
                                                 className="flex items-center gap-1.5 h-7 px-3 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white rounded-md text-[12px] font-bold uppercase tracking-wide transition-colors shrink-0">
@@ -930,16 +967,10 @@ export default function InventoryEntryPage() {
                                         )}
                                         <AuditLogModal recordId={lcpk_box_uq} disabled={!lcpk_box_uq} size="sm" />
                                         <GridMenu items={[
-                                            { label: "Add Box", icon: Plus, color: "green", onClick: () => handleAddBox() },
-                                            { label: "Edit Box", icon: Pencil, color: "green", onClick: () => handleOpenEditBox() },
                                             { label: "Delete Box", icon: Trash2, color: "red", onClick: () => handleDeleteBox(), separator: true },
                                             { label: "Transform Inventory", icon: ArrowRight, color: "orange", onClick: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalTransform(true); } },
                                             { label: "Change Prices", icon: Pencil, color: "blue", onClick: handleToggleChangePrices },
                                             { label: "RePacking", icon: Package, color: "blue", onClick: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalRepacking(true); }, separator: true },
-                                            { label: "WHControl", icon: Warehouse, color: "blue", onClick: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalBoxWHCtrl(true); } },
-                                            { label: "Move Box", icon: ArrowRight, color: "blue", onClick: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalBoxMove(true); } },
-                                            { label: "WH Transfer", icon: Warehouse, color: "blue", onClick: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalTransfer(true); } },
-                                            { label: "Add from PO", icon: ClipboardList, color: "green", onClick: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalBoxPO(true); }, separator: true },
                                             { label: "Notes", icon: FileText, color: "purple", onClick: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalNotes(true); } },
                                             { label: "Composition", icon: Layers, color: "purple", onClick: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalComposition(true); }, separator: true },
                                             { label: "Zebra by Lot", icon: FileText, color: "gray", onClick: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } openReport(`/api/inventory-entry/reports/label-zebra?pack_uq=${encodeURIComponent(lcpack_uq)}&box_uq=${encodeURIComponent(lcpk_box_uq)}`); } },
