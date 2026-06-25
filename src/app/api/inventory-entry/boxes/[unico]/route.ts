@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { executeProcedure } from "@/lib/db";
+import { executeProcedure, getFullpotPool } from "@/lib/db";
 
 type P = { params: Promise<{ unico: string }> };
 
@@ -8,11 +8,23 @@ const num = (v: any) => { const n = parseFloat(String(v ?? 0)); return isNaN(n) 
 const int = (v: any) => { const n = parseInt(String(v ?? 0), 10); return isNaN(n) ? 0 : n; };
 const bit = (v: any) => (v ? 1 : 0);
 
+// Fields the box detail SP doesn't select but the edit form needs
+async function getExtraFields(unico: string) {
+    const pool = await getFullpotPool();
+    const r = await pool.request().input("unico", unico)
+        .query(`SELECT cporder_no, cut_point, inventory_notes FROM flower_packing_box WHERE unico = @unico`);
+    return r.recordset?.[0] ?? {};
+}
+
 export async function GET(_req: NextRequest, { params }: P) {
     const { unico } = await params;
     try {
-        const r = await executeProcedure("sp_flower_packing_box_uq", { lcunico: unico });
-        return NextResponse.json(r.recordset[0] ?? null);
+        const [r, extra] = await Promise.all([
+            executeProcedure("sp_flower_packing_box_uq", { lcunico: unico }),
+            getExtraFields(unico),
+        ]);
+        const row = r.recordset[0];
+        return NextResponse.json(row ? { ...row, ...extra } : null);
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });
     }
@@ -23,31 +35,26 @@ export async function PUT(req: NextRequest, { params }: P) {
     const b = await req.json();
     try {
         const r = await executeProcedure("sp_flower_packing_box_update_new", {
-            lcunico:          unico,
-            lcproduct_uq:     str(b.product_uq,    8),
-            lccase_uq:        str(b.case_uq,        8),
-            lccustomer_uq:    str(b.customer_uq,    8),
-            lccporder_no:     str(b.cporder_no,    20),
-            lnbox_qty:        int(b.box_qty),
-            lnup_x_case:      int(b.up_x_case),
-            lnbunches_x_case: int(b.bunches_x_case),
-            lnunits_x_bunch:  int(b.units_x_bunch),
-            lntotal_units:    int(b.total_units),
-            lnlote:           int(b.lote),
-            lccut_point:      str(b.cut_point,     20),
-            lnprice:          num(b.price),
-            lnf_cost_x_u:     num(b.f_cost_x_u),
-            lnc_cost_x_u:     num(b.c_cost_x_u),
-            lnfreight_x_bx:   num(b.freight_x_bx),
-            lnduties_x_bx:    num(b.duties_x_bx),
-            lnbroker_x_bx:    num(b.broker_x_bx),
-            lnhandling_x_bx:  num(b.handling_x_bx),
-            lnocharges_x_bx:  num(b.ocharges_x_bx),
-            llconfir_box:     bit(b.confir_box),
-            llsold_boxes:     bit(b.sold_boxes),
-            lcremarks:        str(b.remarks,      200),
-            lccust_prod_code:  str(b.cust_product_code, 30),
-            lcuser_uq:        str(b.user_uq, 8),
+            lcunico:           unico,
+            lccustomer_uq:     str(b.customer_uq, 8),
+            lncustomer:        bit(b.customer_uq),
+            lccporder_no:      str(b.cporder_no, 10),
+            lcproduct_uq:      str(b.product_uq, 8),
+            lccase_uq:         str(b.case_uq, 8),
+            lncut:             int(b.cut_point),
+            lnbox_qty:         int(b.box_qty),
+            lnpacks_box:       int(b.packs_box),
+            lnpacks_units:     int(b.packs_units),
+            lnunits_x_box:     int(b.units_x_box),
+            lnfreight_cost:    num(b.freight_cost),
+            lnhandling_cost:   num(b.handling_cost),
+            lnduties_cost:     num(b.duties_cost),
+            lnbroker_cost:     num(b.broker_cost),
+            lncharge_cost:     num(b.charge_cost),
+            f_cost_x_u:        num(b.f_cost_x_u),
+            lnprice_x_u:       num(b.price_x_u),
+            lcbox_id:          str(b.box_id, 20),
+            lcinventory_notes: str(b.inventory_notes, 250),
         });
         const row = r.recordset?.[0];
         if (row?.error === 1 || row?.Error === 1) return NextResponse.json({ success: false, error: row.message || row.Message }, { status: 400 });

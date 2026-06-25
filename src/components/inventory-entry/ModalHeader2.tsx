@@ -17,9 +17,10 @@ interface Props {
 }
 
 const EMPTY = {
-    packing_no: "", invoice_date: today(), invoice_no: "", awbcode: "",
-    airline_uq: "", details: "", porder_no: 0, wphysical_uq: "",
-    available_date: today(), inhouse: false, consolidated: false,
+    grower_uq: "", packing_no: "", invoice_date: today(), invoice_no: "",
+    airline_code: "", awbnumber: "",
+    details: "", porder_no: 0, wphysical_uq: "",
+    available_date: today(), consolidated: false,
 };
 
 export function ModalHeader2({ open, onClose, packUq, warehouses, airlines, userId, onSuccess }: Props) {
@@ -38,17 +39,18 @@ export function ModalHeader2({ open, onClose, packUq, warehouses, airlines, user
                 if (!d) return;
                 const fill: any = {};
                 for (const [k, v] of Object.entries(d)) fill[k.toLowerCase()] = v;
+                const awbcode = t(fill.awbcode);
                 setForm({
+                    grower_uq:      t(fill.grower_uq),
                     packing_no:     t(fill.packing_no),
                     invoice_date:   fill.date_invo ? new Date(fill.date_invo).toISOString().split("T")[0] : today(),
                     invoice_no:     t(fill.invoice_no),
-                    awbcode:        t(fill.awbcode),
-                    airline_uq:     t(fill.airline_uq ?? fill.pob_uq),
+                    airline_code:   awbcode.substring(0, 3),
+                    awbnumber:      awbcode.substring(3),
                     details:        t(fill.details),
                     porder_no:      parseInt(fill.porder_no ?? 0) || 0,
                     wphysical_uq:   t(fill.wphysical_uq),
                     available_date: fill.available_date ? new Date(fill.available_date).toISOString().split("T")[0] : today(),
-                    inhouse:        Boolean(fill.inhouse),
                     consolidated:   Boolean(fill.consolidated),
                 });
             })
@@ -66,7 +68,18 @@ export function ModalHeader2({ open, onClose, packUq, warehouses, airlines, user
             const res = await fetch(`/api/inventory-entry/packings/${packUq}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...form, grower_uq: "", user_uq: userId }),
+                body: JSON.stringify({
+                    grower_uq:      form.grower_uq,
+                    packing_no:     form.packing_no,
+                    invoice_no:     form.invoice_no,
+                    awbcode:        form.airline_code + form.awbnumber,
+                    invoice_date:   form.invoice_date,
+                    details:        form.details,
+                    wphysical_uq:   form.wphysical_uq,
+                    porder_no:      form.porder_no,
+                    available_date: form.available_date,
+                    consolidated:   form.consolidated,
+                }),
             });
             const d = await res.json();
             if (!d.success) throw new Error(d.error || "Update failed");
@@ -113,24 +126,24 @@ export function ModalHeader2({ open, onClose, packUq, warehouses, airlines, user
                             <input type="date" value={form.available_date} onChange={e => setF("available_date", e.target.value)} className={fInput} />
                         </div>
                         <div className="flex flex-col gap-0.5">
-                            <label className={fLabel}>AWB Code</label>
-                            <input value={form.awbcode} onChange={e => setF("awbcode", e.target.value)} className={fInput + " font-mono"} />
-                        </div>
-                        <div className="flex flex-col gap-0.5">
                             <label className={fLabel}>Airline</label>
-                            <select value={form.airline_uq} onChange={e => setF("airline_uq", e.target.value)} className={fInput}>
+                            <select value={form.airline_code} onChange={e => setF("airline_code", e.target.value)} className={fInput}>
                                 <option value="">-- None --</option>
                                 {airlines.map((a: any) => (
-                                    <option key={t(a.UNICO)} value={t(a.UNICO)}>{t(a.AIRLINE ?? a.DESCRIPTION ?? a.UNICO)}</option>
+                                    <option key={t(a.COD_LINEA)} value={t(a.COD_LINEA)}>{t(a.AIRLINE ?? a.COD_LINEA)}</option>
                                 ))}
                             </select>
+                        </div>
+                        <div className="flex flex-col gap-0.5">
+                            <label className={fLabel}>AWB Number (8 digits)</label>
+                            <input value={form.awbnumber} onChange={e => setF("awbnumber", e.target.value.replace(/\D/g, "").substring(0, 8))} className={fInput + " font-mono"} maxLength={8} />
                         </div>
                         <div className="flex flex-col gap-0.5">
                             <label className={fLabel}>Physical Warehouse</label>
                             <select value={form.wphysical_uq} onChange={e => setF("wphysical_uq", e.target.value)} className={fInput}>
                                 <option value="">-- None --</option>
                                 {warehouses.map((w: any) => (
-                                    <option key={t(w.UNICO)} value={t(w.UNICO)}>{t(w.WHOUSE ?? w.DESCRIPTION ?? w.WPHYSICAL ?? w.NAME ?? w.UNICO)}</option>
+                                    <option key={t(w.UNICO)} value={t(w.UNICO)}>{t(w.WAREHOUSE ?? w.WP_NAME ?? w.UNICO)}</option>
                                 ))}
                             </select>
                         </div>
@@ -143,10 +156,6 @@ export function ModalHeader2({ open, onClose, packUq, warehouses, airlines, user
                             <textarea value={form.details} onChange={e => setF("details", e.target.value)} rows={2} className="fos-input text-xs resize-none py-1" />
                         </div>
                         <div className="col-span-2 flex items-center gap-6">
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" checked={form.inhouse} onChange={e => setF("inhouse", e.target.checked)} className="w-4 h-4 accent-[#FB7506]" />
-                                <span className="text-xs font-semibold text-gray-700">In House</span>
-                            </label>
                             <label className="flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" checked={form.consolidated} onChange={e => setF("consolidated", e.target.checked)} className="w-4 h-4 accent-[#FB7506]" />
                                 <span className="text-xs font-semibold text-gray-700">Consolidated</span>

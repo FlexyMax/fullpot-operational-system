@@ -1,8 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, ArrowRight, RefreshCcw, Check } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 
 const t = (v: any) => String(v ?? "").trim();
 const norm = (rows: any[]) => rows.map(r => { const n: any = {}; for (const [k, v] of Object.entries(r)) n[k.toUpperCase()] = v; return n; });
@@ -16,21 +15,34 @@ interface Props {
     onSuccess: () => void;
 }
 
-export function ModalBoxMove({ open, onClose, boxUnico, currentPackUq, userId, onSuccess }: Props) {
-    const [targetPackUq, setTargetPackUq] = useState("");
-    const [saving, setSaving] = useState(false);
+export function ModalBoxMove({ open, onClose, boxUnico, currentPackUq, onSuccess }: Props) {
+    const [targets,       setTargets]       = useState<any[]>([]);
+    const [targetPackUq,  setTargetPackUq]  = useState("");
+    const [loading,       setLoading]       = useState(false);
+    const [saving,        setSaving]        = useState(false);
+
+    useEffect(() => {
+        if (!open || !currentPackUq) return;
+        setTargetPackUq("");
+        setLoading(true);
+        fetch(`/api/inventory-entry/packings/${currentPackUq}/move-targets`)
+            .then(r => r.json())
+            .then(d => setTargets(norm(Array.isArray(d) ? d : [])))
+            .catch(() => setTargets([]))
+            .finally(() => setLoading(false));
+    }, [open, currentPackUq]);
 
     if (!open) return null;
 
     const handleSave = async () => {
-        if (!t(targetPackUq)) { toast.error("Enter a target packing ID."); return; }
+        if (!t(targetPackUq)) { toast.error("Select a destination packing."); return; }
         if (!boxUnico) { toast.error("No box selected."); return; }
         setSaving(true);
         try {
             const res = await fetch(`/api/inventory-entry/boxes/${boxUnico}/move`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ newpacking_uq: targetPackUq, user_uq: userId }),
+                body: JSON.stringify({ newpacking_uq: targetPackUq }),
             });
             const d = await res.json();
             if (!d.success) throw new Error(d.error || "Move failed");
@@ -64,14 +76,16 @@ export function ModalBoxMove({ open, onClose, boxUnico, currentPackUq, userId, o
                         Current packing: <span className="font-mono font-bold text-gray-800">{currentPackUq}</span>
                     </div>
                     <div className="flex flex-col gap-0.5">
-                        <label className={fLabel}>Target Packing ID *</label>
-                        <input
-                            value={targetPackUq}
-                            onChange={e => setTargetPackUq(e.target.value)}
-                            className={fInput}
-                            placeholder="Enter target packing unique ID"
-                            autoFocus
-                        />
+                        <label className={fLabel}>Packing Destination (awb + awbdate + invoice) *</label>
+                        <select value={targetPackUq} onChange={e => setTargetPackUq(e.target.value)} className={fInput} disabled={loading}>
+                            <option value="">{loading ? "Loading..." : "-- Select Destination --"}</option>
+                            {targets.map((p: any) => (
+                                <option key={t(p.UNICO)} value={t(p.UNICO)}>{t(p.DATO)}</option>
+                            ))}
+                        </select>
+                        {!loading && targets.length === 0 && (
+                            <p className="text-[11px] text-gray-400 italic mt-1">No other packings found for this vendor/warehouse.</p>
+                        )}
                     </div>
                 </div>
                 <div className="flex justify-end gap-2 px-4 py-3 bg-gray-50 border-t shrink-0">

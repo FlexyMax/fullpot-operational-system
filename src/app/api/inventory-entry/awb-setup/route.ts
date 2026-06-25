@@ -19,10 +19,9 @@ export async function POST(req: NextRequest) {
     const b = await req.json();
     try {
         const r = await executeProcedure("sp_flower_awbs_setup_insert", {
-            lcawbcode:  str(b.awbcode,  11),
+            lcawb:      str(b.awbcode,  11),
             ldawbdate:  b.awbdate ? new Date(b.awbdate) : new Date(),
             lccity_uq:  str(b.city_uq,   8),
-            lcuser_uq:  str(b.user_uq,   8),
         });
         const row = r.recordset?.[0];
         if (row?.error === 1 || row?.Error === 1) return NextResponse.json({ success: false, error: row.message || row.Message }, { status: 400 });

@@ -18,28 +18,30 @@ interface Props {
 }
 
 export function ModalAddProductToPacking({ open, onClose, packUq, product, cases, userId, onSuccess }: Props) {
-    const [case_uq,        setCaseUq]       = useState("");
-    const [box_qty,        setBoxQty]       = useState(0);
-    const [up_x_case,      setUpXCase]      = useState(0);
-    const [bunches_x_case, setBunchesXCase] = useState(0);
-    const [units_x_bunch,  setUnitsXBunch]  = useState(0);
-    const [price,          setPrice]        = useState(0);
-    const [saving,         setSaving]       = useState(false);
-    const [error,          setError]        = useState<string | null>(null);
+    const [case_uq,     setCaseUq]     = useState("");
+    const [box_qty,     setBoxQty]     = useState(0);
+    const [packs_box,   setPacksBox]   = useState(0);
+    const [packs_units, setPacksUnits] = useState(0);
+    const [stem_pack,   setStemPack]   = useState(false);
+    const [price_x_u,   setPriceXU]    = useState(0);
+    const [saving,      setSaving]     = useState(false);
+    const [error,       setError]      = useState<string | null>(null);
 
     useEffect(() => {
         if (!open || !product) return;
         setCaseUq(t(product.CASE_UQ));
-        const upXCase = int(product.UP_X_CASE ?? 0);
-        setUpXCase(upXCase);
-        setBunchesXCase(upXCase);
-        setUnitsXBunch(int(product.UP_X_PACK ?? 1) || 1);
+        setPacksBox(int(product.UP_X_CASE ?? 0));
+        setPacksUnits(int(product.UP_X_PACK ?? 0));
+        setStemPack(Boolean(product.STEM_PACK));
         setBoxQty(0);
-        setPrice(num(product.SALES_PRICE ?? 0));
+        setPriceXU(num(product.SALES_PRICE ?? 0));
         setError(null);
     }, [open, product]);
 
     if (!open) return null;
+
+    const unitsXBox  = stem_pack ? packs_box * packs_units : packs_box;
+    const totalUnits = unitsXBox * box_qty;
 
     const handleSave = async () => {
         if (!packUq) { toast.error("Select a packing first."); return; }
@@ -52,10 +54,10 @@ export function ModalAddProductToPacking({ open, onClose, packUq, product, cases
                 body: JSON.stringify({
                     pack_uq: packUq,
                     product_uq: t(product.UNICO),
-                    case_uq, box_qty, up_x_case,
-                    bunches_x_case, units_x_bunch,
-                    total_units: box_qty * up_x_case,
-                    price,
+                    case_uq, box_qty, packs_box, packs_units,
+                    units_x_box: unitsXBox,
+                    cut_point: 2,
+                    price_x_u,
                     user_uq: userId,
                 }),
             });
@@ -103,21 +105,27 @@ export function ModalAddProductToPacking({ open, onClose, packUq, product, cases
                             <input type="number" value={box_qty} onChange={e => setBoxQty(int(e.target.value))} className={fInput + " text-right"} />
                         </div>
                         <div className="flex flex-col gap-0.5">
-                            <label className={fLabel}>Units / Case</label>
-                            <input type="number" value={up_x_case} onChange={e => setUpXCase(int(e.target.value))} className={fInput + " text-right"} />
-                        </div>
-                        <div className="flex flex-col gap-0.5">
                             <label className={fLabel}>Bunches / Case</label>
-                            <input type="number" value={bunches_x_case} onChange={e => setBunchesXCase(int(e.target.value))} className={fInput + " text-right"} />
+                            <input type="number" value={packs_box} onChange={e => setPacksBox(int(e.target.value))} className={fInput + " text-right"} />
                         </div>
                         <div className="flex flex-col gap-0.5">
-                            <label className={fLabel}>Units / Bunch</label>
-                            <input type="number" value={units_x_bunch} onChange={e => setUnitsXBunch(int(e.target.value))} className={fInput + " text-right"} />
+                            <label className={fLabel}>Stems / Bunch</label>
+                            <input type="number" value={packs_units} onChange={e => setPacksUnits(int(e.target.value))} className={fInput + " text-right"} disabled={!stem_pack} />
+                        </div>
+                        <div className="flex flex-col gap-0.5 justify-end">
+                            <label className="flex items-center gap-2 cursor-pointer h-7">
+                                <input type="checkbox" checked={stem_pack} onChange={e => setStemPack(e.target.checked)} className="w-4 h-4 accent-[#FB7506]" />
+                                <span className="text-xs font-semibold text-gray-700">Stem Pack</span>
+                            </label>
                         </div>
                     </div>
                     <div className="flex flex-col gap-0.5">
-                        <label className={fLabel}>Sales Price</label>
-                        <input type="number" step="0.01" value={price} onChange={e => setPrice(num(e.target.value))} className={fInput + " text-right"} />
+                        <label className={fLabel}>Sales Price / Unit</label>
+                        <input type="number" step="0.01" value={price_x_u} onChange={e => setPriceXU(num(e.target.value))} className={fInput + " text-right"} />
+                    </div>
+                    <div className="bg-blue-50 rounded p-2 text-xs text-blue-800 border border-blue-100 grid grid-cols-2 gap-1">
+                        <div>Units/Box: <span className="font-bold">{unitsXBox.toLocaleString()}</span></div>
+                        <div>Total Units: <span className="font-bold">{totalUnits.toLocaleString()}</span></div>
                     </div>
                     {error && <p className="text-xs text-red-500 bg-red-50 rounded p-2">{error}</p>}
                 </div>

@@ -101,7 +101,7 @@ export function ModalWarehouseTransfer({ open, onClose, boxUnico, warehouses, us
                             Source WH:{" "}
                             <span className="font-bold text-gray-800">
                                 {sourceWHName
-                                    ? t(sourceWHName.WHOUSE ?? sourceWHName.DESCRIPTION ?? sourceWHName.WPHYSICAL ?? sourceWH)
+                                    ? t(sourceWHName.WAREHOUSE ?? sourceWHName.WP_NAME ?? sourceWH)
                                     : (sourceWH || "—")}
                             </span>
                         </div>
@@ -112,7 +112,7 @@ export function ModalWarehouseTransfer({ open, onClose, boxUnico, warehouses, us
                             <option value="">-- Select Warehouse --</option>
                             {warehouses.map((w: any) => (
                                 <option key={t(w.UNICO)} value={t(w.UNICO)}>
-                                    {t(w.WHOUSE ?? w.DESCRIPTION ?? w.WPHYSICAL ?? w.NAME ?? w.UNICO)}
+                                    {t(w.WAREHOUSE ?? w.WP_NAME ?? w.UNICO)}
                                 </option>
                             ))}
                         </select>

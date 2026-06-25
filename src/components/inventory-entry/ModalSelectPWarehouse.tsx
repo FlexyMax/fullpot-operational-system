@@ -19,7 +19,7 @@ export function ModalSelectPWarehouse({ open, onClose, warehouses, onSelect, tit
     if (!open) return null;
 
     const filtered = warehouses.filter(w => {
-        const name = t(w.WHOUSE ?? w.DESCRIPTION ?? w.WPHYSICAL ?? w.NAME ?? "").toLowerCase();
+        const name = t(w.WAREHOUSE ?? w.WP_NAME ?? "").toLowerCase();
         const code = t(w.UNICO ?? "").toLowerCase();
         const q = search.toLowerCase();
         return !q || name.includes(q) || code.includes(q);
@@ -63,7 +63,7 @@ export function ModalSelectPWarehouse({ open, onClose, warehouses, onSelect, tit
                                     onClick={() => { onSelect(w); onClose(); }}
                                     className="border-b border-gray-100 cursor-pointer odd:bg-white even:bg-gray-50 hover:bg-blue-50 transition-colors">
                                     <td className="p-2 border-r border-gray-100 font-mono text-gray-500">{t(w.UNICO)}</td>
-                                    <td className="p-2 font-semibold text-gray-800">{t(w.WHOUSE ?? w.DESCRIPTION ?? w.WPHYSICAL ?? w.NAME ?? w.UNICO)}</td>
+                                    <td className="p-2 font-semibold text-gray-800">{t(w.WAREHOUSE ?? w.WP_NAME ?? w.UNICO)}</td>
                                 </tr>
                             ))}
                         </tbody>

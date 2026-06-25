@@ -13,7 +13,6 @@ export async function POST(req: NextRequest) {
             lcporder_uq:   str(b.porder_uq,  8),
             lcPacking_uq:  str(b.packing_uq, 8),
             qty_ship:      int(b.qty_ship),
-            lcuser_uq:     str(b.user_uq,    8),
         });
         const row = r.recordset?.[0];
         if (row?.error === 1 || row?.Error === 1) return NextResponse.json({ success: false, error: row.message || row.Message }, { status: 400 });

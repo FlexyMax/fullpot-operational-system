@@ -79,7 +79,7 @@ export function ModalBoxTransform({ open, onClose, boxUnico, boxLabel, growers, 
                         <select value={physical_destination} onChange={e => setPhysicalDest(e.target.value)} className={fInput}>
                             <option value="">-- Select Warehouse --</option>
                             {warehouses.map((w: any) => (
-                                <option key={t(w.UNICO)} value={t(w.UNICO)}>{t(w.WHOUSE ?? w.DESCRIPTION ?? w.WPHYSICAL ?? w.NAME ?? w.UNICO)}</option>
+                                <option key={t(w.UNICO)} value={t(w.UNICO)}>{t(w.WAREHOUSE ?? w.WP_NAME ?? w.UNICO)}</option>
                             ))}
                         </select>
                     </div>

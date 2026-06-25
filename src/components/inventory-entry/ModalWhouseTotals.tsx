@@ -66,7 +66,7 @@ export function ModalWhouseTotals({ open, onClose, lddate, warehouses }: Props) 
                             <option value="">-- Select Warehouse --</option>
                             {warehouses.map((w: any) => (
                                 <option key={t(w.UNICO)} value={t(w.UNICO)}>
-                                    {t(w.WHOUSE ?? w.DESCRIPTION ?? w.WPHYSICAL ?? w.NAME ?? w.UNICO)}
+                                    {t(w.WAREHOUSE ?? w.WP_NAME ?? w.UNICO)}
                                 </option>
                             ))}
                         </select>
@@ -113,7 +113,7 @@ export function ModalWhouseTotals({ open, onClose, lddate, warehouses }: Props) 
                 <div className="px-4 py-2 bg-gray-50 border-t shrink-0 flex items-center justify-between">
                     <span className="text-[10px] text-gray-400">
                         {rows.length > 0 ? `${rows.length} record(s)` : ""}
-                        {whouseName ? ` — ${t(whouseName.WHOUSE ?? whouseName.DESCRIPTION ?? whouseName.UNICO)}` : ""}
+                        {whouseName ? ` — ${t(whouseName.WAREHOUSE ?? whouseName.WP_NAME ?? whouseName.UNICO)}` : ""}
                     </span>
                     <button onClick={onClose} className="px-4 py-2 rounded border border-gray-200 text-xs font-black uppercase text-gray-600 hover:bg-gray-100 transition-colors">
                         Close

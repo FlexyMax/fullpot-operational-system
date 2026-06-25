@@ -50,14 +50,11 @@ export function ModalAvailableDate({ open, onClose, packUq, userId, onSuccess }:
                 invoice_date:   f.date_invo ? new Date(f.date_invo).toISOString().split("T")[0] : today(),
                 invoice_no:     t(f.invoice_no),
                 awbcode:        t(f.awbcode),
-                airline_uq:     t(f.airline_uq ?? f.pob_uq),
                 details:        t(f.details),
                 porder_no:      parseInt(f.porder_no ?? 0) || 0,
                 wphysical_uq:   t(f.wphysical_uq),
                 available_date: availableDate,
-                inhouse:        Boolean(f.inhouse),
                 consolidated:   Boolean(f.consolidated),
-                user_uq:        userId,
             };
             const res = await fetch(`/api/inventory-entry/packings/${packUq}`, {
                 method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),

@@ -12,7 +12,6 @@ export async function POST(req: NextRequest, { params }: P) {
         const r = await executeProcedure("sp_flower_packing_box_move", {
             lcpkbox_uq:       unico,
             lcnewpacking_uq:  str(b.newpacking_uq, 8),
-            lcuser_uq:        str(b.user_uq, 8),
         });
         const row = r.recordset?.[0];
         if (row?.error === 1 || row?.Error === 1) return NextResponse.json({ success: false, error: row.message || row.Message }, { status: 400 });

@@ -10,11 +10,10 @@ export async function POST(req: NextRequest, { params }: P) {
     const b = await req.json();
     try {
         const r = await executeProcedure("sp_flower_packing_awb_change", {
-            lcunico:      pack_uq,
-            lcawbcode:    str(b.awbcode,    20),
-            lcairline_uq: str(b.airline_uq,  8),
-            ldinvo_date:  b.date_invo ? new Date(b.date_invo) : new Date(),
-            lcuser_uq:    str(b.user_uq, 8),
+            lcpacking_uq:   pack_uq,
+            awbcode:        str(b.awbcode, 11),
+            date_invo:      b.date_invo ? new Date(b.date_invo) : new Date(),
+            lcsalesman_uq:  str(b.user_uq, 8),
         });
         const row = r.recordset?.[0];
         if (row?.error === 1 || row?.Error === 1) return NextResponse.json({ success: false, error: row.message || row.Message }, { status: 400 });

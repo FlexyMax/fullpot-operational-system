@@ -21,10 +21,9 @@ export async function PATCH(req: NextRequest, { params }: P) {
     try {
         const r = await executeProcedure("sp_flower_awbs_setup_update", {
             lcunico:    unico,
-            lcawbcode:  str(b.awbcode, 11),
+            lcawb:      str(b.awbcode, 11),
             ldawbdate:  b.awbdate ? new Date(b.awbdate) : new Date(),
             lccity_uq:  str(b.city_uq, 8),
-            lcuser_uq:  str(b.user_uq, 8),
         });
         const row = r.recordset?.[0];
         if (row?.error === 1 || row?.Error === 1) return NextResponse.json({ success: false, error: row.message || row.Message }, { status: 400 });
@@ -34,13 +33,11 @@ export async function PATCH(req: NextRequest, { params }: P) {
     }
 }
 
-export async function DELETE(req: NextRequest, { params }: P) {
+export async function DELETE(_req: NextRequest, { params }: P) {
     const { unico } = await params;
-    const b = await req.json().catch(() => ({}));
     try {
         const r = await executeProcedure("sp_flower_awbs_setup_delete", {
             lcunico:   unico,
-            lcuser_uq: str(b.user_uq, 8),
         });
         const row = r.recordset?.[0];
         if (row?.error === 1 || row?.Error === 1) return NextResponse.json({ success: false, error: row.message || row.Message }, { status: 400 });

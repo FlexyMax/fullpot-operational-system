@@ -14,13 +14,12 @@ export async function POST(req: NextRequest, { params }: P) {
         const r = await executeProcedure("sp_flower_packing_box_transfer", {
             lcpacking_box_uq: unico,
             lcwphysical_uq:   str(b.wphysical_uq,  8),
-            lcawbcode:        str(b.awbcode,       20),
+            lcawbcode:        str(b.awbcode,       11),
             lddate_invo:      b.date_invo   ? new Date(b.date_invo)   : new Date(),
             ldavailable:      b.available   ? new Date(b.available)   : new Date(),
-            lcinvoice_no:     str(b.invoice_no,    20),
+            lcinvoice_no:     str(b.invoice_no,    15),
             lnbox_qty:        int(b.box_qty),
             lnbox_freight:    num(b.box_freight),
-            lcuser_uq:        str(b.user_uq,        8),
         });
         const row = r.recordset?.[0];
         if (row?.error === 1 || row?.Error === 1) return NextResponse.json({ success: false, error: row.message || row.Message }, { status: 400 });

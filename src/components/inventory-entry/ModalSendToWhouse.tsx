@@ -94,7 +94,7 @@ export function ModalSendToWhouse({ open, onClose, packUq, warehouses, userId, o
                             <option value="">-- Select Warehouse --</option>
                             {warehouses.map((w: any) => (
                                 <option key={t(w.UNICO)} value={t(w.UNICO)}>
-                                    {t(w.WHOUSE ?? w.DESCRIPTION ?? w.WPHYSICAL ?? w.NAME ?? w.UNICO)}
+                                    {t(w.WAREHOUSE ?? w.WP_NAME ?? w.UNICO)}
                                 </option>
                             ))}
                         </select>

@@ -37,7 +37,6 @@ import { ModalBoxTransform }         from "@/components/inventory-entry/ModalBox
 import { ModalBoxRepacking }         from "@/components/inventory-entry/ModalBoxRepacking";
 import { ModalAddProductToPacking }  from "@/components/inventory-entry/ModalAddProductToPacking";
 import { ModalAvailableDate }        from "@/components/inventory-entry/ModalAvailableDate";
-import { ModalAddPOToInventory }     from "@/components/inventory-entry/ModalAddPOToInventory";
 import { AuditLogModal }             from "@/components/AuditLogModal";
 const EMPTY_ARR: any[] = [];
 
@@ -84,34 +83,35 @@ const subtleColorFromInt = (n: any): CSSProperties | undefined => {
 // ─── Empty forms ──────────────────────────────────────────────────────────────
 const EMPTY_PACKING: any = {
     unico: "", grower_uq: "", packing_no: "", invoice_date: today(),
-    invoice_no: "", awbcode: "", airline_uq: "", details: "",
+    invoice_no: "", airline_code: "", awbnumber: "", details: "",
     porder_no: 0, wphysical_uq: "", available_date: today(),
-    inhouse: false, consolidated: false,
+    consolidated: false,
 };
 
 const EMPTY_BOX: any = {
-    unico: "", product_uq: "", product_desc: "", case_uq: "", customer_uq: "",
-    cporder_no: "", box_qty: 0, up_x_case: 0, bunches_x_case: 0,
-    units_x_bunch: 0, total_units: 0, lote: 0, cut_point: "",
-    price: 0, t_price: 0, f_cost_x_u: 0, f_cost: 0,
-    c_cost_x_u: 0, t_cost: 0,
-    freight_x_bx: 0, duties_x_bx: 0, broker_x_bx: 0,
-    handling_x_bx: 0, ocharges_x_bx: 0, t_charges: 0,
-    confir_box: false, sold_boxes: false,
-    remarks: "", cust_product_code: "",
+    unico: "", product_uq: "", product_desc: "", case_uq: "",
+    cporder_no: "", box_qty: 0, packs_box: 0, packs_units: 0, stem_pack: false,
+    lote: 0, cut_point: 2, box_id: "",
+    price_x_u: 0, f_cost_x_u: 0,
+    freight_cost: 0, duties_cost: 0, broker_cost: 0, handling_cost: 0, charge_cost: 0,
+    inventory_notes: "",
 };
 
+// VFP calc: units/box = stem_pack ? packs_box*packs_units : packs_box; cost/unit derived from charges, not stored directly
 const calcBox = (f: any) => {
-    const totalUnits = (f.box_qty || 0) * (f.up_x_case || 0);
+    const unitsXBox  = f.stem_pack ? (f.packs_box || 0) * (f.packs_units || 0) : (f.packs_box || 0);
+    const totalUnits = unitsXBox * (f.box_qty || 0);
+    const tCharges   = ((f.freight_cost || 0) + (f.duties_cost || 0) + (f.broker_cost || 0) +
+                        (f.handling_cost || 0) + (f.charge_cost || 0)) * (f.box_qty || 0);
+    const cCostXU    = totalUnits > 0 ? tCharges / totalUnits : 0;
     return {
         ...f,
+        units_x_box: unitsXBox,
         total_units: totalUnits,
-        t_price:     (f.box_qty || 0) * (f.price || 0),
-        f_cost:      (f.f_cost_x_u || 0) * totalUnits,
-        t_cost:      (f.c_cost_x_u || 0) * totalUnits,
-        t_charges:   ((f.freight_x_bx || 0) + (f.duties_x_bx || 0) +
-                      (f.broker_x_bx  || 0) + (f.handling_x_bx || 0) +
-                      (f.ocharges_x_bx || 0)) * (f.box_qty || 0),
+        t_charges:   tCharges,
+        c_cost_x_u:  cCostXU,
+        t_cost_x_u:  cCostXU + (f.f_cost_x_u || 0),
+        t_price:     totalUnits * (f.price_x_u || 0),
     };
 };
 
@@ -140,7 +140,6 @@ const AUDIT_MAP: Record<string, { table: string; ext: string }> = {
     "box-notes":       { table: "flower_packing_box",         ext: "Update Box Notes FlexyMaxApp" },
     "box-composition": { table: "flower_packing_box_bunches_composition", ext: "Update Box Composition FlexyMaxApp" },
     "available-date":  { table: "flower_packing",             ext: "Update Available Date FlexyMaxApp" },
-    "from-porder":     { table: "flower_packing",             ext: "Add P.O to Inventory FlexyMaxApp" },
 };
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
@@ -195,10 +194,13 @@ export default function InventoryEntryPage() {
     const [boxForm,      setBoxForm]      = useState<any>(EMPTY_BOX);
     const [boxSaving,    setBoxSaving]    = useState(false);
     const [boxError,     setBoxError]     = useState<string | null>(null);
+    const [prodPickQuery,      setProdPickQuery]      = useState("");
+    const [prodPickResults,    setProdPickResults]    = useState<any[]>([]);
+    const [prodPickSearching,  setProdPickSearching]  = useState(false);
 
     // ── Change AWB modal ──────────────────────────────────────────────────────
     const [modalChgAwb, setModalChgAwb] = useState(false);
-    const [chgAwbForm,  setChgAwbForm]  = useState({ awbcode: "", airline_uq: "", date_invo: today() });
+    const [chgAwbForm,  setChgAwbForm]  = useState({ airline_code: "", awbnumber: "", date_invo: today() });
     const [chgAwbSaving, setChgAwbSaving] = useState(false);
 
     // ── New modals ────────────────────────────────────────────────────────────
@@ -220,7 +222,6 @@ export default function InventoryEntryPage() {
     const [modalTransform,    setModalTransform]    = useState(false);
     const [modalRepacking,    setModalRepacking]    = useState(false);
     const [modalAvailDate,    setModalAvailDate]    = useState(false);
-    const [modalAddPO,        setModalAddPO]        = useState(false);
     const [modalAddProdPack,  setModalAddProdPack]  = useState(false);
     const [selectedProduct,   setSelectedProduct]   = useState<any>(null);
 
@@ -479,25 +480,26 @@ export default function InventoryEntryPage() {
                 if (!d) { toast.error("Packing not found."); return; }
                 const fill: any = {};
                 for (const [k, v] of Object.entries(d)) fill[k.toLowerCase()] = v;
+                const awbcode = t(fill.awbcode);
                 setPackForm({
                     unico:          t(fill.unico),
                     grower_uq:      t(fill.grower_uq),
                     packing_no:     t(fill.packing_no),
                     invoice_date:   fill.date_invo ? new Date(fill.date_invo).toISOString().split("T")[0] : today(),
                     invoice_no:     t(fill.invoice_no),
-                    awbcode:        t(fill.awbcode),
-                    airline_uq:     t(fill.airline_uq ?? fill.pob_uq),
+                    airline_code:   awbcode.substring(0, 3),
+                    awbnumber:      awbcode.substring(3),
                     details:        t(fill.details),
                     porder_no:      parseInt(fill.porder_no ?? 0) || 0,
                     wphysical_uq:   t(fill.wphysical_uq),
                     available_date: fill.available_date ? new Date(fill.available_date).toISOString().split("T")[0] : today(),
-                    inhouse:        Boolean(fill.inhouse),
                     consolidated:   Boolean(fill.consolidated),
                 });
             } catch (e: any) { toast.error(e.message); return; }
         } else {
             if (!perms.canCreate) { toast.error("Not authorized."); return; }
-            setPackForm({ ...EMPTY_PACKING, awbcode: lcawbcode });
+            const code = t(lcawbcode);
+            setPackForm({ ...EMPTY_PACKING, airline_code: code.substring(0, 3), awbnumber: code.substring(3) });
         }
         setPackError(null);
         setModalPackingMode(mode);
@@ -506,9 +508,21 @@ export default function InventoryEntryPage() {
 
     const handleSavePacking = async () => {
         if (!t(packForm.grower_uq)) { setPackError("Vendor is required."); return; }
+        if ((packForm.airline_code + packForm.awbnumber).length !== 11) { setPackError("AWB code must be 3-letter airline code + 8-digit number."); return; }
         setPackSaving(true); setPackError(null);
         try {
-            const payload = { ...packForm, user_uq: (session?.user as any)?.id || "" };
+            const payload = {
+                grower_uq:      packForm.grower_uq,
+                packing_no:     packForm.packing_no,
+                invoice_no:     packForm.invoice_no,
+                awbcode:        packForm.airline_code + packForm.awbnumber,
+                invoice_date:   packForm.invoice_date,
+                details:        packForm.details,
+                porder_no:      packForm.porder_no,
+                wphysical_uq:   packForm.wphysical_uq,
+                available_date: packForm.available_date,
+                consolidated:   packForm.consolidated,
+            };
             let unico = packForm.unico;
             if (modalPackingMode === "add") {
                 const res = await fetch("/api/inventory-entry/packings", {
@@ -536,59 +550,83 @@ export default function InventoryEntryPage() {
     };
 
     // ── Box actions ───────────────────────────────────────────────────────────
-    const handleOpenBoxModal = async (mode: "add" | "edit") => {
+    const handleOpenBoxModal = async (mode: "add" | "edit", boxUnicoOverride?: string) => {
+        const editUnico = boxUnicoOverride || lcpk_box_uq;
         if (mode === "edit") {
-            if (!lcpk_box_uq) { toast.error("Select a box first."); return; }
+            if (!editUnico) { toast.error("Select a box first."); return; }
             if (!perms.canEdit) { toast.error("Not authorized."); return; }
             try {
-                const r = await fetch(`/api/inventory-entry/boxes/${lcpk_box_uq}`);
+                const r = await fetch(`/api/inventory-entry/boxes/${editUnico}`);
                 const d = await r.json();
                 if (!d) { toast.error("Box not found."); return; }
                 const fill: any = {};
                 for (const [k, v] of Object.entries(d)) fill[k.toLowerCase()] = v;
-                setBoxForm({
-                    unico:             t(fill.unico),
-                    product_uq:        t(fill.product_uq),
-                    product_desc:      t(fill.description ?? fill.product_desc ?? ""),
-                    case_uq:           t(fill.case_uq),
-                    customer_uq:       t(fill.customer_uq),
-                    cporder_no:        t(fill.cporder_no),
-                    box_qty:           parseInt(fill.box_qty ?? 0) || 0,
-                    up_x_case:         parseInt(fill.up_x_case ?? 0) || 0,
-                    bunches_x_case:    parseInt(fill.bunches_x_case ?? 0) || 0,
-                    units_x_bunch:     parseInt(fill.units_x_bunch ?? 0) || 0,
-                    total_units:       parseInt(fill.total_units ?? 0) || 0,
-                    lote:              parseInt(fill.lote ?? 0) || 0,
-                    cut_point:         t(fill.cut_point),
-                    price:             parseFloat(fill.price ?? 0) || 0,
-                    t_price:           parseFloat(fill.t_price ?? 0) || 0,
-                    f_cost_x_u:        parseFloat(fill.f_cost_x_u ?? 0) || 0,
-                    f_cost:            parseFloat(fill.f_cost ?? 0) || 0,
-                    c_cost_x_u:        parseFloat(fill.c_cost_x_u ?? 0) || 0,
-                    t_cost:            parseFloat(fill.t_cost ?? 0) || 0,
-                    freight_x_bx:      parseFloat(fill.freight_x_bx ?? 0) || 0,
-                    duties_x_bx:       parseFloat(fill.duties_x_bx ?? 0) || 0,
-                    broker_x_bx:       parseFloat(fill.broker_x_bx ?? 0) || 0,
-                    handling_x_bx:     parseFloat(fill.handling_x_bx ?? 0) || 0,
-                    ocharges_x_bx:     parseFloat(fill.ocharges_x_bx ?? 0) || 0,
-                    t_charges:         parseFloat(fill.t_charges ?? 0) || 0,
-                    confir_box:        Boolean(fill.confir_box),
-                    sold_boxes:        Boolean(fill.sold_boxes),
-                    remarks:           t(fill.remarks),
-                    cust_product_code: t(fill.cust_prod_code ?? fill.cust_product_code),
-                });
+                setBoxForm(calcBox({
+                    unico:            t(fill.unico),
+                    product_uq:       t(fill.box_pack_uq ?? fill.product_uq),
+                    product_desc:     t(fill.description ?? fill.product_desc ?? ""),
+                    case_uq:          t(fill.case_uq),
+                    cporder_no:       t(fill.cporder_no),
+                    box_qty:          parseInt(fill.box_qty ?? 0) || 0,
+                    packs_box:        parseInt(fill.packs_box ?? 0) || 0,
+                    packs_units:      parseInt(fill.up_x_pack ?? 0) || 0,
+                    stem_pack:        Boolean(fill.stem_pack),
+                    lote:             parseInt(fill.lote ?? 0) || 0,
+                    cut_point:        parseInt(fill.cut_point ?? 2) || 2,
+                    box_id:           t(fill.box_id),
+                    price_x_u:        parseFloat(fill.price_x_u ?? 0) || 0,
+                    f_cost_x_u:       parseFloat(fill.f_cost_x_u ?? 0) || 0,
+                    freight_cost:     parseFloat(fill.freight_cost ?? 0) || 0,
+                    duties_cost:      parseFloat(fill.duties_cost ?? 0) || 0,
+                    broker_cost:      parseFloat(fill.broker_cost ?? 0) || 0,
+                    handling_cost:    parseFloat(fill.handling_cost ?? 0) || 0,
+                    charge_cost:      parseFloat(fill.charge_cost ?? 0) || 0,
+                    inventory_notes:  t(fill.inventory_notes),
+                }));
+                setProdPickQuery(t(fill.description ?? ""));
             } catch (e: any) { toast.error(e.message); return; }
         } else {
             if (!lcpack_uq) { toast.error("Select a packing first."); return; }
             if (!perms.canCreate) { toast.error("Not authorized."); return; }
             setBoxForm({ ...EMPTY_BOX });
+            setProdPickQuery("");
         }
+        setProdPickResults([]);
         setBoxError(null);
         setModalBoxMode(mode);
         setModalBox(true);
     };
 
     const setBoxField = (key: string, val: any) => setBoxForm((p: any) => calcBox({ ...p, [key]: val }));
+
+    const doProdPickSearch = async () => {
+        if (!prodPickQuery.trim()) return;
+        setProdPickSearching(true);
+        try {
+            const r = await fetch(`/api/inventory-entry/products?page=1&pageSize=20&search=${encodeURIComponent(prodPickQuery)}`);
+            const d = await r.json();
+            setProdPickResults(norm((d.rows ?? []) as any[]));
+        } catch {
+            setProdPickResults([]);
+        } finally {
+            setProdPickSearching(false);
+        }
+    };
+
+    const pickBoxProduct = (p: any) => {
+        setBoxForm((prev: any) => calcBox({
+            ...prev,
+            product_uq:   t(p.UNICO),
+            product_desc: t(p.DESCRIPTION),
+            case_uq:      t(p.CASE_UQ) || prev.case_uq,
+            packs_box:    parseInt(p.UP_X_CASE) || 0,
+            packs_units:  parseInt(p.UP_X_PACK) || 0,
+            stem_pack:    Boolean(p.STEM_PACK),
+            price_x_u:    parseFloat(p.SALES_PRICE) || 0,
+        }));
+        setProdPickResults([]);
+        setProdPickQuery(t(p.DESCRIPTION));
+    };
 
     const handleSaveBox = async () => {
         if (!t(boxForm.product_uq)) { setBoxError("Product is required."); return; }
@@ -618,6 +656,7 @@ export default function InventoryEntryPage() {
             }
             setModalBox(false);
             refetchBoxes();
+            qc.invalidateQueries({ queryKey: ["ie-packing-details", lcpack_uq] });
         } catch (e: any) { setBoxError(e.message); }
         finally { setBoxSaving(false); }
     };
@@ -637,17 +676,41 @@ export default function InventoryEntryPage() {
             toast.success("Box deleted.");
             setLcpk_box_uq("");
             refetchBoxes();
+            qc.invalidateQueries({ queryKey: ["ie-packing-details", lcpack_uq] });
         } catch (e: any) { toast.error(e.message); }
     };
 
     // ── Change AWB ────────────────────────────────────────────────────────────
+    const handleOpenChangeAwb = async () => {
+        if (!lcpack_uq) { toast.error("Select a packing first."); return; }
+        try {
+            const r = await fetch(`/api/inventory-entry/packings/${lcpack_uq}`);
+            const d = await r.json();
+            const fill: any = {};
+            for (const [k, v] of Object.entries(d ?? {})) fill[k.toLowerCase()] = v;
+            const awbcode = t(fill.awbcode);
+            setChgAwbForm({
+                airline_code: awbcode.substring(0, 3),
+                awbnumber:    awbcode.substring(3),
+                date_invo:    fill.date_invo ? new Date(fill.date_invo).toISOString().split("T")[0] : today(),
+            });
+        } catch {
+            setChgAwbForm({ airline_code: "", awbnumber: "", date_invo: today() });
+        }
+        setModalChgAwb(true);
+    };
+
     const handleSaveChangeAwb = async () => {
-        if (!t(chgAwbForm.awbcode)) { toast.error("AWB code is required."); return; }
+        if ((chgAwbForm.airline_code + chgAwbForm.awbnumber).length !== 11) { toast.error("Select an airline and enter the 8-digit AWB number."); return; }
         setChgAwbSaving(true);
         try {
             const res = await fetch(`/api/inventory-entry/packings/${lcpack_uq}/change-awb`, {
                 method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...chgAwbForm, user_uq: (session?.user as any)?.id || "" }),
+                body: JSON.stringify({
+                    awbcode:   chgAwbForm.airline_code + chgAwbForm.awbnumber,
+                    date_invo: chgAwbForm.date_invo,
+                    user_uq:   (session?.user as any)?.id || "",
+                }),
             });
             const d = await res.json();
             if (!d.success) throw new Error(d.error || "Change AWB failed");
@@ -884,7 +947,7 @@ export default function InventoryEntryPage() {
                                         { label: "Send to Whouse", icon: ArrowRight, color: "orange", onClick: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalSendWH(true); } },
                                         { label: "Open", icon: Check, color: "green", onClick: () => packAction("open", "Open"), disabled: !lcpack_uq || !perms.canEdit },
                                         { label: "Close", icon: X, color: "amber", onClick: () => packAction("close", "Close"), disabled: !lcpack_uq || !perms.canEdit },
-                                        { label: "Change AWB", icon: Pencil, color: "blue", onClick: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setChgAwbForm({ awbcode: lcawbcode, airline_uq: "", date_invo: today() }); setModalChgAwb(true); }, disabled: !perms.canEdit },
+                                        { label: "Change AWB", icon: Pencil, color: "blue", onClick: () => handleOpenChangeAwb(), disabled: !perms.canEdit || !lcpack_uq },
                                         { label: "WH Totals", icon: BarChart2, color: "blue", onClick: () => setModalWhTotals(true) },
                                         { label: "Copy", icon: Copy, color: "blue", onClick: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalCopy(true); }, separator: true },
                                         { label: "AWB Cust. PO", icon: FileText, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/awb-cporder?date=${lddate}&awb=${encodeURIComponent(lcawbcode || "%")}&pack_uq=${encodeURIComponent(lcpack_uq)}`), disabled: !lcpack_uq },
@@ -983,6 +1046,8 @@ export default function InventoryEntryPage() {
                                         )}
                                         <AuditLogModal recordId={lcpk_box_uq} disabled={!lcpk_box_uq} size="sm" />
                                         <GridMenu items={[
+                                            { label: "Add Box", icon: Plus, color: "green", onClick: () => handleOpenBoxModal("add") },
+                                            { label: "Edit Box", icon: Pencil, color: "green", onClick: () => handleOpenBoxModal("edit"), separator: true },
                                             { label: "Transform Inventory", icon: ArrowRight, color: "orange", onClick: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalTransform(true); } },
                                             { label: "Change Prices", icon: Pencil, color: "blue", onClick: handleToggleChangePrices },
                                             { label: "RePacking", icon: Package, color: "blue", onClick: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalRepacking(true); }, separator: true },
@@ -1020,7 +1085,7 @@ export default function InventoryEntryPage() {
                                                     const rdy  = Boolean(row.READY_TRAN) ? "OK" : "";
                                                     const stk  = Number(row.STOCK ?? row.WH_STOCK ?? 0);
                                                     return (
-                                                        <tr key={i} onClick={() => handleSelectBox(row)}
+                                                        <tr key={i} onClick={() => handleSelectBox(row)} onDoubleClick={() => { handleSelectBox(row); handleOpenBoxModal("edit", t(row.UNICO)); }}
                                                             className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}
                                                             style={!sel ? subtleColorFromInt(row.BACKCOLOR) : undefined}>
                                                             <td className={cn("p-2 text-center", dly > 0 ? "text-red-600" : "text-gray-300")}>{dly || ""}</td>
@@ -1345,7 +1410,7 @@ export default function InventoryEntryPage() {
                                                 &larr; Back
                                             </button>
                                         )}
-                                        <button onClick={() => setModalAddPO(true)}
+                                        <button onClick={() => toast.info("Add P.O to Inventory — coming soon (needs a destination-packing design, see \"Add from PO\" on the AWB's Packings tab for the equivalent per-PO flow).")}
                                             className="flex items-center gap-1.5 h-7 px-3 bg-green-600 hover:bg-green-500 text-white rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
                                             <Plus size={14} /> Add P.O
                                         </button>
@@ -1464,26 +1529,22 @@ export default function InventoryEntryPage() {
                                         ))}
                                     </select>
                                 </div>
-                                <div className="flex flex-col gap-0.5 items-start">
-                                    <label className={fLabel}>Inhouse</label>
-                                    <input type="checkbox" checked={Boolean(packForm.inhouse)} onChange={e => setPackForm((p: any) => ({ ...p, inhouse: e.target.checked }))} className="w-5 h-5 mt-1 accent-[#FB7506]" />
-                                </div>
                                 <div className="flex flex-col gap-0.5">
                                     <label className={fLabel}>Packing No.</label>
                                     <input value={t(packForm.packing_no)} onChange={e => setPackForm((p: any) => ({ ...p, packing_no: e.target.value }))} className={fInput} />
                                 </div>
                                 <div className="flex flex-col gap-0.5">
-                                    <label className={fLabel}>AWB Code</label>
-                                    <input value={t(packForm.awbcode)} onChange={e => setPackForm((p: any) => ({ ...p, awbcode: e.target.value }))} className={fInput} />
-                                </div>
-                                <div className="flex flex-col gap-0.5">
                                     <label className={fLabel}>Airline</label>
-                                    <select value={t(packForm.airline_uq)} onChange={e => setPackForm((p: any) => ({ ...p, airline_uq: e.target.value }))} className={fInput}>
+                                    <select value={t(packForm.airline_code)} onChange={e => setPackForm((p: any) => ({ ...p, airline_code: e.target.value }))} className={fInput}>
                                         <option value="">-- None --</option>
                                         {airlines.map((a: any) => (
-                                            <option key={t(a.UNICO)} value={t(a.UNICO)}>{t(a.AIRLINE ?? a.DESCRIPTION ?? a.UNICO)}</option>
+                                            <option key={t(a.COD_LINEA)} value={t(a.COD_LINEA)}>{t(a.AIRLINE ?? a.COD_LINEA)}</option>
                                         ))}
                                     </select>
+                                </div>
+                                <div className="flex flex-col gap-0.5">
+                                    <label className={fLabel}>AWB Number (8 digits)</label>
+                                    <input value={t(packForm.awbnumber)} onChange={e => setPackForm((p: any) => ({ ...p, awbnumber: e.target.value.replace(/\D/g, "").substring(0, 8) }))} className={fInput + " font-mono"} maxLength={8} />
                                 </div>
                                 <div className="flex flex-col gap-0.5">
                                     <label className={fLabel}>Invoice No.</label>
@@ -1578,54 +1639,82 @@ export default function InventoryEntryPage() {
                                     </select>
                                 </div>
                                 {/* Product */}
-                                <div className="sm:col-span-2 flex flex-col gap-0.5">
+                                <div className="sm:col-span-2 flex flex-col gap-0.5 relative">
                                     <label className={fLabel}>Product *</label>
                                     <div className="flex gap-1">
-                                        <input value={t(boxForm.product_desc || boxForm.product_uq)} readOnly
-                                            className={fInput + " flex-1 bg-gray-50 cursor-not-allowed"} placeholder="Select product..." />
-                                        <input value={t(boxForm.product_uq)} onChange={e => setBoxField("product_uq", e.target.value)}
-                                            className={fInput + " w-20 font-mono"} placeholder="UQ" />
+                                        <input
+                                            value={prodPickQuery}
+                                            onChange={e => { setProdPickQuery(e.target.value); setBoxField("product_uq", ""); }}
+                                            onKeyDown={e => e.key === "Enter" && doProdPickSearch()}
+                                            className={fInput + " flex-1"} placeholder="Search product..." />
+                                        <button onClick={doProdPickSearch} type="button"
+                                            className="h-7 px-2 bg-gray-700 hover:bg-gray-800 text-white rounded flex items-center gap-1 shrink-0">
+                                            {prodPickSearching ? <RefreshCcw size={11} className="animate-spin" /> : <Search size={11} />}
+                                        </button>
                                     </div>
+                                    {prodPickResults.length > 0 && (
+                                        <div className="absolute top-full left-0 right-0 z-10 mt-0.5 max-h-40 overflow-y-auto border border-gray-200 rounded bg-white shadow-lg">
+                                            {prodPickResults.map((p: any, i: number) => (
+                                                <div key={i} onClick={() => pickBoxProduct(p)}
+                                                    className="px-2 py-1 text-xs cursor-pointer hover:bg-blue-50 border-b border-gray-50 last:border-0 truncate">
+                                                    {t(p.DESCRIPTION)}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                                 {/* C.POrder */}
                                 <div className="flex flex-col gap-0.5">
                                     <label className={fLabel}>C.POrder #</label>
-                                    <input value={t(boxForm.cporder_no)} onChange={e => setBoxField("cporder_no", e.target.value)} className={fInput} />
+                                    <input value={t(boxForm.cporder_no)} onChange={e => setBoxField("cporder_no", e.target.value.substring(0, 10))} className={fInput} maxLength={10} />
                                 </div>
                                 {/* Box Qty */}
                                 <div className="flex flex-col gap-0.5">
                                     <label className={fLabel}>Box Qty *</label>
                                     <input type="number" value={boxForm.box_qty} onChange={e => setBoxField("box_qty", parseInt(e.target.value) || 0)} className={fInput + " text-right font-bold"} />
                                 </div>
-                                {/* Units x case */}
-                                <div className="flex flex-col gap-0.5">
-                                    <label className={fLabel}>Units x Case</label>
-                                    <input type="number" value={boxForm.up_x_case} onChange={e => setBoxField("up_x_case", parseInt(e.target.value) || 0)} className={fInput + " text-right"} />
-                                </div>
-                                {/* Bunches x case */}
+                                {/* Bunches x Case */}
                                 <div className="flex flex-col gap-0.5">
                                     <label className={fLabel}>Bunches x Case</label>
-                                    <input type="number" value={boxForm.bunches_x_case} onChange={e => setBoxField("bunches_x_case", parseInt(e.target.value) || 0)} className={fInput + " text-right"} />
+                                    <input type="number" value={boxForm.packs_box} onChange={e => setBoxField("packs_box", parseInt(e.target.value) || 0)} className={fInput + " text-right"} />
                                 </div>
                                 {/* Stems x Bunch */}
                                 <div className="flex flex-col gap-0.5">
                                     <label className={fLabel}>Stems x Bunch</label>
-                                    <input type="number" value={boxForm.units_x_bunch} onChange={e => setBoxField("units_x_bunch", parseInt(e.target.value) || 0)} className={fInput + " text-right"} />
+                                    <input type="number" value={boxForm.packs_units} onChange={e => setBoxField("packs_units", parseInt(e.target.value) || 0)} className={fInput + " text-right"} disabled={!boxForm.stem_pack} />
                                 </div>
-                                {/* Total Units (readonly) */}
+                                {/* Stem Pack toggle */}
+                                <div className="flex flex-col gap-0.5 justify-end">
+                                    <label className="flex items-center gap-2 cursor-pointer h-7">
+                                        <input type="checkbox" checked={Boolean(boxForm.stem_pack)} onChange={e => setBoxField("stem_pack", e.target.checked)} className="w-4 h-4 accent-[#FB7506]" />
+                                        <span className="text-xs font-semibold text-gray-700">Stem Pack</span>
+                                    </label>
+                                </div>
+                                {/* Units/Box + Total Units (readonly) */}
+                                <div className="flex flex-col gap-0.5">
+                                    <label className={fLabel}>Units / Box</label>
+                                    <input readOnly value={boxForm.units_x_box} className={fInput + " text-right bg-gray-50"} />
+                                </div>
                                 <div className="flex flex-col gap-0.5">
                                     <label className={fLabel}>Total Units</label>
                                     <input readOnly value={boxForm.total_units} className={fInput + " text-right bg-gray-50 font-bold text-green-700"} />
                                 </div>
-                                {/* Lote */}
-                                <div className="flex flex-col gap-0.5">
-                                    <label className={fLabel}>Lote</label>
-                                    <input type="number" value={boxForm.lote} onChange={e => setBoxField("lote", parseInt(e.target.value) || 0)} className={fInput + " text-right"} />
-                                </div>
+                                {/* Lote (read-only, auto-generated) */}
+                                {modalBoxMode === "edit" && (
+                                    <div className="flex flex-col gap-0.5">
+                                        <label className={fLabel}>Lote</label>
+                                        <input readOnly value={boxForm.lote} className={fInput + " text-right bg-gray-50"} />
+                                    </div>
+                                )}
                                 {/* Cut point */}
                                 <div className="flex flex-col gap-0.5">
-                                    <label className={fLabel}>Cut Point</label>
-                                    <input value={t(boxForm.cut_point)} onChange={e => setBoxField("cut_point", e.target.value)} className={fInput} />
+                                    <label className={fLabel}>Cut Point (0-4)</label>
+                                    <input type="number" min={0} max={4} value={boxForm.cut_point} onChange={e => setBoxField("cut_point", Math.max(0, Math.min(4, parseInt(e.target.value) || 0)))} className={fInput + " text-right"} />
+                                </div>
+                                {/* Box Id / Cust Product Code */}
+                                <div className="flex flex-col gap-0.5">
+                                    <label className={fLabel}>Cust. Product Code / Box Id.</label>
+                                    <input value={t(boxForm.box_id)} onChange={e => setBoxField("box_id", e.target.value.substring(0, 20))} className={fInput} maxLength={20} />
                                 </div>
                             </div>
 
@@ -1634,8 +1723,8 @@ export default function InventoryEntryPage() {
                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Pricing</p>
                                 <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-x-3 gap-y-2 text-xs">
                                     <div className="flex flex-col gap-0.5">
-                                        <label className={fLabel}>Price / Stem</label>
-                                        <input type="number" step="0.0001" value={boxForm.price} onChange={e => setBoxField("price", parseFloat(e.target.value) || 0)} className={fInput + " text-right"} />
+                                        <label className={fLabel}>Price / Unit</label>
+                                        <input type="number" step="0.0001" value={boxForm.price_x_u} onChange={e => setBoxField("price_x_u", parseFloat(e.target.value) || 0)} className={fInput + " text-right"} />
                                     </div>
                                     <div className="flex flex-col gap-0.5">
                                         <label className={fLabel}>T. Price</label>
@@ -1646,16 +1735,12 @@ export default function InventoryEntryPage() {
                                         <input type="number" step="0.0001" value={boxForm.f_cost_x_u} onChange={e => setBoxField("f_cost_x_u", parseFloat(e.target.value) || 0)} className={fInput + " text-right"} />
                                     </div>
                                     <div className="flex flex-col gap-0.5">
-                                        <label className={fLabel}>F. Cost</label>
-                                        <input readOnly value={fmt2(boxForm.f_cost)} className={fInput + " text-right bg-gray-50"} />
-                                    </div>
-                                    <div className="flex flex-col gap-0.5">
                                         <label className={fLabel}>C Cost x U.</label>
-                                        <input type="number" step="0.0001" value={boxForm.c_cost_x_u} onChange={e => setBoxField("c_cost_x_u", parseFloat(e.target.value) || 0)} className={fInput + " text-right"} />
+                                        <input readOnly value={fmt4(boxForm.c_cost_x_u)} className={fInput + " text-right bg-gray-50"} title="Total charges / total units" />
                                     </div>
                                     <div className="flex flex-col gap-0.5">
-                                        <label className={fLabel}>T. Cost</label>
-                                        <input readOnly value={fmt2(boxForm.t_cost)} className={fInput + " text-right bg-gray-50"} />
+                                        <label className={fLabel}>T. Cost x U.</label>
+                                        <input readOnly value={fmt4(boxForm.t_cost_x_u)} className={fInput + " text-right bg-gray-50"} />
                                     </div>
                                 </div>
                             </div>
@@ -1665,11 +1750,11 @@ export default function InventoryEntryPage() {
                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Charges per Box</p>
                                 <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-x-3 gap-y-2 text-xs">
                                     {[
-                                        { key: "freight_x_bx",  label: "Freight x Bx" },
-                                        { key: "duties_x_bx",   label: "Duties x Bx" },
-                                        { key: "broker_x_bx",   label: "Broker x Bx" },
-                                        { key: "handling_x_bx", label: "Handling x Bx" },
-                                        { key: "ocharges_x_bx", label: "Other x Bx" },
+                                        { key: "freight_cost",  label: "Freight x Bx" },
+                                        { key: "duties_cost",   label: "Duties x Bx" },
+                                        { key: "broker_cost",   label: "Broker x Bx" },
+                                        { key: "handling_cost", label: "Handling x Bx" },
+                                        { key: "charge_cost",   label: "Other x Bx" },
                                     ].map(f => (
                                         <div key={f.key} className="flex flex-col gap-0.5">
                                             <label className={fLabel}>{f.label}</label>
@@ -1687,26 +1772,10 @@ export default function InventoryEntryPage() {
 
                             {/* Extra fields */}
                             <div className="border-t border-gray-100 pt-2">
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-3 gap-y-2 text-xs">
-                                    <div className="sm:col-span-2 flex flex-col gap-0.5">
-                                        <label className={fLabel}>Inventory Remarks</label>
-                                        <textarea value={t(boxForm.remarks)} onChange={e => setBoxField("remarks", e.target.value)}
-                                            rows={2} className="fos-input text-xs resize-none py-1" />
-                                    </div>
-                                    <div className="flex flex-col gap-0.5">
-                                        <label className={fLabel}>Cust. Product Code</label>
-                                        <input value={t(boxForm.cust_product_code)} onChange={e => setBoxField("cust_product_code", e.target.value)} className={fInput} />
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-6 mt-2">
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input type="checkbox" checked={Boolean(boxForm.confir_box)} onChange={e => setBoxField("confir_box", e.target.checked)} className="w-4 h-4 accent-[#FB7506]" />
-                                        <span className="text-xs font-semibold text-gray-700">Confirmed Box</span>
-                                    </label>
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input type="checkbox" checked={Boolean(boxForm.sold_boxes)} onChange={e => setBoxField("sold_boxes", e.target.checked)} className="w-4 h-4 accent-[#FB7506]" />
-                                        <span className="text-xs font-semibold text-gray-700">Sold Boxes</span>
-                                    </label>
+                                <div className="flex flex-col gap-0.5">
+                                    <label className={fLabel}>Inventory Notes</label>
+                                    <textarea value={t(boxForm.inventory_notes)} onChange={e => setBoxField("inventory_notes", e.target.value.substring(0, 250))}
+                                        rows={2} className="fos-input text-xs resize-none py-1" maxLength={250} />
                                 </div>
                             </div>
                         </div>
@@ -1732,17 +1801,17 @@ export default function InventoryEntryPage() {
                                 Current AWB: <span className="font-mono font-bold text-gray-800">{lcawbcode}</span>
                             </div>
                             <div className="flex flex-col gap-0.5">
-                                <label className={fLabel}>New AWB Code *</label>
-                                <input value={chgAwbForm.awbcode} onChange={e => setChgAwbForm(p => ({ ...p, awbcode: e.target.value }))} className={fInput} />
-                            </div>
-                            <div className="flex flex-col gap-0.5">
-                                <label className={fLabel}>Airline</label>
-                                <select value={chgAwbForm.airline_uq} onChange={e => setChgAwbForm(p => ({ ...p, airline_uq: e.target.value }))} className={fInput}>
+                                <label className={fLabel}>Airline *</label>
+                                <select value={chgAwbForm.airline_code} onChange={e => setChgAwbForm(p => ({ ...p, airline_code: e.target.value }))} className={fInput}>
                                     <option value="">-- None --</option>
                                     {airlines.map((a: any) => (
-                                        <option key={t(a.UNICO)} value={t(a.UNICO)}>{t(a.AIRLINE ?? a.DESCRIPTION ?? a.UNICO)}</option>
+                                        <option key={t(a.COD_LINEA)} value={t(a.COD_LINEA)}>{t(a.AIRLINE ?? a.COD_LINEA)}</option>
                                     ))}
                                 </select>
+                            </div>
+                            <div className="flex flex-col gap-0.5">
+                                <label className={fLabel}>New AWB Number (8 digits) *</label>
+                                <input value={chgAwbForm.awbnumber} onChange={e => setChgAwbForm(p => ({ ...p, awbnumber: e.target.value.replace(/\D/g, "").substring(0, 8) }))} className={fInput + " font-mono"} maxLength={8} />
                             </div>
                             <div className="flex flex-col gap-0.5">
                                 <label className={fLabel}>Invoice Date</label>
@@ -1948,12 +2017,6 @@ export default function InventoryEntryPage() {
                 onSuccess={() => { refetchPLC(); qc.invalidateQueries({ queryKey: ["ie-packing-x-awb"] }); logAction("Edit", lcpack_uq, AUDIT_MAP["available-date"].ext); }}
             />
 
-            {/* ─── Add P.O to Inventory Modal ───────────────────────────────────────── */}
-            <ModalAddPOToInventory
-                open={modalAddPO}
-                onClose={() => setModalAddPO(false)}
-                onSuccess={() => { qc.invalidateQueries({ queryKey: ["ie-po-summary", ldship_date] }); logAction("Insert", "from_porder", AUDIT_MAP["from-porder"].ext); }}
-            />
             <AppFooter areaLabel="Inventory" />
         </div>
     );

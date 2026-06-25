@@ -10,7 +10,7 @@ const bit = (v: any) => (v ? 1 : 0);
 export async function GET(_req: NextRequest, { params }: P) {
     const { pack_uq } = await params;
     try {
-        const r = await executeProcedure("sp_flower_packing_uq", { lcunico: pack_uq });
+        const r = await executeProcedure("sp_flower_packing_uq", { lcpacking_uq: pack_uq });
         return NextResponse.json(r.recordset[0] ?? null);
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });
@@ -22,20 +22,17 @@ export async function PUT(req: NextRequest, { params }: P) {
     const b = await req.json();
     try {
         const r = await executeProcedure("sp_flower_packing_update", {
-            lcunico:            pack_uq,
-            lcgrower_uq:        str(b.grower_uq,  8),
-            lcpacking_no:       str(b.packing_no, 20),
-            ldinvoice_date:     b.invoice_date ? new Date(b.invoice_date) : new Date(),
-            lcinvoice_no:       str(b.invoice_no, 20),
-            lcawbcode:          str(b.awbcode,    20),
-            lcairline_uq:       str(b.airline_uq,  8),
-            lcdetails:          str(b.details,   200),
-            lnporder_no:        int(b.porder_no),
-            lcwphysical_uq:     str(b.wphysical_uq, 8),
-            ldavailable_date:   b.available_date ? new Date(b.available_date) : new Date(),
-            llinhouse:          bit(b.inhouse),
-            llconsolidated:     bit(b.consolidated),
-            lcuser_uq:          str(b.user_uq, 8),
+            unico:           pack_uq,
+            packing_no:      str(b.packing_no, 20),
+            invoice_no:      str(b.invoice_no, 20),
+            grower_uq:       str(b.grower_uq,  8),
+            awbcode:         str(b.awbcode,    11),
+            date_invo:       b.invoice_date ? new Date(b.invoice_date) : new Date(),
+            details:         str(b.details,  254),
+            wphysical_uq:    str(b.wphysical_uq, 8),
+            lnporder_no:     int(b.porder_no),
+            ldavailable:     b.available_date ? new Date(b.available_date) : new Date(),
+            llconsolidated:  bit(b.consolidated),
         });
         const row = r.recordset?.[0];
         if (row?.error === 1 || row?.Error === 1) return NextResponse.json({ success: false, error: row.message || row.Message }, { status: 400 });

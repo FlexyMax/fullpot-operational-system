@@ -5,24 +5,13 @@ type P = { params: Promise<{ pack_uq: string }> };
 
 const str = (v: any, len = 255) => String(v ?? "").trim().substring(0, len);
 
-export async function GET(_req: NextRequest, { params }: P) {
-    const { pack_uq } = await params;
-    try {
-        const r = await executeProcedure("sp_flower_packings_to_move", { lcunico: pack_uq });
-        return NextResponse.json(r.recordset ?? []);
-    } catch (err: any) {
-        return NextResponse.json({ error: err.message }, { status: 500 });
-    }
-}
-
 export async function POST(req: NextRequest, { params }: P) {
     const { pack_uq } = await params;
     const b = await req.json();
     try {
         const r = await executeProcedure("sp_flower_packing_to_whouse", {
-            lcunico:       pack_uq,
+            lcpacking_uq:  pack_uq,
             lcwhouse_uq:   str(b.whouse_uq, 8),
-            lcuser_uq:     str(b.user_uq,   8),
         });
         const row = r.recordset?.[0];
         if (row?.error === 1 || row?.Error === 1) return NextResponse.json({ success: false, error: row.message || row.Message }, { status: 400 });
