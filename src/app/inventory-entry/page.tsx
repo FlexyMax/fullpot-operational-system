@@ -451,6 +451,18 @@ export default function InventoryEntryPage() {
         } catch (e: any) { toast.error(e.message); }
     }, [lcpack_uq, lcawbcode]);
 
+    const handleSendLabel = async () => {
+        if (!lcpack_uq) { toast.error("Select a packing first."); return; }
+        if (!confirm("Do you want to resend the label?")) return;
+        try {
+            const res = await fetch(`/api/inventory-entry/packings/${lcpack_uq}/send-label`, { method: "POST" });
+            const d = await res.json();
+            if (!d.success) throw new Error(d.error || "Send Label failed");
+            logAction("Edit", lcpack_uq, "Send Label FlexyMaxApp");
+            toast.success("Label marked as sent.");
+        } catch (e: any) { toast.error(e.message); }
+    };
+
     const handleDeletePacking = async () => {
         if (!lcpack_uq) { toast.error("Select a packing first."); return; }
         if (!perms.canDelete) { toast.error("You are not authorized to delete records."); return; }
@@ -951,13 +963,13 @@ export default function InventoryEntryPage() {
                                         { label: "WH Totals", icon: BarChart2, color: "blue", onClick: () => setModalWhTotals(true) },
                                         { label: "Copy", icon: Copy, color: "blue", onClick: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalCopy(true); }, separator: true },
                                         { label: "AWB Cust. PO", icon: FileText, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/awb-cporder?date=${lddate}&awb=${encodeURIComponent(lcawbcode || "%")}&pack_uq=${encodeURIComponent(lcpack_uq)}`), disabled: !lcpack_uq },
-                                        { label: "Label Laser", icon: FileText, color: "gray", onClick: () => toast.info("Label Laser — coming soon.") },
+                                        { label: "Label Laser", icon: FileText, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/label-laser?pack_uq=${encodeURIComponent(lcpack_uq)}`), disabled: !lcpack_uq },
                                         { label: "Packing", icon: Package, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/packing-arrived?date=${lddate}&awb=${encodeURIComponent(lcawbcode || "%")}&pack_uq=${encodeURIComponent(lcpack_uq)}&wphysical_uq=%25`), disabled: !lcpack_uq },
                                         { label: "COff", icon: FileText, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/cut-off?date=${lddate}&awb=${encodeURIComponent(lcawbcode || "%")}&pack_uq=${encodeURIComponent(lcpack_uq)}`), disabled: !lcpack_uq },
-                                        { label: "PDF Label", icon: FileText, color: "gray", onClick: () => toast.info("PDF Label — coming soon.") },
-                                        { label: "Z300", icon: FileText, color: "gray", onClick: () => toast.info("Z300 — coming soon.") },
-                                        { label: "Z 4M", icon: FileText, color: "gray", onClick: () => toast.info("Z 4M — coming soon.") },
-                                        { label: "RPK", icon: FileText, color: "gray", onClick: () => toast.info("RPK — coming soon.") },
+                                        { label: "PDF Label", icon: FileText, color: "gray", onClick: () => handleSendLabel(), disabled: !lcpack_uq },
+                                        { label: "Z300", icon: FileText, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/label-zebra?pack_uq=${encodeURIComponent(lcpack_uq)}&box_uq=%25`), disabled: !lcpack_uq },
+                                        { label: "Z 4M", icon: FileText, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/label-zebra4m?pack_uq=${encodeURIComponent(lcpack_uq)}&box_uq=%25`), disabled: !lcpack_uq },
+                                        { label: "RPK", icon: FileText, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/label-zebra-repacking?date=${lddate}&awbcode=${encodeURIComponent(lcawbcode || "%")}&pack_uq=${encodeURIComponent(lcpack_uq)}&box_uq=%25`), disabled: !lcpack_uq },
                                         { label: "Header 2", icon: FileText, color: "gray", onClick: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalHeader2(true); }, separator: true },
                                         { label: "Filter Grower", icon: Flower2, color: "purple", onClick: () => setModalFiltGrowers(true) },
                                         { label: "Filter Cust.", icon: ShoppingCart, color: "purple", onClick: () => setModalFiltCust(true) },
@@ -1057,8 +1069,8 @@ export default function InventoryEntryPage() {
                                             { label: "Add from PO", icon: ClipboardList, color: "green", onClick: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalBoxPO(true); }, separator: true },
                                             { label: "Notes", icon: FileText, color: "purple", onClick: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalNotes(true); } },
                                             { label: "Composition", icon: Layers, color: "purple", onClick: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalComposition(true); }, separator: true },
-                                            { label: "Zebra by Lot", icon: FileText, color: "gray", onClick: () => toast.info("Zebra by Lot — coming soon.") },
-                                            { label: "Meto by Lot", icon: FileText, color: "gray", onClick: () => toast.info("Meto by Lot — coming soon.") },
+                                            { label: "Zebra by Lot", icon: FileText, color: "gray", onClick: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } openReport(`/api/inventory-entry/reports/label-zebra?pack_uq=${encodeURIComponent(lcpack_uq)}&box_uq=${encodeURIComponent(lcpk_box_uq)}`); } },
+                                            { label: "Meto by Lot", icon: FileText, color: "gray", onClick: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } openReport(`/api/inventory-entry/reports/label-meto?pack_uq=${encodeURIComponent(lcpack_uq)}&box_uq=${encodeURIComponent(lcpk_box_uq)}`); } },
                                             { label: "Selection", icon: Trash2, color: "red", onClick: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalDelDetails(true); } },
                                         ]} />
                                     </div>
