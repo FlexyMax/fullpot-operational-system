@@ -37,6 +37,7 @@ import { ModalBoxTransform }         from "@/components/inventory-entry/ModalBox
 import { ModalBoxRepacking }         from "@/components/inventory-entry/ModalBoxRepacking";
 import { ModalAddProductToPacking }  from "@/components/inventory-entry/ModalAddProductToPacking";
 import { ModalAvailableDate }        from "@/components/inventory-entry/ModalAvailableDate";
+import { ModalEditBox }              from "@/components/inventory-entry/ModalEditBox";
 import { AuditLogModal }             from "@/components/AuditLogModal";
 const EMPTY_ARR: any[] = [];
 
@@ -86,33 +87,6 @@ const EMPTY_PACKING: any = {
     invoice_no: "", airline_code: "", awbnumber: "", details: "",
     porder_no: 0, wphysical_uq: "", available_date: today(),
     consolidated: false,
-};
-
-const EMPTY_BOX: any = {
-    unico: "", product_uq: "", product_desc: "", case_uq: "",
-    cporder_no: "", box_qty: 0, packs_box: 0, packs_units: 0, stem_pack: false,
-    lote: 0, cut_point: 2, box_id: "",
-    price_x_u: 0, f_cost_x_u: 0,
-    freight_cost: 0, duties_cost: 0, broker_cost: 0, handling_cost: 0, charge_cost: 0,
-    inventory_notes: "",
-};
-
-// VFP calc: units/box = stem_pack ? packs_box*packs_units : packs_box; cost/unit derived from charges, not stored directly
-const calcBox = (f: any) => {
-    const unitsXBox  = f.stem_pack ? (f.packs_box || 0) * (f.packs_units || 0) : (f.packs_box || 0);
-    const totalUnits = unitsXBox * (f.box_qty || 0);
-    const tCharges   = ((f.freight_cost || 0) + (f.duties_cost || 0) + (f.broker_cost || 0) +
-                        (f.handling_cost || 0) + (f.charge_cost || 0)) * (f.box_qty || 0);
-    const cCostXU    = totalUnits > 0 ? tCharges / totalUnits : 0;
-    return {
-        ...f,
-        units_x_box: unitsXBox,
-        total_units: totalUnits,
-        t_charges:   tCharges,
-        c_cost_x_u:  cCostXU,
-        t_cost_x_u:  cCostXU + (f.f_cost_x_u || 0),
-        t_price:     totalUnits * (f.price_x_u || 0),
-    };
 };
 
 type LeftTab = "awbpackings" | "products" | "plcontrol" | "awbsearch" | "polist";
@@ -188,15 +162,8 @@ export default function InventoryEntryPage() {
     const [packSaving,       setPackSaving]       = useState(false);
     const [packError,        setPackError]        = useState<string | null>(null);
 
-    // ── Box modal ─────────────────────────────────────────────────────────────
-    const [modalBox,     setModalBox]     = useState(false);
-    const [modalBoxMode, setModalBoxMode] = useState<"add" | "edit">("add");
-    const [boxForm,      setBoxForm]      = useState<any>(EMPTY_BOX);
-    const [boxSaving,    setBoxSaving]    = useState(false);
-    const [boxError,     setBoxError]     = useState<string | null>(null);
-    const [prodPickQuery,      setProdPickQuery]      = useState("");
-    const [prodPickResults,    setProdPickResults]    = useState<any[]>([]);
-    const [prodPickSearching,  setProdPickSearching]  = useState(false);
+    // ── Box edit modal ────────────────────────────────────────────────────────
+    const [modalEditBox, setModalEditBox] = useState(false);
 
     // ── Change AWB modal ──────────────────────────────────────────────────────
     const [modalChgAwb, setModalChgAwb] = useState(false);
@@ -562,115 +529,20 @@ export default function InventoryEntryPage() {
     };
 
     // ── Box actions ───────────────────────────────────────────────────────────
-    const handleOpenBoxModal = async (mode: "add" | "edit", boxUnicoOverride?: string) => {
+    const handleOpenEditBox = (boxUnicoOverride?: string) => {
         const editUnico = boxUnicoOverride || lcpk_box_uq;
-        if (mode === "edit") {
-            if (!editUnico) { toast.error("Select a box first."); return; }
-            if (!perms.canEdit) { toast.error("Not authorized."); return; }
-            try {
-                const r = await fetch(`/api/inventory-entry/boxes/${editUnico}`);
-                const d = await r.json();
-                if (!d) { toast.error("Box not found."); return; }
-                const fill: any = {};
-                for (const [k, v] of Object.entries(d)) fill[k.toLowerCase()] = v;
-                setBoxForm(calcBox({
-                    unico:            t(fill.unico),
-                    product_uq:       t(fill.box_pack_uq ?? fill.product_uq),
-                    product_desc:     t(fill.description ?? fill.product_desc ?? ""),
-                    case_uq:          t(fill.case_uq),
-                    cporder_no:       t(fill.cporder_no),
-                    box_qty:          parseInt(fill.box_qty ?? 0) || 0,
-                    packs_box:        parseInt(fill.packs_box ?? 0) || 0,
-                    packs_units:      parseInt(fill.up_x_pack ?? 0) || 0,
-                    stem_pack:        Boolean(fill.stem_pack),
-                    lote:             parseInt(fill.lote ?? 0) || 0,
-                    cut_point:        parseInt(fill.cut_point ?? 2) || 2,
-                    box_id:           t(fill.box_id),
-                    price_x_u:        parseFloat(fill.price_x_u ?? 0) || 0,
-                    f_cost_x_u:       parseFloat(fill.f_cost_x_u ?? 0) || 0,
-                    freight_cost:     parseFloat(fill.freight_cost ?? 0) || 0,
-                    duties_cost:      parseFloat(fill.duties_cost ?? 0) || 0,
-                    broker_cost:      parseFloat(fill.broker_cost ?? 0) || 0,
-                    handling_cost:    parseFloat(fill.handling_cost ?? 0) || 0,
-                    charge_cost:      parseFloat(fill.charge_cost ?? 0) || 0,
-                    inventory_notes:  t(fill.inventory_notes),
-                }));
-                setProdPickQuery(t(fill.description ?? ""));
-            } catch (e: any) { toast.error(e.message); return; }
-        } else {
-            if (!lcpack_uq) { toast.error("Select a packing first."); return; }
-            if (!perms.canCreate) { toast.error("Not authorized."); return; }
-            setBoxForm({ ...EMPTY_BOX });
-            setProdPickQuery("");
-        }
-        setProdPickResults([]);
-        setBoxError(null);
-        setModalBoxMode(mode);
-        setModalBox(true);
+        if (!editUnico) { toast.error("Select a box first."); return; }
+        if (!perms.canEdit) { toast.error("Not authorized."); return; }
+        if (editUnico !== lcpk_box_uq) setLcpk_box_uq(editUnico);
+        setModalEditBox(true);
     };
 
-    const setBoxField = (key: string, val: any) => setBoxForm((p: any) => calcBox({ ...p, [key]: val }));
-
-    const doProdPickSearch = async () => {
-        if (!prodPickQuery.trim()) return;
-        setProdPickSearching(true);
-        try {
-            const r = await fetch(`/api/inventory-entry/products?page=1&pageSize=20&search=${encodeURIComponent(prodPickQuery)}`);
-            const d = await r.json();
-            setProdPickResults(norm((d.rows ?? []) as any[]));
-        } catch {
-            setProdPickResults([]);
-        } finally {
-            setProdPickSearching(false);
-        }
-    };
-
-    const pickBoxProduct = (p: any) => {
-        setBoxForm((prev: any) => calcBox({
-            ...prev,
-            product_uq:   t(p.UNICO),
-            product_desc: t(p.DESCRIPTION),
-            case_uq:      t(p.CASE_UQ) || prev.case_uq,
-            packs_box:    parseInt(p.UP_X_CASE) || 0,
-            packs_units:  parseInt(p.UP_X_PACK) || 0,
-            stem_pack:    Boolean(p.STEM_PACK),
-            price_x_u:    parseFloat(p.SALES_PRICE) || 0,
-        }));
-        setProdPickResults([]);
-        setProdPickQuery(t(p.DESCRIPTION));
-    };
-
-    const handleSaveBox = async () => {
-        if (!t(boxForm.product_uq)) { setBoxError("Product is required."); return; }
-        if (!boxForm.box_qty)       { setBoxError("Box Qty is required."); return; }
-        setBoxSaving(true); setBoxError(null);
-        try {
-            const payload = { ...boxForm, pack_uq: lcpack_uq, user_uq: (session?.user as any)?.id || "" };
-            let unico = boxForm.unico;
-            if (modalBoxMode === "add") {
-                const res = await fetch("/api/inventory-entry/boxes", {
-                    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
-                });
-                const d = await res.json();
-                if (!d.success) throw new Error(d.error || "Insert failed");
-                unico = d.unico;
-                logAction("Insert", unico || "NEW", AUDIT_MAP["insert-box"].ext);
-                toast.success("Box added.");
-                setLcpk_box_uq(unico || "");
-            } else {
-                const res = await fetch(`/api/inventory-entry/boxes/${unico}`, {
-                    method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
-                });
-                const d = await res.json();
-                if (!d.success) throw new Error(d.error || "Update failed");
-                logAction("Edit", unico, AUDIT_MAP["update-box"].ext);
-                toast.success("Box updated.");
-            }
-            setModalBox(false);
-            refetchBoxes();
-            qc.invalidateQueries({ queryKey: ["ie-packing-details", lcpack_uq] });
-        } catch (e: any) { setBoxError(e.message); }
-        finally { setBoxSaving(false); }
+    const handleAddBox = () => {
+        if (!lcpack_uq) { toast.error("Select a packing first."); return; }
+        if (!perms.canCreate) { toast.error("Not authorized."); return; }
+        setActiveTab("products");
+        setTabLoaded(prev => ({ ...prev, products: true }));
+        toast.info("Search and select a product below, then click \"Add to Packing\".");
     };
 
     const handleDeleteBox = async () => {
@@ -1058,8 +930,9 @@ export default function InventoryEntryPage() {
                                         )}
                                         <AuditLogModal recordId={lcpk_box_uq} disabled={!lcpk_box_uq} size="sm" />
                                         <GridMenu items={[
-                                            { label: "Add Box", icon: Plus, color: "green", onClick: () => handleOpenBoxModal("add") },
-                                            { label: "Edit Box", icon: Pencil, color: "green", onClick: () => handleOpenBoxModal("edit"), separator: true },
+                                            { label: "Add Box", icon: Plus, color: "green", onClick: () => handleAddBox() },
+                                            { label: "Edit Box", icon: Pencil, color: "green", onClick: () => handleOpenEditBox() },
+                                            { label: "Delete Box", icon: Trash2, color: "red", onClick: () => handleDeleteBox(), separator: true },
                                             { label: "Transform Inventory", icon: ArrowRight, color: "orange", onClick: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalTransform(true); } },
                                             { label: "Change Prices", icon: Pencil, color: "blue", onClick: handleToggleChangePrices },
                                             { label: "RePacking", icon: Package, color: "blue", onClick: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalRepacking(true); }, separator: true },
@@ -1097,7 +970,7 @@ export default function InventoryEntryPage() {
                                                     const rdy  = Boolean(row.READY_TRAN) ? "OK" : "";
                                                     const stk  = Number(row.STOCK ?? row.WH_STOCK ?? 0);
                                                     return (
-                                                        <tr key={i} onClick={() => handleSelectBox(row)} onDoubleClick={() => { handleSelectBox(row); handleOpenBoxModal("edit", t(row.UNICO)); }}
+                                                        <tr key={i} onClick={() => handleSelectBox(row)} onDoubleClick={() => handleOpenEditBox(t(row.UNICO))}
                                                             className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}
                                                             style={!sel ? subtleColorFromInt(row.BACKCOLOR) : undefined}>
                                                             <td className={cn("p-2 text-center", dly > 0 ? "text-red-600" : "text-gray-300")}>{dly || ""}</td>
@@ -1598,203 +1471,6 @@ export default function InventoryEntryPage() {
                 </div>
             )}
 
-            {/* ─── Box Entry Modal ──────────────────────────────────────────────────── */}
-            {modalBox && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
-                    onClick={() => setModalBox(false)}>
-                    <div className="bg-white rounded-t-2xl sm:rounded-lg shadow-2xl w-full sm:max-w-4xl h-[95vh] sm:max-h-[92vh] flex flex-col overflow-hidden"
-                        onClick={e => e.stopPropagation()}>
-
-                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 rounded-t-lg shrink-0">
-                            <div className="flex items-center gap-2">
-                                <Boxes size={16} className="text-[#FB7506]" />
-                                <span className="font-black text-[10px] text-white uppercase tracking-widest">
-                                    {modalBoxMode === "add" ? "Add Box — Inventory Entry" : "Edit Box"}
-                                </span>
-                                {boxError && (
-                                    <span className="flex items-center gap-1 text-amber-400 text-[10px] font-bold ml-2 truncate">
-                                        <AlertCircle size={12} />{boxError}
-                                    </span>
-                                )}
-                            </div>
-                            <div className="flex items-center gap-1.5 px-2">
-                                <button onClick={handleSaveBox} disabled={boxSaving}
-                                    className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all">
-                                    {boxSaving ? <RefreshCcw size={14} className="animate-spin" /> : <Save size={14} />}
-                                    {boxSaving ? "Saving..." : "Save"}
-                                </button>
-                                <button onClick={() => setModalBox(false)}
-                                    className="flex items-center gap-1.5 bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all">
-                                    <X size={14} /> Cancel
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="overflow-y-auto flex-1 p-3 md:p-4 space-y-3">
-                            {/* Readonly context */}
-                            <div className="flex items-center gap-4 bg-gray-50 rounded px-3 py-1.5 border border-gray-100 text-xs">
-                                <span className="text-gray-500 font-bold">Packing: <span className="text-gray-800">{selPacking ? t(selPacking.PACKING_NO) : lcpack_uq}</span></span>
-                                <span className="text-gray-500 font-bold">AWB: <span className="font-mono text-gray-800">{lcawbcode}</span></span>
-                                <span className="text-gray-500 font-bold">Vendor: <span className="text-gray-800">{selPacking ? t(selPacking.GROWER) : ""}</span></span>
-                            </div>
-
-                            {/* Main fields grid */}
-                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-2 text-xs">
-                                {/* Case */}
-                                <div className="flex flex-col gap-0.5">
-                                    <label className={fLabel}>Case *</label>
-                                    <select value={t(boxForm.case_uq)} onChange={e => setBoxField("case_uq", e.target.value)} className={fInput}>
-                                        <option value="">-- Case --</option>
-                                        {cases.map((c: any) => (
-                                            <option key={t(c.UNICO)} value={t(c.UNICO)}>{t(c.CASE ?? c.DESCRIPTION ?? c.UNICO)}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                {/* Product */}
-                                <div className="sm:col-span-2 flex flex-col gap-0.5 relative">
-                                    <label className={fLabel}>Product *</label>
-                                    <div className="flex gap-1">
-                                        <input
-                                            value={prodPickQuery}
-                                            onChange={e => { setProdPickQuery(e.target.value); setBoxField("product_uq", ""); }}
-                                            onKeyDown={e => e.key === "Enter" && doProdPickSearch()}
-                                            className={fInput + " flex-1"} placeholder="Search product..." />
-                                        <button onClick={doProdPickSearch} type="button"
-                                            className="h-7 px-2 bg-gray-700 hover:bg-gray-800 text-white rounded flex items-center gap-1 shrink-0">
-                                            {prodPickSearching ? <RefreshCcw size={11} className="animate-spin" /> : <Search size={11} />}
-                                        </button>
-                                    </div>
-                                    {prodPickResults.length > 0 && (
-                                        <div className="absolute top-full left-0 right-0 z-10 mt-0.5 max-h-40 overflow-y-auto border border-gray-200 rounded bg-white shadow-lg">
-                                            {prodPickResults.map((p: any, i: number) => (
-                                                <div key={i} onClick={() => pickBoxProduct(p)}
-                                                    className="px-2 py-1 text-xs cursor-pointer hover:bg-blue-50 border-b border-gray-50 last:border-0 truncate">
-                                                    {t(p.DESCRIPTION)}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                                {/* C.POrder */}
-                                <div className="flex flex-col gap-0.5">
-                                    <label className={fLabel}>C.POrder #</label>
-                                    <input value={t(boxForm.cporder_no)} onChange={e => setBoxField("cporder_no", e.target.value.substring(0, 10))} className={fInput} maxLength={10} />
-                                </div>
-                                {/* Box Qty */}
-                                <div className="flex flex-col gap-0.5">
-                                    <label className={fLabel}>Box Qty *</label>
-                                    <input type="number" value={boxForm.box_qty} onChange={e => setBoxField("box_qty", parseInt(e.target.value) || 0)} className={fInput + " text-right font-bold"} />
-                                </div>
-                                {/* Bunches x Case */}
-                                <div className="flex flex-col gap-0.5">
-                                    <label className={fLabel}>Bunches x Case</label>
-                                    <input type="number" value={boxForm.packs_box} onChange={e => setBoxField("packs_box", parseInt(e.target.value) || 0)} className={fInput + " text-right"} />
-                                </div>
-                                {/* Stems x Bunch */}
-                                <div className="flex flex-col gap-0.5">
-                                    <label className={fLabel}>Stems x Bunch</label>
-                                    <input type="number" value={boxForm.packs_units} onChange={e => setBoxField("packs_units", parseInt(e.target.value) || 0)} className={fInput + " text-right"} disabled={!boxForm.stem_pack} />
-                                </div>
-                                {/* Stem Pack toggle */}
-                                <div className="flex flex-col gap-0.5 justify-end">
-                                    <label className="flex items-center gap-2 cursor-pointer h-7">
-                                        <input type="checkbox" checked={Boolean(boxForm.stem_pack)} onChange={e => setBoxField("stem_pack", e.target.checked)} className="w-4 h-4 accent-[#FB7506]" />
-                                        <span className="text-xs font-semibold text-gray-700">Stem Pack</span>
-                                    </label>
-                                </div>
-                                {/* Units/Box + Total Units (readonly) */}
-                                <div className="flex flex-col gap-0.5">
-                                    <label className={fLabel}>Units / Box</label>
-                                    <input readOnly value={boxForm.units_x_box} className={fInput + " text-right bg-gray-50"} />
-                                </div>
-                                <div className="flex flex-col gap-0.5">
-                                    <label className={fLabel}>Total Units</label>
-                                    <input readOnly value={boxForm.total_units} className={fInput + " text-right bg-gray-50 font-bold text-green-700"} />
-                                </div>
-                                {/* Lote (read-only, auto-generated) */}
-                                {modalBoxMode === "edit" && (
-                                    <div className="flex flex-col gap-0.5">
-                                        <label className={fLabel}>Lote</label>
-                                        <input readOnly value={boxForm.lote} className={fInput + " text-right bg-gray-50"} />
-                                    </div>
-                                )}
-                                {/* Cut point */}
-                                <div className="flex flex-col gap-0.5">
-                                    <label className={fLabel}>Cut Point (0-4)</label>
-                                    <input type="number" min={0} max={4} value={boxForm.cut_point} onChange={e => setBoxField("cut_point", Math.max(0, Math.min(4, parseInt(e.target.value) || 0)))} className={fInput + " text-right"} />
-                                </div>
-                                {/* Box Id / Cust Product Code */}
-                                <div className="flex flex-col gap-0.5">
-                                    <label className={fLabel}>Cust. Product Code / Box Id.</label>
-                                    <input value={t(boxForm.box_id)} onChange={e => setBoxField("box_id", e.target.value.substring(0, 20))} className={fInput} maxLength={20} />
-                                </div>
-                            </div>
-
-                            {/* Price fields */}
-                            <div className="border-t border-gray-100 pt-2">
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Pricing</p>
-                                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-x-3 gap-y-2 text-xs">
-                                    <div className="flex flex-col gap-0.5">
-                                        <label className={fLabel}>Price / Unit</label>
-                                        <input type="number" step="0.0001" value={boxForm.price_x_u} onChange={e => setBoxField("price_x_u", parseFloat(e.target.value) || 0)} className={fInput + " text-right"} />
-                                    </div>
-                                    <div className="flex flex-col gap-0.5">
-                                        <label className={fLabel}>T. Price</label>
-                                        <input readOnly value={fmt2(boxForm.t_price)} className={fInput + " text-right bg-gray-50 font-bold"} />
-                                    </div>
-                                    <div className="flex flex-col gap-0.5">
-                                        <label className={fLabel}>F Cost x U.</label>
-                                        <input type="number" step="0.0001" value={boxForm.f_cost_x_u} onChange={e => setBoxField("f_cost_x_u", parseFloat(e.target.value) || 0)} className={fInput + " text-right"} />
-                                    </div>
-                                    <div className="flex flex-col gap-0.5">
-                                        <label className={fLabel}>C Cost x U.</label>
-                                        <input readOnly value={fmt4(boxForm.c_cost_x_u)} className={fInput + " text-right bg-gray-50"} title="Total charges / total units" />
-                                    </div>
-                                    <div className="flex flex-col gap-0.5">
-                                        <label className={fLabel}>T. Cost x U.</label>
-                                        <input readOnly value={fmt4(boxForm.t_cost_x_u)} className={fInput + " text-right bg-gray-50"} />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Charges */}
-                            <div className="border-t border-gray-100 pt-2">
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Charges per Box</p>
-                                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-x-3 gap-y-2 text-xs">
-                                    {[
-                                        { key: "freight_cost",  label: "Freight x Bx" },
-                                        { key: "duties_cost",   label: "Duties x Bx" },
-                                        { key: "broker_cost",   label: "Broker x Bx" },
-                                        { key: "handling_cost", label: "Handling x Bx" },
-                                        { key: "charge_cost",   label: "Other x Bx" },
-                                    ].map(f => (
-                                        <div key={f.key} className="flex flex-col gap-0.5">
-                                            <label className={fLabel}>{f.label}</label>
-                                            <input type="number" step="0.01" value={boxForm[f.key]}
-                                                onChange={e => setBoxField(f.key, parseFloat(e.target.value) || 0)}
-                                                className={fInput + " text-right"} />
-                                        </div>
-                                    ))}
-                                    <div className="flex flex-col gap-0.5">
-                                        <label className={fLabel}>T. Charges</label>
-                                        <input readOnly value={fmt2(boxForm.t_charges)} className={fInput + " text-right bg-gray-50 font-bold text-red-700"} />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Extra fields */}
-                            <div className="border-t border-gray-100 pt-2">
-                                <div className="flex flex-col gap-0.5">
-                                    <label className={fLabel}>Inventory Notes</label>
-                                    <textarea value={t(boxForm.inventory_notes)} onChange={e => setBoxField("inventory_notes", e.target.value.substring(0, 250))}
-                                        rows={2} className="fos-input text-xs resize-none py-1" maxLength={250} />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             {/* ─── Change AWB Modal ─────────────────────────────────────────────────── */}
             {modalChgAwb && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
@@ -1915,6 +1591,16 @@ export default function InventoryEntryPage() {
                 ldship_date={lddate}
                 userId={(session?.user as any)?.id || ""}
                 onSuccess={() => { refetchBoxes(); logAction("Insert", lcpack_uq, AUDIT_MAP["insert-box"].ext); }}
+            />
+
+            {/* ─── Edit Box Modal ───────────────────────────────────────────────────── */}
+            <ModalEditBox
+                open={modalEditBox}
+                onClose={() => setModalEditBox(false)}
+                boxUnico={lcpk_box_uq}
+                cases={cases}
+                userId={(session?.user as any)?.id || ""}
+                onSuccess={() => { refetchBoxes(); qc.invalidateQueries({ queryKey: ["ie-packing-details", lcpack_uq] }); logAction("Edit", lcpk_box_uq, AUDIT_MAP["update-box"].ext); }}
             />
 
             {/* ─── Box WH Control Modal ─────────────────────────────────────────────── */}
