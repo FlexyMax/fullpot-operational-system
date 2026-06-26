@@ -720,7 +720,7 @@ export default function InventoryEntryPage() {
 
                     {/* ══ Tab 1: AWB's Packings ══ */}
                     {activeTab === "awbpackings" && (
-                        <div className="flex flex-col gap-2 h-full">
+                        <div className="flex flex-col gap-2">
 
                             {/* Row 1: Date Picker + AWB List */}
                             <div className="flex gap-2 shrink-0 max-h-[280px]">
@@ -834,7 +834,7 @@ export default function InventoryEntryPage() {
                             </div>
 
                             {/* Vendors toolbar — common per-packing actions surfaced as buttons (full set still in the grid's menu) */}
-                            <div className="flex items-center gap-1.5 px-2 h-9 bg-[#F5F3F3] border border-[#DBD9D9] rounded-lg shrink-0 overflow-x-auto">
+                            <div className="sticky top-0 z-10 flex items-center gap-1.5 px-2 h-9 bg-[#F5F3F3] border border-[#DBD9D9] rounded-lg shrink-0 shadow-sm overflow-x-auto">
                                 <TBtn icon={Check}       label="Open"          color="green"  onClick={() => packAction("open", "Open")} disabled={!lcpack_uq || !perms.canEdit} />
                                 <TBtn icon={X}           label="Close"        color="amber"  onClick={() => packAction("close", "Close")} disabled={!lcpack_uq || !perms.canEdit} />
                                 <TBtn icon={Pencil}      label="Change AWB"   color="blue"   onClick={() => handleOpenChangeAwb()} disabled={!perms.canEdit || !lcpack_uq} />
@@ -931,7 +931,7 @@ export default function InventoryEntryPage() {
                             </div>
 
                             {/* Boxes Detail toolbar — common per-box actions surfaced as buttons (full set still in the grid's menu) */}
-                            <div className="flex items-center gap-1.5 px-2 h-9 bg-[#F5F3F3] border border-[#DBD9D9] rounded-lg shrink-0 overflow-x-auto">
+                            <div className="sticky top-0 z-10 flex items-center gap-1.5 px-2 h-9 bg-[#F5F3F3] border border-[#DBD9D9] rounded-lg shrink-0 shadow-sm overflow-x-auto">
                                 <TBtn icon={Plus}        label="Add Box"      color="green"  onClick={() => handleAddBox()} />
                                 <TBtn icon={Pencil}      label="Edit Box"     color="default" onClick={() => handleOpenEditBox()} disabled={!lcpk_box_uq} />
                                 <TBtn icon={Warehouse}   label="WHControl"    color="blue"   onClick={() => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalBoxWHCtrl(true); }} disabled={!lcpk_box_uq} />
@@ -941,7 +941,7 @@ export default function InventoryEntryPage() {
                             </div>
 
                             {/* Row 3: Boxes Detail */}
-                            <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1 min-h-0">
+                            <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0 h-[450px]">
                                 <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between pl-3 pr-0 shrink-0 gap-2">
                                     <div className="flex items-center gap-2 shrink-0 min-w-0">
                                         <Boxes size={14} className="text-[#FB7506] shrink-0" />
