@@ -350,6 +350,14 @@ export default function InventoryEntryPage() {
     const prodSentinelRef = useRef<HTMLDivElement>(null);
     const awbSentinelRef  = useRef<HTMLDivElement>(null);
 
+    // Horizontal scroll containers for Tab 1's grids — reset to the left on every
+    // selection change so the newly-selected row is always fully visible from column 1.
+    const dateScrollRef    = useRef<HTMLDivElement>(null);
+    const awbListScrollRef = useRef<HTMLDivElement>(null);
+    const vendorsScrollRef = useRef<HTMLDivElement>(null);
+    const boxesScrollRef   = useRef<HTMLDivElement>(null);
+    const resetScroll = (ref: React.RefObject<HTMLDivElement | null>) => { if (ref.current) ref.current.scrollLeft = 0; };
+
     useEffect(() => {
         if (!prodSentinelRef.current) return;
         const obs = new IntersectionObserver(([entry]) => {
@@ -384,6 +392,7 @@ export default function InventoryEntryPage() {
                 const d = t(first.DATE_INVO ?? first.AWBDATE ?? "").substring(0, 10);
                 if (d) setLddate(d);
             }
+            resetScroll(dateScrollRef);
         }
     }, [awbDates]);
 
@@ -414,6 +423,7 @@ export default function InventoryEntryPage() {
         setLcawb(code);   // pass specific AWB to SP — server-side filter, no client AWBCODE filter needed
         setLcpack_uq("");
         setLcpk_box_uq("");
+        resetScroll(awbListScrollRef);
     };
 
     const handleSelectPacking = (row: any) => {
@@ -421,9 +431,23 @@ export default function InventoryEntryPage() {
         setLcpack_uq(id);
         setLcpk_box_uq("");
         qc.invalidateQueries({ queryKey: ["ie-packing-details", id] });
+        resetScroll(vendorsScrollRef);
     };
 
-    const handleSelectBox = (row: any) => setLcpk_box_uq(t(row.UNICO));
+    const handleSelectBox = (row: any) => { setLcpk_box_uq(t(row.UNICO)); resetScroll(boxesScrollRef); };
+
+    // Cascade: selecting a row at one level auto-selects the first row at every level below it
+    useEffect(() => {
+        if (awbByDate.length > 0 && !lcawbcode) handleSelectAwb(awbByDate[0]);
+    }, [awbByDate]);
+
+    useEffect(() => {
+        if (packingXAwb.length > 0 && !lcpack_uq) handleSelectPacking(packingXAwb[0]);
+    }, [packingXAwb]);
+
+    useEffect(() => {
+        if (packingDetails.length > 0 && !lcpk_box_uq) handleSelectBox(packingDetails[0]);
+    }, [packingDetails]);
 
     // ── Packing actions ───────────────────────────────────────────────────────
     const packAction = useCallback(async (action: string, label: string) => {
@@ -722,10 +746,10 @@ export default function InventoryEntryPage() {
                     {activeTab === "awbpackings" && (
                         <div className="flex flex-col gap-2">
 
-                            {/* Row 1: Date Picker + AWB List */}
-                            <div className="flex gap-2 shrink-0 max-h-[280px]">
+                            {/* Row 1: Date Picker + AWB List — side by side on large screens, stacked below that */}
+                            <div className="flex flex-col lg:flex-row gap-2 shrink-0 lg:max-h-[280px]">
                                 {/* Date Picker */}
-                                <div className="w-[30%] flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0">
+                                <div className="w-full lg:w-[30%] flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0 max-h-[240px] lg:max-h-none">
                                     <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between pl-3 pr-0 shrink-0">
                                         <div className="flex items-center gap-2 min-w-0">
                                             <Calendar size={14} className="text-[#FB7506] shrink-0" />
@@ -749,7 +773,7 @@ export default function InventoryEntryPage() {
                                             ]} />
                                         </div>
                                     </div>
-                                    <div className="flex-1 overflow-y-auto">
+                                    <div ref={dateScrollRef} className="flex-1 overflow-y-auto">
                                         <table className="w-full text-xs">
                                             <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                                                 <tr className="divide-x divide-[#DBD9D9]/30">
@@ -768,7 +792,7 @@ export default function InventoryEntryPage() {
                                                     const dly = Number(row.DELAYED ?? 0);
                                                     return (
                                                         <tr key={i}
-                                                            onClick={() => { setLddate(d); setLcawb("%"); setLcawbcode(""); setLcpack_uq(""); setLcpk_box_uq(""); }}
+                                                            onClick={() => { setLddate(d); setLcawb("%"); setLcawbcode(""); setLcpack_uq(""); setLcpk_box_uq(""); resetScroll(dateScrollRef); }}
                                                             className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", sel ? "!bg-[#FB7506]/10" : dly > 0 ? "bg-red-50 hover:bg-red-100" : "hover:bg-gray-50")}>
                                                             <td className={cn("p-2 whitespace-nowrap", dly > 0 && !sel ? "text-red-700" : "text-gray-700")}>{displayDate}</td>
                                                             <td className="p-2 text-right">{t(row.RECORDS ?? row.AWBS ?? row.AWB_COUNT ?? "")}</td>
@@ -783,7 +807,7 @@ export default function InventoryEntryPage() {
                                 </div>
 
                                 {/* AWB List */}
-                                <div className="flex-1 flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden min-w-0">
+                                <div className="flex-1 flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden min-w-0 max-h-[240px] lg:max-h-none">
                                     <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between pl-3 pr-0 shrink-0">
                                         <div className="flex items-center gap-2 min-w-0">
                                             <Plane size={14} className="text-[#FB7506] shrink-0" />
@@ -798,7 +822,7 @@ export default function InventoryEntryPage() {
                                             { label: "WH Instructions", icon: FileText, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/wh-instructions?date=${lddate}&awb=${encodeURIComponent(lcawbcode)}`), disabled: !lcawbcode },
                                         ]} />
                                     </div>
-                                    <div className="flex-1 overflow-auto">
+                                    <div ref={awbListScrollRef} className="flex-1 overflow-auto">
                                         <table className="min-w-full text-xs text-left">
                                             <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                                                 <tr className="divide-x divide-[#DBD9D9]/30">
@@ -844,7 +868,7 @@ export default function InventoryEntryPage() {
                             </div>
 
                             {/* Row 2: Vendors / Packings */}
-                            <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0 max-h-[240px]">
+                            <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0 max-h-[320px]">
                                 <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between pl-3 pr-0 shrink-0 gap-2">
                                     <div className="flex items-center gap-2 shrink-0 min-w-0">
                                         <Package size={14} className="text-[#FB7506] shrink-0" />
@@ -879,7 +903,7 @@ export default function InventoryEntryPage() {
                                         { label: "Del Details", icon: Trash2, color: "red", onClick: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalDelDetails(true); } },
                                     ]} />
                                 </div>
-                                <div className="flex-1 overflow-auto">
+                                <div ref={vendorsScrollRef} className="flex-1 overflow-auto">
                                     <table className="min-w-full text-xs text-left whitespace-nowrap">
                                         <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                                             <tr className="divide-x divide-[#DBD9D9]/30">
@@ -941,7 +965,7 @@ export default function InventoryEntryPage() {
                             </div>
 
                             {/* Row 3: Boxes Detail */}
-                            <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0 h-[450px]">
+                            <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0 h-[320px]">
                                 <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between pl-3 pr-0 shrink-0 gap-2">
                                     <div className="flex items-center gap-2 shrink-0 min-w-0">
                                         <Boxes size={14} className="text-[#FB7506] shrink-0" />
@@ -979,7 +1003,7 @@ export default function InventoryEntryPage() {
                                         ]} />
                                     </div>
                                 </div>
-                                <div className="flex-1 overflow-auto">
+                                <div ref={boxesScrollRef} className="flex-1 overflow-auto">
                                     <table className="min-w-full text-xs text-left whitespace-nowrap">
                                         <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                                             <tr className="divide-x divide-[#DBD9D9]/30">
