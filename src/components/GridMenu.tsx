@@ -89,29 +89,28 @@ export function GridMenu({
         >
           <div className="flex flex-col max-h-[70vh] overflow-y-auto">
             {items.map((item, i) => {
-              if (item.separator) {
-                return <div key={`sep-${i}`} className="border-t border-gray-100" />;
-              }
               const isDisabled = !!item.disabled || !!globalDisabled;
               const colorClass = ITEM_COLORS[item.color] || ITEM_COLORS.gray;
               return (
-                <button
-                  key={`${item.label}-${i}`}
-                  onClick={() => {
-                    if (!isDisabled) {
-                      item.onClick();
-                      setOpen(false);
-                    }
-                  }}
-                  disabled={isDisabled}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-4 py-2.5 text-[14px] font-semibold uppercase transition-colors text-left",
-                    isDisabled ? "opacity-40 cursor-not-allowed text-gray-400" : "hover:bg-[#FB7506]/10"
-                  )}
-                >
-                  <item.icon size={16} className={cn("shrink-0", isDisabled ? "text-gray-300" : colorClass)} />
-                  <span className={isDisabled ? "text-gray-400" : colorClass}>{item.label}</span>
-                </button>
+                <div key={`${item.label}-${i}`}>
+                  <button
+                    onClick={() => {
+                      if (!isDisabled) {
+                        item.onClick();
+                        setOpen(false);
+                      }
+                    }}
+                    disabled={isDisabled}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-4 py-2.5 text-[14px] font-semibold uppercase transition-colors text-left",
+                      isDisabled ? "opacity-40 cursor-not-allowed text-gray-400" : "hover:bg-[#FB7506]/10"
+                    )}
+                  >
+                    <item.icon size={16} className={cn("shrink-0", isDisabled ? "text-gray-300" : colorClass)} />
+                    <span className={isDisabled ? "text-gray-400" : colorClass}>{item.label}</span>
+                  </button>
+                  {item.separator && <div className="border-t border-gray-100" />}
+                </div>
               );
             })}
           </div>
