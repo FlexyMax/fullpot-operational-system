@@ -81,6 +81,20 @@ export function ModalEditBox({ open, onClose, boxUnico, cases, userId, onSuccess
 
     const setF = (key: string, val: any) => setForm((p: any) => calc({ ...p, [key]: val }));
 
+    // VFP "boxes.scx" cmbcases.Valid: switching Case reapplies that case's default per-box charges
+    // (freight/handling/duties/broker) — distinct from WHControl's case-change, which rescales bunches/case.
+    const handleCaseChange = (caseUq: string) => {
+        const newCase = cases.find((c: any) => t(c.UNICO) === caseUq);
+        setForm((p: any) => calc({
+            ...p,
+            case_uq:       caseUq,
+            freight_cost:  parseFloat(newCase?.FREIGHT ?? 0) || 0,
+            handling_cost: parseFloat(newCase?.HANDLING ?? 0) || 0,
+            duties_cost:   parseFloat(newCase?.DUTIES ?? 0) || 0,
+            broker_cost:   parseFloat(newCase?.BROKER ?? 0) || 0,
+        }));
+    };
+
     const handleSave = async () => {
         setSaving(true); setError(null);
         try {
@@ -124,7 +138,7 @@ export function ModalEditBox({ open, onClose, boxUnico, cases, userId, onSuccess
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-3 gap-y-2 text-xs">
                         <div className="flex flex-col gap-0.5">
                             <label className={fLabel}>Case *</label>
-                            <select value={form.case_uq} onChange={e => setF("case_uq", e.target.value)} className={fInput}>
+                            <select value={form.case_uq} onChange={e => handleCaseChange(e.target.value)} className={fInput}>
                                 <option value="">-- Case --</option>
                                 {cases.map((c: any) => (
                                     <option key={t(c.UNICO)} value={t(c.UNICO)}>{t(c.CASE ?? c.DESCRIPTION ?? c.UNICO)}</option>

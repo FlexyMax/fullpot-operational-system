@@ -24,6 +24,9 @@ export function ModalBoxWHControl({ open, onClose, boxUnico, cases, userId, onSu
     const [loading, setLoading] = useState(false);
     const [saving,  setSaving]  = useState(false);
     const [error,   setError]   = useState<string | null>(null);
+    // VFP "repacking.scx": lnramoscajafull = original packs_box / original case's factor — held fixed for
+    // this editing session and reapplied whenever the user switches Case, so bunches/case rescales correctly.
+    const [fullCaseBunches, setFullCaseBunches] = useState(0);
 
     useEffect(() => {
         if (!open || !boxUnico) return;
@@ -36,13 +39,16 @@ export function ModalBoxWHControl({ open, onClose, boxUnico, cases, userId, onSu
                 const f: any = {};
                 for (const [k, v] of Object.entries(d)) f[k.toLowerCase()] = v;
                 const packs_units = int(f.up_x_pack ?? f.units_x_bunch ?? f.packs_units ?? 0);
+                const packs_box   = int(f.bunches_x_case ?? f.packs_box ?? 0);
+                const box_factor  = parseFloat(f.box_factor ?? 1) || 1;
                 setForm({
                     case_uq:    t(f.case_uq),
                     box_qty:    int(f.box_qty ?? f.qtyin ?? 0),
-                    packs_box:  int(f.bunches_x_case ?? f.packs_box ?? 0),
+                    packs_box,
                     packs_units,
                     stem_pack:  Boolean(f.stem_pack) || packs_units > 0,
                 });
+                setFullCaseBunches(packs_box / box_factor);
                 setInfo({
                     lote:        t(f.lote ?? ""),
                     case_sh:     t(f.case_sh ?? f.case_uq ?? ""),
@@ -56,6 +62,14 @@ export function ModalBoxWHControl({ open, onClose, boxUnico, cases, userId, onSu
     if (!open) return null;
 
     const setF = (key: string, val: any) => setForm(p => ({ ...p, [key]: val }));
+
+    // Changing the case re-derives bunches/case from the case's conversion factor — same as VFP's
+    // cmbcases.Valid: thisform.packs_case.Value = ROUND(lnramoscajafull * vr_cases.factor, 0)
+    const handleCaseChange = (caseUq: string) => {
+        const newCase = cases.find((c: any) => t(c.UNICO) === caseUq);
+        const factor  = newCase ? parseFloat(newCase.FACTOR ?? newCase.factor ?? 1) || 1 : 1;
+        setForm(p => ({ ...p, case_uq: caseUq, packs_box: Math.round(fullCaseBunches * factor) }));
+    };
 
     // VFP calc: if stem_pack => units_x_box = packs_box * packs_units; else units_x_box = packs_box
     const units_x_box  = form.stem_pack ? form.packs_box * form.packs_units : form.packs_box;
@@ -110,7 +124,7 @@ export function ModalBoxWHControl({ open, onClose, boxUnico, cases, userId, onSu
                     </div>
                     <div className="flex flex-col gap-0.5">
                         <label className={fLabel}>Case</label>
-                        <select value={form.case_uq} onChange={e => setF("case_uq", e.target.value)} className={fInput}>
+                        <select value={form.case_uq} onChange={e => handleCaseChange(e.target.value)} className={fInput}>
                             <option value="">-- Case --</option>
                             {cases.map((c: any) => (
                                 <option key={t(c.UNICO)} value={t(c.UNICO)}>{t(c.CASE ?? c.DESCRIPTION ?? c.UNICO)}</option>

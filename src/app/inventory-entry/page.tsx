@@ -705,6 +705,29 @@ export default function InventoryEntryPage() {
     const selPacking = (packingXAwb as any[]).find(r => packingId(r) === lcpack_uq);
     const selBox     = (packingDetails as any[]).find(r => t(r.UNICO) === lcpk_box_uq);
 
+    // Growers actually present on this AWB's packings (mirrors VFP's "Vendors by AWB" combobox scope)
+    const scopedGrowersSeen = new Map<string, any>();
+    for (const r of packingXAwb as any[]) {
+        const uq = t(r.GROWER_UQ);
+        if (uq && !scopedGrowersSeen.has(uq)) scopedGrowersSeen.set(uq, { UNICO: uq, GROWER: t(r.GROWER) });
+    }
+    const scopedGrowers = Array.from(scopedGrowersSeen.values()).sort((a, b) => a.GROWER.localeCompare(b.GROWER));
+
+    // Customers actually present on this AWB's boxes, and which packing(s) each belongs to
+    // (mirrors VFP's "Customer by AWB" combobox scope, sp_flower_packing_awb_customers).
+    const scopedCustomersSeen = new Map<string, any>();
+    const packCustomerMap = new Map<string, Set<string>>();
+    for (const r of boxesDetail as any[]) {
+        const cUq = t(r.CUSTOMER_UQ);
+        const pUq = t(r.PACK_UQ);
+        if (cUq && !scopedCustomersSeen.has(cUq)) scopedCustomersSeen.set(cUq, { UNICO: cUq, CUSTOMER: t(r.CUSTOMER) });
+        if (cUq && pUq) {
+            if (!packCustomerMap.has(pUq)) packCustomerMap.set(pUq, new Set());
+            packCustomerMap.get(pUq)!.add(cUq);
+        }
+    }
+    const scopedCustomers = Array.from(scopedCustomersSeen.values()).sort((a, b) => a.CUSTOMER.localeCompare(b.CUSTOMER));
+
     const fLabel = "text-[10px] font-black text-gray-500 uppercase tracking-wider";
     const fInput = "fos-input h-7 text-xs";
 
@@ -859,6 +882,10 @@ export default function InventoryEntryPage() {
 
                             {/* Vendors toolbar — common per-packing actions surfaced as buttons (full set still in the grid's menu) */}
                             <div className="sticky top-0 z-10 flex items-center gap-1.5 px-2 h-11 lg:h-9 bg-[#F5F3F3] border border-[#DBD9D9] rounded-lg shrink-0 shadow-sm overflow-x-auto">
+                                <TBtn icon={Plus}        label="Add Packing"  color="green"  onClick={() => handleOpenPackingModal("add")} disabled={!lcawbcode || !perms.canCreate} />
+                                <TBtn icon={Pencil}      label="Edit Packing" color="default" onClick={() => handleOpenPackingModal("edit")} disabled={!lcpack_uq || !perms.canEdit} />
+                                <TBtn icon={Trash2}      label="Delete Packing" color="red" onClick={() => handleDeletePacking()} disabled={!lcpack_uq || !perms.canDelete} />
+                                <div className="w-px h-5 bg-[#DBD9D9] shrink-0 mx-0.5" />
                                 <TBtn icon={Check}       label="Open"          color="green"  onClick={() => packAction("open", "Open")} disabled={!lcpack_uq || !perms.canEdit} />
                                 <TBtn icon={X}           label="Close"        color="amber"  onClick={() => packAction("close", "Close")} disabled={!lcpack_uq || !perms.canEdit} />
                                 <TBtn icon={Pencil}      label="Change AWB"   color="blue"   onClick={() => handleOpenChangeAwb()} disabled={!perms.canEdit || !lcpack_uq} />
@@ -914,9 +941,16 @@ export default function InventoryEntryPage() {
                                         </thead>
                                         <tbody className="divide-y divide-[#DBD9D9]">
                                             {(() => {
-                                            const filtered = packingXAwb as any[];  // SP already filters by lcawb
+                                            // SP already filters by lcawb — apply the Grower/Customer toolbar filters client-side on top
+                                            const filtered = (packingXAwb as any[]).filter(r => {
+                                                if (filterGrowerUq && t(r.GROWER_UQ) !== filterGrowerUq) return false;
+                                                if (filterCustomer && !packCustomerMap.get(packingId(r))?.has(filterCustomer)) return false;
+                                                return true;
+                                            });
                                             if (filtered.length === 0 && !loadingPacking) return (
-                                                <tr><td colSpan={17} className="p-4 text-center text-gray-400 italic">{lcawbcode ? "No packings for this AWB" : "Select a date"}</td></tr>
+                                                <tr><td colSpan={17} className="p-4 text-center text-gray-400 italic">
+                                                    {!lcawbcode ? "Select a date" : (filterGrowerUq || filterCustomer) ? "No packings match the current filter" : "No packings for this AWB"}
+                                                </td></tr>
                                             );
                                             return filtered.map((row: any, i: number) => {
                                                 const uq   = packingId(row);
@@ -1123,25 +1157,21 @@ export default function InventoryEntryPage() {
                                     <table className="min-w-full text-xs text-left whitespace-nowrap">
                                         <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                                             <tr className="divide-x divide-[#DBD9D9]/30">
-                                                {["Description","Class","Subclass","Variety","Color","Grade","Stems/Bunch","Bunches/Case","Units","Sales Price","Case"].map(h => (
+                                                {["Description","Class","Stems/Bunch","Bunches/Case","Units","Sales Price","Case"].map(h => (
                                                     <th key={h} className="p-2 whitespace-nowrap">{h}</th>
                                                 ))}
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-[#DBD9D9]">
                                             {prodAccRows.length === 0 && !loadingProds ? (
-                                                <tr><td colSpan={11} className="p-4 text-center text-gray-400 italic">No products found</td></tr>
+                                                <tr><td colSpan={7} className="p-4 text-center text-gray-400 italic">No products found</td></tr>
                                             ) : (prodAccRows as any[]).map((row: any, i: number) => (
                                                 <tr key={i} onClick={() => setSelectedProduct(row)}
                                                     className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", t(selectedProduct?.UNICO) === t(row.UNICO) ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
-                                                    <td className="p-2 max-w-[200px] truncate">{t(row.DESCRIPTION ?? row.DESC ?? row.PRODUCT_DESC ?? row.PRODUCT ?? "")}</td>
+                                                    <td className="p-2 max-w-[280px] truncate">{t(row.DESCRIPTION ?? row.DESC ?? row.PRODUCT_DESC ?? row.PRODUCT ?? "")}</td>
                                                     <td className="p-2">{t(row.CLASS ?? row.CLASE ?? "")}</td>
-                                                    <td className="p-2">{t(row.SUBCLASS ?? row.SUBCLASE ?? "")}</td>
-                                                    <td className="p-2">{t(row.VARIETY ?? row.VARIEDAD ?? "")}</td>
-                                                    <td className="p-2">{t(row.COLOR ?? "")}</td>
-                                                    <td className="p-2">{t(row.GRADE ?? row.GRADO ?? "")}</td>
-                                                    <td className="p-2 text-right">{t(row.STEMS_BUNCH ?? row.STEMS_X_BUNCH ?? row.BUNCHES_X_CASE ?? "")}</td>
-                                                    <td className="p-2 text-right">{t(row.BUNCHES_CASE ?? row.BUNCHES_X_CASE ?? row.UP_X_CASE ?? "")}</td>
+                                                    <td className="p-2 text-right">{t(row.UP_X_PACK ?? row.STEMS_BUNCH ?? row.STEMS_X_BUNCH ?? "")}</td>
+                                                    <td className="p-2 text-right">{t(row.UP_X_CASE ?? row.BUNCHES_CASE ?? row.BUNCHES_X_CASE ?? "")}</td>
                                                     <td className="p-2 text-right">{t(row.TOTAL_UNITS ?? row.UNITS ?? "")}</td>
                                                     <td className="p-2 text-right">{fmt2(row.SALES_PRICE ?? row.PRICE ?? row.UNIT_PRICE ?? 0)}</td>
                                                     <td className="p-2">{t(row.CASE_NAME ?? row.CASE ?? row.PACK ?? "")}</td>
@@ -1618,6 +1648,9 @@ export default function InventoryEntryPage() {
                 open={modalCopy}
                 onClose={() => setModalCopy(false)}
                 packUq={lcpack_uq}
+                packingNo={t(selPacking?.PACKING_NO)}
+                invoiceNo={t(selPacking?.INVOICE_NO)}
+                grower={t(selPacking?.GROWER)}
                 userId={(session?.user as any)?.id || ""}
                 onSuccess={(newUnico) => { handleRefresh(); if (newUnico) setLcpack_uq(newUnico); logAction("Insert", newUnico || lcpack_uq, AUDIT_MAP["copy-packing"].ext); }}
             />
@@ -1626,7 +1659,7 @@ export default function InventoryEntryPage() {
             <ModalFilterGrowers
                 open={modalFiltGrowers}
                 onClose={() => setModalFiltGrowers(false)}
-                growers={growers}
+                growers={scopedGrowers}
                 currentGrowerUq={filterGrowerUq}
                 onApply={uq => setFilterGrowerUq(uq)}
             />
@@ -1635,6 +1668,7 @@ export default function InventoryEntryPage() {
             <ModalFilterCustomers
                 open={modalFiltCust}
                 onClose={() => setModalFiltCust(false)}
+                customers={scopedCustomers}
                 currentCustomer={filterCustomer}
                 onApply={c => setFilterCustomer(c)}
             />

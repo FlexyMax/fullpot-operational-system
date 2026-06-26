@@ -1,6 +1,7 @@
 "use client";
 import { useState, useCallback } from "react";
 import { X, BarChart2, RefreshCcw, Search } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const t = (v: any) => String(v ?? "").trim();
 const today = () => new Date().toISOString().split("T")[0];
@@ -87,7 +88,7 @@ export function ModalWhouseTotals({ open, onClose, lddate, warehouses }: Props) 
                         <table className="w-full text-xs">
                             <thead className="bg-gray-100 sticky top-0">
                                 <tr>
-                                    {["AWB Code", "Packing No.", "Records", "Boxes", "Units", "Cost"].map(h => (
+                                    {["AWB Code", "Records", "Boxes", "Full Boxes", "WH Status", "Delayed"].map(h => (
                                         <th key={h} className="p-2 text-left font-bold text-gray-700 border-r border-gray-200 whitespace-nowrap last:border-r-0">{h}</th>
                                     ))}
                                 </tr>
@@ -95,16 +96,20 @@ export function ModalWhouseTotals({ open, onClose, lddate, warehouses }: Props) 
                             <tbody>
                                 {rows.length === 0 ? (
                                     <tr><td colSpan={6} className="p-4 text-center text-gray-400 italic">No data for this warehouse / date</td></tr>
-                                ) : rows.map((row: any, i: number) => (
-                                    <tr key={i} className="border-b border-gray-100 odd:bg-white even:bg-gray-50">
-                                        <td className="p-2 border-r border-gray-100 font-mono font-bold">{t(row.AWBCODE ?? row.AWB ?? "")}</td>
-                                        <td className="p-2 border-r border-gray-100 font-mono">{t(row.PACKING_NO ?? row.PACK_NO ?? "")}</td>
-                                        <td className="p-2 border-r border-gray-100 text-right">{t(row.RECORDS ?? row.PACKING_COUNT ?? "")}</td>
-                                        <td className="p-2 border-r border-gray-100 text-right font-bold">{t(row.BOXES ?? row.TOTAL_BOXES ?? row.BOX_COUNT ?? "")}</td>
-                                        <td className="p-2 border-r border-gray-100 text-right">{t(row.UNITS ?? row.TOTAL_UNITS ?? "")}</td>
-                                        <td className="p-2 text-right">{t(row.COST ?? row.TOTAL_COST ?? "")}</td>
-                                    </tr>
-                                ))}
+                                ) : rows.map((row: any, i: number) => {
+                                    const whst = t(row.WHSTATUS ?? "");
+                                    const dly  = Number(row.DELAYED ?? 0);
+                                    return (
+                                        <tr key={i} className="border-b border-gray-100 odd:bg-white even:bg-gray-50">
+                                            <td className="p-2 border-r border-gray-100 font-mono font-bold">{t(row.AWBCODE ?? row.AWB ?? "")}</td>
+                                            <td className="p-2 border-r border-gray-100 text-right">{t(row.RECORDS ?? "")}</td>
+                                            <td className="p-2 border-r border-gray-100 text-right font-bold">{t(row.BOXES ?? "")}</td>
+                                            <td className="p-2 border-r border-gray-100 text-right">{t(row.FULL_BOXES ?? "")}</td>
+                                            <td className={cn("p-2 border-r border-gray-100", whst === "WH" ? "text-green-600 font-bold" : whst === "PWH" ? "text-amber-600 font-bold" : "text-blue-500")}>{whst}</td>
+                                            <td className={cn("p-2 text-right", dly > 0 ? "text-red-600 font-bold" : "text-gray-300")}>{dly || ""}</td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     )}

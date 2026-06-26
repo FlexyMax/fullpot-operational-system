@@ -10,11 +10,14 @@ interface Props {
     open: boolean;
     onClose: () => void;
     packUq: string;
+    packingNo: string;
+    invoiceNo: string;
+    grower: string;
     userId: string;
     onSuccess: (newUnico?: string) => void;
 }
 
-export function ModalHeaderCopy({ open, onClose, packUq, userId, onSuccess }: Props) {
+export function ModalHeaderCopy({ open, onClose, packUq, packingNo, invoiceNo, grower, userId, onSuccess }: Props) {
     const [dateInvo, setDateInvo] = useState(today());
     const [cutOff,   setCutOff]   = useState(today());
     const [saving,   setSaving]   = useState(false);
@@ -55,8 +58,10 @@ export function ModalHeaderCopy({ open, onClose, packUq, userId, onSuccess }: Pr
                     <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors"><X size={16} /></button>
                 </div>
                 <div className="p-4 space-y-3">
-                    <div className="bg-gray-50 rounded p-2 text-xs text-gray-600 border border-gray-100">
-                        Source packing: <span className="font-mono font-bold text-gray-800">{packUq}</span>
+                    <div className="bg-gray-50 rounded p-2 text-xs text-gray-600 border border-gray-100 space-y-0.5">
+                        <div>Vendor: <span className="font-bold text-gray-800">{t(grower) || "—"}</span></div>
+                        <div>Packing No: <span className="font-bold text-gray-800">{t(packingNo) || "—"}</span> &nbsp; Invoice No: <span className="font-bold text-gray-800">{t(invoiceNo) || "—"}</span></div>
+                        <div className="text-[10px] text-gray-400">Source unico: <span className="font-mono">{packUq}</span></div>
                     </div>
                     <div className="flex flex-col gap-0.5">
                         <label className={fLabel}>Invoice Date *</label>
