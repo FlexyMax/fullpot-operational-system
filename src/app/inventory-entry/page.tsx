@@ -9,7 +9,7 @@ import {
     Search, X, Save, ChevronDown, Calendar, FileText,
     AlertCircle, Check, Copy, ArrowRight, Warehouse,
     ClipboardList, Boxes, BarChart2, Plane,
-    ShoppingCart, Flower2, Layers, Tag,
+    ShoppingCart, Flower2, Layers, Tag, ScanLine, MapPin,
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import AppFooter from "@/components/layout/AppFooter";
@@ -23,6 +23,7 @@ import { ModalSelectPWarehouse }     from "@/components/inventory-entry/ModalSel
 import { ModalWhouseTotals }         from "@/components/inventory-entry/ModalWhouseTotals";
 import { ModalSendToWhouse }         from "@/components/inventory-entry/ModalSendToWhouse";
 import { ModalHeaderCopy }           from "@/components/inventory-entry/ModalHeaderCopy";
+import { ModalScanHistory }          from "@/components/inventory-entry/ModalScanHistory";
 import { ModalFilterGrowers }        from "@/components/inventory-entry/ModalFilterGrowers";
 import { ModalFilterCustomers }      from "@/components/inventory-entry/ModalFilterCustomers";
 import { ModalBoxPO }                from "@/components/inventory-entry/ModalBoxPO";
@@ -138,6 +139,7 @@ const AUDIT_MAP: Record<string, { table: string; ext: string }> = {
     "box-notes":       { table: "flower_packing_box",         ext: "Update Box Notes FlexyMaxApp" },
     "box-composition": { table: "flower_packing_box_bunches_composition", ext: "Update Box Composition FlexyMaxApp" },
     "available-date":  { table: "flower_packing",             ext: "Update Available Date FlexyMaxApp" },
+    "update-product":  { table: "flower_products",            ext: "Update Product List FlexyMaxApp" },
 };
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
@@ -221,6 +223,13 @@ export default function InventoryEntryPage() {
     const [priceEdits,       setPriceEdits]       = useState<Record<string, number>>({});
     const [savingPrices,     setSavingPrices]     = useState(false);
 
+    // ── Products List "Change Structure" / "Change to Prices Mode" inline-edit ─
+    const [prodEditMode, setProdEditMode] = useState<"structure" | "prices" | null>(null);
+
+    // ── AWB Search tab's bottom detail panel + scan history modal ──────────────
+    const [awbDetailTab,    setAwbDetailTab]    = useState<"warehouse" | "invoice" | "adjusts">("warehouse");
+    const [modalScanHistory, setModalScanHistory] = useState(false);
+
     // ── Filter state ──────────────────────────────────────────────────────────
     const [filterGrowerUq,  setFilterGrowerUq]  = useState("");
     const [filterCustomer,  setFilterCustomer]  = useState("");
@@ -263,10 +272,11 @@ export default function InventoryEntryPage() {
         staleTime: 0,
     });
 
+    // AWB Search tab's bottom Warehouse/Invoice/Adjusts panel, scoped to the selected box
     const { data: whData, isFetching: loadingWH } = useQuery({
         queryKey: ["ie-warehouse", lcpk_box_uq],
         queryFn:  () => fetch(`/api/inventory-entry/warehouse?pk_box_uq=${lcpk_box_uq}`).then(r => r.json()),
-        enabled:  false,  // warehouse tab removed
+        enabled:  !!lcpk_box_uq && activeTab === "awbsearch",
         staleTime: 0,
     });
     const whStock    = useMemo(() => norm(whData?.stock    ?? []), [whData]);
@@ -288,17 +298,11 @@ export default function InventoryEntryPage() {
         staleTime: 0,
     });
 
-    const { data: adjustsOnly = EMPTY_ARR, isFetching: loadingAdj } = useQuery({
-        queryKey: ["ie-adjusts", lcpk_box_uq],
-        queryFn:  () => fetch(`/api/inventory-entry/warehouse?pk_box_uq=${lcpk_box_uq}`).then(r => r.json()).then(d => norm(d.adjusts ?? [])),
-        enabled:  false,  // adjusts tab removed
-        staleTime: 0,
-    });
 
     const { data: awbSearchData, isFetching: loadingSearch } = useQuery<{ rows: any[]; total: number }>({
         queryKey: ["ie-awb-search", awbSearchQ, awbSearchPage],
         queryFn:  () => fetch(`/api/inventory-entry/awb-search?page=${awbSearchPage}&pageSize=${AWB_PAGE_SIZE}&search=${encodeURIComponent(awbSearchQ)}`).then(r => r.json()),
-        enabled:  activeTab === "awbsearch" && awbSearchQ.length > 0,
+        enabled:  activeTab === "awbsearch" && !!tabLoaded.awbsearch,
         staleTime: 0,
     });
     useEffect(() => {
@@ -448,6 +452,22 @@ export default function InventoryEntryPage() {
     useEffect(() => {
         if (packingDetails.length > 0 && !lcpk_box_uq) handleSelectBox(packingDetails[0]);
     }, [packingDetails]);
+
+    // "Locate" (AWB Search tab) — jump to AWB's Packings with this exact date/AWB/packing/box pre-selected
+    const handleLocateBox = (row: any) => {
+        const rawDate = t(row.BOX_DATE ?? row.AVAILABLE_DATE ?? "");
+        const code = t(row.AWBCODE);
+        if (!rawDate || !code) { toast.error("This row is missing date/AWB info."); return; }
+        const parsed = new Date(rawDate);
+        const date = isNaN(parsed.getTime()) ? rawDate.substring(0, 10) : parsed.toISOString().split("T")[0];
+        setLddate(date);
+        setLcawb(code);
+        setLcawbcode(code);
+        setLcpack_uq(t(row.PACK_UQ));
+        setLcpk_box_uq(t(row.UNICO));
+        setActiveTab("awbpackings");
+        setTabLoaded(prev => ({ ...prev, awbpackings: true }));
+    };
 
     // ── Packing actions ───────────────────────────────────────────────────────
     const packAction = useCallback(async (action: string, label: string) => {
@@ -687,6 +707,23 @@ export default function InventoryEntryPage() {
             toast.error(e.message);
         } finally {
             setSavingPrices(false);
+        }
+    };
+
+    // ── Products List inline-edit field save (Change Structure / Change to Prices Mode) ──
+    const handleProdFieldSave = async (unico: string, field: string, value: any) => {
+        try {
+            const res = await fetch(`/api/inventory-entry/products/${unico}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ field, value }),
+            });
+            const d = await res.json();
+            if (!d.success) throw new Error(d.error || "Update failed");
+            setProdAccRows(prev => prev.map((r: any) => t(r.UNICO) === unico ? { ...r, [field.toUpperCase()]: value } : r));
+            logAction("Edit", unico, AUDIT_MAP["update-product"].ext);
+        } catch (e: any) {
+            toast.error(e.message);
         }
     };
 
@@ -1144,6 +1181,19 @@ export default function InventoryEntryPage() {
                                             className="flex items-center gap-1.5 h-7 px-3 bg-[#FB7506] hover:bg-orange-500 text-white rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
                                             <Search size={14} /> Search
                                         </button>
+                                        <div className="w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
+                                        <button
+                                            onClick={() => setProdEditMode(m => m === "structure" ? null : "structure")}
+                                            disabled={prodEditMode === "prices"}
+                                            className="flex items-center gap-1.5 h-7 px-3 bg-green-600 hover:bg-green-500 disabled:opacity-40 text-white rounded-md text-[12px] font-bold uppercase tracking-wide transition-colors shrink-0">
+                                            {prodEditMode === "structure" ? "Done — Structure" : "Change Structure"}
+                                        </button>
+                                        <button
+                                            onClick={() => setProdEditMode(m => m === "prices" ? null : "prices")}
+                                            disabled={prodEditMode === "structure"}
+                                            className="flex items-center gap-1.5 h-7 px-3 bg-[#FB7506]/10 hover:bg-[#FB7506]/20 border border-[#FB7506]/30 disabled:opacity-40 text-[#FB7506] rounded-md text-[12px] font-bold uppercase tracking-wide transition-colors shrink-0">
+                                            {prodEditMode === "prices" ? "Done — Prices" : "Change to Prices Mode"}
+                                        </button>
                                         <button
                                             onClick={() => { if (!lcpack_uq) { toast.error("Select a packing in AWB's Packings first."); return; } if (!selectedProduct) { toast.error("Select a product first."); return; } setModalAddProdPack(true); }}
                                             className="flex items-center gap-1.5 h-7 px-3 bg-green-600 hover:bg-green-500 text-white rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
@@ -1157,26 +1207,50 @@ export default function InventoryEntryPage() {
                                     <table className="min-w-full text-xs text-left whitespace-nowrap">
                                         <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                                             <tr className="divide-x divide-[#DBD9D9]/30">
-                                                {["Description","Class","Stems/Bunch","Bunches/Case","Units","Sales Price","Case"].map(h => (
+                                                {["Description","Class","Stems/Bunch","Bunches/Case","Units","Sales Price","PriceByS","Case"].map(h => (
                                                     <th key={h} className="p-2 whitespace-nowrap">{h}</th>
                                                 ))}
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-[#DBD9D9]">
                                             {prodAccRows.length === 0 && !loadingProds ? (
-                                                <tr><td colSpan={7} className="p-4 text-center text-gray-400 italic">No products found</td></tr>
-                                            ) : (prodAccRows as any[]).map((row: any, i: number) => (
+                                                <tr><td colSpan={8} className="p-4 text-center text-gray-400 italic">No products found</td></tr>
+                                            ) : (prodAccRows as any[]).map((row: any, i: number) => {
+                                                const unico = t(row.UNICO);
+                                                const editCellInput = "w-16 h-6 text-right text-xs border border-[#FB7506]/40 rounded px-1 bg-white focus:outline-none focus:ring-1 focus:ring-[#FB7506]";
+                                                return (
                                                 <tr key={i} onClick={() => setSelectedProduct(row)}
-                                                    className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", t(selectedProduct?.UNICO) === t(row.UNICO) ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
+                                                    className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", t(selectedProduct?.UNICO) === unico ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                                     <td className="p-2 max-w-[280px] truncate">{t(row.DESCRIPTION ?? row.DESC ?? row.PRODUCT_DESC ?? row.PRODUCT ?? "")}</td>
                                                     <td className="p-2">{t(row.CLASS ?? row.CLASE ?? "")}</td>
-                                                    <td className="p-2 text-right">{t(row.UP_X_PACK ?? row.STEMS_BUNCH ?? row.STEMS_X_BUNCH ?? "")}</td>
-                                                    <td className="p-2 text-right">{t(row.UP_X_CASE ?? row.BUNCHES_CASE ?? row.BUNCHES_X_CASE ?? "")}</td>
+                                                    <td className="p-2 text-right" onClick={e => e.stopPropagation()}>
+                                                        {prodEditMode === "structure" ? (
+                                                            <input type="number" defaultValue={row.UP_X_PACK ?? 0} className={editCellInput}
+                                                                onBlur={e => { const v = parseInt(e.target.value) || 0; if (v !== row.UP_X_PACK) handleProdFieldSave(unico, "up_x_pack", v); }} />
+                                                        ) : t(row.UP_X_PACK ?? "")}
+                                                    </td>
+                                                    <td className="p-2 text-right" onClick={e => e.stopPropagation()}>
+                                                        {prodEditMode === "structure" ? (
+                                                            <input type="number" defaultValue={row.UP_X_CASE ?? 0} className={editCellInput}
+                                                                onBlur={e => { const v = parseInt(e.target.value) || 0; if (v !== row.UP_X_CASE) handleProdFieldSave(unico, "up_x_case", v); }} />
+                                                        ) : t(row.UP_X_CASE ?? "")}
+                                                    </td>
                                                     <td className="p-2 text-right">{t(row.TOTAL_UNITS ?? row.UNITS ?? "")}</td>
-                                                    <td className="p-2 text-right">{fmt2(row.SALES_PRICE ?? row.PRICE ?? row.UNIT_PRICE ?? 0)}</td>
+                                                    <td className="p-2 text-right" onClick={e => e.stopPropagation()}>
+                                                        {prodEditMode === "prices" ? (
+                                                            <input type="number" step="0.01" defaultValue={row.SALES_PRICE ?? 0} className={editCellInput}
+                                                                onBlur={e => { const v = parseFloat(e.target.value) || 0; if (v !== row.SALES_PRICE) handleProdFieldSave(unico, "sales_price", v); }} />
+                                                        ) : fmt2(row.SALES_PRICE ?? row.PRICE ?? row.UNIT_PRICE ?? 0)}
+                                                    </td>
+                                                    <td className="p-2 text-center" onClick={e => e.stopPropagation()}>
+                                                        <input type="checkbox" checked={Boolean(row.STEM_PACK)} disabled={prodEditMode !== "prices"}
+                                                            onChange={e => handleProdFieldSave(unico, "stem_pack", e.target.checked)}
+                                                            className="w-3.5 h-3.5 accent-[#FB7506] disabled:opacity-50" />
+                                                    </td>
                                                     <td className="p-2">{t(row.CASE_NAME ?? row.CASE ?? row.PACK ?? "")}</td>
                                                 </tr>
-                                            ))}
+                                                );
+                                            })}
                                         </tbody>
                                     </table>
                                     {/* sentinel — triggers next page when scrolled into view */}
@@ -1267,7 +1341,7 @@ export default function InventoryEntryPage() {
 
                     {/* ══ Tab 4: AWB Search ══ */}
                     {activeTab === "awbsearch" && (
-                        <div className="flex flex-col h-full min-h-0">
+                        <div className="flex flex-col gap-2 h-full min-h-0">
                             <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1 min-h-0">
 
                                 {/* Header */}
@@ -1300,9 +1374,18 @@ export default function InventoryEntryPage() {
                                             className="flex items-center gap-1.5 h-7 px-3 bg-[#FB7506] hover:bg-orange-500 text-white rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
                                             <Search size={14} /> Search
                                         </button>
-                                        <button onClick={() => toast.info("Invoices — coming soon.")}
+                                        <div className="w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
+                                        <button onClick={() => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setAwbDetailTab("invoice"); }}
                                             className="flex items-center gap-1.5 h-7 px-3 bg-white hover:bg-gray-50 text-[#4F4F4F] border border-[#DBD9D9] rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
                                             <FileText size={14} /> Invoices
+                                        </button>
+                                        <button onClick={() => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalScanHistory(true); }}
+                                            className="flex items-center gap-1.5 h-7 px-3 bg-white hover:bg-gray-50 text-[#4F4F4F] border border-[#DBD9D9] rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
+                                            <ScanLine size={14} /> Scan History
+                                        </button>
+                                        <button onClick={() => { const sel = (awbAccRows as any[]).find(r => t(r.UNICO) === lcpk_box_uq); if (!sel) { toast.error("Select a box first."); return; } handleLocateBox(sel); }}
+                                            className="flex items-center gap-1.5 h-7 px-3 bg-[#FB7506]/10 hover:bg-[#FB7506]/20 border border-[#FB7506]/30 text-[#FB7506] rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
+                                            <MapPin size={14} /> Locate
                                         </button>
                                     </div>
                                 </div>
@@ -1319,12 +1402,13 @@ export default function InventoryEntryPage() {
                                         </thead>
                                         <tbody className="divide-y divide-[#DBD9D9]">
                                             {awbAccRows.length === 0 && !loadingSearch ? (
-                                                <tr><td colSpan={10} className="p-4 text-center text-gray-400 italic">Type to search — AWB code, lot#, or product name</td></tr>
+                                                <tr><td colSpan={10} className="p-4 text-center text-gray-400 italic">No boxes found</td></tr>
                                             ) : (awbAccRows as any[]).map((row: any, i: number) => {
                                                 const stk = Number(row.STOCK ?? 0);
+                                                const sel = lcpk_box_uq === t(row.UNICO);
                                                 return (
-                                                <tr key={i} className="cursor-pointer transition-colors hover:bg-gray-50 divide-x divide-[#DBD9D9]"
-                                                    onClick={() => handleSelectPacking(row)}>
+                                                <tr key={i} onClick={() => setLcpk_box_uq(t(row.UNICO))} onDoubleClick={() => handleLocateBox(row)}
+                                                    className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                                     <td className="p-2">{t(row.LOTE ?? "")}</td>
                                                     <td className="p-2 font-semibold text-[#FB7506]">{t(row.AWBCODE)}</td>
                                                     <td className="p-2">{fmtDate(row.BOX_DATE ?? row.AVAILABLE_DATE ?? "")}</td>
@@ -1348,17 +1432,122 @@ export default function InventoryEntryPage() {
                                     )}
                                 </div>
                             </div>
+
+                            {/* Bottom detail panel: Warehouse / Invoice / Adjusts for the selected box */}
+                            <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0 h-[240px]">
+                                <div className="h-9 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-center gap-1 px-2 shrink-0">
+                                    {([
+                                        { key: "warehouse", label: "Warehouse" },
+                                        { key: "invoice",   label: "Invoice" },
+                                        { key: "adjusts",   label: "Adjusts" },
+                                    ] as const).map(t2 => (
+                                        <button key={t2.key} onClick={() => setAwbDetailTab(t2.key)}
+                                            className={cn("h-7 px-3 rounded-md text-[12px] font-bold uppercase tracking-wide transition-colors",
+                                                awbDetailTab === t2.key ? "bg-white text-[#FB7506] shadow-sm border border-[#DBD9D9]" : "text-[#4F4F4F] hover:bg-white/60")}>
+                                            {t2.label}
+                                        </button>
+                                    ))}
+                                    {loadingWH && <RefreshCcw size={11} className="animate-spin text-gray-400 ml-1" />}
+                                    {!lcpk_box_uq && <span className="text-[11px] text-gray-400 italic ml-2">Select a box above</span>}
+                                </div>
+                                <div className="flex-1 overflow-auto">
+                                    {awbDetailTab === "warehouse" && (
+                                        <table className="min-w-full text-xs text-left whitespace-nowrap">
+                                            <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
+                                                <tr className="divide-x divide-[#DBD9D9]/30">
+                                                    {["Warehouse","AWB","Lote","W-Stock","Q-Hold","Days","Price","Type","Product"].map(h => (
+                                                        <th key={h} className="p-2 whitespace-nowrap">{h}</th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-[#DBD9D9]">
+                                                {whStock.length === 0 ? (
+                                                    <tr><td colSpan={9} className="p-4 text-center text-gray-400 italic">No warehouse stock for this box</td></tr>
+                                                ) : (whStock as any[]).map((row: any, i: number) => (
+                                                    <tr key={i} className="divide-x divide-[#DBD9D9] hover:bg-gray-50">
+                                                        <td className="p-2 max-w-[160px] truncate">{t(row.WAREHOUSE ?? "")}</td>
+                                                        <td className="p-2">{t(row.AWBCODE ?? "")}</td>
+                                                        <td className="p-2">{t(row.LOTE ?? "")}</td>
+                                                        <td className="p-2 text-right">{t(row.WH_STOCK ?? "")}</td>
+                                                        <td className="p-2 text-right">{t(row.QTY_HOLD ?? "")}</td>
+                                                        <td className="p-2 text-right">{t(row.DAYS ?? "")}</td>
+                                                        <td className="p-2 text-right">{fmt4(row.PRICE_X_UNIT ?? 0)}</td>
+                                                        <td className="p-2">{t(row.INV_TYPE ?? "")}</td>
+                                                        <td className="p-2 max-w-[200px] truncate">{t(row.DESCRIPTION ?? "")}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    )}
+                                    {awbDetailTab === "invoice" && (
+                                        <table className="min-w-full text-xs text-left whitespace-nowrap">
+                                            <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
+                                                <tr className="divide-x divide-[#DBD9D9]/30">
+                                                    {["Invoice","Date","Customer","Lote","Case","Qty","Units","Price","Ext.Price","Status","Void"].map(h => (
+                                                        <th key={h} className="p-2 whitespace-nowrap">{h}</th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-[#DBD9D9]">
+                                                {whInvoices.length === 0 ? (
+                                                    <tr><td colSpan={11} className="p-4 text-center text-gray-400 italic">No invoices for this box</td></tr>
+                                                ) : (whInvoices as any[]).map((row: any, i: number) => (
+                                                    <tr key={i} className="divide-x divide-[#DBD9D9] hover:bg-gray-50">
+                                                        <td className="p-2 font-semibold text-[#FB7506]">{t(row.INVOICE_NO ?? "")}</td>
+                                                        <td className="p-2">{t(row.INVOICE_DATE ?? "")}</td>
+                                                        <td className="p-2 max-w-[140px] truncate">{t(row.CUSTOMER ?? "")}</td>
+                                                        <td className="p-2">{t(row.LOTE ?? "")}</td>
+                                                        <td className="p-2">{t(row.CASE_SH ?? "")}</td>
+                                                        <td className="p-2 text-right">{t(row.BOX_QTY ?? "")}</td>
+                                                        <td className="p-2 text-right">{t(row.TOTAL_UNITS ?? "")}</td>
+                                                        <td className="p-2 text-right">{fmt4(row.PRICE ?? 0)}</td>
+                                                        <td className="p-2 text-right">{fmt2(row.EXT_PRICE ?? 0)}</td>
+                                                        <td className={cn("p-2", row.STATUS === "Closed" ? "text-red-500" : "text-green-600")}>{t(row.STATUS ?? "")}</td>
+                                                        <td className="p-2">{t(row.VOID ?? "")}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    )}
+                                    {awbDetailTab === "adjusts" && (
+                                        <table className="min-w-full text-xs text-left whitespace-nowrap">
+                                            <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
+                                                <tr className="divide-x divide-[#DBD9D9]/30">
+                                                    {["Date","Boxes","Amount","Reason","Notes"].map(h => (
+                                                        <th key={h} className="p-2 whitespace-nowrap">{h}</th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-[#DBD9D9]">
+                                                {whAdjusts.length === 0 ? (
+                                                    <tr><td colSpan={5} className="p-4 text-center text-gray-400 italic">No adjustments for this box</td></tr>
+                                                ) : (whAdjusts as any[]).map((row: any, i: number) => (
+                                                    <tr key={i} className="divide-x divide-[#DBD9D9] hover:bg-gray-50">
+                                                        <td className="p-2">{t(row.ADJ_DATE ?? "")}</td>
+                                                        <td className="p-2 text-right">{t(row.QTYBOXES ?? "")}</td>
+                                                        <td className="p-2 text-right">{fmt2(row.AMOUNT ?? 0)}</td>
+                                                        <td className="p-2">{t(row.REASON ?? "")}</td>
+                                                        <td className="p-2 max-w-[240px] truncate text-gray-500">{t(row.NOTES ?? "")}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     )}
 
                     {/* ══ Tab 5: PO List ══ */}
                     {activeTab === "polist" && (
                         <div className="flex flex-col gap-2 h-full">
-                            <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1 min-h-0">
+                            <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0 max-h-[300px]">
                                 <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 gap-2">
                                     <div className="flex items-center gap-2 shrink-0">
                                         <ShoppingCart size={14} className="text-[#FB7506]" />
-                                        <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">Purchase Orders</span>
+                                        <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">
+                                            Purchase Orders <span className="text-gray-400">({poRows.length})</span>
+                                        </span>
                                     </div>
                                     <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
                                         <input type="date" value={ldship_date} onChange={e => { setLdship_date(e.target.value); setPoGrower(""); }}
@@ -1367,87 +1556,92 @@ export default function InventoryEntryPage() {
                                             className="flex items-center gap-1.5 h-7 px-3 bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
                                             <RefreshCcw size={14} className={loadingPO ? "animate-spin" : ""} /> Refresh
                                         </button>
-                                        <select value={poGrower} onChange={e => setPoGrower(e.target.value)}
-                                            className="h-7 text-[12px] border border-[#DBD9D9] rounded-md px-1.5 bg-white max-w-[140px] shrink-0">
-                                            <option value="">All Vendors</option>
-                                            {poRows.map((r: any, i: number) => {
-                                                const uq = t(r.GROWER_UQ ?? r.GRO_UQ ?? r.VENDOR_UQ ?? r.GROW_UQ ?? "") || String(i);
-                                                return <option key={uq} value={uq}>{t(r.GROWER ?? r.GROWER_NAME ?? r.VENDOR ?? "")}</option>;
-                                            })}
-                                        </select>
-                                        {poGrower && (
-                                            <button onClick={() => setPoGrower("")}
-                                                className="text-[12px] text-[#FB7506] hover:text-orange-600 font-semibold shrink-0">
-                                                &larr; Back
-                                            </button>
-                                        )}
-                                        <button onClick={() => toast.info("Add P.O to Inventory — coming soon (needs a destination-packing design, see \"Add from PO\" on the AWB's Packings tab for the equivalent per-PO flow).")}
-                                            className="flex items-center gap-1.5 h-7 px-3 bg-green-600 hover:bg-green-500 text-white rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
-                                            <Plus size={14} /> Add P.O
-                                        </button>
                                     </div>
                                 </div>
                                 <div className="flex-1 overflow-auto">
-                                    {!poGrower ? (
-                                        <table className="min-w-full text-xs text-left">
-                                            <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
-                                                <tr className="divide-x divide-[#DBD9D9]/30">
-                                                    {["Grower","Ship Date","POrders","Shipped","Arrived","Amount"].map(h => (
-                                                        <th key={h} className="p-2 whitespace-nowrap">{h}</th>
-                                                    ))}
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-[#DBD9D9]">
-                                                {poRows.length === 0 ? (
-                                                    <tr><td colSpan={6} className="p-4 text-center text-gray-400 italic">No purchase orders for this date</td></tr>
-                                                ) : (poRows as any[]).map((row: any, i: number) => {
-                                                    const uq = t(row.GROWER_UQ ?? row.GRO_UQ ?? row.VENDOR_UQ ?? row.GROW_UQ ?? "") || String(i);
-                                                    return (
-                                                    <tr key={i} onClick={() => setPoGrower(uq)}
-                                                        className="cursor-pointer transition-colors hover:bg-gray-50 divide-x divide-[#DBD9D9]">
-                                                        <td className="p-2 max-w-[120px] truncate font-medium">{t(row.GROWER)}</td>
-                                                        <td className="p-2">{t(row.SHIP_DATE ?? "").substring(0, 10)}</td>
-                                                        <td className="p-2 text-right">{t(row.QTY_PORDER)}</td>
-                                                        <td className="p-2 text-right">{t(row.QTY_SHIP)}</td>
-                                                        <td className="p-2 text-right">{t(row.QTY_ARRIVED)}</td>
-                                                        <td className="p-2 text-right">{fmt2(row.EXT_PRICE)}</td>
-                                                    </tr>
-                                                    );
-                                                })}
-                                            </tbody>
-                                        </table>
-                                    ) : (
-                                        <table className="min-w-full text-xs text-left whitespace-nowrap">
-                                            <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
-                                                <tr className="divide-x divide-[#DBD9D9]/30">
-                                                    {["Farm","P.Order","S.Order","Customer","Case","Description","T.Units","Ordered","Confirm","Diff","Ship"].map((h, hi) => (
-                                                        <th key={h} className={cn("p-2 whitespace-nowrap", hi >= 6 ? "text-center w-16" : "")}>{h}</th>
-                                                    ))}
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-[#DBD9D9]">
-                                                {loadingPOG ? (
-                                                    <tr><td colSpan={11} className="p-4 text-center"><RefreshCcw size={14} className="animate-spin mx-auto text-gray-400" /></td></tr>
-                                                ) : (poByGrower as any[]).length === 0 ? (
-                                                    <tr><td colSpan={11} className="p-4 text-center text-gray-400 italic">No orders</td></tr>
-                                                ) : (poByGrower as any[]).map((row: any, i: number) => (
-                                                    <tr key={i} className="transition-colors hover:bg-gray-50 divide-x divide-[#DBD9D9]">
-                                                        <td className="p-2 text-gray-500 w-12">{t(row.FARM ?? "")}</td>
-                                                        <td className="p-2">{t(row.PORDER ?? row.PORDER_NO ?? "")}</td>
-                                                        <td className="p-2 text-gray-500">{t(row.SORDER_NO ?? "")}</td>
-                                                        <td className="p-2 max-w-[130px] truncate">{t(row.CUSTOMER ?? "")}</td>
-                                                        <td className="p-2">{t(row.CASE_NAME ?? row.PACK ?? "")}</td>
-                                                        <td className="p-2 max-w-[180px] truncate">{t(row.DESCRIPTION ?? row.VARIETY ?? "")}</td>
-                                                        <td className="p-2 text-center w-16">{t(row.TOTAL_UNITS ?? "")}</td>
-                                                        <td className="p-2 text-center w-16">{t(row.QTY_PORDER ?? "")}</td>
-                                                        <td className="p-2 text-center w-16 text-green-600">{t(row.QTY_CONFIRM ?? "")}</td>
-                                                        <td className="p-2 text-center w-16 text-[#FB7506]">{t(row.QTY_DIFF ?? "")}</td>
-                                                        <td className="p-2 text-center w-16 text-blue-600">{t(row.QTY_SHIP ?? "")}</td>
-                                                    </tr>
+                                    <table className="min-w-full text-xs text-left">
+                                        <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
+                                            <tr className="divide-x divide-[#DBD9D9]/30">
+                                                {["Grower","Ship Date","POrders","Shipped","Arrived","Amount"].map(h => (
+                                                    <th key={h} className="p-2 whitespace-nowrap">{h}</th>
                                                 ))}
-                                            </tbody>
-                                        </table>
-                                    )}
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-[#DBD9D9]">
+                                            {poRows.length === 0 ? (
+                                                <tr><td colSpan={6} className="p-4 text-center text-gray-400 italic">No purchase orders for this date</td></tr>
+                                            ) : (poRows as any[]).map((row: any, i: number) => {
+                                                const uq = t(row.GROWER_UQ ?? row.GRO_UQ ?? row.VENDOR_UQ ?? row.GROW_UQ ?? "") || String(i);
+                                                const sel = poGrower === uq;
+                                                return (
+                                                <tr key={i} onClick={() => setPoGrower(uq)}
+                                                    className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
+                                                    <td className="p-2 max-w-[120px] truncate font-medium">{t(row.GROWER)}</td>
+                                                    <td className="p-2">{t(row.SHIP_DATE ?? "").substring(0, 10)}</td>
+                                                    <td className="p-2 text-right">{t(row.QTY_PORDER)}</td>
+                                                    <td className="p-2 text-right">{t(row.QTY_SHIP)}</td>
+                                                    <td className="p-2 text-right">{t(row.QTY_ARRIVED)}</td>
+                                                    <td className="p-2 text-right">{fmt2(row.EXT_PRICE)}</td>
+                                                </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            {/* Detail: P.O. lines for the selected grower */}
+                            <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1 min-h-0">
+                                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 gap-2">
+                                    <div className="flex items-center gap-2 shrink-0 min-w-0">
+                                        <ClipboardList size={14} className="text-[#FB7506] shrink-0" />
+                                        <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] truncate">
+                                            P.O. Lines{poGrower ? ` — ${t(poRows.find((r: any) => t(r.GROWER_UQ ?? r.GRO_UQ ?? r.VENDOR_UQ ?? r.GROW_UQ ?? "") === poGrower)?.GROWER)}` : ""} <span className="text-gray-400">({(poByGrower as any[]).length})</span>
+                                        </span>
+                                        {poGrower && (
+                                            <button onClick={() => setPoGrower("")} className="text-gray-400 hover:text-gray-700 shrink-0">
+                                                <X size={13} />
+                                            </button>
+                                        )}
+                                    </div>
+                                    <button onClick={() => toast.info("Add P.O to Inventory — coming soon (needs a destination-packing design, see \"Add from PO\" on the AWB's Packings tab for the equivalent per-PO flow).")}
+                                        className="flex items-center gap-1.5 h-7 px-3 bg-green-600 hover:bg-green-500 text-white rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
+                                        <Plus size={14} /> Add P.O
+                                    </button>
+                                </div>
+                                <div className="flex-1 overflow-auto">
+                                    <table className="min-w-full text-xs text-left whitespace-nowrap">
+                                        <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
+                                            <tr className="divide-x divide-[#DBD9D9]/30">
+                                                {["Farm","P.Order","S.Order","Customer","Case","Description","T.Units","Ordered","Confirm","Diff","Ship"].map((h, hi) => (
+                                                    <th key={h} className={cn("p-2 whitespace-nowrap", hi >= 6 ? "text-center w-16" : "")}>{h}</th>
+                                                ))}
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-[#DBD9D9]">
+                                            {!poGrower ? (
+                                                <tr><td colSpan={11} className="p-4 text-center text-gray-400 italic">Select a vendor above to see its P.O. lines</td></tr>
+                                            ) : loadingPOG ? (
+                                                <tr><td colSpan={11} className="p-4 text-center"><RefreshCcw size={14} className="animate-spin mx-auto text-gray-400" /></td></tr>
+                                            ) : (poByGrower as any[]).length === 0 ? (
+                                                <tr><td colSpan={11} className="p-4 text-center text-gray-400 italic">No orders</td></tr>
+                                            ) : (poByGrower as any[]).map((row: any, i: number) => (
+                                                <tr key={i} className="transition-colors hover:bg-gray-50 divide-x divide-[#DBD9D9]">
+                                                    <td className="p-2 text-gray-500 w-12">{t(row.FARM ?? "")}</td>
+                                                    <td className="p-2">{t(row.PORDER ?? row.PORDER_NO ?? "")}</td>
+                                                    <td className="p-2 text-gray-500">{t(row.SORDER_NO ?? "")}</td>
+                                                    <td className="p-2 max-w-[130px] truncate">{t(row.CUSTOMER ?? "")}</td>
+                                                    <td className="p-2">{t(row.CASE_NAME ?? row.PACK ?? "")}</td>
+                                                    <td className="p-2 max-w-[180px] truncate">{t(row.DESCRIPTION ?? row.VARIETY ?? "")}</td>
+                                                    <td className="p-2 text-center w-16">{t(row.TOTAL_UNITS ?? "")}</td>
+                                                    <td className="p-2 text-center w-16">{t(row.QTY_PORDER ?? "")}</td>
+                                                    <td className="p-2 text-center w-16 text-green-600">{t(row.QTY_CONFIRM ?? "")}</td>
+                                                    <td className="p-2 text-center w-16 text-[#FB7506]">{t(row.QTY_DIFF ?? "")}</td>
+                                                    <td className="p-2 text-center w-16 text-blue-600">{t(row.QTY_SHIP ?? "")}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
@@ -1653,6 +1847,14 @@ export default function InventoryEntryPage() {
                 grower={t(selPacking?.GROWER)}
                 userId={(session?.user as any)?.id || ""}
                 onSuccess={(newUnico) => { handleRefresh(); if (newUnico) setLcpack_uq(newUnico); logAction("Insert", newUnico || lcpack_uq, AUDIT_MAP["copy-packing"].ext); }}
+            />
+
+            {/* ─── Scan History Modal (AWB Search) ──────────────────────────────────── */}
+            <ModalScanHistory
+                open={modalScanHistory}
+                onClose={() => setModalScanHistory(false)}
+                boxUnico={lcpk_box_uq}
+                lote={t((awbAccRows as any[]).find(r => t(r.UNICO) === lcpk_box_uq)?.LOTE)}
             />
 
             {/* ─── Filter Growers Modal ─────────────────────────────────────────────── */}
