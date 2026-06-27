@@ -122,3 +122,12 @@ body {
   color: #9ca3af;
   cursor: not-allowed;
 }
+
+/* ReportModal prints over the whole app via a portal to <body> — hide the
+   rest of the page (whatever tab/grid is open behind it) so only the report
+   ends up on paper. */
+@media print {
+  body.report-modal-open #app-shell {
+    display: none;
+  }
+}
