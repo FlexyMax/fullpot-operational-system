@@ -3,6 +3,7 @@ FROM node:20-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 COPY package*.json ./
+COPY scripts ./scripts
 RUN npm ci
 
 # Stage 2: Build the Next.js app
