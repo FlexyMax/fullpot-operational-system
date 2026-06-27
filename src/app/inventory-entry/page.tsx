@@ -9,7 +9,7 @@ import {
     Search, X, Save, ChevronDown, Calendar, FileText,
     AlertCircle, Check, Copy, ArrowRight, Warehouse,
     ClipboardList, Boxes, BarChart2, Plane,
-    ShoppingCart, Flower2, Layers, Tag, ScanLine, MapPin,
+    ShoppingCart, Flower2, Layers, Tag, ScanLine, MapPin, History,
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import AppFooter from "@/components/layout/AppFooter";
@@ -1040,6 +1040,7 @@ export default function InventoryEntryPage() {
                                 <div className="w-px h-5 bg-[#DBD9D9] shrink-0 mx-0.5" />
                                 <TBtn icon={Layers}      label="Composition"  color="purple" onClick={() => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalComposition(true); }} disabled={!lcpk_box_uq} />
                                 <TBtn icon={FileText}    label="Notes"        color="purple" onClick={() => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalNotes(true); }} disabled={!lcpk_box_uq} />
+                                <TBtn icon={History}     label="History"      color="purple" onClick={() => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } openReport(`/api/inventory-entry/reports/box-history?box_uq=${encodeURIComponent(lcpk_box_uq)}`); }} disabled={!lcpk_box_uq} />
                                 <TBtn icon={changePricesMode ? Check : Pencil} label={changePricesMode ? `Done — Prices (${Object.keys(priceEdits).length})` : "Change Prices"}
                                     color={changePricesMode ? "green" : "blue"} onClick={handleToggleChangePrices} disabled={savingPrices} />
                                 <div className="w-px h-5 bg-[#DBD9D9] shrink-0 mx-0.5" />
@@ -1402,9 +1403,17 @@ export default function InventoryEntryPage() {
                                             <Search size={14} /> Search
                                         </button>
                                         <div className="w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
+                                        <button onClick={() => {
+                                            const sel = (awbAccRows as any[]).find(r => t(r.UNICO) === lcpk_box_uq);
+                                            if (!sel) { toast.error("Select a box first."); return; }
+                                            openReport(`/api/inventory-entry/reports/packing-invoices?pack_uq=${encodeURIComponent(t(sel.PACK_UQ))}`);
+                                        }}
+                                            className="flex items-center gap-1.5 h-7 px-3 bg-white hover:bg-gray-50 text-[#4F4F4F] border border-[#DBD9D9] rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
+                                            <FileText size={14} /> Invoices
+                                        </button>
                                         <button onClick={() => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } openReport(`/api/inventory-entry/reports/box-history?box_uq=${encodeURIComponent(lcpk_box_uq)}`); }}
                                             className="flex items-center gap-1.5 h-7 px-3 bg-white hover:bg-gray-50 text-[#4F4F4F] border border-[#DBD9D9] rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
-                                            <FileText size={14} /> History
+                                            <History size={14} /> History
                                         </button>
                                         <button onClick={() => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalScanHistory(true); }}
                                             className="flex items-center gap-1.5 h-7 px-3 bg-white hover:bg-gray-50 text-[#4F4F4F] border border-[#DBD9D9] rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">

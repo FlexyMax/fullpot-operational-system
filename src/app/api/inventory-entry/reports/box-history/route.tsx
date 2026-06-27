@@ -9,19 +9,17 @@ const fmt = (v: any) => parseFloat(v ?? 0).toLocaleString("en-US", { minimumFrac
 const fmtI = (v: any) => { const n = parseInt(v ?? 0); return isNaN(n) ? "" : n.toLocaleString("en-US"); };
 const fmtDate = (v: any) => { const d = v ? new Date(v) : null; return d && !isNaN(d.getTime()) ? d.toLocaleDateString("en-US") : ""; };
 
-// VFP's btn_print_history ("History" button, tooltip "View lot history") — combines sales
-// (invoices this box was sold in) and warehouse adjustments into one printable history,
-// via sp_flower_packing_box_search_invoice_box (verified live).
+// VFP's btn_print_history ("History" button, on AWB's Packings' Boxes Detail toolbar,
+// tooltip "View lot history") — combines sales and warehouse adjustments for one box into
+// a printable history, via sp_flower_packing_box_search_invoice_box (verified live).
+// Column layout confirmed directly from ws_packing_box_history.FRT: Customer | Document |
+// Qty | Price | Date, grouped by type (SALES / ADJUSTS) with a "Total: {type}" subtotal.
 const COLUMNS: ReportColumn[] = [
-    { key: "type",            label: "Type",      width: 0.9 },
-    { key: "add_date",        label: "Date",      width: 1.1, render: r => fmtDate(r.add_date) },
-    { key: "lote",            label: "Lot",       width: 0.9, align: "right" },
-    { key: "description",     label: "Product",   width: 2.3 },
-    { key: "box_qty",         label: "Qty",        width: 0.7, align: "right", render: r => fmtI(r.box_qty) },
-    { key: "invoice_no",      label: "Ref #",      width: 1, render: r => t(r.invoice_no) },
-    { key: "customer_reason", label: "Customer / Reason", width: 1.8 },
-    { key: "price",           label: "Price",      width: 0.9, align: "right", render: r => fmt(r.price) },
-    { key: "message",         label: "Detail",     width: 3 },
+    { key: "customer", label: "Customer",  width: 2.4 },
+    { key: "invoice_no", label: "Document", width: 1.1, render: r => t(r.invoice_no) },
+    { key: "box_qty",  label: "Qty",        width: 0.8, align: "right", render: r => fmtI(r.box_qty) },
+    { key: "price",    label: "Price",      width: 1,   align: "right", render: r => fmt(r.price) },
+    { key: "add_date", label: "Date",       width: 1.3, render: r => fmtDate(r.add_date) },
 ];
 
 export async function GET(req: NextRequest) {
@@ -35,16 +33,25 @@ export async function GET(req: NextRequest) {
     ]);
 
     const rows = r.recordset ?? [];
-    const title = t(rows[0]?.titulo_reporte) || "Packing Box History";
-    const lote = t(rows[0]?.lote);
+    const first = rows[0];
+    const title = t(first?.titulo_reporte) || "Packing Box History";
+    const subtitle = first
+        ? `${t(first.description)}  |  Vendor: ${t(first.grower)}  |  AWB: ${t(first.awbcode)} (${t(first.awbdate)})  |  Lot: ${t(first.lote)}  |  Total In: ${t(first.total_in)}`
+        : undefined;
 
     const buffer = await renderToBuffer(
         <ReportPDF
             company={company}
             title={title}
-            subtitle={lote ? `Lot: ${lote}` : undefined}
+            subtitle={subtitle}
             columns={COLUMNS}
             rows={rows}
+            group={{
+                key: "type",
+                label: row => t(row.type),
+                totals: ["box_qty"],
+                totalLabel: row => `Total: ${t(row.type)}`,
+            }}
         />
     );
 
