@@ -745,6 +745,7 @@ export default function InventoryEntryPage() {
     const packingId = (r: any) => t(r.PACK_UQ ?? r.UNICO);
     const selPacking = (packingXAwb as any[]).find(r => packingId(r) === lcpack_uq);
     const selBox     = (packingDetails as any[]).find(r => t(r.UNICO) === lcpk_box_uq);
+    const isPackingOpen = t(selPacking?.STATUS).toUpperCase() === "OPEN";
 
     // Growers actually present on this AWB's packings (mirrors VFP's "Vendors by AWB" combobox scope)
     const scopedGrowersSeen = new Map<string, any>();
@@ -784,7 +785,7 @@ export default function InventoryEntryPage() {
                 <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1">
 
                     {/* ── Tab bar ── */}
-                    <div className="h-10 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-end px-2 shrink-0 gap-0.5">
+                    <div className="h-10 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-end px-2 shrink-0 gap-0.5 overflow-x-auto">
                         {([
                             { key: "awbpackings", label: "AWB's Packings" },
                             { key: "products",    label: "Products List" },
@@ -922,7 +923,7 @@ export default function InventoryEntryPage() {
                             </div>
 
                             {/* Vendors toolbar — common per-packing actions surfaced as buttons (full set still in the grid's menu) */}
-                            <div className="sticky top-0 z-10 flex items-center gap-1.5 px-2 h-11 lg:h-9 bg-[#F5F3F3] border border-[#DBD9D9] rounded-lg shrink-0 shadow-sm overflow-x-auto">
+                            <div className="sticky top-0 z-10 flex items-center gap-1.5 px-2 h-14 lg:h-9 bg-[#F5F3F3] border border-[#DBD9D9] rounded-lg shrink-0 shadow-sm overflow-x-auto">
                                 <TBtn icon={Plus}        label="Add Packing"  color="green"  onClick={() => handleOpenPackingModal("add")} disabled={!lcawbcode || !perms.canCreate} />
                                 <TBtn icon={Pencil}      label="Edit Packing" color="default" onClick={() => handleOpenPackingModal("edit")} disabled={!lcpack_uq || !perms.canEdit} />
                                 <TBtn icon={Trash2}      label="Delete Packing" color="red" onClick={() => handleDeletePacking()} disabled={!lcpack_uq || !perms.canDelete} />
@@ -940,8 +941,8 @@ export default function InventoryEntryPage() {
 
                             {/* Row 2: Vendors / Packings */}
                             <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0 max-h-[320px]">
-                                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between pl-3 pr-0 shrink-0 gap-2">
-                                    <div className="flex items-center gap-2 shrink-0 min-w-0">
+                                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between pl-3 pr-0 shrink-0 gap-2 overflow-x-auto">
+                                    <div className="flex items-center gap-2 flex-1 min-w-0">
                                         <Package size={14} className="text-[#FB7506] shrink-0" />
                                         <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] truncate">
                                             Vendors{lcawbcode ? ` — ${lcawbcode}` : ""} <span className="text-gray-400">({(packingXAwb as any[]).length})</span>
@@ -1030,7 +1031,7 @@ export default function InventoryEntryPage() {
                             </div>
 
                             {/* Boxes Detail toolbar — common per-box actions surfaced as buttons (full set still in the grid's menu) */}
-                            <div className="sticky top-0 z-10 flex items-center gap-1.5 px-2 h-11 lg:h-9 bg-[#F5F3F3] border border-[#DBD9D9] rounded-lg shrink-0 shadow-sm overflow-x-auto">
+                            <div className="sticky top-0 z-10 flex items-center gap-1.5 px-2 h-14 lg:h-9 bg-[#F5F3F3] border border-[#DBD9D9] rounded-lg shrink-0 shadow-sm overflow-x-auto">
                                 <TBtn icon={Plus}        label="Add Box"      color="green"  onClick={() => handleAddBox()} />
                                 <TBtn icon={Warehouse}   label="WHControl"    color="blue"   onClick={() => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalBoxWHCtrl(true); }} disabled={!lcpk_box_uq} />
                                 <TBtn icon={ArrowRight}  label="Move Box"     color="blue"   onClick={() => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalBoxMove(true); }} disabled={!lcpk_box_uq} />
@@ -1047,8 +1048,8 @@ export default function InventoryEntryPage() {
 
                             {/* Row 3: Boxes Detail */}
                             <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0 h-[320px]">
-                                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between pl-3 pr-0 shrink-0 gap-2">
-                                    <div className="flex items-center gap-2 shrink-0 min-w-0">
+                                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between pl-3 pr-0 shrink-0 gap-2 overflow-x-auto">
+                                    <div className="flex items-center gap-2 flex-1 min-w-0">
                                         <Boxes size={14} className="text-[#FB7506] shrink-0" />
                                         <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] truncate">
                                             Boxes Detail{selPacking ? ` — ${t(selPacking.GROWER)}` : ""} <span className="text-gray-400">({(packingDetails as any[]).length})</span>
@@ -1147,7 +1148,7 @@ export default function InventoryEntryPage() {
                             <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1 min-h-0">
 
                                 {/* Header */}
-                                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 gap-2">
+                                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 gap-2 overflow-x-auto">
                                     <div className="flex items-center gap-2 shrink-0">
                                         <Flower2 size={14} className="text-[#FB7506]" />
                                         <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">Products List</span>
@@ -1194,11 +1195,38 @@ export default function InventoryEntryPage() {
                                             {prodEditMode === "prices" ? "Done — Prices" : "Change to Prices Mode"}
                                         </button>
                                         <button
-                                            onClick={() => { if (!lcpack_uq) { toast.error("Select a packing in AWB's Packings first."); return; } if (!selectedProduct) { toast.error("Select a product first."); return; } setModalAddProdPack(true); }}
-                                            className="flex items-center gap-1.5 h-7 px-3 bg-green-600 hover:bg-green-500 text-white rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
+                                            onClick={() => {
+                                                if (!lcpack_uq) { toast.error("Select a packing in AWB's Packings first."); return; }
+                                                if (!isPackingOpen) { toast.error("This packing is closed."); return; }
+                                                if (!selectedProduct) { toast.error("Select a product first."); return; }
+                                                setModalAddProdPack(true);
+                                            }}
+                                            disabled={!!lcpack_uq && !isPackingOpen}
+                                            className="flex items-center gap-1.5 h-7 px-3 bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
                                             <Plus size={14} /> Add to Packing
                                         </button>
                                     </div>
+                                </div>
+
+                                {/* Selected Packing Info */}
+                                <div className="h-10 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-center gap-4 px-3 shrink-0 overflow-x-auto whitespace-nowrap">
+                                    {selPacking ? (
+                                        <>
+                                            <span className="text-[11px] shrink-0"><span className="font-bold text-gray-400 uppercase">Vendor:</span> <span className="font-bold text-[#4F4F4F]">{t(selPacking.GROWER)}</span></span>
+                                            <span className="text-[11px] shrink-0"><span className="font-bold text-gray-400 uppercase">AWB:</span> <span className="font-bold text-[#4F4F4F]">{t(selPacking.AWBCODE)}</span></span>
+                                            <span className="text-[11px] shrink-0"><span className="font-bold text-gray-400 uppercase">Packing No:</span> <span className="font-bold text-[#4F4F4F]">{t(selPacking.PACKING_NO)}</span></span>
+                                            <span className="text-[11px] shrink-0"><span className="font-bold text-gray-400 uppercase">Invoice No:</span> <span className="font-bold text-[#4F4F4F]">{t(selPacking.INVOICE_NO)}</span></span>
+                                            <span className="text-[11px] shrink-0"><span className="font-bold text-gray-400 uppercase">Date:</span> <span className="font-bold text-[#4F4F4F]">{t(selPacking.BOX_DATE ?? selPacking.DATE_INVO ?? "").substring(0, 12)}</span></span>
+                                            <span className="text-[11px] shrink-0"><span className="font-bold text-gray-400 uppercase">Total Boxes:</span> <span className="font-bold text-[#4F4F4F]">{t(selPacking.TOTAL_BOXES)}</span></span>
+                                            <span className="text-[11px] shrink-0"><span className="font-bold text-gray-400 uppercase">Total $ Warehouse:</span> <span className="font-bold text-[#4F4F4F]">{fmt2(selPacking.TOTAL_COST ?? selPacking.FLOWER_COST ?? 0)}</span></span>
+                                            <span className={cn("text-[11px] font-black uppercase tracking-wide px-2 py-0.5 rounded ml-auto shrink-0",
+                                                isPackingOpen ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600")}>
+                                                {isPackingOpen ? "Open" : "Closed"}
+                                            </span>
+                                        </>
+                                    ) : (
+                                        <span className="text-[11px] text-gray-400 italic">No packing selected — pick one on the AWB&apos;s Packings tab</span>
+                                    )}
                                 </div>
 
                                 {/* Grid */}
@@ -1344,7 +1372,7 @@ export default function InventoryEntryPage() {
                             <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1 min-h-0">
 
                                 {/* Header */}
-                                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 gap-2">
+                                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 gap-2 overflow-x-auto">
                                     <div className="flex items-center gap-2 shrink-0">
                                         <Search size={14} className="text-[#FB7506]" />
                                         <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">Packing Box Search</span>
@@ -1591,8 +1619,8 @@ export default function InventoryEntryPage() {
 
                             {/* Detail: P.O. lines for the selected grower */}
                             <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1 min-h-0">
-                                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 gap-2">
-                                    <div className="flex items-center gap-2 shrink-0 min-w-0">
+                                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 gap-2 overflow-x-auto">
+                                    <div className="flex items-center gap-2 flex-1 min-w-0">
                                         <ClipboardList size={14} className="text-[#FB7506] shrink-0" />
                                         <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] truncate">
                                             P.O. Lines{poGrower ? ` — ${t(poRows.find((r: any) => t(r.GROWER_UQ ?? r.GRO_UQ ?? r.VENDOR_UQ ?? r.GROW_UQ ?? "") === poGrower)?.GROWER)}` : ""} <span className="text-gray-400">({(poByGrower as any[]).length})</span>
