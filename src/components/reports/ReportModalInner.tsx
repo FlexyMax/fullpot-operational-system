@@ -18,6 +18,7 @@ export default function ReportModalInner({ url, onClose }: Props) {
     const [error, setError] = useState<string | null>(null);
     const [zoom, setZoom] = useState(1);
     const [containerWidth, setContainerWidth] = useState(800);
+    const [printWidth, setPrintWidth] = useState<number | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
     const [prevUrl, setPrevUrl] = useState(url);
@@ -48,10 +49,27 @@ export default function ReportModalInner({ url, onClose }: Props) {
         return () => document.body.classList.remove("report-modal-open");
     }, [url]);
 
+    // Printing must ignore whatever on-screen zoom/container size produced —
+    // print CSS forces the canvas to 100% page width regardless, but the
+    // canvas's actual pixel resolution comes from the width passed to <Page>,
+    // so a small on-screen render (zoomed out, or just a narrow phone screen)
+    // would otherwise get stretched up to fill the page and print blurry.
+    // Render at a fixed, print-appropriate resolution instead, leaving the
+    // on-screen zoom untouched.
+    const handlePrint = () => {
+        setPrintWidth(1700);
+        setTimeout(() => {
+            window.print();
+            setPrintWidth(null);
+        }, 350);
+    };
+
     if (!url) return null;
 
     return createPortal(
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 lg:p-6 print:relative print:bg-white print:p-0 print:block" onClick={onClose}>
+            {/* Reports render landscape; default the print dialog to match (user can still flip it). */}
+            <style>{"@media print { @page { size: landscape; margin: 0.4in; } }"}</style>
             <div className="bg-[#3B3B3B] rounded-lg shadow-2xl w-full max-w-5xl h-full flex flex-col overflow-hidden print:bg-white print:shadow-none print:rounded-none print:h-auto print:max-w-none print:overflow-visible" onClick={e => e.stopPropagation()}>
                 <div className="h-11 bg-[#374151] flex items-center justify-between pl-3 pr-2 shrink-0 print:hidden">
                     <div className="flex items-center gap-2 min-w-0">
@@ -65,7 +83,7 @@ export default function ReportModalInner({ url, onClose }: Props) {
                             className="text-gray-300 hover:text-white transition-colors p-1.5 hover:bg-white/10 rounded"><ZoomOut size={15} /></button>
                         <button onClick={() => setZoom(z => Math.min(2.5, z + 0.15))} title="Zoom in"
                             className="text-gray-300 hover:text-white transition-colors p-1.5 hover:bg-white/10 rounded"><ZoomIn size={15} /></button>
-                        <button onClick={() => window.print()} title="Print" className="text-gray-300 hover:text-white transition-colors p-1.5 hover:bg-white/10 rounded"><Printer size={15} /></button>
+                        <button onClick={handlePrint} title="Print" className="text-gray-300 hover:text-white transition-colors p-1.5 hover:bg-white/10 rounded"><Printer size={15} /></button>
                         <a href={url} download title="Download" className="text-gray-300 hover:text-white transition-colors p-1.5 hover:bg-white/10 rounded"><Download size={15} /></a>
                         <a href={url} target="_blank" rel="noreferrer" title="Open in new tab" className="text-gray-300 hover:text-white transition-colors p-1.5 hover:bg-white/10 rounded"><ExternalLink size={15} /></a>
                         <div className="w-px h-5 bg-white/15 mx-1" />
@@ -87,7 +105,7 @@ export default function ReportModalInner({ url, onClose }: Props) {
                             onLoadError={(e) => setError(e?.message || "Unknown error loading PDF")}
                         >
                             {Array.from({ length: numPages }, (_, i) => (
-                                <Page key={i} pageNumber={i + 1} width={containerWidth * zoom} className="shadow-lg mb-3 print:shadow-none print:mb-0 print:break-after-page" />
+                                <Page key={i} pageNumber={i + 1} width={printWidth ?? containerWidth * zoom} className="shadow-lg mb-3 print:shadow-none print:mb-0 print:break-after-page" />
                             ))}
                         </Document>
                     )}

@@ -130,4 +130,15 @@ body {
   body.report-modal-open #app-shell {
     display: none;
   }
+
+  /* react-pdf's canvas has no inline width/height style, only the HTML
+     width/height attributes pdf.js sets for render resolution — so it
+     defaults to displaying at that exact pixel size. On screen that's fine,
+     but for print it means whatever on-screen zoom was active dictates the
+     printed size (a zoomed-out report prints as a tiny thumbnail instead of
+     filling the page). Force it to fill the page width instead. */
+  .react-pdf__Page__canvas {
+    width: 100% !important;
+    height: auto !important;
+  }
 }
