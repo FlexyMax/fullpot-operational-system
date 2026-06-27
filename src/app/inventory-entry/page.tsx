@@ -28,6 +28,7 @@ import { ModalFilterGrowers }        from "@/components/inventory-entry/ModalFil
 import { ModalFilterCustomers }      from "@/components/inventory-entry/ModalFilterCustomers";
 import { ModalBoxPO }                from "@/components/inventory-entry/ModalBoxPO";
 import { ModalAddPOToInventory }     from "@/components/inventory-entry/ModalAddPOToInventory";
+import { ReportModal }               from "@/components/reports/ReportModal";
 import { ModalBoxWHControl }         from "@/components/inventory-entry/ModalBoxWHControl";
 import { ModalAWBSetup }             from "@/components/inventory-entry/ModalAWBSetup";
 import { ModalDeletePackingDetails } from "@/components/inventory-entry/ModalDeletePackingDetails";
@@ -233,6 +234,7 @@ export default function InventoryEntryPage() {
     // ── AWB Search tab's bottom detail panel + scan history modal ──────────────
     const [awbDetailTab,    setAwbDetailTab]    = useState<"warehouse" | "invoice" | "adjusts">("warehouse");
     const [modalScanHistory, setModalScanHistory] = useState(false);
+    const [reportModalUrl, setReportModalUrl] = useState<string | null>(null);
 
     // ── Filter state ──────────────────────────────────────────────────────────
     const [filterGrowerUq,  setFilterGrowerUq]  = useState("");
@@ -406,6 +408,7 @@ export default function InventoryEntryPage() {
 
     // ── Handlers ──────────────────────────────────────────────────────────────
     const openReport = (path: string) => window.open(path, "_blank");
+    const openReportModal = (path: string) => setReportModalUrl(path);
 
     const handleTabClick = (tab: LeftTab) => {
         setActiveTab(tab);
@@ -829,12 +832,12 @@ export default function InventoryEntryPage() {
                                                 <RefreshCcw size={12} /> Refresh
                                             </button>
                                             <GridMenu items={[
-                                                { label: "Packing Date", icon: FileText, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/packing-arrived?date=${lddate}&awb=%25&pack_uq=%25&wphysical_uq=%25`) },
-                                                { label: "AWB Cust. PO", icon: FileText, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/awb-cporder?date=${lddate}&awb=%25&pack_uq=%25`) },
-                                                { label: "Products", icon: FileText, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/products?date=${lddate}&awb=%25&grower_uq=%25`) },
-                                                { label: "NS Summary", icon: FileText, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/no-scanned-summary`) },
-                                                { label: "No Scanned", icon: FileText, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/no-scanned?date=${lddate}`) },
-                                                { label: "Delayed", icon: FileText, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/delayed?date=${lddate}`) },
+                                                { label: "Packing Date", icon: FileText, color: "gray", onClick: () => openReportModal(`/api/inventory-entry/reports/packing-arrived?date=${lddate}&awb=%25&pack_uq=%25&wphysical_uq=%25`) },
+                                                { label: "AWB Cust. PO", icon: FileText, color: "gray", onClick: () => openReportModal(`/api/inventory-entry/reports/awb-cporder?date=${lddate}&awb=%25&pack_uq=%25`) },
+                                                { label: "Products", icon: FileText, color: "gray", onClick: () => openReportModal(`/api/inventory-entry/reports/products?date=${lddate}&awb=%25&grower_uq=%25`) },
+                                                { label: "NS Summary", icon: FileText, color: "gray", onClick: () => openReportModal(`/api/inventory-entry/reports/no-scanned-summary`) },
+                                                { label: "No Scanned", icon: FileText, color: "gray", onClick: () => openReportModal(`/api/inventory-entry/reports/no-scanned?date=${lddate}`) },
+                                                { label: "Delayed", icon: FileText, color: "gray", onClick: () => openReportModal(`/api/inventory-entry/reports/delayed?date=${lddate}`) },
                                             ]} />
                                         </div>
                                     </div>
@@ -883,8 +886,8 @@ export default function InventoryEntryPage() {
                                         </div>
                                         <GridMenu items={[
                                             { label: "Total By Whouse", icon: BarChart2, color: "blue", onClick: () => setModalWhTotals(true) },
-                                            { label: "AWB Report", icon: FileText, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/awb-full?awb=${encodeURIComponent(lcawbcode)}`), disabled: !lcawbcode },
-                                            { label: "WH Instructions", icon: FileText, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/wh-instructions?date=${lddate}&awb=${encodeURIComponent(lcawbcode)}`), disabled: !lcawbcode },
+                                            { label: "AWB Report", icon: FileText, color: "gray", onClick: () => openReportModal(`/api/inventory-entry/reports/awb-full?awb=${encodeURIComponent(lcawbcode)}`), disabled: !lcawbcode },
+                                            { label: "WH Instructions", icon: FileText, color: "gray", onClick: () => openReportModal(`/api/inventory-entry/reports/wh-instructions?date=${lddate}&awb=${encodeURIComponent(lcawbcode)}`), disabled: !lcawbcode },
                                         ]} />
                                     </div>
                                     <div ref={awbListScrollRef} className="flex-1 overflow-auto">
@@ -960,10 +963,10 @@ export default function InventoryEntryPage() {
                                         )}
                                     </div>
                                     <GridMenu items={[
-                                        { label: "AWB Cust. PO", icon: FileText, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/awb-cporder?date=${lddate}&awb=${encodeURIComponent(lcawbcode || "%")}&pack_uq=${encodeURIComponent(lcpack_uq)}`), disabled: !lcpack_uq },
-                                        { label: "Packing", icon: FileText, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/packing-arrived?date=${lddate}&awb=${encodeURIComponent(lcawbcode || "%")}&pack_uq=${encodeURIComponent(lcpack_uq)}&wphysical_uq=%25`), disabled: !lcpack_uq },
-                                        { label: "COff", icon: FileText, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/cut-off?date=${lddate}&awb=${encodeURIComponent(lcawbcode || "%")}&pack_uq=${encodeURIComponent(lcpack_uq)}`), disabled: !lcpack_uq, separator: true },
-                                        { label: "Label Laser", icon: Tag, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/label-laser?pack_uq=${encodeURIComponent(lcpack_uq)}`), disabled: !lcpack_uq },
+                                        { label: "AWB Cust. PO", icon: FileText, color: "gray", onClick: () => openReportModal(`/api/inventory-entry/reports/awb-cporder?date=${lddate}&awb=${encodeURIComponent(lcawbcode || "%")}&pack_uq=${encodeURIComponent(lcpack_uq)}`), disabled: !lcpack_uq },
+                                        { label: "Packing", icon: FileText, color: "gray", onClick: () => openReportModal(`/api/inventory-entry/reports/packing-arrived?date=${lddate}&awb=${encodeURIComponent(lcawbcode || "%")}&pack_uq=${encodeURIComponent(lcpack_uq)}&wphysical_uq=%25`), disabled: !lcpack_uq },
+                                        { label: "COff", icon: FileText, color: "gray", onClick: () => openReportModal(`/api/inventory-entry/reports/cut-off?date=${lddate}&awb=${encodeURIComponent(lcawbcode || "%")}&pack_uq=${encodeURIComponent(lcpack_uq)}`), disabled: !lcpack_uq, separator: true },
+                                        { label: "Label Laser", icon: Tag, color: "gray", onClick: () => openReportModal(`/api/inventory-entry/reports/label-laser?pack_uq=${encodeURIComponent(lcpack_uq)}`), disabled: !lcpack_uq },
                                         { label: "PDF Label", icon: Tag, color: "gray", onClick: () => handleSendLabel(), disabled: !lcpack_uq },
                                         { label: "Z300", icon: Tag, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/label-zebra?pack_uq=${encodeURIComponent(lcpack_uq)}&box_uq=%25`), disabled: !lcpack_uq },
                                         { label: "Z 4M", icon: Tag, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/label-zebra4m?pack_uq=${encodeURIComponent(lcpack_uq)}&box_uq=%25`), disabled: !lcpack_uq },
@@ -1040,7 +1043,7 @@ export default function InventoryEntryPage() {
                                 <div className="w-px h-5 bg-[#DBD9D9] shrink-0 mx-0.5" />
                                 <TBtn icon={Layers}      label="Composition"  color="purple" onClick={() => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalComposition(true); }} disabled={!lcpk_box_uq} />
                                 <TBtn icon={FileText}    label="Notes"        color="purple" onClick={() => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalNotes(true); }} disabled={!lcpk_box_uq} />
-                                <TBtn icon={History}     label="History"      color="purple" onClick={() => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } openReport(`/api/inventory-entry/reports/box-history?box_uq=${encodeURIComponent(lcpk_box_uq)}`); }} disabled={!lcpk_box_uq} />
+                                <TBtn icon={History}     label="History"      color="purple" onClick={() => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } openReportModal(`/api/inventory-entry/reports/box-history?box_uq=${encodeURIComponent(lcpk_box_uq)}`); }} disabled={!lcpk_box_uq} />
                                 <TBtn icon={changePricesMode ? Check : Pencil} label={changePricesMode ? `Done — Prices (${Object.keys(priceEdits).length})` : "Change Prices"}
                                     color={changePricesMode ? "green" : "blue"} onClick={handleToggleChangePrices} disabled={savingPrices} />
                                 <div className="w-px h-5 bg-[#DBD9D9] shrink-0 mx-0.5" />
@@ -1406,12 +1409,12 @@ export default function InventoryEntryPage() {
                                         <button onClick={() => {
                                             const sel = (awbAccRows as any[]).find(r => t(r.UNICO) === lcpk_box_uq);
                                             if (!sel) { toast.error("Select a box first."); return; }
-                                            openReport(`/api/inventory-entry/reports/packing-invoices?pack_uq=${encodeURIComponent(t(sel.PACK_UQ))}`);
+                                            openReportModal(`/api/inventory-entry/reports/packing-invoices?pack_uq=${encodeURIComponent(t(sel.PACK_UQ))}`);
                                         }}
                                             className="flex items-center gap-1.5 h-7 px-3 bg-white hover:bg-gray-50 text-[#4F4F4F] border border-[#DBD9D9] rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
                                             <FileText size={14} /> Invoices
                                         </button>
-                                        <button onClick={() => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } openReport(`/api/inventory-entry/reports/box-history?box_uq=${encodeURIComponent(lcpk_box_uq)}`); }}
+                                        <button onClick={() => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } openReportModal(`/api/inventory-entry/reports/box-history?box_uq=${encodeURIComponent(lcpk_box_uq)}`); }}
                                             className="flex items-center gap-1.5 h-7 px-3 bg-white hover:bg-gray-50 text-[#4F4F4F] border border-[#DBD9D9] rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
                                             <History size={14} /> History
                                         </button>
@@ -1896,6 +1899,9 @@ export default function InventoryEntryPage() {
                 boxUnico={lcpk_box_uq}
                 lote={t((awbAccRows as any[]).find(r => t(r.UNICO) === lcpk_box_uq)?.LOTE)}
             />
+
+            {/* ─── Report Viewer Modal (all PDF report buttons) ────────────────────── */}
+            <ReportModal url={reportModalUrl} onClose={() => setReportModalUrl(null)} />
 
             {/* ─── Filter Growers Modal ─────────────────────────────────────────────── */}
             <ModalFilterGrowers
