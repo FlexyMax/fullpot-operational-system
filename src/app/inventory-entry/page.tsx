@@ -785,7 +785,7 @@ export default function InventoryEntryPage() {
                 <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1">
 
                     {/* ── Tab bar ── */}
-                    <div className="h-10 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-end px-2 shrink-0 gap-0.5 overflow-x-auto">
+                    <div className="h-14 lg:h-10 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-end px-2 shrink-0 gap-0.5 overflow-x-auto">
                         {([
                             { key: "awbpackings", label: "AWB's Packings" },
                             { key: "products",    label: "Products List" },
@@ -1148,7 +1148,7 @@ export default function InventoryEntryPage() {
                             <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1 min-h-0">
 
                                 {/* Header */}
-                                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 gap-2 overflow-x-auto">
+                                <div className="h-16 lg:h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 gap-2 overflow-x-auto">
                                     <div className="flex items-center gap-2 shrink-0">
                                         <Flower2 size={14} className="text-[#FB7506]" />
                                         <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">Products List</span>
@@ -1296,7 +1296,7 @@ export default function InventoryEntryPage() {
                     {activeTab === "plcontrol" && (
                         <div className="flex flex-col gap-2 h-full">
                             <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1 min-h-0">
-                                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 gap-2">
+                                <div className="h-16 lg:h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 gap-2 overflow-x-auto">
                                     <div className="flex items-center gap-2 shrink-0">
                                         <ClipboardList size={14} className="text-[#FB7506]" />
                                         <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">Packing List Control</span>
@@ -1372,7 +1372,7 @@ export default function InventoryEntryPage() {
                             <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1 min-h-0">
 
                                 {/* Header */}
-                                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 gap-2 overflow-x-auto">
+                                <div className="h-16 lg:h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 gap-2 overflow-x-auto">
                                     <div className="flex items-center gap-2 shrink-0">
                                         <Search size={14} className="text-[#FB7506]" />
                                         <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">Packing Box Search</span>
@@ -1402,9 +1402,9 @@ export default function InventoryEntryPage() {
                                             <Search size={14} /> Search
                                         </button>
                                         <div className="w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
-                                        <button onClick={() => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setAwbDetailTab("invoice"); }}
+                                        <button onClick={() => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } openReport(`/api/inventory-entry/reports/box-history?box_uq=${encodeURIComponent(lcpk_box_uq)}`); }}
                                             className="flex items-center gap-1.5 h-7 px-3 bg-white hover:bg-gray-50 text-[#4F4F4F] border border-[#DBD9D9] rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
-                                            <FileText size={14} /> Invoices
+                                            <FileText size={14} /> History
                                         </button>
                                         <button onClick={() => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalScanHistory(true); }}
                                             className="flex items-center gap-1.5 h-7 px-3 bg-white hover:bg-gray-50 text-[#4F4F4F] border border-[#DBD9D9] rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
