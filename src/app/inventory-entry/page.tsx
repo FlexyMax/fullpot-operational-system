@@ -27,6 +27,7 @@ import { ModalScanHistory }          from "@/components/inventory-entry/ModalSca
 import { ModalFilterGrowers }        from "@/components/inventory-entry/ModalFilterGrowers";
 import { ModalFilterCustomers }      from "@/components/inventory-entry/ModalFilterCustomers";
 import { ModalBoxPO }                from "@/components/inventory-entry/ModalBoxPO";
+import { ModalAddPOToInventory }     from "@/components/inventory-entry/ModalAddPOToInventory";
 import { ModalBoxWHControl }         from "@/components/inventory-entry/ModalBoxWHControl";
 import { ModalAWBSetup }             from "@/components/inventory-entry/ModalAWBSetup";
 import { ModalDeletePackingDetails } from "@/components/inventory-entry/ModalDeletePackingDetails";
@@ -140,6 +141,7 @@ const AUDIT_MAP: Record<string, { table: string; ext: string }> = {
     "box-composition": { table: "flower_packing_box_bunches_composition", ext: "Update Box Composition FlexyMaxApp" },
     "available-date":  { table: "flower_packing",             ext: "Update Available Date FlexyMaxApp" },
     "update-product":  { table: "flower_products",            ext: "Update Product List FlexyMaxApp" },
+    "add-po":          { table: "flower_packing_box",          ext: "Add P.O. to Inventory FlexyMaxApp" },
 };
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
@@ -205,6 +207,8 @@ export default function InventoryEntryPage() {
     const [modalFiltGrowers, setModalFiltGrowers] = useState(false);
     const [modalFiltCust,    setModalFiltCust]    = useState(false);
     const [modalBoxPO,       setModalBoxPO]       = useState(false);
+    const [modalAddPO,       setModalAddPO]       = useState(false);
+    const [selPOLine,        setSelPOLine]        = useState<any>(null);
     const [modalBoxWHCtrl,   setModalBoxWHCtrl]   = useState(false);
     const [modalAWBSetup,    setModalAWBSetup]    = useState(false);
     const [modalDelDetails,  setModalDelDetails]  = useState(false);
@@ -1028,11 +1032,15 @@ export default function InventoryEntryPage() {
                             {/* Boxes Detail toolbar — common per-box actions surfaced as buttons (full set still in the grid's menu) */}
                             <div className="sticky top-0 z-10 flex items-center gap-1.5 px-2 h-11 lg:h-9 bg-[#F5F3F3] border border-[#DBD9D9] rounded-lg shrink-0 shadow-sm overflow-x-auto">
                                 <TBtn icon={Plus}        label="Add Box"      color="green"  onClick={() => handleAddBox()} />
-                                <TBtn icon={Pencil}      label="Edit Box"     color="default" onClick={() => handleOpenEditBox()} disabled={!lcpk_box_uq} />
                                 <TBtn icon={Warehouse}   label="WHControl"    color="blue"   onClick={() => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalBoxWHCtrl(true); }} disabled={!lcpk_box_uq} />
                                 <TBtn icon={ArrowRight}  label="Move Box"     color="blue"   onClick={() => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalBoxMove(true); }} disabled={!lcpk_box_uq} />
                                 <TBtn icon={Warehouse}   label="WH Transfer"  color="blue"   onClick={() => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalTransfer(true); }} disabled={!lcpk_box_uq} />
                                 <TBtn icon={ClipboardList} label="Add from PO" color="green" onClick={() => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalBoxPO(true); }} disabled={!lcpack_uq} />
+                                <div className="w-px h-5 bg-[#DBD9D9] shrink-0 mx-0.5" />
+                                <TBtn icon={Layers}      label="Composition"  color="purple" onClick={() => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalComposition(true); }} disabled={!lcpk_box_uq} />
+                                <TBtn icon={FileText}    label="Notes"        color="purple" onClick={() => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalNotes(true); }} disabled={!lcpk_box_uq} />
+                                <TBtn icon={changePricesMode ? Check : Pencil} label={changePricesMode ? `Done — Prices (${Object.keys(priceEdits).length})` : "Change Prices"}
+                                    color={changePricesMode ? "green" : "blue"} onClick={handleToggleChangePrices} disabled={savingPrices} />
                                 <div className="w-px h-5 bg-[#DBD9D9] shrink-0 mx-0.5" />
                                 <TBtn icon={Trash2}      label="Selection"    color="red"    onClick={() => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalDelDetails(true); }} disabled={!lcpack_uq} />
                             </div>
@@ -1055,21 +1063,12 @@ export default function InventoryEntryPage() {
                                         <input className="w-10 h-7 text-[11px] border border-[#DBD9D9] rounded px-1.5 bg-white" defaultValue="0" readOnly />
                                         <span className="text-[10px] font-bold text-gray-400 whitespace-nowrap">To Label:</span>
                                         <input className="w-10 h-7 text-[11px] border border-[#DBD9D9] rounded px-1.5 bg-white" defaultValue="0" readOnly />
-                                        {changePricesMode && (
-                                            <button onClick={handleToggleChangePrices} disabled={savingPrices}
-                                                className="flex items-center gap-1.5 h-7 px-3 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white rounded-md text-[12px] font-bold uppercase tracking-wide transition-colors shrink-0">
-                                                {savingPrices ? <RefreshCcw size={12} className="animate-spin" /> : <Check size={12} />}
-                                                {savingPrices ? "Saving..." : `OK (${Object.keys(priceEdits).length})`}
-                                            </button>
-                                        )}
                                         <AuditLogModal recordId={lcpk_box_uq} disabled={!lcpk_box_uq} size="sm" />
                                         <GridMenu items={[
+                                            { label: "Edit Box", icon: Pencil, color: "gray", onClick: () => handleOpenEditBox(), disabled: !lcpk_box_uq },
                                             { label: "Delete Box", icon: Trash2, color: "red", onClick: () => handleDeleteBox(), separator: true },
-                                            { label: "Transform Inventory", icon: ArrowRight, color: "orange", onClick: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalTransform(true); } },
-                                            { label: "Change Prices", icon: Pencil, color: "blue", onClick: handleToggleChangePrices },
+                                            { label: "Transform Inventory", icon: ArrowRight, color: "orange", onClick: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalTransform(true); }, separator: true },
                                             { label: "RePacking", icon: Package, color: "blue", onClick: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalRepacking(true); }, separator: true },
-                                            { label: "Notes", icon: FileText, color: "purple", onClick: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalNotes(true); } },
-                                            { label: "Composition", icon: Layers, color: "purple", onClick: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalComposition(true); }, separator: true },
                                             { label: "Zebra by Lot", icon: Tag, color: "gray", onClick: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } openReport(`/api/inventory-entry/reports/label-zebra?pack_uq=${encodeURIComponent(lcpack_uq)}&box_uq=${encodeURIComponent(lcpk_box_uq)}`); } },
                                             { label: "Meto by Lot", icon: Tag, color: "gray", onClick: () => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } openReport(`/api/inventory-entry/reports/label-meto?pack_uq=${encodeURIComponent(lcpack_uq)}&box_uq=${encodeURIComponent(lcpk_box_uq)}`); } },
                                         ]} />
@@ -1574,7 +1573,7 @@ export default function InventoryEntryPage() {
                                                 const uq = t(row.GROWER_UQ ?? row.GRO_UQ ?? row.VENDOR_UQ ?? row.GROW_UQ ?? "") || String(i);
                                                 const sel = poGrower === uq;
                                                 return (
-                                                <tr key={i} onClick={() => setPoGrower(uq)}
+                                                <tr key={i} onClick={() => { setPoGrower(uq); setSelPOLine(null); }}
                                                     className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                                     <td className="p-2 max-w-[120px] truncate font-medium">{t(row.GROWER)}</td>
                                                     <td className="p-2">{t(row.SHIP_DATE ?? "").substring(0, 10)}</td>
@@ -1599,12 +1598,12 @@ export default function InventoryEntryPage() {
                                             P.O. Lines{poGrower ? ` — ${t(poRows.find((r: any) => t(r.GROWER_UQ ?? r.GRO_UQ ?? r.VENDOR_UQ ?? r.GROW_UQ ?? "") === poGrower)?.GROWER)}` : ""} <span className="text-gray-400">({(poByGrower as any[]).length})</span>
                                         </span>
                                         {poGrower && (
-                                            <button onClick={() => setPoGrower("")} className="text-gray-400 hover:text-gray-700 shrink-0">
+                                            <button onClick={() => { setPoGrower(""); setSelPOLine(null); }} className="text-gray-400 hover:text-gray-700 shrink-0">
                                                 <X size={13} />
                                             </button>
                                         )}
                                     </div>
-                                    <button onClick={() => toast.info("Add P.O to Inventory — coming soon (needs a destination-packing design, see \"Add from PO\" on the AWB's Packings tab for the equivalent per-PO flow).")}
+                                    <button onClick={() => { if (!selPOLine) { toast.error("Select a P.O. line first."); return; } setModalAddPO(true); }}
                                         className="flex items-center gap-1.5 h-7 px-3 bg-green-600 hover:bg-green-500 text-white rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
                                         <Plus size={14} /> Add P.O
                                     </button>
@@ -1625,8 +1624,11 @@ export default function InventoryEntryPage() {
                                                 <tr><td colSpan={11} className="p-4 text-center"><RefreshCcw size={14} className="animate-spin mx-auto text-gray-400" /></td></tr>
                                             ) : (poByGrower as any[]).length === 0 ? (
                                                 <tr><td colSpan={11} className="p-4 text-center text-gray-400 italic">No orders</td></tr>
-                                            ) : (poByGrower as any[]).map((row: any, i: number) => (
-                                                <tr key={i} className="transition-colors hover:bg-gray-50 divide-x divide-[#DBD9D9]">
+                                            ) : (poByGrower as any[]).map((row: any, i: number) => {
+                                                const sel = selPOLine && t(selPOLine.PORDER_UQ) === t(row.PORDER_UQ) && t(selPOLine.SORDER_NO) === t(row.SORDER_NO);
+                                                return (
+                                                <tr key={i} onClick={() => setSelPOLine(row)}
+                                                    className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                                     <td className="p-2 text-gray-500 w-12">{t(row.FARM ?? "")}</td>
                                                     <td className="p-2">{t(row.PORDER ?? row.PORDER_NO ?? "")}</td>
                                                     <td className="p-2 text-gray-500">{t(row.SORDER_NO ?? "")}</td>
@@ -1639,7 +1641,8 @@ export default function InventoryEntryPage() {
                                                     <td className="p-2 text-center w-16 text-[#FB7506]">{t(row.QTY_DIFF ?? "")}</td>
                                                     <td className="p-2 text-center w-16 text-blue-600">{t(row.QTY_SHIP ?? "")}</td>
                                                 </tr>
-                                            ))}
+                                                );
+                                            })}
                                         </tbody>
                                     </table>
                                 </div>
@@ -1883,6 +1886,21 @@ export default function InventoryEntryPage() {
                 ldship_date={lddate}
                 userId={(session?.user as any)?.id || ""}
                 onSuccess={() => { refetchBoxes(); logAction("Insert", lcpack_uq, AUDIT_MAP["insert-box"].ext); }}
+            />
+
+            {/* ─── Add P.O. to Inventory Modal (PO List tab) ────────────────────────── */}
+            <ModalAddPOToInventory
+                open={modalAddPO}
+                onClose={() => setModalAddPO(false)}
+                poLine={selPOLine}
+                defaultDate={ldship_date}
+                userId={(session?.user as any)?.id || ""}
+                onSuccess={() => {
+                    setSelPOLine(null);
+                    qc.invalidateQueries({ queryKey: ["ie-po-summary", ldship_date] });
+                    if (poGrower) qc.invalidateQueries({ queryKey: ["ie-po-grower", poGrower, ldship_date] });
+                    logAction("Insert", t(selPOLine?.PORDER_UQ), AUDIT_MAP["add-po"].ext);
+                }}
             />
 
             {/* ─── Edit Box Modal ───────────────────────────────────────────────────── */}
