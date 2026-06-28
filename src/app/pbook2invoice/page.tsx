@@ -819,18 +819,24 @@ export default function Pbook2InvoicePage() {
                 <TBtn icon={RefreshCw}    label="Update"          onClick={() => setModalUpdateLine({ open: true, tab: "details" })} disabled={!selectedUnico} />
                 <TBtn icon={Trash2}       label="Void Line"       onClick={handleVoidLine} disabled={!selectedUnico || !canDelete || working} variant="danger" />
                 <div className="w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
-                <GridMenu items={[
-                    { label: "Change PO",       icon: FilePen,     color: "blue",   onClick: () => setModalChangePO(true), disabled: !selectedUnico },
-                    { label: "Attach Invoice",  icon: Paperclip,   color: "blue",   onClick: () => setModalAttach(true), disabled: !selectedUnico },
-                    { label: "Partial Invoice", icon: Scissors,    color: "blue",   onClick: () => setModalPartial(true), disabled: !selectedUnico, separator: true },
-                    { label: "Reset Inv.",      icon: RotateCcw,   color: "amber",  onClick: handleResetInv, disabled: !selectedUnico || working },
-                    { label: "Notes",           icon: StickyNote,  color: "purple", onClick: () => setModalUpdateLine({ open: true, tab: "notes" }), disabled: !selectedUnico },
-                    { label: "Stock OM",        icon: ShoppingCart, color: "purple", onClick: () => { setActiveTab("stockom"); if (selectedUnico) fetchStockOm(); }, disabled: !selectedUnico, separator: true },
-                    { label: "Pick List",       icon: List,        color: "gray",   onClick: () => setReportModalUrl(`/api/pbook2invoice/reports/pick-list?invoice_uq=${encodeURIComponent(t(selectedLine?.INVOICE_UQ))}`), disabled: !t(selectedLine?.INVOICE_UQ) || !parseInt(selectedLine?.INVOICE_NO ?? 0) },
-                    { label: "Invoice",         icon: Receipt,     color: "gray",   onClick: () => {}, disabled: !selectedUnico, separator: true },
-                    { label: "Search",          icon: Search,      color: "gray",   onClick: () => {} },
-                    { label: "Change Cust.",    icon: UserCog,     color: "gray",   onClick: () => {}, disabled: !selectedUnico },
-                ]} />
+                <div className="flex items-center bg-white border border-[#DBD9D9] rounded px-2 py-1 gap-1 w-56 shrink-0">
+                    <Search size={11} className="text-gray-400 shrink-0" />
+                    <input
+                        value={productSearch}
+                        onChange={e => setProductSearch(e.target.value)}
+                        onKeyDown={e => { if (e.key === "Enter") setAppliedSearch(productSearch); }}
+                        placeholder="Search product..."
+                        className="text-[11px] text-gray-700 placeholder-gray-400 outline-none flex-1 min-w-0 bg-transparent"
+                    />
+                    {productSearch && (
+                        <button onClick={() => { setProductSearch(""); setAppliedSearch(""); }}>
+                            <X size={11} className="text-gray-400 hover:text-gray-700" />
+                        </button>
+                    )}
+                </div>
+                <TBtn icon={List}   label="Prebook Line"  onClick={() => {}} />
+                <TBtn icon={Copy}   label="Gen. Invoices"  onClick={handleGenInvoices} disabled={!selectedUnico || working} />
+                <TBtn icon={Check}  label="Make Invoice"   onClick={handleMakeInvoice} disabled={!selectedUnico || !canEdit || working} variant="success" />
             </div>
 
             {/* ── Closed Prebook box by date and customer (Lines) — separate panel, not nested in any grid ── */}
@@ -843,36 +849,18 @@ export default function Pbook2InvoicePage() {
                     {loadingLines && <RefreshCcw size={10} className="text-gray-400 animate-spin shrink-0 ml-2" />}
                 </div>
                 <div className="h-10 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-center justify-end px-3 gap-2 shrink-0 overflow-x-auto">
-                    <div className="flex items-center bg-white border border-[#DBD9D9] rounded px-2 py-1 gap-1 w-56 shrink-0">
-                        <Search size={11} className="text-gray-400 shrink-0" />
-                        <input
-                            value={productSearch}
-                            onChange={e => setProductSearch(e.target.value)}
-                            onKeyDown={e => { if (e.key === "Enter") setAppliedSearch(productSearch); }}
-                            placeholder="Search product..."
-                            className="text-[11px] text-gray-700 placeholder-gray-400 outline-none flex-1 min-w-0 bg-transparent"
-                        />
-                        {productSearch && (
-                            <button onClick={() => { setProductSearch(""); setAppliedSearch(""); }}>
-                                <X size={11} className="text-gray-400 hover:text-gray-700" />
-                            </button>
-                        )}
-                    </div>
-                    <button onClick={() => {}}
-                        className="flex items-center gap-1.5 bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] px-3 h-7 rounded-md text-[14px] font-semibold uppercase tracking-wide transition-all whitespace-nowrap shrink-0"
-                    >
-                        <List size={14} /> Prebook Line
-                    </button>
-                    <button onClick={handleGenInvoices} disabled={!selectedUnico || working}
-                        className="flex items-center gap-1.5 bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] px-3 h-7 rounded-md text-[14px] font-semibold uppercase tracking-wide disabled:opacity-40 disabled:cursor-not-allowed transition-all whitespace-nowrap shrink-0"
-                    >
-                        <Copy size={14} /> Gen. Invoices
-                    </button>
-                    <button onClick={handleMakeInvoice} disabled={!selectedUnico || !canEdit || working}
-                        className="flex items-center gap-1.5 bg-green-600 hover:bg-green-500 text-white px-3 h-7 rounded-md text-[14px] font-semibold uppercase tracking-wide disabled:opacity-40 disabled:cursor-not-allowed transition-all whitespace-nowrap shrink-0"
-                    >
-                        <Check size={14} /> Make Invoice
-                    </button>
+                    <GridMenu items={[
+                        { label: "Change PO",       icon: FilePen,     color: "blue",   onClick: () => setModalChangePO(true), disabled: !selectedUnico },
+                        { label: "Attach Invoice",  icon: Paperclip,   color: "blue",   onClick: () => setModalAttach(true), disabled: !selectedUnico },
+                        { label: "Partial Invoice", icon: Scissors,    color: "blue",   onClick: () => setModalPartial(true), disabled: !selectedUnico, separator: true },
+                        { label: "Reset Inv.",      icon: RotateCcw,   color: "amber",  onClick: handleResetInv, disabled: !selectedUnico || working },
+                        { label: "Notes",           icon: StickyNote,  color: "purple", onClick: () => setModalUpdateLine({ open: true, tab: "notes" }), disabled: !selectedUnico },
+                        { label: "Stock OM",        icon: ShoppingCart, color: "purple", onClick: () => { setActiveTab("stockom"); if (selectedUnico) fetchStockOm(); }, disabled: !selectedUnico, separator: true },
+                        { label: "Pick List",       icon: List,        color: "gray",   onClick: () => setReportModalUrl(`/api/pbook2invoice/reports/pick-list?invoice_uq=${encodeURIComponent(t(selectedLine?.INVOICE_UQ))}`), disabled: !t(selectedLine?.INVOICE_UQ) || !parseInt(selectedLine?.INVOICE_NO ?? 0) },
+                        { label: "Invoice",         icon: Receipt,     color: "gray",   onClick: () => {}, disabled: !selectedUnico, separator: true },
+                        { label: "Search",          icon: Search,      color: "gray",   onClick: () => {} },
+                        { label: "Change Cust.",    icon: UserCog,     color: "gray",   onClick: () => {}, disabled: !selectedUnico },
+                    ]} />
                 </div>
                 <div className="bg-white border-b border-[#DBD9D9] p-1 text-right text-[10px] text-gray-400 font-bold italic pr-4 shrink-0">
                     {(lines as any[]).length} Records
