@@ -99,26 +99,28 @@ export function ReportPDF({ company, title, subtitle, columns, rows, group, land
     return (
         <Document>
             <Page size="LETTER" orientation={landscape ? "landscape" : "portrait"} style={styles.page}>
-                <View style={styles.headerRow}>
-                    <View>
-                        <Text style={styles.companyName}>{company.name}</Text>
-                        {company.address && <Text style={styles.companyLine}>{company.address}</Text>}
-                        {company.cityStateZip && <Text style={styles.companyLine}>{company.cityStateZip}</Text>}
-                        {(company.phone || company.fax) && (
-                            <Text style={styles.companyLine}>
-                                {company.phone && `Phone: ${company.phone}`}{company.phone && company.fax ? "  " : ""}{company.fax && `Fax: ${company.fax}`}
-                            </Text>
-                        )}
+                <View fixed>
+                    <View style={styles.headerRow}>
+                        <View>
+                            <Text style={styles.companyName}>{company.name}</Text>
+                            {company.address && <Text style={styles.companyLine}>{company.address}</Text>}
+                            {company.cityStateZip && <Text style={styles.companyLine}>{company.cityStateZip}</Text>}
+                            {(company.phone || company.fax) && (
+                                <Text style={styles.companyLine}>
+                                    {company.phone && `Phone: ${company.phone}`}{company.phone && company.fax ? "  " : ""}{company.fax && `Fax: ${company.fax}`}
+                                </Text>
+                            )}
+                        </View>
+                        <View style={styles.titleBlock}>
+                            <Text style={styles.reportTitle}>{title}</Text>
+                            {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+                        </View>
                     </View>
-                    <View style={styles.titleBlock}>
-                        <Text style={styles.reportTitle}>{title}</Text>
-                        {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
-                    </View>
+                    <View style={styles.divider} />
                 </View>
-                <View style={styles.divider} />
 
                 <View style={styles.table}>
-                    <View style={styles.theadRow}>
+                    <View style={styles.theadRow} fixed>
                         {columns.map(c => (
                             <Text key={c.key} style={[styles.th, colFlex(c.width), { textAlign: c.align ?? "left" }]}>{c.label}</Text>
                         ))}
