@@ -644,15 +644,8 @@ export default function Pbook2InvoicePage() {
             <div className="flex flex-col lg:flex-row gap-2 mx-2 mt-2 shrink-0 lg:max-h-[280px]">
 
                 {/* Left: Date Picker */}
-                <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1 lg:flex-[0.9] min-w-0">
-                    <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center px-3 shrink-0 rounded-t-lg">
-                        <Calendar size={15} className="text-[#FB7506]" />
-                        <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] ml-2">
-                            Date Picker [Closed Prebooks]
-                        </span>
-                        {loadingDates && <RefreshCcw size={10} className="text-gray-400 animate-spin ml-2" />}
-                    </div>
-                    <div className="h-10 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-center justify-end px-3 gap-1.5 shrink-0 overflow-x-auto">
+                <div className="flex flex-col flex-1 lg:flex-[0.9] min-w-0 min-h-0">
+                    <div className="h-10 bg-[#F5F3F3] border border-[#DBD9D9] rounded-lg flex items-center justify-end px-3 gap-1.5 shrink-0 shadow-sm mb-2 overflow-x-auto">
                         {(["delivery", "shipping"] as const).map(m => (
                             <button key={m} onClick={() => switchMode(m)}
                                 className={cn(
@@ -670,6 +663,14 @@ export default function Pbook2InvoicePage() {
                         >
                             <RefreshCcw size={14} /> Refresh
                         </button>
+                    </div>
+                    <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1 min-h-0">
+                    <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center px-3 shrink-0 rounded-t-lg">
+                        <Calendar size={15} className="text-[#FB7506]" />
+                        <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] ml-2">
+                            Date Picker [Closed Prebooks]
+                        </span>
+                        {loadingDates && <RefreshCcw size={10} className="text-gray-400 animate-spin ml-2" />}
                     </div>
                     <div className="bg-white border-b border-[#DBD9D9] p-1 text-right text-[10px] text-gray-400 font-bold italic pr-4 shrink-0">
                         {dateRows.length} Records
@@ -720,18 +721,12 @@ export default function Pbook2InvoicePage() {
                             </tbody>
                         </table>
                     </div>
+                    </div>
                 </div>
 
                 {/* Right: Customers for the selected date */}
-                <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1 lg:flex-[1.1] min-w-0">
-                    <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center px-3 shrink-0 rounded-t-lg min-w-0">
-                        <Users size={15} className="text-[#FB7506] shrink-0" />
-                        <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] truncate ml-2">
-                            {selectedDate ? `Customers — ${fmtDate(selectedDate)}` : "Customers"}
-                        </span>
-                        {loadingCustomers && <RefreshCcw size={10} className="text-gray-400 animate-spin shrink-0 ml-2" />}
-                    </div>
-                    <div className="h-10 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-center justify-end px-3 gap-1.5 shrink-0 overflow-x-auto">
+                <div className="flex flex-col flex-1 lg:flex-[1.1] min-w-0 min-h-0">
+                    <div className="h-10 bg-[#F5F3F3] border border-[#DBD9D9] rounded-lg flex items-center justify-end px-3 gap-1.5 shrink-0 shadow-sm mb-2 overflow-x-auto">
                         <button onClick={handleMakeInvoicesBulk} disabled={!selectedDate || selectedCustUq === "%" || working}
                             className="flex items-center gap-1.5 px-3 h-7 text-[14px] font-semibold uppercase tracking-wide bg-green-600 hover:bg-green-500 text-white rounded-md disabled:opacity-40 disabled:cursor-not-allowed transition-all whitespace-nowrap shrink-0"
                         >
@@ -747,6 +742,14 @@ export default function Pbook2InvoicePage() {
                         >
                             <Link2 size={14} /> Invoices
                         </button>
+                    </div>
+                    <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1 min-h-0">
+                    <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center px-3 shrink-0 rounded-t-lg min-w-0">
+                        <Users size={15} className="text-[#FB7506] shrink-0" />
+                        <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] truncate ml-2">
+                            {selectedDate ? `Customers — ${fmtDate(selectedDate)}` : "Customers"}
+                        </span>
+                        {loadingCustomers && <RefreshCcw size={10} className="text-gray-400 animate-spin shrink-0 ml-2" />}
                     </div>
                     <div className="bg-white border-b border-[#DBD9D9] p-1 text-right text-[10px] text-gray-400 font-bold italic pr-4 shrink-0">
                         {(customers as any[]).filter((row: any) => t(row.CUSTOMER_UQ ?? "") !== "%").length} Records
@@ -811,6 +814,7 @@ export default function Pbook2InvoicePage() {
                             </tbody>
                         </table>
                     </div>
+                    </div>
                 </div>
             </div>
 
@@ -841,14 +845,14 @@ export default function Pbook2InvoicePage() {
 
             {/* ── Closed Prebook box by date and customer (Lines) — separate panel, not nested in any grid ── */}
             <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden mx-2 mt-2 h-[432px] shrink-0">
-                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center px-3 shrink-0 min-w-0">
-                    <Lock size={15} className="text-[#FB7506] shrink-0" />
-                    <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] truncate ml-2">
-                        Closed Prebook box by date and customer
-                    </span>
-                    {loadingLines && <RefreshCcw size={10} className="text-gray-400 animate-spin shrink-0 ml-2" />}
-                </div>
-                <div className="h-10 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-center justify-end px-3 gap-2 shrink-0 overflow-x-auto">
+                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between pl-3 pr-0 shrink-0 min-w-0 rounded-tr-lg">
+                    <div className="flex items-center min-w-0">
+                        <Lock size={15} className="text-[#FB7506] shrink-0" />
+                        <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] truncate ml-2">
+                            Closed Prebook box by date and customer
+                        </span>
+                        {loadingLines && <RefreshCcw size={10} className="text-gray-400 animate-spin shrink-0 ml-2" />}
+                    </div>
                     <GridMenu items={[
                         { label: "Change PO",       icon: FilePen,     color: "blue",   onClick: () => setModalChangePO(true), disabled: !selectedUnico },
                         { label: "Attach Invoice",  icon: Paperclip,   color: "blue",   onClick: () => setModalAttach(true), disabled: !selectedUnico },
