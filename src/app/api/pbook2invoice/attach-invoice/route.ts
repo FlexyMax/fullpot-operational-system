@@ -8,15 +8,18 @@ export async function POST(req: NextRequest) {
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const b = await req.json();
     const pbook_uq = String(b.pbook_uq ?? "");
+    const invoice_uq = String(b.invoice_uq ?? "");
     if (!pbook_uq) return NextResponse.json({ error: "pbook_uq required" }, { status: 400 });
+    if (!invoice_uq) return NextResponse.json({ error: "invoice_uq required" }, { status: 400 });
     try {
         const salProfile = await executeProcedure("sp_flower_salesman_uq", {
             lcunico: "%",
             lcuser_uq: (session as any).user?.id ?? "",
         });
         const salesman_uq = salProfile.recordset?.[0]?.unico ?? "";
-        const r = await executeProcedure("sp_flower_prebook_header_reset_invoice", {
-            lcunico: pbook_uq,
+        const r = await executeProcedure("sp_flower_prebook_header_attach_invoice", {
+            lcpbook_uq: pbook_uq,
+            lcinvoice_uq: invoice_uq,
             lcsalesman_uq: salesman_uq,
         });
         const row = r.recordset?.[0];

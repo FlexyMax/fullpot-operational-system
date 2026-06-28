@@ -7,15 +7,18 @@ export async function DELETE(req: NextRequest) {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const b = await req.json();
-    const unico         = String(b.unico ?? "");
-    const boxes_delete  = parseInt(b.boxes_delete ?? 1);
-    const user_uq       = (session as any).user?.id ?? "";
+    const unico = String(b.unico ?? "");
     if (!unico) return NextResponse.json({ error: "unico required" }, { status: 400 });
     try {
-        const r = await executeProcedure("sp_flower_invoice_box_delete_part", {
-            lcunico:         unico,
-            lnboxes_delete:  boxes_delete,
-            lcuser_uq:       user_uq,
+        const salProfile = await executeProcedure("sp_flower_salesman_uq", {
+            lcunico: "%",
+            lcuser_uq: (session as any).user?.id ?? "",
+        });
+        const salesman_uq = salProfile.recordset?.[0]?.unico ?? "";
+        const r = await executeProcedure("sp_flower_prebook_box_void", {
+            lcunico: unico,
+            lcsalesman_uq: salesman_uq,
+            llvoid: 1,
         });
         const row = r.recordset?.[0];
         if (row?.error === 1 || row?.Error === 1)

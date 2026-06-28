@@ -306,3 +306,77 @@ Remaining work:
   checkbox squares onto the standard gray-container token with `#FB7506`
   filled chips for active days, matching the orange-chip pattern used
   elsewhere instead of an unrelated one-off green.
+- `pbook2invoice` (Prebook to Invoice) — (2026-06-28) prior rounds had already
+  fixed this page's visual structure (see the entries above), but most of its
+  buttons were empty `onClick` stubs. Reverse-engineered the real VFP screen
+  the same way as Inventory Entry — extracted printable strings from the
+  `.FPT` memo files for the main screen and all 8 modal sub-screens in
+  `FOS_VFP_Original\Pbook2Invoice\`, then verified every stored procedure's
+  exact params and (for reports) the literal `reporte = '....frx'` value live
+  via `OBJECT_DEFINITION()`.
+  **Found 3 real proc-mismatch bugs while doing this, beyond the missing
+  buttons — a reminder that "looks wired" isn't the same as "calls the right
+  proc," and that an SP's own header comment is worth reading even when a
+  route looks plausible:** (1) "Void Line" called `sp_flower_invoice_box_delete_part`
+  (the *Delete Invoice* modal's proc, operates on `flower_invoice_box`) instead
+  of `sp_flower_prebook_box_void` (operates on `flower_prebook_box`, the table
+  this page's lines actually come from) — selecting a line and voiding it was
+  silently a no-op. (2) "Reset Inv." called a read-only SELECT
+  (`sp_flower_prebook_to_invoice_insert`) scoped to a whole date and reported
+  a fake "Reset complete (N records)" success toast without changing anything
+  — the real reset (`sp_flower_prebook_header_reset_invoice`) needs one
+  specific prebook header, not a date. (3) "Make Invoice" / "Make Invoices" /
+  "Gen. Invoices" had their procs cross-wired three ways — confirmed via each
+  proc's own SQL comment (literally `-- boton Gen Invoices` on the one "Make
+  Invoice" was calling). Fixed: "Make Invoice" (single line) →
+  `sp_flower_invoice_insert_from_prebook_uq`, "Make Invoices" (bulk, Customers
+  panel) → `sp_flower_invoice_insert_by_customer` (now requires a specific
+  customer selected, not "ALL"), "Gen. Invoices" → `sp_flower_invoice_insert_from_prebook_to_invoice`.
+  **Also found the 5 detail tabs' (Invoiced Prebooks/Assigned Stock/Purchase/
+  Stock OM/Similar Products) column→field mappings didn't match their real
+  stored procedures' actual output column names at all** (e.g. "Stock" column
+  read `r.STOCK ?? r.BOXES ?? r.QTY_BOXES`, but the proc returns `wh_stock`) —
+  every numeric/date column across all 5 tabs was rendering blank. The tables
+  were correctly *styled* (dark thead, dividers, peach selection — visual
+  correctness was checked in an earlier round) but never checked against real
+  data, which is why this went unnoticed; re-derived every column from each
+  proc's actual `SELECT` list and fixed all 5.
+  Built the missing modals (`src/components/pbook2invoice/`): Change PO,
+  Unassign Stock, Attach Invoice, Partial Invoice (multi-line picker +
+  join-to-existing-invoice toggle), and a combined Update Line / Notes modal
+  (two tabs sharing one GET/PUT round-trip instead of two, since both ultimately
+  read/write the same `flower_prebook_box` row) — plus a read-only "Invoice By
+  Date" list modal. New API routes follow the existing
+  `executeProcedure(name, params)` → `{success, error}` shape exactly.
+  Wired 2 new PDF reports (Pick List, Prebook Without Invoice) through the
+  standard `ReportPDF`/`ReportModal` pattern — never `window.open()`.
+  **Design-standard pass (Part B):** added the `PanelGrid` record-count bar
+  (`bg-white border-b ... text-right text-[10px] ... italic`, "{n} Records")
+  under the Date Picker/Customers/Lines panel headers, which had none; split
+  each of those 3 headers into a white title row + a separate `bg-[#F5F3F3]`
+  button row (they'd been cramming buttons into the white title bar, the same
+  miss the "standalone action button toolbar" rule above already called out
+  for this page's *main* bar); converted the main action bar's 12 buttons to
+  the `GridMenu` pattern (kept Update + Void Line inline, grouped the rest by
+  category); added `src/store/usePbook2InvoiceStore.ts` (Zustand) for the
+  page's UI/selection/modal state, matching the convention already used by
+  Vendors/Customers/Freights/AP/etc. (this page was using local `useState` for
+  the same shape of state — Inventory Entry does too and wasn't flagged, so
+  this isn't a universal rule, but worth matching here since the user asked
+  specifically); stacked the Date Picker + Customers panels on mobile
+  (`flex-col lg:flex-row`) instead of staying side-by-side at any width.
+  **Deferred, explicitly out of scope this round:** "Search" and "Change
+  Cust." buttons open *shared* VFP dialogs outside the Pbook2Invoice folder
+  (need their own investigation); "Invoice By Prebook" read-only view (no
+  confident SP match found, unlike "Invoice By Customer"); the actual invoice
+  *document* print proc (distinct from `sp_flower_invoice_print_num`, which
+  only bumps a reprint counter — not found yet); product/case swapping inside
+  the Update Line modal (shown read-only — would need a dedicated product-search
+  sub-modal, same gap noted for Inventory Entry's own product picker).
+  All new GET routes and the 2 reports were verified live against real
+  production data; the mutating actions (Void Line, Reset Inv., Change PO,
+  Unassign Stock, Attach Invoice, Partial Invoice, Make Invoice/Invoices, Gen
+  Invoices, Update Line save) compile clean but are pending a live test pass
+  with the user before being considered fully verified, per their request to
+  test those together rather than have them exercised unsupervised against
+  production data.

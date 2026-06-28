@@ -7,17 +7,18 @@ export async function POST(req: NextRequest) {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const b = await req.json();
-    const pbook_uq = String(b.pbook_uq ?? "");
-    if (!pbook_uq) return NextResponse.json({ error: "pbook_uq required" }, { status: 400 });
+    const stock_uq = String(b.stock_uq ?? "");
+    const boxes_delete = parseInt(b.boxes_delete ?? 0, 10);
+    const reason_uq = String(b.reason_uq ?? "");
+    if (!stock_uq) return NextResponse.json({ error: "stock_uq required" }, { status: 400 });
+    if (!boxes_delete || boxes_delete <= 0) return NextResponse.json({ error: "boxes_delete required" }, { status: 400 });
+    if (!reason_uq) return NextResponse.json({ error: "reason_uq required" }, { status: 400 });
     try {
-        const salProfile = await executeProcedure("sp_flower_salesman_uq", {
-            lcunico: "%",
-            lcuser_uq: (session as any).user?.id ?? "",
-        });
-        const salesman_uq = salProfile.recordset?.[0]?.unico ?? "";
-        const r = await executeProcedure("sp_flower_prebook_header_reset_invoice", {
-            lcunico: pbook_uq,
-            lcsalesman_uq: salesman_uq,
+        const r = await executeProcedure("sp_flower_packing_stock_unassign", {
+            lcstock_uq: stock_uq,
+            lnboxes_delete: boxes_delete,
+            lcreason_uq: reason_uq,
+            lcnewpbook_d_uq: null,
         });
         const row = r.recordset?.[0];
         if (row?.error === 1 || row?.Error === 1)

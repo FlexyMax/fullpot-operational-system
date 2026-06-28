@@ -19,6 +19,14 @@ import { usePagePermissions } from "@/lib/permissions";
 import { GridMenu } from "@/components/GridMenu";
 import AppHeader from "@/components/layout/AppHeader";
 import AppFooter from "@/components/layout/AppFooter";
+import { ModalUpdateLine } from "@/components/pbook2invoice/ModalUpdateLine";
+import { ModalChangePO } from "@/components/pbook2invoice/ModalChangePO";
+import { ModalUnassignStock } from "@/components/pbook2invoice/ModalUnassignStock";
+import { ModalAttachInvoice } from "@/components/pbook2invoice/ModalAttachInvoice";
+import { ModalPartialInvoice } from "@/components/pbook2invoice/ModalPartialInvoice";
+import { ReportModal } from "@/components/reports/ReportModal";
+import { ModalInvoicesByCustomer } from "@/components/pbook2invoice/ModalInvoicesByCustomer";
+import { usePbook2InvoiceStore } from "@/store/usePbook2InvoiceStore";
 const EMPTY_ARR: any[] = [];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -56,7 +64,6 @@ const BOTTOM_TABS = [
     { id: "stockom",   label: "Stock OM",             icon: ShoppingCart },
     { id: "similar",   label: "Similar Products",     icon: BookOpen     },
 ] as const;
-type BottomTabId = typeof BOTTOM_TABS[number]["id"];
 
 // ─── Table cell helpers ────────────────────────────────────────────────────────
 function Th({ children, className }: { children: any; className?: string }) {
@@ -129,21 +136,21 @@ function InvoicedTab({ rows }: { rows: any[] }) {
                     <tbody className="divide-y divide-[#DBD9D9]">
                         {rows.map((r, i) => (
                             <tr key={i} className="hover:bg-gray-50 text-gray-600">
-                                <Td>{t(r.LOT)}</Td>
-                                <Td>{fmtDate(r.INVOICE_DATE ?? r.INV_DATE ?? r.LDINV_DATE)}</Td>
-                                <Td className="font-semibold text-blue-700">{t(r.INVOICE ?? r.INVOICE_NO)}</Td>
-                                <Td className="text-right">{fmt(r.BOXES)}</Td>
-                                <Td className="text-right">{fmtI(r.UNITS_X_CASE ?? r.UXCASE ?? r.UNITS_X_BOX)}</Td>
+                                <Td>{t(r.LOTE)}</Td>
+                                <Td>{fmtDate(r.INVOICE_DATE)}</Td>
+                                <Td className="font-semibold text-blue-700">{t(r.INVOICE_NO)}</Td>
+                                <Td className="text-right">{fmt(r.BOX_QTY)}</Td>
+                                <Td className="text-right">{fmtI(r.UNITS_X_BOX)}</Td>
                                 <Td className="text-right">{fmt(r.PRICE)}</Td>
                                 <Td className="text-right">{fmt(r.TOTAL_UNITS)}</Td>
-                                <Td className="text-right font-semibold">{fmt(r.VALUE)}</Td>
-                                <Td>{t(r.VENDOR ?? r.GROWER)}</Td>
-                                <Td>{t(r.WAREHOUSE ?? r.WHOUSE)}</Td>
-                                <Td>{t(r.CASE_SH ?? r.CASE)}</Td>
-                                <Td className="text-right">{fmt(r.UNIT_COST)}</Td>
+                                <Td className="text-right font-semibold">{fmt(r.EXT_PRICE)}</Td>
+                                <Td>{t(r.GROWER)}</Td>
+                                <Td>{t(r.WP_NAME)}</Td>
+                                <Td>{t(r.CASE_SH)}</Td>
+                                <Td className="text-right">{fmt(r.FARM_UNIT_PRICE)}</Td>
                                 <Td className="text-right">{fmtI(r.DAYS)}</Td>
                                 <Td>{t(r.STATUS)}</Td>
-                                <Td>{t(r.SOLD_PRODUCT)}</Td>
+                                <Td>{t(r.DESCRIPTION)}</Td>
                             </tr>
                         ))}
                         {rows.length === 0 && <tr><td colSpan={15} className="p-6 text-center text-gray-400 italic">No invoiced prebooks</td></tr>}
@@ -154,7 +161,9 @@ function InvoicedTab({ rows }: { rows: any[] }) {
     );
 }
 
-function AssignedStockTab({ rows }: { rows: any[] }) {
+function AssignedStockTab({ rows, onUnassign }: { rows: any[]; onUnassign: (row: any) => void }) {
+    const [selected, setSelected] = useState<string | null>(null);
+    const selRow = rows.find(r => t(r.UNICO) === selected);
     return (
         <div>
             <div className="flex items-center gap-2 px-3 h-10 bg-white border-b border-[#DBD9D9] shrink-0">
@@ -162,7 +171,7 @@ function AssignedStockTab({ rows }: { rows: any[] }) {
                 <span className="font-bold text-[14px] text-[#4F4F4F] uppercase tracking-tight">Preassigned Stock</span>
                 <div className="ml-auto flex gap-2">
                     <SBtn icon={Plus}  label="Assign to Prebook box" onClick={() => {}} />
-                    <SBtn icon={Minus} label="Unassign Lot"          onClick={() => {}} />
+                    <SBtn icon={Minus} label="Unassign Lot" disabled={!selRow} onClick={() => selRow && onUnassign(selRow)} />
                 </div>
             </div>
             <div className="h-[230px] overflow-y-auto">
@@ -179,25 +188,30 @@ function AssignedStockTab({ rows }: { rows: any[] }) {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-[#DBD9D9]">
-                        {rows.map((r, i) => (
-                            <tr key={i} className="hover:bg-gray-50 text-gray-600">
-                                <Td>{t(r.CUSTOMER)}</Td>
-                                <Td>{t(r.WAREHOUSE ?? r.WHOUSE)}</Td>
-                                <Td>{t(r.VENDOR ?? r.GROWER)}</Td>
-                                <Td className="text-right">{fmtI(r.STOCK ?? r.BOXES ?? r.QTY_BOXES)}</Td>
-                                <Td className="text-right">{fmtI(r.UP_X_PACK ?? r.UXPACK)}</Td>
-                                <Td className="text-right">{fmtI(r.PACKS_X_CASE ?? r.PXCASE)}</Td>
-                                <Td className="text-right">{fmtI(r.UNITS_X_CASE ?? r.UNITS_X_BOX ?? r.UXCASE)}</Td>
-                                <Td>{t(r.LOTE ?? r.LOT ?? r.PCCODE)}</Td>
-                                <Td>{fmtDate(r.DATE ?? r.PACK_DATE)}</Td>
-                                <Td className="text-right">{fmtI(r.DAYS ?? r.AGE)}</Td>
-                                <Td>{t(r.AWB)}</Td>
-                                <Td className="text-right">{fmt(r.UNIT_PRICE ?? r.UNITPRICE)}</Td>
-                                <Td className="text-right">{fmt(r.BOX_VALUE ?? r.BOXVALUE)}</Td>
-                                <Td className="text-right font-semibold">{fmt(r.TOTAL_VALUE ?? r.TOTALVALUE)}</Td>
-                                <Td className="text-right">{fmt(r.UNIT_COST ?? r.UNITCOST)}</Td>
-                            </tr>
-                        ))}
+                        {rows.map((r, i) => {
+                            const uq = t(r.UNICO);
+                            const sel = selected === uq;
+                            return (
+                                <tr key={i} onClick={() => setSelected(sel ? null : uq)}
+                                    className={cn("cursor-pointer transition-colors", sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50 text-gray-600")}>
+                                    <Td>{t(r.CUSTOMER)}</Td>
+                                    <Td>{t(r.WAREHOUSE)}</Td>
+                                    <Td>{t(r.GROWER)}</Td>
+                                    <Td className="text-right">{fmtI(r.WH_STOCK)}</Td>
+                                    <Td className="text-right">{fmtI(r.UP_X_PACK)}</Td>
+                                    <Td className="text-right">{fmtI(r.PACKS_BOX)}</Td>
+                                    <Td className="text-right">{fmtI(r.TUNITS_X_BOX)}</Td>
+                                    <Td>{t(r.LOTE)}</Td>
+                                    <Td>{fmtDate(r.BOX_DATE)}</Td>
+                                    <Td className="text-right">{fmtI(r.DAYS)}</Td>
+                                    <Td>{t(r.AWBCODE)}</Td>
+                                    <Td className="text-right">{fmt(r.PRICE_X_UNIT)}</Td>
+                                    <Td className="text-right">{fmt(r.BOXVALUE)}</Td>
+                                    <Td className="text-right font-semibold">{fmt(r.STOCKVALUE)}</Td>
+                                    <Td className="text-right">{fmt(r.FARM_UNIT_PRICE)}</Td>
+                                </tr>
+                            );
+                        })}
                         {rows.length === 0 && <tr><td colSpan={15} className="p-6 text-center text-gray-400 italic">No assigned stock</td></tr>}
                     </tbody>
                 </table>
@@ -225,13 +239,13 @@ function PurchaseTab({ rows }: { rows: any[] }) {
                     <tbody className="divide-y divide-[#DBD9D9]">
                         {rows.map((r, i) => (
                             <tr key={i} className="hover:bg-gray-50 text-gray-600">
-                                <Td className="font-semibold">{t(r.PO_NO ?? r.PURCHASE_NO ?? r.SORDER_NO)}</Td>
-                                <Td>{t(r.PRODUCT ?? r.DESCRIPTION)}</Td>
-                                <Td>{t(r.VENDOR ?? r.GROWER)}</Td>
-                                <Td className="text-right">{fmtI(r.BOXES ?? r.QTY_BOXES)}</Td>
-                                <Td className="text-right">{fmtI(r.UNITS_X_CASE ?? r.UNITS_X_BOX)}</Td>
-                                <Td className="text-right">{fmt(r.COST ?? r.UNIT_COST)}</Td>
-                                <Td>{t(r.STATUS)}</Td>
+                                <Td className="font-semibold">{t(r.CPO_NUMBER ?? r.SORDER_NO)}</Td>
+                                <Td>{t(r.DESCRIPTION)}</Td>
+                                <Td>{t(r.GROWER)}</Td>
+                                <Td className="text-right">{fmtI(r.QTY_PORDER)}</Td>
+                                <Td className="text-right">{fmtI(r.TUNITS_X_BOX)}</Td>
+                                <Td className="text-right">{fmt(r.PO_PRICE)}</Td>
+                                <Td>{r.ACTIVE ? "Active" : "Inactive"}</Td>
                             </tr>
                         ))}
                         {rows.length === 0 && <tr><td colSpan={7} className="p-6 text-center text-gray-400 italic">No purchase records</td></tr>}
@@ -256,7 +270,7 @@ function StockOmTab({ rows, loading }: { rows: any[]; loading: boolean }) {
                 <table className="min-w-full text-xs text-left">
                     <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                         <tr>
-                            <Th>Customer</Th><Th>Warehouse</Th><Th>Vendor</Th>
+                            <Th>Warehouse</Th><Th>Vendor</Th>
                             <Th>Case</Th><Th className="text-right">UxPack</Th><Th className="text-right">PxCase</Th><Th className="text-right">UxCase</Th>
                             <Th>Lote</Th><Th className="text-right">Days</Th><Th>Awb</Th>
                             <Th className="text-right">Stock</Th><Th className="text-right">UnitPrice</Th>
@@ -266,30 +280,29 @@ function StockOmTab({ rows, loading }: { rows: any[]; loading: boolean }) {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-[#DBD9D9]">
-                        {loading && <tr><td colSpan={18} className="p-6 text-center text-gray-400 italic"><Loader2 size={14} className="animate-spin inline mr-2" />Loading...</td></tr>}
+                        {loading && <tr><td colSpan={17} className="p-6 text-center text-gray-400 italic"><Loader2 size={14} className="animate-spin inline mr-2" />Loading...</td></tr>}
                         {!loading && rows.map((r, i) => (
                             <tr key={i} className="hover:bg-gray-50 text-gray-600">
-                                <Td>{t(r.CUSTOMER)}</Td>
-                                <Td>{t(r.WAREHOUSE ?? r.WHOUSE)}</Td>
-                                <Td>{t(r.VENDOR ?? r.GROWER)}</Td>
-                                <Td>{t(r.CASE_SH ?? r.CASE)}</Td>
-                                <Td className="text-right">{fmtI(r.UP_X_PACK ?? r.UXPACK)}</Td>
-                                <Td className="text-right">{fmtI(r.PACKS_X_CASE ?? r.PXCASE)}</Td>
-                                <Td className="text-right">{fmtI(r.UNITS_X_CASE ?? r.UNITS_X_BOX)}</Td>
-                                <Td>{t(r.LOTE ?? r.LOT ?? r.PCCODE)}</Td>
-                                <Td className="text-right">{fmtI(r.DAYS ?? r.AGE)}</Td>
-                                <Td>{t(r.AWB)}</Td>
-                                <Td className="text-right">{fmtI(r.STOCK ?? r.BOXES)}</Td>
-                                <Td className="text-right">{fmt(r.UNIT_PRICE ?? r.UNITPRICE)}</Td>
-                                <Td className="text-right">{fmt(r.BOX_VALUE ?? r.BOXVALUE)}</Td>
-                                <Td className="text-right font-semibold">{fmt(r.TOTAL_VALUE ?? r.TOTALVALUE)}</Td>
-                                <Td className="text-right">{fmt(r.UNIT_COST ?? r.UNITCOST)}</Td>
-                                <Td>{fmtDate(r.DATE ?? r.PACK_DATE)}</Td>
-                                <Td className="text-right">{fmt(r.GPM ?? r.GP_M)}</Td>
-                                <Td>{t(r.BOX_ID ?? r.BOXID ?? r.PCCODE)}</Td>
+                                <Td>{t(r.WAREHOUSE)}</Td>
+                                <Td>{t(r.GROWER)}</Td>
+                                <Td>{t(r.CASE_SH)}</Td>
+                                <Td className="text-right">{fmtI(r.UP_X_PACK)}</Td>
+                                <Td className="text-right">{fmtI(r.PACKS_BOX)}</Td>
+                                <Td className="text-right">{fmtI(r.TUNITS_X_BOX)}</Td>
+                                <Td>{t(r.LOTE)}</Td>
+                                <Td className="text-right">{fmtI(r.DAYS)}</Td>
+                                <Td>{t(r.AWBCODE)}</Td>
+                                <Td className="text-right">{fmtI(r.WH_STOCK)}</Td>
+                                <Td className="text-right">{fmt(r.PRICE_X_UNIT)}</Td>
+                                <Td className="text-right">{fmt(r.BOXVALUE)}</Td>
+                                <Td className="text-right font-semibold">{fmt(r.STOCKVALUE)}</Td>
+                                <Td className="text-right">{fmt(r.FARM_UNIT_PRICE)}</Td>
+                                <Td>{fmtDate(r.BOX_DATE)}</Td>
+                                <Td className="text-right">{fmt(r.GPM)}</Td>
+                                <Td>{t(r.BOX_ID)}</Td>
                             </tr>
                         ))}
-                        {!loading && rows.length === 0 && <tr><td colSpan={18} className="p-6 text-center text-gray-400 italic">Click Stock OM to load open market stock</td></tr>}
+                        {!loading && rows.length === 0 && <tr><td colSpan={17} className="p-6 text-center text-gray-400 italic">Click Stock OM to load open market stock</td></tr>}
                     </tbody>
                 </table>
             </div>
@@ -311,37 +324,36 @@ function SimilarTab({ rows }: { rows: any[] }) {
                 <table className="min-w-full text-xs text-left">
                     <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                         <tr>
-                            <Th>Customer</Th><Th>Warehouse</Th><Th>Vendor</Th>
+                            <Th>Warehouse</Th><Th>Vendor</Th>
                             <Th>Case</Th><Th className="text-right">UxPack</Th><Th className="text-right">PxCase</Th><Th className="text-right">UxCase</Th>
                             <Th>lote</Th><Th className="text-right">Days</Th><Th>Awb</Th>
                             <Th className="text-right">Stock</Th><Th className="text-right">UnitPrice</Th>
                             <Th className="text-right">BoxValue</Th><Th className="text-right">TotalValue</Th>
-                            <Th>Description</Th><Th className="text-right">UnitCost</Th><Th className="text-right">G</Th>
+                            <Th>Description</Th><Th className="text-right">UnitCost</Th><Th className="text-right">GPM</Th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-[#DBD9D9]">
                         {rows.map((r, i) => (
                             <tr key={i} className="hover:bg-gray-50 text-gray-600">
-                                <Td>{t(r.CUSTOMER)}</Td>
-                                <Td>{t(r.WAREHOUSE ?? r.WHOUSE)}</Td>
-                                <Td>{t(r.VENDOR ?? r.GROWER)}</Td>
-                                <Td>{t(r.CASE_SH ?? r.CASE)}</Td>
-                                <Td className="text-right">{fmtI(r.UP_X_PACK ?? r.UXPACK)}</Td>
-                                <Td className="text-right">{fmtI(r.PACKS_X_CASE ?? r.PXCASE)}</Td>
-                                <Td className="text-right">{fmtI(r.UNITS_X_CASE ?? r.UNITS_X_BOX)}</Td>
-                                <Td>{t(r.LOTE ?? r.LOT ?? r.PCCODE)}</Td>
-                                <Td className="text-right">{fmtI(r.DAYS ?? r.AGE)}</Td>
-                                <Td>{t(r.AWB)}</Td>
-                                <Td className="text-right">{fmtI(r.STOCK ?? r.BOXES)}</Td>
-                                <Td className="text-right">{fmt(r.UNIT_PRICE ?? r.UNITPRICE)}</Td>
-                                <Td className="text-right">{fmt(r.BOX_VALUE ?? r.BOXVALUE)}</Td>
-                                <Td className="text-right font-semibold">{fmt(r.TOTAL_VALUE ?? r.TOTALVALUE)}</Td>
-                                <Td className="max-w-[180px] truncate">{t(r.DESCRIPTION ?? r.PRODUCT)}</Td>
-                                <Td className="text-right">{fmt(r.UNIT_COST ?? r.UNITCOST)}</Td>
-                                <Td className="text-right">{fmt(r.G ?? r.GP_PCT)}</Td>
+                                <Td>{t(r.WAREHOUSE)}</Td>
+                                <Td>{t(r.GROWER)}</Td>
+                                <Td>{t(r.CASE_SH)}</Td>
+                                <Td className="text-right">{fmtI(r.UP_X_PACK)}</Td>
+                                <Td className="text-right">{fmtI(r.PACKS_BOX)}</Td>
+                                <Td className="text-right">{fmtI(r.TUNITS_X_BOX)}</Td>
+                                <Td>{t(r.LOTE)}</Td>
+                                <Td className="text-right">{fmtI(r.DAYS)}</Td>
+                                <Td>{t(r.AWBCODE)}</Td>
+                                <Td className="text-right">{fmtI(r.WH_STOCK)}</Td>
+                                <Td className="text-right">{fmt(r.PRICE_X_UNIT)}</Td>
+                                <Td className="text-right">{fmt(r.BOXVALUE)}</Td>
+                                <Td className="text-right font-semibold">{fmt(r.STOCKVALUE)}</Td>
+                                <Td className="max-w-[180px] truncate">{t(r.DESCRIPTION)}</Td>
+                                <Td className="text-right">{fmt(r.FARM_UNIT_PRICE)}</Td>
+                                <Td className="text-right">{fmt(r.GPM)}</Td>
                             </tr>
                         ))}
-                        {rows.length === 0 && <tr><td colSpan={17} className="p-6 text-center text-gray-400 italic">No similar products</td></tr>}
+                        {rows.length === 0 && <tr><td colSpan={16} className="p-6 text-center text-gray-400 italic">No similar products</td></tr>}
                     </tbody>
                 </table>
             </div>
@@ -356,16 +368,25 @@ export default function Pbook2InvoicePage() {
     const qc = useQueryClient();
     const { canEdit, canDelete } = usePagePermissions("pbook2invoice");
 
-    const [dateMode,        setDateMode]        = useState<"delivery" | "shipping">("delivery");
-    const [selectedDate,    setSelectedDate]    = useState<string | null>(null);
-    const [selectedCustUq,  setSelectedCustUq]  = useState<string>("%");
-    const [productSearch,   setProductSearch]   = useState("");
-    const [appliedSearch,   setAppliedSearch]   = useState("");
-    const [selectedUnico,   setSelectedUnico]   = useState<string | null>(null);
-    const [activeTab,       setActiveTab]       = useState<BottomTabId>("invoiced");
-    const [datesKey,        setDatesKey]        = useState(0);
-    const [linesKey,        setLinesKey]        = useState(0);
-    const [working,         setWorking]         = useState(false);
+    const {
+        dateMode, setDateMode,
+        selectedDate, setSelectedDate,
+        selectedCustUq, setSelectedCustUq,
+        productSearch, setProductSearch,
+        appliedSearch, setAppliedSearch,
+        selectedUnico, setSelectedUnico,
+        activeTab, setActiveTab,
+        datesKey, bumpDatesKey,
+        linesKey, bumpLinesKey,
+        working, setWorking,
+        modalUpdateLine, setModalUpdateLine,
+        modalChangePO, setModalChangePO,
+        modalUnassign, setModalUnassign,
+        modalAttach, setModalAttach,
+        modalPartial, setModalPartial,
+        reportModalUrl, setReportModalUrl,
+        modalInvoicesByCustomer, setModalInvoicesByCustomer,
+    } = usePbook2InvoiceStore();
 
     // ── Dates ─────────────────────────────────────────────────────────────────
     const { data: datesData, isFetching: loadingDates } = useQuery({
@@ -428,6 +449,7 @@ export default function Pbook2InvoicePage() {
             return norm(Array.isArray(j) ? j : []);
         },
     });
+    const selectedLine = (lines as any[]).find((l: any) => t(l.UNICO ?? l.PBOOK_BOX_UQ) === selectedUnico);
 
     // ── Detail ────────────────────────────────────────────────────────────────
     const { data: detail } = useQuery({
@@ -463,26 +485,71 @@ export default function Pbook2InvoicePage() {
 
     // ── Actions ───────────────────────────────────────────────────────────────
     const handleMakeInvoice = useCallback(async () => {
-        if (!selectedUnico) { toast.error("Select a prebook line first"); return; }
+        const pbook_uq = t(selectedLine?.PBOOK_UQ);
+        if (!pbook_uq) { toast.error("Select a prebook line first"); return; }
         setWorking(true);
         try {
             const r = await fetch("/api/pbook2invoice/make-invoice", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ pbook_uq: selectedUnico }),
+                body: JSON.stringify({ pbook_uq }),
             });
             const j = await r.json();
             if (!r.ok || !j.success) throw new Error(j.error || "Failed");
             toast.success("Invoice created successfully");
-            setLinesKey(k => k + 1);
-            setDatesKey(k => k + 1);
+            bumpLinesKey();
+            bumpDatesKey();
             qc.invalidateQueries({ queryKey: ["pb2inv-detail", selectedUnico] });
         } catch (e: any) {
             toast.error(e.message);
         } finally {
             setWorking(false);
         }
-    }, [selectedUnico, qc]);
+    }, [selectedLine, selectedUnico, qc]);
+
+    const handleMakeInvoicesBulk = useCallback(async () => {
+        if (!selectedDate) { toast.error("Select a date first"); return; }
+        if (!selectedCustUq || selectedCustUq === "%") { toast.error("Select a specific customer first"); return; }
+        setWorking(true);
+        try {
+            const r = await fetch("/api/pbook2invoice/make-invoices-bulk", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ customer_uq: selectedCustUq, date: selectedDate, mode: dateMode }),
+            });
+            const j = await r.json();
+            if (!r.ok || !j.success) throw new Error(j.error || "Failed");
+            toast.success(j.message || "Invoices created successfully");
+            bumpLinesKey();
+            bumpDatesKey();
+        } catch (e: any) {
+            toast.error(e.message);
+        } finally {
+            setWorking(false);
+        }
+    }, [selectedDate, selectedCustUq, dateMode]);
+
+    const handleGenInvoices = useCallback(async () => {
+        const pbook_uq = t(selectedLine?.PBOOK_UQ);
+        if (!pbook_uq) { toast.error("Select a prebook line first"); return; }
+        setWorking(true);
+        try {
+            const r = await fetch("/api/pbook2invoice/gen-invoices", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ pbook_uq }),
+            });
+            const j = await r.json();
+            if (!r.ok || !j.success) throw new Error(j.error || "Failed");
+            toast.success("Invoice header generated");
+            bumpLinesKey();
+            bumpDatesKey();
+        } catch (e: any) {
+            toast.error(e.message);
+        } finally {
+            setWorking(false);
+        }
+    }, [selectedLine]);
 
     const handleVoidLine = useCallback(() => {
         if (!selectedUnico) { toast.error("Select a prebook line first"); return; }
@@ -496,14 +563,14 @@ export default function Pbook2InvoicePage() {
                         const r = await fetch("/api/pbook2invoice/void-line", {
                             method: "DELETE",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ unico: selectedUnico, boxes_delete: 1 }),
+                            body: JSON.stringify({ unico: selectedUnico }),
                         });
                         const j = await r.json();
                         if (!r.ok || !j.success) throw new Error(j.error || "Failed");
                         toast.success("Line voided");
                         setSelectedUnico(null);
-                        setLinesKey(k => k + 1);
-                        setDatesKey(k => k + 1);
+                        bumpLinesKey();
+                        bumpDatesKey();
                     } catch (e: any) {
                         toast.error(e.message);
                     } finally {
@@ -516,8 +583,9 @@ export default function Pbook2InvoicePage() {
     }, [selectedUnico]);
 
     const handleResetInv = useCallback(() => {
-        if (!selectedDate) { toast.error("Select a date first"); return; }
-        toast("Reset invoice data for this date?", {
+        const pbook_uq = t(selectedLine?.PBOOK_UQ);
+        if (!pbook_uq) { toast.error("Select a prebook line first"); return; }
+        toast("Unlink this prebook from its invoice number?", {
             duration: 8000,
             action: {
                 label: "Reset",
@@ -527,13 +595,13 @@ export default function Pbook2InvoicePage() {
                         const r = await fetch("/api/pbook2invoice/reset", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ date: selectedDate, mode: dateMode }),
+                            body: JSON.stringify({ pbook_uq }),
                         });
                         const j = await r.json();
                         if (!r.ok || !j.success) throw new Error(j.error || "Failed");
-                        toast.success(`Reset complete (${j.records ?? 0} records)`);
-                        setLinesKey(k => k + 1);
-                        setDatesKey(k => k + 1);
+                        toast.success("Invoice number reset");
+                        bumpLinesKey();
+                        bumpDatesKey();
                     } catch (e: any) {
                         toast.error(e.message);
                     } finally {
@@ -543,7 +611,7 @@ export default function Pbook2InvoicePage() {
             },
             cancel: { label: "Cancel", onClick: () => {} },
         });
-    }, [selectedDate, dateMode]);
+    }, [selectedLine]);
 
     const switchMode = (mode: "delivery" | "shipping") => {
         setDateMode(mode);
@@ -566,8 +634,6 @@ export default function Pbook2InvoicePage() {
     if (status === "loading") return null;
     if (status === "unauthenticated") { router.push("/login"); return null; }
 
-    const selectedLine = (lines as any[]).find((l: any) => t(l.UNICO ?? l.PBOOK_BOX_UQ) === selectedUnico);
-
     return (
         <div className="flex flex-col min-h-screen bg-[#FBF9F8] font-sans text-[#333]">
 
@@ -575,37 +641,38 @@ export default function Pbook2InvoicePage() {
             <AppHeader title="Prebook to Invoice" extraRight={working ? <Loader2 size={14} className="animate-spin text-white/60" /> : undefined} />
 
             {/* ── Date Picker (left) + Customers (right) — side by side, no nesting ── */}
-            <div className="flex gap-2 mx-2 mt-2 shrink-0 max-h-[280px]">
+            <div className="flex flex-col lg:flex-row gap-2 mx-2 mt-2 shrink-0 lg:max-h-[280px]">
 
                 {/* Left: Date Picker */}
-                <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-[0.9] min-w-0">
-                    <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
-                        <div className="flex items-center gap-2">
-                            <Calendar size={15} className="text-[#FB7506]" />
-                            <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">
-                                Date Picker [Closed Prebooks]
-                            </span>
-                            {loadingDates && <RefreshCcw size={10} className="text-gray-400 animate-spin" />}
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            {(["delivery", "shipping"] as const).map(m => (
-                                <button key={m} onClick={() => switchMode(m)}
-                                    className={cn(
-                                        "px-3 h-7 rounded-md text-[14px] font-semibold uppercase tracking-wide transition-all",
-                                        dateMode === m
-                                            ? "bg-[#FB7506] text-white"
-                                            : "text-gray-500 hover:text-[#FB7506] hover:bg-gray-100"
-                                    )}
-                                >
-                                    {m === "delivery" ? "Delivery" : "Arrival"}
-                                </button>
-                            ))}
-                            <button onClick={() => setDatesKey(k => k + 1)}
-                                className="ml-1 flex items-center gap-1.5 bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] text-[14px] font-semibold px-3 h-7 rounded-md transition-all"
+                <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1 lg:flex-[0.9] min-w-0">
+                    <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center px-3 shrink-0 rounded-t-lg">
+                        <Calendar size={15} className="text-[#FB7506]" />
+                        <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] ml-2">
+                            Date Picker [Closed Prebooks]
+                        </span>
+                        {loadingDates && <RefreshCcw size={10} className="text-gray-400 animate-spin ml-2" />}
+                    </div>
+                    <div className="h-10 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-center justify-end px-3 gap-1.5 shrink-0 overflow-x-auto">
+                        {(["delivery", "shipping"] as const).map(m => (
+                            <button key={m} onClick={() => switchMode(m)}
+                                className={cn(
+                                    "px-3 h-7 rounded-md text-[14px] font-semibold uppercase tracking-wide transition-all shrink-0",
+                                    dateMode === m
+                                        ? "bg-[#FB7506] text-white"
+                                        : "text-gray-500 hover:text-[#FB7506] hover:bg-white"
+                                )}
                             >
-                                <RefreshCcw size={14} /> Refresh
+                                {m === "delivery" ? "Delivery" : "Arrival"}
                             </button>
-                        </div>
+                        ))}
+                        <button onClick={() => bumpDatesKey()}
+                            className="flex items-center gap-1.5 bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] text-[14px] font-semibold px-3 h-7 rounded-md transition-all shrink-0"
+                        >
+                            <RefreshCcw size={14} /> Refresh
+                        </button>
+                    </div>
+                    <div className="bg-white border-b border-[#DBD9D9] p-1 text-right text-[10px] text-gray-400 font-bold italic pr-4 shrink-0">
+                        {dateRows.length} Records
                     </div>
                     <div className="overflow-y-auto flex-1">
                         <table className="min-w-full text-xs text-left">
@@ -656,32 +723,33 @@ export default function Pbook2InvoicePage() {
                 </div>
 
                 {/* Right: Customers for the selected date */}
-                <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-[1.1] min-w-0">
-                    <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
-                        <div className="flex items-center gap-2 min-w-0">
-                            <Users size={15} className="text-[#FB7506] shrink-0" />
-                            <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] truncate">
-                                {selectedDate ? `Customers — ${fmtDate(selectedDate)}` : "Customers"}
-                            </span>
-                            {loadingCustomers && <RefreshCcw size={10} className="text-gray-400 animate-spin shrink-0" />}
-                        </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                            <button onClick={handleMakeInvoice} disabled={!selectedDate || working}
-                                className="flex items-center gap-1.5 px-3 h-7 text-[14px] font-semibold uppercase tracking-wide bg-green-600 hover:bg-green-500 text-white rounded-md disabled:opacity-40 disabled:cursor-not-allowed transition-all whitespace-nowrap"
-                            >
-                                <Check size={14} /> Make Invoices
-                            </button>
-                            <button onClick={() => {}} disabled={!selectedDate}
-                                className="flex items-center gap-1 px-3 h-7 text-[14px] font-semibold uppercase tracking-wide bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] rounded-md disabled:opacity-40 transition-all whitespace-nowrap"
-                            >
-                                <Printer size={14} /> Without Invoice
-                            </button>
-                            <button onClick={() => {}} disabled={!selectedDate}
-                                className="flex items-center gap-1 px-3 h-7 text-[14px] font-semibold uppercase tracking-wide bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] rounded-md disabled:opacity-40 transition-all whitespace-nowrap"
-                            >
-                                <Link2 size={14} /> Invoices
-                            </button>
-                        </div>
+                <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1 lg:flex-[1.1] min-w-0">
+                    <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center px-3 shrink-0 rounded-t-lg min-w-0">
+                        <Users size={15} className="text-[#FB7506] shrink-0" />
+                        <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] truncate ml-2">
+                            {selectedDate ? `Customers — ${fmtDate(selectedDate)}` : "Customers"}
+                        </span>
+                        {loadingCustomers && <RefreshCcw size={10} className="text-gray-400 animate-spin shrink-0 ml-2" />}
+                    </div>
+                    <div className="h-10 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-center justify-end px-3 gap-1.5 shrink-0 overflow-x-auto">
+                        <button onClick={handleMakeInvoicesBulk} disabled={!selectedDate || selectedCustUq === "%" || working}
+                            className="flex items-center gap-1.5 px-3 h-7 text-[14px] font-semibold uppercase tracking-wide bg-green-600 hover:bg-green-500 text-white rounded-md disabled:opacity-40 disabled:cursor-not-allowed transition-all whitespace-nowrap shrink-0"
+                        >
+                            <Check size={14} /> Make Invoices
+                        </button>
+                        <button onClick={() => setReportModalUrl(`/api/pbook2invoice/reports/without-invoice?customer_uq=${encodeURIComponent(selectedCustUq)}&date=${selectedDate}&mode=${dateMode}`)} disabled={!selectedDate}
+                            className="flex items-center gap-1 px-3 h-7 text-[14px] font-semibold uppercase tracking-wide bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] rounded-md disabled:opacity-40 transition-all whitespace-nowrap shrink-0"
+                        >
+                            <Printer size={14} /> Without Invoice
+                        </button>
+                        <button onClick={() => setModalInvoicesByCustomer(true)} disabled={!selectedDate || selectedCustUq === "%"}
+                            className="flex items-center gap-1 px-3 h-7 text-[14px] font-semibold uppercase tracking-wide bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] rounded-md disabled:opacity-40 transition-all whitespace-nowrap shrink-0"
+                        >
+                            <Link2 size={14} /> Invoices
+                        </button>
+                    </div>
+                    <div className="bg-white border-b border-[#DBD9D9] p-1 text-right text-[10px] text-gray-400 font-bold italic pr-4 shrink-0">
+                        {(customers as any[]).filter((row: any) => t(row.CUSTOMER_UQ ?? "") !== "%").length} Records
                     </div>
                     <div className="overflow-y-auto flex-1">
                         <table className="min-w-full text-xs text-left">
@@ -748,66 +816,66 @@ export default function Pbook2InvoicePage() {
 
             {/* ── ACTION BUTTON BAR — sticks to the top once scrolled past the Date/Customer row, so the grids below keep the buttons in reach ── */}
             <div className="sticky top-0 z-20 h-11 bg-[#F5F3F3] border border-[#DBD9D9] flex items-center px-3 gap-1.5 shrink-0 shadow-sm overflow-x-auto mx-2 rounded-lg mt-2">
-                <TBtn icon={FilePen}      label="Change PO"      onClick={() => {}} disabled={!selectedUnico} />
-                <TBtn icon={Paperclip}    label="Attach Invoice"  onClick={() => {}} disabled={!selectedUnico} />
-                <div className="w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
-                <TBtn icon={RotateCcw}    label="Reset Inv."      onClick={handleResetInv} disabled={!selectedDate || working} variant="warning" />
-                <TBtn icon={Receipt}      label="Invoice"         onClick={() => {}} disabled={!selectedUnico} />
-                <TBtn icon={List}         label="Pick List"       onClick={() => {}} disabled={!selectedDate} />
-                <TBtn icon={StickyNote}   label="Notes"           onClick={() => {}} disabled={!selectedUnico} />
-                <TBtn icon={ShoppingCart} label="Stock OM"        onClick={() => { setActiveTab("stockom"); if (selectedUnico) fetchStockOm(); }} disabled={!selectedUnico} />
-                <div className="w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
-                <TBtn icon={Search}       label="Search"          onClick={() => {}} />
-                <TBtn icon={RefreshCw}    label="Update"          onClick={() => { setLinesKey(k => k + 1); }} disabled={!selectedDate} />
-                <TBtn icon={UserCog}      label="Change Cust."    onClick={() => {}} disabled={!selectedUnico} />
-                <div className="w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
+                <TBtn icon={RefreshCw}    label="Update"          onClick={() => setModalUpdateLine({ open: true, tab: "details" })} disabled={!selectedUnico} />
                 <TBtn icon={Trash2}       label="Void Line"       onClick={handleVoidLine} disabled={!selectedUnico || !canDelete || working} variant="danger" />
-                <TBtn icon={Scissors}     label="Partial Invoice" onClick={() => {}} disabled={!selectedUnico} />
+                <div className="w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
+                <GridMenu items={[
+                    { label: "Change PO",       icon: FilePen,     color: "blue",   onClick: () => setModalChangePO(true), disabled: !selectedUnico },
+                    { label: "Attach Invoice",  icon: Paperclip,   color: "blue",   onClick: () => setModalAttach(true), disabled: !selectedUnico },
+                    { label: "Partial Invoice", icon: Scissors,    color: "blue",   onClick: () => setModalPartial(true), disabled: !selectedUnico, separator: true },
+                    { label: "Reset Inv.",      icon: RotateCcw,   color: "amber",  onClick: handleResetInv, disabled: !selectedUnico || working },
+                    { label: "Notes",           icon: StickyNote,  color: "purple", onClick: () => setModalUpdateLine({ open: true, tab: "notes" }), disabled: !selectedUnico },
+                    { label: "Stock OM",        icon: ShoppingCart, color: "purple", onClick: () => { setActiveTab("stockom"); if (selectedUnico) fetchStockOm(); }, disabled: !selectedUnico, separator: true },
+                    { label: "Pick List",       icon: List,        color: "gray",   onClick: () => setReportModalUrl(`/api/pbook2invoice/reports/pick-list?invoice_uq=${encodeURIComponent(t(selectedLine?.INVOICE_UQ))}`), disabled: !t(selectedLine?.INVOICE_UQ) || !parseInt(selectedLine?.INVOICE_NO ?? 0) },
+                    { label: "Invoice",         icon: Receipt,     color: "gray",   onClick: () => {}, disabled: !selectedUnico, separator: true },
+                    { label: "Search",          icon: Search,      color: "gray",   onClick: () => {} },
+                    { label: "Change Cust.",    icon: UserCog,     color: "gray",   onClick: () => {}, disabled: !selectedUnico },
+                ]} />
             </div>
 
             {/* ── Closed Prebook box by date and customer (Lines) — separate panel, not nested in any grid ── */}
             <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden mx-2 mt-2 h-[432px] shrink-0">
-                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0">
-                    <div className="flex items-center gap-2 min-w-0">
-                        <Lock size={15} className="text-[#FB7506] shrink-0" />
-                        <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] truncate">
-                            Closed Prebook box by date and customer
-                        </span>
-                        {loadingLines && <RefreshCcw size={10} className="text-gray-400 animate-spin shrink-0" />}
+                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center px-3 shrink-0 min-w-0">
+                    <Lock size={15} className="text-[#FB7506] shrink-0" />
+                    <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] truncate ml-2">
+                        Closed Prebook box by date and customer
+                    </span>
+                    {loadingLines && <RefreshCcw size={10} className="text-gray-400 animate-spin shrink-0 ml-2" />}
+                </div>
+                <div className="h-10 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-center justify-end px-3 gap-2 shrink-0 overflow-x-auto">
+                    <div className="flex items-center bg-white border border-[#DBD9D9] rounded px-2 py-1 gap-1 w-56 shrink-0">
+                        <Search size={11} className="text-gray-400 shrink-0" />
+                        <input
+                            value={productSearch}
+                            onChange={e => setProductSearch(e.target.value)}
+                            onKeyDown={e => { if (e.key === "Enter") setAppliedSearch(productSearch); }}
+                            placeholder="Search product..."
+                            className="text-[11px] text-gray-700 placeholder-gray-400 outline-none flex-1 min-w-0 bg-transparent"
+                        />
+                        {productSearch && (
+                            <button onClick={() => { setProductSearch(""); setAppliedSearch(""); }}>
+                                <X size={11} className="text-gray-400 hover:text-gray-700" />
+                            </button>
+                        )}
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                        <div className="flex items-center bg-[#F5F3F3] border border-[#DBD9D9] rounded px-2 py-1 gap-1 w-56">
-                            <Search size={11} className="text-gray-400 shrink-0" />
-                            <input
-                                value={productSearch}
-                                onChange={e => setProductSearch(e.target.value)}
-                                onKeyDown={e => { if (e.key === "Enter") setAppliedSearch(productSearch); }}
-                                placeholder="Search product..."
-                                className="text-[11px] text-gray-700 placeholder-gray-400 outline-none flex-1 min-w-0 bg-transparent"
-                            />
-                            {productSearch && (
-                                <button onClick={() => { setProductSearch(""); setAppliedSearch(""); }}>
-                                    <X size={11} className="text-gray-400 hover:text-gray-700" />
-                                </button>
-                            )}
-                        </div>
-                        <span className="text-[10px] font-bold text-gray-400 whitespace-nowrap">{(lines as any[]).length} rows</span>
-                        <button onClick={() => {}}
-                            className="flex items-center gap-1.5 bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] px-3 h-7 rounded-md text-[14px] font-semibold uppercase tracking-wide transition-all whitespace-nowrap"
-                        >
-                            <List size={14} /> Prebook Line
-                        </button>
-                        <button onClick={() => {}} disabled={!selectedDate}
-                            className="flex items-center gap-1.5 bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] px-3 h-7 rounded-md text-[14px] font-semibold uppercase tracking-wide disabled:opacity-40 disabled:cursor-not-allowed transition-all whitespace-nowrap"
-                        >
-                            <Copy size={14} /> Gen. Invoices
-                        </button>
-                        <button onClick={handleMakeInvoice} disabled={!selectedUnico || !canEdit || working}
-                            className="flex items-center gap-1.5 bg-green-600 hover:bg-green-500 text-white px-3 h-7 rounded-md text-[14px] font-semibold uppercase tracking-wide disabled:opacity-40 disabled:cursor-not-allowed transition-all whitespace-nowrap"
-                        >
-                            <Check size={14} /> Make Invoice
-                        </button>
-                    </div>
+                    <button onClick={() => {}}
+                        className="flex items-center gap-1.5 bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] px-3 h-7 rounded-md text-[14px] font-semibold uppercase tracking-wide transition-all whitespace-nowrap shrink-0"
+                    >
+                        <List size={14} /> Prebook Line
+                    </button>
+                    <button onClick={handleGenInvoices} disabled={!selectedUnico || working}
+                        className="flex items-center gap-1.5 bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] px-3 h-7 rounded-md text-[14px] font-semibold uppercase tracking-wide disabled:opacity-40 disabled:cursor-not-allowed transition-all whitespace-nowrap shrink-0"
+                    >
+                        <Copy size={14} /> Gen. Invoices
+                    </button>
+                    <button onClick={handleMakeInvoice} disabled={!selectedUnico || !canEdit || working}
+                        className="flex items-center gap-1.5 bg-green-600 hover:bg-green-500 text-white px-3 h-7 rounded-md text-[14px] font-semibold uppercase tracking-wide disabled:opacity-40 disabled:cursor-not-allowed transition-all whitespace-nowrap shrink-0"
+                    >
+                        <Check size={14} /> Make Invoice
+                    </button>
+                </div>
+                <div className="bg-white border-b border-[#DBD9D9] p-1 text-right text-[10px] text-gray-400 font-bold italic pr-4 shrink-0">
+                    {(lines as any[]).length} Records
                 </div>
 
                 <div className="flex-1 overflow-auto">
@@ -904,7 +972,7 @@ export default function Pbook2InvoicePage() {
                 </div>
                 <div>
                     {activeTab === "invoiced"  && <InvoicedTab      rows={detail?.invoiced      ?? []} />}
-                    {activeTab === "assigned"  && <AssignedStockTab rows={detail?.stockAssigned ?? []} />}
+                    {activeTab === "assigned"  && <AssignedStockTab rows={detail?.stockAssigned ?? []} onUnassign={row => setModalUnassign(row)} />}
                     {activeTab === "purchase"  && <PurchaseTab      rows={detail?.purchase      ?? []} />}
                     {activeTab === "stockom"   && <StockOmTab       rows={stockOm} loading={loadingStockOm} />}
                     {activeTab === "similar"   && <SimilarTab       rows={detail?.stockSimilar  ?? []} />}
@@ -912,6 +980,52 @@ export default function Pbook2InvoicePage() {
             </div>
 
             <AppFooter areaLabel="Prebook to Invoice" />
+
+            <ModalUpdateLine
+                open={modalUpdateLine.open}
+                initialTab={modalUpdateLine.tab}
+                unico={selectedUnico ?? ""}
+                onClose={() => setModalUpdateLine({ ...modalUpdateLine, open: false })}
+                onSuccess={() => { bumpLinesKey(); qc.invalidateQueries({ queryKey: ["pb2inv-detail", selectedUnico] }); }}
+            />
+
+            <ModalChangePO
+                open={modalChangePO}
+                onClose={() => setModalChangePO(false)}
+                pbookUq={t(selectedLine?.PBOOK_UQ)}
+                currentPo={t(selectedLine?.CPORDER_NO)}
+                onSuccess={() => { bumpLinesKey(); bumpDatesKey(); }}
+            />
+
+            <ModalUnassignStock
+                open={!!modalUnassign}
+                onClose={() => setModalUnassign(null)}
+                row={modalUnassign}
+                onSuccess={() => qc.invalidateQueries({ queryKey: ["pb2inv-detail", selectedUnico] })}
+            />
+
+            <ModalAttachInvoice
+                open={modalAttach}
+                onClose={() => setModalAttach(false)}
+                pbookUq={t(selectedLine?.PBOOK_UQ)}
+                onSuccess={() => { bumpLinesKey(); bumpDatesKey(); }}
+            />
+
+            <ModalPartialInvoice
+                open={modalPartial}
+                onClose={() => setModalPartial(false)}
+                pbookUq={t(selectedLine?.PBOOK_UQ)}
+                onSuccess={() => { bumpLinesKey(); bumpDatesKey(); }}
+            />
+
+            <ReportModal url={reportModalUrl} onClose={() => setReportModalUrl(null)} />
+
+            <ModalInvoicesByCustomer
+                open={modalInvoicesByCustomer}
+                onClose={() => setModalInvoicesByCustomer(false)}
+                customerUq={selectedCustUq}
+                date={selectedDate ?? ""}
+            />
         </div>
     );
 }

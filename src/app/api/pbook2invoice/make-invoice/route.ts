@@ -3,6 +3,9 @@ import { executeProcedure } from "@/lib/db";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
+// "Make Invoice" (Lines panel) — creates an invoice from one prebook header's
+// arrived stock. VFP tooltip: "Make invoice from prebook". Confirmed live via
+// the proc's own header comment ("insertar invoice ... para un prebook").
 export async function POST(req: NextRequest) {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -10,13 +13,12 @@ export async function POST(req: NextRequest) {
     const pbook_uq = String(b.pbook_uq ?? "");
     if (!pbook_uq) return NextResponse.json({ error: "pbook_uq required" }, { status: 400 });
     try {
-        // Get salesman unico for current user
         const salProfile = await executeProcedure("sp_flower_salesman_uq", {
             lcunico: "%",
             lcuser_uq: (session as any).user?.id ?? "",
         });
         const salesman_uq = salProfile.recordset?.[0]?.unico ?? "";
-        const r = await executeProcedure("sp_flower_invoice_insert_from_prebook_to_invoice", {
+        const r = await executeProcedure("sp_flower_invoice_insert_from_prebook_uq", {
             lcpbook_uq:    pbook_uq,
             lcsalesman_uq: salesman_uq,
         });
