@@ -69,7 +69,7 @@ export default function ReportModalInner({ url, onClose }: Props) {
     return createPortal(
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 lg:p-6 print:relative print:bg-white print:p-0 print:block" onClick={onClose}>
             {/* Reports render landscape; default the print dialog to match (user can still flip it). */}
-            <style>{"@media print { @page { size: landscape; margin: 0.4in; } }"}</style>
+            <style>{"@media print { @page { size: letter landscape; margin: 0.4in; } }"}</style>
             <div className="bg-[#3B3B3B] rounded-lg shadow-2xl w-full max-w-5xl h-full flex flex-col overflow-hidden print:bg-white print:shadow-none print:rounded-none print:h-auto print:max-w-none print:overflow-visible" onClick={e => e.stopPropagation()}>
                 <div className="h-11 bg-[#374151] flex items-center justify-between pl-3 pr-2 shrink-0 print:hidden">
                     <div className="flex items-center gap-2 min-w-0">
@@ -90,7 +90,7 @@ export default function ReportModalInner({ url, onClose }: Props) {
                         <button onClick={onClose} title="Close" className="text-gray-300 hover:text-white transition-colors p-1.5 hover:bg-white/10 rounded"><X size={17} /></button>
                     </div>
                 </div>
-                <div ref={containerRef} className="flex-1 overflow-auto flex flex-col items-center gap-3 py-4 px-2 print:overflow-visible print:h-auto print:p-0 print:gap-0">
+                <div ref={containerRef} className="flex-1 overflow-auto flex flex-col items-center gap-3 py-4 px-2 print:block print:overflow-visible print:h-auto print:p-0 print:gap-0">
                     {error ? (
                         <div className="text-center text-gray-300 mt-10">
                             <p className="font-bold text-sm mb-1">Could not display this report</p>

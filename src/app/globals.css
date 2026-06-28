@@ -136,9 +136,34 @@ body {
      defaults to displaying at that exact pixel size. On screen that's fine,
      but for print it means whatever on-screen zoom was active dictates the
      printed size (a zoomed-out report prints as a tiny thumbnail instead of
-     filling the page). Force it to fill the page width instead. */
+     filling the page). Fit it to the page instead — width:100% alone isn't
+     enough: our reports are 11x8.5 Letter landscape (ratio 1.294:1), but the
+     printable area after the 0.4in @page margin below is 10.2in x 7.7in
+     (ratio 1.325:1) — close, but not identical. Forcing width to 100% alone
+     made height come out ~0.18in taller than the page, just enough overflow
+     to push the last bit of every single page onto an extra blank one
+     (doubling the page count). max-height (an absolute unit, so it doesn't
+     need a percentage basis from an ancestor) caps it so it scales down to
+     fit both dimensions, the same as object-fit: contain would for an image.
+   */
   .react-pdf__Page__canvas {
-    width: 100% !important;
+    width: auto !important;
     height: auto !important;
+    max-width: 100% !important;
+    max-height: 7.7in !important;
+  }
+
+  /* The text/annotation layers are invisible overlays pdf.js positions with
+     absolute pixel coordinates computed from the page's original (unshrunk)
+     render width — they don't get the canvas's max-height scale-down above,
+     so their text spans sit far below where the now-smaller canvas actually
+     ends. That invisible overflow was tall enough to push every single page
+     onto an extra blank one (e.g. a 2-page report printing as 3 pages, one
+     real page's worth of invisible spillover per page). They only exist for
+     on-screen text selection, which is irrelevant to a printed page (the
+     canvas image already contains the visible text) — just hide them. */
+  .textLayer,
+  .annotationLayer {
+    display: none !important;
   }
 }
