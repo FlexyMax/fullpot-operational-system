@@ -5,29 +5,29 @@ CREATE FUNCTION [dbo].[udf_NC_prebook_box_purchase_control]
     @llpb_date  bit      -- 1 = filter by flower_prebook.pb_date, 0 = filter by flower_prebook.whouse_date
 )
 -- ============================================================================
--- udf_NC_prebook_box_purchase_control (v2 — now parameterized)
+-- udf_NC_prebook_box_purchase_control (v3 — widened for sp_NC_prebook_box_to_invoice_box)
 -- "NC" = New Code / web app version, created 2026-06-30. Used only by:
 --   sp_NC_prebook_to_invoice_dates
 --   sp_NC_prebook_customers_by_date_closed
+--   sp_NC_prebook_box_to_invoice_box
 -- The legacy dbo.udf_flower_prebook_box_purchase_control() is left completely
 -- untouched and still used by the VFP desktop app and every other proc that
 -- already calls it.
 --
--- v1 of this function (no parameters, same 3 joins as below but plain
--- dbo.udf_flower_prebook_box_in_invoice() with no filter) measured NO faster
--- than the legacy function — bisecting column by column found the entire
--- cost concentrated in one join: invoiced_cases alone took ~2.7s, because
--- udf_flower_prebook_box_in_invoice() aggregates flower_invoice/
--- flower_invoice_box (the company's ENTIRE invoice history, no date filter)
--- before being LEFT JOINed — the caller's date filter never reaches it.
+-- v1/v2 history: see git log / DESIGN_SYSTEM.md — bisected the legacy
+-- function's join to udf_flower_prebook_box_in_invoice() as the real
+-- bottleneck (it aggregates ALL of flower_invoice/flower_invoice_box with no
+-- date filter), fixed here by building the qualifying prebook_box set once
+-- (the `boxes` CTE) and filtering the invoice aggregation down to
+-- `pbook_d_uq IN (SELECT unico FROM boxes)` before grouping.
 --
--- v2 takes the date range as parameters, builds the qualifying prebook_box
--- set ONCE as the `boxes` CTE, and inlines the invoice aggregation with an
--- explicit `pbook_d_uq IN (SELECT unico FROM boxes)` filter so it only
--- aggregates invoice lines that can possibly match — not the whole table.
--- compras/shipped (udf_flower_prebook_box_purchase/_shipped) are left as
--- plain unfiltered joins, same as v1 — bisecting showed those two resolve in
--- well under a second on their own, they were never the bottleneck.
+-- v3 adds the remaining flower_prebook_box/flower_prebook columns that
+-- sp_NC_prebook_box_to_invoice_box needs (sorder_no, cporder_no/pccode,
+-- product_uq, case_uq, packs_x_case, up_x_pack, units_x_box, so_price,
+-- not_found, void, carrier_uq, whouse_uq, pbook_no, invoice_uq) — all plain
+-- pass-through columns from tables already in the `boxes` CTE's FROM/JOIN,
+-- no new joins added, so this doesn't change the function's performance
+-- profile for the two callers that don't need them.
 -- ============================================================================
 RETURNS TABLE AS
 RETURN (
@@ -35,11 +35,23 @@ RETURN (
         SELECT
             flower_prebook_box.unico,
             flower_prebook_box.pbook_uq,
+            flower_prebook_box.sorder_no,
+            flower_prebook_box.pccode,
+            flower_prebook_box.product_uq,
+            flower_prebook_box.case_uq,
             flower_prebook_box.qty_order,
             flower_prebook_box.packs_x_case,
             flower_prebook_box.up_x_pack,
+            flower_prebook_box.units_x_box,
+            flower_prebook_box.so_price,
+            flower_prebook_box.not_found,
+            flower_prebook_box.void,
             flower_prebook_box.ext_price,
             flower_prebook.customer_uq,
+            flower_prebook.carrier_uq,
+            flower_prebook.whouse_uq,
+            flower_prebook.invoice_uq,
+            flower_prebook.pbook_no,
             flower_prebook.closed,
             convert(datetime, convert(char(12), flower_prebook.pb_date)) as pb_date,
             convert(datetime, convert(char(12), flower_prebook.whouse_date)) as whouse_date,
@@ -57,13 +69,28 @@ RETURN (
     SELECT
         boxes.unico,
         boxes.pbook_uq,
+        boxes.sorder_no,
+        boxes.pccode,
+        cporder_no = boxes.pccode,
+        boxes.product_uq,
+        boxes.case_uq,
         boxes.customer_uq,
+        boxes.carrier_uq,
+        boxes.whouse_uq,
+        boxes.invoice_uq,
+        boxes.pbook_no,
         boxes.closed,
         boxes.pb_date,
         boxes.whouse_date,
         boxes.pbdate,
         boxes.shipdate,
         boxes.qty_order,
+        boxes.packs_x_case,
+        boxes.up_x_pack,
+        boxes.units_x_box,
+        boxes.so_price,
+        boxes.not_found,
+        boxes.void,
         total_sales = boxes.ext_price,
 
         po_cases = case when boxes.packs_x_case * boxes.up_x_pack > 0

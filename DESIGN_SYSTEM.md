@@ -533,3 +533,56 @@ Remaining work:
   "same result, web-app-only, don't touch the VFP-shared original" rewrite:
   prefix with `NC` (`sp_NC_...`/`udf_NC_...`) and verify the name doesn't
   already exist before creating it.**
+  **Follow-up (same day): the Lines grid too.** The user asked for the same
+  treatment for "Closed Prebook box by date and customer" — its proc,
+  `sp_flower_prebook_box_to_invoice_box`, goes through the same legacy
+  `udf_flower_prebook_box_purchase_control()` and measured the same ~3-5s.
+  - **Found an existing, unfinished `sp_NC_prebook_box_to_invoice_box`
+    already in production** before writing anything — not created in this
+    session, the requester had started it earlier. **Always check whether a
+    name is free before creating, and if it's already taken, ask who made it
+    and whether to modify it rather than silently overwriting** — this one
+    had two real bugs that explained why it was never wired up: (1) its
+    date-mode branch compared `@ldpb_date` (a `datetime`) to the literals
+    `0`/`1` instead of checking `@llpb_date`, so it never actually switched
+    between delivery/arrival filtering; (2) it still selected from the
+    legacy unfiltered `udf_flower_prebook_box_purchase_control()` and
+    INNER JOINed a pre-filtered `@AR` id-list onto it *after* the fact —
+    which doesn't help, the function's own invoice join already runs
+    unfiltered before `@AR` ever narrows anything. Its core idea (pre-filter
+    the box set once, scope the quality-control adjust aggregate to that
+    same set) was exactly right, just needed to happen *inside* the shared
+    NC function instead.
+  - Widened `udf_NC_prebook_box_purchase_control` (still the same one
+    object, now used by all 3 procs) with the extra `flower_prebook_box`/
+    `flower_prebook` pass-through columns this proc needs (`sorder_no`,
+    `cporder_no`/`pccode`, `product_uq`, `case_uq`, `packs_x_case`,
+    `up_x_pack`, `units_x_box`, `so_price`, `not_found`, `void`,
+    `carrier_uq`, `whouse_uq`, `pbook_no`, `invoice_uq`) — all columns from
+    tables already in its `boxes` CTE, so no new joins, no measurable change
+    for the two existing callers (re-verified: still ~0.2-0.9s after
+    widening).
+  - **Found and fixed a real bug in the legacy proc itself** while
+    rewriting: its delivery branch attributes `invoice_no` per box (joins
+    `flower_invoice_box.pbook_d_uq`), but its shipping/arrival branch
+    instead uses the prebook-*header*-level `flower_prebook.invoice_uq` —
+    wrong as soon as one prebook's boxes get split across more than one
+    invoice via Partial Invoice. Confirmed live: box `0F8CCEE7`'s own
+    `flower_invoice_box` row shows invoice #476744, but its prebook header's
+    `invoice_uq` is `NULL` (that prebook's boxes span 2 different invoices)
+    — the legacy shipping branch showed `0`, the new one correctly shows
+    476744. `sp_NC_prebook_box_to_invoice_box` joins via `flower_invoice_box`
+    in both modes now.
+  - Kept the requester's `@lnPageNumber`/`@lnRowsOfPage` parameters from
+    their draft (defaulted, `OFFSET`/`FETCH` deliberately left unwired, same
+    as their draft) so the signature is ready whenever paging is actually
+    needed — not in scope for this round.
+  - Same `OPTION (RECOMPILE)` treatment as the other two (the date is cast
+    into a local variable before being passed to the function).
+  - Verified row-by-row against the legacy proc before wiring it in:
+    delivery mode matched exactly (124/124 rows); shipping mode's only
+    diffs were the `invoice_no` bug above (confirmed as a fix, not a
+    regression) on 43 of 132 rows.
+  - Measured end to end through the real API route
+    (`/api/pbook2invoice/lines`): ~3.7-5s -> ~0.25-0.3s warm.
+  - `sql/pbook2invoice/` updated with the widened UDF and the new proc.
