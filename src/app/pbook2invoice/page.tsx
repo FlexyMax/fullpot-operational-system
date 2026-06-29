@@ -846,19 +846,26 @@ export default function Pbook2InvoicePage() {
                                 {!selectedDate && (
                                     <tr><td colSpan={10} className="p-6 text-center text-gray-400 italic">Select a date on the left</td></tr>
                                 )}
-                                {selectedDate && (
-                                    <tr onClick={() => selectCustomer("%")}
-                                        className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]",
-                                            selectedCustUq === "%" ? "!bg-[#FB7506]/10" : "bg-white hover:bg-gray-50")}
-                                    >
-                                        <td className="p-2 font-bold text-gray-500 italic">ALL</td>
-                                        <td className="p-2" /><td className="p-2" />
-                                        <td className="p-2" /><td className="p-2" />
-                                        <td className="p-2" /><td className="p-2" />
-                                        <td className="p-2" /><td className="p-2" />
-                                        <td className="p-2" />
-                                    </tr>
-                                )}
+                                {selectedDate && (() => {
+                                    const allRow = (customers as any[]).find((row: any) => t(row.CUSTOMER_UQ ?? "") === "%");
+                                    return (
+                                        <tr onClick={() => selectCustomer("%")}
+                                            className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9] font-bold text-gray-500",
+                                                selectedCustUq === "%" ? "!bg-[#FB7506]/10" : "bg-white hover:bg-gray-50")}
+                                        >
+                                            <td className="p-2 italic">ALL</td>
+                                            <td className="p-2 text-right">{fmtI(allRow?.RECORDS)}</td>
+                                            <td className="p-2 text-right">{fmt(allRow?.CREDIT_LIMIT)}</td>
+                                            <td className="p-2 text-right">{fmtI(allRow?.QTY_ORDER)}</td>
+                                            <td className="p-2 text-right">{fmtI(allRow?.QTY_PORDER)}</td>
+                                            <td className="p-2 text-right">{fmtI(allRow?.QTY_SHIP)}</td>
+                                            <td className="p-2 text-right">{fmtI(allRow?.QTY_INVOICE)}</td>
+                                            <td className="p-2 text-right">{fmt(allRow?.TOTAL_SALE)}</td>
+                                            <td className="p-2 text-right">{fmt(allRow?.TOTAL_PURCHASE)}</td>
+                                            <td className="p-2 text-right">{fmt(allRow?.PROFIT)}%</td>
+                                        </tr>
+                                    );
+                                })()}
                                 {(customers as any[]).filter((row: any) => t(row.CUSTOMER_UQ ?? "") !== "%").map((row: any, j: number) => {
                                     const uq = t(row.CUSTOMER_UQ ?? "");
                                     const selCust = selectedCustUq === uq;
