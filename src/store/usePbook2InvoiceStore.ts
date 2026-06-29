@@ -39,6 +39,8 @@ interface Pbook2InvoiceState {
     setReportModalUrl: (v: string | null) => void;
     modalInvoicesByCustomer: boolean;
     setModalInvoicesByCustomer: (v: boolean) => void;
+    modalChangeCustomer: boolean;
+    setModalChangeCustomer: (v: boolean) => void;
 }
 
 export const usePbook2InvoiceStore = create<Pbook2InvoiceState>((set) => ({
@@ -77,4 +79,6 @@ export const usePbook2InvoiceStore = create<Pbook2InvoiceState>((set) => ({
     setReportModalUrl: (v) => set({ reportModalUrl: v }),
     modalInvoicesByCustomer: false,
     setModalInvoicesByCustomer: (v) => set({ modalInvoicesByCustomer: v }),
+    modalChangeCustomer: false,
+    setModalChangeCustomer: (v) => set({ modalChangeCustomer: v }),
 }));

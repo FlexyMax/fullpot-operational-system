@@ -99,6 +99,7 @@ Implement with explicit Tailwind arbitrary values (`text-[14px] font-bold`, etc.
   - **Implementation gotchas, already solved — don't rediscover these:** (1) `pdfjs-dist` touches browser-only globals at module-load time and crashes during Next.js's SSR pass even inside a `"use client"` component, so the public `ReportModal.tsx` is a `next/dynamic(..., { ssr: false })` wrapper around the real `ReportModalInner.tsx` — import sites never see the difference. (2) The pdf.js worker file (`public/pdf.worker.min.mjs`) must exactly match the pdfjs-dist version `react-pdf` bundles internally (often a *nested* copy under `react-pdf/node_modules`, not whatever version npm hoists to the top level) or it throws an API/Worker version mismatch at runtime — `scripts/copy-pdf-worker.mjs` (run via `postinstall`) resolves the worker path through `react-pdf` itself so it's always right. (3) The Docker build's `deps` stage only copied `package*.json` before `npm ci`, so that postinstall script crashed the build outright (`MODULE_NOT_FOUND`) — every deploy kept serving the previous image. Fixed by also `COPY scripts ./scripts` before `RUN npm ci`. (4) Printing: the modal portals to `document.body` (not inline in the page tree) so it can sit *outside* the rest of the app in the DOM — `<body>` gets a `report-modal-open` class while it's open, and `globals.css` hides `#app-shell` (the page-content wrapper added in `layout.tsx` for exactly this) under `@media print`, so hitting Print only puts the report on paper, not whatever tab/grid happened to be open behind it. (5) Print sizing: react-pdf's canvas has no inline width/height CSS (only the HTML attributes pdf.js sets for render resolution), so printing displayed it at whatever pixel size the on-screen zoom/container happened to produce — `width:100%` alone wasn't enough, since our reports' actual aspect ratio (11x8.5 Letter landscape, 1.294:1) doesn't exactly match the printable area's aspect ratio (10.2in x 7.7in after the 0.4in `@page` margin, 1.325:1); forcing width to 100% made the height come out ~0.18in taller than the page on *every single page*, just enough overflow to silently push an extra blank page in after each real one (a 2-page report printed as 4 pages). Fixed with `max-width:100%; max-height:7.7in` (`object-fit:contain` logic) on `.react-pdf__Page__canvas`, plus `display:none` on `.textLayer`/`.annotationLayer` for print — those invisible text-selection overlays are positioned with absolute pixel coordinates from the page's *original* unshrunk render width, so they don't scale down with the canvas and were overflowing on their own even after the canvas itself was fixed. Verified page counts with a real headless `page.pdf()` print (not a screenshot, which doesn't reflect actual pagination).
   - **Rolled out on:** `inventory-entry` (all ~14 PDF report buttons, 2026-06-27). **Not yet migrated — same `window.open()` miss, fix the same way next time each page comes up for review:** `sales` (POS)'s invoice "Print" button (`/api/pos/invoice/print`), `accounts-payable`'s statement printer (builds a printable window via `window.open('', '_blank')` + manual HTML, a different/older pattern from the same root problem).
 - **`ReportPDF` (`src/components/reports/ReportPDF.tsx`) — the company letterhead, report title, and table column-header row must all be marked `fixed`, not just the page footer.** A `fixed` View in `@react-pdf/renderer` repeats on every page; a plain one only renders once, wherever it falls in document order — which for the letterhead/column-header is the very top, so on page 1 it looked complete and the bug was invisible until a report ran past one page. Every report routed through `ReportPDF` that returns more than one page (No Scan Summary, packing-invoices, etc.) was leaving page 2+ as bare, unlabeled data rows. Fixed by wrapping the letterhead+divider block and the `theadRow` each in their own `fixed` View (2026-06-27) — this is shared by every report, so the fix applies automatically; no per-report route changes needed. Keep this in mind if a *new* report component is ever built instead of reusing `ReportPDF` directly.
+- **Any report whose row count isn't naturally bounded by its filters must be capped before it reaches `ReportPDF`.** `react-pdf` lays out this app's tables at roughly **50ms per row** (Yoga flexbox per cell) — fine for the typical few-dozen/few-hundred-row report, but Pbook to Invoice's "Stock OM" report (`sp_flower_packing_stock_without_customer_report`, no filters at all) returns 13,575 rows in production and simply never finished rendering (10+ minutes; confirmed by timing 200/500-row slices, since the full run outlasted a 280s `curl --max-time`). A render that's still running when the client gives up does **not** stop on the server — it keeps the Node event loop busy and queues every other request behind it (self-hosted via Docker/`server.js`, no platform request timeout to save you). Before wiring any new report to a proc with no inherent row cap (no date range, no single-entity filter), check the real row count live first; if it's in the thousands, sort by whatever field makes truncation meaningful and slice server-side (e.g. Stock OM: sorted by `days` ascending, capped at 300 — renders in ~13s warm), and say so in the report's `subtitle` ("Freshest 300 of 13,575 records...") rather than silently dropping rows.
 
 ---
 
@@ -408,3 +409,53 @@ Remaining work:
   keyed off `selectedUnico` on the Lines panel and all 5 tabs (not added to
   Date Picker/Customers — those are aggregate lists with no single record for
   a log icon to describe).
+  **Follow-up round (2026-06-30):** re-read the user's reported "the menu items
+  don't do anything" against the actual VFP `.prg`/`.FPT` source (note: in
+  `C:\EISVisualSystems\Antigravity\Pbook2Invoice\`, these are still binary
+  SCX/memo pairs despite the `.prg` extension — same string-extraction
+  technique as before). Two real bugs found, two non-bugs confirmed:
+  - **"Stock OM" was wired wrong.** It's not a tab-switcher in VFP — `btn_stock`
+    is a *print* button (tooltip "Print stock open market") calling
+    `sp_flower_packing_stock_without_customer_report`. Re-wired the `GridMenu`
+    item to open that as a real `ReportPDF` report; the bottom "Stock Open
+    Market" *tab* (which the GridMenu item used to jump to) is unaffected —
+    users already reach it by clicking the tab directly.
+  - **This report's proc has zero filters and returns 13,575 rows** (stock
+    dating back to 2010 that evidently never got written off in this DB).
+    `react-pdf` renders this app's `ReportPDF` tables at ~50ms/row (Yoga
+    flexbox layout per cell) — confirmed by timing 200/500-row slices on a
+    freshly-restarted dev server — so the unfiltered report doesn't fail
+    fast, it just never realistically finishes (10+ minutes, and a stuck
+    render blocks the whole Node event loop, queueing every other request
+    behind it — don't leave a heavy `renderToBuffer` call running past a
+    client timeout without killing the server, it keeps consuming the
+    process). **New rule: any report whose row count is unbounded must be
+    capped before it reaches `ReportPDF`**, sorted by whatever field makes
+    the cap meaningful (here `days`, ascending — freshest/most sellable
+    stock first) with the cap and true total stated in the subtitle, not
+    silently dropped. 300 rows renders in ~13s warm, an acceptable wait for
+    an infrequent report click.
+  - **"Change Cust." needed a real modal, not a stub.** VFP opens
+    `ventas_prebook_change_customer.scx`: read-only Prebook#/Cust.PO/
+    Customer/Delivery/Shipping header, a "Customer to Search" box, a
+    Customer/ShipTo/Carrier candidate grid, OK calling
+    `sp_flower_prebook_change_customer(pbook_uq, shipto_uq, carrier_uq)`.
+    Built `ModalChangeCustomer.tsx` matching this — the header fields come
+    free from `detail.detail` (already fetched per selected line via
+    `sp_flower_prebook_box_uq_pc`, just never rendered anywhere before) so no
+    extra round-trip was needed. The candidate search
+    (`sp_flower_customers_list_to_change_prebooks`) returns 9,604 rows for an
+    empty search — matches VFP's own default (`lcsearch` starts as the
+    literal placeholder `'Customer To Search'`, which matches nothing, so the
+    grid starts empty until the user actually searches) — so the modal does
+    **not** auto-search on open, and the route itself refuses an empty
+    `search` param and caps results at 200 as a second line of defense.
+  - **Change PO / Attach Invoice / Partial Invoice / Reset Inv. / Notes were
+    re-checked and are genuinely wired correctly** (open real modals / show a
+    confirm toast, verified by reading every modal component — no early
+    `return null` or prop mismatch found). Could not reproduce "does
+    nothing" from the code; likeliest explanation is the production deploy
+    hadn't picked up the round that wired them yet.
+  - "Search" (opens `ventas_prebook_search.scx`, with a `ventas_prebook_search_some.scx`
+    disambiguation step when multiple prebooks match) remains a stub —
+    confirmed real but not requested to be fixed this round.

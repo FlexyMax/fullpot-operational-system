@@ -27,6 +27,7 @@ import { ModalAttachInvoice } from "@/components/pbook2invoice/ModalAttachInvoic
 import { ModalPartialInvoice } from "@/components/pbook2invoice/ModalPartialInvoice";
 import { ReportModal } from "@/components/reports/ReportModal";
 import { ModalInvoicesByCustomer } from "@/components/pbook2invoice/ModalInvoicesByCustomer";
+import { ModalChangeCustomer } from "@/components/pbook2invoice/ModalChangeCustomer";
 import { usePbook2InvoiceStore } from "@/store/usePbook2InvoiceStore";
 const EMPTY_ARR: any[] = [];
 
@@ -453,6 +454,7 @@ export default function Pbook2InvoicePage() {
         modalPartial, setModalPartial,
         reportModalUrl, setReportModalUrl,
         modalInvoicesByCustomer, setModalInvoicesByCustomer,
+        modalChangeCustomer, setModalChangeCustomer,
     } = usePbook2InvoiceStore();
 
     // ── Dates ─────────────────────────────────────────────────────────────────
@@ -929,13 +931,13 @@ export default function Pbook2InvoicePage() {
                             { label: "Change PO",       icon: FilePen,     color: "blue",   onClick: () => setModalChangePO(true), disabled: !selectedUnico },
                             { label: "Attach Invoice",  icon: Paperclip,   color: "blue",   onClick: () => setModalAttach(true), disabled: !selectedUnico },
                             { label: "Partial Invoice", icon: Scissors,    color: "blue",   onClick: () => setModalPartial(true), disabled: !selectedUnico, separator: true },
-                            { label: "Reset Inv.",      icon: RotateCcw,   color: "amber",  onClick: handleResetInv, disabled: !selectedUnico || working },
-                            { label: "Notes",           icon: StickyNote,  color: "purple", onClick: () => setModalUpdateLine({ open: true, tab: "notes" }), disabled: !selectedUnico },
-                            { label: "Stock OM",        icon: ShoppingCart, color: "purple", onClick: () => { setActiveTab("stockom"); if (selectedUnico) fetchStockOm(); }, disabled: !selectedUnico, separator: true },
+                            { label: "Reset Inv.",      icon: RotateCcw,   color: "amber",  onClick: handleResetInv, disabled: !selectedUnico || working, separator: true },
+                            { label: "Notes",           icon: StickyNote,  color: "purple", onClick: () => setModalUpdateLine({ open: true, tab: "notes" }), disabled: !selectedUnico, separator: true },
                             { label: "Pick List",       icon: List,        color: "gray",   onClick: () => setReportModalUrl(`/api/pbook2invoice/reports/pick-list?invoice_uq=${encodeURIComponent(t(selectedLine?.INVOICE_UQ))}`), disabled: !t(selectedLine?.INVOICE_UQ) || !parseInt(selectedLine?.INVOICE_NO ?? 0) },
-                            { label: "Invoice",         icon: Receipt,     color: "gray",   onClick: () => setReportModalUrl(`/api/pbook2invoice/reports/invoice?invoice_uq=${encodeURIComponent(t(selectedLine?.INVOICE_UQ))}`), disabled: !t(selectedLine?.INVOICE_UQ) || !parseInt(selectedLine?.INVOICE_NO ?? 0), separator: true },
+                            { label: "Invoice",         icon: Receipt,     color: "gray",   onClick: () => setReportModalUrl(`/api/pbook2invoice/reports/invoice?invoice_uq=${encodeURIComponent(t(selectedLine?.INVOICE_UQ))}`), disabled: !t(selectedLine?.INVOICE_UQ) || !parseInt(selectedLine?.INVOICE_NO ?? 0) },
+                            { label: "Stock OM",        icon: ShoppingCart, color: "gray",   onClick: () => setReportModalUrl("/api/pbook2invoice/reports/stock-om"), separator: true },
                             { label: "Search",          icon: Search,      color: "gray",   onClick: () => {} },
-                            { label: "Change Cust.",    icon: UserCog,     color: "gray",   onClick: () => {}, disabled: !selectedUnico },
+                            { label: "Change Cust.",    icon: UserCog,     color: "gray",   onClick: () => setModalChangeCustomer(true), disabled: !selectedUnico },
                         ]} />
                     </div>
                 </div>
@@ -1090,6 +1092,14 @@ export default function Pbook2InvoicePage() {
                 onClose={() => setModalInvoicesByCustomer(false)}
                 customerUq={selectedCustUq}
                 date={selectedDate ?? ""}
+            />
+
+            <ModalChangeCustomer
+                open={modalChangeCustomer}
+                onClose={() => setModalChangeCustomer(false)}
+                pbookUq={t(selectedLine?.PBOOK_UQ)}
+                header={detail?.detail}
+                onSuccess={() => { bumpLinesKey(); bumpDatesKey(); qc.invalidateQueries({ queryKey: ["pb2inv-detail", selectedUnico] }); }}
             />
         </div>
     );
