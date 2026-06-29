@@ -847,22 +847,37 @@ export default function Pbook2InvoicePage() {
                                     <tr><td colSpan={10} className="p-6 text-center text-gray-400 italic">Select a date on the left</td></tr>
                                 )}
                                 {selectedDate && (() => {
-                                    const allRow = (customers as any[]).find((row: any) => t(row.CUSTOMER_UQ ?? "") === "%");
+                                    // sp_NC_prebook_customers_by_date_closed doesn't compute an "ALL" totals
+                                    // row server-side (unlike the legacy procs) — recreated here instead by
+                                    // summing the per-customer rows already on hand, no extra round-trip.
+                                    const rows = (customers as any[]).filter((row: any) => t(row.CUSTOMER_UQ ?? "") !== "%");
+                                    const all = rows.reduce((acc, row: any) => {
+                                        acc.records += parseFloat(row.RECORDS ?? 0) || 0;
+                                        acc.qty_order += parseFloat(row.QTY_ORDER ?? 0) || 0;
+                                        acc.qty_porder += parseFloat(row.QTY_PORDER ?? 0) || 0;
+                                        acc.qty_ship += parseFloat(row.QTY_SHIP ?? 0) || 0;
+                                        acc.qty_invoice += parseFloat(row.QTY_INVOICE ?? 0) || 0;
+                                        acc.total_sale += parseFloat(row.TOTAL_SALE ?? 0) || 0;
+                                        acc.total_purchase += parseFloat(row.TOTAL_PURCHASE ?? 0) || 0;
+                                        acc.credit_limit += parseFloat(row.CREDIT_LIMIT ?? 0) || 0;
+                                        return acc;
+                                    }, { records: 0, qty_order: 0, qty_porder: 0, qty_ship: 0, qty_invoice: 0, total_sale: 0, total_purchase: 0, credit_limit: 0 });
+                                    const allProfit = all.total_sale > 0 ? (all.total_sale - all.total_purchase) * 100 / all.total_sale : 0;
                                     return (
                                         <tr onClick={() => selectCustomer("%")}
                                             className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9] font-bold text-gray-500",
                                                 selectedCustUq === "%" ? "!bg-[#FB7506]/10" : "bg-white hover:bg-gray-50")}
                                         >
                                             <td className="p-2 italic">ALL</td>
-                                            <td className="p-2 text-right">{fmtI(allRow?.RECORDS)}</td>
-                                            <td className="p-2 text-right">{fmt(allRow?.CREDIT_LIMIT)}</td>
-                                            <td className="p-2 text-right">{fmtI(allRow?.QTY_ORDER)}</td>
-                                            <td className="p-2 text-right">{fmtI(allRow?.QTY_PORDER)}</td>
-                                            <td className="p-2 text-right">{fmtI(allRow?.QTY_SHIP)}</td>
-                                            <td className="p-2 text-right">{fmtI(allRow?.QTY_INVOICE)}</td>
-                                            <td className="p-2 text-right">{fmt(allRow?.TOTAL_SALE)}</td>
-                                            <td className="p-2 text-right">{fmt(allRow?.TOTAL_PURCHASE)}</td>
-                                            <td className="p-2 text-right">{fmt(allRow?.PROFIT)}%</td>
+                                            <td className="p-2 text-right">{fmtI(all.records)}</td>
+                                            <td className="p-2 text-right">{fmt(all.credit_limit)}</td>
+                                            <td className="p-2 text-right">{fmtI(all.qty_order)}</td>
+                                            <td className="p-2 text-right">{fmtI(all.qty_porder)}</td>
+                                            <td className="p-2 text-right">{fmtI(all.qty_ship)}</td>
+                                            <td className="p-2 text-right">{fmtI(all.qty_invoice)}</td>
+                                            <td className="p-2 text-right">{fmt(all.total_sale)}</td>
+                                            <td className="p-2 text-right">{fmt(all.total_purchase)}</td>
+                                            <td className="p-2 text-right">{fmt(allProfit)}%</td>
                                         </tr>
                                     );
                                 })()}

@@ -459,3 +459,77 @@ Remaining work:
   - "Search" (opens `ventas_prebook_search.scx`, with a `ventas_prebook_search_some.scx`
     disambiguation step when multiple prebooks match) remains a stub —
     confirmed real but not requested to be fixed this round.
+  **Performance round (2026-06-30): Date Picker + Customers grids, ~3.5s ->
+  ~0.25-0.9s.** The user flagged these two grids as slow. Root-caused in
+  stages (all measurements live against production):
+  1. First suspected the 4 legacy procs' `@tablita`-filled-in-two-passes-
+     then-regrouped shape. Per the requester's explicit direction, did **not**
+     touch those 4 (`sp_flower_prebook_to_invoice_dates[_shipping]`,
+     `sp_flower_prebook_customers_by_(shipping_)date_closed` — still used by
+     the VFP desktop app) and instead created 2 new parameterized procs
+     (`sp_NC_prebook_to_invoice_dates`, `sp_NC_prebook_customers_by_date_closed`,
+     `@llpb_date` picks delivery/arrival instead of two near-duplicate procs
+     each) — `sql/pbook2invoice/` has the deployed definitions. Rewriting the
+     two-pass shape into one CTE-based pass alone changed **nothing**
+     (~3.2-4.4s either way) — wrong theory.
+  2. Bisected column-by-column against the shared `udf_flower_prebook_box_
+     purchase_control()` UDF both procs go through: a bare `COUNT(*)` with
+     the date filter resolved in ~160ms, but `invoiced_cases` alone (sourced
+     from `udf_flower_prebook_box_in_invoice()`, one of 9 LEFT JOINed
+     sub-functions in there) took ~2.7s **by itself** — that sub-function
+     aggregates `flower_invoice`/`flower_invoice_box` (the company's entire
+     invoice history, no date filter, indexed only by `pbook_d_uq`) before
+     being joined, so the caller's date filter never reaches it. The other
+     8 joins (production/hand/inventory/assigned/asspo/composition/carrier,
+     plus a box-level color/tooltip CASE block) were never the bottleneck —
+     each resolved in under half a second standalone.
+  3. Created `udf_NC_prebook_box_purchase_control(@lddatefrom, @lddateto,
+     @llpb_date)` — same legacy `udf_flower_prebook_box_purchase_control()`
+     left fully untouched — keeping only the 3 joins the 2 new procs actually
+     read (`compras`/`shipped`/`invoice`) and parameterizing it so it builds
+     the qualifying `flower_prebook_box` set **once** (a `boxes` CTE) and
+     filters the invoice aggregation down to `pbook_d_uq IN (SELECT unico
+     FROM boxes)` before grouping, instead of aggregating the whole table
+     first. Tested standalone with literal date arguments: dates-shape
+     938ms, customers-shape 164ms — looked solved.
+  4. Wiring that into the 2 procs (which pass the date as a **local
+     variable**, e.g. `DECLARE @ld date = CAST(@lddate AS date)`, not a
+     literal) made them *slower than the legacy procs* (~4.2-4.6s) — SQL
+     Server can't sniff a local variable's actual value at compile time the
+     way it can a literal or the procedure's own parameter, so it fell back
+     to a generic cardinality estimate and picked a bad join plan for
+     `udf_NC_prebook_box_purchase_control()` all over again. Fixed by adding
+     `OPTION (RECOMPILE)` to the `INSERT...SELECT` statements that reference
+     the local variable — forces that one statement to compile fresh against
+     the real runtime value every call. **This is the general rule worth
+     keeping: any query/proc statement that passes a `DECLARE`d local
+     variable (not the proc's own parameter, not a literal) into a filter
+     that materially changes row counts downstream should get `OPTION
+     (RECOMPILE)` on that statement — check this first if a new proc's
+     measured time doesn't match what the same query timed with literal
+     test values.**
+  5. Verified the 2 new procs' output against the legacy ones row-by-row
+     (not just timing) before wiring anything into the app — caught one real
+     pre-existing inconsistency between the legacy delivery/shipping
+     customer procs: the shipping variant declares `qty_porder`/`qty_invoice`
+     as `int` (silently truncates) and never joins `flower_salesmen` (so
+     "Customer" never got the `/ salesman` suffix in shipping mode) — the
+     delivery variant does both correctly. The new merged proc does it
+     consistently (matches delivery's behavior in both modes); invisible in
+     the grid today since the UI already displays those two columns rounded.
+  6. Per explicit instruction: **table variables, not temp tables** — the
+     `@tablita` table-variable pattern itself was kept (this database is
+     compat level 150 / SQL Server 2019, which has table-variable deferred
+     compilation, so the classic "table variables always estimate 1 row"
+     problem mostly doesn't apply here anyway) — and the customers proc no
+     longer computes the legacy procs' `UNION ALL` "ALL" totals row; the
+     page recomputes it client-side by summing the per-customer rows it
+     already has (`src/app/pbook2invoice/page.tsx`, the Customers panel's
+     "ALL" row), which is also what surfaced the **next** bug: the page had
+     been discarding the legacy SP's real "ALL" row entirely and rendering
+     a hardcoded blank one instead — fixed in the same round, independent of
+     which proc is in use.
+  **Naming convention confirmed with the requester for this kind of
+  "same result, web-app-only, don't touch the VFP-shared original" rewrite:
+  prefix with `NC` (`sp_NC_...`/`udf_NC_...`) and verify the name doesn't
+  already exist before creating it.**
