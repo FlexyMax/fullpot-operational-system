@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, type CSSProperties } from "react";
+import { useState, useCallback, useEffect, useRef, type CSSProperties } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -520,6 +520,22 @@ export default function Pbook2InvoicePage() {
     });
     const selectedLine = (lines as any[]).find((l: any) => t(l.UNICO ?? l.PBOOK_BOX_UQ) === selectedUnico);
 
+    // ── Auto-select the first line once it loads for a given date/customer,
+    //    so the bottom detail tabs show real data immediately instead of
+    //    waiting for a click — same pattern as Standing Orders. Fires once
+    //    per (date, customer) pair, not on every refilter, so a manual click
+    //    afterward (or a product-search refilter) doesn't get overridden.
+    const autoSelectedFor = useRef("");
+    useEffect(() => {
+        const key = `${selectedDate}|${selectedCustUq}`;
+        if (autoSelectedFor.current === key) return;
+        if ((lines as any[]).length === 0) return;
+        autoSelectedFor.current = key;
+        const first = (lines as any[])[0];
+        setSelectedUnico(t(first.UNICO ?? first.PBOOK_BOX_UQ ?? ""));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [lines, selectedDate, selectedCustUq]);
+
     // ── Detail ────────────────────────────────────────────────────────────────
     const { data: detail, isFetching: loadingDetail } = useQuery({
         queryKey: ["pb2inv-detail", selectedUnico],
@@ -686,6 +702,7 @@ export default function Pbook2InvoicePage() {
     }, [selectedLine]);
 
     const switchMode = (mode: "delivery" | "shipping") => {
+        autoSelectedFor.current = "";
         setDateMode(mode);
         setSelectedDate(null);
         setSelectedCustUq("%");
@@ -693,12 +710,14 @@ export default function Pbook2InvoicePage() {
     };
 
     const selectDate = (dateStr: string) => {
+        autoSelectedFor.current = "";
         setSelectedDate(dateStr);
         setSelectedCustUq("%");
         setSelectedUnico(null);
     };
 
     const selectCustomer = (uq: string) => {
+        autoSelectedFor.current = "";
         setSelectedCustUq(uq);
         setSelectedUnico(null);
     };
