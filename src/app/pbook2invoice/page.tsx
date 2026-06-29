@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { usePagePermissions } from "@/lib/permissions";
 import { GridMenu } from "@/components/GridMenu";
+import { AuditLogModal } from "@/components/AuditLogModal";
 import AppHeader from "@/components/layout/AppHeader";
 import AppFooter from "@/components/layout/AppFooter";
 import { ModalUpdateLine } from "@/components/pbook2invoice/ModalUpdateLine";
@@ -109,17 +110,41 @@ function SBtn({ icon: Icon, label, onClick, disabled }: any) {
     );
 }
 
+// ─── Bare icon-only Refresh + AuditLogModal, the canonical PanelGrid header-tools pair ──
+function HeaderTools({ recordId, onRefresh, refreshing }: { recordId: string | null; onRefresh: () => void; refreshing?: boolean }) {
+    return (
+        <>
+            <AuditLogModal recordId={recordId} disabled={!recordId} size="sm" />
+            <button onClick={onRefresh} title="Refresh"
+                className="text-gray-400 hover:text-[#FB7506] transition-all hover:rotate-180 duration-500 p-1"
+            >
+                <RefreshCcw size={14} className={refreshing ? "animate-spin" : ""} />
+            </button>
+        </>
+    );
+}
+
 // ─── Bottom tab sub-components ─────────────────────────────────────────────────
-function InvoicedTab({ rows }: { rows: any[] }) {
+function InvoicedTab({ rows, recordId, onRefresh, refreshing, onOpenReport }: {
+    rows: any[]; recordId: string | null; onRefresh: () => void; refreshing: boolean; onOpenReport: (url: string) => void;
+}) {
+    const [selected, setSelected] = useState<string | null>(null);
+    const selRow = rows.find(r => t(r.UNICO) === selected);
+    const invoiceUq = t(selRow?.INVOICE_UQ);
     return (
         <div>
             <div className="flex items-center gap-2 px-3 h-10 bg-white border-b border-[#DBD9D9] shrink-0">
                 <Receipt size={14} className="text-[#FB7506] shrink-0"/>
-                <span className="font-bold text-[14px] text-[#4F4F4F] uppercase tracking-tight">Invoiced Prebooks</span>
+                <span className="font-bold text-[14px] text-[#4F4F4F] uppercase tracking-tight">
+                    Invoiced Prebooks <span className="text-gray-400">({rows.length})</span>
+                </span>
                 <SBtn icon={X}       label="Close"     onClick={() => {}} />
-                <SBtn icon={Printer} label="Invoice"   onClick={() => {}} />
-                <SBtn icon={Printer} label="Pick List" onClick={() => {}} />
-                <div className="ml-auto"><Lock size={11} className="text-gray-400" /></div>
+                <SBtn icon={Printer} label="Invoice"   disabled={!invoiceUq} onClick={() => onOpenReport(`/api/pbook2invoice/reports/invoice?invoice_uq=${encodeURIComponent(invoiceUq)}`)} />
+                <SBtn icon={Printer} label="Pick List" disabled={!invoiceUq} onClick={() => onOpenReport(`/api/pbook2invoice/reports/pick-list?invoice_uq=${encodeURIComponent(invoiceUq)}`)} />
+                <div className="ml-auto flex items-center gap-1">
+                    <HeaderTools recordId={recordId} onRefresh={onRefresh} refreshing={refreshing} />
+                    <Lock size={11} className="text-gray-400 ml-1" />
+                </div>
             </div>
             <div className="h-[230px] overflow-y-auto">
                 <table className="min-w-full text-xs text-left">
@@ -134,25 +159,30 @@ function InvoicedTab({ rows }: { rows: any[] }) {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-[#DBD9D9]">
-                        {rows.map((r, i) => (
-                            <tr key={i} className="hover:bg-gray-50 text-gray-600">
-                                <Td>{t(r.LOTE)}</Td>
-                                <Td>{fmtDate(r.INVOICE_DATE)}</Td>
-                                <Td className="font-semibold text-blue-700">{t(r.INVOICE_NO)}</Td>
-                                <Td className="text-right">{fmt(r.BOX_QTY)}</Td>
-                                <Td className="text-right">{fmtI(r.UNITS_X_BOX)}</Td>
-                                <Td className="text-right">{fmt(r.PRICE)}</Td>
-                                <Td className="text-right">{fmt(r.TOTAL_UNITS)}</Td>
-                                <Td className="text-right font-semibold">{fmt(r.EXT_PRICE)}</Td>
-                                <Td>{t(r.GROWER)}</Td>
-                                <Td>{t(r.WP_NAME)}</Td>
-                                <Td>{t(r.CASE_SH)}</Td>
-                                <Td className="text-right">{fmt(r.FARM_UNIT_PRICE)}</Td>
-                                <Td className="text-right">{fmtI(r.DAYS)}</Td>
-                                <Td>{t(r.STATUS)}</Td>
-                                <Td>{t(r.DESCRIPTION)}</Td>
-                            </tr>
-                        ))}
+                        {rows.map((r, i) => {
+                            const uq = t(r.UNICO);
+                            const sel = selected === uq;
+                            return (
+                                <tr key={i} onClick={() => setSelected(sel ? null : uq)}
+                                    className={cn("cursor-pointer transition-colors", sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50 text-gray-600")}>
+                                    <Td>{t(r.LOTE)}</Td>
+                                    <Td>{fmtDate(r.INVOICE_DATE)}</Td>
+                                    <Td className="font-semibold text-blue-700">{t(r.INVOICE_NO)}</Td>
+                                    <Td className="text-right">{fmt(r.BOX_QTY)}</Td>
+                                    <Td className="text-right">{fmtI(r.UNITS_X_BOX)}</Td>
+                                    <Td className="text-right">{fmt(r.PRICE)}</Td>
+                                    <Td className="text-right">{fmt(r.TOTAL_UNITS)}</Td>
+                                    <Td className="text-right font-semibold">{fmt(r.EXT_PRICE)}</Td>
+                                    <Td>{t(r.GROWER)}</Td>
+                                    <Td>{t(r.WP_NAME)}</Td>
+                                    <Td>{t(r.CASE_SH)}</Td>
+                                    <Td className="text-right">{fmt(r.FARM_UNIT_PRICE)}</Td>
+                                    <Td className="text-right">{fmtI(r.DAYS)}</Td>
+                                    <Td>{t(r.STATUS)}</Td>
+                                    <Td>{t(r.DESCRIPTION)}</Td>
+                                </tr>
+                            );
+                        })}
                         {rows.length === 0 && <tr><td colSpan={15} className="p-6 text-center text-gray-400 italic">No invoiced prebooks</td></tr>}
                     </tbody>
                 </table>
@@ -161,17 +191,24 @@ function InvoicedTab({ rows }: { rows: any[] }) {
     );
 }
 
-function AssignedStockTab({ rows, onUnassign }: { rows: any[]; onUnassign: (row: any) => void }) {
+function AssignedStockTab({ rows, onUnassign, recordId, onRefresh, refreshing }: {
+    rows: any[]; onUnassign: (row: any) => void; recordId: string | null; onRefresh: () => void; refreshing: boolean;
+}) {
     const [selected, setSelected] = useState<string | null>(null);
     const selRow = rows.find(r => t(r.UNICO) === selected);
     return (
         <div>
             <div className="flex items-center gap-2 px-3 h-10 bg-white border-b border-[#DBD9D9] shrink-0">
                 <Package size={14} className="text-[#FB7506] shrink-0"/>
-                <span className="font-bold text-[14px] text-[#4F4F4F] uppercase tracking-tight">Preassigned Stock</span>
-                <div className="ml-auto flex gap-2">
+                <span className="font-bold text-[14px] text-[#4F4F4F] uppercase tracking-tight">
+                    Preassigned Stock <span className="text-gray-400">({rows.length})</span>
+                </span>
+                <div className="ml-auto flex items-center gap-2">
                     <SBtn icon={Plus}  label="Assign to Prebook box" onClick={() => {}} />
                     <SBtn icon={Minus} label="Unassign Lot" disabled={!selRow} onClick={() => selRow && onUnassign(selRow)} />
+                    <div className="flex items-center gap-1 ml-1">
+                        <HeaderTools recordId={recordId} onRefresh={onRefresh} refreshing={refreshing} />
+                    </div>
                 </div>
             </div>
             <div className="h-[230px] overflow-y-auto">
@@ -220,12 +257,18 @@ function AssignedStockTab({ rows, onUnassign }: { rows: any[]; onUnassign: (row:
     );
 }
 
-function PurchaseTab({ rows }: { rows: any[] }) {
+function PurchaseTab({ rows, recordId, onRefresh, refreshing }: { rows: any[]; recordId: string | null; onRefresh: () => void; refreshing: boolean }) {
+    const [selected, setSelected] = useState<number | null>(null);
     return (
         <div>
             <div className="flex items-center gap-2 px-3 h-10 bg-white border-b border-[#DBD9D9] shrink-0">
                 <ClipboardList size={14} className="text-[#FB7506] shrink-0"/>
-                <span className="font-bold text-[14px] text-[#4F4F4F] uppercase tracking-tight">Purchase by Prebook Box</span>
+                <span className="font-bold text-[14px] text-[#4F4F4F] uppercase tracking-tight">
+                    Purchase by Prebook Box <span className="text-gray-400">({rows.length})</span>
+                </span>
+                <div className="ml-auto flex items-center gap-1">
+                    <HeaderTools recordId={recordId} onRefresh={onRefresh} refreshing={refreshing} />
+                </div>
             </div>
             <div className="h-[230px] overflow-y-auto">
                 <table className="min-w-full text-xs text-left">
@@ -237,17 +280,21 @@ function PurchaseTab({ rows }: { rows: any[] }) {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-[#DBD9D9]">
-                        {rows.map((r, i) => (
-                            <tr key={i} className="hover:bg-gray-50 text-gray-600">
-                                <Td className="font-semibold">{t(r.CPO_NUMBER ?? r.SORDER_NO)}</Td>
-                                <Td>{t(r.DESCRIPTION)}</Td>
-                                <Td>{t(r.GROWER)}</Td>
-                                <Td className="text-right">{fmtI(r.QTY_PORDER)}</Td>
-                                <Td className="text-right">{fmtI(r.TUNITS_X_BOX)}</Td>
-                                <Td className="text-right">{fmt(r.PO_PRICE)}</Td>
-                                <Td>{r.ACTIVE ? "Active" : "Inactive"}</Td>
-                            </tr>
-                        ))}
+                        {rows.map((r, i) => {
+                            const sel = selected === i;
+                            return (
+                                <tr key={i} onClick={() => setSelected(sel ? null : i)}
+                                    className={cn("cursor-pointer transition-colors", sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50 text-gray-600")}>
+                                    <Td className="font-semibold">{t(r.CPO_NUMBER ?? r.SORDER_NO)}</Td>
+                                    <Td>{t(r.DESCRIPTION)}</Td>
+                                    <Td>{t(r.GROWER)}</Td>
+                                    <Td className="text-right">{fmtI(r.QTY_PORDER)}</Td>
+                                    <Td className="text-right">{fmtI(r.TUNITS_X_BOX)}</Td>
+                                    <Td className="text-right">{fmt(r.PO_PRICE)}</Td>
+                                    <Td>{r.ACTIVE ? "Active" : "Inactive"}</Td>
+                                </tr>
+                            );
+                        })}
                         {rows.length === 0 && <tr><td colSpan={7} className="p-6 text-center text-gray-400 italic">No purchase records</td></tr>}
                     </tbody>
                 </table>
@@ -256,14 +303,20 @@ function PurchaseTab({ rows }: { rows: any[] }) {
     );
 }
 
-function StockOmTab({ rows, loading }: { rows: any[]; loading: boolean }) {
+function StockOmTab({ rows, loading, recordId, onRefresh }: { rows: any[]; loading: boolean; recordId: string | null; onRefresh: () => void }) {
+    const [selected, setSelected] = useState<number | null>(null);
     return (
         <div>
             <div className="flex items-center gap-2 px-3 h-10 bg-white border-b border-[#DBD9D9] shrink-0">
                 <ShoppingCart size={14} className="text-[#FB7506] shrink-0"/>
-                <span className="font-bold text-[14px] text-[#4F4F4F] uppercase tracking-tight">Stock Open Market</span>
-                <div className="ml-auto">
+                <span className="font-bold text-[14px] text-[#4F4F4F] uppercase tracking-tight">
+                    Stock Open Market <span className="text-gray-400">({rows.length})</span>
+                </span>
+                <div className="ml-auto flex items-center gap-2">
                     <SBtn icon={Plus} label="Assign to Prebook box" onClick={() => {}} />
+                    <div className="flex items-center gap-1 ml-1">
+                        <HeaderTools recordId={recordId} onRefresh={onRefresh} refreshing={loading} />
+                    </div>
                 </div>
             </div>
             <div className="h-[230px] overflow-y-auto">
@@ -281,27 +334,31 @@ function StockOmTab({ rows, loading }: { rows: any[]; loading: boolean }) {
                     </thead>
                     <tbody className="divide-y divide-[#DBD9D9]">
                         {loading && <tr><td colSpan={17} className="p-6 text-center text-gray-400 italic"><Loader2 size={14} className="animate-spin inline mr-2" />Loading...</td></tr>}
-                        {!loading && rows.map((r, i) => (
-                            <tr key={i} className="hover:bg-gray-50 text-gray-600">
-                                <Td>{t(r.WAREHOUSE)}</Td>
-                                <Td>{t(r.GROWER)}</Td>
-                                <Td>{t(r.CASE_SH)}</Td>
-                                <Td className="text-right">{fmtI(r.UP_X_PACK)}</Td>
-                                <Td className="text-right">{fmtI(r.PACKS_BOX)}</Td>
-                                <Td className="text-right">{fmtI(r.TUNITS_X_BOX)}</Td>
-                                <Td>{t(r.LOTE)}</Td>
-                                <Td className="text-right">{fmtI(r.DAYS)}</Td>
-                                <Td>{t(r.AWBCODE)}</Td>
-                                <Td className="text-right">{fmtI(r.WH_STOCK)}</Td>
-                                <Td className="text-right">{fmt(r.PRICE_X_UNIT)}</Td>
-                                <Td className="text-right">{fmt(r.BOXVALUE)}</Td>
-                                <Td className="text-right font-semibold">{fmt(r.STOCKVALUE)}</Td>
-                                <Td className="text-right">{fmt(r.FARM_UNIT_PRICE)}</Td>
-                                <Td>{fmtDate(r.BOX_DATE)}</Td>
-                                <Td className="text-right">{fmt(r.GPM)}</Td>
-                                <Td>{t(r.BOX_ID)}</Td>
-                            </tr>
-                        ))}
+                        {!loading && rows.map((r, i) => {
+                            const sel = selected === i;
+                            return (
+                                <tr key={i} onClick={() => setSelected(sel ? null : i)}
+                                    className={cn("cursor-pointer transition-colors", sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50 text-gray-600")}>
+                                    <Td>{t(r.WAREHOUSE)}</Td>
+                                    <Td>{t(r.GROWER)}</Td>
+                                    <Td>{t(r.CASE_SH)}</Td>
+                                    <Td className="text-right">{fmtI(r.UP_X_PACK)}</Td>
+                                    <Td className="text-right">{fmtI(r.PACKS_BOX)}</Td>
+                                    <Td className="text-right">{fmtI(r.TUNITS_X_BOX)}</Td>
+                                    <Td>{t(r.LOTE)}</Td>
+                                    <Td className="text-right">{fmtI(r.DAYS)}</Td>
+                                    <Td>{t(r.AWBCODE)}</Td>
+                                    <Td className="text-right">{fmtI(r.WH_STOCK)}</Td>
+                                    <Td className="text-right">{fmt(r.PRICE_X_UNIT)}</Td>
+                                    <Td className="text-right">{fmt(r.BOXVALUE)}</Td>
+                                    <Td className="text-right font-semibold">{fmt(r.STOCKVALUE)}</Td>
+                                    <Td className="text-right">{fmt(r.FARM_UNIT_PRICE)}</Td>
+                                    <Td>{fmtDate(r.BOX_DATE)}</Td>
+                                    <Td className="text-right">{fmt(r.GPM)}</Td>
+                                    <Td>{t(r.BOX_ID)}</Td>
+                                </tr>
+                            );
+                        })}
                         {!loading && rows.length === 0 && <tr><td colSpan={17} className="p-6 text-center text-gray-400 italic">Click Stock OM to load open market stock</td></tr>}
                     </tbody>
                 </table>
@@ -310,14 +367,20 @@ function StockOmTab({ rows, loading }: { rows: any[]; loading: boolean }) {
     );
 }
 
-function SimilarTab({ rows }: { rows: any[] }) {
+function SimilarTab({ rows, recordId, onRefresh, refreshing }: { rows: any[]; recordId: string | null; onRefresh: () => void; refreshing: boolean }) {
+    const [selected, setSelected] = useState<number | null>(null);
     return (
         <div>
             <div className="flex items-center gap-2 px-3 h-10 bg-white border-b border-[#DBD9D9] shrink-0">
                 <BookOpen size={14} className="text-[#FB7506] shrink-0"/>
-                <span className="font-bold text-[14px] text-[#4F4F4F] uppercase tracking-tight">Stock Open Market and Similar Products</span>
-                <div className="ml-auto">
+                <span className="font-bold text-[14px] text-[#4F4F4F] uppercase tracking-tight">
+                    Stock Open Market and Similar Products <span className="text-gray-400">({rows.length})</span>
+                </span>
+                <div className="ml-auto flex items-center gap-2">
                     <SBtn icon={Plus} label="Assign to Prebook box" onClick={() => {}} />
+                    <div className="flex items-center gap-1 ml-1">
+                        <HeaderTools recordId={recordId} onRefresh={onRefresh} refreshing={refreshing} />
+                    </div>
                 </div>
             </div>
             <div className="h-[230px] overflow-y-auto">
@@ -333,26 +396,30 @@ function SimilarTab({ rows }: { rows: any[] }) {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-[#DBD9D9]">
-                        {rows.map((r, i) => (
-                            <tr key={i} className="hover:bg-gray-50 text-gray-600">
-                                <Td>{t(r.WAREHOUSE)}</Td>
-                                <Td>{t(r.GROWER)}</Td>
-                                <Td>{t(r.CASE_SH)}</Td>
-                                <Td className="text-right">{fmtI(r.UP_X_PACK)}</Td>
-                                <Td className="text-right">{fmtI(r.PACKS_BOX)}</Td>
-                                <Td className="text-right">{fmtI(r.TUNITS_X_BOX)}</Td>
-                                <Td>{t(r.LOTE)}</Td>
-                                <Td className="text-right">{fmtI(r.DAYS)}</Td>
-                                <Td>{t(r.AWBCODE)}</Td>
-                                <Td className="text-right">{fmtI(r.WH_STOCK)}</Td>
-                                <Td className="text-right">{fmt(r.PRICE_X_UNIT)}</Td>
-                                <Td className="text-right">{fmt(r.BOXVALUE)}</Td>
-                                <Td className="text-right font-semibold">{fmt(r.STOCKVALUE)}</Td>
-                                <Td className="max-w-[180px] truncate">{t(r.DESCRIPTION)}</Td>
-                                <Td className="text-right">{fmt(r.FARM_UNIT_PRICE)}</Td>
-                                <Td className="text-right">{fmt(r.GPM)}</Td>
-                            </tr>
-                        ))}
+                        {rows.map((r, i) => {
+                            const sel = selected === i;
+                            return (
+                                <tr key={i} onClick={() => setSelected(sel ? null : i)}
+                                    className={cn("cursor-pointer transition-colors", sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50 text-gray-600")}>
+                                    <Td>{t(r.WAREHOUSE)}</Td>
+                                    <Td>{t(r.GROWER)}</Td>
+                                    <Td>{t(r.CASE_SH)}</Td>
+                                    <Td className="text-right">{fmtI(r.UP_X_PACK)}</Td>
+                                    <Td className="text-right">{fmtI(r.PACKS_BOX)}</Td>
+                                    <Td className="text-right">{fmtI(r.TUNITS_X_BOX)}</Td>
+                                    <Td>{t(r.LOTE)}</Td>
+                                    <Td className="text-right">{fmtI(r.DAYS)}</Td>
+                                    <Td>{t(r.AWBCODE)}</Td>
+                                    <Td className="text-right">{fmtI(r.WH_STOCK)}</Td>
+                                    <Td className="text-right">{fmt(r.PRICE_X_UNIT)}</Td>
+                                    <Td className="text-right">{fmt(r.BOXVALUE)}</Td>
+                                    <Td className="text-right font-semibold">{fmt(r.STOCKVALUE)}</Td>
+                                    <Td className="max-w-[180px] truncate">{t(r.DESCRIPTION)}</Td>
+                                    <Td className="text-right">{fmt(r.FARM_UNIT_PRICE)}</Td>
+                                    <Td className="text-right">{fmt(r.GPM)}</Td>
+                                </tr>
+                            );
+                        })}
                         {rows.length === 0 && <tr><td colSpan={16} className="p-6 text-center text-gray-400 italic">No similar products</td></tr>}
                     </tbody>
                 </table>
@@ -452,7 +519,7 @@ export default function Pbook2InvoicePage() {
     const selectedLine = (lines as any[]).find((l: any) => t(l.UNICO ?? l.PBOOK_BOX_UQ) === selectedUnico);
 
     // ── Detail ────────────────────────────────────────────────────────────────
-    const { data: detail } = useQuery({
+    const { data: detail, isFetching: loadingDetail } = useQuery({
         queryKey: ["pb2inv-detail", selectedUnico],
         enabled: !!selectedUnico,
         queryFn: async () => {
@@ -468,6 +535,9 @@ export default function Pbook2InvoicePage() {
             };
         },
     });
+    const refreshDetail = useCallback(() => {
+        qc.invalidateQueries({ queryKey: ["pb2inv-detail", selectedUnico] });
+    }, [qc, selectedUnico]);
 
     // ── Stock OM ──────────────────────────────────────────────────────────────
     const { data: stockOm = EMPTY_ARR, isFetching: loadingStockOm, refetch: fetchStockOm } = useQuery({
@@ -668,7 +738,7 @@ export default function Pbook2InvoicePage() {
                     <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center px-3 shrink-0 rounded-t-lg">
                         <Calendar size={15} className="text-[#FB7506]" />
                         <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] ml-2">
-                            Date Picker [Closed Prebooks]
+                            Date Picker [Closed Prebooks] <span className="text-gray-400">({dateRows.length})</span>
                         </span>
                         {loadingDates && <RefreshCcw size={10} className="text-gray-400 animate-spin ml-2" />}
                     </div>
@@ -747,7 +817,7 @@ export default function Pbook2InvoicePage() {
                     <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center px-3 shrink-0 rounded-t-lg min-w-0">
                         <Users size={15} className="text-[#FB7506] shrink-0" />
                         <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] truncate ml-2">
-                            {selectedDate ? `Customers — ${fmtDate(selectedDate)}` : "Customers"}
+                            {selectedDate ? `Customers — ${fmtDate(selectedDate)}` : "Customers"} <span className="text-gray-400">({(customers as any[]).filter((row: any) => t(row.CUSTOMER_UQ ?? "") !== "%").length})</span>
                         </span>
                         {loadingCustomers && <RefreshCcw size={10} className="text-gray-400 animate-spin shrink-0 ml-2" />}
                     </div>
@@ -849,22 +919,25 @@ export default function Pbook2InvoicePage() {
                     <div className="flex items-center min-w-0">
                         <Lock size={15} className="text-[#FB7506] shrink-0" />
                         <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] truncate ml-2">
-                            Closed Prebook box by date and customer
+                            Closed Prebook box by date and customer <span className="text-gray-400">({(lines as any[]).length})</span>
                         </span>
                         {loadingLines && <RefreshCcw size={10} className="text-gray-400 animate-spin shrink-0 ml-2" />}
                     </div>
-                    <GridMenu items={[
-                        { label: "Change PO",       icon: FilePen,     color: "blue",   onClick: () => setModalChangePO(true), disabled: !selectedUnico },
-                        { label: "Attach Invoice",  icon: Paperclip,   color: "blue",   onClick: () => setModalAttach(true), disabled: !selectedUnico },
-                        { label: "Partial Invoice", icon: Scissors,    color: "blue",   onClick: () => setModalPartial(true), disabled: !selectedUnico, separator: true },
-                        { label: "Reset Inv.",      icon: RotateCcw,   color: "amber",  onClick: handleResetInv, disabled: !selectedUnico || working },
-                        { label: "Notes",           icon: StickyNote,  color: "purple", onClick: () => setModalUpdateLine({ open: true, tab: "notes" }), disabled: !selectedUnico },
-                        { label: "Stock OM",        icon: ShoppingCart, color: "purple", onClick: () => { setActiveTab("stockom"); if (selectedUnico) fetchStockOm(); }, disabled: !selectedUnico, separator: true },
-                        { label: "Pick List",       icon: List,        color: "gray",   onClick: () => setReportModalUrl(`/api/pbook2invoice/reports/pick-list?invoice_uq=${encodeURIComponent(t(selectedLine?.INVOICE_UQ))}`), disabled: !t(selectedLine?.INVOICE_UQ) || !parseInt(selectedLine?.INVOICE_NO ?? 0) },
-                        { label: "Invoice",         icon: Receipt,     color: "gray",   onClick: () => {}, disabled: !selectedUnico, separator: true },
-                        { label: "Search",          icon: Search,      color: "gray",   onClick: () => {} },
-                        { label: "Change Cust.",    icon: UserCog,     color: "gray",   onClick: () => {}, disabled: !selectedUnico },
-                    ]} />
+                    <div className="flex items-center gap-1 shrink-0">
+                        <HeaderTools recordId={selectedUnico} onRefresh={bumpLinesKey} refreshing={loadingLines} />
+                        <GridMenu items={[
+                            { label: "Change PO",       icon: FilePen,     color: "blue",   onClick: () => setModalChangePO(true), disabled: !selectedUnico },
+                            { label: "Attach Invoice",  icon: Paperclip,   color: "blue",   onClick: () => setModalAttach(true), disabled: !selectedUnico },
+                            { label: "Partial Invoice", icon: Scissors,    color: "blue",   onClick: () => setModalPartial(true), disabled: !selectedUnico, separator: true },
+                            { label: "Reset Inv.",      icon: RotateCcw,   color: "amber",  onClick: handleResetInv, disabled: !selectedUnico || working },
+                            { label: "Notes",           icon: StickyNote,  color: "purple", onClick: () => setModalUpdateLine({ open: true, tab: "notes" }), disabled: !selectedUnico },
+                            { label: "Stock OM",        icon: ShoppingCart, color: "purple", onClick: () => { setActiveTab("stockom"); if (selectedUnico) fetchStockOm(); }, disabled: !selectedUnico, separator: true },
+                            { label: "Pick List",       icon: List,        color: "gray",   onClick: () => setReportModalUrl(`/api/pbook2invoice/reports/pick-list?invoice_uq=${encodeURIComponent(t(selectedLine?.INVOICE_UQ))}`), disabled: !t(selectedLine?.INVOICE_UQ) || !parseInt(selectedLine?.INVOICE_NO ?? 0) },
+                            { label: "Invoice",         icon: Receipt,     color: "gray",   onClick: () => setReportModalUrl(`/api/pbook2invoice/reports/invoice?invoice_uq=${encodeURIComponent(t(selectedLine?.INVOICE_UQ))}`), disabled: !t(selectedLine?.INVOICE_UQ) || !parseInt(selectedLine?.INVOICE_NO ?? 0), separator: true },
+                            { label: "Search",          icon: Search,      color: "gray",   onClick: () => {} },
+                            { label: "Change Cust.",    icon: UserCog,     color: "gray",   onClick: () => {}, disabled: !selectedUnico },
+                        ]} />
+                    </div>
                 </div>
                 <div className="bg-white border-b border-[#DBD9D9] p-1 text-right text-[10px] text-gray-400 font-bold italic pr-4 shrink-0">
                     {(lines as any[]).length} Records
@@ -963,11 +1036,11 @@ export default function Pbook2InvoicePage() {
                     )}
                 </div>
                 <div>
-                    {activeTab === "invoiced"  && <InvoicedTab      rows={detail?.invoiced      ?? []} />}
-                    {activeTab === "assigned"  && <AssignedStockTab rows={detail?.stockAssigned ?? []} onUnassign={row => setModalUnassign(row)} />}
-                    {activeTab === "purchase"  && <PurchaseTab      rows={detail?.purchase      ?? []} />}
-                    {activeTab === "stockom"   && <StockOmTab       rows={stockOm} loading={loadingStockOm} />}
-                    {activeTab === "similar"   && <SimilarTab       rows={detail?.stockSimilar  ?? []} />}
+                    {activeTab === "invoiced"  && <InvoicedTab      rows={detail?.invoiced      ?? []} recordId={selectedUnico} onRefresh={refreshDetail} refreshing={loadingDetail} onOpenReport={setReportModalUrl} />}
+                    {activeTab === "assigned"  && <AssignedStockTab rows={detail?.stockAssigned ?? []} onUnassign={row => setModalUnassign(row)} recordId={selectedUnico} onRefresh={refreshDetail} refreshing={loadingDetail} />}
+                    {activeTab === "purchase"  && <PurchaseTab      rows={detail?.purchase      ?? []} recordId={selectedUnico} onRefresh={refreshDetail} refreshing={loadingDetail} />}
+                    {activeTab === "stockom"   && <StockOmTab       rows={stockOm} loading={loadingStockOm} recordId={selectedUnico} onRefresh={fetchStockOm} />}
+                    {activeTab === "similar"   && <SimilarTab       rows={detail?.stockSimilar  ?? []} recordId={selectedUnico} onRefresh={refreshDetail} refreshing={loadingDetail} />}
                 </div>
             </div>
 

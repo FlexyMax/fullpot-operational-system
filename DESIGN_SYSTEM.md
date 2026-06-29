@@ -94,6 +94,7 @@ Implement with explicit Tailwind arbitrary values (`text-[14px] font-bold`, etc.
 - **Grid action menu (hamburger dropdown):** use the shared `GridMenu` (`src/components/GridMenu.tsx`) or replicate its pattern in full — both the trigger and the dropdown are standardized, not just the dropdown.
   - **Trigger** — the "3 lines" icon button, exactly like `PanelGrid`'s own hamburger: `h-10 w-10 flex items-center justify-center hover:bg-gray-100`, containing three `2px`-thick `bg-[#FB7506]` line segments that are horizontal when closed and rotate to vertical when open (`flex-col gap-[5px]` ↔ `flex-row gap-[5px]`). **Not** a solid orange square button with a lucide `Menu` (☰) icon — that was the old pattern and is now a known miss to look for (it was wrong in `GridMenu.tsx` itself, QC's `QualityCreditsTab`/`QCHistoryTab` local `ActionMenu`, and Items' `Tab1.tsx` `RightCard` — all fixed 2026-06-21). Width can stay `w-10`/`h-10` even when the trigger docks into a panel's top-right corner (`rounded-tr-lg`, `pr-0` on the parent header) — don't widen it back out to fit a label, the icon-only button is the standard.
   - **Dropdown** — must render through `createPortal(..., document.body)` with `position: fixed` anchored to the trigger's `getBoundingClientRect()`. Without the portal, the dropdown is a descendant of the scrollable grid container and gets visually clipped/hidden behind the rows the moment the list scrolls or the container's `overflow-auto` kicks in. Dropdown items: `px-4 py-2.5 text-[14px] font-semibold uppercase`, `hover:bg-[#FB7506]/10`, `rounded-sm` panel, `border border-gray-200`, `z-[100]` — matching `PanelGrid`'s own `MenuDropdown`. Any page-local copy of this pattern should match the same trigger and item styling.
+- **Grid header "tools" trio — inline record count, bare refresh icon, log icon.** Per `PanelGrid.tsx` (the canonical reference, `title`/`recordCount`/`onRefresh`/`onLog` props): every grid header shows the row count **inline next to the title** (`Title <span className="text-gray-400">({count})</span>`, line 189-194) *in addition to* the separate "{n} Records" bar below the header (line 293-298) — these are not alternatives, `PanelGrid` renders both. Refresh and audit-log controls are **bare icons, never a labeled/bordered button**: `text-gray-400 hover:text-[#FB7506] transition-all hover:rotate-180 duration-500 p-1` for refresh (`RefreshCcw`, spins via a `refreshing && "animate-spin"` class), and the shared `AuditLogModal` component (`src/components/AuditLogModal.tsx`, `size="sm"`) for the log icon — both sit to the left of the `GridMenu` hamburger if there is one, never as a separate gray toolbar button. The log icon only belongs on a grid that has one current "subject" record to show history for (e.g. the selected prebook line, the selected box) — it doesn't belong on aggregate/summary lists with no single underlying record (a list of dates, a list of customers). Pbook to Invoice's "Closed Prebook box" (Lines) panel and its 5 detail tabs were missing this entire trio (2026-06-29) — fixed by adding `HeaderTools` (a small local `<AuditLogModal/><button refresh/></>` pair) to each, keyed off `selectedUnico`.
 - **Viewing a PDF report: always `ReportModal`, never `window.open()`/a new tab.** `window.open()`-ing a report route worked inconsistently on mobile (some browsers just download the file or show a blank tab instead of previewing it) — this is now a fixed miss to look for on any "view report" button, the same way a missing panel icon or a red button is. The standard is `src/components/reports/ReportModal.tsx`: a `<ReportModal url={reportModalUrl} onClose={() => setReportModalUrl(null)} />` rendered once per page, fed by a local `openReportModal(path)` helper (`setReportModalUrl(path)`) that every report button calls instead of `openReport`/`window.open`. It renders the PDF with `react-pdf`/`pdfjs-dist` (canvas-based, so it looks identical on every device instead of depending on the browser's native PDF plugin), with zoom in/out, **print**, download, and open-in-new-tab-as-fallback controls in a dark `#374151` toolbar (modal headers stay dark per the gap below, even though this is a portal, not an inline modal).
   - **Implementation gotchas, already solved — don't rediscover these:** (1) `pdfjs-dist` touches browser-only globals at module-load time and crashes during Next.js's SSR pass even inside a `"use client"` component, so the public `ReportModal.tsx` is a `next/dynamic(..., { ssr: false })` wrapper around the real `ReportModalInner.tsx` — import sites never see the difference. (2) The pdf.js worker file (`public/pdf.worker.min.mjs`) must exactly match the pdfjs-dist version `react-pdf` bundles internally (often a *nested* copy under `react-pdf/node_modules`, not whatever version npm hoists to the top level) or it throws an API/Worker version mismatch at runtime — `scripts/copy-pdf-worker.mjs` (run via `postinstall`) resolves the worker path through `react-pdf` itself so it's always right. (3) The Docker build's `deps` stage only copied `package*.json` before `npm ci`, so that postinstall script crashed the build outright (`MODULE_NOT_FOUND`) — every deploy kept serving the previous image. Fixed by also `COPY scripts ./scripts` before `RUN npm ci`. (4) Printing: the modal portals to `document.body` (not inline in the page tree) so it can sit *outside* the rest of the app in the DOM — `<body>` gets a `report-modal-open` class while it's open, and `globals.css` hides `#app-shell` (the page-content wrapper added in `layout.tsx` for exactly this) under `@media print`, so hitting Print only puts the report on paper, not whatever tab/grid happened to be open behind it. (5) Print sizing: react-pdf's canvas has no inline width/height CSS (only the HTML attributes pdf.js sets for render resolution), so printing displayed it at whatever pixel size the on-screen zoom/container happened to produce — `width:100%` alone wasn't enough, since our reports' actual aspect ratio (11x8.5 Letter landscape, 1.294:1) doesn't exactly match the printable area's aspect ratio (10.2in x 7.7in after the 0.4in `@page` margin, 1.325:1); forcing width to 100% made the height come out ~0.18in taller than the page on *every single page*, just enough overflow to silently push an extra blank page in after each real one (a 2-page report printed as 4 pages). Fixed with `max-width:100%; max-height:7.7in` (`object-fit:contain` logic) on `.react-pdf__Page__canvas`, plus `display:none` on `.textLayer`/`.annotationLayer` for print — those invisible text-selection overlays are positioned with absolute pixel coordinates from the page's *original* unshrunk render width, so they don't scale down with the canvas and were overflowing on their own even after the canvas itself was fixed. Verified page counts with a real headless `page.pdf()` print (not a screenshot, which doesn't reflect actual pagination).
   - **Rolled out on:** `inventory-entry` (all ~14 PDF report buttons, 2026-06-27). **Not yet migrated — same `window.open()` miss, fix the same way next time each page comes up for review:** `sales` (POS)'s invoice "Print" button (`/api/pos/invoice/print`), `accounts-payable`'s statement printer (builds a printable window via `window.open('', '_blank')` + manual HTML, a different/older pattern from the same root problem).
@@ -368,11 +369,10 @@ Remaining work:
   **Deferred, explicitly out of scope this round:** "Search" and "Change
   Cust." buttons open *shared* VFP dialogs outside the Pbook2Invoice folder
   (need their own investigation); "Invoice By Prebook" read-only view (no
-  confident SP match found, unlike "Invoice By Customer"); the actual invoice
-  *document* print proc (distinct from `sp_flower_invoice_print_num`, which
-  only bumps a reprint counter — not found yet); product/case swapping inside
-  the Update Line modal (shown read-only — would need a dedicated product-search
-  sub-modal, same gap noted for Inventory Entry's own product picker).
+  confident SP match found, unlike "Invoice By Customer"); product/case
+  swapping inside the Update Line modal (shown read-only — would need a
+  dedicated product-search sub-modal, same gap noted for Inventory Entry's own
+  product picker).
   All new GET routes and the 2 reports were verified live against real
   production data; the mutating actions (Void Line, Reset Inv., Change PO,
   Unassign Stock, Attach Invoice, Partial Invoice, Make Invoice/Invoices, Gen
@@ -380,3 +380,31 @@ Remaining work:
   with the user before being considered fully verified, per their request to
   test those together rather than have them exercised unsupervised against
   production data.
+  **Follow-up round (2026-06-29):** found the real invoice *document* print
+  proc — `sp_flower_invoice_report(@invoice_uq)`, confirmed live via
+  `OBJECT_DEFINITION` (`reporte = 'ws_invoice.frx'`); distinct from
+  `sp_flower_invoice_print` (a mutation that closes the invoice for printing
+  and applies automatic charges — not wired, out of scope) and
+  `sp_flower_invoice_print_num` (just bumps the reprint counter). Wired as a
+  new `ReportPDF` route (`/api/pbook2invoice/reports/invoice`, grouped with a
+  `TOTAL` subtotal row on `ext_price`) and verified live (`curl` + `pdftotext`,
+  real invoice #476572 rendered with correct line items and total). This fixed
+  two previously-stubbed buttons: the Lines panel `GridMenu`'s "Invoice" item,
+  and the Invoiced Prebooks tab's own "Invoice" button. The Invoiced Prebooks
+  tab's "Pick List" button was also a stub despite the report itself already
+  existing — neither button worked because **the tab's own grid had no row
+  selection at all**, so there was nothing to scope the report to; added
+  click-to-select (`UNICO` as the key, same peach-highlight pattern as the
+  other tabs) and wired both buttons off the selected row's `INVOICE_UQ`,
+  disabled until a row is selected. Added the same click-to-select highlight
+  (visual only, index-keyed, no action attached) to Purchase/Stock OM/Similar
+  Products for consistency, since `AssignedStockTab` already had it and the
+  other three didn't. Also applied the grid header "tools" trio (see the
+  `GridMenu` section above) to the Lines panel and all 5 detail tabs, which had
+  none of it: inline `(count)` next to every grid title (including Date
+  Picker/Customers, which already had the separate Records bar but not the
+  inline count), a bare refresh icon wired to `qc.invalidateQueries(["pb2inv-detail", ...])`
+  (or `bumpLinesKey`/`fetchStockOm` where appropriate), and `AuditLogModal`
+  keyed off `selectedUnico` on the Lines panel and all 5 tabs (not added to
+  Date Picker/Customers — those are aggregate lists with no single record for
+  a log icon to describe).
