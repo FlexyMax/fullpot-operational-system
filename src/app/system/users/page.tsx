@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Search, Users, Plus, Pencil, Trash2, Calendar, Check, AlertCircle, XCircle } from "lucide-react";
+import { Search, Users, Plus, Pencil, Trash2, Calendar, Check, Filter } from "lucide-react";
 import { toast } from "sonner";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { AppFooter } from "@/components/layout/AppFooter";
@@ -12,8 +12,8 @@ import PanelGrid from "@/components/ui/PanelGrid";
 import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
 import { useUserStore } from "@/store/system/useUserStore";
 import { UserUpsertModal } from "./components/UserUpsertModal";
-import { UserLogModal } from "./components/UserLogModal";
 import { usePagePermissions } from "@/lib/permissions";
+import { todayEST } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 
 const apiFetch = async (url: string) => { const r = await fetch(url); const j = await r.json(); if (!r.ok) throw new Error(j?.error || `HTTP ${r.status}`); return j; };
@@ -26,17 +26,34 @@ export default function UsersDefinitionPage() {
 
     const {
         searchTerm, setSearchTerm, selectedRow, setSelectedRow,
-        setUpsertModalOpen, setLogModalOpen, setMode
+        setUpsertModalOpen, setMode
     } = useUserStore();
 
     const [deleteDialog, setDeleteDialog] = useState(false);
     const [deleting, setDeleting] = useState(false);
 
+    // Activity log date range — defaults to today on each selection change (matches VFP actualiza_vistas)
+    const [logFrom, setLogFrom] = useState(todayEST);
+    const [logTo, setLogTo] = useState(todayEST);
+
     useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
+
+    // Reset log dates to today whenever the selected user changes
+    useEffect(() => {
+        if (selectedRow) { setLogFrom(todayEST()); setLogTo(todayEST()); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedRow?.unico]);
 
     const { data: users = [], isFetching } = useQuery({
         queryKey: ["sys-users-list"],
         queryFn: () => apiFetch("/api/system/users"),
+    });
+
+    const { data: logData = [], isFetching: loadingLog, refetch: refetchLog } = useQuery({
+        queryKey: ["sys-user-log", selectedRow?.unico, logFrom, logTo],
+        queryFn: () => apiFetch(`/api/system/users/${selectedRow?.unico}/log?from=${logFrom}&to=${logTo}`),
+        enabled: !!selectedRow?.unico,
+        retry: false,
     });
 
     const filteredUsers = useMemo(() => {
@@ -54,16 +71,8 @@ export default function UsersDefinitionPage() {
         else setSelectedRow(row);
     };
 
-    const handleAdd = () => {
-        setMode("add");
-        setUpsertModalOpen(true);
-    };
-
-    const handleEdit = () => {
-        if (!selectedRow) return;
-        setMode("edit");
-        setUpsertModalOpen(true);
-    };
+    const handleAdd  = () => { setMode("add"); setUpsertModalOpen(true); };
+    const handleEdit = () => { if (!selectedRow) return; setMode("edit"); setUpsertModalOpen(true); };
 
     const handleDelete = async () => {
         if (!selectedRow) return;
@@ -72,7 +81,6 @@ export default function UsersDefinitionPage() {
             const res = await fetch(`/api/system/users/${selectedRow.unico}`, { method: "DELETE" });
             const data = await res.json();
             if (!res.ok || !data.success) throw new Error(data.error || "Delete failed");
-            
             await qc.invalidateQueries({ queryKey: ["sys-users-list"] });
             setSelectedRow(null);
             setDeleteDialog(false);
@@ -87,7 +95,7 @@ export default function UsersDefinitionPage() {
     if (status === "loading") return null;
 
     return (
-        <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
+        <div className="flex flex-col min-h-screen bg-[#f4f6f8] font-sans text-[#333]">
             <AppHeader title="Users" />
 
             {/* Search toolbar */}
@@ -99,60 +107,127 @@ export default function UsersDefinitionPage() {
                 </div>
             </div>
 
+            {/* Main Users grid */}
             <PanelGrid
                 title="System Users"
                 icon={Users}
                 recordCount={filteredUsers.length}
                 refreshing={isFetching}
+                onRefresh={() => qc.invalidateQueries({ queryKey: ["sys-users-list"] })}
                 menuItems={[
-                    { label: "New User", icon: Plus, color: "green", onClick: handleAdd, disabled: !perms.canCreate },
-                    { label: "Edit User", icon: Pencil, color: "orange", onClick: handleEdit, disabled: !selectedRow || !perms.canEdit },
-                    { label: "Delete User", icon: Trash2, color: "orange", onClick: () => setDeleteDialog(true), disabled: !selectedRow || !perms.canDelete },
-                    { separator: true },
-                    { label: "Activity Log", icon: Calendar, color: "blue", onClick: () => setLogModalOpen(true), disabled: !selectedRow },
+                    { label: "New User",    icon: Plus,   color: "green",  onClick: handleAdd,                        disabled: !perms.canCreate },
+                    { label: "Edit User",   icon: Pencil, color: "orange", onClick: handleEdit,                       disabled: !selectedRow || !perms.canEdit },
+                    { label: "Delete User", icon: Trash2, color: "red",    onClick: () => setDeleteDialog(true),      disabled: !selectedRow || !perms.canDelete },
                 ]}
-                className="mx-2 mt-2 mb-3 flex-1 flex flex-col min-h-0"
+                className="mx-2 mt-2 h-[420px] shrink-0"
             >
-                <div className="overflow-auto flex-1">
+                <PanelGridTable>
+                    <PanelGridThead>
+                        <PanelGridTh>Code</PanelGridTh>
+                        <PanelGridTh>ID / Cédula</PanelGridTh>
+                        <PanelGridTh>Name</PanelGridTh>
+                        <PanelGridTh>Username</PanelGridTh>
+                        <PanelGridTh>E-mail</PanelGridTh>
+                        <PanelGridTh className="hidden md:table-cell">Position</PanelGridTh>
+                        <PanelGridTh className="hidden sm:table-cell">Level</PanelGridTh>
+                        <PanelGridTh className="text-center">Active</PanelGridTh>
+                    </PanelGridThead>
+                    <PanelGridTbody>
+                        {filteredUsers.length === 0 ? (
+                            <tr><td colSpan={8} className="p-6 text-center text-gray-300 text-xs">No users found</td></tr>
+                        ) : filteredUsers.map((u: any) => {
+                            const isSelected = selectedRow?.unico === u.unico;
+                            return (
+                                <PanelGridTr
+                                    key={u.unico}
+                                    selected={isSelected}
+                                    onClick={() => handleSelect(u)}
+                                    className="cursor-pointer"
+                                >
+                                    <PanelGridTd className="font-mono text-[10px]">{u.unico}</PanelGridTd>
+                                    <PanelGridTd>{String(u.cedula || "")}</PanelGridTd>
+                                    <PanelGridTd className="font-semibold max-w-[180px] truncate">{String(u.apellidos || "").trim()}, {String(u.nombres || "").trim()}</PanelGridTd>
+                                    <PanelGridTd className="text-gray-600">{String(u.username || "")}</PanelGridTd>
+                                    <PanelGridTd className="text-gray-500">{String(u.correo || "")}</PanelGridTd>
+                                    <PanelGridTd className="hidden md:table-cell text-gray-500">{String(u.cargo || "")}</PanelGridTd>
+                                    <PanelGridTd className="hidden sm:table-cell text-gray-500">{String(u.nivel || "")}</PanelGridTd>
+                                    <PanelGridTd className="text-center">
+                                        {u.activo ? <Check size={10} className="text-green-500 mx-auto" /> : "—"}
+                                    </PanelGridTd>
+                                </PanelGridTr>
+                            );
+                        })}
+                    </PanelGridTbody>
+                </PanelGridTable>
+            </PanelGrid>
+
+            {/* Activity Log panel — embedded below main grid (VFP: Detallecontrol1) */}
+            <PanelGrid
+                title={selectedRow ? `Activity Log — ${selectedRow.username}` : "Activity Log"}
+                icon={Calendar}
+                recordCount={selectedRow ? (logData as any[]).length : undefined}
+                refreshing={loadingLog}
+                onRefresh={() => refetchLog()}
+                headerRight={selectedRow ? (
+                    <div className="flex items-center gap-1 text-xs shrink-0">
+                        <input type="date" value={logFrom} onChange={e => setLogFrom(e.target.value)}
+                            className="fos-input h-7 text-xs w-28" />
+                        <span className="text-gray-400">→</span>
+                        <input type="date" value={logTo} onChange={e => setLogTo(e.target.value)}
+                            className="fos-input h-7 text-xs w-28" />
+                        <button onClick={() => refetchLog()}
+                            className="flex items-center gap-1 bg-[#FB7506] hover:bg-orange-600 text-white px-2.5 h-7 rounded text-[11px] font-black uppercase tracking-wider transition-all">
+                            <Filter size={12} /> Filter
+                        </button>
+                    </div>
+                ) : undefined}
+                className="mx-2 mt-2 mb-3 h-[260px] shrink-0"
+            >
+                {!selectedRow ? (
+                    <div className="h-full flex flex-col items-center justify-center text-gray-300 gap-2">
+                        <Users size={28} className="opacity-20" />
+                        <p className="text-xs font-bold uppercase tracking-widest">Select a user to view activity log</p>
+                    </div>
+                ) : loadingLog ? (
+                    <div className="h-full flex items-center justify-center text-gray-400 text-xs font-bold italic">
+                        Loading activity...
+                    </div>
+                ) : (logData as any[]).length === 0 ? (
+                    <div className="h-full flex items-center justify-center text-gray-400 text-xs font-bold italic">
+                        No activity found for selected dates
+                    </div>
+                ) : (
                     <PanelGridTable>
                         <PanelGridThead>
-                            <PanelGridTh>Code</PanelGridTh>
-                            <PanelGridTh>ID / Cédula</PanelGridTh>
-                            <PanelGridTh>Name</PanelGridTh>
-                            <PanelGridTh>Username</PanelGridTh>
-                            <PanelGridTh>E-mail</PanelGridTh>
-                            <PanelGridTh className="hidden md:table-cell">Position</PanelGridTh>
-                            <PanelGridTh className="hidden sm:table-cell">Level</PanelGridTh>
-                            <PanelGridTh className="text-center">Active</PanelGridTh>
+                            <PanelGridTh>Date</PanelGridTh>
+                            <PanelGridTh>Action</PanelGridTh>
+                            <PanelGridTh>Screen</PanelGridTh>
+                            <PanelGridTh>Module</PanelGridTh>
+                            <PanelGridTh>Company</PanelGridTh>
                         </PanelGridThead>
                         <PanelGridTbody>
-                            {filteredUsers.length === 0 ? (
-                                <tr><td colSpan={8} className="p-6 text-center text-gray-300 text-xs">No users found</td></tr>
-                            ) : filteredUsers.map((u: any) => {
-                                const isSelected = selectedRow?.unico === u.unico;
-                                return (
-                                    <PanelGridTr
-                                        key={u.unico}
-                                        selected={isSelected}
-                                        onClick={() => handleSelect(u)}
-                                        className="cursor-pointer"
-                                    >
-                                        <PanelGridTd className="font-mono text-[10px]">{u.unico}</PanelGridTd>
-                                        <PanelGridTd>{String(u.cedula || "")}</PanelGridTd>
-                                        <PanelGridTd className="font-semibold max-w-[180px] truncate">{String(u.apellidos || "").trim()}, {String(u.nombres || "").trim()}</PanelGridTd>
-                                        <PanelGridTd className="text-gray-600">{String(u.username || "")}</PanelGridTd>
-                                        <PanelGridTd className="text-gray-500">{String(u.correo || "")}</PanelGridTd>
-                                        <PanelGridTd className="hidden md:table-cell text-gray-500">{String(u.cargo || "")}</PanelGridTd>
-                                        <PanelGridTd className="hidden sm:table-cell text-gray-500">{String(u.nivel || "")}</PanelGridTd>
-                                        <PanelGridTd className="text-center">
-                                            {u.activo ? <Check size={10} className="text-green-500 mx-auto" /> : "—"}
-                                        </PanelGridTd>
-                                    </PanelGridTr>
-                                );
-                            })}
+                            {(logData as any[]).map((row: any, i: number) => (
+                                <PanelGridTr key={i}>
+                                    <PanelGridTd className="text-gray-600">
+                                        {row.fecha ? new Date(row.fecha).toLocaleString("en-US", { timeZone: "America/New_York" }) : ""}
+                                    </PanelGridTd>
+                                    <PanelGridTd className="font-semibold text-blue-700">
+                                        {String(row.accion || "").trim()}
+                                    </PanelGridTd>
+                                    <PanelGridTd className="truncate max-w-[180px]">
+                                        {String(row.pantalla || "").trim()}
+                                    </PanelGridTd>
+                                    <PanelGridTd className="truncate max-w-[140px] text-gray-500">
+                                        {String(row.modulo || "").trim()}
+                                    </PanelGridTd>
+                                    <PanelGridTd className="text-gray-400">
+                                        {String(row.empresa || "").trim()}
+                                    </PanelGridTd>
+                                </PanelGridTr>
+                            ))}
                         </PanelGridTbody>
                     </PanelGridTable>
-                </div>
+                )}
             </PanelGrid>
 
             <AppFooter areaLabel="System Management" database="Sistema" />
@@ -173,9 +248,6 @@ export default function UsersDefinitionPage() {
                     <button onClick={() => setDeleteDialog(true)} disabled={!perms.canDelete} className="flex flex-col items-center gap-1 p-2 text-red-600 disabled:opacity-30">
                         <Trash2 size={20} /><span className="text-[10px] font-bold uppercase">Delete</span>
                     </button>
-                    <button onClick={() => setLogModalOpen(true)} className="flex flex-col items-center gap-1 p-2 text-blue-600">
-                        <Calendar size={20} /><span className="text-[10px] font-bold uppercase">Log</span>
-                    </button>
                 </div>
             </div>
 
@@ -183,7 +255,6 @@ export default function UsersDefinitionPage() {
                 qc.invalidateQueries({ queryKey: ["sys-users-list"] });
                 toast.success("User saved successfully.");
             }} />
-            <UserLogModal />
 
             {deleteDialog && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -198,7 +269,7 @@ export default function UsersDefinitionPage() {
                             </div>
                         </div>
                         <div className="flex border-t border-gray-100">
-                            <button onClick={() => { setDeleteDialog(false); }} className="flex-1 py-3 text-sm font-bold text-gray-600 hover:bg-gray-50 border-r border-gray-100">Cancel</button>
+                            <button onClick={() => setDeleteDialog(false)} className="flex-1 py-3 text-sm font-bold text-gray-600 hover:bg-gray-50 border-r border-gray-100">Cancel</button>
                             <button onClick={handleDelete} disabled={deleting} className="flex-1 py-3 text-sm font-black text-red-600 hover:bg-red-50 disabled:opacity-50">
                                 {deleting ? "Deleting..." : "Delete"}
                             </button>
