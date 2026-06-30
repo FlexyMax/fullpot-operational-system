@@ -51,7 +51,7 @@ export async function PUT(req: NextRequest, { params }: P) {
             lcccard_expiration_year:   b.ccard_expiration_year     ?? "",
         });
         const row = r.recordset?.[0];
-        if (row?.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
+        if (row?.error) return NextResponse.json({ success: false, error: row.message }, { status: 400 });
         return NextResponse.json({ success: true, unico });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });

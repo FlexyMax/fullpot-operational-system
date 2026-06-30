@@ -19,7 +19,7 @@ export async function POST(req: Request) {
             llall_invoices: b.all_invoices ? 1 : 0,
         });
         const row = r.recordset?.[0];
-        if (row?.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
+        if (row?.error) return NextResponse.json({ success: false, error: row.message }, { status: 400 });
         return NextResponse.json({ success: true, unico: row?.unico ?? "" });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });

@@ -516,7 +516,7 @@ export default function CustomerPaymentsPage() {
                                         return (
                                             <PanelGridTr key={c.unico} onDoubleClick={()=>setActiveTab("invoices")} onClick={()=>{ if(isSel) selectCustomer(null); else selectCustomer(c); }} selected={isSel}>
                                                 <PanelGridTd className="font-medium">
-                                                    <div className="font-bold text-gray-800">{t(c.cust_code)}</div>
+                                                    <div className="font-mono font-semibold text-[#FB7506]">{t(c.cust_code)}</div>
                                                     <div className="text-gray-500 text-[10px]">{t(c.customer)}</div>
                                                 </PanelGridTd>
                                                 {/* SP returns pre-formatted "$x,xxx.xx" strings for money — use t() directly */}
@@ -629,7 +629,7 @@ export default function CustomerPaymentsPage() {
                                         return (
                                             <PanelGridTr key={inv.unico} onClick={()=>{ const isSel=selInvoice?.unico===inv.unico; setSelInvoice(isSel?null:inv); store.setSelInvoiceUq(isSel?null:inv?.unico||null); }}
                                                 className={cn(isOverdue && !isSel && "bg-red-50 hover:bg-red-100", isVoid && "opacity-45")} selected={isSel}>
-                                                <PanelGridTd className="font-bold text-blue-700">{inv.invoice_no}</PanelGridTd>
+                                                <PanelGridTd className="font-mono font-semibold text-[#FB7506]">{inv.invoice_no}</PanelGridTd>
                                                 <PanelGridTd>{fmtDate(inv.arec_date)}</PanelGridTd>
                                                 <PanelGridTd align="right">{inv.days}</PanelGridTd>
                                                 <PanelGridTd align="right">{inv.percen}</PanelGridTd>
@@ -817,7 +817,7 @@ export default function CustomerPaymentsPage() {
                                 <PanelGridTbody>
                                     {(payInvoices as any[]).map((p:any,i:number)=>(
                                         <PanelGridTr key={i}>
-                                            <PanelGridTd className="font-bold text-blue-700">{p.invoice_no}</PanelGridTd>
+                                            <PanelGridTd className="font-mono font-semibold text-[#FB7506]">{p.invoice_no}</PanelGridTd>
                                             <PanelGridTd>{fmtDate(p.ar_date)}</PanelGridTd>
                                             <PanelGridTd>{fmtDate(p.date_due)}</PanelGridTd>
                                             <PanelGridTd align="right">{fmt(p.ammount)}</PanelGridTd>
@@ -914,7 +914,7 @@ export default function CustomerPaymentsPage() {
                                         const isSel=selCrDb?.unico===c.unico;
                                         return <PanelGridTr key={c.unico} onClick={()=>{ const s=selCrDb?.unico===c.unico; setSelCrDb(s?null:c); store.setSelCrdbUq(s?null:c?.unico||null); }} selected={isSel}>
                                             <PanelGridTd><span className={cn("font-black text-[10px]",c.type==="C"?"text-green-600":"text-red-500")}>{c.type}</span></PanelGridTd>
-                                            <PanelGridTd className="font-bold text-blue-700">{c.invoice_no}</PanelGridTd>
+                                            <PanelGridTd className="font-mono font-semibold text-[#FB7506]">{c.invoice_no}</PanelGridTd>
                                             <PanelGridTd align="right" className="text-red-500">{c.type==="D"?fmt(c.cd_ammount):"—"}</PanelGridTd>
                                             <PanelGridTd align="right" className="text-green-600">{c.type==="C"?fmt(c.cd_ammount):"—"}</PanelGridTd>
                                             <PanelGridTd align="right">{fmt(c.overcredits)}</PanelGridTd>
@@ -986,7 +986,7 @@ export default function CustomerPaymentsPage() {
                                     {(stmtData as any[]).map((r:any,i:number)=><PanelGridTr key={i}>
                                         <PanelGridTd className="font-bold">{t(r.type)}</PanelGridTd>
                                         <PanelGridTd>{fmtDate(r.fecha||r.date)}</PanelGridTd>
-                                        <PanelGridTd>{r.invoice_no}</PanelGridTd>
+                                        <PanelGridTd className="font-mono font-semibold text-[#FB7506]">{r.invoice_no}</PanelGridTd>
                                         <PanelGridTd align="right" className="text-red-500">{fmt(r.debits)}</PanelGridTd>
                                         <PanelGridTd align="right" className="text-green-600">{fmt(r.credits)}</PanelGridTd>
                                         <PanelGridTd align="right" className="font-bold text-orange-600">{fmt(r.balance)}</PanelGridTd>
@@ -1034,7 +1034,7 @@ export default function CustomerPaymentsPage() {
                                     {(stmtBalData as any[]).map((r:any,i:number)=><PanelGridTr key={i}>
                                         <PanelGridTd className="font-bold">{t(r.type)}</PanelGridTd>
                                         <PanelGridTd>{fmtDate(r.fecha||r.date)}</PanelGridTd>
-                                        <PanelGridTd>{r.invoice_no}</PanelGridTd>
+                                        <PanelGridTd className="font-mono font-semibold text-[#FB7506]">{r.invoice_no}</PanelGridTd>
                                         <PanelGridTd>{fmtDate(r.due_date)}</PanelGridTd>
                                         <PanelGridTd align="right">{fmt(r.ammount)}</PanelGridTd>
                                         <PanelGridTd align="right" className="text-blue-700">{fmt(r.payments)}</PanelGridTd>
@@ -1089,7 +1089,7 @@ export default function CustomerPaymentsPage() {
                                         const isSel=selCorpIncome?.unico===c.unico;
                                         return <PanelGridTr key={c.unico} onClick={()=>{ const s=selCorpIncome?.unico===c.unico; if(s){setSelCorpIncome(null);store.setActiveGrid(null);}else{setSelCorpIncome(c);setSelCorpPayment(null);store.setActiveGrid("corporate");} }} selected={isSel}>
                                             <PanelGridTd>{fmtDate(c.pay_date)}</PanelGridTd>
-                                            <PanelGridTd className="font-bold">{t(c.cust_code)}</PanelGridTd>
+                                            <PanelGridTd className="font-mono font-semibold text-[#FB7506]">{t(c.cust_code)}</PanelGridTd>
                                             <PanelGridTd>{t(c.bank_doc)}</PanelGridTd>
                                             <PanelGridTd align="right" className="font-bold">{fmt(c.pay_amount)}</PanelGridTd>
                                             <PanelGridTd align="right" className="text-blue-700">{fmt(c.pay_applied)}</PanelGridTd>
@@ -1130,7 +1130,7 @@ export default function CustomerPaymentsPage() {
                                         const isSel=selCorpPayment?.unico===p.unico;
                                         return <PanelGridTr key={p.unico} onClick={()=>{ const s=selCorpPayment?.unico===p.unico; if(s){setSelCorpPayment(null);store.setActiveGrid(null);}else{setSelCorpPayment(p);store.setActiveGrid("corp-invoice");} }} selected={isSel}>
                                             <PanelGridTd>{fmtDate(p.pay_date)}</PanelGridTd>
-                                            <PanelGridTd className="font-bold">{t(p.cust_code)}</PanelGridTd>
+                                            <PanelGridTd className="font-mono font-semibold text-[#FB7506]">{t(p.cust_code)}</PanelGridTd>
                                             <PanelGridTd>{t(p.bank_doc)}</PanelGridTd>
                                             <PanelGridTd align="right" className="font-bold text-blue-700">{fmt(p.payment)}</PanelGridTd>
                                             <PanelGridTd align="right">{fmt(p.applied)}</PanelGridTd>
@@ -1172,7 +1172,7 @@ export default function CustomerPaymentsPage() {
                                         <PanelGridTd className="font-bold">{t(c.cust_code)}</PanelGridTd>
                                         <PanelGridTd>{t(c.bank_doc)}</PanelGridTd>
                                         <PanelGridTd align="right" className="text-blue-700 font-bold">{fmt(c.in_ammount)}</PanelGridTd>
-                                        <PanelGridTd className="font-bold">{c.invoice_no}</PanelGridTd>
+                                        <PanelGridTd className="font-mono font-semibold text-[#FB7506]">{c.invoice_no}</PanelGridTd>
                                         <PanelGridTd>{fmtDate(c.date_due)}</PanelGridTd>
                                     </PanelGridTr>)}
                                     {!loadingCorpInv&&!selCorpPayment&&<tr><td colSpan={6} className="p-4 text-center text-gray-300 italic text-xs">Select a customer payment</td></tr>}

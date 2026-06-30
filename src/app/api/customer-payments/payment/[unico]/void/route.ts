@@ -7,7 +7,7 @@ export async function PUT(_req: Request, { params }: P) {
     try {
         const r = await executeProcedure("sp_flower_income_void", { lcincome_uq: unico });
         const row = r.recordset?.[0];
-        if (row?.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
+        if (row?.error) return NextResponse.json({ success: false, error: row.message }, { status: 400 });
         return NextResponse.json({ success: true });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
