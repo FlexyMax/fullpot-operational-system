@@ -484,7 +484,7 @@ export default function CustomersSetupPage() {
                                                     {isExp ? <Minus size={11} className="text-[#FB7506]" /> : <Plus size={11} className="text-gray-400" />}
                                                 </button>
                                             </PanelGridTd>
-                                            <PanelGridTd className="font-mono text-[10px]">{t(c.old_code)}</PanelGridTd>
+                                            <PanelGridTd className="font-mono font-semibold text-[#FB7506]">{t(c.old_code)}</PanelGridTd>
                                             <PanelGridTd className="font-semibold max-w-[180px] truncate">{t(c.customer)}</PanelGridTd>
                                             <PanelGridTd align="center">{(String(c.active||"").trim().toLowerCase() === "yes" || c.active === true || c.active === 1) ? <Check size={10} className="text-green-500 mx-auto" /> : <X size={10} className="text-gray-300 mx-auto" />}</PanelGridTd>
                                             <PanelGridTd align="center">{(String(c.credithold||"").trim().toLowerCase() === "yes" || c.credithold === true || c.credithold === 1) ? <span className="text-red-500 font-black text-[9px]">HOLD</span> : "\u2014"}</PanelGridTd>

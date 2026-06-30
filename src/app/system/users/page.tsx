@@ -172,7 +172,7 @@ export default function UsersDefinitionPage() {
                                     onClick={() => handleSelect(u)}
                                     className="cursor-pointer"
                                 >
-                                    <PanelGridTd className="font-mono text-[10px]">{u.unico}</PanelGridTd>
+                                    <PanelGridTd className="font-mono font-semibold text-[#FB7506]">{u.unico}</PanelGridTd>
                                     <PanelGridTd>{String(u.cedula || "")}</PanelGridTd>
                                     <PanelGridTd className="font-semibold max-w-[180px] truncate">{String(u.apellidos || "").trim()}, {String(u.nombres || "").trim()}</PanelGridTd>
                                     <PanelGridTd className="text-gray-600">{String(u.username || "")}</PanelGridTd>
