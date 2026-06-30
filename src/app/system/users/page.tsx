@@ -193,7 +193,7 @@ export default function UsersDefinitionPage() {
                 icon={Calendar}
                 recordCount={selectedRow ? logTotal : undefined}
                 refreshing={loadingLog}
-                onRefresh={() => refetchLog()}
+                onRefresh={() => setLogNonce(n => n + 1)}
                 headerRight={selectedRow ? (
                     <div className="flex items-center gap-1 text-xs shrink-0">
                         <input type="date" value={logFrom} onChange={e => setLogFrom(e.target.value)}
