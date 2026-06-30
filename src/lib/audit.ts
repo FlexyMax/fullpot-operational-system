@@ -8,8 +8,8 @@ export const PANTA: Record<string, string> = {
     "customers-setup":     "XD6Z7045",  // APP Customer Center
     "sales":               "XD6Z7051",  // APP Sales Orders
     "module-screen-setup": "52961702",  // MODULES SETUP
-    "users-definition":    "52961702",  // fallback — register dedicated pantalla record
-    "access-definition":   "52961702",  // fallback — register dedicated pantalla record
+    "users-definition":    "YK618352",  // SYSTEM USER SETUP
+    "access-definition":   "52961680",  // USER ACCESS
     "customer-payments":   "XD6Z7054",  // APP A-R
     "flexy2qb":            "XD6Y7055",  // Flexy2QB (APP A-R)
     "awbs":                "52961702",  // fallback — register ventas_awbs in pantalla table to get real UQ

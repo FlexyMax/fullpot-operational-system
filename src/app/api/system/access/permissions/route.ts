@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { executeProcedure, executeQuery } from "@/lib/db";
+import { executeProcedure } from "@/lib/db";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export async function GET(req: NextRequest) {
     const unico = req.nextUrl.searchParams.get("unico");
@@ -14,26 +16,27 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-    const rows: any[] = await req.json();
+    const { rows, targetUq }: { rows: any[], targetUq?: string } = await req.json();
     if (!Array.isArray(rows) || rows.length === 0)
         return NextResponse.json({ error: "rows array required" }, { status: 400 });
-    const txt = (v: any) => String(v ?? "").replace(/'/g, "''");
-    const bit = (v: any) => (v ? 1 : 0);
+    const session = await getServerSession(authOptions);
+    const operatorUq = String((session?.user as any)?.id ?? "").padEnd(8).substring(0, 8);
     try {
-        for (const r of rows) {
-            await executeQuery(
-                `UPDATE usuarios_accesos SET
-                    acceso    = ${bit(r.acceso)},
-                    crear     = ${bit(r.crear)},
-                    editar    = ${bit(r.editar)},
-                    borrar    = ${bit(r.borrar)},
-                    consultar = ${bit(r.consultar)},
-                    reportes  = ${bit(r.reportes)}
-                 WHERE unico = '${txt(r.unico)}'`,
-                true
-            );
-        }
-        return NextResponse.json({ success: true, updated: rows.length });
+        const result = await executeProcedure("sp_NC_accesos_update_batch", {
+            lcjson: JSON.stringify(rows.map(r => ({
+                unico:     r.unico,
+                acceso:    r.acceso    ? 1 : 0,
+                crear:     r.crear     ? 1 : 0,
+                editar:    r.editar    ? 1 : 0,
+                borrar:    r.borrar    ? 1 : 0,
+                consultar: r.consultar ? 1 : 0,
+                reportes:  r.reportes  ? 1 : 0,
+            }))),
+            lcOperator_uq: operatorUq,
+            lcTarget_uq:   String(targetUq ?? "").padEnd(8).substring(0, 8),
+        }, true);
+        const row = (result.recordset as any[])[0];
+        return NextResponse.json({ success: true, updated: row?.updated ?? rows.length });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }

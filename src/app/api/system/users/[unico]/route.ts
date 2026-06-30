@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure, executeQuery } from "@/lib/db";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 const txt = (v: any) => String(v ?? "").replace(/'/g, "''");
 
@@ -15,18 +17,21 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ uni
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ unico: string }> }) {
     const { unico } = await params;
+    const session = await getServerSession(authOptions);
+    const operatorUq = String((session?.user as any)?.id ?? "").padEnd(8).substring(0, 8);
     const body = await req.json();
     const { nombres, apellidos, username, clave, nivel, cargo, correo } = body;
     try {
         const r = await executeProcedure("sp_NC_user_update", {
-            lcUnico:     unico,
-            lcUserName:  txt(username),
-            lcFirstName: txt(nombres),
-            lcLastName:  txt(apellidos),
-            lcLevel:     txt(nivel),
-            lcPassword:  txt(clave),
-            lcPosition:  txt(cargo),
-            lcemail:     txt(correo)
+            lcUnico:       unico,
+            lcUserName:    txt(username),
+            lcFirstName:   txt(nombres),
+            lcLastName:    txt(apellidos),
+            lcLevel:       txt(nivel),
+            lcPassword:    txt(clave),
+            lcPosition:    txt(cargo),
+            lcemail:       txt(correo),
+            lcOperator_uq: operatorUq,
         }, true);
         const row = r.recordset?.[0] || {};
         if (row.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
@@ -37,10 +42,15 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ unic
     }
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ unico: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ unico: string }> }) {
     const { unico } = await params;
+    const session = await getServerSession(authOptions);
+    const operatorUq = String((session?.user as any)?.id ?? "").padEnd(8).substring(0, 8);
     try {
-        const r = await executeProcedure("sp_NC_user_delete", { lcUnico: unico }, true);
+        const r = await executeProcedure("sp_NC_user_delete", {
+            lcUnico:       unico,
+            lcOperator_uq: operatorUq,
+        }, true);
         const row = r.recordset?.[0] || {};
         if (row.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
 

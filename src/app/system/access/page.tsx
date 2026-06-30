@@ -18,6 +18,7 @@ import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { AuditLogModal } from "@/components/AuditLogModal";
 import { cn } from "@/lib/utils";
 import { useAccessStore } from "@/store/system/useAccessStore";
+import PanelGrid from "@/components/ui/PanelGrid";
 const EMPTY_ARR: any[] = [];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -126,11 +127,17 @@ export default function SystemAccessPage() {
             return;
         }
         try {
-            await fetch("/api/system/access/initialize", {
+            const res = await fetch("/api/system/access/initialize", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ unico: selectedUnico, nivel: selectedUser.nivel }),
             });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                toast.error(data.error || "Failed to initialize permissions.");
+                return;
+            }
+            logAction("Edit", selectedUnico!);
             await refetchPerms();
             setEditMode(true);
         } catch (e: any) {
@@ -149,7 +156,7 @@ export default function SystemAccessPage() {
             const res = await fetch("/api/system/access/permissions", {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(localPerms),
+                body: JSON.stringify({ rows: localPerms, targetUq: selectedUnico }),
             });
             const data = await res.json();
             if (data.success) {
@@ -208,61 +215,47 @@ export default function SystemAccessPage() {
             <div className="flex flex-col lg:flex-row flex-1 gap-2 p-2 overflow-y-auto lg:overflow-hidden">
 
                 {/* ── Left: User List ──────────────────────────────────────── */}
-                <div className="hidden lg:flex w-[260px] shrink-0 flex-col gap-2">
-                    <div className="flex flex-col flex-1 bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden">
-                        <div className="h-10 bg-white flex items-center justify-between pl-3 pr-2 border-b border-[#DBD9D9] shrink-0 rounded-t-lg">
-                            <div className="flex items-center gap-2">
-                                <Users size={16} className="text-[#FB7506]" />
-                                <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">Users</span>
-                            </div>
-                            {loadingUsers && <RefreshCcw size={16} className="text-gray-400 animate-spin" />}
-                        </div>
-                        <div className="p-2 border-b border-[#DBD9D9] shrink-0 bg-[#F5F3F3]">
-                            <div className="relative">
-                                <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
-                                <input
-                                    type="text"
-                                    value={searchTerm}
-                                    onChange={e => setSearchTerm(e.target.value)}
-                                    placeholder="Search users..."
-                                    className="w-full pl-7 pr-2 h-9 text-sm border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506] bg-white"
-                                />
-                            </div>
-                        </div>
-                        <div className="text-[10px] font-black text-gray-400 uppercase tracking-wider px-2 py-0.5 bg-gray-50 border-b border-[#DBD9D9] text-right">
-                            {filteredUsers.length} users
-                        </div>
-                        <div className="overflow-y-auto flex-1">
-                            {(filteredUsers as any[]).map((u: any) => {
-                                const isActive   = u.activo;
-                                const isSelected = selectedUnico === u.unico;
-                                return (
-                                    <div
-                                        key={u.unico}
-                                        onClick={() => handleSelectUser(u.unico)}
-                                        className={cn(
-                                            "px-3 py-2 border-b border-[#DBD9D9] cursor-pointer transition-colors flex items-center gap-2",
-                                            editMode ? "cursor-not-allowed opacity-60" : "",
-                                            isSelected ? "!bg-[#FB7506]/10" : "hover:bg-blue-50"
-                                        )}
-                                    >
-                                        <div className={cn(
-                                            "w-1.5 h-1.5 rounded-full shrink-0",
-                                            isActive ? "bg-green-400" : "bg-gray-300"
-                                        )} />
-                                        <div className="min-w-0">
-                                            <p className="text-[13px] font-normal text-gray-800 truncate">
-                                                {String(u.full_name || "").trim()}
-                                            </p>
-                                            <p className="text-[9px] text-gray-400 truncate">
-                                                {String(u.usuario || "").trim()} · {String(u.nivel || "").trim()}
-                                            </p>
-                                        </div>
+                <div className="hidden lg:flex w-[260px] shrink-0 flex-col">
+                    <PanelGrid
+                        title="Users"
+                        icon={Users}
+                        recordCount={filteredUsers.length}
+                        searchValue={searchTerm}
+                        onSearchChange={setSearchTerm}
+                        searchPlaceholder="Search users..."
+                        refreshing={loadingUsers}
+                        onRefresh={() => qc.invalidateQueries({ queryKey: ["sys-users"] })}
+                        className="flex-1"
+                    >
+                        {(filteredUsers as any[]).map((u: any) => {
+                            const isActive   = u.activo;
+                            const isSelected = selectedUnico === u.unico;
+                            return (
+                                <div
+                                    key={u.unico}
+                                    onClick={() => handleSelectUser(u.unico)}
+                                    className={cn(
+                                        "px-3 py-2 border-b border-[#DBD9D9] cursor-pointer transition-colors flex items-center gap-2",
+                                        editMode ? "cursor-not-allowed opacity-60" : "",
+                                        isSelected ? "!bg-[#FB7506]/10" : "hover:bg-blue-50"
+                                    )}
+                                >
+                                    <div className={cn(
+                                        "w-1.5 h-1.5 rounded-full shrink-0",
+                                        isActive ? "bg-green-400" : "bg-gray-300"
+                                    )} />
+                                    <div className="min-w-0">
+                                        <p className="text-[13px] font-normal text-gray-800 truncate">
+                                            {String(u.full_name || "").trim()}
+                                        </p>
+                                        <p className="text-[9px] text-gray-400 truncate">
+                                            {String(u.usuario || "").trim()} · {String(u.nivel || "").trim()}
+                                        </p>
                                     </div>
-                                );
-                            })}
-                        </div>
-                    </div>
+                                </div>
+                            );
+                        })}
+                    </PanelGrid>
                 </div>
 
                 {/* ── Right: User Card + Filters + Grid ────────────────────── */}
@@ -270,50 +263,17 @@ export default function SystemAccessPage() {
 
                     {/* User Card */}
                     <div className="bg-white rounded-lg border border-[#DBD9D9] shadow-sm shrink-0">
-                        <div className="h-10 bg-white flex items-center justify-between pl-3 border-b border-[#DBD9D9] rounded-t-lg">
-                            {/* Left: title + status badge */}
-                            <div className="flex items-center gap-2">
-                                <UserCheck size={16} className="text-[#FB7506]" />
-                                <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">User Information</span>
-                                <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} />
-                                {selectedUser && (
-                                    <span className={cn(
-                                        "text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded",
-                                        selectedUser.activo ? "bg-[#22C55E] text-white" : "bg-red-500 text-white"
-                                    )}>
-                                        {selectedUser.activo ? "Active" : "Inactive"}
-                                    </span>
-                                )}
-                            </div>
-                            {/* Right: Edit -or- Save + Cancel — hidden on mobile, surfaced via the bottom action bar instead */}
-                            <div className="hidden lg:flex items-center gap-1.5 pr-2">
-                                {!editMode ? (
-                                    <button
-                                        onClick={handleEdit}
-                                        disabled={!selectedUnico || !perms.canEdit}
-                                        className="flex items-center gap-1.5 px-3 h-7 rounded-md font-semibold text-[14px] uppercase text-white transition-all shrink-0 bg-[#FB7506] hover:bg-orange-500 disabled:opacity-40 disabled:cursor-not-allowed"
-                                    >
-                                        <Pencil size={14} /> Edit
-                                    </button>
-                                ) : (
-                                    <div className="flex gap-2 pr-2 mr-20">
-                                        <button
-                                            onClick={handleSave}
-                                            disabled={saving || !perms.canEdit}
-                                            className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-3 py-1.5 rounded font-semibold text-[14px] uppercase transition-all"
-                                        >
-                                            {saving ? <RefreshCcw size={14} className="animate-spin" /> : <Save size={14} />}
-                                            {saving ? "Saving..." : "Save"}
-                                        </button>
-                                        <button
-                                            onClick={handleCancel}
-                                            className="flex items-center gap-1.5 bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded font-semibold text-[14px] uppercase transition-all"
-                                        >
-                                            <X size={14} /> Cancel
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
+                        <div className="h-10 bg-white flex items-center gap-2 pl-3 border-b border-[#DBD9D9] rounded-t-lg">
+                            <UserCheck size={16} className="text-[#FB7506]" />
+                            <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">User Information</span>
+                            {selectedUser && (
+                                <span className={cn(
+                                    "text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded",
+                                    selectedUser.activo ? "bg-[#22C55E] text-white" : "bg-red-500 text-white"
+                                )}>
+                                    {selectedUser.activo ? "Active" : "Inactive"}
+                                </span>
+                            )}
                         </div>
                         {!selectedUser ? (
                             <div className="p-4 text-xs text-gray-400 italic text-center">Select a user from the list</div>
@@ -382,134 +342,147 @@ export default function SystemAccessPage() {
                     </div>
 
                     {/* Permissions Grid */}
-                    <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1 min-h-[300px] lg:min-h-0">
-                        <div className="h-10 bg-white flex items-center justify-between pl-3 border-b border-[#DBD9D9] shrink-0 rounded-t-lg">
-                            <div className="flex items-center gap-2">
-                                <Shield size={16} className="text-[#FB7506]" />
-                                <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">Screen Permissions</span>
+                    <PanelGrid
+                        title="Screen Permissions"
+                        icon={Shield}
+                        recordCount={filteredPerms.length}
+                        refreshing={loadingPerms}
+                        onRefresh={() => refetchPerms()}
+                        headerRight={
+                            <div className="flex items-center gap-1.5">
                                 <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} />
-                                {loadingPerms && <RefreshCcw size={16} className="text-gray-400 animate-spin" />}
-                            </div>
-                            {!editMode && selectedUnico && (
-                                <div className="hidden lg:flex items-center gap-1.5 pr-2">
+                                {!editMode ? (
                                     <button
-                                        onClick={() => setCopyModal({ mode: "from" })}
-                                        className="flex items-center gap-1.5 px-3 h-7 rounded-md font-semibold text-[14px] uppercase text-[#4F4F4F] transition-all shrink-0 bg-white border border-[#DBD9D9] hover:bg-gray-50"
+                                        onClick={handleEdit}
+                                        disabled={!selectedUnico || !perms.canEdit}
+                                        className="flex items-center gap-1.5 px-3 h-7 rounded-md font-semibold text-[14px] uppercase text-white transition-all shrink-0 bg-[#FB7506] hover:bg-orange-500 disabled:opacity-40 disabled:cursor-not-allowed"
                                     >
-                                        <Copy size={14} /> Copy From
+                                        <Pencil size={14} /> Edit
                                     </button>
-                                    <button
-                                        onClick={() => setCopyModal({ mode: "to" })}
-                                        className="flex items-center gap-1.5 px-3 h-7 rounded-md font-semibold text-[14px] uppercase text-[#4F4F4F] transition-all shrink-0 bg-white border border-[#DBD9D9] hover:bg-gray-50"
-                                    >
-                                        <Copy size={14} /> Copy To
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Check/Uncheck column buttons — edit mode only */}
-                        {editMode && (
-                            <div className="bg-blue-50 border-b border-blue-100 px-2 py-1.5 flex items-center gap-1 shrink-0 flex-wrap">
-                                <span className="text-[10px] font-black text-blue-500 uppercase tracking-wider mr-2">Toggle column:</span>
-                                {PERM_FIELDS.map(field => {
-                                    const allChecked = colAllChecked(field);
-                                    const disabled   = isVisitor && (field === "crear" || field === "editar" || field === "borrar");
-                                    return (
-                                        <button
-                                            key={field}
-                                            onClick={() => !disabled && checkColumn(field, !allChecked)}
-                                            disabled={disabled}
-                                            className={cn(
-                                                "flex items-center gap-1 px-2 py-0.5 rounded text-xs font-black uppercase tracking-wider transition-all",
-                                                disabled ? "bg-gray-100 text-gray-300 cursor-not-allowed" :
-                                                allChecked ? "bg-blue-500 text-white hover:bg-blue-600" :
-                                                "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
-                                            )}
-                                        >
-                                            {allChecked ? <CheckSquare size={12} /> : <Square size={12} />}
-                                            {PERM_LABELS[field]}
+                                ) : (
+                                    <>
+                                        <button onClick={handleSave} disabled={saving || !perms.canEdit}
+                                            className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-3 h-7 rounded-md font-semibold text-[14px] uppercase transition-all">
+                                            {saving ? <RefreshCcw size={14} className="animate-spin" /> : <Save size={14} />}
+                                            {saving ? "Saving..." : "Save"}
                                         </button>
-                                    );
-                                })}
+                                        <button onClick={handleCancel}
+                                            className="flex items-center gap-1.5 bg-gray-500 hover:bg-gray-600 text-white px-3 h-7 rounded-md font-semibold text-[14px] uppercase transition-all">
+                                            <X size={14} /> Cancel
+                                        </button>
+                                    </>
+                                )}
                             </div>
-                        )}
-
-                        <div className="overflow-auto flex-1">
-                            {!selectedUnico ? (
-                                <div className="h-40 flex flex-col items-center justify-center text-gray-300 gap-2">
-                                    <Shield size={32} className="opacity-20" />
-                                    <p className="text-xs font-bold uppercase tracking-widest">Select a user to view permissions</p>
+                        }
+                        menuItems={!editMode && !!selectedUnico ? [
+                            { label: "Copy From", icon: Copy, color: "blue", onClick: () => setCopyModal({ mode: "from" }) },
+                            { label: "Copy To",   icon: Copy, color: "blue", onClick: () => setCopyModal({ mode: "to" }) },
+                        ] : undefined}
+                        className="flex-1 min-h-[300px] lg:min-h-0"
+                    >
+                        <div className="flex flex-col h-full">
+                            {/* Check/Uncheck column buttons — edit mode only */}
+                            {editMode && (
+                                <div className="bg-blue-50 border-b border-blue-100 px-2 py-1.5 flex items-center gap-1 shrink-0 flex-wrap">
+                                    <span className="text-[10px] font-black text-blue-500 uppercase tracking-wider mr-2">Toggle column:</span>
+                                    {PERM_FIELDS.map(field => {
+                                        const allChecked = colAllChecked(field);
+                                        const disabled   = isVisitor && (field === "crear" || field === "editar" || field === "borrar");
+                                        return (
+                                            <button
+                                                key={field}
+                                                onClick={() => !disabled && checkColumn(field, !allChecked)}
+                                                disabled={disabled}
+                                                className={cn(
+                                                    "flex items-center gap-1 px-2 py-0.5 rounded text-xs font-black uppercase tracking-wider transition-all",
+                                                    disabled ? "bg-gray-100 text-gray-300 cursor-not-allowed" :
+                                                    allChecked ? "bg-blue-500 text-white hover:bg-blue-600" :
+                                                    "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                                                )}
+                                            >
+                                                {allChecked ? <CheckSquare size={12} /> : <Square size={12} />}
+                                                {PERM_LABELS[field]}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
-                            ) : filteredPerms.length === 0 ? (
-                                <div className="h-40 flex items-center justify-center text-gray-400 text-xs font-bold italic">
-                                    {loadingPerms ? "Loading permissions..." : "No permissions found"}
-                                </div>
-                            ) : (
-                                <table className="min-w-full text-[13px] font-normal text-left">
-                                    <thead className="bg-[#4F4F4F] text-white font-bold text-[12px] uppercase sticky top-0 z-10">
-                                        <tr>
-                                            {PERM_FIELDS.map(f => (
-                                                <th key={f} className="p-2 text-center whitespace-nowrap">
-                                                    {PERM_LABELS[f]}
-                                                </th>
-                                            ))}
-                                            <th className="p-2 whitespace-nowrap">Screen</th>
-                                            <th className="p-2 whitespace-nowrap">Module</th>
-                                            <th className="p-2 whitespace-nowrap">Company</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {filteredPerms.map((p: any) => {
-                                            const local     = localPerms.find(lp => lp.unico === p.unico) ?? p;
-                                            const dimmed    = !local.acceso;
-                                            return (
-                                                <tr
-                                                    key={p.unico}
-                                                    className={cn(
-                                                        "border-b border-[#DBD9D9] transition-colors",
-                                                        dimmed ? "opacity-40" : "bg-[#22C55E]/5 hover:bg-[#22C55E]/10"
-                                                    )}
-                                                >
-                                                    {PERM_FIELDS.map(field => {
-                                                        const checked  = Boolean(local[field]);
-                                                        const disabled = !editMode ||
-                                                            (isVisitor && (field === "crear" || field === "editar" || field === "borrar"));
-                                                        return (
-                                                            <td key={field} className="p-1.5 text-center border-r border-[#DBD9D9]">
-                                                                <button
-                                                                    onClick={() => togglePerm(p.unico, field)}
-                                                                    disabled={disabled}
-                                                                    className={cn(
-                                                                        "w-5 h-5 rounded flex items-center justify-center mx-auto transition-all",
-                                                                        disabled ? "cursor-default" : "cursor-pointer hover:scale-110",
-                                                                        checked
-                                                                            ? "bg-[#22C55E] text-white"
-                                                                            : "bg-white border border-[#DBD9D9] text-transparent"
-                                                                    )}
-                                                                >
-                                                                    <Check size={11} />
-                                                                </button>
-                                                            </td>
-                                                        );
-                                                    })}
-                                                    <td className={cn("p-2 border-r border-[#DBD9D9] truncate max-w-[180px] font-normal", !dimmed && "text-[#22C55E]")}>
-                                                        {String(p.pantalla || "").trim()}
-                                                    </td>
-                                                    <td className={cn("p-2 border-r border-[#DBD9D9] truncate max-w-[150px]", !dimmed ? "text-[#22C55E]" : "text-gray-500")}>
-                                                        {String(p.modulo || "").trim()}
-                                                    </td>
-                                                    <td className={cn("p-2 truncate max-w-[120px]", !dimmed ? "text-[#22C55E]" : "text-gray-400")}>
-                                                        {String(p.empresa || "").trim()}
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
                             )}
+                            <div className="flex-1 overflow-auto min-h-0">
+                                {!selectedUnico ? (
+                                    <div className="h-40 flex flex-col items-center justify-center text-gray-300 gap-2">
+                                        <Shield size={32} className="opacity-20" />
+                                        <p className="text-xs font-bold uppercase tracking-widest">Select a user to view permissions</p>
+                                    </div>
+                                ) : filteredPerms.length === 0 ? (
+                                    <div className="h-40 flex items-center justify-center text-gray-400 text-xs font-bold italic">
+                                        {loadingPerms ? "Loading permissions..." : "No permissions found"}
+                                    </div>
+                                ) : (
+                                    <table className="min-w-full text-[13px] font-normal text-left">
+                                        <thead className="bg-[#4F4F4F] text-white font-bold text-[12px] uppercase sticky top-0 z-10">
+                                            <tr>
+                                                {PERM_FIELDS.map(f => (
+                                                    <th key={f} className="p-2 text-center whitespace-nowrap">
+                                                        {PERM_LABELS[f]}
+                                                    </th>
+                                                ))}
+                                                <th className="p-2 whitespace-nowrap">Screen</th>
+                                                <th className="p-2 whitespace-nowrap">Module</th>
+                                                <th className="p-2 whitespace-nowrap">Company</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {filteredPerms.map((p: any) => {
+                                                const local     = localPerms.find(lp => lp.unico === p.unico) ?? p;
+                                                const dimmed    = !local.acceso;
+                                                return (
+                                                    <tr
+                                                        key={p.unico}
+                                                        className={cn(
+                                                            "border-b border-[#DBD9D9] transition-colors",
+                                                            dimmed ? "opacity-40" : "bg-[#22C55E]/5 hover:bg-[#22C55E]/10"
+                                                        )}
+                                                    >
+                                                        {PERM_FIELDS.map(field => {
+                                                            const checked  = Boolean(local[field]);
+                                                            const disabled = !editMode ||
+                                                                (isVisitor && (field === "crear" || field === "editar" || field === "borrar"));
+                                                            return (
+                                                                <td key={field} className="p-1.5 text-center border-r border-[#DBD9D9]">
+                                                                    <button
+                                                                        onClick={() => togglePerm(p.unico, field)}
+                                                                        disabled={disabled}
+                                                                        className={cn(
+                                                                            "w-5 h-5 rounded flex items-center justify-center mx-auto transition-all",
+                                                                            disabled ? "cursor-default" : "cursor-pointer hover:scale-110",
+                                                                            checked
+                                                                                ? "bg-[#22C55E] text-white"
+                                                                                : "bg-white border border-[#DBD9D9] text-transparent"
+                                                                        )}
+                                                                    >
+                                                                        <Check size={11} />
+                                                                    </button>
+                                                                </td>
+                                                            );
+                                                        })}
+                                                        <td className={cn("p-2 border-r border-[#DBD9D9] truncate max-w-[180px] font-normal", !dimmed && "text-[#22C55E]")}>
+                                                            {String(p.pantalla || "").trim()}
+                                                        </td>
+                                                        <td className={cn("p-2 border-r border-[#DBD9D9] truncate max-w-[150px]", !dimmed ? "text-[#22C55E]" : "text-gray-500")}>
+                                                            {String(p.modulo || "").trim()}
+                                                        </td>
+                                                        <td className={cn("p-2 truncate max-w-[120px]", !dimmed ? "text-[#22C55E]" : "text-gray-400")}>
+                                                            {String(p.empresa || "").trim()}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </div>
                         </div>
-                    </div>
+                    </PanelGrid>
                 </div>
             </div>
 
