@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Search, Users, Plus, Pencil, Trash2, Calendar, Check, Filter } from "lucide-react";
 import { toast } from "sonner";
 import { AppHeader } from "@/components/layout/AppHeader";
@@ -34,15 +34,16 @@ export default function UsersDefinitionPage() {
 
     // Activity log state
     const LOG_PAGE_SIZE = 20;
-    const [logFrom, setLogFrom] = useState(todayEST);
-    const [logTo,   setLogTo]   = useState(todayEST);
-    const [logPage, setLogPage] = useState(1);
+    const [logFrom,  setLogFrom]  = useState(todayEST);
+    const [logTo,    setLogTo]    = useState(todayEST);
+    const [logNonce, setLogNonce] = useState(0);   // incremented to force-reset on Filter click
+    const sentinelRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
 
-    // Reset log dates + page to today/1 whenever the selected user changes
+    // Reset log dates to today whenever the selected user changes
     useEffect(() => {
-        if (selectedRow) { setLogFrom(todayEST()); setLogTo(todayEST()); setLogPage(1); }
+        if (selectedRow) { setLogFrom(todayEST()); setLogTo(todayEST()); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedRow?.unico]);
 
@@ -51,15 +52,35 @@ export default function UsersDefinitionPage() {
         queryFn: () => apiFetch("/api/system/users"),
     });
 
-    const { data: logResp, isFetching: loadingLog, refetch: refetchLog } = useQuery({
-        queryKey: ["sys-user-log", selectedRow?.unico, logFrom, logTo, logPage],
-        queryFn: () => apiFetch(`/api/system/users/${selectedRow?.unico}/log?from=${logFrom}&to=${logTo}&page=${logPage}&pageSize=${LOG_PAGE_SIZE}`),
+    const {
+        data: logPages, isFetching: loadingLog,
+        fetchNextPage, hasNextPage, isFetchingNextPage,
+    } = useInfiniteQuery({
+        queryKey: ["sys-user-log", selectedRow?.unico, logFrom, logTo, logNonce],
+        queryFn: ({ pageParam = 1 }) =>
+            apiFetch(`/api/system/users/${selectedRow?.unico}/log?from=${logFrom}&to=${logTo}&page=${pageParam}&pageSize=${LOG_PAGE_SIZE}`),
+        getNextPageParam: (lastPage: any) => {
+            const { page, pageSize, total } = lastPage;
+            return page * pageSize < total ? page + 1 : undefined;
+        },
+        initialPageParam: 1,
         enabled: !!selectedRow?.unico,
         retry: false,
     });
-    const logData:  any[] = (logResp as any)?.data  ?? [];
-    const logTotal: number = (logResp as any)?.total ?? 0;
-    const logPages: number = Math.max(1, Math.ceil(logTotal / LOG_PAGE_SIZE));
+    const logData:  any[] = logPages?.pages.flatMap((p: any) => p.data) ?? [];
+    const logTotal: number = (logPages?.pages[0] as any)?.total ?? 0;
+
+    // Trigger next page fetch when sentinel scrolls into view
+    useEffect(() => {
+        const el = sentinelRef.current;
+        if (!el) return;
+        const obs = new IntersectionObserver(
+            ([entry]) => { if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) fetchNextPage(); },
+            { threshold: 0.1 }
+        );
+        obs.observe(el);
+        return () => obs.disconnect();
+    }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
     const filteredUsers = useMemo(() => {
         if (!searchTerm.trim()) return users as any[];
@@ -180,28 +201,10 @@ export default function UsersDefinitionPage() {
                         <span className="text-gray-400">→</span>
                         <input type="date" value={logTo} onChange={e => setLogTo(e.target.value)}
                             className="fos-input h-7 text-xs w-28" />
-                        <button onClick={() => { setLogPage(1); refetchLog(); }}
+                        <button onClick={() => setLogNonce(n => n + 1)}
                             className="flex items-center gap-1 bg-[#FB7506] hover:bg-orange-600 text-white px-2.5 h-7 rounded text-[11px] font-black uppercase tracking-wider transition-all">
                             <Filter size={12} /> Filter
                         </button>
-                        {logTotal > 0 && (
-                            <>
-                                <span className="w-px h-5 bg-gray-200 mx-0.5" />
-                                <span className="text-[11px] text-gray-500 whitespace-nowrap font-bold">
-                                    {logPage}/{logPages}
-                                </span>
-                                <button onClick={() => setLogPage(p => Math.max(1, p - 1))}
-                                    disabled={logPage <= 1}
-                                    className="h-7 w-6 flex items-center justify-center rounded border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-30 text-base leading-none">
-                                    ‹
-                                </button>
-                                <button onClick={() => setLogPage(p => Math.min(logPages, p + 1))}
-                                    disabled={logPage >= logPages}
-                                    className="h-7 w-6 flex items-center justify-center rounded border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-30 text-base leading-none">
-                                    ›
-                                </button>
-                            </>
-                        )}
                     </div>
                 ) : undefined}
                 className="mx-2 mt-2 mb-3 h-[260px] shrink-0"
@@ -248,6 +251,13 @@ export default function UsersDefinitionPage() {
                                     </PanelGridTd>
                                 </PanelGridTr>
                             ))}
+                            {/* Infinite scroll sentinel */}
+                            <tr><td colSpan={5}>
+                                <div ref={sentinelRef} className="h-1" />
+                                {isFetchingNextPage && (
+                                    <p className="text-center text-[11px] text-gray-400 italic py-1">Loading more...</p>
+                                )}
+                            </td></tr>
                         </PanelGridTbody>
                     </PanelGridTable>
                 )}
