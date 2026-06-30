@@ -248,7 +248,17 @@ export async function POST(req: NextRequest, context: { params: Promise<{ tab: s
             return normalized;
         });
 
-        return NextResponse.json({ success: true, data: normalizedData, message: result.recordset?.[0]?.message });
+        // Echo back the primary identifier from the mutation params so the client
+        // can pass it to logAction. SPs return error/message but rarely return unico.
+        const spUnico = (
+            normalizedData[0]?.unico ||
+            normalizedData[0]?.UNICO ||
+            body.lcinvoice_uq || body.lccr_uq || body.lcincome_uq ||
+            body.lcCharge_uq || body.lcpacking_uq || body.lcawbcode_aux ||
+            body.lcpacking_box || body.lcawbcode || ""
+        );
+
+        return NextResponse.json({ success: true, data: normalizedData, message: result.recordset?.[0]?.message, unico: spUnico });
     } catch (error: any) {
         console.error("[flexy2qb api error]", error);
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
