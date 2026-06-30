@@ -55,9 +55,10 @@ export default function SystemAccessPage() {
         clearFilters,
     } = useAccessStore();
 
-    const [editMode,    setEditMode]    = useState(false);
-    const [localPerms,  setLocalPerms]  = useState<any[]>([]);
-    const [saving,      setSaving]      = useState(false);
+    const [editMode,      setEditMode]      = useState(false);
+    const [localPerms,    setLocalPerms]    = useState<any[]>([]);
+    const [saving,        setSaving]        = useState(false);
+    const [initializingEdit, setInitializingEdit] = useState(false);
 
     useEffect(() => {
         if (status === "unauthenticated") router.push("/login");
@@ -121,11 +122,12 @@ export default function SystemAccessPage() {
 
     // ── Edit mode ─────────────────────────────────────────────────────────────
     const handleEdit = async () => {
-        if (!selectedUser) return;
+        if (!selectedUser || initializingEdit) return;
         if (!selectedUser.activo) {
             toast.error("User isn't active.");
             return;
         }
+        setInitializingEdit(true);
         try {
             const res = await fetch("/api/system/access/initialize", {
                 method: "POST",
@@ -142,6 +144,8 @@ export default function SystemAccessPage() {
             setEditMode(true);
         } catch (e: any) {
             toast.error(e.message);
+        } finally {
+            setInitializingEdit(false);
         }
     };
 
@@ -350,15 +354,20 @@ export default function SystemAccessPage() {
                         onRefresh={() => refetchPerms()}
                         headerRight={
                             <div className="flex items-center gap-1.5">
-                                <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} />
                                 {!editMode ? (
-                                    <button
-                                        onClick={handleEdit}
-                                        disabled={!selectedUnico || !perms.canEdit}
-                                        className="flex items-center gap-1.5 px-3 h-7 rounded-md font-semibold text-[14px] uppercase text-white transition-all shrink-0 bg-[#FB7506] hover:bg-orange-500 disabled:opacity-40 disabled:cursor-not-allowed"
-                                    >
-                                        <Pencil size={14} /> Edit
-                                    </button>
+                                    <>
+                                        <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} />
+                                        <button
+                                            onClick={handleEdit}
+                                            disabled={!selectedUnico || !perms.canEdit || initializingEdit}
+                                            className="flex items-center gap-1.5 px-3 h-7 rounded-md font-semibold text-[14px] uppercase text-white transition-all shrink-0 bg-[#FB7506] hover:bg-orange-500 disabled:opacity-40 disabled:cursor-not-allowed"
+                                        >
+                                            {initializingEdit
+                                                ? <><RefreshCcw size={14} className="animate-spin" /> Editing...</>
+                                                : <><Pencil size={14} /> Edit</>
+                                            }
+                                        </button>
+                                    </>
                                 ) : (
                                     <>
                                         <button onClick={handleSave} disabled={saving || !perms.canEdit}
@@ -370,6 +379,7 @@ export default function SystemAccessPage() {
                                             className="flex items-center gap-1.5 bg-gray-500 hover:bg-gray-600 text-white px-3 h-7 rounded-md font-semibold text-[14px] uppercase transition-all">
                                             <X size={14} /> Cancel
                                         </button>
+                                        <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} />
                                     </>
                                 )}
                             </div>
