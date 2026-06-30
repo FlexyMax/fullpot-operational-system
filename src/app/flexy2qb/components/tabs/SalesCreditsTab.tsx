@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Calendar, Check, X, ArrowRight, RotateCcw, Clock, CheckCircle2, CheckCheck } from "lucide-react";
+import { Calendar, Check, X, ArrowRight, RotateCcw, Clock, CheckCircle2, CheckCheck, ClipboardList } from "lucide-react";
 import { cn } from "@/lib/utils";
 import PanelGrid from "@/components/ui/PanelGrid";
 import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
@@ -11,6 +11,7 @@ import { useFlexy2QBStore } from "@/store/flexy2qb/useFlexy2QBStore";
 import { useAuditLog } from "@/lib/audit";
 import { normalizeToISODate } from "@/lib/dates";
 import { toast } from "sonner";
+import { LogRecordModal } from "@/app/flexy2qb/components/modals/LogRecordModal";
 
 const EMPTY_ARR: any[] = [];
 const SUB_TABS = [
@@ -42,6 +43,7 @@ export default function SalesCreditsTab() {
     const [searchNR, setSearchNR] = useState("");
     const [searchReady, setSearchReady] = useState("");
     const [searchSent, setSearchSent] = useState("");
+    const [logId, setLogId] = useState<string | null>(null);
 
     const switchSubTab = (t: "not-ready" | "ready" | "sent") => {
         setSubTab(t); setSelNR(undefined); setSelReady(undefined); setSelSent(undefined);
@@ -149,6 +151,8 @@ export default function SalesCreditsTab() {
                             menuItems={[
                                 { label: "Ready By Credit", icon: Check, color: "green", onClick: () => { if (selNR === undefined || !notReady[selNR]) return toast.error("Select a row first"); markReady.mutate({ lccr_uq: notReady[selNR].unico, llready: true, ldCreditPay_date: null, llByReadyByDate: false }); }, disabled: !canWrite || selNR === undefined },
                                 { label: "Ready By Date", icon: Calendar, color: "green", onClick: () => { if (!selectedDate) return toast.error("Select a date first"); markReady.mutate({ lccr_uq: null, llready: true, ldCreditPay_date: selectedDate, llByReadyByDate: true }); }, disabled: !canWrite || !selectedDate },
+                                { separator: true },
+                                { label: "View Log", icon: ClipboardList, color: "gray", onClick: () => { if (selNR === undefined || !notReady[selNR]) return toast.error("Select a row first"); setLogId(notReady[selNR].unico); }, disabled: selNR === undefined },
                             ]}
                             className="h-full flex flex-col">
                             <PanelGridTable>
@@ -174,6 +178,8 @@ export default function SalesCreditsTab() {
                                 { separator: true },
                                 { label: "Send to QB", icon: ArrowRight, color: "blue", onClick: () => { if (selReady === undefined || !readyData[selReady]) return toast.error("Select a row first"); sendToQb.mutate({ lccr_uq: readyData[selReady].unico, llready: true, ldCreditPay_date: null, llByReadyByDate: false }); }, disabled: !canWrite || selReady === undefined },
                                 { label: "Send By Date", icon: Calendar, color: "blue", onClick: () => { if (!selectedDate) return toast.error("Select a date first"); sendToQb.mutate({ lccr_uq: null, llready: true, ldCreditPay_date: selectedDate, llByReadyByDate: true }); }, disabled: !canWrite || !selectedDate },
+                                { separator: true },
+                                { label: "View Log", icon: ClipboardList, color: "gray", onClick: () => { if (selReady === undefined || !readyData[selReady]) return toast.error("Select a row first"); setLogId(readyData[selReady].unico); }, disabled: selReady === undefined },
                             ]}
                             className="h-full flex flex-col">
                             <PanelGridTable>
@@ -196,6 +202,8 @@ export default function SalesCreditsTab() {
                             menuItems={[
                                 { label: "Mark as Not Sent", icon: RotateCcw, color: "red", onClick: () => { if (selSent === undefined || !sentData[selSent]) return toast.error("Select a row first"); sendToQb.mutate({ lccr_uq: sentData[selSent].unico, llready: false, ldCreditPay_date: null, llByReadyByDate: false }); }, disabled: !canWrite || selSent === undefined },
                                 { label: "Not Sent By Date", icon: Calendar, color: "red", onClick: () => { if (!selectedDate) return toast.error("Select a date first"); sendToQb.mutate({ lccr_uq: null, llready: false, ldCreditPay_date: selectedDate, llByReadyByDate: true }); }, disabled: !canWrite || !selectedDate },
+                                { separator: true },
+                                { label: "View Log", icon: ClipboardList, color: "gray", onClick: () => { if (selSent === undefined || !sentData[selSent]) return toast.error("Select a row first"); setLogId(sentData[selSent].unico); }, disabled: selSent === undefined },
                             ]}
                             className="h-full flex flex-col">
                             <PanelGridTable>
@@ -216,6 +224,7 @@ export default function SalesCreditsTab() {
             </div>
 
             <MobileActionBar activeGrid={activeGrid} items={mobileItems} onClearSelection={() => { setActiveGrid(null); setSelNR(undefined); setSelReady(undefined); setSelSent(undefined); }} />
+            <LogRecordModal recordId={logId} onClose={() => setLogId(null)} />
         </div>
     );
 }
