@@ -19,8 +19,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ unic
             lnPageSize: pageSize,
         }, true);
 
-        const total = (result.recordsets[0]?.[0] as any)?.TotalRecords ?? 0;
-        const data  = result.recordsets[1] ?? [];
+        const sets  = result.recordsets as any[];
+        const total = sets[0]?.[0]?.TotalRecords ?? 0;
+        const data  = sets[1] ?? [];
 
         return NextResponse.json({ data, total, page, pageSize });
     } catch (err: any) {
