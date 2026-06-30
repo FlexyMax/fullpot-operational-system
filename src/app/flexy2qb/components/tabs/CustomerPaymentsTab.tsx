@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Calendar, Check, X, ArrowRight, RotateCcw, Clock, CheckCircle2, CheckCheck, ClipboardList, Download } from "lucide-react";
+import { MobileDateCalendar } from "@/components/ui/MobileDateCalendar";
 import { cn } from "@/lib/utils";
 import PanelGrid from "@/components/ui/PanelGrid";
 import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
@@ -107,10 +108,15 @@ export default function CustomerPaymentsTab() {
 
     return (
         <div className="flex flex-col md:flex-row h-full gap-2">
-            <div className="md:hidden flex items-center gap-2 bg-white border border-[#DBD9D9] rounded-md px-3 py-2 mb-1 shrink-0">
-                <Calendar size={14} className="text-[#FB7506] shrink-0" />
-                <input type="date" value={selectedDate || ""} onChange={e => setSelectedDate(e.target.value || null)}
-                    className="flex-1 min-w-0 border border-gray-300 rounded px-2 py-0.5 text-[11px] text-gray-700 outline-none focus:border-[#FB7506]" />
+            <div className="md:hidden mb-1">
+                <MobileDateCalendar
+                    dates={dates}
+                    dateGetter={row => row.in_date}
+                    countGetter={row => row.records || 0}
+                    selectedDate={selectedDate}
+                    onSelect={setSelectedDate}
+                    loading={loadingDates}
+                />
             </div>
             {/* Date panel — no year selector for payments */}
             <div className="hidden md:flex md:w-[200px] shrink-0 md:h-full flex-col">
