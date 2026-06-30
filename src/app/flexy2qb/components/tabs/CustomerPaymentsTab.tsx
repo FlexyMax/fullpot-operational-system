@@ -141,11 +141,11 @@ export default function CustomerPaymentsTab() {
                     {subTab === "not-ready" && (
                         <PanelGrid title="Not Ready" icon={Clock} recordCount={fNR.length} refreshing={loadingNR}
                             searchValue={searchNR} onSearchChange={setSearchNR}
+                            onRefresh={triggerRefresh}
+                            onLog={() => { if (selNR === undefined || !notReady[selNR]) return toast.error("Select a row first"); setLogId(notReady[selNR].unico); }}
                             menuItems={[
                                 { label: "Ready By Payment", icon: Check, color: "green", onClick: () => { if (selNR === undefined || !notReady[selNR]) return toast.error("Select a row first"); markReady.mutate({ lcincome_uq: notReady[selNR].unico, llready: true, llByReadyByDate: false }); }, disabled: !canWrite || selNR === undefined },
                                 { label: "Ready By Date", icon: Calendar, color: "green", onClick: () => { if (!selectedDate) return toast.error("Select a date first"); markReady.mutate({ lcincome_uq: null, ldin_date: selectedDate, llready: true, llByReadyByDate: true }); }, disabled: !canWrite || !selectedDate },
-                                { separator: true },
-                                { label: "View Log", icon: ClipboardList, color: "gray", onClick: () => { if (selNR === undefined || !notReady[selNR]) return toast.error("Select a row first"); setLogId(notReady[selNR].unico); }, disabled: selNR === undefined },
                             ]}
                             className="h-full flex flex-col">
                             <PanelGridTable>
@@ -165,15 +165,15 @@ export default function CustomerPaymentsTab() {
                     {subTab === "ready" && (
                         <PanelGrid title="Ready to QB" icon={CheckCircle2} recordCount={fReady.length} refreshing={loadingReady}
                             searchValue={searchReady} onSearchChange={setSearchReady}
+                            onRefresh={triggerRefresh}
+                            onLog={() => { if (selReady === undefined || !readyData[selReady]) return toast.error("Select a row first"); setLogId(readyData[selReady].unico); }}
+                            headerRight={<button onClick={downloadReady} className="text-gray-400 hover:text-[#FB7506] transition-all p-1" title="Download CSV"><Download size={16} /></button>}
                             menuItems={[
                                 { label: "Payment Mark as Not Ready", icon: X, color: "red", onClick: () => { if (selReady === undefined || !readyData[selReady]) return toast.error("Select a row first"); markReady.mutate({ lcincome_uq: readyData[selReady].unico, llready: false, llByReadyByDate: false }); }, disabled: !canWrite || selReady === undefined },
                                 { label: "Mark as Not Ready By Date", icon: Calendar, color: "red", onClick: () => { if (!selectedDate) return toast.error("Select a date first"); markReady.mutate({ lcincome_uq: null, ldin_date: selectedDate, llready: false, llByReadyByDate: true }); }, disabled: !canWrite || !selectedDate },
                                 { separator: true },
                                 { label: "Sent By Payment", icon: ArrowRight, color: "blue", onClick: () => { if (selReady === undefined || !readyData[selReady]) return toast.error("Select a row first"); sendToQb.mutate({ lcincome_uq: readyData[selReady].unico, llready: true, llByReadyByDate: false }); }, disabled: !canWrite || selReady === undefined },
                                 { label: "Sent By Date", icon: Calendar, color: "blue", onClick: () => { if (!selectedDate) return toast.error("Select a date first"); sendToQb.mutate({ lcincome_uq: null, ldin_date: selectedDate, llready: true, llByReadyByDate: true }); }, disabled: !canWrite || !selectedDate },
-                                { label: "Download CSV", icon: Download, color: "gray", onClick: downloadReady },
-                                { separator: true },
-                                { label: "View Log", icon: ClipboardList, color: "gray", onClick: () => { if (selReady === undefined || !readyData[selReady]) return toast.error("Select a row first"); setLogId(readyData[selReady].unico); }, disabled: selReady === undefined },
                             ]}
                             className="h-full flex flex-col">
                             <PanelGridTable>
@@ -193,11 +193,11 @@ export default function CustomerPaymentsTab() {
                     {subTab === "sent" && (
                         <PanelGrid title="Sent to QB" icon={CheckCheck} recordCount={fSent.length} refreshing={loadingSent}
                             searchValue={searchSent} onSearchChange={setSearchSent}
+                            onRefresh={triggerRefresh}
+                            onLog={() => { if (selSent === undefined || !sentData[selSent]) return toast.error("Select a row first"); setLogId(sentData[selSent].unico); }}
                             menuItems={[
                                 { label: "Mark as Not Sent", icon: RotateCcw, color: "red", onClick: () => { if (selSent === undefined || !sentData[selSent]) return toast.error("Select a row first"); sendToQb.mutate({ lcincome_uq: sentData[selSent].unico, llready: false, llByReadyByDate: false }); }, disabled: !canWrite || selSent === undefined },
                                 { label: "Mark as Not Sent By Date", icon: Calendar, color: "red", onClick: () => { if (!selectedDate) return toast.error("Select a date first"); sendToQb.mutate({ lcincome_uq: null, ldin_date: selectedDate, llready: false, llByReadyByDate: true }); }, disabled: !canWrite || !selectedDate },
-                                { separator: true },
-                                { label: "View Log", icon: ClipboardList, color: "gray", onClick: () => { if (selSent === undefined || !sentData[selSent]) return toast.error("Select a row first"); setLogId(sentData[selSent].unico); }, disabled: selSent === undefined },
                             ]}
                             className="h-full flex flex-col">
                             <PanelGridTable>
