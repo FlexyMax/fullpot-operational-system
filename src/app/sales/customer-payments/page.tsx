@@ -358,9 +358,41 @@ export default function CustomerPaymentsPage() {
         catch (e: any) { toast.error((e as any).message); setPrintAllProgress(null); }
     }, "Print All");
 
-    // totalRow: only total_books_bal is raw numeric; other money fields are pre-formatted strings
-    const totalRow = { balance: (customers as any[]).reduce((s: number, c: any) => s + parseFloat(c.total_books_bal||0), 0) };
+    // parseMoney strips "$" and "," from the SP's pre-formatted money strings
+    const parseMoney = (v: any) => parseFloat(String(v ?? "0").replace(/[$,]/g, "")) || 0;
+    const totalRow = (customers as any[]).reduce((acc: any, c: any) => ({
+        total_invoice:  acc.total_invoice  + parseMoney(c.total_invoice),
+        total_credits:  acc.total_credits  + parseMoney(c.total_credits),
+        total_debits:   acc.total_debits   + parseMoney(c.total_debits),
+        total_in_cr_db: acc.total_in_cr_db + parseMoney(c.total_in_cr_db),
+        total_incomes:  acc.total_incomes  + parseMoney(c.total_incomes),
+        total_payments: acc.total_payments + parseMoney(c.total_payments),
+        total_inv_bal:  acc.total_inv_bal  + parseMoney(c.total_inv_bal),
+        total_unapply:  acc.total_unapply  + parseMoney(c.total_unapply),
+        balance:        acc.balance        + parseFloat(c.total_books_bal || 0),
+    }), { total_invoice:0, total_credits:0, total_debits:0, total_in_cr_db:0, total_incomes:0, total_payments:0, total_inv_bal:0, total_unapply:0, balance:0 });
     const invTotals = { payments: (invoices as any[]).reduce((s: number, i: any) => s + parseFloat(i.in_ammount||0), 0), credits: (invoices as any[]).reduce((s: number, i: any) => s + parseFloat(i.cre_ammount||0), 0), debits: (invoices as any[]).reduce((s: number, i: any) => s + parseFloat(i.deb_ammount||0), 0), invBal: (invoices as any[]).reduce((s: number, i: any) => s + parseFloat(i.balance||0), 0), booksBal: selCustomer?.total_books_bal ?? 0 };
+
+    // Selected customer info bar — reused in Invoices, Payments, CR/DB, and Statement tabs
+    const selCustBar = selCustomer ? (
+        <div className="bg-gray-100 border border-gray-200 rounded-lg px-3 py-1.5 shrink-0 flex flex-wrap items-center gap-x-4 gap-y-0.5 text-[11px]">
+            <div className="flex items-center gap-2">
+                <span className="font-mono font-semibold text-[#FB7506] text-[12px]">{t(selCustomer.cust_code)}</span>
+                <span className="font-bold text-gray-700">{t(selCustomer.customer)}</span>
+                {t(selCustomer.hold)==="Yes" && <span className="text-red-500 font-black text-[9px] border border-red-300 rounded px-1 ml-1">HOLD</span>}
+            </div>
+            <div className="flex items-center gap-x-4 gap-y-0.5 flex-wrap ml-auto text-[11px]">
+                <span className="text-gray-400">Cr.Limit: <span className="font-bold text-gray-600">{t(selCustomer.credit_limit)}</span></span>
+                <span className="text-gray-400">G.Invoice: <span className="font-bold text-gray-600">{t(selCustomer.total_invoice)}</span></span>
+                <span className="text-gray-400">T.Credits: <span className="font-bold text-green-600">{t(selCustomer.total_credits)}</span></span>
+                <span className="text-gray-400">T.Debits: <span className="font-bold text-red-500">{t(selCustomer.total_debits)}</span></span>
+                <span className="text-gray-400">N.Invoice: <span className="font-bold text-gray-600">{t(selCustomer.total_in_cr_db)}</span></span>
+                <span className="text-gray-400">Payments: <span className="font-bold text-blue-700">{t(selCustomer.total_incomes)}</span></span>
+                <span className="text-gray-400">Inv-Bal: <span className="font-bold text-orange-600">{t(selCustomer.total_inv_bal)}</span></span>
+                <span className="text-gray-400">Book-Bal: <span className={cn("font-bold", parseFloat(String(selCustomer.total_books_bal||0))>0?"text-orange-600":"text-gray-600")}>{"$"+fmt(selCustomer.total_books_bal)}</span></span>
+            </div>
+        </div>
+    ) : null;
 
     const TAB_COLORS: Record<string, string> = { customer:"text-gray-500 hover:text-gray-700 hover:bg-gray-50", invoices:"text-gray-500 hover:text-gray-700 hover:bg-gray-50", payments:"text-gray-500 hover:text-gray-700 hover:bg-gray-50", crdb:"text-gray-500 hover:text-gray-700 hover:bg-gray-50", statement:"text-gray-500 hover:text-gray-700 hover:bg-gray-50", corporate:"text-gray-500 hover:text-gray-700 hover:bg-gray-50" };
     const TAB_ACTIVE = "bg-white text-blue-600 border-b-2 border-blue-600 shadow-sm";
@@ -551,11 +583,21 @@ export default function CustomerPaymentsPage() {
                                 {/* Totals row */}
                                 {(customers as any[]).length > 0 && (
                                     <PanelGridTfoot>
-                                        <tr>
+                                        <tr className="text-[11px]">
                                             <td className="px-2 py-1 font-black">TOTALS ({custTotal} customers)</td>
-                                            <td colSpan={10} className="px-2 py-1"/>
+                                            <td className="px-2 py-1"/>
+                                            <td className="px-2 py-1"/>
+                                            <td className="px-2 py-1 text-right font-black">{"$"+fmt(totalRow.total_invoice)}</td>
+                                            <td className="px-2 py-1 text-right font-black text-green-600">{"$"+fmt(totalRow.total_credits)}</td>
+                                            <td className="px-2 py-1 text-right font-black text-red-500">{"$"+fmt(totalRow.total_debits)}</td>
+                                            <td className="px-2 py-1 text-right font-black">{"$"+fmt(totalRow.total_in_cr_db)}</td>
+                                            <td className="px-2 py-1 text-right font-black text-blue-700">{"$"+fmt(totalRow.total_incomes)}</td>
+                                            <td className="px-2 py-1 text-right font-black">{"$"+fmt(totalRow.total_payments)}</td>
+                                            <td className="px-2 py-1 text-right font-black text-orange-600">{"$"+fmt(totalRow.total_inv_bal)}</td>
+                                            <td className="px-2 py-1 text-right font-black">{"$"+fmt(totalRow.total_unapply)}</td>
                                             <td className="px-2 py-1 text-right font-black">{"$"+fmt(totalRow.balance)}</td>
-                                            <td colSpan={2} className="px-2 py-1"/>
+                                            <td className="px-2 py-1"/>
+                                            <td className="px-2 py-1"/>
                                         </tr>
                                     </PanelGridTfoot>
                                 )}
@@ -586,6 +628,7 @@ export default function CustomerPaymentsPage() {
                             <span className={cn(!balanceFilter?"text-[#FB7506]":"text-gray-500")}>Bal = 0</span>
                         </label>
                     </div>
+                    {selCustBar}
 
                     {/* Invoices grid */}
                     <PanelGrid
@@ -738,7 +781,7 @@ export default function CustomerPaymentsPage() {
             {/* ── TAB 3: CUSTOMER PAYMENTS ──────────────────────────────────── */}
             {activeTab === "payments" && (
                 <div className="flex flex-col flex-1 overflow-hidden p-1.5 gap-1.5">
-                    {/* Payments grid */}
+                    {selCustBar}
                     {/* Payments grid */}
                     <PanelGrid
                         title={`Customer Payments ${selCustomer?`— ${t(selCustomer.customer)}`:""}`}
@@ -838,6 +881,7 @@ export default function CustomerPaymentsPage() {
             {/* ── TAB 4: CREDITS / DEBITS ───────────────────────────────────── */}
             {activeTab === "crdb" && (
                 <div className="flex flex-col flex-1 overflow-hidden p-1.5 gap-1.5">
+                    {selCustBar}
                     {/* Two-column layout */}
                     <div className="flex gap-1.5 flex-1 overflow-hidden min-h-0">
                         {/* Left: Date picker */}
@@ -848,7 +892,7 @@ export default function CustomerPaymentsPage() {
                             recordCount={(crdbDates as any[]).length}
                             onRefresh={refetchCrdbDates}
                             refreshing={loadingCrdbDates}
-                            className="w-32 shrink-0 flex flex-col min-h-0"
+                            className="w-44 shrink-0 flex flex-col min-h-0"
                         >
                                 <PanelGridTable>
                                     <PanelGridThead>
@@ -859,8 +903,8 @@ export default function CustomerPaymentsPage() {
                                             const dKey = d.cddate ?? d.cd_date;
                                             const isSel = selCrDbDate === dKey;
                                             return <PanelGridTr key={dKey} onClick={()=>{setSelCrDbDate(dKey);setSelCrDb(null);}} selected={isSel}>
-                                                <PanelGridTd className="text-[10px]">{fmtDate(d.cd_date||d.cddate)}</PanelGridTd>
-                                                <PanelGridTd align="right" className="text-[10px]">{d.records}</PanelGridTd>
+                                                <PanelGridTd>{fmtDate(d.cd_date||d.cddate)}</PanelGridTd>
+                                                <PanelGridTd align="right">{d.records}</PanelGridTd>
                                             </PanelGridTr>;
                                         })}
                                         {!loadingCrdbDates && !selCustomer && <tr><td colSpan={2} className="p-2 text-center text-gray-300 italic text-[9px]">Select customer</td></tr>}
@@ -935,6 +979,7 @@ export default function CustomerPaymentsPage() {
             {/* ── TAB 5: STATEMENT ──────────────────────────────────────────── */}
             {activeTab === "statement" && (
                 <div className="flex flex-col flex-1 overflow-hidden p-1.5 gap-1.5">
+                    {selCustBar}
                     {/* Date filters shared between both grids */}
                     <div className="bg-gray-100 border border-gray-200 rounded-lg px-3 py-1.5 flex flex-wrap items-center gap-3 shrink-0 text-xs">
                         <div className="flex items-center gap-2">

@@ -39,7 +39,7 @@ export const useCustomerPaymentsStore = create<CustomerPaymentsState>((set) => (
     selCrdbUq: null,
 
     customerSearch: "",
-    customerFilterMode: "ALL",
+    customerFilterMode: "BAL>0",
 
     setActiveTab: (tab) => set({ activeTab: tab, activeGrid: ["statement","corporate"].includes(tab) ? null : tab }),
     setActiveGrid: (grid) => set({ activeGrid: grid }),
