@@ -24,7 +24,7 @@ import { MobileActionBar } from "@/components/layout/MobileActionBar";
 import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { useCustomerPaymentsStore } from "@/store/sales/useCustomerPaymentsStore";
 
-import { EMPTY_ARR, t, fmt, fmtDate, today, toastConfirm, cpFetch, Modal, Btn } from "./components/Shared";
+import { EMPTY_ARR, t, fmt, fmtDate, today, toastConfirm, cpFetch, Modal, Btn, normalizeToISODate } from "./components/Shared";
 import CustomerEditModal from "./components/CustomerEditModal";
 import InvoiceSearchModal from "./components/InvoiceSearchModal";
 import NewPaymentModal from "./components/NewPaymentModal";
@@ -277,7 +277,7 @@ export default function CustomerPaymentsPage() {
     useEffect(() => {
         if ((crdbDates as any[]).length > 0 && !selCrDbDate) {
             const first = (crdbDates as any[])[0];
-            setSelCrDbDate(first.cddate ?? first.cd_date ?? null);
+            setSelCrDbDate(normalizeToISODate(first.cddate ?? first.cd_date) || null);
         }
     }, [crdbDates]);
 
@@ -909,7 +909,7 @@ export default function CustomerPaymentsPage() {
                                     </PanelGridThead>
                                     <PanelGridTbody>
                                         {(crdbDates as any[]).map((d:any)=>{
-                                            const dKey = d.cddate ?? d.cd_date;
+                                            const dKey = normalizeToISODate(d.cddate ?? d.cd_date) || String(d.cddate ?? d.cd_date ?? "");
                                             const isSel = selCrDbDate === dKey;
                                             return <PanelGridTr key={dKey} onClick={()=>{setSelCrDbDate(dKey);setSelCrDb(null);}} selected={isSel}>
                                                 <PanelGridTd>{fmtDate(d.cd_date||d.cddate)}</PanelGridTd>

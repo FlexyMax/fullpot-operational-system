@@ -1,12 +1,22 @@
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { XCircle } from "lucide-react";
+import { normalizeToISODate, todayEST } from "@/lib/dates";
 
 export const EMPTY_ARR: any[] = [];
 export const t   = (v: any) => String(v ?? "").trim();
 export const fmt = (v: any) => parseFloat(v ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-export const fmtDate = (v: any) => { if (!v) return ""; const d = new Date(v); return isNaN(d.getTime()) ? t(v) : d.toLocaleDateString("en-US"); };
-export const today = () => new Date().toISOString().split("T")[0];
+// SQL Server stores dates in NY local time; the mssql driver serializes them with a UTC 'Z'
+// suffix (misleading). We must NOT apply timezone conversion — just strip the time portion.
+export const fmtDate = (v: any) => {
+    if (!v) return "";
+    const iso = normalizeToISODate(v);
+    if (!iso) return t(v);
+    const [y, m, d] = iso.split("-");
+    return `${m}/${d}/${y}`;
+};
+export { normalizeToISODate };
+export const today = todayEST;
 
 export const toastConfirm = (message: string, onConfirm: () => void, confirmLabel = "Confirm") => {
     toast(message, {
