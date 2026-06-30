@@ -371,7 +371,7 @@ export default function CustomerPaymentsPage() {
         total_unapply:  acc.total_unapply  + parseMoney(c.total_unapply),
         balance:        acc.balance        + parseFloat(c.total_books_bal || 0),
     }), { total_invoice:0, total_credits:0, total_debits:0, total_in_cr_db:0, total_incomes:0, total_payments:0, total_inv_bal:0, total_unapply:0, balance:0 });
-    const invTotals = { payments: (invoices as any[]).reduce((s: number, i: any) => s + parseFloat(i.in_ammount||0), 0), credits: (invoices as any[]).reduce((s: number, i: any) => s + parseFloat(i.cre_ammount||0), 0), debits: (invoices as any[]).reduce((s: number, i: any) => s + parseFloat(i.deb_ammount||0), 0), invBal: (invoices as any[]).reduce((s: number, i: any) => s + parseFloat(i.balance||0), 0), booksBal: selCustomer?.total_books_bal ?? 0 };
+    const invTotals = { amount: (invoices as any[]).reduce((s: number, i: any) => s + parseFloat(i.ammount||0), 0), payments: (invoices as any[]).reduce((s: number, i: any) => s + parseFloat(i.in_ammount||0), 0), credits: (invoices as any[]).reduce((s: number, i: any) => s + parseFloat(i.cre_ammount||0), 0), debits: (invoices as any[]).reduce((s: number, i: any) => s + parseFloat(i.deb_ammount||0), 0), invBal: (invoices as any[]).reduce((s: number, i: any) => s + parseFloat(i.balance||0), 0), booksBal: selCustomer?.total_books_bal ?? 0 };
 
     // Selected customer info bar — reused in Invoices, Payments, CR/DB, and Statement tabs
     const selCustBar = selCustomer ? (
@@ -691,13 +691,21 @@ export default function CustomerPaymentsPage() {
                                     {!loadingInv && !selCustomer && <tr><td colSpan={12} className="p-8 text-center text-gray-400 italic text-xs">Select a customer in Tab 1</td></tr>}
                                     {!loadingInv && selCustomer && (invoices as any[]).length === 0 && <tr><td colSpan={12} className="p-8 text-center text-gray-400 italic text-xs">No invoices found</td></tr>}
                                 </PanelGridTbody>
+                                {(invoices as any[]).length > 0 && (
+                                    <PanelGridTfoot>
+                                        <tr className="text-[11px]">
+                                            <td className="px-2 py-1 font-black" colSpan={5}>TOTALS</td>
+                                            <td className="px-2 py-1 text-right font-black">{fmt(invTotals.amount)}</td>
+                                            <td className="px-2 py-1 text-right font-black text-blue-700">{fmt(invTotals.payments)}</td>
+                                            <td className="px-2 py-1 text-right font-black text-green-600">{fmt(invTotals.credits)}</td>
+                                            <td className="px-2 py-1 text-right font-black text-red-500">{fmt(invTotals.debits)}</td>
+                                            <td className="px-2 py-1 text-right font-black text-orange-600">{fmt(invTotals.invBal)}</td>
+                                            <td className="px-2 py-1"/>
+                                            <td className={cn("px-2 py-1 text-right font-black", parseFloat(String(invTotals.booksBal||0))>0?"text-orange-600":"text-gray-800")}>{fmt(invTotals.booksBal)}</td>
+                                        </tr>
+                                    </PanelGridTfoot>
+                                )}
                             </PanelGridTable>
-                        {/* Totals bar */}
-                        <div className="h-8 border-t border-gray-200 bg-gray-50 flex items-center gap-4 px-3 shrink-0 text-xs mt-auto">
-                            {[{l:"Payments",v:invTotals.payments,c:"text-blue-700"},{l:"Credits",v:invTotals.credits,c:"text-green-600"},{l:"Debits",v:invTotals.debits,c:"text-red-500"},{l:"Inv. Balance",v:invTotals.invBal,c:"text-orange-600"},{l:"Books Balance",v:invTotals.booksBal,c:"text-gray-800"}].map(f=>(
-                                <div key={f.l} className="flex items-center gap-1"><span className="text-[9px] font-black text-gray-400 uppercase">{f.l}:</span><span className={cn("font-bold",f.c)}>{fmt(f.v)}</span></div>
-                            ))}
-                        </div>
                     </PanelGrid>
 
                     {/* Applied payments + income combo */}
