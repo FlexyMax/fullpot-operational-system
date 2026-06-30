@@ -368,6 +368,18 @@ export default function MyPage() {
 
 ---
 
+## SP Authorization — REQUIRED Before Any SP Change
+
+Before creating, modifying, or deleting any stored procedure:
+
+1. **Explain the change** — SP name, DB, current behavior, proposed change, and reason
+2. **Get explicit approval** from the user before executing any CREATE / ALTER / DROP PROCEDURE
+3. **Document** — update the SQL file in `sql/[module]/` and add the change to the SP's history comment block
+
+This applies to ALL changes, even minor ones (column order, adding comments, TRY/CATCH). SP changes hit production directly.
+
+---
+
 ## SP Standards — Stored Procedure Rules (CRITICAL)
 
 ### Return Format
