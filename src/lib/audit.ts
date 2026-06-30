@@ -7,6 +7,7 @@ export const PANTA: Record<string, string> = {
     "accounts-payable":    "XD6Z7067",  // APP A-P
     "customers-setup":     "XD6Z7045",  // APP Customer Center
     "sales":               "XD6Z7051",  // APP Sales Orders
+    "companies-definition": "52961672",  // COMPANY SETUP
     "module-screen-setup": "52961702",  // MODULES SETUP
     "users-definition":    "YK618352",  // SYSTEM USER SETUP
     "access-definition":   "52961680",  // USER ACCESS

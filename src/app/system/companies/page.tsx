@@ -15,6 +15,7 @@ import { AppFooter } from "@/components/layout/AppFooter";
 import PanelGrid from "@/components/ui/PanelGrid";
 import { PanelGridTable, PanelGridThead, PanelGridTbody, PanelGridTh, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
 import { ConfirmDelete } from "@/components/ConfirmDelete";
+import { AuditLogModal } from "@/components/AuditLogModal";
 import { cn } from "@/lib/utils";
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions } from "@/lib/permissions";
@@ -160,12 +161,14 @@ export default function CompaniesPage() {
                     icon={Building2}
                     recordCount={filteredCompanies.length}
                     refreshing={loadingCompanies}
+                    onRefresh={() => qc.invalidateQueries({ queryKey: ["sys-companies"] })}
                     searchValue={companySearch}
                     onSearchChange={setCompanySearch}
+                    headerRight={<AuditLogModal recordId={selCompanyUnico} disabled={!selCompanyUnico} />}
                     menuItems={[
-                        { label: "Add Company", icon: Plus, color: "green", onClick: handleAdd, disabled: !perms.canCreate },
-                        { label: "Edit Company", icon: Pencil, color: "orange", onClick: handleEdit, disabled: !selCompanyUnico || !perms.canEdit },
-                        { label: "Delete Company", icon: Trash2, color: "red", onClick: handleRemove, disabled: !selCompanyUnico || !perms.canDelete, separator: true }
+                        { label: "Add Company",    icon: Plus,   color: "green",  onClick: handleAdd,    disabled: !perms.canCreate },
+                        { label: "Edit Company",   icon: Pencil, color: "orange", onClick: handleEdit,   disabled: !selCompanyUnico || !perms.canEdit },
+                        { label: "Delete Company", icon: Trash2, color: "red",    onClick: handleRemove, disabled: !selCompanyUnico || !perms.canDelete, separator: true },
                     ]}
                     className="flex-1"
                 >

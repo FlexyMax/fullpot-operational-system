@@ -84,7 +84,7 @@ export default function SystemAccessPage() {
     });
 
     const { data: modules = EMPTY_ARR } = useQuery({ queryKey: ["sys-modules"],    queryFn: () => sysFetch("/api/system/access/modules")    });
-    const { data: companies = EMPTY_ARR } = useQuery({ queryKey: ["sys-companies"],  queryFn: () => sysFetch("/api/system/access/companies")  });
+    const { data: companies = EMPTY_ARR } = useQuery({ queryKey: ["sys-access-companies"],  queryFn: () => sysFetch("/api/system/access/companies")  });
 
     // ── Sync permissions to local state ──────────────────────────────────────
     useEffect(() => {

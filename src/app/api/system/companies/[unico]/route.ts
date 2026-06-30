@@ -1,20 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { executeQuery } from "@/lib/db";
+import { executeProcedure } from "@/lib/db";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
-const txt = (v: any) => String(v ?? "").replace(/'/g, "''");
+const txt = (v: any) => String(v ?? "");
 const bit = (v: any) => (v ? 1 : 0);
 type P = { params: Promise<{ unico: string }> };
 
 export async function GET(_req: NextRequest, { params }: P) {
     const { unico } = await params;
     try {
-        const r = await executeQuery(
-            `SELECT unico, ruc, nombre, pais, ciudad, direccion, telefono1, telefono2,
-                    fax1, fax2, apostal, email, image, basedatos, datapath,
-                    servidor, dsn, active, website
-             FROM empresas WHERE unico = '${txt(unico)}'`,
-            true
-        );
+        const r = await executeProcedure("sp_NC_empresa_info", { lcUnico: unico }, true);
         return NextResponse.json(r.recordset[0] ?? null);
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });
@@ -23,47 +19,52 @@ export async function GET(_req: NextRequest, { params }: P) {
 
 export async function PUT(req: NextRequest, { params }: P) {
     const { unico } = await params;
+    const session = await getServerSession(authOptions);
+    const operatorUq = String((session?.user as any)?.id ?? "").padEnd(8).substring(0, 8);
     const b = await req.json();
     try {
-        const sql = `
-            EXEC sp_sistema_empresas_update
-                @lcUnico = '${txt(unico)}',
-                @lcRuc = '${txt(b.ruc)}',
-                @lcNombre = '${txt(b.nombre)}',
-                @lcPais = '${txt(b.pais)}',
-                @lcCiudad = '${txt(b.ciudad)}',
-                @lcDireccion = '${txt(b.direccion)}',
-                @lcTelefono1 = '${txt(b.telefono1)}',
-                @lcTelefono2 = '${txt(b.telefono2)}',
-                @lcFax1 = '${txt(b.fax1)}',
-                @lcFax2 = '${txt(b.fax2)}',
-                @lcApostal = '${txt(b.apostal)}',
-                @lcEmail = '${txt(b.email)}',
-                @lcImage = '${txt(b.image)}',
-                @lcBasedatos = '${txt(b.basedatos)}',
-                @lcDatapath = '${txt(b.datapath)}',
-                @lcServidor = '${txt(b.servidor)}',
-                @lcDsn = '${txt(b.dsn)}',
-                @llActive = ${bit(b.active)},
-                @lcWebsite = '${txt(b.website)}'
-        `;
-        const r = await executeQuery(sql, true);
-        const res = r.recordset?.[0] || {};
-        if (res.Error) return NextResponse.json({ success: false, error: res.Error });
-        return NextResponse.json({ success: true, message: res.Message || "Company updated." });
+        const r = await executeProcedure("sp_sistema_empresas_update", {
+            lcUnico:       unico,
+            lcRuc:         txt(b.ruc),
+            lcNombre:      txt(b.nombre),
+            lcPais:        txt(b.pais),
+            lcCiudad:      txt(b.ciudad),
+            lcDireccion:   txt(b.direccion),
+            lcTelefono1:   txt(b.telefono1),
+            lcTelefono2:   txt(b.telefono2),
+            lcFax1:        txt(b.fax1),
+            lcFax2:        txt(b.fax2),
+            lcApostal:     txt(b.apostal),
+            lcEmail:       txt(b.email),
+            lcImage:       txt(b.image),
+            lcBasedatos:   txt(b.basedatos),
+            lcDatapath:    txt(b.datapath),
+            lcServidor:    txt(b.servidor),
+            lcDsn:         txt(b.dsn),
+            llActive:      bit(b.active),
+            lcWebsite:     txt(b.website),
+            lcOperator_uq: operatorUq,
+        }, true);
+        const row = r.recordset?.[0] || {};
+        if (row.error) return NextResponse.json({ success: false, error: row.message }, { status: 400 });
+        return NextResponse.json({ success: true, message: row.message });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }
 }
 
-export async function DELETE(req: NextRequest, { params }: P) {
+export async function DELETE(_req: NextRequest, { params }: P) {
     const { unico } = await params;
+    const session = await getServerSession(authOptions);
+    const operatorUq = String((session?.user as any)?.id ?? "").padEnd(8).substring(0, 8);
     try {
-        const sql = `EXEC sp_sistema_empresas_delete @lcUnico = '${txt(unico)}'`;
-        const r = await executeQuery(sql, true);
-        const res = r.recordset?.[0] || {};
-        if (res.Error) return NextResponse.json({ success: false, error: res.Error });
-        return NextResponse.json({ success: true, message: res.Message || "Company deleted." });
+        const r = await executeProcedure("sp_sistema_empresas_delete", {
+            lcUnico:       unico,
+            lcOperator_uq: operatorUq,
+        }, true);
+        const row = r.recordset?.[0] || {};
+        if (row.error) return NextResponse.json({ success: false, error: row.message }, { status: 400 });
+        return NextResponse.json({ success: true, message: row.message });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }
