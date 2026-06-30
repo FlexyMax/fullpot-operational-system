@@ -38,6 +38,7 @@ export default function UsersDefinitionPage() {
     const [logTo,    setLogTo]    = useState(todayEST);
     const [logNonce, setLogNonce] = useState(0);   // incremented to force-reset on Filter click
     const sentinelRef = useRef<HTMLDivElement>(null);
+    const logPanelRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
 
@@ -140,6 +141,7 @@ export default function UsersDefinitionPage() {
                 recordCount={filteredUsers.length}
                 refreshing={isFetching}
                 onRefresh={() => qc.invalidateQueries({ queryKey: ["sys-users-list"] })}
+                onLog={() => logPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
                 menuItems={[
                     { label: "New User",    icon: Plus,   color: "green",  onClick: handleAdd,                        disabled: !perms.canCreate },
                     { label: "Edit User",   icon: Pencil, color: "orange", onClick: handleEdit,                       disabled: !selectedRow || !perms.canEdit },
@@ -188,6 +190,7 @@ export default function UsersDefinitionPage() {
             </PanelGrid>
 
             {/* Activity Log panel — embedded below main grid (VFP: Detallecontrol1) */}
+            <div ref={logPanelRef}>
             <PanelGrid
                 title={selectedRow ? `Activity Log — ${selectedRow.username}` : "Activity Log"}
                 icon={Calendar}
@@ -207,7 +210,7 @@ export default function UsersDefinitionPage() {
                         </button>
                     </div>
                 ) : undefined}
-                className="mx-2 mt-2 mb-3 h-[260px] shrink-0"
+                className="mx-2 mt-2 mb-3 h-[360px] shrink-0"
             >
                 {!selectedRow ? (
                     <div className="h-full flex flex-col items-center justify-center text-gray-300 gap-2">
@@ -262,6 +265,7 @@ export default function UsersDefinitionPage() {
                     </PanelGridTable>
                 )}
             </PanelGrid>
+            </div>
 
             <AppFooter areaLabel="System Management" database="Sistema" />
 
