@@ -61,10 +61,8 @@ export default function PurchasesCreditsTab() {
     const fReady = useMemo(() => filterRows(readyData, searchReady), [readyData, searchReady]);
     const fSent  = useMemo(() => filterRows(sentData, searchSent),   [sentData, searchSent]);
 
-    // Reset date when year changes
     useEffect(() => { setSelectedDate(null); }, [selectedYear]);
 
-    // Auto-select first date when dates load
     useEffect(() => {
         if (dates.length > 0 && !selectedDate) {
             const first = dates[0];
@@ -73,7 +71,6 @@ export default function PurchasesCreditsTab() {
         }
     }, [dates]);
 
-    // Auto-select first record in each sub-tab
     useEffect(() => {
         if (subTab === "not-ready" && notReady.length > 0 && selNR === undefined) {
             setSelNR(0); setActiveGrid("not-ready");
@@ -94,23 +91,36 @@ export default function PurchasesCreditsTab() {
         if (res.error) toast.error(res.message || "Error");
         else { toast.success(res.message || "Success"); triggerRefresh(); logAction("Edit", res.unico || ""); }
     };
-    const markReady = useMutation({ mutationFn: async (p: any) => (await (await fetch("/api/flexy2qb/purchases-credits/update-ready", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(p) })).json()), onSuccess: onMutate });
-    const sendToQb  = useMutation({ mutationFn: async (p: any) => (await (await fetch("/api/flexy2qb/purchases-credits/send",         { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(p) })).json()), onSuccess: onMutate });
+    const markReady       = useMutation({ mutationFn: async (p: any) => (await (await fetch("/api/flexy2qb/purchases-credits/update-ready",      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(p) })).json()), onSuccess: onMutate });
+    const markReadyByDate = useMutation({ mutationFn: async (p: any) => (await (await fetch("/api/flexy2qb/purchases-credits/update-ready-date", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(p) })).json()), onSuccess: onMutate });
+    const sendToQb        = useMutation({ mutationFn: async (p: any) => (await (await fetch("/api/flexy2qb/purchases-credits/send",               { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(p) })).json()), onSuccess: onMutate });
 
     const yrOpts: { v: string }[] = years.map((y: any) => { const v = String(y.year || y.lnYear || Object.values(y)[0]); return { v }; });
 
     const downloadReady = () => { if (!readyData.length) { toast.error("No ready data"); return; } downloadCSV(readyData, "PurchasesCreditsReady2QB.csv"); };
 
     const mobileItems = [
-        { grid: "not-ready", label: "Mark Ready", icon: Check,      color: "green", onClick: () => { if (selNR === undefined) return toast.error("Select a row"); markReady.mutate({ lccr_uq: notReady[selNR!]?.unico, llready: true }); },                               disabled: !canWrite || selNR === undefined },
-        { grid: "ready",     label: "Send",        icon: ArrowRight, color: "blue",  onClick: () => { if (selReady === undefined) return toast.error("Select a row"); sendToQb.mutate({ lccr_uq: readyData[selReady!]?.unico, llready: true, llSendByDate: false }); },     disabled: !canWrite || selReady === undefined },
-        { grid: "ready",     label: "Unmark",      icon: X,          color: "red",   onClick: () => { if (selReady === undefined) return toast.error("Select a row"); markReady.mutate({ lccr_uq: readyData[selReady!]?.unico, llready: false }); },                        disabled: !canWrite || selReady === undefined },
-        { grid: "sent",      label: "Not Sent",    icon: RotateCcw,  color: "red",   onClick: () => { if (selSent === undefined) return toast.error("Select a row"); sendToQb.mutate({ lccr_uq: sentData[selSent!]?.unico, llready: false, llSendByDate: false }); },       disabled: !canWrite || selSent === undefined },
+        { grid: "not-ready", label: "By Credit", icon: Check,      color: "green", onClick: () => { if (selNR === undefined) return toast.error("Select a row"); markReady.mutate({ lccr_uq: notReady[selNR!]?.unico, llready: true }); },                                                   disabled: !canWrite || selNR === undefined },
+        { grid: "not-ready", label: "By Date",   icon: Calendar,   color: "green", onClick: () => { if (!selectedDate) return toast.error("Select a date"); markReadyByDate.mutate({ lccr_uq: null, llready: true, ldcr_date: selectedDate }); },                                             disabled: !canWrite || !selectedDate },
+        { grid: "ready",     label: "Unmark",    icon: X,          color: "red",   onClick: () => { if (selReady === undefined) return toast.error("Select a row"); markReady.mutate({ lccr_uq: readyData[selReady!]?.unico, llready: false }); },                                             disabled: !canWrite || selReady === undefined },
+        { grid: "ready",     label: "Send",      icon: ArrowRight, color: "blue",  onClick: () => { if (selReady === undefined) return toast.error("Select a row"); sendToQb.mutate({ lccr_uq: readyData[selReady!]?.unico, llready: true, llSendByDate: false }); },                          disabled: !canWrite || selReady === undefined },
+        { grid: "ready",     label: "Send Date", icon: Calendar,   color: "blue",  onClick: () => { if (!selectedDate) return toast.error("Select a date"); sendToQb.mutate({ lccr_uq: null, llready: true, llSendByDate: true, ldcr_date: selectedDate }); },                                 disabled: !canWrite || !selectedDate },
+        { grid: "sent",      label: "Not Sent",  icon: RotateCcw,  color: "red",   onClick: () => { if (selSent === undefined) return toast.error("Select a row"); sendToQb.mutate({ lccr_uq: sentData[selSent!]?.unico, llready: false, llSendByDate: false }); },                            disabled: !canWrite || selSent === undefined },
+        { grid: "sent",      label: "By Date",   icon: Calendar,   color: "red",   onClick: () => { if (!selectedDate) return toast.error("Select a date"); sendToQb.mutate({ lccr_uq: null, llready: false, llSendByDate: true, ldcr_date: selectedDate }); },                               disabled: !canWrite || !selectedDate },
     ];
 
     return (
         <div className="flex flex-col md:flex-row h-full gap-2">
-            <div className="w-full md:w-[220px] shrink-0 md:h-full h-40 min-h-0 flex flex-col">
+            <div className="md:hidden flex items-center gap-2 bg-white border border-[#DBD9D9] rounded-md px-3 py-2 mb-1 shrink-0">
+                <Calendar size={14} className="text-[#FB7506] shrink-0" />
+                <select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))}
+                    className="bg-white text-gray-700 border border-gray-300 text-[10px] font-black rounded px-1.5 py-0.5 outline-none">
+                    {yrOpts.map((y: { v: string }) => <option key={y.v} value={y.v}>{y.v}</option>)}
+                </select>
+                <input type="date" value={selectedDate || ""} onChange={e => setSelectedDate(e.target.value || null)}
+                    className="flex-1 min-w-0 border border-gray-300 rounded px-2 py-0.5 text-[11px] text-gray-700 outline-none focus:border-[#FB7506]" />
+            </div>
+            <div className="hidden md:flex md:w-[220px] shrink-0 md:h-full flex-col">
                 <PanelGrid title="Dates" icon={Calendar} refreshing={loadingDates}
                     headerRight={<select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))}
                         className="bg-white text-gray-700 border border-gray-300 text-[10px] font-black rounded px-2 py-1 outline-none">
@@ -150,7 +160,8 @@ export default function PurchasesCreditsTab() {
                             onRefresh={triggerRefresh}
                             onLog={() => { if (selNR === undefined || !notReady[selNR]) return toast.error("Select a row first"); setLogId(notReady[selNR].unico); }}
                             menuItems={[
-                                { label: "Mark Ready", icon: Check, color: "green", onClick: () => { if (selNR === undefined || !notReady[selNR]) return toast.error("Select a row first"); markReady.mutate({ lccr_uq: notReady[selNR].unico, llready: true }); }, disabled: !canWrite || selNR === undefined },
+                                { label: "Ready By Credit", icon: Check,    color: "green", onClick: () => { if (selNR === undefined || !notReady[selNR]) return toast.error("Select a row first"); markReady.mutate({ lccr_uq: notReady[selNR].unico, llready: true }); }, disabled: !canWrite || selNR === undefined },
+                                { label: "Ready By Date",   icon: Calendar, color: "green", onClick: () => { if (!selectedDate) return toast.error("Select a date first"); markReadyByDate.mutate({ lccr_uq: null, llready: true, ldcr_date: selectedDate }); }, disabled: !canWrite || !selectedDate },
                             ]}
                             className="h-full flex flex-col">
                             <PanelGridTable>
@@ -174,8 +185,10 @@ export default function PurchasesCreditsTab() {
                             onLog={() => { if (selReady === undefined || !readyData[selReady]) return toast.error("Select a row first"); setLogId(readyData[selReady].unico); }}
                             headerRight={<button onClick={downloadReady} className="text-gray-400 hover:text-[#FB7506] transition-all p-1" title="Download CSV"><Download size={16} /></button>}
                             menuItems={[
-                                { label: "Send to QB", icon: ArrowRight, color: "blue", onClick: () => { if (selReady === undefined || !readyData[selReady]) return toast.error("Select a row first"); sendToQb.mutate({ lccr_uq: readyData[selReady].unico, llready: true, llSendByDate: false }); }, disabled: !canWrite || selReady === undefined },
-                                { label: "Unmark Ready", icon: X, color: "red", onClick: () => { if (selReady === undefined || !readyData[selReady]) return toast.error("Select a row first"); markReady.mutate({ lccr_uq: readyData[selReady].unico, llready: false }); }, disabled: !canWrite || selReady === undefined },
+                                { label: "Unmark Ready",   icon: X,          color: "red",  onClick: () => { if (selReady === undefined || !readyData[selReady]) return toast.error("Select a row first"); markReady.mutate({ lccr_uq: readyData[selReady].unico, llready: false }); }, disabled: !canWrite || selReady === undefined },
+                                { separator: true },
+                                { label: "Send By Credit", icon: ArrowRight, color: "blue", onClick: () => { if (selReady === undefined || !readyData[selReady]) return toast.error("Select a row first"); sendToQb.mutate({ lccr_uq: readyData[selReady].unico, llready: true, llSendByDate: false }); }, disabled: !canWrite || selReady === undefined },
+                                { label: "Send By Date",   icon: Calendar,   color: "blue", onClick: () => { if (!selectedDate) return toast.error("Select a date first"); sendToQb.mutate({ lccr_uq: null, llready: true, llSendByDate: true, ldcr_date: selectedDate }); }, disabled: !canWrite || !selectedDate },
                             ]}
                             className="h-full flex flex-col">
                             <PanelGridTable>
@@ -198,7 +211,8 @@ export default function PurchasesCreditsTab() {
                             onRefresh={triggerRefresh}
                             onLog={() => { if (selSent === undefined || !sentData[selSent]) return toast.error("Select a row first"); setLogId(sentData[selSent].unico); }}
                             menuItems={[
-                                { label: "Mark as Not Sent", icon: RotateCcw, color: "red", onClick: () => { if (selSent === undefined || !sentData[selSent]) return toast.error("Select a row first"); sendToQb.mutate({ lccr_uq: sentData[selSent].unico, llready: false, llSendByDate: false }); }, disabled: !canWrite || selSent === undefined },
+                                { label: "Not Sent By Credit", icon: RotateCcw, color: "red", onClick: () => { if (selSent === undefined || !sentData[selSent]) return toast.error("Select a row first"); sendToQb.mutate({ lccr_uq: sentData[selSent].unico, llready: false, llSendByDate: false }); }, disabled: !canWrite || selSent === undefined },
+                                { label: "Not Sent By Date",   icon: Calendar,  color: "red", onClick: () => { if (!selectedDate) return toast.error("Select a date first"); sendToQb.mutate({ lccr_uq: null, llready: false, llSendByDate: true, ldcr_date: selectedDate }); }, disabled: !canWrite || !selectedDate },
                             ]}
                             className="h-full flex flex-col">
                             <PanelGridTable>

@@ -86,10 +86,10 @@ export async function POST(req: NextRequest, context: { params: Promise<{ tab: s
                     spParams = { ldawb_date: body.ldawb_date };
                 } else if (action === "update-ready") {
                     procName = "sp_flower_awb_charge_ready_to_qbooks";
-                    spParams = { lcCharge_uq: body.lcCharge_uq, llready: body.llready, llUpdateByDate: body.llUpdateByDate || false };
+                    spParams = { lcCharge_uq: body.lcCharge_uq, llready: body.llready, llUpdateByDate: body.llUpdateByDate || false, ldawb_date: body.ldawb_date ?? null };
                 } else if (action === "send") {
                     procName = "sp_flower_awb_charge_sent_to_qbooks";
-                    spParams = { lcCharge_uq: body.lcCharge_uq, llready: body.llready, llByReadyByDate: body.llByReadyByDate || false };
+                    spParams = { lcCharge_uq: body.lcCharge_uq, llready: body.llready, llByReadyByDate: body.llByReadyByDate || false, ldawb_date: body.ldawb_date ?? null };
                 }
                 break;
 
@@ -113,10 +113,10 @@ export async function POST(req: NextRequest, context: { params: Promise<{ tab: s
                     spParams = { lccr_uq: body.lccr_uq, llready: body.llready };
                 } else if (action === "update-ready-date") {
                     procName = "sp_NC_accounts_pay_cr_update_ready_to_qbooks_by_date";
-                    spParams = { lccr_uq: body.lccr_uq, llready: body.llready };
+                    spParams = { lccr_uq: body.lccr_uq, llready: body.llready, ldcr_date: body.ldcr_date ?? null };
                 } else if (action === "send") {
                     procName = "sp_flower_accounts_pay_cr_update_sent_to_qbooks";
-                    spParams = { lccr_uq: body.lccr_uq, llready: body.llready, llSendByDate: body.llSendByDate || false };
+                    spParams = { lccr_uq: body.lccr_uq, llready: body.llready, llSendByDate: body.llSendByDate || false, ldcr_date: body.ldcr_date ?? null };
                 }
                 break;
 
