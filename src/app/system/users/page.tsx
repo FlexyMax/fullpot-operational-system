@@ -32,15 +32,17 @@ export default function UsersDefinitionPage() {
     const [deleteDialog, setDeleteDialog] = useState(false);
     const [deleting, setDeleting] = useState(false);
 
-    // Activity log date range — defaults to today on each selection change (matches VFP actualiza_vistas)
+    // Activity log state
+    const LOG_PAGE_SIZE = 20;
     const [logFrom, setLogFrom] = useState(todayEST);
-    const [logTo, setLogTo] = useState(todayEST);
+    const [logTo,   setLogTo]   = useState(todayEST);
+    const [logPage, setLogPage] = useState(1);
 
     useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
 
-    // Reset log dates to today whenever the selected user changes
+    // Reset log dates + page to today/1 whenever the selected user changes
     useEffect(() => {
-        if (selectedRow) { setLogFrom(todayEST()); setLogTo(todayEST()); }
+        if (selectedRow) { setLogFrom(todayEST()); setLogTo(todayEST()); setLogPage(1); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedRow?.unico]);
 
@@ -49,12 +51,15 @@ export default function UsersDefinitionPage() {
         queryFn: () => apiFetch("/api/system/users"),
     });
 
-    const { data: logData = [], isFetching: loadingLog, refetch: refetchLog } = useQuery({
-        queryKey: ["sys-user-log", selectedRow?.unico, logFrom, logTo],
-        queryFn: () => apiFetch(`/api/system/users/${selectedRow?.unico}/log?from=${logFrom}&to=${logTo}`),
+    const { data: logResp, isFetching: loadingLog, refetch: refetchLog } = useQuery({
+        queryKey: ["sys-user-log", selectedRow?.unico, logFrom, logTo, logPage],
+        queryFn: () => apiFetch(`/api/system/users/${selectedRow?.unico}/log?from=${logFrom}&to=${logTo}&page=${logPage}&pageSize=${LOG_PAGE_SIZE}`),
         enabled: !!selectedRow?.unico,
         retry: false,
     });
+    const logData:  any[] = (logResp as any)?.data  ?? [];
+    const logTotal: number = (logResp as any)?.total ?? 0;
+    const logPages: number = Math.max(1, Math.ceil(logTotal / LOG_PAGE_SIZE));
 
     const filteredUsers = useMemo(() => {
         if (!searchTerm.trim()) return users as any[];
@@ -165,7 +170,7 @@ export default function UsersDefinitionPage() {
             <PanelGrid
                 title={selectedRow ? `Activity Log — ${selectedRow.username}` : "Activity Log"}
                 icon={Calendar}
-                recordCount={selectedRow ? (logData as any[]).length : undefined}
+                recordCount={selectedRow ? logTotal : undefined}
                 refreshing={loadingLog}
                 onRefresh={() => refetchLog()}
                 headerRight={selectedRow ? (
@@ -175,10 +180,28 @@ export default function UsersDefinitionPage() {
                         <span className="text-gray-400">→</span>
                         <input type="date" value={logTo} onChange={e => setLogTo(e.target.value)}
                             className="fos-input h-7 text-xs w-28" />
-                        <button onClick={() => refetchLog()}
+                        <button onClick={() => { setLogPage(1); refetchLog(); }}
                             className="flex items-center gap-1 bg-[#FB7506] hover:bg-orange-600 text-white px-2.5 h-7 rounded text-[11px] font-black uppercase tracking-wider transition-all">
                             <Filter size={12} /> Filter
                         </button>
+                        {logTotal > 0 && (
+                            <>
+                                <span className="w-px h-5 bg-gray-200 mx-0.5" />
+                                <span className="text-[11px] text-gray-500 whitespace-nowrap font-bold">
+                                    {logPage}/{logPages}
+                                </span>
+                                <button onClick={() => setLogPage(p => Math.max(1, p - 1))}
+                                    disabled={logPage <= 1}
+                                    className="h-7 w-6 flex items-center justify-center rounded border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-30 text-base leading-none">
+                                    ‹
+                                </button>
+                                <button onClick={() => setLogPage(p => Math.min(logPages, p + 1))}
+                                    disabled={logPage >= logPages}
+                                    className="h-7 w-6 flex items-center justify-center rounded border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-30 text-base leading-none">
+                                    ›
+                                </button>
+                            </>
+                        )}
                     </div>
                 ) : undefined}
                 className="mx-2 mt-2 mb-3 h-[260px] shrink-0"
@@ -192,7 +215,7 @@ export default function UsersDefinitionPage() {
                     <div className="h-full flex items-center justify-center text-gray-400 text-xs font-bold italic">
                         Loading activity...
                     </div>
-                ) : (logData as any[]).length === 0 ? (
+                ) : logData.length === 0 ? (
                     <div className="h-full flex items-center justify-center text-gray-400 text-xs font-bold italic">
                         No activity found for selected dates
                     </div>
@@ -206,7 +229,7 @@ export default function UsersDefinitionPage() {
                             <PanelGridTh>Company</PanelGridTh>
                         </PanelGridThead>
                         <PanelGridTbody>
-                            {(logData as any[]).map((row: any, i: number) => (
+                            {logData.map((row: any, i: number) => (
                                 <PanelGridTr key={i}>
                                     <PanelGridTd className="text-gray-600">
                                         {row.fecha ? new Date(row.fecha).toLocaleString("en-US", { timeZone: "America/New_York" }) : ""}
