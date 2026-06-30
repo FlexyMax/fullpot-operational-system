@@ -214,7 +214,7 @@ export default function UsersDefinitionPage() {
                         <Users size={28} className="opacity-20" />
                         <p className="text-xs font-bold uppercase tracking-widest">Select a user to view activity log</p>
                     </div>
-                ) : loadingLog ? (
+                ) : (loadingLog && logData.length === 0) ? (
                     <div className="h-full flex items-center justify-center text-gray-400 text-xs font-bold italic">
                         Loading activity...
                     </div>
