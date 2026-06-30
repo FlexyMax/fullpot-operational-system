@@ -275,7 +275,8 @@ Every API route that performs a write operation should:
 2. **Check SP error flags:**
    ```ts
    const row = r.recordset[0];
-   if (row?.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
+   // Note: db.ts auto-throws when SP returns error=1, so this is a safety net
+   if (row?.error) return NextResponse.json({ success: false, error: row.message }, { status: 400 });
    ```
 
 3. **Fail informatively:** Return HTTP 400 for business rule violations, 500 for DB errors.
@@ -362,5 +363,76 @@ export default function MyPage() {
 
 1. **ALL Database Interactions MUST use Store Procedures (SPs).** Direct SQL queries (e.g., `SELECT * FROM table`, `INSERT INTO table`) are strictly prohibited in API routes.
 2. **Missing SPs:** If a required CRUD operation does not have an existing Store Procedure, DO NOT write a raw SQL query. You must stop and ask the user to provide or create the SP.
-3. **Business Rules Validation in SPs:** All CRUD Store Procedures return business rule validations and errors. You must capture the returned dataset from the SP (e.g., checking `row.Error` and `row.Message`) to know if the operation was successful. Do NOT assume success just because the HTTP request or SQL execution didn't throw an exception.
+3. **Business Rules Validation in SPs:** All CRUD Store Procedures return business rule validations and errors. You must capture the returned dataset from the SP (checking `row.error` — lowercase — and `row.message`) to know if the operation was successful. Do NOT assume success just because the HTTP request or SQL execution didn't throw an exception.
 4. **UI Notifications:** All success/error feedback for CRUD operations must be displayed to the user using **Sonner Toasts** (`toast.success` and `toast.error`). Do not use inline `<span>` elements, manual states (`setSaveMsg`), or native browser windows (`alert()`) for operation feedback.
+
+---
+
+## SP Standards — Stored Procedure Rules (CRITICAL)
+
+### Return Format
+
+ALL CRUD SPs MUST return exactly this SELECT, in this column order:
+
+```sql
+SELECT unico = @lcUnico, message = @lcMessage, error = @llerror
+```
+
+Rules:
+- **`unico` is ALWAYS the PK of the main table** (never NULL). For INSERT: the new record's unico. For UPDATE/DELETE: the input `@lcUnico` param.
+- **`error`** = `0` (success) or `1` (failure). Type `bit`, initialized as `DECLARE @llerror bit = 0`.
+- **`message`** = descriptive message. `'Transaction OK'` on success, `ERROR_MESSAGE()` on DB error, custom business rule message on validation failure.
+- Column names are **lowercase** — routes read them as `row.unico`, `row.message`, `row.error`.
+
+### SP Body Template
+
+```sql
+ALTER PROCEDURE [dbo].[sp_xxx_yyy_insert]
+    @lcUnico  char(8),
+    @lcNombre varchar(100)
+AS
+-- ================================================================
+-- SP:    sp_xxx_yyy_insert
+-- DB:    fullpot | Tabla: xxx_yyy
+-- Desc:  Inserta un registro en xxx_yyy
+-- Retorna: unico = nuevo registro, message = resultado, error = 0/1
+-- Historia: YYYY-MM-DD  Descripcion del cambio
+-- ================================================================
+SET NOCOUNT ON
+DECLARE @llerror bit = 0, @lcMessage varchar(1000) = ''
+BEGIN TRY
+    -- business logic here
+    SET @lcMessage = 'Transaction OK'
+END TRY
+BEGIN CATCH
+    SET @lcMessage = ERROR_MESSAGE()
+    SET @llerror = 1
+END CATCH
+SELECT unico = @lcUnico, message = @lcMessage, error = @llerror
+```
+
+### Route Pattern — Checking SP Result
+
+```ts
+const r   = await executeProcedure("sp_xxx_yyy_insert", { ... });
+const row = r.recordset?.[0] || {};
+// Note: db.ts auto-throws when error=1 (before this line executes)
+// This check handles edge cases where auto-throw doesn't trigger:
+if (row.error) return NextResponse.json({ success: false, error: row.message }, { status: 400 });
+return NextResponse.json({ success: true, unico: String(row.unico || "").trim(), message: row.message });
+```
+
+### Documentation Requirement
+
+When creating or modifying any SP:
+1. **Update/create the SQL file** in `sql/[module]/` (e.g., `sql/customer-payments/ar_payment_detail_sps.sql`)
+2. **Add the header comment block** inside the SP body (after the parameters, before SET NOCOUNT)
+
+### `executeProcedure` — DB Selection
+
+```ts
+executeProcedure("sp_name", params)        // → fullpot DB (operational)
+executeProcedure("sp_name", params, true)  // → sistema DB (system setup)
+```
+
+**Cross-DB calls are NOT supported on Azure SQL PaaS.** `sp_sistema_bitacora_insert` (sistema DB) cannot be called from fullpot SPs. For AR pages, the audit trail is handled client-side via `logAction()` → `/api/audit/log`.
