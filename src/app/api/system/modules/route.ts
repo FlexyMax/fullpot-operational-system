@@ -1,46 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
-import { executeQuery, executeProcedure } from "@/lib/db";
-import crypto from "crypto";
+import { executeProcedure } from "@/lib/db";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
-const txt    = (v: any) => String(v ?? "").replace(/'/g, "''");
-const bit    = (v: any) => (v ? 1 : 0);
-const genUq  = () => crypto.randomBytes(4).toString("hex").toUpperCase();
+const bit = (v: any) => (v ? 1 : 0);
 
 export async function GET() {
     try {
-        const result = await executeQuery(`
-            SELECT m.unico, m.clase, m.orden, m.nombre, m.descripcion,
-                   m.image, m.dsn, m.active, m.web,
-                   COUNT(p.unico) AS screen_count
-            FROM modulo m
-            LEFT JOIN pantalla p ON p.modulo_uq = m.unico
-            GROUP BY m.unico, m.clase, m.orden, m.nombre, m.descripcion,
-                     m.image, m.dsn, m.active, m.web
-            ORDER BY m.orden, m.nombre`, true);
-        return NextResponse.json(result.recordset);
+        const r = await executeProcedure("sp_NC_modulos_lista", {}, true);
+        return NextResponse.json(r.recordset ?? []);
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });
     }
 }
 
 export async function POST(req: NextRequest) {
-    const body = await req.json();
-    const { nombre, clase, orden, image, descripcion, dsn, active, web } = body;
+    const session = await getServerSession(authOptions);
+    const operatorUq = String((session?.user as any)?.id ?? "").padEnd(8).substring(0, 8);
+    const { nombre, clase, orden, image, descripcion, dsn, active, web } = await req.json();
     try {
-        const result = await executeProcedure("sp_sistema_modulos_insert", {
-            lcUnico: "",
-            lcNombre: nombre,
-            lcClase: clase,
-            lnOrden: parseInt(orden) || 0,
-            lcImage: image,
+        const r = await executeProcedure("sp_sistema_modulos_insert", {
+            lcUnico:       "",
+            lcNombre:      nombre,
+            lcClase:       clase,
+            lnOrden:       parseInt(orden) || 0,
+            lcImage:       image,
             lcDescripcion: descripcion,
-            llActive: bit(active),
-            llWeb: bit(web),
-            lcDsn: dsn
+            llActive:      bit(active),
+            llWeb:         bit(web),
+            lcDsn:         dsn,
+            lcOperator_uq: operatorUq,
         }, true);
-        const row = result.recordset[0];
-        if (row.Error) throw new Error(row.Error);
-        return NextResponse.json({ success: true, unico: row.Unico, message: row.Message });
+        const row = r.recordset?.[0] || {};
+        if (row.error) return NextResponse.json({ success: false, error: row.message }, { status: 400 });
+        return NextResponse.json({ success: true, unico: String(row.unico || "").trim(), message: row.message });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }

@@ -293,7 +293,7 @@ export default function ModuleScreenSetupPage() {
                     <PanelGrid
                         title="Modules"
                         icon={LayoutGrid}
-                        recordCount={(modules as any[]).length}
+                        recordCount={filteredMods.length}
                         refreshing={loadingMods}
                         searchValue={modSearch}
                         onSearchChange={setModSearch}
@@ -324,7 +324,7 @@ export default function ModuleScreenSetupPage() {
                                     const isSel = activeGrid === "module" && selModUnico === m.unico;
                                     return (
                                         <PanelGridTr key={m.unico} selected={isSel} onClick={() => isSel ? clearSelection() : setSelModUnico(m.unico)} onDoubleClick={handleEditModule}>
-                                            <PanelGridTd className="font-semibold text-gray-800">{t(m.unico)}</PanelGridTd>
+                                            <PanelGridTd className="font-mono font-semibold text-[#FB7506]">{t(m.unico)}</PanelGridTd>
                                             <PanelGridTd className="font-semibold text-blue-700">{t(m.nombre)}</PanelGridTd>
                                             <PanelGridTd className="text-gray-500">{t(m.clase)}</PanelGridTd>
                                             <PanelGridTd>{m.orden}</PanelGridTd>
@@ -347,6 +347,7 @@ export default function ModuleScreenSetupPage() {
                         icon={Monitor}
                         recordCount={(screens as any[]).length}
                         refreshing={loadingScr}
+                        onRefresh={() => refetchScr()}
                         headerRight={<AuditLogModal recordId={selScrUnico} disabled={!selScrUnico} />}
                         menuItems={[
                             { label: "Add Screen", icon: Plus, color: "green", onClick: handleAddScreen, disabled: !selModUnico || !perms.canCreate },
@@ -376,7 +377,7 @@ export default function ModuleScreenSetupPage() {
                                         const isSel = activeGrid === "screen" && selScrUnico === s.unico;
                                         return (
                                             <PanelGridTr key={s.unico} selected={isSel} onClick={() => isSel ? setSelScrUnico(null) : setSelScrUnico(s.unico)} onDoubleClick={handleEditScreen}>
-                                                <PanelGridTd className="font-semibold text-gray-800">{t(s.unico)}</PanelGridTd>
+                                                <PanelGridTd className="font-mono font-semibold text-[#FB7506]">{t(s.unico)}</PanelGridTd>
                                                 <PanelGridTd className="font-semibold text-blue-700">{t(s.nombre)}</PanelGridTd>
                                                 <PanelGridTd className="text-blue-600">{t(s.web_form)}</PanelGridTd>
                                                 <PanelGridTd className="text-gray-500">{t(s.run_pantalla)}</PanelGridTd>

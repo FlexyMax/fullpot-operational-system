@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { executeQuery, executeProcedure } from "@/lib/db";
+import { executeProcedure } from "@/lib/db";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
-const txt = (v: any) => String(v ?? "").replace(/'/g, "''");
 const bit = (v: any) => (v ? 1 : 0);
 type P = { params: Promise<{ unico: string }> };
 
 export async function GET(_req: NextRequest, { params }: P) {
     const { unico } = await params;
     try {
-        const r = await executeQuery(`SELECT * FROM pantalla WHERE unico='${txt(unico)}'`, true);
+        const r = await executeProcedure("sp_NC_pantalla_info", { lcUnico: unico }, true);
         return NextResponse.json(r.recordset[0] ?? null);
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });
@@ -17,24 +18,27 @@ export async function GET(_req: NextRequest, { params }: P) {
 
 export async function PUT(req: NextRequest, { params }: P) {
     const { unico } = await params;
+    const session = await getServerSession(authOptions);
+    const operatorUq = String((session?.user as any)?.id ?? "").padEnd(8).substring(0, 8);
     const { nombre, orden, run_pantalla, executable, image, path, menu, web_form, descripcion, modulo_uq } = await req.json();
     try {
-        const result = await executeProcedure("sp_sistema_pantallas_update", {
-            lcUnico: unico,
-            lcModulo_uq: modulo_uq,
-            lcNombre: nombre,
-            lnOrden: parseInt(orden) || 0,
+        const r = await executeProcedure("sp_sistema_pantallas_update", {
+            lcUnico:        unico,
+            lcModulo_uq:    modulo_uq,
+            lcNombre:       nombre,
+            lnOrden:        parseInt(orden) || 0,
             lcRun_pantalla: run_pantalla,
-            lcImage: image,
-            lcPath: path,
-            llMenu: bit(menu),
-            lcExecutable: executable,
-            lcWeb_form: web_form,
-            lcDescripcion: descripcion
+            lcImage:        image,
+            lcPath:         path,
+            llMenu:         bit(menu),
+            lcExecutable:   executable,
+            lcWeb_form:     web_form,
+            lcDescripcion:  descripcion,
+            lcOperator_uq:  operatorUq,
         }, true);
-        const row = result.recordset[0];
-        if (row.Error) throw new Error(row.Error);
-        return NextResponse.json({ success: true, message: row.Message });
+        const row = r.recordset?.[0] || {};
+        if (row.error) return NextResponse.json({ success: false, error: row.message }, { status: 400 });
+        return NextResponse.json({ success: true, message: row.message });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }
@@ -42,11 +46,16 @@ export async function PUT(req: NextRequest, { params }: P) {
 
 export async function DELETE(_req: NextRequest, { params }: P) {
     const { unico } = await params;
+    const session = await getServerSession(authOptions);
+    const operatorUq = String((session?.user as any)?.id ?? "").padEnd(8).substring(0, 8);
     try {
-        const result = await executeProcedure("sp_sistema_pantallas_delete", { lcUnico: unico }, true);
-        const row = result.recordset[0];
-        if (row.Error) return NextResponse.json({ success: false, error: row.Error }, { status: 400 });
-        return NextResponse.json({ success: true, message: row.Message });
+        const r = await executeProcedure("sp_sistema_pantallas_delete", {
+            lcUnico:       unico,
+            lcOperator_uq: operatorUq,
+        }, true);
+        const row = r.recordset?.[0] || {};
+        if (row.error) return NextResponse.json({ success: false, error: row.message }, { status: 400 });
+        return NextResponse.json({ success: true, message: row.message });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }
