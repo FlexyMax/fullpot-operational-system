@@ -12,6 +12,7 @@ import { useAuditLog } from "@/lib/audit";
 import { normalizeToISODate } from "@/lib/dates";
 import { toast } from "sonner";
 import { LogRecordModal } from "@/app/flexy2qb/components/modals/LogRecordModal";
+import { downloadCSV } from "@/lib/csv";
 
 const EMPTY_ARR: any[] = [];
 const SUB_TABS = [
@@ -99,15 +100,8 @@ export default function Purchases2QBTab() {
     const markReadyInvoice  = useMutation({ mutationFn: async (p: any) => (await (await fetch("/api/flexy2qb/purchases/update-ready-invoice", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(p) })).json()), onSuccess: onMutate });
     const sendToQb          = useMutation({ mutationFn: async (p: any) => (await (await fetch("/api/flexy2qb/purchases/send",                 { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(p) })).json()), onSuccess: onMutate });
 
-    const downloadCSV = () => {
-        if (!tpoData.length) { toast.error("No TPO data ready"); return; }
-        const headers = Object.keys(tpoData[0]);
-        const csv = [headers, ...tpoData.map((r: any) => headers.map((h: string) => `"${String(r[h] || "").replace(/"/g, '""')}"`).join(","))].join("\n");
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const a = Object.assign(document.createElement("a"), { href: url, download: "Bills2TPO.csv" });
-        document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-    };
+    const downloadTPO   = () => { if (!tpoData.length)   { toast.error("No TPO data ready");   return; } downloadCSV(tpoData,   "Bills2TPO.csv"); };
+    const downloadReady = () => { if (!readyData.length) { toast.error("No ready data");       return; } downloadCSV(readyData, "PurchasesReady2QB.csv"); };
 
     const yrOpts: { v: string }[] = years.map((y: any) => { const v = String(y.year || y.lnYear || Object.values(y)[0]); return { v }; });
 
@@ -186,7 +180,8 @@ export default function Purchases2QBTab() {
                         <PanelGrid title="Ready to QB" icon={CheckCircle2} recordCount={fReady.length} refreshing={loadingReady}
                             searchValue={searchReady} onSearchChange={setSearchReady}
                             menuItems={[
-                                { label: "Download TPO CSV", icon: Download, color: "green", onClick: downloadCSV },
+                                { label: "Download TPO CSV", icon: Download, color: "green", onClick: downloadTPO },
+                                { label: "Download CSV", icon: Download, color: "gray", onClick: downloadReady },
                                 { separator: true },
                                 { label: "Invoice Mark as Not Ready", icon: X, color: "red", onClick: () => { if (selReady === undefined || !readyData[selReady]) return toast.error("Select a row first"); markReady.mutate({ lcpacking_box: readyData[selReady].packing_uq, lcawbcode: readyData[selReady].awbcode, llready: false }); }, disabled: !canWrite || selReady === undefined },
                                 { label: "Mark as Not Ready By Date", icon: Calendar, color: "red", onClick: () => { if (!selectedDate) return toast.error("Select a date first"); markReadyByDate.mutate({ ldAwbDate: selectedDate, llready: false }); }, disabled: !canWrite || !selectedDate },

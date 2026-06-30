@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Calendar, Check, X, ArrowRight, RotateCcw, Clock, CheckCircle2, CheckCheck, ClipboardList } from "lucide-react";
+import { Calendar, Check, X, ArrowRight, RotateCcw, Clock, CheckCircle2, CheckCheck, ClipboardList, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import PanelGrid from "@/components/ui/PanelGrid";
 import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
@@ -12,6 +12,7 @@ import { useAuditLog } from "@/lib/audit";
 import { normalizeToISODate } from "@/lib/dates";
 import { toast } from "sonner";
 import { LogRecordModal } from "@/app/flexy2qb/components/modals/LogRecordModal";
+import { downloadCSV } from "@/lib/csv";
 
 const EMPTY_ARR: any[] = [];
 const SUB_TABS = [
@@ -100,6 +101,8 @@ export default function Sales2QBTab() {
 
     const yrOpts: { v: string }[] = years.map((y: any) => { const v = String(y.year || y.lnYear || Object.values(y)[0]); return { v }; });
 
+    const downloadReady = () => { if (!readyData.length) { toast.error("No ready data"); return; } downloadCSV(readyData, "SalesReady2QB.csv"); };
+
     const mobileItems = [
         { grid: "not-ready", label: "Ready",     icon: Check,      color: "green", onClick: () => { if (selNR === undefined) return toast.error("Select a row"); markReady.mutate({ lcinvoice_uq: notReady[selNR!]?.unico, llready: true }); },                                    disabled: !canWrite || selNR === undefined },
         { grid: "not-ready", label: "By Date",   icon: Calendar,   color: "green", onClick: () => { if (!selectedDate) return toast.error("Select a date"); markReadyByDate.mutate({ ldInvoice_date: selectedDate, llsent: true }); },                                             disabled: !canWrite || !selectedDate },
@@ -180,6 +183,7 @@ export default function Sales2QBTab() {
                                 { separator: true },
                                 { label: "Sent By Invoice", icon: ArrowRight, color: "blue", onClick: () => { if (selReady === undefined || !readyData[selReady]) return toast.error("Select a row first"); sendToQb.mutate({ lcinvoice_uq: readyData[selReady].unico, llsent: true }); }, disabled: !canWrite || selReady === undefined },
                                 { label: "Sent By Date", icon: Calendar, color: "blue", onClick: () => { if (!selectedDate) return toast.error("Select a date first"); sendToQbByDate.mutate({ ldInvoice_date: selectedDate, llsent: true }); }, disabled: !canWrite || !selectedDate },
+                                { label: "Download CSV", icon: Download, color: "gray", onClick: downloadReady },
                                 { separator: true },
                                 { label: "View Log", icon: ClipboardList, color: "gray", onClick: () => { if (selReady === undefined || !readyData[selReady]) return toast.error("Select a row first"); setLogId(readyData[selReady].unico); }, disabled: selReady === undefined },
                             ]}
