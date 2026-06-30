@@ -389,6 +389,7 @@ export default function CustomerPaymentsPage() {
                 <span className="text-gray-400">N.Invoice: <span className="font-bold text-gray-600">{t(selCustomer.total_in_cr_db)}</span></span>
                 <span className="text-gray-400">Payments: <span className="font-bold text-blue-700">{t(selCustomer.total_incomes)}</span></span>
                 <span className="text-gray-400">Inv-Bal: <span className="font-bold text-orange-600">{t(selCustomer.total_inv_bal)}</span></span>
+                <span className="text-gray-400">Unapply: <span className="font-bold text-gray-600">{t(selCustomer.total_unapply)}</span></span>
                 <span className="text-gray-400">Book-Bal: <span className={cn("font-bold", parseFloat(String(selCustomer.total_books_bal||0))>0?"text-orange-600":"text-gray-600")}>{"$"+fmt(selCustomer.total_books_bal)}</span></span>
             </div>
         </div>
