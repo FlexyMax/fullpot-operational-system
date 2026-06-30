@@ -141,18 +141,18 @@ export function UserUpsertModal({ onSaved }: { onSaved: () => void }) {
 
                     <div className="flex-1 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 text-xs">
                         {[
-                            { label: "Code",       key: "unico",    readonly: true },
-                            { label: "ID / Cédula",key: "cedula",   readonly: false },
-                            { label: "First Name", key: "nombres",  readonly: false },
-                            { label: "Last Name",  key: "apellidos",readonly: false },
-                            { label: "Username",   key: "username", readonly: false },
-                            { label: "Password",   key: "clave",    readonly: false, type: "password" },
-                            { label: "Position",   key: "cargo",    readonly: false },
-                            { label: "E-mail",     key: "correo",   readonly: false },
-                            { label: "W. User",    key: "windows_usuario",  readonly: false },
-                            { label: "W. Password",key: "windows_password", readonly: false },
+                            { label: "Code",        key: "unico",            readonly: true  },
+                            { label: "ID / Cédula", key: "cedula",           readonly: false },
+                            { label: "First Name",  key: "nombres",          readonly: false },
+                            { label: "Last Name",   key: "apellidos",        readonly: false },
+                            { label: "Username",    key: "username",         readonly: false },
+                            { label: "Password",    key: "clave",            readonly: false, type: "password" },
+                            { label: "Position",    key: "cargo",            readonly: false },
+                            { label: "E-mail",      key: "correo",           readonly: false, wide: true },
+                            { label: "W. User",     key: "windows_usuario",  readonly: false },
+                            { label: "W. Password", key: "windows_password", readonly: false },
                         ].map(f => (
-                            <div key={f.key} className="flex flex-col gap-1">
+                            <div key={f.key} className={cn("flex flex-col gap-1", (f as any).wide && "col-span-2")}>
                                 <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">{f.label}</label>
                                 <input
                                     type={f.type || "text"}
