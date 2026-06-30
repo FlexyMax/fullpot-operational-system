@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Calendar, Check, X, ArrowRight, RotateCcw, Clock, CheckCircle2, CheckCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -8,6 +8,8 @@ import PanelGrid from "@/components/ui/PanelGrid";
 import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
 import { MobileActionBar } from "@/components/layout/MobileActionBar";
 import { useFlexy2QBStore } from "@/store/flexy2qb/useFlexy2QBStore";
+import { useAuditLog } from "@/lib/audit";
+import { normalizeToISODate } from "@/lib/dates";
 import { toast } from "sonner";
 
 const EMPTY_ARR: any[] = [];
@@ -20,8 +22,17 @@ const SUB_TABS = [
 const filterRows = (rows: any[], term: string) =>
     !term ? rows : rows.filter((r: any) => Object.values(r).some(v => String(v ?? "").toLowerCase().includes(term.toLowerCase())));
 
+const fmtDate = (v: any) => {
+    if (!v) return "";
+    const iso = normalizeToISODate(v);
+    if (!iso) return String(v);
+    const [y, m, d] = iso.split("-");
+    return `${m}/${d}/${y}`;
+};
+
 export default function CustomerPaymentsTab() {
     const { canWrite, refreshTrigger, triggerRefresh, activeGrid, setActiveGrid } = useFlexy2QBStore();
+    const { logAction } = useAuditLog("flexy2qb", "flexy_to_qb");
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [subTab, setSubTab] = useState<"not-ready" | "ready" | "sent">("not-ready");
     const [selNR, setSelNR] = useState<number | undefined>();
@@ -45,19 +56,48 @@ export default function CustomerPaymentsTab() {
     const fReady = useMemo(() => filterRows(readyData, searchReady), [readyData, searchReady]);
     const fSent  = useMemo(() => filterRows(sentData, searchSent),   [sentData, searchSent]);
 
-    const onMutate = (res: any) => { if (res.error) toast.error(res.message || "Error"); else { toast.success(res.message || "Success"); triggerRefresh(); } };
+    // Auto-select first date when dates load
+    useEffect(() => {
+        if (dates.length > 0 && !selectedDate) {
+            const first = dates[0];
+            const ds = first.indate || first.in_date;
+            setSelectedDate(normalizeToISODate(ds) || ds);
+        }
+    }, [dates]);
+
+    // Auto-select first record in each sub-tab
+    useEffect(() => {
+        if (subTab === "not-ready" && notReady.length > 0 && selNR === undefined) {
+            setSelNR(0); setActiveGrid("not-ready");
+        }
+    }, [notReady, subTab]);
+    useEffect(() => {
+        if (subTab === "ready" && readyData.length > 0 && selReady === undefined) {
+            setSelReady(0); setActiveGrid("ready");
+        }
+    }, [readyData, subTab]);
+    useEffect(() => {
+        if (subTab === "sent" && sentData.length > 0 && selSent === undefined) {
+            setSelSent(0); setActiveGrid("sent");
+        }
+    }, [sentData, subTab]);
+
+    const onMutate = (res: any) => {
+        if (res.error) toast.error(res.message || "Error");
+        else { toast.success(res.message || "Success"); triggerRefresh(); logAction("Edit", res.unico || ""); }
+    };
     const markReady = useMutation({ mutationFn: async (p: any) => (await (await fetch("/api/flexy2qb/payments/update-ready", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(p) })).json()), onSuccess: onMutate });
     const sendToQb  = useMutation({ mutationFn: async (p: any) => (await (await fetch("/api/flexy2qb/payments/send",         { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(p) })).json()), onSuccess: onMutate });
 
     const mobileItems = [
-        { grid: "not-ready", label: "Ready",     icon: Check,      color: "green", onClick: () => { if (selNR === undefined) return toast.error("Select a row"); markReady.mutate({ lcincome_uq: notReady[selNR!]?.unico, llready: true, llByReadyByDate: false }); },                              disabled: !canWrite || selNR === undefined },
-        { grid: "not-ready", label: "By Date",   icon: Calendar,   color: "green", onClick: () => { if (!selectedDate) return toast.error("Select a date"); markReady.mutate({ lcincome_uq: selectedDate, llready: true, llByReadyByDate: true }); },                                               disabled: !canWrite || !selectedDate },
-        { grid: "ready",     label: "Not Ready", icon: X,          color: "red",   onClick: () => { if (selReady === undefined) return toast.error("Select a row"); markReady.mutate({ lcincome_uq: readyData[selReady!]?.unico, llready: false, llByReadyByDate: false }); },                     disabled: !canWrite || selReady === undefined },
-        { grid: "ready",     label: "By Date",   icon: Calendar,   color: "red",   onClick: () => { if (!selectedDate) return toast.error("Select a date"); markReady.mutate({ lcincome_uq: selectedDate, llready: false, llByReadyByDate: true }); },                                              disabled: !canWrite || !selectedDate },
-        { grid: "ready",     label: "Send",      icon: ArrowRight, color: "blue",  onClick: () => { if (selReady === undefined) return toast.error("Select a row"); sendToQb.mutate({ lcincome_uq: readyData[selReady!]?.unico, llready: true, llByReadyByDate: false }); },                       disabled: !canWrite || selReady === undefined },
-        { grid: "ready",     label: "Send Date", icon: Calendar,   color: "blue",  onClick: () => { if (!selectedDate) return toast.error("Select a date"); sendToQb.mutate({ lcincome_uq: selectedDate, llready: true, llByReadyByDate: true }); },                                               disabled: !canWrite || !selectedDate },
-        { grid: "sent",      label: "Not Sent",  icon: RotateCcw,  color: "red",   onClick: () => { if (selSent === undefined) return toast.error("Select a row"); sendToQb.mutate({ lcincome_uq: sentData[selSent!]?.unico, llready: false, llByReadyByDate: false }); },                         disabled: !canWrite || selSent === undefined },
-        { grid: "sent",      label: "By Date",   icon: Calendar,   color: "red",   onClick: () => { if (!selectedDate) return toast.error("Select a date"); sendToQb.mutate({ lcincome_uq: selectedDate, llready: false, llByReadyByDate: true }); },                                              disabled: !canWrite || !selectedDate },
+        { grid: "not-ready", label: "Ready",     icon: Check,      color: "green", onClick: () => { if (selNR === undefined) return toast.error("Select a row"); markReady.mutate({ lcincome_uq: notReady[selNR!]?.unico, llready: true, llByReadyByDate: false }); },                                  disabled: !canWrite || selNR === undefined },
+        { grid: "not-ready", label: "By Date",   icon: Calendar,   color: "green", onClick: () => { if (!selectedDate) return toast.error("Select a date"); markReady.mutate({ lcincome_uq: null, ldin_date: selectedDate, llready: true, llByReadyByDate: true }); },                                  disabled: !canWrite || !selectedDate },
+        { grid: "ready",     label: "Not Ready", icon: X,          color: "red",   onClick: () => { if (selReady === undefined) return toast.error("Select a row"); markReady.mutate({ lcincome_uq: readyData[selReady!]?.unico, llready: false, llByReadyByDate: false }); },                          disabled: !canWrite || selReady === undefined },
+        { grid: "ready",     label: "By Date",   icon: Calendar,   color: "red",   onClick: () => { if (!selectedDate) return toast.error("Select a date"); markReady.mutate({ lcincome_uq: null, ldin_date: selectedDate, llready: false, llByReadyByDate: true }); },                                 disabled: !canWrite || !selectedDate },
+        { grid: "ready",     label: "Send",      icon: ArrowRight, color: "blue",  onClick: () => { if (selReady === undefined) return toast.error("Select a row"); sendToQb.mutate({ lcincome_uq: readyData[selReady!]?.unico, llready: true, llByReadyByDate: false }); },                            disabled: !canWrite || selReady === undefined },
+        { grid: "ready",     label: "Send Date", icon: Calendar,   color: "blue",  onClick: () => { if (!selectedDate) return toast.error("Select a date"); sendToQb.mutate({ lcincome_uq: null, ldin_date: selectedDate, llready: true, llByReadyByDate: true }); },                                   disabled: !canWrite || !selectedDate },
+        { grid: "sent",      label: "Not Sent",  icon: RotateCcw,  color: "red",   onClick: () => { if (selSent === undefined) return toast.error("Select a row"); sendToQb.mutate({ lcincome_uq: sentData[selSent!]?.unico, llready: false, llByReadyByDate: false }); },                              disabled: !canWrite || selSent === undefined },
+        { grid: "sent",      label: "By Date",   icon: Calendar,   color: "red",   onClick: () => { if (!selectedDate) return toast.error("Select a date"); sendToQb.mutate({ lcincome_uq: null, ldin_date: selectedDate, llready: false, llByReadyByDate: true }); },                                  disabled: !canWrite || !selectedDate },
     ];
 
     return (
@@ -70,8 +110,9 @@ export default function CustomerPaymentsTab() {
                         <PanelGridTbody>
                             {dates.map((d: any, i: number) => {
                                 const ds = d.indate || d.in_date;
-                                return <PanelGridTr key={i} selected={selectedDate === ds} onClick={() => setSelectedDate(ds)}>
-                                    <PanelGridTd>{ds ? new Date(ds).toLocaleDateString("en-US") : ""}</PanelGridTd>
+                                const norm = normalizeToISODate(ds) || ds;
+                                return <PanelGridTr key={i} selected={selectedDate === norm} onClick={() => setSelectedDate(norm)}>
+                                    <PanelGridTd>{fmtDate(ds)}</PanelGridTd>
                                     <PanelGridTd align="right">{d.Payments || 0}</PanelGridTd>
                                 </PanelGridTr>;
                             })}
@@ -97,7 +138,7 @@ export default function CustomerPaymentsTab() {
                             searchValue={searchNR} onSearchChange={setSearchNR}
                             menuItems={[
                                 { label: "Ready By Payment", icon: Check, color: "green", onClick: () => { if (selNR === undefined || !notReady[selNR]) return toast.error("Select a row first"); markReady.mutate({ lcincome_uq: notReady[selNR].unico, llready: true, llByReadyByDate: false }); }, disabled: !canWrite || selNR === undefined },
-                                { label: "Ready By Date", icon: Calendar, color: "green", onClick: () => { if (!selectedDate) return toast.error("Select a date first"); markReady.mutate({ lcincome_uq: selectedDate, llready: true, llByReadyByDate: true }); }, disabled: !canWrite || !selectedDate },
+                                { label: "Ready By Date", icon: Calendar, color: "green", onClick: () => { if (!selectedDate) return toast.error("Select a date first"); markReady.mutate({ lcincome_uq: null, ldin_date: selectedDate, llready: true, llByReadyByDate: true }); }, disabled: !canWrite || !selectedDate },
                             ]}
                             className="h-full flex flex-col">
                             <PanelGridTable>
@@ -107,7 +148,7 @@ export default function CustomerPaymentsTab() {
                                     : fNR.length === 0 ? <tr><td colSpan={5} className="p-8 text-center text-xs text-gray-400 italic">{selectedDate ? "No pending data" : "Select a date"}</td></tr>
                                     : fNR.map((row: any, i: number) => (
                                         <PanelGridTr key={i} selected={selNR === i} onClick={() => { const s = selNR === i; setSelNR(s ? undefined : i); setActiveGrid(s ? null : "not-ready"); }}>
-                                            <PanelGridTd>{row.in_number}</PanelGridTd><PanelGridTd>{row.customer}</PanelGridTd><PanelGridTd>{row.bank_doc}</PanelGridTd><PanelGridTd>{row.payment_method}</PanelGridTd><PanelGridTd align="right">{row.in_amount}</PanelGridTd>
+                                            <PanelGridTd className="font-mono font-semibold text-[#FB7506]">{row.in_number}</PanelGridTd><PanelGridTd>{row.customer}</PanelGridTd><PanelGridTd>{row.bank_doc}</PanelGridTd><PanelGridTd>{row.payment_method}</PanelGridTd><PanelGridTd align="right">{row.in_amount}</PanelGridTd>
                                         </PanelGridTr>
                                     ))}
                                 </PanelGridTbody>
@@ -119,10 +160,10 @@ export default function CustomerPaymentsTab() {
                             searchValue={searchReady} onSearchChange={setSearchReady}
                             menuItems={[
                                 { label: "Payment Mark as Not Ready", icon: X, color: "red", onClick: () => { if (selReady === undefined || !readyData[selReady]) return toast.error("Select a row first"); markReady.mutate({ lcincome_uq: readyData[selReady].unico, llready: false, llByReadyByDate: false }); }, disabled: !canWrite || selReady === undefined },
-                                { label: "Mark as Not Ready By Date", icon: Calendar, color: "red", onClick: () => { if (!selectedDate) return toast.error("Select a date first"); markReady.mutate({ lcincome_uq: selectedDate, llready: false, llByReadyByDate: true }); }, disabled: !canWrite || !selectedDate },
+                                { label: "Mark as Not Ready By Date", icon: Calendar, color: "red", onClick: () => { if (!selectedDate) return toast.error("Select a date first"); markReady.mutate({ lcincome_uq: null, ldin_date: selectedDate, llready: false, llByReadyByDate: true }); }, disabled: !canWrite || !selectedDate },
                                 { separator: true },
                                 { label: "Sent By Payment", icon: ArrowRight, color: "blue", onClick: () => { if (selReady === undefined || !readyData[selReady]) return toast.error("Select a row first"); sendToQb.mutate({ lcincome_uq: readyData[selReady].unico, llready: true, llByReadyByDate: false }); }, disabled: !canWrite || selReady === undefined },
-                                { label: "Sent By Date", icon: Calendar, color: "blue", onClick: () => { if (!selectedDate) return toast.error("Select a date first"); sendToQb.mutate({ lcincome_uq: selectedDate, llready: true, llByReadyByDate: true }); }, disabled: !canWrite || !selectedDate },
+                                { label: "Sent By Date", icon: Calendar, color: "blue", onClick: () => { if (!selectedDate) return toast.error("Select a date first"); sendToQb.mutate({ lcincome_uq: null, ldin_date: selectedDate, llready: true, llByReadyByDate: true }); }, disabled: !canWrite || !selectedDate },
                             ]}
                             className="h-full flex flex-col">
                             <PanelGridTable>
@@ -132,7 +173,7 @@ export default function CustomerPaymentsTab() {
                                     : fReady.length === 0 ? <tr><td colSpan={5} className="p-8 text-center text-xs text-gray-400 italic">No data ready</td></tr>
                                     : fReady.map((row: any, i: number) => (
                                         <PanelGridTr key={i} selected={selReady === i} onClick={() => { const s = selReady === i; setSelReady(s ? undefined : i); setActiveGrid(s ? null : "ready"); }}>
-                                            <PanelGridTd>{row.in_number}</PanelGridTd><PanelGridTd>{row.Customer}</PanelGridTd><PanelGridTd>{row.bank_doc}</PanelGridTd><PanelGridTd>{row.payment_method}</PanelGridTd><PanelGridTd align="right">{row.Amount}</PanelGridTd>
+                                            <PanelGridTd className="font-mono font-semibold text-[#FB7506]">{row.in_number}</PanelGridTd><PanelGridTd>{row.Customer}</PanelGridTd><PanelGridTd>{row.bank_doc}</PanelGridTd><PanelGridTd>{row.payment_method}</PanelGridTd><PanelGridTd align="right">{row.Amount}</PanelGridTd>
                                         </PanelGridTr>
                                     ))}
                                 </PanelGridTbody>
@@ -144,7 +185,7 @@ export default function CustomerPaymentsTab() {
                             searchValue={searchSent} onSearchChange={setSearchSent}
                             menuItems={[
                                 { label: "Mark as Not Sent", icon: RotateCcw, color: "red", onClick: () => { if (selSent === undefined || !sentData[selSent]) return toast.error("Select a row first"); sendToQb.mutate({ lcincome_uq: sentData[selSent].unico, llready: false, llByReadyByDate: false }); }, disabled: !canWrite || selSent === undefined },
-                                { label: "Mark as Not Sent By Date", icon: Calendar, color: "red", onClick: () => { if (!selectedDate) return toast.error("Select a date first"); sendToQb.mutate({ lcincome_uq: selectedDate, llready: false, llByReadyByDate: true }); }, disabled: !canWrite || !selectedDate },
+                                { label: "Mark as Not Sent By Date", icon: Calendar, color: "red", onClick: () => { if (!selectedDate) return toast.error("Select a date first"); sendToQb.mutate({ lcincome_uq: null, ldin_date: selectedDate, llready: false, llByReadyByDate: true }); }, disabled: !canWrite || !selectedDate },
                             ]}
                             className="h-full flex flex-col">
                             <PanelGridTable>
@@ -154,7 +195,7 @@ export default function CustomerPaymentsTab() {
                                     : fSent.length === 0 ? <tr><td colSpan={5} className="p-8 text-center text-xs text-gray-400 italic">{selectedDate ? "No data sent" : "Select a date"}</td></tr>
                                     : fSent.map((row: any, i: number) => (
                                         <PanelGridTr key={i} selected={selSent === i} onClick={() => { const s = selSent === i; setSelSent(s ? undefined : i); setActiveGrid(s ? null : "sent"); }}>
-                                            <PanelGridTd>{row.in_number}</PanelGridTd><PanelGridTd>{row.customer}</PanelGridTd><PanelGridTd>{row.bank_doc}</PanelGridTd><PanelGridTd>{row.payment_method}</PanelGridTd><PanelGridTd align="right">{row.in_amount}</PanelGridTd>
+                                            <PanelGridTd className="font-mono font-semibold text-[#FB7506]">{row.in_number}</PanelGridTd><PanelGridTd>{row.customer}</PanelGridTd><PanelGridTd>{row.bank_doc}</PanelGridTd><PanelGridTd>{row.payment_method}</PanelGridTd><PanelGridTd align="right">{row.in_amount}</PanelGridTd>
                                         </PanelGridTr>
                                     ))}
                                 </PanelGridTbody>

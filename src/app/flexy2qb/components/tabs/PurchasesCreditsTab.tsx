@@ -1,13 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Calendar, Check, X, ArrowRight, Clock, CheckCircle2, CheckCheck } from "lucide-react";
+import { Calendar, Check, X, ArrowRight, RotateCcw, Clock, CheckCircle2, CheckCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import PanelGrid from "@/components/ui/PanelGrid";
 import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
 import { MobileActionBar } from "@/components/layout/MobileActionBar";
 import { useFlexy2QBStore } from "@/store/flexy2qb/useFlexy2QBStore";
+import { useAuditLog } from "@/lib/audit";
+import { normalizeToISODate } from "@/lib/dates";
 import { toast } from "sonner";
 
 const EMPTY_ARR: any[] = [];
@@ -20,8 +22,17 @@ const SUB_TABS = [
 const filterRows = (rows: any[], term: string) =>
     !term ? rows : rows.filter((r: any) => Object.values(r).some(v => String(v ?? "").toLowerCase().includes(term.toLowerCase())));
 
+const fmtDate = (v: any) => {
+    if (!v) return "";
+    const iso = normalizeToISODate(v);
+    if (!iso) return String(v);
+    const [y, m, d] = iso.split("-");
+    return `${m}/${d}/${y}`;
+};
+
 export default function PurchasesCreditsTab() {
     const { canWrite, refreshTrigger, triggerRefresh, activeGrid, setActiveGrid } = useFlexy2QBStore();
+    const { logAction } = useAuditLog("flexy2qb", "flexy_to_qb");
     const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [subTab, setSubTab] = useState<"not-ready" | "ready" | "sent">("not-ready");
@@ -47,7 +58,39 @@ export default function PurchasesCreditsTab() {
     const fReady = useMemo(() => filterRows(readyData, searchReady), [readyData, searchReady]);
     const fSent  = useMemo(() => filterRows(sentData, searchSent),   [sentData, searchSent]);
 
-    const onMutate = (res: any) => { if (res.error) toast.error(res.message || "Error"); else { toast.success(res.message || "Success"); triggerRefresh(); } };
+    // Reset date when year changes
+    useEffect(() => { setSelectedDate(null); }, [selectedYear]);
+
+    // Auto-select first date when dates load
+    useEffect(() => {
+        if (dates.length > 0 && !selectedDate) {
+            const first = dates[0];
+            const ds = first.cddate || first.cd_date;
+            setSelectedDate(normalizeToISODate(ds) || ds);
+        }
+    }, [dates]);
+
+    // Auto-select first record in each sub-tab
+    useEffect(() => {
+        if (subTab === "not-ready" && notReady.length > 0 && selNR === undefined) {
+            setSelNR(0); setActiveGrid("not-ready");
+        }
+    }, [notReady, subTab]);
+    useEffect(() => {
+        if (subTab === "ready" && readyData.length > 0 && selReady === undefined) {
+            setSelReady(0); setActiveGrid("ready");
+        }
+    }, [readyData, subTab]);
+    useEffect(() => {
+        if (subTab === "sent" && sentData.length > 0 && selSent === undefined) {
+            setSelSent(0); setActiveGrid("sent");
+        }
+    }, [sentData, subTab]);
+
+    const onMutate = (res: any) => {
+        if (res.error) toast.error(res.message || "Error");
+        else { toast.success(res.message || "Success"); triggerRefresh(); logAction("Edit", res.unico || ""); }
+    };
     const markReady = useMutation({ mutationFn: async (p: any) => (await (await fetch("/api/flexy2qb/purchases-credits/update-ready", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(p) })).json()), onSuccess: onMutate });
     const sendToQb  = useMutation({ mutationFn: async (p: any) => (await (await fetch("/api/flexy2qb/purchases-credits/send",         { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(p) })).json()), onSuccess: onMutate });
 
@@ -57,6 +100,7 @@ export default function PurchasesCreditsTab() {
         { grid: "not-ready", label: "Mark Ready", icon: Check,      color: "green", onClick: () => { if (selNR === undefined) return toast.error("Select a row"); markReady.mutate({ lccr_uq: notReady[selNR!]?.unico, llready: true }); },                               disabled: !canWrite || selNR === undefined },
         { grid: "ready",     label: "Send",        icon: ArrowRight, color: "blue",  onClick: () => { if (selReady === undefined) return toast.error("Select a row"); sendToQb.mutate({ lccr_uq: readyData[selReady!]?.unico, llready: true, llSendByDate: false }); },     disabled: !canWrite || selReady === undefined },
         { grid: "ready",     label: "Unmark",      icon: X,          color: "red",   onClick: () => { if (selReady === undefined) return toast.error("Select a row"); markReady.mutate({ lccr_uq: readyData[selReady!]?.unico, llready: false }); },                        disabled: !canWrite || selReady === undefined },
+        { grid: "sent",      label: "Not Sent",    icon: RotateCcw,  color: "red",   onClick: () => { if (selSent === undefined) return toast.error("Select a row"); sendToQb.mutate({ lccr_uq: sentData[selSent!]?.unico, llready: false, llSendByDate: false }); },       disabled: !canWrite || selSent === undefined },
     ];
 
     return (
@@ -73,8 +117,9 @@ export default function PurchasesCreditsTab() {
                         <PanelGridTbody>
                             {dates.map((d: any, i: number) => {
                                 const ds = d.cddate || d.cd_date;
-                                return <PanelGridTr key={i} selected={selectedDate === ds} onClick={() => setSelectedDate(ds)}>
-                                    <PanelGridTd>{new Date(ds).toLocaleDateString("en-US")}</PanelGridTd>
+                                const norm = normalizeToISODate(ds) || ds;
+                                return <PanelGridTr key={i} selected={selectedDate === norm} onClick={() => setSelectedDate(norm)}>
+                                    <PanelGridTd>{fmtDate(ds)}</PanelGridTd>
                                     <PanelGridTd align="right">{d.Credits || 0}</PanelGridTd>
                                 </PanelGridTr>;
                             })}
@@ -108,7 +153,7 @@ export default function PurchasesCreditsTab() {
                                     : fNR.length === 0 ? <tr><td colSpan={3} className="p-8 text-center text-xs text-gray-400 italic">{selectedDate ? "No pending data" : "Select a date"}</td></tr>
                                     : fNR.map((row: any, i: number) => (
                                         <PanelGridTr key={i} selected={selNR === i} onClick={() => { const s = selNR === i; setSelNR(s ? undefined : i); setActiveGrid(s ? null : "not-ready"); }}>
-                                            <PanelGridTd>{row.invoice_no}</PanelGridTd><PanelGridTd>{row.grower}</PanelGridTd><PanelGridTd align="right">{row.cr_amount}</PanelGridTd>
+                                            <PanelGridTd className="font-mono font-semibold text-[#FB7506]">{row.invoice_no}</PanelGridTd><PanelGridTd>{row.grower}</PanelGridTd><PanelGridTd align="right">{row.cr_amount}</PanelGridTd>
                                         </PanelGridTr>
                                     ))}
                                 </PanelGridTbody>
@@ -130,7 +175,7 @@ export default function PurchasesCreditsTab() {
                                     : fReady.length === 0 ? <tr><td colSpan={3} className="p-8 text-center text-xs text-gray-400 italic">No data ready</td></tr>
                                     : fReady.map((row: any, i: number) => (
                                         <PanelGridTr key={i} selected={selReady === i} onClick={() => { const s = selReady === i; setSelReady(s ? undefined : i); setActiveGrid(s ? null : "ready"); }}>
-                                            <PanelGridTd>{row.invoice_no}</PanelGridTd><PanelGridTd>{row.grower}</PanelGridTd><PanelGridTd align="right">{row.cr_amount}</PanelGridTd>
+                                            <PanelGridTd className="font-mono font-semibold text-[#FB7506]">{row.invoice_no}</PanelGridTd><PanelGridTd>{row.grower}</PanelGridTd><PanelGridTd align="right">{row.cr_amount}</PanelGridTd>
                                         </PanelGridTr>
                                     ))}
                                 </PanelGridTbody>
@@ -140,6 +185,9 @@ export default function PurchasesCreditsTab() {
                     {subTab === "sent" && (
                         <PanelGrid title="Sent to QB" icon={CheckCheck} recordCount={fSent.length} refreshing={loadingSent}
                             searchValue={searchSent} onSearchChange={setSearchSent}
+                            menuItems={[
+                                { label: "Mark as Not Sent", icon: RotateCcw, color: "red", onClick: () => { if (selSent === undefined || !sentData[selSent]) return toast.error("Select a row first"); sendToQb.mutate({ lccr_uq: sentData[selSent].unico, llready: false, llSendByDate: false }); }, disabled: !canWrite || selSent === undefined },
+                            ]}
                             className="h-full flex flex-col">
                             <PanelGridTable>
                                 <PanelGridThead><PanelGridTh>Invoice</PanelGridTh><PanelGridTh>Grower</PanelGridTh><PanelGridTh align="right">Amount</PanelGridTh></PanelGridThead>
@@ -148,7 +196,7 @@ export default function PurchasesCreditsTab() {
                                     : fSent.length === 0 ? <tr><td colSpan={3} className="p-8 text-center text-xs text-gray-400 italic">{selectedDate ? "No data sent" : "Select a date"}</td></tr>
                                     : fSent.map((row: any, i: number) => (
                                         <PanelGridTr key={i} selected={selSent === i} onClick={() => { const s = selSent === i; setSelSent(s ? undefined : i); setActiveGrid(s ? null : "sent"); }}>
-                                            <PanelGridTd>{row.invoice_no}</PanelGridTd><PanelGridTd>{row.grower}</PanelGridTd><PanelGridTd align="right">{row.cr_amount}</PanelGridTd>
+                                            <PanelGridTd className="font-mono font-semibold text-[#FB7506]">{row.invoice_no}</PanelGridTd><PanelGridTd>{row.grower}</PanelGridTd><PanelGridTd align="right">{row.cr_amount}</PanelGridTd>
                                         </PanelGridTr>
                                     ))}
                                 </PanelGridTbody>
