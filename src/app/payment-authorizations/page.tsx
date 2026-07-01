@@ -648,9 +648,10 @@ export default function PaymentAuthorizationsPage() {
     const [vendorSearch,       setVendorSearch]       = useState("");
     const [vendorBalFilter,    setVendorBalFilter]    = useState<"A" | "B" | "N">("B");
     const [vendorMode,         setVendorMode]         = useState<"all" | "quarterly">("all");
-    const [quarterDetail,      setQuarterDetail]      = useState<any[]>([]);
-    const [quarterDetailModal, setQuarterDetailModal] = useState(false);
-    const [loadingQDetail,     setLoadingQDetail]     = useState(false);
+    const [quarterDetail,        setQuarterDetail]        = useState<any[]>([]);
+    const [quarterDetailModal,   setQuarterDetailModal]   = useState(false);
+    const [loadingQDetail,       setLoadingQDetail]       = useState(false);
+    const [quarterSummaryModal,  setQuarterSummaryModal]  = useState(false);
 
     // Row selections
     const [selInvoiceRow,  setSelInvoiceRow]  = useState<any>(null);
@@ -929,7 +930,7 @@ export default function PaymentAuthorizationsPage() {
                         }
                         menuItems={[
                             { label: "All Vendors",     icon: Users,     color: "gray", onClick: () => { setVendorMode("all"); refetchVendors(); } },
-                            { label: "4 Months View",   icon: BarChart2, color: "blue", onClick: () => { setVendorMode("quarterly"); refetchVendorsSummary(); } },
+                            { label: "4 Months View",   icon: BarChart2, color: "blue", onClick: () => { refetchVendorsSummary(); setQuarterSummaryModal(true); } },
                             { separator: true },
                             { label: "4 Months Detail", icon: FileText,  color: "blue", onClick: async () => {
                                 if (!store.lcgrower_uq) { toast.warning("Select a vendor first."); return; }
@@ -1356,6 +1357,33 @@ export default function PaymentAuthorizationsPage() {
                         qc.invalidateQueries({ queryKey: ["pa-outcomes", store.lcgrower_uq, store.ldPaymentsFrom, store.lnclose] });
                     }}
                 />
+            )}
+
+            {/* 4 Months Summary modal */}
+            {quarterSummaryModal && (
+                <Modal title="4 Months View — All Vendors" icon={BarChart2} onClose={() => setQuarterSummaryModal(false)} size="xl"
+                    footer={<button onClick={() => setQuarterSummaryModal(false)} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Close</button>}>
+                    {loadingVendorsSummary ? (
+                        <div className="flex items-center gap-2 text-gray-400 text-xs py-4"><Loader2 size={14} className="animate-spin" />Loading…</div>
+                    ) : vendorsSummary.length === 0 ? (
+                        <p className="text-xs text-gray-400 italic py-4">No records found for the last 4 months.</p>
+                    ) : (
+                        <div className="overflow-auto">
+                            <PanelGridTable>
+                                <PanelGridThead>
+                                    {Object.keys(vendorsSummary[0]).map(c => <PanelGridTh key={c}>{c.replace(/_/g, " ")}</PanelGridTh>)}
+                                </PanelGridThead>
+                                <PanelGridTbody>
+                                    {(vendorsSummary as any[]).map((row, i) => (
+                                        <PanelGridTr key={i}>
+                                            {Object.keys(vendorsSummary[0]).map(c => <PanelGridTd key={c}>{t(row[c])}</PanelGridTd>)}
+                                        </PanelGridTr>
+                                    ))}
+                                </PanelGridTbody>
+                            </PanelGridTable>
+                        </div>
+                    )}
+                </Modal>
             )}
 
             {/* 4 Months Detail modal */}
