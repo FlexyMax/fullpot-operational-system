@@ -540,6 +540,98 @@ function ModalAddPayment({ banks, supplierUq, onClose, onSaved }: any) {
     );
 }
 
+function ModalEditPayment({ uq, banks, onClose, onSaved }: { uq: string; banks: any[]; onClose: () => void; onSaved: () => void }) {
+    const [loading,   setLoading]   = useState(true);
+    const [saving,    setSaving]    = useState(false);
+    const [bankUq,    setBankUq]    = useState("");
+    const [outDate,   setOutDate]   = useState("");
+    const [amount,    setAmount]    = useState("0.00");
+    const [total,     setTotal]     = useState("0.00");
+    const [details,   setDetails]   = useState("");
+    const [payDoc,    setPayDoc]    = useState("0");
+
+    useEffect(() => {
+        fetch(`/api/payment-authorizations/outcomes/${encodeURIComponent(uq)}`)
+            .then(r => r.json())
+            .then((d: any) => {
+                if (d) {
+                    setBankUq(t(d.BANK_UQ ?? d.bank_uq ?? ""));
+                    const raw = d.OUT_DATE ?? d.out_date ?? "";
+                    const parsed = raw ? new Date(raw) : null;
+                    setOutDate(parsed && !isNaN(parsed.getTime()) ? parsed.toLocaleDateString("en-CA") : "");
+                    setAmount(String(parseFloat(d.OUT_AMMOUNT ?? d.out_ammount ?? "0") || 0));
+                    setTotal(String(parseFloat(d.OUT_TOTAL ?? d.out_total ?? "0") || 0));
+                    setDetails(t(d.DETAILS ?? d.details ?? ""));
+                    setPayDoc(String(parseInt(d.PAY_DOC ?? d.pay_doc ?? "0") || 0));
+                }
+            })
+            .catch((e: any) => toast.error(e.message))
+            .finally(() => setLoading(false));
+    }, [uq]);
+
+    const handleSave = async () => {
+        if (!bankUq)  { toast.warning("Select a bank."); return; }
+        if (!outDate) { toast.warning("Select a date."); return; }
+        setSaving(true);
+        try {
+            const r = await fetch(`/api/payment-authorizations/outcomes/${encodeURIComponent(uq)}`, {
+                method: "PUT", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ bank_uq: bankUq, out_date: outDate, out_ammount: parseFloat(amount) || 0, out_total: parseFloat(total) || 0, details, pay_doc: parseInt(payDoc) || 0 }),
+            }).then(r => r.json());
+            if (!r.success) throw new Error(r.error || "Failed to update payment");
+            toast.success("Payment updated.");
+            onSaved();
+        } catch (e: any) { toast.error(e.message); }
+        finally { setSaving(false); }
+    };
+
+    return (
+        <Modal title="Edit Payment Authorization" icon={Pencil} onClose={onClose} size="sm"
+            footer={
+                <>
+                    <button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Cancel</button>
+                    <button onClick={handleSave} disabled={saving || loading} className="flex items-center gap-1.5 px-4 py-2 rounded bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 disabled:opacity-50">
+                        {saving && <Loader2 size={12} className="animate-spin" />}Save
+                    </button>
+                </>
+            }>
+            {loading ? (
+                <div className="flex items-center gap-2 text-gray-400 text-xs py-4"><Loader2 size={14} className="animate-spin" />Loading…</div>
+            ) : (
+                <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-bold text-gray-500 uppercase">Bank</label>
+                        <select value={bankUq} onChange={e => setBankUq(e.target.value)} className="border rounded px-2 py-1 text-sm">
+                            <option value="">— Select Bank —</option>
+                            {banks.map((b: any) => <option key={t(b.UNICO)} value={t(b.UNICO)}>{t(b.BANK)}</option>)}
+                        </select>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-bold text-gray-500 uppercase">Date</label>
+                        <input type="date" value={outDate} onChange={e => setOutDate(e.target.value)} className="border rounded px-2 py-1 text-sm" />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-bold text-gray-500 uppercase">Amount</label>
+                        <input type="number" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} className="border rounded px-2 py-1 text-sm text-right" />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-bold text-gray-500 uppercase">Total</label>
+                        <input type="number" step="0.01" value={total} onChange={e => setTotal(e.target.value)} className="border rounded px-2 py-1 text-sm text-right" />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-bold text-gray-500 uppercase">Pay Doc #</label>
+                        <input type="number" value={payDoc} onChange={e => setPayDoc(e.target.value)} className="border rounded px-2 py-1 text-sm text-right" />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-bold text-gray-500 uppercase">Details / Notes</label>
+                        <input type="text" value={details} onChange={e => setDetails(e.target.value)} maxLength={100} className="border rounded px-2 py-1 text-sm" />
+                    </div>
+                </div>
+            )}
+        </Modal>
+    );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function PaymentAuthorizationsPage() {
     const { status }  = useSession();
@@ -570,6 +662,7 @@ export default function PaymentAuthorizationsPage() {
     const [paymentsReportModal, setPaymentsReportModal] = useState(false);
     const [dateHistoryModal,    setDateHistoryModal]    = useState(false);
     const [addPaymentModal,     setAddPaymentModal]     = useState(false);
+    const [editPaymentModal,    setEditPaymentModal]    = useState(false);
     const [crdbModal,           setCrdbModal]           = useState(false);
     const [reportModalUrl,      setReportModalUrl]      = useState<string | null>(null);
 
@@ -680,6 +773,24 @@ export default function PaymentAuthorizationsPage() {
             toast.success("Detail deleted.");
             setSelDetailRow(null);
             qc.invalidateQueries({ queryKey: ["pa-outcome-details", store.lcapd_uq] });
+        },
+        onError: (e: any) => toast.error(e.message),
+    });
+
+    const deletePaymentMutation = useMutation({
+        mutationFn: async (unico: string) => {
+            const r = await fetch(`/api/payment-authorizations/outcomes/${encodeURIComponent(unico)}`, {
+                method: "DELETE",
+            }).then(r => r.json());
+            if (!r.success) throw new Error(r.error || "Failed to delete payment");
+            return r;
+        },
+        onSuccess: (_, unico) => {
+            logAction("Delete", unico, "Delete Payment Authorization");
+            toast.success("Payment deleted.");
+            setSelOutcomeRow(null);
+            store.setOutcomeUq("");
+            qc.invalidateQueries({ queryKey: ["pa-outcomes", store.lcgrower_uq, store.ldPaymentsFrom, store.lnclose] });
         },
         onError: (e: any) => toast.error(e.message),
     });
@@ -1039,7 +1150,7 @@ export default function PaymentAuthorizationsPage() {
                             title={store.lcgrower ? `Payments — ${store.lcgrower}` : "Payments"}
                             icon={CreditCard}
                             recordCount={outcomesList.length}
-                            refreshing={loadingOutcomes || closePaymentMutation.isPending}
+                            refreshing={loadingOutcomes || closePaymentMutation.isPending || deletePaymentMutation.isPending}
                             onRefresh={refetchOutcomes}
                             headerRight={
                                 <div className="flex items-center gap-2">
@@ -1057,16 +1168,18 @@ export default function PaymentAuthorizationsPage() {
                                 </div>
                             }
                             menuItems={[
-                                { label: "Add Payment", icon: Plus,       color: "green",  onClick: () => { if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; } setAddPaymentModal(true); }, disabled: !store.lcgrower_uq || !perms.canCreate },
-                                { label: "Auto Pay",    icon: CheckCheck,  color: "blue",   onClick: handleClosePayment, disabled: !selOutcomeRow || !perms.canEdit },
+                                { label: "Add Payment",    icon: Plus,       color: "green",  onClick: () => { if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; } setAddPaymentModal(true); }, disabled: !store.lcgrower_uq || !perms.canCreate },
+                                { label: "Edit Payment",   icon: Pencil,     color: "blue",   onClick: () => { if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } setEditPaymentModal(true); }, disabled: !selOutcomeRow || !perms.canEdit },
+                                { label: "Delete Payment", icon: Trash2,     color: "red",    onClick: () => { if (!perms.canDelete) { toast.error(PERMISSION_MSGS.delete); return; } toastConfirm("Delete this payment authorization?", () => deletePaymentMutation.mutate(store.lcoutcome_uq)); }, disabled: !selOutcomeRow || !perms.canDelete },
+                                { label: "Auto Pay",       icon: CheckCheck, color: "blue",   onClick: handleClosePayment, disabled: !selOutcomeRow || !perms.canEdit },
                                 { separator: true },
-                                { label: "Payment PDF", icon: Printer,    color: "gray",   onClick: () => {
+                                { label: "Payment PDF",    icon: Printer,    color: "gray",   onClick: () => {
                                     if (!store.lcoutcome_uq) { toast.warning("Select a payment."); return; }
                                     setReportModalUrl(`/api/payment-authorizations/reports/payment-single?outcome_uq=${encodeURIComponent(store.lcoutcome_uq)}`);
                                 }, disabled: !selOutcomeRow || !perms.canReport },
-                                { label: "Reports",     icon: FileText,   color: "gray",   onClick: () => setPaymentsReportModal(true), disabled: !perms.canReport },
+                                { label: "Reports",        icon: FileText,   color: "gray",   onClick: () => setPaymentsReportModal(true), disabled: !perms.canReport },
                                 { separator: true },
-                                { label: "History",     icon: Calendar,   color: "gray",   onClick: () => setDateHistoryModal(true) },
+                                { label: "History",        icon: Calendar,   color: "gray",   onClick: () => setDateHistoryModal(true) },
                             ]}
                             className="flex-1 flex flex-col min-h-0"
                         >
@@ -1171,6 +1284,8 @@ export default function PaymentAuthorizationsPage() {
                     { grid: "invoices", label: "Approve",    icon: Check,       color: "green", onClick: () => handleApprove(true),  disabled: !selInvoiceRow || !perms.canEdit },
                     { grid: "invoices", label: "Un-Approve", icon: XCircle,     color: "gray",  onClick: () => handleApprove(false), disabled: !selInvoiceRow || !perms.canEdit },
                     { grid: "payments", label: "Auto Pay",   icon: CheckCheck,  color: "blue",  onClick: handleClosePayment, disabled: !selOutcomeRow || !perms.canEdit },
+                    { grid: "payments", label: "Edit",       icon: Pencil,      color: "blue",  onClick: () => { if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } setEditPaymentModal(true); }, disabled: !selOutcomeRow || !perms.canEdit },
+                    { grid: "payments", label: "Delete",     icon: Trash2,      color: "red",   onClick: () => { if (!perms.canDelete) { toast.error(PERMISSION_MSGS.delete); return; } toastConfirm("Delete this payment authorization?", () => deletePaymentMutation.mutate(store.lcoutcome_uq)); }, disabled: !selOutcomeRow || !perms.canDelete },
                     { grid: "payments", label: "Pay PDF",    icon: Printer,     color: "gray",  onClick: () => store.lcoutcome_uq && setReportModalUrl(`/api/payment-authorizations/reports/payment-single?outcome_uq=${encodeURIComponent(store.lcoutcome_uq)}`), disabled: !selOutcomeRow },
                 ]}
                 onClearSelection={() => {
@@ -1226,6 +1341,18 @@ export default function PaymentAuthorizationsPage() {
                     onSaved={(data: any) => {
                         setAddPaymentModal(false);
                         logAction("Insert", t(data?.unico ?? data?.UNICO ?? ""), "Insert Payment Authorization");
+                        qc.invalidateQueries({ queryKey: ["pa-outcomes", store.lcgrower_uq, store.ldPaymentsFrom, store.lnclose] });
+                    }}
+                />
+            )}
+            {editPaymentModal && selOutcomeRow && (
+                <ModalEditPayment
+                    uq={store.lcoutcome_uq}
+                    banks={banksList}
+                    onClose={() => setEditPaymentModal(false)}
+                    onSaved={() => {
+                        logAction("Edit", store.lcoutcome_uq, "Edit Payment Authorization");
+                        setEditPaymentModal(false);
                         qc.invalidateQueries({ queryKey: ["pa-outcomes", store.lcgrower_uq, store.ldPaymentsFrom, store.lnclose] });
                     }}
                 />
