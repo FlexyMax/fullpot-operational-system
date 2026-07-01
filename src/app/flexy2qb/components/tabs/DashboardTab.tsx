@@ -23,7 +23,7 @@ const CUSTOMER_TYPES = [
 ];
 
 export default function DashboardTab() {
-    const [customerType, setCustomerType] = useState<string>("A");
+    const [customerType, setCustomerType] = useState<string>("S");
 
     const { data: dashboardData = EMPTY_ARR, isFetching } = useQuery({
         queryKey: ["flexy2qb-dashboard", customerType],
