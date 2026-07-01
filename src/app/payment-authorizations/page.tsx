@@ -12,6 +12,7 @@ import {
 import PanelGrid from "@/components/ui/PanelGrid";
 import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd, PanelGridTfoot } from "@/components/ui/PanelGridTable";
 import { MobileActionBar } from "@/components/layout/MobileActionBar";
+import { ReportModal } from "@/components/reports/ReportModal";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAuditLog } from "@/lib/audit";
@@ -66,151 +67,133 @@ function Modal({ title, icon: Icon, onClose, children, footer, size = "md" }: an
     );
 }
 
-// ─── ModalReports ─────────────────────────────────────────────────────────────
-function ModalReports({ growers, defaultGrower, onClose }: { growers: any[]; defaultGrower: string; onClose: () => void }) {
+// ─── ModalReports — filter form only; calls onOpen(url) with the PDF endpoint ──
+function ModalReports({ growers, defaultGrower, defaultGrowerName, onClose, onOpen }: {
+    growers: any[];
+    defaultGrower: string;
+    defaultGrowerName: string;
+    onClose: () => void;
+    onOpen: (url: string) => void;
+}) {
     const [option,   setOption]   = useState<"pending" | "summary">("pending");
     const [growerUq, setGrowerUq] = useState(defaultGrower);
     const [dateFrom, setDateFrom] = useState(today());
     const [dateTo,   setDateTo]   = useState(today());
-    const [loading,  setLoading]  = useState(false);
-    const [results,  setResults]  = useState<any[]>([]);
 
-    const generate = async () => {
-        setLoading(true);
-        try {
-            const url = option === "pending"
-                ? `/api/payment-authorizations/reports/pending?grower_uq=${encodeURIComponent(growerUq)}&date_from=${dateFrom}&date_to=${dateTo}`
-                : `/api/payment-authorizations/reports/summary?grower_uq=${encodeURIComponent(growerUq)}&ldfrom=${dateFrom}&ldto=${dateTo}&lnoption=1`;
-            const data = await paFetch(url);
-            setResults(norm(Array.isArray(data) ? data : []));
-        } catch (e: any) { toast.error(e.message); }
-        finally { setLoading(false); }
+    const growerName = growers.find(g => t(g.UNICO) === growerUq)
+        ? t(growers.find(g => t(g.UNICO) === growerUq)?.GROWER ?? "")
+        : defaultGrowerName;
+
+    const generate = () => {
+        const base = `grower_uq=${encodeURIComponent(growerUq)}&grower_name=${encodeURIComponent(growerName)}`;
+        const url = option === "pending"
+            ? `/api/payment-authorizations/reports/pending?${base}&date_from=${dateFrom}&date_to=${dateTo}`
+            : `/api/payment-authorizations/reports/summary?${base}&ldfrom=${dateFrom}&ldto=${dateTo}&lnoption=1`;
+        onClose();
+        onOpen(url);
     };
 
-    const cols = results.length > 0 ? Object.keys(results[0]) : [];
-
     return (
-        <Modal title="Vendor's Reports" icon={Printer} onClose={onClose} size="xl"
-            footer={<button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Close</button>}>
+        <Modal title="Vendor Reports" icon={Printer} onClose={onClose} size="sm"
+            footer={
+                <>
+                    <button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Cancel</button>
+                    <button onClick={generate} className="px-4 py-2 rounded bg-[#FB7506] text-white text-sm font-bold hover:bg-orange-600">Generate PDF</button>
+                </>
+            }>
             <div className="flex flex-col gap-4">
-                <div className="flex flex-wrap gap-4 items-end">
-                    <div className="flex flex-col gap-1">
-                        <label className="text-[10px] font-bold text-gray-500 uppercase">Report Type</label>
-                        <div className="flex gap-3">
-                            {(["pending", "summary"] as const).map(o => (
-                                <label key={o} className="flex items-center gap-1.5 text-xs cursor-pointer">
-                                    <input type="radio" checked={option === o} onChange={() => setOption(o)} className="accent-orange-500" />
-                                    {o === "pending" ? "Pending Invoices" : "AP Summary"}
-                                </label>
-                            ))}
-                        </div>
+                <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase">Report Type</label>
+                    <div className="flex gap-4">
+                        {(["pending", "summary"] as const).map(o => (
+                            <label key={o} className="flex items-center gap-1.5 text-xs cursor-pointer">
+                                <input type="radio" checked={option === o} onChange={() => setOption(o)} className="accent-orange-500" />
+                                {o === "pending" ? "Pending Invoices" : "AP Summary"}
+                            </label>
+                        ))}
                     </div>
-                    <div className="flex flex-col gap-1">
-                        <label className="text-[10px] font-bold text-gray-500 uppercase">Vendor</label>
-                        <select value={growerUq} onChange={e => setGrowerUq(e.target.value)} className="border rounded px-2 py-1 text-xs">
-                            <option value="">— All —</option>
-                            {growers.map((g: any) => <option key={t(g.UNICO)} value={t(g.UNICO)}>{t(g.GROWER ?? g.SUPPLIER ?? g.NAME)}</option>)}
-                        </select>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                        <label className="text-[10px] font-bold text-gray-500 uppercase">From</label>
-                        <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="border rounded px-2 py-1 text-xs" />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                        <label className="text-[10px] font-bold text-gray-500 uppercase">To</label>
-                        <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="border rounded px-2 py-1 text-xs" />
-                    </div>
-                    <button onClick={generate} disabled={loading}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FB7506] hover:bg-orange-600 text-white text-[11px] font-black uppercase rounded disabled:opacity-50 transition-colors">
-                        <Printer size={12} /> {loading ? "Generating…" : "Generate"}
-                    </button>
                 </div>
-                {loading && <div className="flex items-center gap-2 text-gray-400 text-xs"><Loader2 size={14} className="animate-spin" />Generating…</div>}
-                {results.length > 0 && (
-                    <div className="overflow-auto border border-gray-200 rounded">
-                        <PanelGridTable>
-                            <PanelGridThead>
-                                {cols.map(c => <PanelGridTh key={c}>{c}</PanelGridTh>)}
-                            </PanelGridThead>
-                            <PanelGridTbody>
-                                {results.map((row, i) => (
-                                    <PanelGridTr key={i}>
-                                        {cols.map(c => <PanelGridTd key={c}>{t(row[c])}</PanelGridTd>)}
-                                    </PanelGridTr>
-                                ))}
-                            </PanelGridTbody>
-                        </PanelGridTable>
-                    </div>
-                )}
+                <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase">Vendor</label>
+                    <select value={growerUq} onChange={e => setGrowerUq(e.target.value)} className="border rounded px-2 py-1 text-xs">
+                        <option value="">— All —</option>
+                        {growers.map((g: any) => <option key={t(g.UNICO)} value={t(g.UNICO)}>{t(g.GROWER ?? g.SUPPLIER ?? g.NAME)}</option>)}
+                    </select>
+                </div>
+                <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase">From</label>
+                    <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="border rounded px-2 py-1 text-xs" />
+                </div>
+                <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase">To</label>
+                    <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="border rounded px-2 py-1 text-xs" />
+                </div>
             </div>
         </Modal>
     );
 }
 
-// ─── ModalPaymentsReport ──────────────────────────────────────────────────────
-function ModalPaymentsReport({ growers, defaultGrower, onClose }: { growers: any[]; defaultGrower: string; onClose: () => void }) {
+// ─── ModalPaymentsReport — filter form only; calls onOpen(url) with PDF endpoint
+function ModalPaymentsReport({ growers, defaultGrower, defaultGrowerName, onClose, onOpen }: {
+    growers: any[];
+    defaultGrower: string;
+    defaultGrowerName: string;
+    onClose: () => void;
+    onOpen: (url: string) => void;
+}) {
+    const [option,   setOption]   = useState<"detail" | "resume">("detail");
     const [growerUq, setGrowerUq] = useState(defaultGrower);
     const [dateFrom, setDateFrom] = useState(today());
     const [dateTo,   setDateTo]   = useState(today());
-    const [loading,  setLoading]  = useState(false);
-    const [results,  setResults]  = useState<any[]>([]);
-    const COLS = ["OUT_DATE", "OUT_DOCUMENT", "STATUS", "BANK", "GROWER", "FARM", "TOTAL_PAYMENT"];
 
-    const generate = async () => {
-        setLoading(true);
-        try {
-            const data = await paFetch(`/api/payment-authorizations/reports/payments?grower_uq=${encodeURIComponent(growerUq)}&payments_from=${dateFrom}&payments_to=${dateTo}`);
-            setResults(norm(Array.isArray(data) ? data : []));
-        } catch (e: any) { toast.error(e.message); }
-        finally { setLoading(false); }
+    const growerName = growers.find(g => t(g.UNICO) === growerUq)
+        ? t(growers.find(g => t(g.UNICO) === growerUq)?.GROWER ?? "")
+        : defaultGrowerName;
+
+    const generate = () => {
+        const base = `grower_uq=${encodeURIComponent(growerUq)}&grower_name=${encodeURIComponent(growerName)}&payments_from=${dateFrom}&payments_to=${dateTo}`;
+        const url = option === "resume"
+            ? `/api/payment-authorizations/reports/payments-resume?${base}`
+            : `/api/payment-authorizations/reports/payments?${base}`;
+        onClose();
+        onOpen(url);
     };
 
     return (
-        <Modal title="Payments Report" icon={DollarSign} onClose={onClose} size="xl"
-            footer={<button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Close</button>}>
+        <Modal title="Payments Report" icon={DollarSign} onClose={onClose} size="sm"
+            footer={
+                <>
+                    <button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Cancel</button>
+                    <button onClick={generate} className="px-4 py-2 rounded bg-[#FB7506] text-white text-sm font-bold hover:bg-orange-600">Generate PDF</button>
+                </>
+            }>
             <div className="flex flex-col gap-4">
-                <div className="flex flex-wrap gap-4 items-end">
-                    <div className="flex flex-col gap-1">
-                        <label className="text-[10px] font-bold text-gray-500 uppercase">Vendor</label>
-                        <select value={growerUq} onChange={e => setGrowerUq(e.target.value)} className="border rounded px-2 py-1 text-xs">
-                            <option value="">— All —</option>
-                            {growers.map((g: any) => <option key={t(g.UNICO)} value={t(g.UNICO)}>{t(g.GROWER ?? g.SUPPLIER ?? g.NAME)}</option>)}
-                        </select>
+                <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase">Report Type</label>
+                    <div className="flex gap-4">
+                        {(["detail", "resume"] as const).map(o => (
+                            <label key={o} className="flex items-center gap-1.5 text-xs cursor-pointer">
+                                <input type="radio" checked={option === o} onChange={() => setOption(o)} className="accent-orange-500" />
+                                {o === "detail" ? "Payments Detail" : "Payments Resume"}
+                            </label>
+                        ))}
                     </div>
-                    <div className="flex flex-col gap-1">
-                        <label className="text-[10px] font-bold text-gray-500 uppercase">From</label>
-                        <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="border rounded px-2 py-1 text-xs" />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                        <label className="text-[10px] font-bold text-gray-500 uppercase">To</label>
-                        <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="border rounded px-2 py-1 text-xs" />
-                    </div>
-                    <button onClick={generate} disabled={loading}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FB7506] hover:bg-orange-600 text-white text-[11px] font-black uppercase rounded disabled:opacity-50 transition-colors">
-                        <Printer size={12} /> {loading ? "Loading…" : "Generate"}
-                    </button>
                 </div>
-                {loading && <div className="flex items-center gap-2 text-gray-400 text-xs"><Loader2 size={14} className="animate-spin" />Loading…</div>}
-                {results.length > 0 && (
-                    <div className="overflow-auto border border-gray-200 rounded">
-                        <PanelGridTable>
-                            <PanelGridThead>
-                                {COLS.map(c => <PanelGridTh key={c} align={c === "TOTAL_PAYMENT" ? "right" : "left"}>{c}</PanelGridTh>)}
-                            </PanelGridThead>
-                            <PanelGridTbody>
-                                {results.map((row, i) => (
-                                    <PanelGridTr key={i}>
-                                        {COLS.map(c => (
-                                            <PanelGridTd key={c} align={c === "TOTAL_PAYMENT" ? "right" : "left"}>
-                                                {c.includes("DATE") ? fmtDate(row[c]) : c === "TOTAL_PAYMENT" ? fmt(row[c]) : t(row[c])}
-                                            </PanelGridTd>
-                                        ))}
-                                    </PanelGridTr>
-                                ))}
-                            </PanelGridTbody>
-                        </PanelGridTable>
-                    </div>
-                )}
+                <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase">Vendor</label>
+                    <select value={growerUq} onChange={e => setGrowerUq(e.target.value)} className="border rounded px-2 py-1 text-xs">
+                        <option value="">— All —</option>
+                        {growers.map((g: any) => <option key={t(g.UNICO)} value={t(g.UNICO)}>{t(g.GROWER ?? g.SUPPLIER ?? g.NAME)}</option>)}
+                    </select>
+                </div>
+                <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase">From</label>
+                    <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="border rounded px-2 py-1 text-xs" />
+                </div>
+                <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase">To</label>
+                    <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="border rounded px-2 py-1 text-xs" />
+                </div>
             </div>
         </Modal>
     );
@@ -221,10 +204,25 @@ function ModalDateToHistory({ onClose }: { onClose: () => void }) {
     const [dateFrom, setDateFrom] = useState(today());
     const [dateTo,   setDateTo]   = useState(today());
     const [balance,  setBalance]  = useState<"zero" | "nonzero" | "all">("all");
+    const [loading,  setLoading]  = useState(false);
 
-    const handleOk = () => {
-        toast.info(`History move: ${dateFrom} – ${dateTo} (requires server-side configuration)`);
-        onClose();
+    const handleOk = async () => {
+        setLoading(true);
+        try {
+            const r = await fetch("/api/payment-authorizations/date-to-history", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ date_from: dateFrom, date_to: dateTo, balance }),
+            });
+            const j = await r.json();
+            if (!r.ok || !j.success) throw new Error(j?.error || "Failed to move to history");
+            toast.success("Records moved to history.");
+            onClose();
+        } catch (e: any) {
+            toast.error(e.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -232,7 +230,9 @@ function ModalDateToHistory({ onClose }: { onClose: () => void }) {
             footer={
                 <>
                     <button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Cancel</button>
-                    <button onClick={handleOk} className="px-4 py-2 rounded bg-[#FB7506] text-white text-sm font-bold hover:bg-orange-600">OK</button>
+                    <button onClick={handleOk} disabled={loading} className="flex items-center gap-1.5 px-4 py-2 rounded bg-[#FB7506] text-white text-sm font-bold hover:bg-orange-600 disabled:opacity-50">
+                        {loading && <Loader2 size={12} className="animate-spin" />}OK
+                    </button>
                 </>
             }>
             <div className="flex flex-col gap-4">
@@ -279,19 +279,19 @@ function ModalAddPayment({ banks, supplierUq, onClose, onSaved }: any) {
                 body: JSON.stringify({ bank_uq: bankUq, supplier_uq: supplierUq, out_ammount: parseFloat(amount) || 0, out_total: parseFloat(total) || 0, details, pay_doc: parseInt(payDoc) || 0 }),
             }).then(r => r.json());
             if (!r.success) throw new Error(r.error || "Failed to create payment");
-            toast.success("Payment created.");
+            toast.success("Payment authorization created.");
             onSaved(r.data);
         } catch (e: any) { toast.error(e.message); }
         finally { setSaving(false); }
     };
 
     return (
-        <Modal title="Payment Authorization" icon={DollarSign} onClose={onClose} size="sm"
+        <Modal title="New Payment Authorization" icon={DollarSign} onClose={onClose} size="sm"
             footer={
                 <>
                     <button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Cancel</button>
-                    <button onClick={handleSave} disabled={saving} className="px-4 py-2 rounded bg-green-600 text-white text-sm font-bold hover:bg-green-700 disabled:opacity-50">
-                        {saving ? "Saving…" : "OK"}
+                    <button onClick={handleSave} disabled={saving} className="flex items-center gap-1.5 px-4 py-2 rounded bg-green-600 text-white text-sm font-bold hover:bg-green-700 disabled:opacity-50">
+                        {saving && <Loader2 size={12} className="animate-spin" />}Save
                     </button>
                 </>
             }>
@@ -316,7 +316,7 @@ function ModalAddPayment({ banks, supplierUq, onClose, onSaved }: any) {
                     <input type="number" value={payDoc} onChange={e => setPayDoc(e.target.value)} className="border rounded px-2 py-1 text-sm text-right" />
                 </div>
                 <div className="flex flex-col gap-1">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase">Details</label>
+                    <label className="text-[10px] font-bold text-gray-500 uppercase">Details / Notes</label>
                     <input type="text" value={details} onChange={e => setDetails(e.target.value)} maxLength={100} className="border rounded px-2 py-1 text-sm" />
                 </div>
             </div>
@@ -354,17 +354,14 @@ export default function PaymentAuthorizationsPage() {
     const [paymentsReportModal, setPaymentsReportModal] = useState(false);
     const [dateHistoryModal,    setDateHistoryModal]    = useState(false);
     const [addPaymentModal,     setAddPaymentModal]     = useState(false);
+    const [reportModalUrl,      setReportModalUrl]      = useState<string | null>(null);
 
     // ── Auth guard ────────────────────────────────────────────────────────────
     useEffect(() => {
         if (status === "unauthenticated") router.push("/login");
     }, [status, router]);
 
-    // Hide the mobile action bar when switching tabs — it's scoped to whatever
-    // row was selected on the previous tab, not the one you just switched to.
-    useEffect(() => {
-        setActiveBar(null);
-    }, [activeTab]);
+    useEffect(() => { setActiveBar(null); }, [activeTab]);
 
     // ── Queries ───────────────────────────────────────────────────────────────
     const { data: growersList = EMPTY_ARR } = useQuery({
@@ -499,8 +496,8 @@ export default function PaymentAuthorizationsPage() {
     };
 
     // ── Computed ──────────────────────────────────────────────────────────────
-    const activeVendorData = vendorMode === "all" ? vendorsList : vendorsSummary;
-    const loadingVendorData = vendorMode === "all" ? loadingVendors : loadingVendorsSummary;
+    const activeVendorData   = vendorMode === "all" ? vendorsList : vendorsSummary;
+    const loadingVendorData  = vendorMode === "all" ? loadingVendors : loadingVendorsSummary;
 
     const getVendorRow = (row: any) => {
         if (vendorMode === "all") {
@@ -640,7 +637,10 @@ export default function PaymentAuthorizationsPage() {
                                     return (
                                         <PanelGridTr key={i} selected={sel}
                                             onClick={() => { store.setGrowerUq(uq, t(row.GROWER)); setSelInvoiceRow(null); setSelOutcomeRow(null); setInvoiceBalFilter("pos"); }}>
-                                            <PanelGridTd className="font-medium min-w-[180px]">{t(row.GROWER)}</PanelGridTd>
+                                            <PanelGridTd className="font-medium min-w-[180px]">
+                                                <span className="text-[#FB7506] font-bold mr-1.5">{t(row.CODE ?? row.VENDOR_CODE ?? "")}</span>
+                                                {t(row.GROWER)}
+                                            </PanelGridTd>
                                             <PanelGridTd align="right">{fmt(inv)}</PanelGridTd>
                                             <PanelGridTd align="right" className="text-green-600">{fmt(cre)}</PanelGridTd>
                                             <PanelGridTd align="right" className="text-red-500">{fmt(deb)}</PanelGridTd>
@@ -682,10 +682,11 @@ export default function PaymentAuthorizationsPage() {
                                 </div>
                             }
                             menuItems={[
-                                { label: "Approve",   icon: Check,    color: "green", onClick: () => handleApprove(true),  disabled: !selInvoiceRow || !perms.canEdit },
-                                { label: "Un-Approve",icon: XCircle,  color: "gray",  onClick: () => handleApprove(false), disabled: !selInvoiceRow || !perms.canEdit },
+                                { label: "Approve",    icon: Check,   color: "green", onClick: () => handleApprove(true),  disabled: !selInvoiceRow || !perms.canEdit },
+                                { label: "Un-Approve", icon: XCircle, color: "gray",  onClick: () => handleApprove(false), disabled: !selInvoiceRow || !perms.canEdit },
                                 { separator: true },
-                                { label: "Reports",   icon: Printer,  color: "gray",  onClick: () => setReportsModal(true), disabled: !perms.canReport },
+                                { label: "Reports",    icon: Printer, color: "gray",  onClick: () => setReportsModal(true), disabled: !perms.canReport },
+                                { label: "History",    icon: Calendar, color: "gray", onClick: () => setDateHistoryModal(true) },
                             ]}
                             className="flex-1 flex flex-col min-h-0"
                         >
@@ -721,8 +722,8 @@ export default function PaymentAuthorizationsPage() {
                                             const approved = row.APPROVED == null ? "—" : t(row.APPROVED);
                                             return (
                                                 <PanelGridTr key={uq} selected={sel} onClick={() => handleSelectInvoice(row, uq)}>
-                                                    <PanelGridTd className="font-medium">{t(row.INVOICE_NO)}</PanelGridTd>
-                                                    <PanelGridTd align="right" className="text-gray-500">{t(row.PORDER_NO) === "0" ? "" : t(row.PORDER_NO)}</PanelGridTd>
+                                                    <PanelGridTd className="font-bold text-[#FB7506]">{t(row.INVOICE_NO)}</PanelGridTd>
+                                                    <PanelGridTd align="right" className="text-[#FB7506] font-medium">{t(row.PORDER_NO) === "0" ? "" : t(row.PORDER_NO)}</PanelGridTd>
                                                     <PanelGridTd>{fmtDate(row.APDATE)}</PanelGridTd>
                                                     <PanelGridTd align="right">{t(row.DAYS)}</PanelGridTd>
                                                     <PanelGridTd align="right">{t(row.PERCEN)}</PanelGridTd>
@@ -761,27 +762,27 @@ export default function PaymentAuthorizationsPage() {
                         {/* Outcome details mini-grid */}
                         {store.lcgrower_uq && (
                             <PanelGrid
-                                title={selInvoiceRow ? `Payments — ${t(selInvoiceRow.INVOICE_NO)}` : "Payments"}
+                                title={selInvoiceRow ? `Applied Payments — ${t(selInvoiceRow.INVOICE_NO)}` : "Applied Payments"}
                                 icon={CreditCard}
                                 refreshing={loadingDetails || deleteDetailMutation.isPending}
                                 className="h-36 shrink-0 flex flex-col"
                             >
                                 <PanelGridTable>
                                     <PanelGridThead>
-                                        <PanelGridTh>Outcome</PanelGridTh>
+                                        <PanelGridTh>Outcome Ref</PanelGridTh>
                                         <PanelGridTh align="right">Amount</PanelGridTh>
                                         <PanelGridTh align="right">Pay Doc</PanelGridTh>
                                         <PanelGridTh className="w-8">{""}</PanelGridTh>
                                     </PanelGridThead>
                                     <PanelGridTbody>
                                         {!store.lcapd_uq ? (
-                                            <PanelGridTr><PanelGridTd colSpan={4} className="py-4 text-center text-gray-400 italic">Select an invoice to see payments</PanelGridTd></PanelGridTr>
+                                            <PanelGridTr><PanelGridTd colSpan={4} className="py-4 text-center text-gray-400 italic">Select an invoice to see applied payments</PanelGridTd></PanelGridTr>
                                         ) : outcomeDetails.length === 0 ? (
                                             <PanelGridTr><PanelGridTd colSpan={4} className="py-4 text-center text-gray-400 italic">No payment records</PanelGridTd></PanelGridTr>
                                         ) : outcomeDetails.map((row: any, i: number) => (
                                             <PanelGridTr key={i} selected={selDetailRow === row}
                                                 onClick={() => setSelDetailRow(selDetailRow === row ? null : row)}>
-                                                <PanelGridTd>{t(row.DATO ?? row.OUT_DOCUMENT ?? row.UNICO)}</PanelGridTd>
+                                                <PanelGridTd className="font-bold text-[#FB7506]">{t(row.DATO ?? row.OUT_DOCUMENT ?? row.UNICO)}</PanelGridTd>
                                                 <PanelGridTd align="right" className="text-blue-700 font-medium">{fmt(row.OUT_AMMOUNT)}</PanelGridTd>
                                                 <PanelGridTd align="right">{t(row.PAY_DOC) === "0" ? "" : t(row.PAY_DOC)}</PanelGridTd>
                                                 <PanelGridTd>
@@ -825,11 +826,16 @@ export default function PaymentAuthorizationsPage() {
                                 </div>
                             }
                             menuItems={[
-                                { label: "Add Payment", icon: Plus,       color: "green", onClick: () => { if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; } setAddPaymentModal(true); }, disabled: !store.lcgrower_uq || !perms.canCreate },
-                                { label: "Auto Pay",    icon: CheckCheck,  color: "blue",  onClick: handleClosePayment, disabled: !selOutcomeRow || !perms.canEdit },
+                                { label: "Add Payment", icon: Plus,       color: "green",  onClick: () => { if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; } setAddPaymentModal(true); }, disabled: !store.lcgrower_uq || !perms.canCreate },
+                                { label: "Auto Pay",    icon: CheckCheck,  color: "blue",   onClick: handleClosePayment, disabled: !selOutcomeRow || !perms.canEdit },
                                 { separator: true },
-                                { label: "History",     icon: Calendar,   color: "gray",  onClick: () => setDateHistoryModal(true) },
-                                { label: "Reports",     icon: Printer,    color: "gray",  onClick: () => setPaymentsReportModal(true), disabled: !perms.canReport },
+                                { label: "Payment PDF", icon: Printer,    color: "gray",   onClick: () => {
+                                    if (!store.lcoutcome_uq) { toast.warning("Select a payment."); return; }
+                                    setReportModalUrl(`/api/payment-authorizations/reports/payment-single?outcome_uq=${encodeURIComponent(store.lcoutcome_uq)}`);
+                                }, disabled: !selOutcomeRow || !perms.canReport },
+                                { label: "Reports",     icon: FileText,   color: "gray",   onClick: () => setPaymentsReportModal(true), disabled: !perms.canReport },
+                                { separator: true },
+                                { label: "History",     icon: Calendar,   color: "gray",   onClick: () => setDateHistoryModal(true) },
                             ]}
                             className="flex-1 flex flex-col min-h-0"
                         >
@@ -862,7 +868,7 @@ export default function PaymentAuthorizationsPage() {
                                                     <PanelGridTd className="font-medium">{t(row.FARM)}</PanelGridTd>
                                                     <PanelGridTd>{t(row.BANK)}</PanelGridTd>
                                                     <PanelGridTd>{fmtDate(row.OUT_DATE)}</PanelGridTd>
-                                                    <PanelGridTd>{t(row.OUT_DOCUMENT)}</PanelGridTd>
+                                                    <PanelGridTd className="font-bold text-[#FB7506]">{t(row.OUT_DOCUMENT)}</PanelGridTd>
                                                     <PanelGridTd align="right" className="font-semibold">{fmt(row.OUT_AMMOUNT)}</PanelGridTd>
                                                     <PanelGridTd className={cn("font-semibold", isPaid ? "text-green-600" : "text-amber-600")}>{t(row.STATUS)}</PanelGridTd>
                                                 </PanelGridTr>
@@ -900,7 +906,7 @@ export default function PaymentAuthorizationsPage() {
                                         const bal = parseFloat(row.LINE_BALANCE ?? row.BALANCE ?? (amt - pay).toFixed(2)) || (amt - pay);
                                         return (
                                             <PanelGridTr key={i}>
-                                                <PanelGridTd className="font-medium">{t(row.INVOICE_NO)}</PanelGridTd>
+                                                <PanelGridTd className="font-bold text-[#FB7506]">{t(row.INVOICE_NO)}</PanelGridTd>
                                                 <PanelGridTd>{fmtDate(row.INVOICE_DATE ?? row.APDATE)}</PanelGridTd>
                                                 <PanelGridTd>{fmtDate(row.DATE_DUE ?? row.DUE_DATE)}</PanelGridTd>
                                                 <PanelGridTd align="right">{fmt(amt)}</PanelGridTd>
@@ -934,6 +940,7 @@ export default function PaymentAuthorizationsPage() {
                     { grid: "invoices", label: "Approve",    icon: Check,       color: "green", onClick: () => handleApprove(true),  disabled: !selInvoiceRow || !perms.canEdit },
                     { grid: "invoices", label: "Un-Approve", icon: XCircle,     color: "gray",  onClick: () => handleApprove(false), disabled: !selInvoiceRow || !perms.canEdit },
                     { grid: "payments", label: "Auto Pay",   icon: CheckCheck,  color: "blue",  onClick: handleClosePayment, disabled: !selOutcomeRow || !perms.canEdit },
+                    { grid: "payments", label: "Pay PDF",    icon: Printer,     color: "gray",  onClick: () => store.lcoutcome_uq && setReportModalUrl(`/api/payment-authorizations/reports/payment-single?outcome_uq=${encodeURIComponent(store.lcoutcome_uq)}`), disabled: !selOutcomeRow },
                 ]}
                 onClearSelection={() => {
                     if (activeBar === "invoices") { setSelInvoiceRow(null); store.setApUq(""); store.setApdUq(""); }
@@ -944,10 +951,22 @@ export default function PaymentAuthorizationsPage() {
 
             {/* ── Modals ─────────────────────────────────────────────────────── */}
             {reportsModal && (
-                <ModalReports growers={growersList} defaultGrower={store.lcgrower_uq} onClose={() => setReportsModal(false)} />
+                <ModalReports
+                    growers={growersList}
+                    defaultGrower={store.lcgrower_uq}
+                    defaultGrowerName={store.lcgrower}
+                    onClose={() => setReportsModal(false)}
+                    onOpen={url => setReportModalUrl(url)}
+                />
             )}
             {paymentsReportModal && (
-                <ModalPaymentsReport growers={growersList} defaultGrower={store.lcgrower_uq} onClose={() => setPaymentsReportModal(false)} />
+                <ModalPaymentsReport
+                    growers={growersList}
+                    defaultGrower={store.lcgrower_uq}
+                    defaultGrowerName={store.lcgrower}
+                    onClose={() => setPaymentsReportModal(false)}
+                    onOpen={url => setReportModalUrl(url)}
+                />
             )}
             {dateHistoryModal && <ModalDateToHistory onClose={() => setDateHistoryModal(false)} />}
             {addPaymentModal && (
@@ -989,6 +1008,9 @@ export default function PaymentAuthorizationsPage() {
                     )}
                 </Modal>
             )}
+
+            {/* PDF Report viewer */}
+            <ReportModal url={reportModalUrl} onClose={() => setReportModalUrl(null)} />
         </div>
     );
 }
