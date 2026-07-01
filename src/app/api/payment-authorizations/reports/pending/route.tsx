@@ -48,6 +48,11 @@ export async function GET(req: NextRequest) {
 
     const rows = r.recordset ?? [];
 
+    if (sp.get("format") === "columns") {
+        const cols = rows.length > 0 ? Object.keys(rows[0]) : [];
+        return new Response(JSON.stringify(cols, null, 2), { headers: { "Content-Type": "application/json" } });
+    }
+
     if (sp.get("format") === "csv") {
         const keys = rows.length > 0 ? Object.keys(rows[0]).filter(k => !skipKey(k)) : [];
         const header = keys.join(",");
