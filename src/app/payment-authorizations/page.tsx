@@ -7,7 +7,7 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import {
     XCircle, Loader2, DollarSign, FileText, Users, CreditCard,
     Plus, Trash2, Check, CheckCheck, Printer, BarChart2,
-    Calendar, Building2, AlertCircle, Search,
+    Calendar, Building2, AlertCircle,
 } from "lucide-react";
 import PanelGrid from "@/components/ui/PanelGrid";
 import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd, PanelGridTfoot } from "@/components/ui/PanelGridTable";
@@ -26,7 +26,7 @@ const EMPTY_ARR: any[] = [];
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const t       = (v: any) => String(v ?? "").trim();
 const fmt     = (v: any) => parseFloat(v ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const fmtDate = (v: any) => { if (!v) return ""; const d = new Date(v); return isNaN(d.getTime()) ? t(v) : d.toLocaleDateString("en-US"); };
+const fmtDate = (v: any) => { if (!v) return ""; const d = new Date(v); return isNaN(d.getTime()) ? t(v) : d.toLocaleDateString("en-US", { timeZone: "America/New_York" }); };
 const today   = () => new Date().toISOString().split("T")[0];
 const norm    = (rows: any[]) => rows.map(r => { const n: any = {}; for (const [k, v] of Object.entries(r)) n[k.toUpperCase()] = v; return n; });
 
@@ -386,14 +386,14 @@ export default function PaymentAuthorizationsPage() {
         staleTime: 0,
     });
 
-    const { data: invoicesList = EMPTY_ARR, isFetching: loadingInvoices } = useQuery({
+    const { data: invoicesList = EMPTY_ARR, isFetching: loadingInvoices, refetch: refetchInvoices } = useQuery({
         queryKey: ["pa-invoices", store.lcgrower_uq, invoiceBalFilter],
         queryFn:  () => paFetch(`/api/payment-authorizations/invoices?supplier_uq=${encodeURIComponent(store.lcgrower_uq)}&balance=${invoiceBalFilter}`).then(d => norm(Array.isArray(d) ? d : [])),
         enabled:  !!store.lcgrower_uq,
         staleTime: 0,
     });
 
-    const { data: outcomesList = EMPTY_ARR, isFetching: loadingOutcomes } = useQuery({
+    const { data: outcomesList = EMPTY_ARR, isFetching: loadingOutcomes, refetch: refetchOutcomes } = useQuery({
         queryKey: ["pa-outcomes", store.lcgrower_uq, store.ldPaymentsFrom, store.lnclose],
         queryFn:  () => paFetch(`/api/payment-authorizations/outcomes?grower_uq=${encodeURIComponent(store.lcgrower_uq)}&ldfrom=${store.ldPaymentsFrom || "2000-01-01"}&lnclose=${store.lnclose}`).then(d => norm(Array.isArray(d) ? d : [])),
         enabled:  !!store.lcgrower_uq,
@@ -530,7 +530,10 @@ export default function PaymentAuthorizationsPage() {
         return true;
     }), [activeVendorData, vendorSearch, vendorBalFilter, vendorMode]);
 
-    const totalVendorBal = useMemo(() => filteredVendors.reduce((s: number, r: any) => s + getVendorRow(r).bal, 0), [filteredVendors]);
+    const vendorTotals = useMemo(() => filteredVendors.reduce((acc: any, r: any) => {
+        const { inv, cre, deb, net, pay, bal } = getVendorRow(r);
+        return { inv: acc.inv + inv, cre: acc.cre + cre, deb: acc.deb + deb, net: acc.net + net, pay: acc.pay + pay, bal: acc.bal + bal };
+    }, { inv: 0, cre: 0, deb: 0, net: 0, pay: 0, bal: 0 }), [filteredVendors]);
 
     const invTotals = useMemo(() => invoicesList.reduce((acc: any, r: any) => ({
         ammount:  acc.ammount  + (parseFloat(r.AMMOUNT)     || 0),
@@ -586,6 +589,7 @@ export default function PaymentAuthorizationsPage() {
                         icon={Building2}
                         recordCount={filteredVendors.length}
                         refreshing={loadingVendorData}
+                        onRefresh={() => vendorMode === "all" ? refetchVendors() : refetchVendorsSummary()}
                         searchValue={vendorSearch}
                         onSearchChange={setVendorSearch}
                         headerRight={
@@ -596,7 +600,6 @@ export default function PaymentAuthorizationsPage() {
                             </div>
                         }
                         menuItems={[
-                            { label: "Refresh",         icon: Search,    color: "gray", onClick: () => vendorMode === "all" ? refetchVendors() : refetchVendorsSummary() },
                             { label: "All Vendors",     icon: Users,     color: "gray", onClick: () => { setVendorMode("all"); refetchVendors(); } },
                             { label: "4 Months View",   icon: BarChart2, color: "blue", onClick: () => { setVendorMode("quarterly"); refetchVendorsSummary(); } },
                             { separator: true },
@@ -619,10 +622,10 @@ export default function PaymentAuthorizationsPage() {
                             <PanelGridThead>
                                 <PanelGridTh>Vendor</PanelGridTh>
                                 <PanelGridTh align="right">T.Invoice</PanelGridTh>
-                                <PanelGridTh align="right" className="text-green-700">T.Credits</PanelGridTh>
-                                <PanelGridTh align="right" className="text-red-600">T.Debits</PanelGridTh>
+                                <PanelGridTh align="right">T.Credits</PanelGridTh>
+                                <PanelGridTh align="right">T.Debits</PanelGridTh>
                                 <PanelGridTh align="right">Net Invoice</PanelGridTh>
-                                <PanelGridTh align="right" className="text-blue-700">Payments</PanelGridTh>
+                                <PanelGridTh align="right">Payments</PanelGridTh>
                                 <PanelGridTh align="right">Inv-Bal</PanelGridTh>
                             </PanelGridThead>
                             <PanelGridTbody>
@@ -655,10 +658,14 @@ export default function PaymentAuthorizationsPage() {
                                 <PanelGridTfoot>
                                     <tr>
                                         <td className="px-2 py-2 text-[10px] font-black text-gray-600 uppercase tracking-wide">
-                                            TOTALS ({filteredVendors.length} vendors)
+                                            TOTALS ({filteredVendors.length})
                                         </td>
-                                        <td colSpan={5} />
-                                        <td className="px-2 py-2 text-right font-black text-[11px] text-orange-600">{fmt(totalVendorBal)}</td>
+                                        <td className="px-2 py-2 text-right font-black text-[11px]">{fmt(vendorTotals.inv)}</td>
+                                        <td className="px-2 py-2 text-right font-black text-[11px] text-green-600">{fmt(vendorTotals.cre)}</td>
+                                        <td className="px-2 py-2 text-right font-black text-[11px] text-red-500">{fmt(vendorTotals.deb)}</td>
+                                        <td className="px-2 py-2 text-right font-black text-[11px]">{fmt(vendorTotals.net)}</td>
+                                        <td className="px-2 py-2 text-right font-black text-[11px] text-blue-700">{fmt(vendorTotals.pay)}</td>
+                                        <td className="px-2 py-2 text-right font-black text-[11px] text-orange-600">{fmt(vendorTotals.bal)}</td>
                                     </tr>
                                 </PanelGridTfoot>
                             )}
@@ -674,6 +681,7 @@ export default function PaymentAuthorizationsPage() {
                             icon={FileText}
                             recordCount={invoicesList.length}
                             refreshing={loadingInvoices || approveMutation.isPending}
+                            onRefresh={refetchInvoices}
                             headerRight={
                                 <div className="flex gap-2">
                                     <BalBtn active={invoiceBalFilter === "pos"}  onClick={() => { setInvoiceBalFilter("pos");  setSelInvoiceRow(null); store.setApUq(""); store.setApdUq(""); }} label="Bal +" />
@@ -704,9 +712,9 @@ export default function PaymentAuthorizationsPage() {
                                         <PanelGridTh align="right">%</PanelGridTh>
                                         <PanelGridTh>Due Date</PanelGridTh>
                                         <PanelGridTh align="right">Amount</PanelGridTh>
-                                        <PanelGridTh align="right" className="text-blue-700">Payments</PanelGridTh>
-                                        <PanelGridTh align="right" className="text-green-700">Credits</PanelGridTh>
-                                        <PanelGridTh align="right" className="text-red-600">Debits</PanelGridTh>
+                                        <PanelGridTh align="right">Payments</PanelGridTh>
+                                        <PanelGridTh align="right">Credits</PanelGridTh>
+                                        <PanelGridTh align="right">Debits</PanelGridTh>
                                         <PanelGridTh align="right">Balance</PanelGridTh>
                                         <PanelGridTh align="center">Approved</PanelGridTh>
                                         <PanelGridTh align="center">Pay</PanelGridTh>
@@ -810,6 +818,7 @@ export default function PaymentAuthorizationsPage() {
                             icon={CreditCard}
                             recordCount={outcomesList.length}
                             refreshing={loadingOutcomes || closePaymentMutation.isPending}
+                            onRefresh={refetchOutcomes}
                             headerRight={
                                 <div className="flex items-center gap-2">
                                     <input type="date" value={store.ldPaymentsFrom}
@@ -892,7 +901,7 @@ export default function PaymentAuthorizationsPage() {
                                     <PanelGridTh>Inv.Date</PanelGridTh>
                                     <PanelGridTh>Due Date</PanelGridTh>
                                     <PanelGridTh align="right">Amount</PanelGridTh>
-                                    <PanelGridTh align="right" className="text-blue-700">Payment</PanelGridTh>
+                                    <PanelGridTh align="right">Payment</PanelGridTh>
                                     <PanelGridTh align="right">Balance</PanelGridTh>
                                 </PanelGridThead>
                                 <PanelGridTbody>

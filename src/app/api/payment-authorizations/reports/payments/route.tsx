@@ -10,7 +10,7 @@ import { ReportPDF, type ReportColumn } from "@/components/reports/ReportPDF";
 
 const t   = (v: any) => String(v ?? "").trim();
 const fmt = (v: any) => { const n = parseFloat(v ?? ""); return isNaN(n) ? t(v) : n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
-const fmtDate = (v: any) => { const d = v ? new Date(v) : null; return d && !isNaN(d.getTime()) ? d.toLocaleDateString("en-US") : t(v); };
+const fmtDate = (v: any) => { const d = v ? new Date(v) : null; return d && !isNaN(d.getTime()) ? d.toLocaleDateString("en-US", { timeZone: "America/New_York" }) : t(v); };
 
 // Known column layout from VFP ws_outcomes_payments.frx and current ModalPaymentsReport
 const COLUMNS: ReportColumn[] = [
@@ -58,8 +58,7 @@ export async function GET(req: NextRequest) {
     const buffer = await renderToBuffer(
         <ReportPDF
             company={company}
-            title="PAYMENTS REPORT"
-            subtitle={subtitle}
+            title=""
             columns={columns}
             rows={rows}
             landscape={true}

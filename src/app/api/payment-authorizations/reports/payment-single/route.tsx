@@ -10,14 +10,15 @@ import { ReportPDF, type ReportColumn } from "@/components/reports/ReportPDF";
 
 const t   = (v: any) => String(v ?? "").trim();
 const fmt = (v: any) => { const n = parseFloat(v ?? ""); return isNaN(n) ? t(v) : n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
-const fmtDate = (v: any) => { const d = v ? new Date(v) : null; return d && !isNaN(d.getTime()) ? d.toLocaleDateString("en-US") : t(v); };
+const fmtDate = (v: any) => { const d = v ? new Date(v) : null; return d && !isNaN(d.getTime()) ? d.toLocaleDateString("en-US", { timeZone: "America/New_York" }) : t(v); };
 
 const AMOUNT_KEYS = new Set(["AMMOUNT","AMOUNT","BALANCE","OUT_AMMOUNT","TOTAL","TOTAL_PAYMENT","LINE_BALANCE"]);
-const DATE_KEYS   = new Set(["APDATE","DATE_DUE","INV_DATE","INVOICE_DATE","OUT_DATE","DATE","DUE_DATE"]);
+const DATE_KEYS   = new Set(["APDATE","DATE_DUE","INV_DATE","INVOICE_DATE","OUT_DATE","DATE","DUE_DATE","DOC_DATE","PDATE","PAYMENT_DATE"]);
+const VFP_SKIP    = new Set(["REPORTE","TITULO","PDF","FRX","NOMBRE_REPORTE","REPORT","TITLE"]);
 
 function buildColumns(rows: any[]): ReportColumn[] {
     if (!rows.length) return [];
-    return Object.keys(rows[0]).map(key => ({
+    return Object.keys(rows[0]).filter(key => !VFP_SKIP.has(key)).map(key => ({
         key,
         label: key.replace(/_/g, " "),
         width: AMOUNT_KEYS.has(key) ? 1.2 : DATE_KEYS.has(key) ? 1.0 : 1.6,
@@ -50,8 +51,7 @@ export async function GET(req: NextRequest) {
     const buffer = await renderToBuffer(
         <ReportPDF
             company={company}
-            title="PAYMENT DETAIL"
-            subtitle={subtitle}
+            title=""
             columns={columns}
             rows={rows}
             landscape={true}
