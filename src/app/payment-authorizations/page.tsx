@@ -200,42 +200,39 @@ function ModalPaymentsReport({ growers, defaultGrower, defaultGrowerName, onClos
 }
 
 // ─── ModalDateToHistory ───────────────────────────────────────────────────────
-function ModalDateToHistory({ onClose }: { onClose: () => void }) {
-    const [dateFrom, setDateFrom] = useState(today());
+// SP: sp_flower_growers_pending_invoices_report2 (ws_growers_accounts_history.frx)
+// lnoption: 1=balance=0, 2=balance<>0, 3=all
+function ModalDateToHistory({ growerUq, growerName, onClose, onOpen }: {
+    growerUq: string; growerName: string;
+    onClose: () => void; onOpen: (url: string) => void;
+}) {
+    const startOfYear = new Date(new Date().getFullYear(), 0, 1).toISOString().split("T")[0];
+    const [dateFrom, setDateFrom] = useState(startOfYear);
     const [dateTo,   setDateTo]   = useState(today());
-    const [balance,  setBalance]  = useState<"zero" | "nonzero" | "all">("all");
-    const [loading,  setLoading]  = useState(false);
+    const [balance,  setBalance]  = useState<"zero" | "nonzero" | "all">("nonzero");
 
-    const handleOk = async () => {
-        setLoading(true);
-        try {
-            const r = await fetch("/api/payment-authorizations/date-to-history", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ date_from: dateFrom, date_to: dateTo, balance }),
-            });
-            const j = await r.json();
-            if (!r.ok || !j.success) throw new Error(j?.error || "Failed to move to history");
-            toast.success("Records moved to history.");
-            onClose();
-        } catch (e: any) {
-            toast.error(e.message);
-        } finally {
-            setLoading(false);
-        }
+    const generate = () => {
+        const lnoption = balance === "zero" ? 1 : balance === "nonzero" ? 2 : 3;
+        const url = `/api/payment-authorizations/reports/summary?grower_uq=${encodeURIComponent(growerUq)}&grower_name=${encodeURIComponent(growerName)}&ldfrom=${dateFrom}&ldto=${dateTo}&lnoption=${lnoption}`;
+        onClose();
+        onOpen(url);
     };
 
     return (
-        <Modal title="Select Date / Move to History" icon={Calendar} onClose={onClose} size="sm"
+        <Modal title="Vendor Invoice History" icon={Calendar} onClose={onClose} size="sm"
             footer={
                 <>
                     <button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Cancel</button>
-                    <button onClick={handleOk} disabled={loading} className="flex items-center gap-1.5 px-4 py-2 rounded bg-[#FB7506] text-white text-sm font-bold hover:bg-orange-600 disabled:opacity-50">
-                        {loading && <Loader2 size={12} className="animate-spin" />}OK
+                    <button onClick={generate} className="px-4 py-2 rounded bg-[#FB7506] text-white text-sm font-bold hover:bg-orange-600">
+                        Generate PDF
                     </button>
                 </>
             }>
             <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase">Vendor</label>
+                    <p className="text-xs font-semibold text-gray-700">{growerName || growerUq || "All Vendors"}</p>
+                </div>
                 <div className="flex flex-col gap-1">
                     <label className="text-[10px] font-bold text-gray-500 uppercase">Invoice Date From</label>
                     <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="border rounded px-2 py-1 text-sm w-full" />
@@ -250,7 +247,7 @@ function ModalDateToHistory({ onClose }: { onClose: () => void }) {
                         {(["zero", "nonzero", "all"] as const).map(b => (
                             <label key={b} className="flex items-center gap-1.5 text-xs cursor-pointer">
                                 <input type="radio" checked={balance === b} onChange={() => setBalance(b)} className="accent-orange-500" />
-                                {b === "zero" ? "Equal 0" : b === "nonzero" ? "<> 0" : "All"}
+                                {b === "zero" ? "Paid (= 0)" : b === "nonzero" ? "Pending (≠ 0)" : "All"}
                             </label>
                         ))}
                     </div>
@@ -977,7 +974,14 @@ export default function PaymentAuthorizationsPage() {
                     onOpen={url => setReportModalUrl(url)}
                 />
             )}
-            {dateHistoryModal && <ModalDateToHistory onClose={() => setDateHistoryModal(false)} />}
+            {dateHistoryModal && (
+                <ModalDateToHistory
+                    growerUq={store.lcgrower_uq}
+                    growerName={store.lcgrower}
+                    onClose={() => setDateHistoryModal(false)}
+                    onOpen={url => setReportModalUrl(url)}
+                />
+            )}
             {addPaymentModal && (
                 <ModalAddPayment
                     banks={banksList}
