@@ -7,7 +7,7 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import {
     XCircle, Loader2, DollarSign, FileText, Users, CreditCard,
     Plus, Trash2, Check, CheckCheck, Printer, BarChart2,
-    Calendar, Building2, AlertCircle,
+    Calendar, Building2, AlertCircle, RefreshCcw, Pencil,
 } from "lucide-react";
 import PanelGrid from "@/components/ui/PanelGrid";
 import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd, PanelGridTfoot } from "@/components/ui/PanelGridTable";
@@ -257,6 +257,225 @@ function ModalDateToHistory({ growerUq, growerName, onClose, onOpen }: {
     );
 }
 
+// ─── ModalCRDB — Credits / Debits per AP invoice ──────────────────────────────
+// SPs: sp_flower_accounts_pay_credits_debits (list), sp_flower_accounts_pay_cr_insert/update/delete
+function ModalCRDB({ invoiceUq, invoiceNo, growerName, onClose, onOpen, logAction, perms }: {
+    invoiceUq: string; invoiceNo: string; growerName: string;
+    onClose: () => void; onOpen: (url: string) => void;
+    logAction: (action: "Edit" | "Insert" | "Delete", uq: string, detail?: string) => void;
+    perms: { canCreate: boolean; canEdit: boolean; canDelete: boolean; canReport: boolean };
+}) {
+    const qc = useQueryClient();
+    const [mode,        setMode]        = useState<"list" | "form">("list");
+    const [editUq,      setEditUq]      = useState<string | null>(null);
+    const [formType,    setFormType]    = useState<"C" | "D">("C");
+    const [formDate,    setFormDate]    = useState(today());
+    const [formReason,  setFormReason]  = useState("");
+    const [formAmount,  setFormAmount]  = useState("0.00");
+    const [formDetails, setFormDetails] = useState("");
+    const [saving,      setSaving]      = useState(false);
+
+    const { data: crdbList = EMPTY_ARR, isFetching, refetch } = useQuery({
+        queryKey: ["pa-crdb", invoiceUq],
+        queryFn:  () => paFetch(`/api/payment-authorizations/crdb?invoice_uq=${encodeURIComponent(invoiceUq)}`).then(d => norm(Array.isArray(d) ? d : [])),
+        enabled:  !!invoiceUq,
+        staleTime: 0,
+    });
+
+    const { data: reasonsList = EMPTY_ARR } = useQuery({
+        queryKey: ["pa-crdb-reasons"],
+        queryFn:  () => paFetch("/api/payment-authorizations/crdb-reasons").then(d => norm(Array.isArray(d) ? d : [])),
+        staleTime: 10 * 60 * 1000,
+    });
+
+    const openAdd = (type: "C" | "D") => {
+        if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; }
+        setEditUq(null);
+        setFormType(type);
+        setFormDate(today());
+        setFormReason(t(reasonsList[0]?.UNICO ?? ""));
+        setFormAmount("0.00");
+        setFormDetails("");
+        setMode("form");
+    };
+
+    const openEdit = (row: any) => {
+        if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; }
+        const matched = reasonsList.find((r: any) => t(r.REASON).toLowerCase() === t(row.REASON).toLowerCase());
+        const d = new Date(t(row.CD_DATE));
+        setEditUq(t(row.UNICO));
+        setFormType(t(row.TYPE) as "C" | "D");
+        setFormDate(isNaN(d.getTime()) ? today() : d.toLocaleDateString("en-CA"));
+        setFormReason(t(matched?.UNICO ?? ""));
+        setFormAmount(t(row.CD_AMOUNT));
+        setFormDetails(t(row.CD_DETAILS));
+        setMode("form");
+    };
+
+    const handleSave = async () => {
+        if (!formReason) { toast.warning("Select a reason."); return; }
+        if (!parseFloat(formAmount)) { toast.warning("Enter an amount greater than 0."); return; }
+        setSaving(true);
+        try {
+            const body = { type: formType, cd_date: formDate, acc_pay_uq: invoiceUq, reason_uq: formReason, amount: formAmount, details: formDetails };
+            const r = editUq
+                ? await fetch("/api/payment-authorizations/crdb", { method: "PUT",  headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...body, unico: editUq }) }).then(x => x.json())
+                : await fetch("/api/payment-authorizations/crdb", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(x => x.json());
+            if (!r.success) throw new Error(r.error || "Failed");
+            logAction(editUq ? "Edit" : "Insert", editUq ?? t(r.data?.unico ?? ""), `${formType === "C" ? "Credit" : "Debit"} on invoice ${invoiceNo}`);
+            toast.success(editUq ? "Record updated." : "Record added.");
+            qc.invalidateQueries({ queryKey: ["pa-crdb", invoiceUq] });
+            qc.invalidateQueries({ queryKey: ["pa-invoices"] });
+            setMode("list");
+        } catch (e: any) { toast.error(e.message); }
+        finally { setSaving(false); }
+    };
+
+    const handleDelete = (crdb_uq: string) => {
+        if (!perms.canDelete) { toast.error(PERMISSION_MSGS.delete); return; }
+        toastConfirm("Delete this credit/debit?", async () => {
+            try {
+                const r = await fetch("/api/payment-authorizations/crdb", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ crdb_uq }) }).then(x => x.json());
+                if (!r.success) throw new Error(r.error || "Failed to delete");
+                logAction("Delete", crdb_uq, `Delete CRDB on invoice ${invoiceNo}`);
+                toast.success("Deleted.");
+                qc.invalidateQueries({ queryKey: ["pa-crdb", invoiceUq] });
+                qc.invalidateQueries({ queryKey: ["pa-invoices"] });
+            } catch (e: any) { toast.error(e.message); }
+        });
+    };
+
+    const typeBadge = (type: string) => t(type) === "C"
+        ? <span className="inline-flex px-1.5 py-0.5 rounded text-[9px] font-black bg-green-100 text-green-700">CREDIT</span>
+        : <span className="inline-flex px-1.5 py-0.5 rounded text-[9px] font-black bg-red-100 text-red-600">DEBIT</span>;
+
+    return (
+        <Modal title={`Credits / Debits — Invoice ${invoiceNo}`} icon={CreditCard} onClose={onClose} size="xl"
+            footer={
+                mode === "form" ? (
+                    <>
+                        <button onClick={() => setMode("list")} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Back</button>
+                        <button onClick={handleSave} disabled={saving} className="flex items-center gap-1.5 px-4 py-2 rounded bg-green-600 text-white text-sm font-bold hover:bg-green-700 disabled:opacity-50">
+                            {saving && <Loader2 size={12} className="animate-spin" />}Save
+                        </button>
+                    </>
+                ) : (
+                    <button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Close</button>
+                )
+            }>
+
+            {mode === "form" ? (
+                <div className="flex flex-col gap-4">
+                    <div className="flex items-center gap-6">
+                        <label className="text-[10px] font-bold text-gray-500 uppercase">Type</label>
+                        {(["C", "D"] as const).map(tp => (
+                            <label key={tp} className="flex items-center gap-1.5 text-xs cursor-pointer">
+                                <input type="radio" checked={formType === tp} onChange={() => setFormType(tp)} className="accent-orange-500" />
+                                <span className={tp === "C" ? "text-green-700 font-bold" : "text-red-600 font-bold"}>{tp === "C" ? "Credit" : "Debit"}</span>
+                            </label>
+                        ))}
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-1">
+                            <label className="text-[10px] font-bold text-gray-500 uppercase">Date</label>
+                            <input type="date" value={formDate} onChange={e => setFormDate(e.target.value)} className="border rounded px-2 py-1 text-sm" />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                            <label className="text-[10px] font-bold text-gray-500 uppercase">Amount</label>
+                            <input type="number" step="0.01" min="0" value={formAmount} onChange={e => setFormAmount(e.target.value)} className="border rounded px-2 py-1 text-sm text-right" />
+                        </div>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-bold text-gray-500 uppercase">Reason</label>
+                        <select value={formReason} onChange={e => setFormReason(e.target.value)} className="border rounded px-2 py-1 text-sm">
+                            <option value="">— Select —</option>
+                            {reasonsList.map((r: any) => <option key={t(r.UNICO)} value={t(r.UNICO)}>{t(r.REASON)}</option>)}
+                        </select>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-bold text-gray-500 uppercase">Details / Notes</label>
+                        <input type="text" value={formDetails} onChange={e => setFormDetails(e.target.value)} maxLength={100} className="border rounded px-2 py-1 text-sm" />
+                    </div>
+                </div>
+            ) : (
+                <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-2 justify-between">
+                        <span className="text-xs text-gray-500">{growerName}</span>
+                        <div className="flex gap-2">
+                            {perms.canCreate && (
+                                <>
+                                    <button onClick={() => openAdd("C")} className="flex items-center gap-1 px-3 h-7 rounded bg-green-600 text-white text-[11px] font-bold hover:bg-green-700"><Plus size={11} />Credit</button>
+                                    <button onClick={() => openAdd("D")} className="flex items-center gap-1 px-3 h-7 rounded bg-red-500 text-white text-[11px] font-bold hover:bg-red-600"><Plus size={11} />Debit</button>
+                                </>
+                            )}
+                            <button onClick={() => refetch()} title="Refresh" className="p-1.5 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700">
+                                <RefreshCcw size={13} className={isFetching ? "animate-spin" : ""} />
+                            </button>
+                        </div>
+                    </div>
+                    <PanelGridTable>
+                        <PanelGridThead>
+                            <PanelGridTh align="center">#</PanelGridTh>
+                            <PanelGridTh>Type</PanelGridTh>
+                            <PanelGridTh>Date</PanelGridTh>
+                            <PanelGridTh>Reason</PanelGridTh>
+                            <PanelGridTh align="right">Amount</PanelGridTh>
+                            <PanelGridTh>Details</PanelGridTh>
+                            <PanelGridTh className="w-20">{""}</PanelGridTh>
+                        </PanelGridThead>
+                        <PanelGridTbody>
+                            {isFetching && crdbList.length === 0 ? (
+                                <PanelGridTr><PanelGridTd colSpan={7} className="py-8 text-center text-gray-400 italic">Loading…</PanelGridTd></PanelGridTr>
+                            ) : crdbList.length === 0 ? (
+                                <PanelGridTr><PanelGridTd colSpan={7} className="py-8 text-center text-gray-400 italic">No credits or debits on this invoice</PanelGridTd></PanelGridTr>
+                            ) : crdbList.map((row: any, i: number) => (
+                                <PanelGridTr key={i}>
+                                    <PanelGridTd align="center" className="text-gray-400 text-[10px]">{t(row.CD_NO)}</PanelGridTd>
+                                    <PanelGridTd>{typeBadge(row.TYPE)}</PanelGridTd>
+                                    <PanelGridTd>{fmtDate(row.CD_DATE)}</PanelGridTd>
+                                    <PanelGridTd>{t(row.REASON)}</PanelGridTd>
+                                    <PanelGridTd align="right" className={cn("font-semibold", t(row.TYPE) === "C" ? "text-green-600" : "text-red-500")}>{fmt(row.CD_AMOUNT)}</PanelGridTd>
+                                    <PanelGridTd className="text-gray-500 text-[10px]">{t(row.CD_DETAILS)}</PanelGridTd>
+                                    <PanelGridTd>
+                                        <div className="flex gap-1 justify-end">
+                                            {perms.canReport && (
+                                                <button onClick={() => onOpen(`/api/payment-authorizations/reports/crdb?crdb_uq=${encodeURIComponent(t(row.UNICO))}&type=${encodeURIComponent(t(row.TYPE))}`)}
+                                                    title="PDF" className="p-1 text-gray-400 hover:text-orange-500 transition-colors"><Printer size={11} /></button>
+                                            )}
+                                            {perms.canEdit && (
+                                                <button onClick={() => openEdit(row)} title="Edit"
+                                                    className="p-1 text-gray-400 hover:text-blue-600 transition-colors"><Pencil size={11} /></button>
+                                            )}
+                                            {perms.canDelete && (
+                                                <button onClick={() => handleDelete(t(row.UNICO))} title="Delete"
+                                                    className="p-1 text-red-300 hover:text-red-600 transition-colors"><Trash2 size={11} /></button>
+                                            )}
+                                        </div>
+                                    </PanelGridTd>
+                                </PanelGridTr>
+                            ))}
+                        </PanelGridTbody>
+                        {crdbList.length > 0 && (
+                            <PanelGridTfoot>
+                                <tr>
+                                    <td colSpan={4} className="px-2 py-2 text-[10px] font-black text-gray-600 uppercase tracking-wide">
+                                        {crdbList.length} record(s)
+                                    </td>
+                                    <td className="px-2 py-2 text-right text-[11px] font-black">
+                                        <span className="text-green-600 mr-3">CR {fmt(crdbList.filter((r: any) => t(r.TYPE) === "C").reduce((s: number, r: any) => s + (parseFloat(r.CD_AMOUNT) || 0), 0))}</span>
+                                        <span className="text-red-500">DB {fmt(crdbList.filter((r: any) => t(r.TYPE) === "D").reduce((s: number, r: any) => s + (parseFloat(r.CD_AMOUNT) || 0), 0))}</span>
+                                    </td>
+                                    <td colSpan={2} />
+                                </tr>
+                            </PanelGridTfoot>
+                        )}
+                    </PanelGridTable>
+                </div>
+            )}
+        </Modal>
+    );
+}
+
 // ─── ModalAddPayment ──────────────────────────────────────────────────────────
 function ModalAddPayment({ banks, supplierUq, onClose, onSaved }: any) {
     const [bankUq,   setBankUq]   = useState("");
@@ -351,6 +570,7 @@ export default function PaymentAuthorizationsPage() {
     const [paymentsReportModal, setPaymentsReportModal] = useState(false);
     const [dateHistoryModal,    setDateHistoryModal]    = useState(false);
     const [addPaymentModal,     setAddPaymentModal]     = useState(false);
+    const [crdbModal,           setCrdbModal]           = useState(false);
     const [reportModalUrl,      setReportModalUrl]      = useState<string | null>(null);
 
     // ── Auth guard ────────────────────────────────────────────────────────────
@@ -687,11 +907,16 @@ export default function PaymentAuthorizationsPage() {
                                 </div>
                             }
                             menuItems={[
-                                { label: "Approve",    icon: Check,   color: "green", onClick: () => handleApprove(true),  disabled: !selInvoiceRow || !perms.canEdit },
-                                { label: "Un-Approve", icon: XCircle, color: "gray",  onClick: () => handleApprove(false), disabled: !selInvoiceRow || !perms.canEdit },
+                                { label: "Approve",         icon: Check,      color: "green", onClick: () => handleApprove(true),  disabled: !selInvoiceRow || !perms.canEdit },
+                                { label: "Un-Approve",      icon: XCircle,    color: "gray",  onClick: () => handleApprove(false), disabled: !selInvoiceRow || !perms.canEdit },
                                 { separator: true },
-                                { label: "Reports",    icon: Printer, color: "gray",  onClick: () => setReportsModal(true), disabled: !perms.canReport },
-                                { label: "History",    icon: Calendar, color: "gray", onClick: () => setDateHistoryModal(true) },
+                                { label: "Credits/Debits",  icon: CreditCard, color: "blue",  onClick: () => {
+                                    if (!selInvoiceRow) { toast.warning("Select an invoice first."); return; }
+                                    setCrdbModal(true);
+                                }, disabled: !selInvoiceRow },
+                                { separator: true },
+                                { label: "Reports",         icon: Printer,    color: "gray",  onClick: () => setReportsModal(true), disabled: !perms.canReport },
+                                { label: "History",         icon: Calendar,   color: "gray",  onClick: () => setDateHistoryModal(true) },
                             ]}
                             className="flex-1 flex flex-col min-h-0"
                         >
@@ -980,6 +1205,17 @@ export default function PaymentAuthorizationsPage() {
                     growerName={store.lcgrower}
                     onClose={() => setDateHistoryModal(false)}
                     onOpen={url => setReportModalUrl(url)}
+                />
+            )}
+            {crdbModal && selInvoiceRow && (
+                <ModalCRDB
+                    invoiceUq={store.lcap_uq}
+                    invoiceNo={t(selInvoiceRow.INVOICE_NO)}
+                    growerName={store.lcgrower}
+                    onClose={() => setCrdbModal(false)}
+                    onOpen={url => setReportModalUrl(url)}
+                    logAction={logAction}
+                    perms={perms}
                 />
             )}
             {addPaymentModal && (
