@@ -653,6 +653,9 @@ export default function PaymentAuthorizationsPage() {
     const [quarterDetailModal,   setQuarterDetailModal]   = useState(false);
     const [loadingQDetail,       setLoadingQDetail]       = useState(false);
     const [quarterSummaryModal,  setQuarterSummaryModal]  = useState(false);
+    const [qSumSel,              setQSumSel]              = useState<{ uq: string; name: string } | null>(null);
+    const [qSumDetail,           setQSumDetail]           = useState<any[]>([]);
+    const [loadingQSumDetail,    setLoadingQSumDetail]    = useState(false);
 
     // Row selections
     const [selInvoiceRow,  setSelInvoiceRow]  = useState<any>(null);
@@ -932,17 +935,6 @@ export default function PaymentAuthorizationsPage() {
                         menuItems={[
                             { label: "All Vendors",     icon: Users,     color: "gray", onClick: () => { setVendorMode("all"); refetchVendors(); } },
                             { label: "4 Months View",   icon: BarChart2, color: "blue", onClick: () => { refetchVendorsSummary(); setQuarterSummaryModal(true); } },
-                            { separator: true },
-                            { label: "4 Months Detail", icon: FileText,  color: "blue", onClick: async () => {
-                                if (!store.lcgrower_uq) { toast.warning("Select a vendor first."); return; }
-                                setLoadingQDetail(true);
-                                try {
-                                    const d = await paFetch(`/api/payment-authorizations/vendors-summary-detail?grower_uq=${encodeURIComponent(store.lcgrower_uq)}`);
-                                    setQuarterDetail(norm(Array.isArray(d) ? d : []));
-                                    setQuarterDetailModal(true);
-                                } catch (e: any) { toast.error(e.message); }
-                                finally { setLoadingQDetail(false); }
-                            }, disabled: !store.lcgrower_uq },
                             { separator: true },
                             { label: "History",         icon: Calendar,  color: "gray", onClick: () => setDateHistoryModal(true) },
                         ]}
@@ -1360,23 +1352,68 @@ export default function PaymentAuthorizationsPage() {
                 />
             )}
 
-            {/* 4 Months Summary modal */}
+            {/* 4 Months Summary modal — with drill-down to vendor detail */}
             {quarterSummaryModal && (
-                <Modal title="4 Months View — All Vendors" icon={BarChart2} onClose={() => setQuarterSummaryModal(false)} size="xl"
-                    footer={<button onClick={() => setQuarterSummaryModal(false)} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Close</button>}>
-                    {loadingVendorsSummary ? (
+                <Modal
+                    title={qSumSel ? `4 Months Detail — ${qSumSel.name}` : "4 Months View — All Vendors"}
+                    icon={BarChart2}
+                    onClose={() => { setQuarterSummaryModal(false); setQSumSel(null); setQSumDetail([]); }}
+                    size="xl"
+                    footer={
+                        qSumSel ? (
+                            <button onClick={() => { setQSumSel(null); setQSumDetail([]); }}
+                                className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">← Back</button>
+                        ) : (
+                            <button onClick={() => { setQuarterSummaryModal(false); }}
+                                className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Close</button>
+                        )
+                    }>
+                    {qSumSel ? (
+                        loadingQSumDetail ? (
+                            <div className="flex items-center gap-2 text-gray-400 text-xs py-4"><Loader2 size={14} className="animate-spin" />Loading detail…</div>
+                        ) : qSumDetail.length === 0 ? (
+                            <p className="text-xs text-gray-400 italic py-4">No invoices found for this vendor in the last 4 months.</p>
+                        ) : (
+                            <div className="overflow-auto">
+                                <PanelGridTable>
+                                    <PanelGridThead>
+                                        {Object.keys(qSumDetail[0]).map(c => <PanelGridTh key={c}>{c.replace(/_/g, " ")}</PanelGridTh>)}
+                                    </PanelGridThead>
+                                    <PanelGridTbody>
+                                        {qSumDetail.map((row, i) => (
+                                            <PanelGridTr key={i}>
+                                                {Object.keys(qSumDetail[0]).map(c => <PanelGridTd key={c}>{t(row[c])}</PanelGridTd>)}
+                                            </PanelGridTr>
+                                        ))}
+                                    </PanelGridTbody>
+                                </PanelGridTable>
+                            </div>
+                        )
+                    ) : loadingVendorsSummary ? (
                         <div className="flex items-center gap-2 text-gray-400 text-xs py-4"><Loader2 size={14} className="animate-spin" />Loading…</div>
                     ) : vendorsSummary.length === 0 ? (
                         <p className="text-xs text-gray-400 italic py-4">No records found for the last 4 months.</p>
                     ) : (
                         <div className="overflow-auto">
+                            <p className="text-[10px] text-gray-400 italic mb-2">Click a vendor to see invoice detail</p>
                             <PanelGridTable>
                                 <PanelGridThead>
                                     {Object.keys(vendorsSummary[0]).map(c => <PanelGridTh key={c}>{c.replace(/_/g, " ")}</PanelGridTh>)}
                                 </PanelGridThead>
                                 <PanelGridTbody>
                                     {(vendorsSummary as any[]).map((row, i) => (
-                                        <PanelGridTr key={i}>
+                                        <PanelGridTr key={i} className="cursor-pointer" onClick={async () => {
+                                            const uq   = t(row.UNICO ?? row.GROWER_UQ ?? row.unico ?? "");
+                                            const name = t(row.GROWER ?? row.SUPPLIER ?? row.NAME ?? "");
+                                            if (!uq) return;
+                                            setQSumSel({ uq, name });
+                                            setLoadingQSumDetail(true);
+                                            try {
+                                                const d = await paFetch(`/api/payment-authorizations/vendors-summary-detail?grower_uq=${encodeURIComponent(uq)}`);
+                                                setQSumDetail(norm(Array.isArray(d) ? d : []));
+                                            } catch (e: any) { toast.error(e.message); setQSumSel(null); }
+                                            finally { setLoadingQSumDetail(false); }
+                                        }}>
                                             {Object.keys(vendorsSummary[0]).map(c => <PanelGridTd key={c}>{t(row[c])}</PanelGridTd>)}
                                         </PanelGridTr>
                                     ))}
