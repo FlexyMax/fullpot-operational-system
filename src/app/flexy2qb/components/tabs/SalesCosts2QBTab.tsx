@@ -154,10 +154,10 @@ export default function SalesCosts2QBTab() {
             </div>
 
             <div className="flex-1 flex flex-col overflow-hidden min-h-0">
-                <div className="bg-white border-b border-gray-200 flex items-end px-2 shrink-0 gap-0.5 h-9">
+                <div className="bg-white border-b border-gray-200 flex items-end px-2 shrink-0 gap-0.5 h-11 md:h-9">
                     {SUB_TABS.map(t => (
                         <button key={t.id} onClick={() => switchSubTab(t.id as any)}
-                            className={cn("px-3 h-full text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                            className={cn("px-4 md:px-3 h-full text-[11px] md:text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
                                 subTab === t.id ? "text-[#FB7506] border-b-2 border-[#FB7506]" : "text-gray-400 hover:text-gray-600")}>
                             {t.label}
                         </button>
