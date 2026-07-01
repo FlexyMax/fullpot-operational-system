@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
-import { X, FileText, Download, ExternalLink, RefreshCcw, ZoomIn, ZoomOut, Printer } from "lucide-react";
+import { X, FileText, Download, ExternalLink, RefreshCcw, ZoomIn, ZoomOut, Printer, FileSpreadsheet } from "lucide-react";
 
 pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
@@ -84,7 +84,8 @@ export default function ReportModalInner({ url, onClose }: Props) {
                         <button onClick={() => setZoom(z => Math.min(2.5, z + 0.15))} title="Zoom in"
                             className="text-gray-300 hover:text-white transition-colors p-1.5 hover:bg-white/10 rounded"><ZoomIn size={15} /></button>
                         <button onClick={handlePrint} title="Print" className="text-gray-300 hover:text-white transition-colors p-1.5 hover:bg-white/10 rounded"><Printer size={15} /></button>
-                        <a href={url} download title="Download" className="text-gray-300 hover:text-white transition-colors p-1.5 hover:bg-white/10 rounded"><Download size={15} /></a>
+                        <a href={url} download title="Download PDF" className="text-gray-300 hover:text-white transition-colors p-1.5 hover:bg-white/10 rounded"><Download size={15} /></a>
+                        <a href={`${url}${url.includes("?") ? "&" : "?"}format=csv`} download title="Download CSV" className="text-gray-300 hover:text-white transition-colors p-1.5 hover:bg-white/10 rounded"><FileSpreadsheet size={15} /></a>
                         <a href={url} target="_blank" rel="noreferrer" title="Open in new tab" className="text-gray-300 hover:text-white transition-colors p-1.5 hover:bg-white/10 rounded"><ExternalLink size={15} /></a>
                         <div className="w-px h-5 bg-white/15 mx-1" />
                         <button onClick={onClose} title="Close" className="text-gray-300 hover:text-white transition-colors p-1.5 hover:bg-white/10 rounded"><X size={17} /></button>
