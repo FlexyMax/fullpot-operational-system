@@ -18,7 +18,6 @@ export default function ReportModalInner({ url, onClose }: Props) {
     const [error, setError] = useState<string | null>(null);
     const [zoom, setZoom] = useState(1);
     const [containerWidth, setContainerWidth] = useState(800);
-    const [printWidth, setPrintWidth] = useState<number | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
     const [prevUrl, setPrevUrl] = useState(url);
@@ -49,20 +48,10 @@ export default function ReportModalInner({ url, onClose }: Props) {
         return () => document.body.classList.remove("report-modal-open");
     }, [url]);
 
-    // Printing must ignore whatever on-screen zoom/container size produced —
-    // print CSS forces the canvas to 100% page width regardless, but the
-    // canvas's actual pixel resolution comes from the width passed to <Page>,
-    // so a small on-screen render (zoomed out, or just a narrow phone screen)
-    // would otherwise get stretched up to fill the page and print blurry.
-    // Render at a fixed, print-appropriate resolution instead, leaving the
-    // on-screen zoom untouched.
-    const handlePrint = () => {
-        setPrintWidth(1700);
-        setTimeout(() => {
-            window.print();
-            setPrintWidth(null);
-        }, 350);
-    };
+    // Open the PDF route URL directly in a new tab — the browser's native PDF
+    // viewer handles printing with proper vector resolution and landscape layout.
+    // Printing canvas elements via window.print() is unreliable across browsers.
+    const handlePrint = () => window.open(url!, "_blank");
 
     if (!url) return null;
 
@@ -106,7 +95,7 @@ export default function ReportModalInner({ url, onClose }: Props) {
                             onLoadError={(e) => setError(e?.message || "Unknown error loading PDF")}
                         >
                             {Array.from({ length: numPages }, (_, i) => (
-                                <Page key={i} pageNumber={i + 1} width={printWidth ?? containerWidth * zoom} className="shadow-lg mb-3 print:shadow-none print:mb-0 print:break-after-page" />
+                                <Page key={i} pageNumber={i + 1} width={containerWidth * zoom} className="shadow-lg mb-3 print:shadow-none print:mb-0 print:break-after-page" />
                             ))}
                         </Document>
                     )}
