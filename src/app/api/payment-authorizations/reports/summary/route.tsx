@@ -85,9 +85,9 @@ export async function GET(req: NextRequest) {
 
     const subtitle = [
         vendorInfo?.name ? `Vendor: ${vendorInfo.name}` : grower_uq ? `Vendor: ${grower_uq}` : "All Vendors",
-        `Period: ${fmtDate(ldfrom)} – ${fmtDate(ldto)}`,
+        `Period: ${fmtDate(ldfrom)} to ${fmtDate(ldto)}`,
         `${rows.length} record(s)`,
-    ].join("   •   ");
+    ].join("  |  ");
 
     const buffer = await renderToBuffer(
         <ReportPDF

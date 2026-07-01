@@ -30,8 +30,12 @@ const fmtDate = (v: any) => { if (!v) return ""; const d = new Date(v); return i
 const today   = () => new Date().toISOString().split("T")[0];
 const norm    = (rows: any[]) => rows.map(r => { const n: any = {}; for (const [k, v] of Object.entries(r)) n[k.toUpperCase()] = v; return n; });
 
-const VFP_SKIP_MODAL = new Set(["REPORTE","TITULO","PDF","FRX","NOMBRE_REPORTE","REPORT","TITLE","XLS","XLS_FILE","XLSFILE","SUBTITULO","TITULO_REPORTE","SUBTITU","NOMBRE_TITULO","SUB_TITULO"]);
-const skipModalCol   = (key: string) => { const ku = key.replace(/ /g, "_").toUpperCase(); return VFP_SKIP_MODAL.has(ku) || VFP_SKIP_MODAL.has(key.toUpperCase()); };
+const VFP_SKIP_MODAL     = new Set(["REPORTE","TITULO","PDF","FRX","NOMBRE_REPORTE","REPORT","TITLE","XLS","XLS_FILE","XLSFILE","SUBTITULO","TITULO_REPORTE","SUBTITU","NOMBRE_TITULO","SUB_TITULO"]);
+const ID_SKIP_MODAL      = new Set(["UNICO","SUPPLIER_UQ","GROWER_UQ"]);
+const CONTACT_SKIP_DET   = new Set(["GROWER","SUPPLIER","GROWER_NAME","ADDRESS","CITY","PHONE","FAX","EMAIL","MANAGER","PHONE_FAX"]);
+const skipModalCol  = (key: string) => { const ku = key.replace(/ /g, "_").toUpperCase(); return VFP_SKIP_MODAL.has(ku) || ID_SKIP_MODAL.has(ku); };
+const skipDetailCol = (key: string) => { const ku = key.replace(/ /g, "_").toUpperCase(); return skipModalCol(key) || CONTACT_SKIP_DET.has(ku) || CONTACT_SKIP_DET.has(key); };
+const fmtModalVal   = (v: any) => v instanceof Date ? v.toLocaleDateString("en-US", { timeZone: "America/New_York" }) : t(v);
 
 const paFetch = async (url: string) => {
     const r = await fetch(url);
@@ -1388,12 +1392,12 @@ export default function PaymentAuthorizationsPage() {
                             <div className="overflow-auto">
                                 <PanelGridTable>
                                     <PanelGridThead>
-                                        {Object.keys(qSumDetail[0]).filter(c => !skipModalCol(c)).map(c => <PanelGridTh key={c}>{c.replace(/_/g, " ")}</PanelGridTh>)}
+                                        {Object.keys(qSumDetail[0]).filter(c => !skipDetailCol(c)).map(c => <PanelGridTh key={c}>{c.replace(/_/g, " ")}</PanelGridTh>)}
                                     </PanelGridThead>
                                     <PanelGridTbody>
                                         {qSumDetail.map((row, i) => (
                                             <PanelGridTr key={i}>
-                                                {Object.keys(qSumDetail[0]).filter(c => !skipModalCol(c)).map(c => <PanelGridTd key={c}>{t(row[c])}</PanelGridTd>)}
+                                                {Object.keys(qSumDetail[0]).filter(c => !skipDetailCol(c)).map(c => <PanelGridTd key={c}>{fmtModalVal(row[c])}</PanelGridTd>)}
                                             </PanelGridTr>
                                         ))}
                                     </PanelGridTbody>
@@ -1425,7 +1429,7 @@ export default function PaymentAuthorizationsPage() {
                                             } catch (e: any) { toast.error(e.message); setQSumSel(null); }
                                             finally { setLoadingQSumDetail(false); }
                                         }}>
-                                            {Object.keys(vendorsSummary[0]).filter(c => !skipModalCol(c)).map(c => <PanelGridTd key={c}>{t(row[c])}</PanelGridTd>)}
+                                            {Object.keys(vendorsSummary[0]).filter(c => !skipModalCol(c)).map(c => <PanelGridTd key={c}>{fmtModalVal(row[c])}</PanelGridTd>)}
                                         </PanelGridTr>
                                     ))}
                                 </PanelGridTbody>

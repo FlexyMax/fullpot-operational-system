@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
     const columns = buildColumns(rows);
     if (!columns.length) columns.push({ key: "_empty", label: "No data", width: 1 });
 
-    const subtitle = `All Vendors   •   Last 4 Months   •   ${rows.length} record(s)`;
+    const subtitle = `All Vendors  |  Last 4 Months  |  ${rows.length} record(s)`;
 
     const buffer = await renderToBuffer(
         <ReportPDF

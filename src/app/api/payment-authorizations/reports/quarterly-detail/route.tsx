@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
         vendorInfo.name ? `Vendor: ${vendorInfo.name}` : grower_uq,
         `Last 4 Months`,
         `${rows.length} invoice(s)`,
-    ].join("   •   ");
+    ].join("  |  ");
 
     const buffer = await renderToBuffer(
         <ReportPDF
