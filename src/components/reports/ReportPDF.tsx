@@ -30,6 +30,15 @@ const styles = StyleSheet.create({
     footer: { position: "absolute", bottom: 16, left: 24, right: 24, flexDirection: "row", justifyContent: "space-between", fontSize: 7, color: "#999", borderTopWidth: 0.5, borderTopColor: BORDER, paddingTop: 4 },
 });
 
+export interface VendorInfo {
+    name?: string;
+    address?: string;
+    city?: string;
+    phone?: string;
+    email?: string;
+    manager?: string;
+}
+
 export interface ReportColumn {
     key: string;
     label: string;
@@ -53,6 +62,7 @@ interface Props {
     rows: any[];
     group?: ReportGroup;
     landscape?: boolean;
+    vendorInfo?: VendorInfo;
 }
 
 const fmt = (v: any) => {
@@ -85,7 +95,7 @@ function Row({ row, columns }: { row: any; columns: ReportColumn[] }) {
     );
 }
 
-export function ReportPDF({ company, title, subtitle, columns, rows, group, landscape = true }: Props) {
+export function ReportPDF({ company, title, subtitle, columns, rows, group, landscape = true, vendorInfo }: Props) {
     const groups: { key: string; label: string; rows: any[] }[] = [];
     if (group) {
         for (const row of rows) {
@@ -118,6 +128,19 @@ export function ReportPDF({ company, title, subtitle, columns, rows, group, land
                     </View>
                     <View style={styles.divider} />
                 </View>
+
+                {vendorInfo && (vendorInfo.name || vendorInfo.address) && (
+                    <View style={{ marginBottom: 8, paddingVertical: 5, paddingHorizontal: 8, backgroundColor: "#F8F6F4", borderRadius: 3, borderLeftWidth: 2.5, borderLeftColor: ACCENT }}>
+                        {!!vendorInfo.name    && <Text style={{ fontSize: 9, fontWeight: 700, color: DARK }}>{vendorInfo.name}</Text>}
+                        {!!vendorInfo.address && <Text style={{ fontSize: 7, color: "#555", marginTop: 1 }}>{vendorInfo.address}{vendorInfo.city ? `, ${vendorInfo.city}` : ""}</Text>}
+                        {!!(vendorInfo.phone || vendorInfo.email) && (
+                            <Text style={{ fontSize: 7, color: "#555", marginTop: 1 }}>
+                                {[vendorInfo.phone ? `Tel: ${vendorInfo.phone}` : null, vendorInfo.email ?? null].filter(Boolean).join("   ")}
+                            </Text>
+                        )}
+                        {!!vendorInfo.manager && <Text style={{ fontSize: 7, color: "#555", marginTop: 1 }}>Manager: {vendorInfo.manager}</Text>}
+                    </View>
+                )}
 
                 <View style={styles.table}>
                     <View style={styles.theadRow} fixed>

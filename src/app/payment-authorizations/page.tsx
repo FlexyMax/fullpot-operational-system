@@ -30,6 +30,9 @@ const fmtDate = (v: any) => { if (!v) return ""; const d = new Date(v); return i
 const today   = () => new Date().toISOString().split("T")[0];
 const norm    = (rows: any[]) => rows.map(r => { const n: any = {}; for (const [k, v] of Object.entries(r)) n[k.toUpperCase()] = v; return n; });
 
+const VFP_SKIP_MODAL = new Set(["REPORTE","TITULO","PDF","FRX","NOMBRE_REPORTE","REPORT","TITLE","XLS","XLS_FILE","XLSFILE","SUBTITULO","TITULO_REPORTE","SUBTITU","NOMBRE_TITULO","SUB_TITULO"]);
+const skipModalCol   = (key: string) => { const ku = key.replace(/ /g, "_").toUpperCase(); return VFP_SKIP_MODAL.has(ku) || VFP_SKIP_MODAL.has(key.toUpperCase()); };
+
 const paFetch = async (url: string) => {
     const r = await fetch(url);
     let j: any;
@@ -1361,11 +1364,19 @@ export default function PaymentAuthorizationsPage() {
                     size="xl"
                     footer={
                         qSumSel ? (
-                            <button onClick={() => { setQSumSel(null); setQSumDetail([]); }}
-                                className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">← Back</button>
+                            <div className="flex justify-between w-full">
+                                <button onClick={() => { setQSumSel(null); setQSumDetail([]); }}
+                                    className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">← Back</button>
+                                <button onClick={() => { setReportModalUrl(`/api/payment-authorizations/reports/quarterly-detail?grower_uq=${encodeURIComponent(qSumSel.uq)}&grower_name=${encodeURIComponent(qSumSel.name)}`); setQuarterSummaryModal(false); setQSumSel(null); setQSumDetail([]); }}
+                                    className="flex items-center gap-1.5 px-4 py-2 rounded bg-[#FB7506] text-white text-sm font-bold hover:bg-orange-600"><Printer size={13} /> Print PDF</button>
+                            </div>
                         ) : (
-                            <button onClick={() => { setQuarterSummaryModal(false); }}
-                                className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Close</button>
+                            <div className="flex justify-between w-full">
+                                <button onClick={() => { setQuarterSummaryModal(false); }}
+                                    className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Close</button>
+                                <button onClick={() => { setReportModalUrl(`/api/payment-authorizations/reports/quarterly`); setQuarterSummaryModal(false); }}
+                                    className="flex items-center gap-1.5 px-4 py-2 rounded bg-[#FB7506] text-white text-sm font-bold hover:bg-orange-600"><Printer size={13} /> Print PDF</button>
+                            </div>
                         )
                     }>
                     {qSumSel ? (
@@ -1377,12 +1388,12 @@ export default function PaymentAuthorizationsPage() {
                             <div className="overflow-auto">
                                 <PanelGridTable>
                                     <PanelGridThead>
-                                        {Object.keys(qSumDetail[0]).map(c => <PanelGridTh key={c}>{c.replace(/_/g, " ")}</PanelGridTh>)}
+                                        {Object.keys(qSumDetail[0]).filter(c => !skipModalCol(c)).map(c => <PanelGridTh key={c}>{c.replace(/_/g, " ")}</PanelGridTh>)}
                                     </PanelGridThead>
                                     <PanelGridTbody>
                                         {qSumDetail.map((row, i) => (
                                             <PanelGridTr key={i}>
-                                                {Object.keys(qSumDetail[0]).map(c => <PanelGridTd key={c}>{t(row[c])}</PanelGridTd>)}
+                                                {Object.keys(qSumDetail[0]).filter(c => !skipModalCol(c)).map(c => <PanelGridTd key={c}>{t(row[c])}</PanelGridTd>)}
                                             </PanelGridTr>
                                         ))}
                                     </PanelGridTbody>
@@ -1398,13 +1409,13 @@ export default function PaymentAuthorizationsPage() {
                             <p className="text-[10px] text-gray-400 italic mb-2">Click a vendor to see invoice detail</p>
                             <PanelGridTable>
                                 <PanelGridThead>
-                                    {Object.keys(vendorsSummary[0]).map(c => <PanelGridTh key={c}>{c.replace(/_/g, " ")}</PanelGridTh>)}
+                                    {Object.keys(vendorsSummary[0]).filter(c => !skipModalCol(c)).map(c => <PanelGridTh key={c}>{c.replace(/_/g, " ")}</PanelGridTh>)}
                                 </PanelGridThead>
                                 <PanelGridTbody>
                                     {(vendorsSummary as any[]).map((row, i) => (
                                         <PanelGridTr key={i} className="cursor-pointer" onClick={async () => {
-                                            const uq   = t(row.UNICO ?? row.GROWER_UQ ?? row.unico ?? "");
-                                            const name = t(row.GROWER ?? row.SUPPLIER ?? row.NAME ?? "");
+                                            const uq   = t(row.UNICO ?? row.GROWER_UQ ?? row.SUPPLIER_UQ ?? "");
+                                            const name = t(row.GROWER ?? row.SUPPLIER ?? row.GROWER_NAME ?? row.NAME ?? "");
                                             if (!uq) return;
                                             setQSumSel({ uq, name });
                                             setLoadingQSumDetail(true);
@@ -1414,7 +1425,7 @@ export default function PaymentAuthorizationsPage() {
                                             } catch (e: any) { toast.error(e.message); setQSumSel(null); }
                                             finally { setLoadingQSumDetail(false); }
                                         }}>
-                                            {Object.keys(vendorsSummary[0]).map(c => <PanelGridTd key={c}>{t(row[c])}</PanelGridTd>)}
+                                            {Object.keys(vendorsSummary[0]).filter(c => !skipModalCol(c)).map(c => <PanelGridTd key={c}>{t(row[c])}</PanelGridTd>)}
                                         </PanelGridTr>
                                     ))}
                                 </PanelGridTbody>
