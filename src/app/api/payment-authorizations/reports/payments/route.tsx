@@ -16,6 +16,7 @@ const fmtDateTime = (v: any): string => { const d = v instanceof Date ? v : (v ?
 const AMOUNT_KEYS = new Set(["TOTAL_PAYMENT","AMMOUNT","AMOUNT","BALANCE"]);
 const DATE_KEYS   = new Set(["OUT_DATE"]);
 const VFP_SKIP    = new Set(["REPORTE","TITULO","PDF","FRX","NOMBRE_REPORTE","REPORT","TITLE","XLS","XLS_FILE","XLSFILE","SUBTITULO","TITULO_REPORTE","SUBTITU","NOMBRE_TITULO","SUB_TITULO"]);
+const skipKey     = (key: string) => VFP_SKIP.has(key) || VFP_SKIP.has(key.replace(/ /g, "_")) || VFP_SKIP.has(key.toUpperCase()) || VFP_SKIP.has(key.replace(/ /g, "_").toUpperCase());
 
 // Known column layout from VFP ws_outcomes_payments.frx and current ModalPaymentsReport
 const COLUMNS: ReportColumn[] = [
@@ -47,7 +48,7 @@ export async function GET(req: NextRequest) {
     const rows = r.recordset ?? [];
 
     if (sp.get("format") === "csv") {
-        const keys = rows.length > 0 ? Object.keys(rows[0]).filter(k => !VFP_SKIP.has(k)) : [];
+        const keys = rows.length > 0 ? Object.keys(rows[0]).filter(k => !skipKey(k)) : [];
         const header = keys.join(",");
         const body = rows.map(row => keys.map(k => { const v = row[k]; const s = DATE_KEYS.has(k) ? fmtDate(v) : AMOUNT_KEYS.has(k) ? t(v) : v instanceof Date ? fmtDateTime(v) : t(v); return `"${s.replace(/"/g, '""')}"`; }).join(",")).join("\r\n");
         return new Response(header ? `${header}\r\n${body}` : "", { headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="payments_${grower_uq || "all"}.csv"` } });

@@ -17,9 +17,11 @@ const AMOUNT_KEYS = new Set(["AMMOUNT","AMOUNT","BALANCE","OUT_AMMOUNT","TOTAL",
 const DATE_KEYS   = new Set(["APDATE","DATE_DUE","INV_DATE","INVOICE_DATE","OUT_DATE","DATE","DUE_DATE","LASTDATE","DOC_DATE","PDATE","PAYMENT_DATE"]);
 const VFP_SKIP    = new Set(["REPORTE","TITULO","PDF","FRX","NOMBRE_REPORTE","REPORT","TITLE","XLS","XLS_FILE","XLSFILE","SUBTITULO","TITULO_REPORTE","SUBTITU","NOMBRE_TITULO","SUB_TITULO"]);
 
+const skipKey = (key: string) => VFP_SKIP.has(key) || VFP_SKIP.has(key.replace(/ /g, "_")) || VFP_SKIP.has(key.toUpperCase()) || VFP_SKIP.has(key.replace(/ /g, "_").toUpperCase());
+
 function buildColumns(rows: any[]): ReportColumn[] {
     if (!rows.length) return [];
-    return Object.keys(rows[0]).filter(key => !VFP_SKIP.has(key)).map(key => ({
+    return Object.keys(rows[0]).filter(key => !skipKey(key)).map(key => ({
         key,
         label: key.replace(/_/g, " "),
         width: AMOUNT_KEYS.has(key) ? 1.2 : DATE_KEYS.has(key) ? 1.0 : 1.6,
@@ -47,7 +49,7 @@ export async function GET(req: NextRequest) {
     const rows = r.recordset ?? [];
 
     if (sp.get("format") === "csv") {
-        const keys = rows.length > 0 ? Object.keys(rows[0]).filter(k => !VFP_SKIP.has(k)) : [];
+        const keys = rows.length > 0 ? Object.keys(rows[0]).filter(k => !skipKey(k)) : [];
         const header = keys.join(",");
         const body = rows.map(row => keys.map(k => { const v = row[k]; const s = DATE_KEYS.has(k) ? fmtDate(v) : AMOUNT_KEYS.has(k) ? t(v) : v instanceof Date ? fmtDateTime(v) : t(v); return `"${s.replace(/"/g, '""')}"`; }).join(",")).join("\r\n");
         return new Response(header ? `${header}\r\n${body}` : "", { headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="payments_resume_${grower_uq || "all"}.csv"` } });
