@@ -92,7 +92,7 @@ export default function Sales2QBTab() {
     }, [sentData, subTab]);
 
     const onMutate = (res: any) => {
-        if (res.error) toast.error(res.message || "Error");
+        if (!res.success) toast.error(res.error || "Error");
         else { toast.success(res.message || "Success"); triggerRefresh(); logAction("Edit", res.unico || ""); }
     };
     const markReady      = useMutation({ mutationFn: async (p: any) => (await (await fetch("/api/flexy2qb/sales/update-ready",      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(p) })).json()), onSuccess: onMutate });
