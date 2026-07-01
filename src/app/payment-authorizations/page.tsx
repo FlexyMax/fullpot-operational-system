@@ -32,7 +32,8 @@ const norm    = (rows: any[]) => rows.map(r => { const n: any = {}; for (const [
 
 const paFetch = async (url: string) => {
     const r = await fetch(url);
-    const j = await r.json();
+    let j: any;
+    try { j = await r.json(); } catch { throw new Error(`HTTP ${r.status}`); }
     if (!r.ok) throw new Error(j?.error || `HTTP ${r.status}`);
     return j;
 };
