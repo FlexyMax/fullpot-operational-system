@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
-import { RefreshCw, Download, Pencil, Trash2, History, ClipboardList, Calendar } from "lucide-react";
+import { RefreshCw, Download, Pencil, Trash2, History, ClipboardList, Calendar, AlignJustify } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useQCContext } from "../../context/QCContext";
@@ -241,16 +241,21 @@ export default function QCHistoryTab({ onEditQC }: Props) {
 
                 {/* Right: history grid */}
                 <div className="flex flex-col flex-1 bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden min-h-0">
-                    {/* Toolbar */}
-                    <div className="h-9 border-b border-[#DBD9D9] flex items-center px-3 gap-4 shrink-0 bg-white justify-between text-xs">
-                        <div className="flex items-center gap-1.5 text-gray-400">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                            <input placeholder="Search..." className="outline-none text-[11px] w-40 text-black placeholder-gray-400"/>
-                        </div>
-                        <div className="flex items-center gap-3 text-[10px] text-gray-500">
-                            <button className="flex items-center gap-1 hover:text-black font-semibold"><Download size={11}/> Download</button>
-                            {!loadingHistory && selDate && <span>{(historyRows as any[]).length} Records</span>}
-                        </div>
+                    {/* Grid header */}
+                    <div className="h-9 border-b border-[#DBD9D9] flex items-center px-3 shrink-0 bg-white">
+                        <History size={13} className="text-[#FB7506] shrink-0 mr-2"/>
+                        <span className="text-[#4F4F4F] text-[13px] font-bold uppercase tracking-tight truncate flex-1">QC Credit Records</span>
+                        {!loadingHistory && selDate && (historyRows as any[]).length > 0 && (
+                            <span className="bg-[#FB7506]/10 text-[#FB7506] text-[10px] font-bold rounded-full px-2 py-0.5 whitespace-nowrap mr-2">
+                                {(historyRows as any[]).length}
+                            </span>
+                        )}
+                        <button title="Download" className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors">
+                            <Download size={13}/>
+                        </button>
+                        <button title="Log" className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-[#FB7506] transition-colors">
+                            <AlignJustify size={13}/>
+                        </button>
                     </div>
 
                     {/* Grid — white headers */}

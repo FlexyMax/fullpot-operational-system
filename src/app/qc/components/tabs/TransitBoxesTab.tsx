@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { RefreshCw, X, ChevronDown, Download, Truck } from "lucide-react";
+import { RefreshCw, X, ChevronDown, Download, Truck, AlignJustify } from "lucide-react";
 import { cn } from "@/lib/utils";
 const EMPTY_ARR: any[] = [];
 
@@ -63,16 +63,20 @@ export default function TransitBoxesTab() {
     return (
         <div className="flex flex-col h-full bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden">
 
-            {/* ── Unified header row ─────────────────────────── */}
-            <div className="flex items-stretch shrink-0 border-b border-[#DBD9D9]">
-                <div className="h-9 bg-white border-r border-[#DBD9D9] flex items-center gap-2 px-3 shrink-0 min-w-[280px]">
+            {/* ── Header row: title + filters + icons ─────────── */}
+            <div className="h-9 flex items-center shrink-0 border-b border-[#DBD9D9]">
+                <div className="flex items-center gap-2 px-3 shrink-0">
                     <Truck size={14} className="text-[#FB7506] shrink-0"/>
-                    <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">Boxes in Transit Delivery Date</span>
-                    <RefreshCw size={11} className="text-gray-400 cursor-pointer hover:text-[#FB7506] flex-shrink-0" onClick={() => refetch()}/>
+                    <span className="text-[#4F4F4F] text-[13px] font-bold uppercase tracking-tight whitespace-nowrap">Boxes in Transit</span>
+                    {!loading && allRows.length > 0 && (
+                        <span className="bg-[#FB7506]/10 text-[#FB7506] text-[10px] font-bold rounded-full px-2 py-0.5 whitespace-nowrap">
+                            {rows.length.toLocaleString()} / {allRows.length.toLocaleString()}
+                        </span>
+                    )}
                 </div>
-                <div className="flex items-center gap-2 px-3 bg-white flex-1">
-                    <div className="relative flex items-center">
-                        <select value={year} onChange={e => { setYear(Number(e.target.value)); }}
+                <div className="flex items-center gap-2 px-3 flex-1 min-w-0 border-l border-[#DBD9D9]">
+                    <div className="relative flex items-center shrink-0">
+                        <select value={year} onChange={e => setYear(Number(e.target.value))}
                             className="fos-input py-1 text-[11px] w-24 pr-10 appearance-none">
                             {(years as any[]).length
                                 ? (years as any[]).map((y: any) => <option key={y.year ?? y} value={y.year ?? y}>{y.year ?? y}</option>)
@@ -84,31 +88,20 @@ export default function TransitBoxesTab() {
                             <ChevronDown size={9} className="text-gray-400"/>
                         </div>
                     </div>
-                    <input value={search} onChange={e => { setSearch(e.target.value); }}
+                    <input value={search} onChange={e => setSearch(e.target.value)}
                         onKeyDown={e => e.key === "Enter" && refetch()}
-                        placeholder="Search" className="fos-input py-1 text-[11px] flex-1 max-w-xs"/>
+                        placeholder="Search" className="fos-input py-1 text-[11px] flex-1 max-w-xs min-w-0"/>
                 </div>
-                <button onClick={() => refetch()} className="px-3 text-green-500 hover:text-green-600 shrink-0">
-                    <RefreshCw size={14} className={loading ? "animate-spin" : ""}/>
+                <button title="Download" className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors shrink-0">
+                    <Download size={13}/>
                 </button>
-            </div>
-
-            {/* ── Toolbar (search + download + record count, no pagination) ── */}
-            <div className="h-9 border-b border-[#DBD9D9] flex items-center px-3 gap-4 shrink-0 bg-white justify-between text-xs">
-                <div className="flex items-center gap-1.5 text-gray-400">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                    <input type="text" placeholder="Search..." className="outline-none text-[11px] w-32 text-black placeholder-gray-400"/>
-                </div>
-                <div className="flex items-center gap-3 text-[10px] text-gray-500">
-                    <button className="flex items-center gap-1 hover:text-black font-semibold">
-                        <Download size={11}/> Download
-                    </button>
-                    {!loading && allRows.length > 0 && (
-                        <span className="whitespace-nowrap">
-                            {rows.length.toLocaleString()} / {allRows.length.toLocaleString()} Records
-                        </span>
-                    )}
-                </div>
+                <button title="Log" className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-[#FB7506] transition-colors shrink-0">
+                    <AlignJustify size={13}/>
+                </button>
+                <button onClick={() => refetch()} title="Refresh"
+                    className="p-1.5 mr-1 rounded hover:bg-gray-100 text-gray-400 hover:text-[#FB7506] transition-colors shrink-0">
+                    <RefreshCw size={13} className={loading ? "animate-spin" : ""}/>
+                </button>
             </div>
 
             {/* ── Data grid with infinite scroll ─────────────── */}
