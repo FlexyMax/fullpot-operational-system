@@ -113,8 +113,12 @@ export async function POST(
             // ── Quality Credits ───────────────────────────────────────────────
             case "credits":
                 if (action === "search") {
-                    procName = "sp_flower_inventory_quality_control";
-                    spParams = { lcdescription: body.search || "%" };
+                    procName = "sp_NC_inventory_quality_control";
+                    spParams = {
+                        lcdescription: body.search || "%",
+                        lnPageNumber:  body.pageNo   || 1,
+                        lnRowsOfPage:  body.pageSize || 50,
+                    };
                 } else if (action === "by-box") {
                     procName = "sp_flower_packing_quality_credits";
                     spParams = { lcpkbox_uq: body.pkboxUq };

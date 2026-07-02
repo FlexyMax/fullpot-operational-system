@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, Award, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -31,7 +31,7 @@ function colorNum(val: any, color: string) {
     return <span className={color + " font-bold"}>{n}</span>;
 }
 
-const STEP = 25;
+const PAGE_SIZE = 50;
 
 interface Props {
     onAddQC?:  (row: any) => void;
@@ -42,36 +42,45 @@ export default function QualityCreditsTab({ onAddQC, onEditQC }: Props) {
     const qc = useQueryClient();
     const { canCreate, canEdit, canDelete, setLcPackBoxID, setLcQCID, refreshTrigger, triggerRefresh } = useQCContext();
 
-    const [search,       setSearch]       = useState("");
-    const [searchKey,    setSearchKey]    = useState(1);
-    const [visibleCount, setVisibleCount] = useState(STEP);
-    const [selRow,       setSelRow]       = useState<any>(null);
-    const [selCredit,    setSelCredit]    = useState<any>(null);
+    const [search,    setSearch]    = useState("");
+    const [searchKey, setSearchKey] = useState(1);
+    const [selRow,    setSelRow]    = useState<any>(null);
+    const [selCredit, setSelCredit] = useState<any>(null);
 
     const sentinelRef = useRef<HTMLDivElement>(null);
 
-    const { data: qcResp, isFetching: loadingSearch } = useQuery({
+    const {
+        data: qcData,
+        isFetching: loadingSearch,
+        isFetchingNextPage,
+        hasNextPage,
+        fetchNextPage,
+    } = useInfiniteQuery({
         queryKey: ["qc-credits-search", searchKey, search],
-        queryFn:  () => qcPost("/api/qc/credits/search", { search: search || "%" }),
+        queryFn: ({ pageParam }: { pageParam: number }) =>
+            qcPost("/api/qc/credits/search", { search: search || "%", pageNo: pageParam, pageSize: PAGE_SIZE }),
+        initialPageParam: 1,
+        getNextPageParam: (lastPage: any, allPages) => {
+            const total  = lastPage?.data?.[0]?.QueryTotalRecords ?? 0;
+            const loaded = allPages.reduce((acc: number, p: any) => acc + (p?.data?.length ?? 0), 0);
+            return loaded < total ? allPages.length + 1 : undefined;
+        },
         staleTime: 0,
-        select:   (d: any) => d,
     });
-    const allRows = (qcResp as any)?.data ?? [];
-    const rows    = allRows.slice(0, visibleCount);
-    const hasMore = visibleCount < allRows.length;
 
-    useEffect(() => { setVisibleCount(STEP); }, [searchKey, search]);
+    const allRows     = qcData?.pages.flatMap((p: any) => p?.data ?? []) ?? [];
+    const totalRecords = qcData?.pages[0]?.data?.[0]?.QueryTotalRecords ?? 0;
 
     useEffect(() => {
         const el = sentinelRef.current;
         if (!el) return;
         const obs = new IntersectionObserver(entries => {
-            if (entries[0].isIntersecting && hasMore)
-                setVisibleCount(v => Math.min(v + STEP, allRows.length));
+            if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage)
+                fetchNextPage();
         }, { rootMargin: "150px" });
         obs.observe(el);
         return () => obs.disconnect();
-    }, [hasMore, allRows.length]);
+    }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
     const { data: creditRows = EMPTY_ARR, isFetching: loadingCredits, refetch: refetchCredits } = useQuery({
         queryKey: ["qc-credits-by-box", selRow?.unico, refreshTrigger],
@@ -110,7 +119,7 @@ export default function QualityCreditsTab({ onAddQC, onEditQC }: Props) {
     };
 
     const countLabel: string | number | undefined = allRows.length > 0
-        ? (rows.length !== allRows.length ? `${rows.length} / ${allRows.length}` : allRows.length)
+        ? (totalRecords && totalRecords !== allRows.length ? `${allRows.length} / ${totalRecords}` : allRows.length)
         : undefined;
 
     return (
@@ -124,7 +133,7 @@ export default function QualityCreditsTab({ onAddQC, onEditQC }: Props) {
                 searchValue={search}
                 onSearchChange={setSearch}
                 searchPlaceholder="Search lots, AWB, farm..."
-                onRefresh={() => { setVisibleCount(STEP); setSearchKey(k => k + 1); }}
+                onRefresh={() => { setSearchKey(k => k + 1); }}
                 refreshing={loadingSearch}
                 onDownload={() => {}}
                 headerRight={<AuditLogModal recordId={selRow?.unico} disabled={!selRow}/>}
@@ -139,9 +148,9 @@ export default function QualityCreditsTab({ onAddQC, onEditQC }: Props) {
                         </tr>
                     </thead>
                     <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
-                        {loadingSearch && rows.length === 0 && <tr><td colSpan={15} className="p-6 text-center text-gray-400">Loading...</td></tr>}
+                        {loadingSearch && allRows.length === 0 && <tr><td colSpan={15} className="p-6 text-center text-gray-400">Loading...</td></tr>}
                         {!loadingSearch && allRows.length === 0 && <tr><td colSpan={15} className="p-6 text-center text-gray-400">No results.</td></tr>}
-                        {(rows as any[]).map((row: any) => (
+                        {(allRows as any[]).map((row: any) => (
                             <tr key={row.unico} onClick={() => handleSelectRow(row)}
                                 className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", selRow?.unico === row.unico ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                 <td className="p-2 max-w-[200px] truncate font-medium">{t(row.description)}</td>
@@ -164,7 +173,7 @@ export default function QualityCreditsTab({ onAddQC, onEditQC }: Props) {
                     </tbody>
                 </table>
                 <div ref={sentinelRef} className="h-4 flex items-center justify-center py-2 text-[10px] text-gray-400">
-                    {hasMore && !loadingSearch && "Loading more..."}
+                    {isFetchingNextPage && "Loading more..."}
                 </div>
             </PanelGrid>
 
