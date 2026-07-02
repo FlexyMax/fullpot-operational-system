@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useRef, useEffect } from "react";
+import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { RefreshCw, Download, ChevronDown, X, Trash2, Pencil, ArrowRight, Package, Warehouse, FileText, ScanLine } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -20,7 +20,6 @@ const qcPost = (url: string, body: any) =>
 const toastConfirm = (msg: string, fn: () => void) =>
     toast(msg, { duration: 10000, action: { label: "Confirm", onClick: fn }, cancel: { label: "Cancel", onClick: () => {} } });
 
-
 type SubTab = "warehouse-stock" | "invoiced-lots";
 
 interface Props {
@@ -29,16 +28,13 @@ interface Props {
     onAddQC?:           (lot: any) => void;
 }
 
-// ── Help icon ────────────────────────────────────────────────────────────────
 function HelpIcon() {
     return (
         <span className="w-4 h-4 rounded-full border border-gray-400 text-gray-400 text-[9px] font-bold flex items-center justify-center shrink-0 cursor-default select-none">?</span>
     );
 }
 
-// ── Grid toolbar ─────────────────────────────────────────────────────────────
-function GridToolbar({ total, page, totalPages, onPage }:
-    { total: number; page: number; totalPages: number; onPage: (p: number) => void }) {
+function SubGridToolbar({ total, download }: { total: number; download?: boolean }) {
     return (
         <div className="h-9 border-b border-[#DBD9D9] flex items-center px-3 gap-3 shrink-0 bg-white text-xs justify-between">
             <div className="flex items-center gap-2 text-gray-400 min-w-0">
@@ -46,23 +42,17 @@ function GridToolbar({ total, page, totalPages, onPage }:
                 <input type="text" placeholder="Search..." className="outline-none text-[11px] w-32 text-black placeholder-gray-400"/>
             </div>
             <div className="flex items-center gap-3 shrink-0">
-                <button className="flex items-center gap-1 text-gray-500 hover:text-black font-semibold">
-                    <Download size={11}/> <span className="text-[10px]">Download</span>
-                </button>
-                {total > 0 && (
-                    <span className="text-[10px] text-gray-500 whitespace-nowrap">{total.toLocaleString()} Records</span>
+                {download !== false && (
+                    <button className="flex items-center gap-1 text-gray-500 hover:text-black font-semibold">
+                        <Download size={11}/> <span className="text-[10px]">Download</span>
+                    </button>
                 )}
-                <div className="flex items-center gap-1 text-[10px] text-gray-500">
-                    <button onClick={() => onPage(page - 1)} disabled={page <= 1} className="p-0.5 rounded hover:bg-gray-100 disabled:opacity-30">‹</button>
-                    <span>Page <span className="font-bold">{page}</span> of {totalPages}</span>
-                    <button onClick={() => onPage(page + 1)} disabled={page >= totalPages} className="p-0.5 rounded hover:bg-gray-100 disabled:opacity-30">›</button>
-                </div>
+                {total > 0 && <span className="text-[10px] text-gray-500 whitespace-nowrap">{total.toLocaleString()} Records</span>}
             </div>
         </div>
     );
 }
 
-// ── Sub-grid toolbar (header bar) ─────────────────────────────────────────────
 function SubGridHeader({ title, icon: Icon, actions }: { title: string; icon?: LucideIcon; actions?: React.ReactNode }) {
     return (
         <div className="h-8 bg-white flex items-center justify-between px-3 shrink-0 rounded-t-lg border-b border-[#DBD9D9]">
@@ -88,7 +78,7 @@ function ScanPanel({ title, icon: Icon, rows, loading }: { title: string; icon?:
                 </div>
                 <RefreshCw size={12} className="text-gray-400 cursor-pointer hover:text-[#FB7506]"/>
             </div>
-            <GridToolbar total={rows.length} page={1} totalPages={1} onPage={() => {}}/>
+            <SubGridToolbar total={rows.length} download={false}/>
             <div className="overflow-auto flex-1">
                 <table className="min-w-full text-xs">
                     <thead className="bg-[#4F4F4F] text-white font-bold text-[11px] uppercase sticky top-0">
@@ -112,25 +102,24 @@ function ScanPanel({ title, icon: Icon, rows, loading }: { title: string; icon?:
     );
 }
 
+const PAGE_SIZE = 20;
+
 export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQC }: Props) {
     const qc    = useQueryClient();
     const { canCreate, canEdit, canDelete, refreshTrigger, triggerRefresh } = useQCContext();
 
-    // Filters
     const [dateFrom,  setDateFrom]  = useState(today());
     const [dateTo,    setDateTo]    = useState(today());
-    const [warehouse, setWarehouse] = useState("%"); // "%" = ALL (matches physical_list unico for ALL)
+    const [warehouse, setWarehouse] = useState("%");
     const [search,    setSearch]    = useState("");
-    const [page,      setPage]      = useState(1);
-    const PAGE_SIZE = 20;
 
-    // Selection
     const [selRow,     setSelRow]     = useState<any>(null);
     const [selStock,   setSelStock]   = useState<any>(null);
     const [selInvoice, setSelInvoice] = useState<any>(null);
     const [subTab,     setSubTab]     = useState<SubTab>("warehouse-stock");
 
-    // Physical warehouses
+    const sentinelRef = useRef<HTMLDivElement>(null);
+
     const { data: physWarehouses = EMPTY_ARR } = useQuery({
         queryKey: ["qc-phys-warehouses"],
         queryFn: () => qcPost("/api/qc/stock/physical-warehouses", {}),
@@ -138,23 +127,45 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
         select: (d: any) => d.data ?? [],
     });
 
-    // Main packing list
-    const { data: packingResp, isFetching: loadingPacking, refetch: refetchPacking } = useQuery({
-        queryKey: ["qc-packing", page, dateFrom, dateTo, warehouse, search],
-        queryFn: () => qcPost("/api/qc/stock/list", {
-            pageNo: page, pageSize: PAGE_SIZE,
-            dateFrom, dateTo,
-            warehouseUq: warehouse,
-            search: search || "",
-        }),
+    // Infinite-scroll packing list
+    const {
+        data: packingData,
+        isFetching: loadingPacking,
+        isFetchingNextPage,
+        hasNextPage,
+        fetchNextPage,
+        refetch: refetchPacking,
+    } = useInfiniteQuery({
+        queryKey: ["qc-packing", dateFrom, dateTo, warehouse, search],
+        queryFn: ({ pageParam }: { pageParam: number }) =>
+            qcPost("/api/qc/stock/list", {
+                pageNo: pageParam, pageSize: PAGE_SIZE,
+                dateFrom, dateTo, warehouseUq: warehouse, search: search || "",
+            }),
+        initialPageParam: 1,
+        getNextPageParam: (lastPage: any, allPages) => {
+            const total  = lastPage?.data?.[0]?.QueryTotalRecords ?? 0;
+            const loaded = allPages.reduce((acc: number, p: any) => acc + (p?.data?.length ?? 0), 0);
+            return loaded < total ? allPages.length + 1 : undefined;
+        },
         staleTime: 0,
-        select: (d: any) => d,
     });
-    const packingRows  = (packingResp as any)?.data ?? [];
-    const totalRecords = (packingResp as any)?.data?.[0]?.QueryTotalRecords ?? (packingResp as any)?.total ?? 0;
-    const totalPages   = Math.max(1, Math.ceil(totalRecords / PAGE_SIZE));
 
-    // Lots Scan IN (right panel — always refreshes with selected row)
+    const packingRows  = packingData?.pages.flatMap((p: any) => p?.data ?? []) ?? [];
+    const totalRecords = packingData?.pages[0]?.data?.[0]?.QueryTotalRecords ?? 0;
+
+    // Load next page when sentinel becomes visible
+    useEffect(() => {
+        const el = sentinelRef.current;
+        if (!el) return;
+        const obs = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage)
+                fetchNextPage();
+        }, { rootMargin: "150px" });
+        obs.observe(el);
+        return () => obs.disconnect();
+    }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
     const { data: scanInRows = EMPTY_ARR, isFetching: loadingScanIn } = useQuery({
         queryKey: ["qc-scan-in", selRow?.unico, refreshTrigger],
         queryFn: () => qcPost("/api/qc/stock/racks-by-lot", { pkboxUq: selRow.unico }),
@@ -163,7 +174,6 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
         select: (d: any) => d.data ?? [],
     });
 
-    // Warehouse stock (sub-tab 1)
     const { data: stockRows = EMPTY_ARR, isFetching: loadingStock } = useQuery({
         queryKey: ["qc-stock-by-box", selRow?.unico, refreshTrigger],
         queryFn: () => qcPost("/api/qc/stock/stock-by-box", { pkboxUq: selRow.unico }),
@@ -172,7 +182,6 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
         select: (d: any) => d.data ?? [],
     });
 
-    // Invoiced lots (sub-tab 2)
     const { data: invoiceRows = EMPTY_ARR, isFetching: loadingInvoice } = useQuery({
         queryKey: ["qc-invoiced-by-box", selRow?.unico],
         queryFn: () => qcPost("/api/qc/stock/invoiced-by-box", { pkboxUq: selRow.unico }),
@@ -181,7 +190,6 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
         select: (d: any) => d.data ?? [],
     });
 
-    // Invoice Lots Scan OUT (right panel for sub-tab 2)
     const { data: scanOutRows = EMPTY_ARR, isFetching: loadingScanOut } = useQuery({
         queryKey: ["qc-scan-out", selInvoice?.unico],
         queryFn: () => qcPost("/api/qc/stock/racks-by-invoice", { invoiceBoxUq: selInvoice.unico }),
@@ -203,16 +211,16 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
         setSelRow(row);
         setSelStock(null);
         setSelInvoice(null);
-        qc.invalidateQueries({ queryKey: ["qc-scan-in",       row.unico] });
-        qc.invalidateQueries({ queryKey: ["qc-stock-by-box",  row.unico] });
+        qc.invalidateQueries({ queryKey: ["qc-scan-in",         row.unico] });
+        qc.invalidateQueries({ queryKey: ["qc-stock-by-box",    row.unico] });
         qc.invalidateQueries({ queryKey: ["qc-invoiced-by-box", row.unico] });
     };
 
     return (
         <div className="flex flex-col h-full gap-1.5 text-xs">
 
-            {/* ── Filter bar ─────────────────────────────────── */}
-            <div className="bg-[#F5F3F3] rounded-lg border border-[#DBD9D9] shadow-sm px-3 py-2 flex items-center gap-3 shrink-0">
+            {/* ── Filter bar ───────────────────────────────────── */}
+            <div className="bg-[#F5F3F3] rounded-lg border border-[#DBD9D9] shadow-sm px-3 py-2 flex flex-wrap items-center gap-3 shrink-0">
                 <div className="flex items-center gap-1.5">
                     <HelpIcon/>
                     <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="fos-input py-1 w-32 text-[11px]"/>
@@ -221,7 +229,6 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                     <HelpIcon/>
                     <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="fos-input py-1 w-32 text-[11px]"/>
                 </div>
-                {/* Warehouse select with clear */}
                 <div className="flex items-center gap-1.5">
                     <HelpIcon/>
                     <div className="relative flex items-center">
@@ -242,35 +249,49 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                         </div>
                     </div>
                 </div>
-                <div className="flex items-center gap-1.5 flex-1">
+                <div className="flex items-center gap-1.5 flex-1 min-w-[160px]">
                     <HelpIcon/>
                     <input value={search} onChange={e => setSearch(e.target.value)}
                         onKeyDown={e => e.key === "Enter" && refetchPacking()}
                         placeholder="Lot, AWB Code, Farm, Product"
                         className="fos-input py-1 flex-1 text-[11px] min-w-0"/>
                 </div>
-                <button onClick={() => { setPage(1); refetchPacking(); }}
+                <button onClick={() => refetchPacking()}
                     className={cn("p-1.5 rounded-full transition-colors shrink-0", loadingPacking ? "text-gray-300" : "text-green-500 hover:bg-green-50")}>
                     <RefreshCw size={14} className={loadingPacking ? "animate-spin" : ""}/>
                 </button>
             </div>
 
-            {/* ── Main split: packing grid + Lots Scan IN ─────── */}
+            {/* ── Main split: packing grid + Lots Scan IN ──────── */}
             <div className="flex bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-[3] min-h-0">
                 {/* Packing grid */}
                 <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+                    {/* Header */}
                     <div className="h-8 bg-white flex items-center justify-between px-3 shrink-0 border-b border-[#DBD9D9]">
                         <div className="flex items-center gap-2 min-w-0">
                             <Package size={14} className="text-[#FB7506] shrink-0"/>
                             <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">Packing List Boxes</span>
                         </div>
-                        <RefreshCw size={12} className="text-gray-400 cursor-pointer hover:text-[#FB7506]" onClick={() => refetchPacking()}/>
+                        <div className="flex items-center gap-3 shrink-0">
+                            {totalRecords > 0 && (
+                                <span className="text-[10px] text-gray-400">
+                                    {packingRows.length.toLocaleString()} / {totalRecords.toLocaleString()}
+                                </span>
+                            )}
+                            <RefreshCw size={12} className="text-gray-400 cursor-pointer hover:text-[#FB7506]" onClick={() => refetchPacking()}/>
+                        </div>
                     </div>
-                    <GridToolbar
-                        total={totalRecords}
-                        page={page} totalPages={totalPages}
-                        onPage={p => setPage(p)}
-                    />
+                    {/* Toolbar (search + download, no pagination) */}
+                    <div className="h-9 border-b border-[#DBD9D9] flex items-center px-3 gap-3 shrink-0 bg-white text-xs justify-between">
+                        <div className="flex items-center gap-2 text-gray-400 min-w-0">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            <input type="text" placeholder="Search..." className="outline-none text-[11px] w-32 text-black placeholder-gray-400"/>
+                        </div>
+                        <button className="flex items-center gap-1 text-[10px] text-gray-500 hover:text-black font-semibold shrink-0">
+                            <Download size={11}/> Download
+                        </button>
+                    </div>
+                    {/* Infinite scroll table */}
                     <div className="overflow-auto flex-1">
                         <table className="min-w-full text-xs text-left">
                             <thead className="bg-[#4F4F4F] text-white font-bold text-[11px] uppercase sticky top-0 z-10">
@@ -289,7 +310,9 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                                 </tr>
                             </thead>
                             <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
-                                {loadingPacking && <tr><td colSpan={11} className="p-6 text-center text-gray-400">Loading...</td></tr>}
+                                {loadingPacking && packingRows.length === 0 && (
+                                    <tr><td colSpan={11} className="p-6 text-center text-gray-400">Loading...</td></tr>
+                                )}
                                 {!loadingPacking && packingRows.length === 0 && (
                                     <tr><td colSpan={11} className="p-6 text-center text-gray-400">No results for the selected filters.</td></tr>
                                 )}
@@ -313,21 +336,23 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                                             <td className="p-1.5 whitespace-nowrap">{t(row.pb_date ?? row.PbookDate)?.split("T")[0]}</td>
                                             <td className="p-1.5 whitespace-nowrap max-w-[90px] truncate">{t(row.warehouse ?? row.Warehouse)}</td>
                                             <td className="p-1.5 text-center">{row.ready_tran ? "✓" : ""}</td>
-                                            <td className="p-1.5 font-semibold truncate max-w-[220px]"
-                                                style={{ color: row.foreColor ?? "#f97316" }}>
+                                            <td className="p-1.5 font-semibold truncate max-w-[220px]" style={{ color: row.foreColor ?? "#f97316" }}>
                                                 {t(row.description)}
                                             </td>
                                             <td className="p-1.5 whitespace-nowrap">{t(row.sorder_no)}</td>
                                             <td className="p-1.5 whitespace-nowrap font-mono">{t(row.awbcode)}</td>
                                             <td className="p-1.5 text-right">{row.lote}</td>
-                                            <td className="p-1.5 text-right font-black" style={{ color: boxColor }}>
-                                                {row.box_qty}
-                                            </td>
+                                            <td className="p-1.5 text-right font-black" style={{ color: boxColor }}>{row.box_qty}</td>
                                         </tr>
                                     );
                                 })}
                             </tbody>
                         </table>
+                        {/* Infinite scroll sentinel */}
+                        <div ref={sentinelRef} className="flex items-center justify-center py-2 text-[10px] text-gray-400">
+                            {isFetchingNextPage && "Loading more..."}
+                            {!isFetchingNextPage && !hasNextPage && packingRows.length > 0 && ""}
+                        </div>
                     </div>
                 </div>
 
@@ -335,9 +360,8 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                 <ScanPanel title="Lots Scan IN" icon={ScanLine} rows={scanInRows as any[]} loading={loadingScanIn}/>
             </div>
 
-            {/* ── Bottom: sub-tabs ────────────────────────────── */}
+            {/* ── Bottom: sub-tabs ─────────────────────────────── */}
             <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-[2] min-h-0">
-                {/* Sub-tab bar */}
                 <div className="h-10 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-end px-2 shrink-0 gap-0.5">
                     {[
                         { id: "warehouse-stock" as SubTab, label: "Warehouse Stock" },
@@ -351,7 +375,6 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                     ))}
                 </div>
 
-                {/* Sub-tab content */}
                 <div className="flex flex-1 min-h-0 overflow-hidden">
 
                     {/* Warehouse Stock */}
@@ -367,7 +390,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                                     ) : undefined
                                 }
                             />
-                            <GridToolbar total={(stockRows as any[]).length} page={1} totalPages={1} onPage={() => {}}/>
+                            <SubGridToolbar total={(stockRows as any[]).length}/>
                             <div className="overflow-auto flex-1">
                                 <table className="min-w-full text-xs text-left">
                                     <thead className="bg-[#4F4F4F] text-white font-bold text-[11px] uppercase sticky top-0">
@@ -418,7 +441,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                         <>
                             <div className="flex flex-col flex-1 overflow-hidden">
                                 <SubGridHeader title="Invoiced Stock Lots" icon={FileText}/>
-                                <GridToolbar total={(invoiceRows as any[]).length} page={1} totalPages={1} onPage={() => {}}/>
+                                <SubGridToolbar total={(invoiceRows as any[]).length}/>
                                 <div className="overflow-auto flex-1">
                                     <table className="min-w-full text-xs text-left">
                                         <thead className="bg-[#4F4F4F] text-white font-bold text-[11px] uppercase sticky top-0">
@@ -453,7 +476,6 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                                     </table>
                                 </div>
                             </div>
-                            {/* Invoice Lots Scan OUT panel */}
                             <ScanPanel title="Invoice Lots Scan OUT" icon={ScanLine} rows={scanOutRows as any[]} loading={loadingScanOut}/>
                         </>
                     )}

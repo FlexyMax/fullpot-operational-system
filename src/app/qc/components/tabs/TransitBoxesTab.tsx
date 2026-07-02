@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { RefreshCw, X, ChevronDown, Download, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -12,7 +12,7 @@ const qcPost = (url: string, body: any) =>
     fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
         .then(r => r.json());
 
-const PAGE_SIZE = 25;
+const STEP = 50;
 
 function colorVal(val: any, type: "orange" | "green" | "purple" | "blue") {
     if (!val || val === 0) return <span className="text-gray-400">0</span>;
@@ -21,9 +21,11 @@ function colorVal(val: any, type: "orange" | "green" | "purple" | "blue") {
 }
 
 export default function TransitBoxesTab() {
-    const [year,      setYear]      = useState(new Date().getFullYear());
-    const [search,    setSearch]    = useState("");
-    const [page,      setPage]      = useState(1);
+    const [year,         setYear]         = useState(new Date().getFullYear());
+    const [search,       setSearch]       = useState("");
+    const [visibleCount, setVisibleCount] = useState(STEP);
+
+    const sentinelRef = useRef<HTMLDivElement>(null);
 
     const { data: years = EMPTY_ARR } = useQuery({
         queryKey: ["qc-transit-years"],
@@ -40,27 +42,37 @@ export default function TransitBoxesTab() {
     });
 
     const allRows = (transitResp as any)?.data ?? [];
-    const totalRecords = allRows.length;
-    const totalPages   = Math.max(1, Math.ceil(totalRecords / PAGE_SIZE));
-    const rows         = allRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+    const rows    = allRows.slice(0, visibleCount);
+    const hasMore = visibleCount < allRows.length;
+
+    // Reset visible count when data changes
+    useEffect(() => { setVisibleCount(STEP); }, [year, search, allRows.length]);
+
+    // Load more rows when sentinel becomes visible
+    useEffect(() => {
+        const el = sentinelRef.current;
+        if (!el) return;
+        const obs = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting && hasMore)
+                setVisibleCount(v => Math.min(v + STEP, allRows.length));
+        }, { rootMargin: "150px" });
+        obs.observe(el);
+        return () => obs.disconnect();
+    }, [hasMore, allRows.length]);
 
     return (
         <div className="flex flex-col h-full bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden">
 
             {/* ── Unified header row ─────────────────────────── */}
             <div className="flex items-stretch shrink-0 border-b border-[#DBD9D9]">
-                {/* Left: title */}
                 <div className="h-9 bg-white border-r border-[#DBD9D9] flex items-center gap-2 px-3 shrink-0 min-w-[280px]">
                     <Truck size={14} className="text-[#FB7506] shrink-0"/>
                     <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">Boxes in Transit Delivery Date</span>
                     <RefreshCw size={11} className="text-gray-400 cursor-pointer hover:text-[#FB7506] flex-shrink-0" onClick={() => refetch()}/>
                 </div>
-
-                {/* Right: filters */}
                 <div className="flex items-center gap-2 px-3 bg-white flex-1">
-                    {/* Year combobox */}
                     <div className="relative flex items-center">
-                        <select value={year} onChange={e => { setYear(Number(e.target.value)); setPage(1); }}
+                        <select value={year} onChange={e => { setYear(Number(e.target.value)); }}
                             className="fos-input py-1 text-[11px] w-24 pr-10 appearance-none">
                             {(years as any[]).length
                                 ? (years as any[]).map((y: any) => <option key={y.year ?? y} value={y.year ?? y}>{y.year ?? y}</option>)
@@ -72,19 +84,16 @@ export default function TransitBoxesTab() {
                             <ChevronDown size={9} className="text-gray-400"/>
                         </div>
                     </div>
-                    {/* Search */}
-                    <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
+                    <input value={search} onChange={e => { setSearch(e.target.value); }}
                         onKeyDown={e => e.key === "Enter" && refetch()}
                         placeholder="Search" className="fos-input py-1 text-[11px] flex-1 max-w-xs"/>
                 </div>
-
-                {/* Far right: refresh */}
-                <button onClick={() => { setPage(1); refetch(); }} className="px-3 text-green-500 hover:text-green-600 shrink-0">
+                <button onClick={() => refetch()} className="px-3 text-green-500 hover:text-green-600 shrink-0">
                     <RefreshCw size={14} className={loading ? "animate-spin" : ""}/>
                 </button>
             </div>
 
-            {/* ── Grid toolbar ───────────────────────────────── */}
+            {/* ── Toolbar (search + download + record count, no pagination) ── */}
             <div className="h-9 border-b border-[#DBD9D9] flex items-center px-3 gap-4 shrink-0 bg-white justify-between text-xs">
                 <div className="flex items-center gap-1.5 text-gray-400">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -94,20 +103,15 @@ export default function TransitBoxesTab() {
                     <button className="flex items-center gap-1 hover:text-black font-semibold">
                         <Download size={11}/> Download
                     </button>
-                    {!loading && totalRecords > 0 && (
-                        <span className="whitespace-nowrap">{totalRecords.toLocaleString()} Records</span>
-                    )}
-                    {totalPages > 1 && (
-                        <div className="flex items-center gap-1">
-                            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1} className="p-0.5 rounded hover:bg-gray-100 disabled:opacity-30">‹</button>
-                            <span>Page <b>{page}</b> of {totalPages}</span>
-                            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="p-0.5 rounded hover:bg-gray-100 disabled:opacity-30">›</button>
-                        </div>
+                    {!loading && allRows.length > 0 && (
+                        <span className="whitespace-nowrap">
+                            {rows.length.toLocaleString()} / {allRows.length.toLocaleString()} Records
+                        </span>
                     )}
                 </div>
             </div>
 
-            {/* ── Data grid ──────────────────────────────────── */}
+            {/* ── Data grid with infinite scroll ─────────────── */}
             <div className="overflow-auto flex-1">
                 <table className="min-w-full text-xs text-left">
                     <thead className="bg-[#4F4F4F] border-b border-[#DBD9D9] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
@@ -118,8 +122,8 @@ export default function TransitBoxesTab() {
                         </tr>
                     </thead>
                     <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
-                        {loading && <tr><td colSpan={17} className="p-8 text-center text-gray-400">Loading...</td></tr>}
-                        {!loading && rows.length === 0 && <tr><td colSpan={17} className="p-8 text-center text-gray-400">No transit boxes for the selected year.</td></tr>}
+                        {loading && rows.length === 0 && <tr><td colSpan={17} className="p-8 text-center text-gray-400">Loading...</td></tr>}
+                        {!loading && allRows.length === 0 && <tr><td colSpan={17} className="p-8 text-center text-gray-400">No transit boxes for the selected year.</td></tr>}
                         {(rows as any[]).map((row: any, i: number) => (
                             <tr key={row.unico ?? i}
                                 style={{ backgroundColor: row.backColor || undefined }}
@@ -145,6 +149,10 @@ export default function TransitBoxesTab() {
                         ))}
                     </tbody>
                 </table>
+                {/* Infinite scroll sentinel */}
+                <div ref={sentinelRef} className="h-4 flex items-center justify-center py-2 text-[10px] text-gray-400">
+                    {hasMore && !loading && "Loading more..."}
+                </div>
             </div>
         </div>
     );

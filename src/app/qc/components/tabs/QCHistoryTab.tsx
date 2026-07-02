@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
-import { RefreshCw, Download, Pencil, Trash2, Search } from "lucide-react";
+import { RefreshCw, Download, Pencil, Trash2, History, ClipboardList, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useQCContext } from "../../context/QCContext";
@@ -17,14 +17,19 @@ const fmtDate = (v: any) => {
 };
 const fmtUSD = (v: any) => v != null && v !== "" ? `$ ${Number(v).toFixed(2)}` : "";
 
+function toInputDate(v: any): string {
+    if (!v) return "";
+    const d = new Date(v);
+    if (isNaN(d.getTime())) return t(v).split("T")[0];
+    return d.toISOString().split("T")[0];
+}
+
 const qcPost = (url: string, body: any) =>
     fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
         .then(r => r.json());
 
 const toastConfirm = (msg: string, fn: () => void) =>
     toast(msg, { duration: 10000, action: { label: "Confirm", onClick: fn }, cancel: { label: "Cancel", onClick: () => {} } });
-
-const DATE_PAGE = 20;
 
 // ── Action Menu ───────────────────────────────────────────────────────────────
 function ActionMenu({ onEdit, onDelete, hasSelection, canEdit, canDelete }: any) {
@@ -53,17 +58,9 @@ function ActionMenu({ onEdit, onDelete, hasSelection, canEdit, canDelete }: any)
             <button ref={btnRef} onClick={toggle}
                 className={cn("h-full w-10 flex items-center justify-center hover:bg-gray-100 transition-colors shrink-0", open ? "flex-row gap-[5px]" : "flex-col gap-[5px]")}>
                 {open ? (
-                    <>
-                        <span className="block h-5 w-[2px] bg-[#FB7506] rounded-full" />
-                        <span className="block h-5 w-[2px] bg-[#FB7506] rounded-full" />
-                        <span className="block h-5 w-[2px] bg-[#FB7506] rounded-full" />
-                    </>
+                    <><span className="block h-5 w-[2px] bg-[#FB7506] rounded-full"/><span className="block h-5 w-[2px] bg-[#FB7506] rounded-full"/><span className="block h-5 w-[2px] bg-[#FB7506] rounded-full"/></>
                 ) : (
-                    <>
-                        <span className="block w-5 h-[2px] bg-[#FB7506] rounded-full" />
-                        <span className="block w-5 h-[2px] bg-[#FB7506] rounded-full" />
-                        <span className="block w-5 h-[2px] bg-[#FB7506] rounded-full" />
-                    </>
+                    <><span className="block w-5 h-[2px] bg-[#FB7506] rounded-full"/><span className="block w-5 h-[2px] bg-[#FB7506] rounded-full"/><span className="block w-5 h-[2px] bg-[#FB7506] rounded-full"/></>
                 )}
             </button>
             {mounted && open && createPortal(
@@ -95,7 +92,7 @@ export default function QCHistoryTab({ onEditQC }: Props) {
 
     const [selDate,   setSelDate]   = useState<any>(null);
     const [selRow,    setSelRow]    = useState<any>(null);
-    const [datePage,  setDatePage]  = useState(1);
+    const [mobileDate, setMobileDate] = useState("");
 
     const { data: dateRows = EMPTY_ARR, isFetching: loadingDates, refetch: refetchDates } = useQuery({
         queryKey: ["qc-history-dates"],
@@ -112,6 +109,16 @@ export default function QCHistoryTab({ onEditQC }: Props) {
         select:   (d: any) => d.data ?? [],
     });
 
+    // Auto-select first date when list loads
+    useEffect(() => {
+        const list = dateRows as any[];
+        if (list.length > 0 && !selDate) {
+            setSelDate(list[0]);
+            setMobileDate(toInputDate(list[0].crdate));
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [(dateRows as any[]).length]);
+
     // Auto-select first history row when date changes
     useEffect(() => {
         const list = historyRows as any[];
@@ -119,8 +126,13 @@ export default function QCHistoryTab({ onEditQC }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selDate?.crdate, (historyRows as any[]).length]);
 
-    const totalDatePages = Math.max(1, Math.ceil((dateRows as any[]).length / DATE_PAGE));
-    const pagedDates     = (dateRows as any[]).slice((datePage - 1) * DATE_PAGE, datePage * DATE_PAGE);
+    const handleMobileDateChange = (val: string) => {
+        setMobileDate(val);
+        const found = (dateRows as any[]).find(d => toInputDate(d.crdate) === val);
+        if (found) setSelDate(found);
+        else if (val) setSelDate({ crdate: val });
+        setSelRow(null);
+    };
 
     const handleEdit = () => {
         if (!selRow) { toast.error("Select a QC credit row first."); return; }
@@ -165,14 +177,18 @@ export default function QCHistoryTab({ onEditQC }: Props) {
     return (
         <div className="flex flex-col h-full gap-1.5">
 
-            {/* ── Top header row ─────────────────────────────── */}
-            <div className="flex items-stretch bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0 h-9">
-                <div className="bg-white flex items-center gap-2 px-3 flex-1">
-                    <Search size={14} className="text-[#FB7506] shrink-0"/>
-                    <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">QC Stock Search</span>
+            {/* ── Top header bar — gray bg, title + icons ─────── */}
+            <div className="flex items-stretch bg-[#F5F3F3] rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0 h-9">
+                <div className="flex items-center gap-2 px-3 flex-1 min-w-0">
+                    <History size={14} className="text-[#FB7506] shrink-0"/>
+                    <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">QC History</span>
                 </div>
-                <button onClick={() => refetchDates()} className="px-3 border-l border-[#DBD9D9] text-green-500 hover:text-green-600 shrink-0">
+                <button onClick={() => refetchDates()} title="Refresh"
+                    className="px-3 border-l border-[#DBD9D9] text-green-500 hover:text-green-600 shrink-0">
                     <RefreshCw size={14} className={loadingDates ? "animate-spin" : ""}/>
+                </button>
+                <button title="Log" className="px-3 border-l border-[#DBD9D9] text-gray-400 hover:text-[#FB7506] shrink-0">
+                    <ClipboardList size={14}/>
                 </button>
                 <ActionMenu
                     onEdit={handleEdit}
@@ -182,30 +198,36 @@ export default function QCHistoryTab({ onEditQC }: Props) {
                 />
             </div>
 
-            {/* ── Content: left dates + right credits ────────── */}
-            <div className="flex gap-2 flex-1 min-h-0">
+            {/* ── Mobile: date picker ──────────────────────────── */}
+            <div className="md:hidden bg-[#F5F3F3] rounded-lg border border-[#DBD9D9] px-3 py-2 flex items-center gap-2 shrink-0">
+                <Calendar size={13} className="text-[#FB7506] shrink-0"/>
+                <span className="text-[11px] font-bold text-[#4F4F4F] uppercase shrink-0">Date</span>
+                <input type="date" value={mobileDate} onChange={e => handleMobileDateChange(e.target.value)}
+                    className="fos-input py-1 flex-1 text-[11px]"/>
+            </div>
 
-                {/* Left: date panel */}
-                <div className="w-52 flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0">
-                    {/* Pagination */}
-                    <div className="h-8 border-b border-[#DBD9D9] flex items-center justify-between px-2 bg-[#F5F3F3] text-[10px] text-gray-500 shrink-0">
-                        <button onClick={() => setDatePage(p => Math.max(1, p - 1))} disabled={datePage <= 1} className="p-0.5 rounded hover:bg-gray-200 disabled:opacity-30">‹</button>
-                        <span>Page <b>{datePage}</b> of {totalDatePages}</span>
-                        <button onClick={() => setDatePage(p => Math.min(totalDatePages, p + 1))} disabled={datePage >= totalDatePages} className="p-0.5 rounded hover:bg-gray-200 disabled:opacity-30">›</button>
+            {/* ── Content: left dates + right credits ─────────── */}
+            <div className="flex flex-col md:flex-row gap-2 flex-1 min-h-0">
+
+                {/* Left: date panel (hidden on mobile) */}
+                <div className="hidden md:flex w-52 flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0">
+                    {/* Date list header */}
+                    <div className="h-8 bg-white border-b border-[#DBD9D9] flex items-center gap-2 px-3 shrink-0">
+                        <Calendar size={12} className="text-[#FB7506]"/>
+                        <span className="text-[#4F4F4F] text-[11px] font-bold uppercase tracking-tight">QC Dates</span>
                     </div>
-
                     <div className="overflow-auto flex-1">
                         <table className="w-full text-xs text-left">
-                            <thead className="bg-[#4F4F4F] border-b border-[#DBD9D9] text-white text-[11px] font-bold uppercase sticky top-0">
-                                <tr className="divide-x divide-[#DBD9D9]/30">
+                            <thead className="bg-white border-b border-[#DBD9D9] text-[#4F4F4F] text-[11px] font-bold uppercase sticky top-0">
+                                <tr className="divide-x divide-[#DBD9D9]">
                                     <th className="p-2">QC Date</th>
                                     <th className="p-2 text-right">Credits</th>
                                 </tr>
                             </thead>
                             <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
                                 {loadingDates && <tr><td colSpan={2} className="p-4 text-center text-gray-400">Loading...</td></tr>}
-                                {pagedDates.map((d: any, i: number) => (
-                                    <tr key={i} onClick={() => { setSelDate(d); setSelRow(null); }}
+                                {(dateRows as any[]).map((d: any, i: number) => (
+                                    <tr key={i} onClick={() => { setSelDate(d); setSelRow(null); setMobileDate(toInputDate(d.crdate)); }}
                                         className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]",
                                             selDate?.crdate === d.crdate ? "bg-[#FB7506]/10 font-bold" : "hover:bg-gray-50")}>
                                         <td className="p-2 whitespace-nowrap">{fmtDate(d.crdate)}</td>
@@ -218,7 +240,7 @@ export default function QCHistoryTab({ onEditQC }: Props) {
                 </div>
 
                 {/* Right: history grid */}
-                <div className="flex flex-col flex-1 bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden">
+                <div className="flex flex-col flex-1 bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden min-h-0">
                     {/* Toolbar */}
                     <div className="h-9 border-b border-[#DBD9D9] flex items-center px-3 gap-4 shrink-0 bg-white justify-between text-xs">
                         <div className="flex items-center gap-1.5 text-gray-400">
@@ -231,11 +253,11 @@ export default function QCHistoryTab({ onEditQC }: Props) {
                         </div>
                     </div>
 
-                    {/* Grid */}
+                    {/* Grid — white headers */}
                     <div className="overflow-auto flex-1">
                         <table className="min-w-full text-xs text-left">
-                            <thead className="bg-[#4F4F4F] border-b border-[#DBD9D9] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
-                                <tr className="divide-x divide-[#DBD9D9]/30">{["QC Date","Invoice Date","QC Boxes","QC Units","Qc Amount","Reason","Notes","Lot","AWBcode","Description","Box Qty"].map(h => (
+                            <thead className="bg-white border-b border-[#DBD9D9] text-[#4F4F4F] text-[11px] font-bold uppercase sticky top-0 z-10">
+                                <tr className="divide-x divide-[#DBD9D9]">{["QC Date","Invoice Date","QC Boxes","QC Units","Qc Amount","Reason","Notes","Lot","AWBcode","Description","Box Qty"].map(h => (
                                     <th key={h} className="p-2 whitespace-nowrap">{h}</th>
                                 ))}</tr>
                             </thead>

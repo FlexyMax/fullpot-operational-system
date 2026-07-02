@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { RefreshCw, Download, Calendar, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -19,13 +19,19 @@ function fmtDate(v: any) {
     return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
-const DATE_PAGE = 15;
+function toInputDate(v: any): string {
+    if (!v) return "";
+    const d = new Date(v);
+    if (isNaN(d.getTime())) return t(v).split("T")[0];
+    return d.toISOString().split("T")[0];
+}
+
 const CANCEL_PAGE = 25;
 
 export default function CancelledPurchasesTab() {
     const [selDate,    setSelDate]    = useState<any>(null);
-    const [datePage,   setDatePage]   = useState(1);
     const [cancelPage, setCancelPage] = useState(1);
+    const [mobileDate, setMobileDate] = useState("");
 
     const { data: dateRows = EMPTY_ARR, isFetching: loadingDates } = useQuery({
         queryKey: ["qc-cancel-dates"],
@@ -33,6 +39,16 @@ export default function CancelledPurchasesTab() {
         staleTime: 0,
         select:   (d: any) => d.data ?? [],
     });
+
+    // Auto-select first date when list loads
+    useEffect(() => {
+        const list = dateRows as any[];
+        if (list.length > 0 && !selDate) {
+            setSelDate(list[0]);
+            setMobileDate(toInputDate(list[0].cancel_date ?? list[0].canceldate));
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [(dateRows as any[]).length]);
 
     const { data: cancelRows = EMPTY_ARR, isFetching: loadingCancel } = useQuery({
         queryKey: ["qc-cancel-list", selDate?.canceldate],
@@ -42,30 +58,36 @@ export default function CancelledPurchasesTab() {
         select:   (d: any) => d.data ?? [],
     });
 
-    const totalDatePages   = Math.max(1, Math.ceil((dateRows as any[]).length / DATE_PAGE));
-    const pagedDates       = (dateRows as any[]).slice((datePage - 1) * DATE_PAGE, datePage * DATE_PAGE);
     const totalCancelPages = Math.max(1, Math.ceil((cancelRows as any[]).length / CANCEL_PAGE));
     const pagedCancels     = (cancelRows as any[]).slice((cancelPage - 1) * CANCEL_PAGE, cancelPage * CANCEL_PAGE);
 
-    return (
-        <div className="flex h-full gap-2">
+    const handleMobileDateChange = (val: string) => {
+        setMobileDate(val);
+        const found = (dateRows as any[]).find(d =>
+            toInputDate(d.cancel_date ?? d.canceldate) === val
+        );
+        if (found) { setSelDate(found); setCancelPage(1); }
+        else if (val) { setSelDate({ canceldate: val, cancel_date: val }); setCancelPage(1); }
+    };
 
-            {/* ── Left: dates ───────────────────────────────── */}
-            <div className="w-56 flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0">
+    return (
+        <div className="flex flex-col md:flex-row h-full gap-2">
+
+            {/* ── Mobile: date picker (replaces left panel) ───── */}
+            <div className="md:hidden bg-[#F5F3F3] rounded-lg border border-[#DBD9D9] px-3 py-2 flex items-center gap-2 shrink-0">
+                <Calendar size={13} className="text-[#FB7506] shrink-0"/>
+                <span className="text-[11px] font-bold text-[#4F4F4F] uppercase shrink-0">Date</span>
+                <input type="date" value={mobileDate} onChange={e => handleMobileDateChange(e.target.value)}
+                    className="fos-input py-1 flex-1 text-[11px]"/>
+            </div>
+
+            {/* ── Desktop: left date list ───────────────────────── */}
+            <div className="hidden md:flex w-56 flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0">
                 <div className="h-9 bg-white border-b border-[#DBD9D9] flex items-center gap-2 px-3 shrink-0">
                     <Calendar size={12} className="text-[#FB7506]"/>
-                    <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">Purchases Cancellations Date</span>
+                    <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">Cancellations Date</span>
                 </div>
-
-                {/* Date pagination toolbar */}
-                <div className="h-8 border-b border-[#DBD9D9] flex items-center justify-between px-2 bg-white text-[10px] text-gray-500 shrink-0">
-                    <button onClick={() => setDatePage(p => Math.max(1, p - 1))} disabled={datePage <= 1} className="p-0.5 rounded hover:bg-gray-100 disabled:opacity-30">‹</button>
-                    <span>Page <b>{datePage}</b> of {totalDatePages}</span>
-                    <button onClick={() => setDatePage(p => Math.min(totalDatePages, p + 1))} disabled={datePage >= totalDatePages} className="p-0.5 rounded hover:bg-gray-100 disabled:opacity-30">›</button>
-                </div>
-
-                {/* Dates grid */}
-                <div className="flex-1 overflow-hidden">
+                <div className="flex-1 overflow-auto">
                     <table className="w-full text-xs text-left">
                         <thead className="bg-[#4F4F4F] border-b border-[#DBD9D9] text-white text-[11px] font-bold uppercase sticky top-0">
                             <tr className="divide-x divide-[#DBD9D9]/30">
@@ -76,9 +98,9 @@ export default function CancelledPurchasesTab() {
                         <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
                             {loadingDates && <tr><td colSpan={2} className="p-4 text-center text-gray-400">Loading...</td></tr>}
                             {!loadingDates && (dateRows as any[]).length === 0 && <tr><td colSpan={2} className="p-4 text-center text-gray-400">No data</td></tr>}
-                            {pagedDates.map((d: any, i: number) => (
+                            {(dateRows as any[]).map((d: any, i: number) => (
                                 <tr key={i}
-                                    onClick={() => { setSelDate(d); setCancelPage(1); }}
+                                    onClick={() => { setSelDate(d); setCancelPage(1); setMobileDate(toInputDate(d.cancel_date ?? d.canceldate)); }}
                                     className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]",
                                         selDate?.canceldate === d.canceldate
                                             ? "bg-[#FB7506]/10 font-bold"
@@ -92,10 +114,9 @@ export default function CancelledPurchasesTab() {
                 </div>
             </div>
 
-            {/* ── Right: cancellations ──────────────────────── */}
-            <div className="flex flex-col flex-1 bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden">
-                {/* Header bar */}
-                <div className="flex items-center justify-between shrink-0">
+            {/* ── Right: cancellations grid ─────────────────────── */}
+            <div className="flex flex-col flex-1 bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden min-h-0">
+                <div className="flex items-center shrink-0">
                     <div className="h-9 bg-white border-b border-[#DBD9D9] flex items-center gap-2 px-3 flex-1">
                         <XCircle size={14} className="text-[#FB7506] shrink-0"/>
                         <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">Purchase Cancelations by Date</span>
