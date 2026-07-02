@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
+import { serverAuditLog } from "@/lib/serverAudit";
+
+const PANTA = "52961702";
+const TABLA = "flower_packing";
 
 type P = { params: Promise<{ pack_uq: string }> };
 
@@ -26,6 +30,7 @@ export async function POST(req: NextRequest, { params }: P) {
         }
         const row = r.recordset?.[0];
         if (row?.error === 1 || row?.Error === 1) return NextResponse.json({ success: false, error: row.message || row.Message }, { status: 400 });
+        serverAuditLog(PANTA, "Edit", TABLA, pack_uq, action).catch(() => {});
         return NextResponse.json({ success: true, unico: row?.unico ?? row?.UNICO });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
