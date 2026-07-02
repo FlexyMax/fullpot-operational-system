@@ -16,6 +16,21 @@ Exception: if the user explicitly says "ejecuta" / "go ahead" / "run it" for a s
 
 ---
 
+## Design Standards — CHECK BEFORE EVERY CODE CHANGE
+
+Before writing or editing ANY component, modal, or page, verify compliance with the app design standards stored in memory (`feedback_panel_grid_design`). Key rules:
+
+1. **PanelGrid is mandatory for ALL grids** — in pages AND inside modals. No custom table headers ever.
+2. **Download = `onDownload` prop** on PanelGrid, never a `menuItems` entry.
+3. **AuditLogModal in `headerRight`** of every PanelGrid — never `onLog={() => {}}`.
+4. **Modals with grids**: dark header → `<PanelGrid className="flex-1 min-h-0 rounded-none border-x-0 border-b-0">` → footer.
+5. **Action buttons in headerRight**: use `h-7` height.
+6. **Row selection**: every grid must have `selRow` state + `onClick` + orange highlight `!bg-[#FB7506]/10`.
+
+If adding a new grid or modal, run through this checklist before committing.
+
+---
+
 ## graphify
 
 This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.

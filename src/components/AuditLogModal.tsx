@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { RotateCcw, XCircle, RefreshCcw } from "lucide-react";
+import { RotateCcw, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fetchRecordAudit } from "@/lib/audit";
+import PanelGrid from "@/components/ui/PanelGrid";
 import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
 
 interface Props {
@@ -23,9 +24,8 @@ export function AuditLogModal({ recordId, disabled, size = "sm", bareButton = fa
     const [loading, setLoading] = useState(false);
     const [error,   setError]   = useState<string | null>(null);
 
-    const handleOpen = async () => {
-        if (!recordId || disabled) return;
-        setOpen(true);
+    const loadLog = async () => {
+        if (!recordId) return;
         setLoading(true);
         setError(null);
         try {
@@ -36,6 +36,12 @@ export function AuditLogModal({ recordId, disabled, size = "sm", bareButton = fa
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleOpen = async () => {
+        if (!recordId || disabled) return;
+        setOpen(true);
+        await loadLog();
     };
 
     return (
@@ -61,27 +67,34 @@ export function AuditLogModal({ recordId, disabled, size = "sm", bareButton = fa
             {/* ── Modal (portal to document.body to escape stacking contexts) ── */}
             {open && createPortal(
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col">
-                        {/* Header */}
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col overflow-hidden">
+
+                        {/* Dark modal header */}
                         <div className="h-10 bg-[#333030] rounded-t-xl flex items-center justify-between px-4 shrink-0">
                             <div className="flex items-center gap-2">
                                 <RotateCcw size={14} className="text-[#FB7506]" />
                                 <span className="font-black text-[11px] uppercase tracking-widest text-white">
                                     Log Record — {recordId}
                                 </span>
-                                {loading && <RefreshCcw size={11} className="text-gray-400 animate-spin ml-2" />}
                             </div>
                             <button onClick={() => setOpen(false)}>
                                 <XCircle size={16} className="text-gray-400 hover:text-white transition-colors" />
                             </button>
                         </div>
 
-                        {/* Content */}
-                        <div className="overflow-auto flex-1">
-                            {error ? (
-                                <div className="p-6 text-center text-red-500 text-sm font-bold">{error}</div>
-                            ) : loading ? (
+                        {/* PanelGrid — app-standard grid inside modal */}
+                        <PanelGrid
+                            title="Audit Log"
+                            icon={RotateCcw}
+                            recordCount={!loading && rows.length > 0 ? rows.length : undefined}
+                            onRefresh={loadLog}
+                            refreshing={loading}
+                            className="flex-1 min-h-0 rounded-none border-x-0 border-b-0"
+                        >
+                            {loading ? (
                                 <div className="p-8 text-center text-gray-400 text-sm">Loading log records...</div>
+                            ) : error ? (
+                                <div className="p-6 text-center text-red-500 text-sm font-bold">{error}</div>
                             ) : rows.length === 0 ? (
                                 <div className="p-8 text-center text-gray-400 text-sm italic">
                                     No log records found for this entry.
@@ -101,11 +114,11 @@ export function AuditLogModal({ recordId, disabled, size = "sm", bareButton = fa
                                                 <PanelGridTd>
                                                     <span className={cn(
                                                         "px-1.5 py-0.5 rounded text-[9px] font-black uppercase",
-                                                        String(r.Event).trim() === "Insert"   ? "bg-green-100 text-green-700" :
-                                                        String(r.Event).trim() === "Delete"   ? "bg-red-100 text-red-600"   :
-                                                        String(r.Event).trim() === "Edit"     ? "bg-blue-100 text-blue-700"  :
-                                                        String(r.Event).trim() === "Entrada"  ? "bg-purple-100 text-purple-700" :
-                                                        String(r.Event).trim() === "Salida"   ? "bg-gray-100 text-gray-500" :
+                                                        String(r.Event).trim() === "Insert"  ? "bg-green-100 text-green-700"   :
+                                                        String(r.Event).trim() === "Delete"  ? "bg-red-100 text-red-600"       :
+                                                        String(r.Event).trim() === "Edit"    ? "bg-blue-100 text-blue-700"     :
+                                                        String(r.Event).trim() === "Entrada" ? "bg-purple-100 text-purple-700" :
+                                                        String(r.Event).trim() === "Salida"  ? "bg-gray-100 text-gray-500"     :
                                                         "bg-orange-100 text-orange-700"
                                                     )}>
                                                         {String(r.Event ?? "").trim()}
@@ -128,13 +141,10 @@ export function AuditLogModal({ recordId, disabled, size = "sm", bareButton = fa
                                     </PanelGridTbody>
                                 </PanelGridTable>
                             )}
-                        </div>
+                        </PanelGrid>
 
                         {/* Footer */}
-                        <div className="px-4 py-2 bg-gray-50 border-t rounded-b-xl flex items-center justify-between shrink-0">
-                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                                {rows.length} Records
-                            </span>
+                        <div className="px-4 py-2 bg-gray-50 border-t shrink-0 flex justify-end">
                             <button
                                 onClick={() => setOpen(false)}
                                 className="px-4 py-1.5 rounded-lg border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors"
