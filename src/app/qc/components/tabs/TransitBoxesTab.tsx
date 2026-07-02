@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { X, ChevronDown, Download, Truck } from "lucide-react";
+import { X, ChevronDown, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import PanelGrid from "@/components/ui/PanelGrid";
 import { AuditLogModal } from "@/components/AuditLogModal";
@@ -26,6 +26,7 @@ export default function TransitBoxesTab() {
     const [year,         setYear]         = useState(new Date().getFullYear());
     const [search,       setSearch]       = useState("");
     const [visibleCount, setVisibleCount] = useState(STEP);
+    const [selRow,       setSelRow]       = useState<any>(null);
 
     const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -71,13 +72,13 @@ export default function TransitBoxesTab() {
             recordCount={countLabel}
             onRefresh={() => refetch()}
             refreshing={loading}
+            onDownload={() => {}}
             searchValue={search}
             onSearchChange={setSearch}
             searchPlaceholder="Search..."
-            menuItems={[{ label: "Download CSV", icon: Download, color: "orange", onClick: () => {} }]}
             headerRight={
                 <div className="flex items-center gap-1">
-                <AuditLogModal recordId={null} disabled/>
+                <AuditLogModal recordId={selRow?.unico} disabled={!selRow}/>
                 <div className="relative flex items-center mr-2">
                     <select value={year} onChange={e => setYear(Number(e.target.value))}
                         className="fos-input py-1 text-[11px] w-24 pr-8 appearance-none">
@@ -108,8 +109,9 @@ export default function TransitBoxesTab() {
                     {!loading && allRows.length === 0 && <tr><td colSpan={17} className="p-8 text-center text-gray-400">No transit boxes for the selected year.</td></tr>}
                     {(rows as any[]).map((row: any, i: number) => (
                         <tr key={row.unico ?? i}
-                            style={{ backgroundColor: row.backColor || undefined }}
-                            className="hover:bg-gray-50 transition-colors divide-x divide-[#DBD9D9]">
+                            onClick={() => setSelRow(row)}
+                            style={{ backgroundColor: selRow?.unico === (row.unico ?? i) ? undefined : (row.backColor || undefined) }}
+                            className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", selRow?.unico === (row.unico ?? i) ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                             <td className="p-2 whitespace-nowrap">{t(row.AvailableDate)?.split("T")[0]}</td>
                             <td className="p-2 whitespace-nowrap">{t(row.box_date)?.split("T")[0]}</td>
                             <td className="p-2 whitespace-nowrap truncate max-w-[100px]">{t(row.Warehouse)}</td>

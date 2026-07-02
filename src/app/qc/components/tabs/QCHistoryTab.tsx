@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { RefreshCw, Pencil, Trash2, History, Calendar, Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { RefreshCw, Pencil, Trash2, History, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import PanelGrid from "@/components/ui/PanelGrid";
@@ -251,11 +251,10 @@ export default function QCHistoryTab({ onEditQC }: Props) {
                     recordCount={!loadingHistory && selDate && (historyRows as any[]).length > 0 ? (historyRows as any[]).length : undefined}
                     onRefresh={() => refetchHistory()}
                     refreshing={loadingHistory}
+                    onDownload={() => {}}
                     menuItems={[
                         { label: "Edit QC Credit",   icon: Pencil, color: "orange", onClick: handleEdit,   disabled: !canEdit   || !selRow },
                         { label: "Delete QC Credit", icon: Trash2, color: "red",    onClick: handleDelete, disabled: !canDelete || !selRow },
-                        { separator: true },
-                        { label: "Download CSV",     icon: Download, color: "orange", onClick: () => {} },
                     ]}
                     headerRight={<AuditLogModal recordId={selRow?.unico} disabled={!selRow}/>}
                     className="flex-1 min-w-0 shadow-sm"

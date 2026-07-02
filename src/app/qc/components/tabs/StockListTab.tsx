@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { RefreshCw, ChevronDown, X, Trash2, Pencil, ArrowRight, Package, Warehouse, FileText, ScanLine, Download } from "lucide-react";
+import { RefreshCw, ChevronDown, X, Trash2, Pencil, ArrowRight, Package, Warehouse, FileText, ScanLine } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import PanelGrid from "@/components/ui/PanelGrid";
@@ -204,7 +204,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                     recordCount={countLabel}
                     onRefresh={() => refetchPacking()}
                     refreshing={loadingPacking}
-                    menuItems={[{ label: "Download CSV", icon: Download, color: "orange", onClick: () => {} }]}
+                    onDownload={() => {}}
                     headerRight={<AuditLogModal recordId={selRow?.unico} disabled={!selRow}/>}
                     className="flex-1 min-w-0 shadow-sm"
                 >
@@ -323,7 +323,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                             recordCount={(stockRows as any[]).length > 0 ? (stockRows as any[]).length : undefined}
                             onRefresh={() => refetchStock()}
                             refreshing={loadingStock}
-                            menuItems={[{ label: "Download CSV", icon: Download, color: "orange", onClick: () => {} }]}
+                            onDownload={() => {}}
                             headerRight={
                                 <div className="flex items-center gap-1">
                                     {canCreate && selRow && (
@@ -388,7 +388,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                                 recordCount={(invoiceRows as any[]).length > 0 ? (invoiceRows as any[]).length : undefined}
                                 onRefresh={() => refetchInvoice()}
                                 refreshing={loadingInvoice}
-                                menuItems={[{ label: "Download CSV", icon: Download, color: "orange", onClick: () => {} }]}
+                                onDownload={() => {}}
                                 headerRight={<AuditLogModal recordId={selInvoice?.unico} disabled={!selInvoice}/>}
                                 className="flex-1 min-w-0"
                             >

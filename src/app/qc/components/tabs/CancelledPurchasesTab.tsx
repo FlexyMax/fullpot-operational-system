@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Calendar, XCircle, Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar, XCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import PanelGrid from "@/components/ui/PanelGrid";
 import { AuditLogModal } from "@/components/AuditLogModal";
@@ -109,6 +109,7 @@ const CANCEL_PAGE = 25;
 
 export default function CancelledPurchasesTab() {
     const [selDate,    setSelDate]    = useState<any>(null);
+    const [selCancel,  setSelCancel]  = useState<any>(null);
     const [cancelPage, setCancelPage] = useState(1);
 
     const qcPost = (url: string, body: any) =>
@@ -140,6 +141,7 @@ export default function CancelledPurchasesTab() {
         const found = (dateRows as any[]).find(d => toISO(d.cancel_date ?? d.canceldate) === iso);
         setSelDate(found ?? { canceldate: iso, cancel_date: iso });
         setCancelPage(1);
+        setSelCancel(null);
     };
 
     const totalCancelPages = Math.max(1, Math.ceil((cancelRows as any[]).length / CANCEL_PAGE));
@@ -203,12 +205,11 @@ export default function CancelledPurchasesTab() {
                 title="Purchase Cancellations by Date"
                 icon={XCircle}
                 recordCount={!loadingCancel && selDate && (cancelRows as any[]).length > 0 ? (cancelRows as any[]).length : undefined}
-                onRefresh={() => {}}
-                menuItems={[{ label: "Download CSV", icon: Download, color: "orange", onClick: () => {} }]}
+                onDownload={() => {}}
                 headerRight={
                     <div className="flex items-center gap-1">
                         {pagination}
-                        <AuditLogModal recordId={null} disabled/>
+                        <AuditLogModal recordId={selCancel?.unico} disabled={!selCancel}/>
                     </div>
                 }
                 className="flex-1 min-h-0 shadow-sm"
@@ -226,7 +227,9 @@ export default function CancelledPurchasesTab() {
                         {selDate && loadingCancel && <tr><td colSpan={12} className="p-6 text-center text-gray-400">Loading...</td></tr>}
                         {selDate && !loadingCancel && pagedCancels.length === 0 && <tr><td colSpan={12} className="p-6 text-center text-gray-400">No cancellations for this date.</td></tr>}
                         {pagedCancels.map((row: any, i: number) => (
-                            <tr key={row.unico ?? i} className="hover:bg-gray-50 transition-colors divide-x divide-[#DBD9D9]">
+                            <tr key={row.unico ?? i}
+                                onClick={() => setSelCancel(row)}
+                                className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", selCancel?.unico === row.unico ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                                 <td className="p-2 font-bold text-purple-600 whitespace-nowrap">{t(row.reason)}</td>
                                 <td className="p-2 whitespace-nowrap truncate max-w-[120px]">{t(row.customer)}</td>
                                 <td className="p-2 whitespace-nowrap">{t(row.pbook_no)}</td>

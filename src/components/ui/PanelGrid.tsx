@@ -7,6 +7,7 @@ import {
   Search,
   RefreshCcw,
   History,
+  Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +31,7 @@ export interface PanelGridProps {
   onSearchChange?: (value: string) => void;
   onRefresh?: () => void;
   refreshing?: boolean;
+  onDownload?: () => void;
   onLog?: () => void;
   menuItems?: PanelMenuItem[];
   headerRight?: React.ReactNode;
@@ -152,6 +154,7 @@ export default function PanelGrid({
   onSearchChange,
   onRefresh,
   refreshing = false,
+  onDownload,
   onLog,
   menuItems,
   headerRight,
@@ -230,6 +233,17 @@ export default function PanelGrid({
               title="Refresh"
             >
               <RefreshCcw size={16} className={cn(refreshing && "animate-spin")} />
+            </button>
+          )}
+
+          {/* Download icon */}
+          {onDownload && (
+            <button
+              onClick={onDownload}
+              className="text-gray-400 hover:text-[#FB7506] transition-all p-1"
+              title="Download CSV"
+            >
+              <Download size={16} />
             </button>
           )}
 

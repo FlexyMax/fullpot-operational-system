@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Download, Award, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Award, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import PanelGrid from "@/components/ui/PanelGrid";
@@ -126,7 +126,7 @@ export default function QualityCreditsTab({ onAddQC, onEditQC }: Props) {
                 searchPlaceholder="Search lots, AWB, farm..."
                 onRefresh={() => { setVisibleCount(STEP); setSearchKey(k => k + 1); }}
                 refreshing={loadingSearch}
-                menuItems={[{ label: "Download CSV", icon: Download, color: "orange", onClick: () => {} }]}
+                onDownload={() => {}}
                 headerRight={<AuditLogModal recordId={selRow?.unico} disabled={!selRow}/>}
                 className="flex-[3] min-h-0 shadow-sm"
             >
@@ -175,12 +175,11 @@ export default function QualityCreditsTab({ onAddQC, onEditQC }: Props) {
                 recordCount={(creditRows as any[]).length > 0 ? (creditRows as any[]).length : undefined}
                 onRefresh={() => refetchCredits()}
                 refreshing={loadingCredits}
+                onDownload={() => {}}
                 menuItems={[
                     { label: "Add QC Credit",    icon: Plus,   color: "green",  onClick: () => { if (!selRow) { toast.error("Select a lot first."); return; } onAddQC?.(selRow); },             disabled: !canCreate },
                     { label: "Edit QC Credit",   icon: Pencil, color: "orange", onClick: () => { if (!selCredit) { toast.error("Select a QC credit first."); return; } onEditQC?.(selRow, selCredit); }, disabled: !canEdit || !selCredit },
                     { label: "Delete QC Credit", icon: Trash2, color: "red",    onClick: () => { if (!selCredit) { toast.error("Select a QC credit first."); return; } toastConfirm("Delete this QC credit?", () => deleteCredit.mutate(selCredit.unico)); }, disabled: !canDelete || !selCredit },
-                    { separator: true },
-                    { label: "Download CSV",     icon: Download, color: "orange", onClick: () => {} },
                 ]}
                 headerRight={<AuditLogModal recordId={selCredit?.unico} disabled={!selCredit}/>}
                 className="flex-[2] min-h-0 shadow-sm"
