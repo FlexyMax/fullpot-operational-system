@@ -125,6 +125,7 @@ export default function QualityCreditsTab({ onAddQC, onEditQC }: Props) {
                 searchPlaceholder="Search lots, AWB, farm..."
                 onRefresh={() => { setVisibleCount(STEP); setSearchKey(k => k + 1); }}
                 refreshing={loadingSearch}
+                onLog={() => {}}
                 menuItems={[{ label: "Download CSV", icon: Download, color: "orange", onClick: () => {} }]}
                 className="flex-[3] min-h-0 shadow-sm"
             >
@@ -171,6 +172,7 @@ export default function QualityCreditsTab({ onAddQC, onEditQC }: Props) {
                 title="Quality Credits by Lot"
                 icon={Award}
                 recordCount={(creditRows as any[]).length > 0 ? (creditRows as any[]).length : undefined}
+                onLog={() => {}}
                 menuItems={[
                     { label: "Add QC Credit",    icon: Plus,   color: "green",  onClick: () => { if (!selRow) { toast.error("Select a lot first."); return; } onAddQC?.(selRow); },             disabled: !canCreate },
                     { label: "Edit QC Credit",   icon: Pencil, color: "orange", onClick: () => { if (!selCredit) { toast.error("Select a QC credit first."); return; } onEditQC?.(selRow, selCredit); }, disabled: !canEdit || !selCredit },

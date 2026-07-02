@@ -70,6 +70,7 @@ export default function TransitBoxesTab() {
             recordCount={countLabel}
             onRefresh={() => refetch()}
             refreshing={loading}
+            onLog={() => {}}
             searchValue={search}
             onSearchChange={setSearch}
             searchPlaceholder="Search..."

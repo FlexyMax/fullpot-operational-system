@@ -203,6 +203,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                     recordCount={countLabel}
                     onRefresh={() => refetchPacking()}
                     refreshing={loadingPacking}
+                    onLog={() => {}}
                     menuItems={[{ label: "Download CSV", icon: Download, color: "orange", onClick: () => {} }]}
                     className="flex-1 min-w-0 shadow-sm"
                 >
