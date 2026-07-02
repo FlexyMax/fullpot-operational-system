@@ -2,10 +2,10 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { RefreshCw, Download, ChevronDown, X, Trash2, Pencil, ArrowRight, Package, Warehouse, FileText, ScanLine, AlignJustify } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { RefreshCw, ChevronDown, X, Trash2, Pencil, ArrowRight, Package, Warehouse, FileText, ScanLine, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import PanelGrid from "@/components/ui/PanelGrid";
 import { useQCContext } from "../../context/QCContext";
 const EMPTY_ARR: any[] = [];
 
@@ -31,85 +31,6 @@ interface Props {
 function HelpIcon() {
     return (
         <span className="w-4 h-4 rounded-full border border-gray-400 text-gray-400 text-[9px] font-bold flex items-center justify-center shrink-0 cursor-default select-none">?</span>
-    );
-}
-
-// ── Unified grid header — title + count badge + icons ────────────────────────
-function GridHeader({
-    title, icon: Icon, count, total, onRefresh, onDownload, refreshing, actions, right,
-}: {
-    title: string;
-    icon?: LucideIcon;
-    count?: number;
-    total?: number;
-    onRefresh?: () => void;
-    onDownload?: () => void;
-    refreshing?: boolean;
-    actions?: React.ReactNode;
-    right?: React.ReactNode;
-}) {
-    return (
-        <div className="h-9 bg-white flex items-center justify-between px-3 shrink-0 border-b border-[#DBD9D9]">
-            <div className="flex items-center gap-2 min-w-0">
-                {Icon && <Icon size={14} className="text-[#FB7506] shrink-0"/>}
-                <span className="text-[#4F4F4F] text-[13px] font-bold uppercase tracking-tight truncate">{title}</span>
-                {count !== undefined && count > 0 && (
-                    <span className="bg-[#FB7506]/10 text-[#FB7506] text-[10px] font-bold rounded-full px-2 py-0.5 shrink-0 whitespace-nowrap">
-                        {total !== undefined && total !== count ? `${count.toLocaleString()} / ${total.toLocaleString()}` : count.toLocaleString()}
-                    </span>
-                )}
-            </div>
-            <div className="flex items-center gap-1 shrink-0">
-                {right}
-                {actions}
-                {onDownload && (
-                    <button onClick={onDownload} title="Download"
-                        className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors">
-                        <Download size={13}/>
-                    </button>
-                )}
-                <button title="Log" className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-[#FB7506] transition-colors">
-                    <AlignJustify size={13}/>
-                </button>
-                {onRefresh !== undefined ? (
-                    <button onClick={onRefresh} title="Refresh"
-                        className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-[#FB7506] transition-colors">
-                        <RefreshCw size={13} className={refreshing ? "animate-spin" : ""}/>
-                    </button>
-                ) : (
-                    <RefreshCw size={13} className="text-gray-300 p-1.5 box-content"/>
-                )}
-            </div>
-        </div>
-    );
-}
-
-function ScanPanel({ title, icon: Icon, rows, loading }: { title: string; icon?: LucideIcon; rows: any[]; loading: boolean }) {
-    return (
-        <div className="w-72 flex flex-col border-l border-[#DBD9D9] shrink-0 overflow-hidden">
-            <GridHeader title={title} icon={Icon} count={rows.length > 0 ? rows.length : undefined}/>
-            <div className="overflow-auto flex-1">
-                <table className="min-w-full text-xs">
-                    <thead className="bg-[#4F4F4F] text-white font-bold text-[11px] uppercase sticky top-0">
-                        <tr className="divide-x divide-[#DBD9D9]/30">
-                            {["ScanTime","Barcode","Rack","Grower"].map(h => <th key={h} className="p-1.5 whitespace-nowrap">{h}</th>)}
-                        </tr>
-                    </thead>
-                    <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
-                        {loading && <tr><td colSpan={4} className="p-4 text-center text-gray-400">Loading...</td></tr>}
-                        {!loading && rows.length === 0 && <tr><td colSpan={4} className="p-4 text-center text-gray-300 italic">No scan data</td></tr>}
-                        {rows.map((r, i) => (
-                            <tr key={i} className="hover:bg-gray-50 divide-x divide-[#DBD9D9]">
-                                <td className="p-1.5 whitespace-nowrap text-[10px] text-green-600 font-semibold">{t(r.ScanTime)?.replace("T", " ").substring(0, 16)}</td>
-                                <td className="p-1.5 font-bold text-blue-600 text-[10px]">{t(r.barcode)}</td>
-                                <td className="p-1.5 text-[10px]">{t(r.rack)}</td>
-                                <td className="p-1.5 text-[10px] truncate max-w-[80px]">{t(r.grower)}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        </div>
     );
 }
 
@@ -163,6 +84,9 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
 
     const packingRows  = packingData?.pages.flatMap((p: any) => p?.data ?? []) ?? [];
     const totalRecords = packingData?.pages[0]?.data?.[0]?.QueryTotalRecords ?? 0;
+    const countLabel: string | number | undefined = packingRows.length > 0
+        ? (totalRecords && totalRecords !== packingRows.length ? `${packingRows.length} / ${totalRecords}` : packingRows.length)
+        : undefined;
 
     useEffect(() => {
         const el = sentinelRef.current;
@@ -272,84 +196,106 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
             </div>
 
             {/* ── Main split: packing grid + Lots Scan IN ──────── */}
-            <div className="flex bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-[3] min-h-0">
-                <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-                    <GridHeader
-                        title="Packing List Boxes"
-                        icon={Package}
-                        count={packingRows.length}
-                        total={totalRecords}
-                        onDownload={() => {}}
-                        onRefresh={() => refetchPacking()}
-                        refreshing={loadingPacking}
-                    />
-                    <div className="overflow-auto flex-1">
-                        <table className="min-w-full text-xs text-left">
-                            <thead className="bg-[#4F4F4F] text-white font-bold text-[11px] uppercase sticky top-0 z-10">
-                                <tr className="divide-x divide-[#DBD9D9]/30">
-                                    <th className="p-1.5 w-12">+QC</th>
-                                    <th className="p-1.5 whitespace-nowrap">AvailableDate</th>
-                                    <th className="p-1.5 whitespace-nowrap">InvoiceDate</th>
-                                    <th className="p-1.5 whitespace-nowrap">PbookDate</th>
-                                    <th className="p-1.5 whitespace-nowrap">Warehouse</th>
-                                    <th className="p-1.5 whitespace-nowrap">ReadyTran</th>
-                                    <th className="p-1.5 min-w-[220px]">Description</th>
-                                    <th className="p-1.5 whitespace-nowrap">SOrder No</th>
-                                    <th className="p-1.5 whitespace-nowrap">AWBCode</th>
-                                    <th className="p-1.5 text-right">Lot</th>
-                                    <th className="p-1.5 text-right">BoxQty</th>
-                                </tr>
-                            </thead>
-                            <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
-                                {loadingPacking && packingRows.length === 0 && (
-                                    <tr><td colSpan={11} className="p-6 text-center text-gray-400">Loading...</td></tr>
-                                )}
-                                {!loadingPacking && packingRows.length === 0 && (
-                                    <tr><td colSpan={11} className="p-6 text-center text-gray-400">No results for the selected filters.</td></tr>
-                                )}
-                                {(packingRows as any[]).map((row: any) => {
-                                    const isSelected = selRow?.unico === row.unico;
-                                    const boxColor   = row.foreColor ?? (Number(row.box_qty) >= 50 ? "#f97316" : Number(row.box_qty) >= 20 ? "#22c55e" : undefined);
-                                    return (
-                                        <tr key={row.unico} onClick={() => handleSelectRow(row)}
-                                            style={{ backgroundColor: isSelected ? undefined : (row.backColor || undefined) }}
-                                            className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", isSelected ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
-                                            <td className="p-1 text-center" onClick={e => e.stopPropagation()}>
-                                                {canCreate && (
-                                                    <button onClick={() => onAddQC?.(row)}
-                                                        className="px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-[11px] font-black rounded transition-colors">
-                                                        QC
-                                                    </button>
-                                                )}
-                                            </td>
-                                            <td className="p-1.5 whitespace-nowrap">{t(row.AvailableDate)?.split("T")[0]}</td>
-                                            <td className="p-1.5 whitespace-nowrap">{t(row.InvoiceDate)?.split("T")[0]}</td>
-                                            <td className="p-1.5 whitespace-nowrap">{t(row.pb_date ?? row.PbookDate)?.split("T")[0]}</td>
-                                            <td className="p-1.5 whitespace-nowrap max-w-[90px] truncate">{t(row.warehouse ?? row.Warehouse)}</td>
-                                            <td className="p-1.5 text-center">{row.ready_tran ? "✓" : ""}</td>
-                                            <td className="p-1.5 font-semibold truncate max-w-[220px]" style={{ color: row.foreColor ?? "#f97316" }}>
-                                                {t(row.description)}
-                                            </td>
-                                            <td className="p-1.5 whitespace-nowrap">{t(row.sorder_no)}</td>
-                                            <td className="p-1.5 whitespace-nowrap font-mono">{t(row.awbcode)}</td>
-                                            <td className="p-1.5 text-right">{row.lote}</td>
-                                            <td className="p-1.5 text-right font-black" style={{ color: boxColor }}>{row.box_qty}</td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                        <div ref={sentinelRef} className="flex items-center justify-center py-2 text-[10px] text-gray-400">
-                            {isFetchingNextPage && "Loading more..."}
-                        </div>
+            <div className="flex gap-1.5 flex-[3] min-h-0">
+                <PanelGrid
+                    title="Packing List Boxes"
+                    icon={Package}
+                    recordCount={countLabel}
+                    onRefresh={() => refetchPacking()}
+                    refreshing={loadingPacking}
+                    menuItems={[{ label: "Download CSV", icon: Download, color: "orange", onClick: () => {} }]}
+                    className="flex-1 min-w-0 shadow-sm"
+                >
+                    <table className="min-w-full text-xs text-left">
+                        <thead className="bg-[#4F4F4F] text-white font-bold text-[11px] uppercase sticky top-0 z-10">
+                            <tr className="divide-x divide-[#DBD9D9]/30">
+                                <th className="p-1.5 w-12">+QC</th>
+                                <th className="p-1.5 whitespace-nowrap">AvailableDate</th>
+                                <th className="p-1.5 whitespace-nowrap">InvoiceDate</th>
+                                <th className="p-1.5 whitespace-nowrap">PbookDate</th>
+                                <th className="p-1.5 whitespace-nowrap">Warehouse</th>
+                                <th className="p-1.5 whitespace-nowrap">ReadyTran</th>
+                                <th className="p-1.5 min-w-[220px]">Description</th>
+                                <th className="p-1.5 whitespace-nowrap">SOrder No</th>
+                                <th className="p-1.5 whitespace-nowrap">AWBCode</th>
+                                <th className="p-1.5 text-right">Lot</th>
+                                <th className="p-1.5 text-right">BoxQty</th>
+                            </tr>
+                        </thead>
+                        <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
+                            {loadingPacking && packingRows.length === 0 && (
+                                <tr><td colSpan={11} className="p-6 text-center text-gray-400">Loading...</td></tr>
+                            )}
+                            {!loadingPacking && packingRows.length === 0 && (
+                                <tr><td colSpan={11} className="p-6 text-center text-gray-400">No results for the selected filters.</td></tr>
+                            )}
+                            {(packingRows as any[]).map((row: any) => {
+                                const isSelected = selRow?.unico === row.unico;
+                                const boxColor   = row.foreColor ?? (Number(row.box_qty) >= 50 ? "#f97316" : Number(row.box_qty) >= 20 ? "#22c55e" : undefined);
+                                return (
+                                    <tr key={row.unico} onClick={() => handleSelectRow(row)}
+                                        style={{ backgroundColor: isSelected ? undefined : (row.backColor || undefined) }}
+                                        className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", isSelected ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
+                                        <td className="p-1 text-center" onClick={e => e.stopPropagation()}>
+                                            {canCreate && (
+                                                <button onClick={() => onAddQC?.(row)}
+                                                    className="px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-[11px] font-black rounded transition-colors">
+                                                    QC
+                                                </button>
+                                            )}
+                                        </td>
+                                        <td className="p-1.5 whitespace-nowrap">{t(row.AvailableDate)?.split("T")[0]}</td>
+                                        <td className="p-1.5 whitespace-nowrap">{t(row.InvoiceDate)?.split("T")[0]}</td>
+                                        <td className="p-1.5 whitespace-nowrap">{t(row.pb_date ?? row.PbookDate)?.split("T")[0]}</td>
+                                        <td className="p-1.5 whitespace-nowrap max-w-[90px] truncate">{t(row.warehouse ?? row.Warehouse)}</td>
+                                        <td className="p-1.5 text-center">{row.ready_tran ? "✓" : ""}</td>
+                                        <td className="p-1.5 font-semibold truncate max-w-[220px]" style={{ color: row.foreColor ?? "#f97316" }}>
+                                            {t(row.description)}
+                                        </td>
+                                        <td className="p-1.5 whitespace-nowrap">{t(row.sorder_no)}</td>
+                                        <td className="p-1.5 whitespace-nowrap font-mono">{t(row.awbcode)}</td>
+                                        <td className="p-1.5 text-right">{row.lote}</td>
+                                        <td className="p-1.5 text-right font-black" style={{ color: boxColor }}>{row.box_qty}</td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                    <div ref={sentinelRef} className="flex items-center justify-center py-2 text-[10px] text-gray-400">
+                        {isFetchingNextPage && "Loading more..."}
                     </div>
-                </div>
+                </PanelGrid>
 
-                <ScanPanel title="Lots Scan IN" icon={ScanLine} rows={scanInRows as any[]} loading={loadingScanIn}/>
+                <PanelGrid
+                    title="Lots Scan IN"
+                    icon={ScanLine}
+                    recordCount={(scanInRows as any[]).length > 0 ? (scanInRows as any[]).length : undefined}
+                    className="w-72 shrink-0 shadow-sm"
+                >
+                    <table className="min-w-full text-xs">
+                        <thead className="bg-[#4F4F4F] text-white font-bold text-[11px] uppercase sticky top-0">
+                            <tr className="divide-x divide-[#DBD9D9]/30">
+                                {["ScanTime","Barcode","Rack","Grower"].map(h => <th key={h} className="p-1.5 whitespace-nowrap">{h}</th>)}
+                            </tr>
+                        </thead>
+                        <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
+                            {loadingScanIn && <tr><td colSpan={4} className="p-4 text-center text-gray-400">Loading...</td></tr>}
+                            {!loadingScanIn && (scanInRows as any[]).length === 0 && <tr><td colSpan={4} className="p-4 text-center text-gray-300 italic">No scan data</td></tr>}
+                            {(scanInRows as any[]).map((r, i) => (
+                                <tr key={i} className="hover:bg-gray-50 divide-x divide-[#DBD9D9]">
+                                    <td className="p-1.5 whitespace-nowrap text-[10px] text-green-600 font-semibold">{t(r.ScanTime)?.replace("T", " ").substring(0, 16)}</td>
+                                    <td className="p-1.5 font-bold text-blue-600 text-[10px]">{t(r.barcode)}</td>
+                                    <td className="p-1.5 text-[10px]">{t(r.rack)}</td>
+                                    <td className="p-1.5 text-[10px] truncate max-w-[80px]">{t(r.grower)}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </PanelGrid>
             </div>
 
             {/* ── Bottom: sub-tabs ─────────────────────────────── */}
-            <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-[2] min-h-0">
+            <div className="flex flex-col flex-[2] min-h-0 bg-white rounded-md border border-[#DBD9D9] shadow-sm overflow-hidden">
                 <div className="h-10 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-end px-2 shrink-0 gap-0.5">
                     {[
                         { id: "warehouse-stock" as SubTab, label: "Warehouse Stock" },
@@ -363,113 +309,135 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                     ))}
                 </div>
 
-                <div className="flex flex-1 min-h-0 overflow-hidden">
+                <div className="flex flex-1 min-h-0 gap-1.5 p-1.5 overflow-hidden">
 
                     {subTab === "warehouse-stock" && (
-                        <div className="flex flex-col flex-1 overflow-hidden">
-                            <GridHeader
-                                title="Packing List Boxes transferred to Stock"
-                                icon={Warehouse}
-                                count={(stockRows as any[]).length || undefined}
-                                onDownload={() => {}}
-                                right={
-                                    canCreate && selRow ? (
-                                        <button onClick={() => onSendToWarehouse?.(selRow)}
-                                            className="flex items-center gap-1.5 text-[11px] font-bold bg-[#FB7506] hover:bg-orange-500 text-white px-3 py-1 rounded transition-colors mr-1">
-                                            <ArrowRight size={11}/> Send to Warehouse
-                                        </button>
-                                    ) : undefined
-                                }
-                            />
-                            <div className="overflow-auto flex-1">
-                                <table className="min-w-full text-xs text-left">
-                                    <thead className="bg-[#4F4F4F] text-white font-bold text-[11px] uppercase sticky top-0">
-                                        <tr className="divide-x divide-[#DBD9D9]/30">{["Warehouse","Lot","Grower","inv_type","Days","QtyIn","QtyOut","QtyHold","WHStock","Stock","Flower CostxU","Landing CostxU","Total CostxU","PricexU","UnitsBox","BoxID","Actions"].map(h => (
-                                            <th key={h} className="p-1.5 whitespace-nowrap">{h}</th>
-                                        ))}</tr>
-                                    </thead>
-                                    <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
-                                        {!selRow && <tr><td colSpan={17} className="p-6 text-center text-gray-400">Select a packing row above.</td></tr>}
-                                        {selRow && loadingStock && <tr><td colSpan={17} className="p-6 text-center text-gray-400">Loading...</td></tr>}
-                                        {selRow && !loadingStock && (stockRows as any[]).length === 0 && <tr><td colSpan={17} className="p-6 text-center text-gray-300 italic">No warehouse stock for this box.</td></tr>}
-                                        {(stockRows as any[]).map((row: any) => (
-                                            <tr key={row.unico} onClick={() => setSelStock(row)}
-                                                style={{ backgroundColor: row.backColor || undefined, color: row.foreColor || undefined }}
-                                                className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", selStock?.unico === row.unico ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
-                                                <td className="p-1.5 whitespace-nowrap truncate max-w-[100px]">{t(row.warehouse)}</td>
-                                                <td className="p-1.5 text-right">{row.lote}</td>
-                                                <td className="p-1.5 whitespace-nowrap truncate max-w-[80px]">{t(row.grower)}</td>
-                                                <td className="p-1.5">{t(row.inv_type)}</td>
-                                                <td className="p-1.5 text-right">{row.days}</td>
-                                                <td className="p-1.5 text-right text-green-600">{row.qty_in}</td>
-                                                <td className="p-1.5 text-right text-red-500">{row.qty_out}</td>
-                                                <td className="p-1.5 text-right">{row.qty_hold}</td>
-                                                <td className="p-1.5 text-right">{row.wh_stock}</td>
-                                                <td className="p-1.5 text-right font-bold">{row.stock}</td>
-                                                <td className="p-1.5 text-right">{fmt(row.f_cost_x_u)}</td>
-                                                <td className="p-1.5 text-right">{fmt(row.c_cost_x_u)}</td>
-                                                <td className="p-1.5 text-right">{fmt(row.t_cost_x_u)}</td>
-                                                <td className="p-1.5 text-right">{fmt(row.price_x_u)}</td>
-                                                <td className="p-1.5 text-right">{row.tunits_x_box}</td>
-                                                <td className="p-1.5 whitespace-nowrap truncate max-w-[80px]">{t(row.box_id)}</td>
-                                                <td className="p-1.5">
-                                                    <div className="flex gap-1">
-                                                        {canEdit && <button onClick={e => { e.stopPropagation(); onEditTransfer?.(row); }} className="text-amber-500 hover:text-amber-700" title="Edit Transfer"><Pencil size={12}/></button>}
-                                                        {canDelete && <button onClick={e => { e.stopPropagation(); toastConfirm("Delete this transfer?", () => deleteTransfer.mutate(row)); }} className="text-red-500 hover:text-red-700" title="Delete Transfer"><Trash2 size={12}/></button>}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+                        <PanelGrid
+                            title="Packing List Boxes transferred to Stock"
+                            icon={Warehouse}
+                            recordCount={(stockRows as any[]).length > 0 ? (stockRows as any[]).length : undefined}
+                            menuItems={[{ label: "Download CSV", icon: Download, color: "orange", onClick: () => {} }]}
+                            headerRight={
+                                canCreate && selRow ? (
+                                    <button onClick={() => onSendToWarehouse?.(selRow)}
+                                        className="flex items-center gap-1.5 text-[11px] font-bold bg-[#FB7506] hover:bg-orange-500 text-white px-3 py-1 rounded transition-colors mr-1">
+                                        <ArrowRight size={11}/> Send to Warehouse
+                                    </button>
+                                ) : undefined
+                            }
+                            className="flex-1 min-w-0"
+                        >
+                            <table className="min-w-full text-xs text-left">
+                                <thead className="bg-[#4F4F4F] text-white font-bold text-[11px] uppercase sticky top-0">
+                                    <tr className="divide-x divide-[#DBD9D9]/30">{["Warehouse","Lot","Grower","inv_type","Days","QtyIn","QtyOut","QtyHold","WHStock","Stock","Flower CostxU","Landing CostxU","Total CostxU","PricexU","UnitsBox","BoxID","Actions"].map(h => (
+                                        <th key={h} className="p-1.5 whitespace-nowrap">{h}</th>
+                                    ))}</tr>
+                                </thead>
+                                <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
+                                    {!selRow && <tr><td colSpan={17} className="p-6 text-center text-gray-400">Select a packing row above.</td></tr>}
+                                    {selRow && loadingStock && <tr><td colSpan={17} className="p-6 text-center text-gray-400">Loading...</td></tr>}
+                                    {selRow && !loadingStock && (stockRows as any[]).length === 0 && <tr><td colSpan={17} className="p-6 text-center text-gray-300 italic">No warehouse stock for this box.</td></tr>}
+                                    {(stockRows as any[]).map((row: any) => (
+                                        <tr key={row.unico} onClick={() => setSelStock(row)}
+                                            style={{ backgroundColor: row.backColor || undefined, color: row.foreColor || undefined }}
+                                            className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", selStock?.unico === row.unico ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
+                                            <td className="p-1.5 whitespace-nowrap truncate max-w-[100px]">{t(row.warehouse)}</td>
+                                            <td className="p-1.5 text-right">{row.lote}</td>
+                                            <td className="p-1.5 whitespace-nowrap truncate max-w-[80px]">{t(row.grower)}</td>
+                                            <td className="p-1.5">{t(row.inv_type)}</td>
+                                            <td className="p-1.5 text-right">{row.days}</td>
+                                            <td className="p-1.5 text-right text-green-600">{row.qty_in}</td>
+                                            <td className="p-1.5 text-right text-red-500">{row.qty_out}</td>
+                                            <td className="p-1.5 text-right">{row.qty_hold}</td>
+                                            <td className="p-1.5 text-right">{row.wh_stock}</td>
+                                            <td className="p-1.5 text-right font-bold">{row.stock}</td>
+                                            <td className="p-1.5 text-right">{fmt(row.f_cost_x_u)}</td>
+                                            <td className="p-1.5 text-right">{fmt(row.c_cost_x_u)}</td>
+                                            <td className="p-1.5 text-right">{fmt(row.t_cost_x_u)}</td>
+                                            <td className="p-1.5 text-right">{fmt(row.price_x_u)}</td>
+                                            <td className="p-1.5 text-right">{row.tunits_x_box}</td>
+                                            <td className="p-1.5 whitespace-nowrap truncate max-w-[80px]">{t(row.box_id)}</td>
+                                            <td className="p-1.5">
+                                                <div className="flex gap-1">
+                                                    {canEdit && <button onClick={e => { e.stopPropagation(); onEditTransfer?.(row); }} className="text-amber-500 hover:text-amber-700" title="Edit Transfer"><Pencil size={12}/></button>}
+                                                    {canDelete && <button onClick={e => { e.stopPropagation(); toastConfirm("Delete this transfer?", () => deleteTransfer.mutate(row)); }} className="text-red-500 hover:text-red-700" title="Delete Transfer"><Trash2 size={12}/></button>}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </PanelGrid>
                     )}
 
                     {subTab === "invoiced-lots" && (
                         <>
-                            <div className="flex flex-col flex-1 overflow-hidden">
-                                <GridHeader
-                                    title="Invoiced Stock Lots"
-                                    icon={FileText}
-                                    count={(invoiceRows as any[]).length || undefined}
-                                    onDownload={() => {}}
-                                />
-                                <div className="overflow-auto flex-1">
-                                    <table className="min-w-full text-xs text-left">
-                                        <thead className="bg-[#4F4F4F] text-white font-bold text-[11px] uppercase sticky top-0">
-                                            <tr className="divide-x divide-[#DBD9D9]/30">{["InvoiceNo","Invoice Date","Customer","Description","Lot","BoxQty","void","Status","ScanQty","UxBox","Price","TUnits","ExtPrice","Case"].map(h => (
-                                                <th key={h} className="p-1.5 whitespace-nowrap">{h}</th>
-                                            ))}</tr>
-                                        </thead>
-                                        <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
-                                            {!selRow && <tr><td colSpan={14} className="p-6 text-center text-gray-400">Select a packing row above.</td></tr>}
-                                            {selRow && loadingInvoice && <tr><td colSpan={14} className="p-6 text-center text-gray-400">Loading...</td></tr>}
-                                            {selRow && !loadingInvoice && (invoiceRows as any[]).length === 0 && <tr><td colSpan={14} className="p-6 text-center text-gray-300 italic">No invoiced lots.</td></tr>}
-                                            {(invoiceRows as any[]).map((row: any) => (
-                                                <tr key={row.unico} onClick={() => setSelInvoice(row)}
-                                                    className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", selInvoice?.unico === row.unico ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
-                                                    <td className="p-1.5 font-bold text-purple-600 whitespace-nowrap">{t(row.invoice_no)}</td>
-                                                    <td className="p-1.5 whitespace-nowrap">{t(row.invoice_date)?.split("T")[0]}</td>
-                                                    <td className="p-1.5 whitespace-nowrap truncate max-w-[100px]">{t(row.customer)}</td>
-                                                    <td className="p-1.5 font-semibold text-green-600 truncate max-w-[140px]">{t(row.description)}</td>
-                                                    <td className="p-1.5 text-right">{row.lote}</td>
-                                                    <td className="p-1.5 text-right font-bold text-[#FB7506]">{row.box_qty}</td>
-                                                    <td className="p-1.5">{row.void ? "Yes" : "No"}</td>
-                                                    <td className="p-1.5">{t(row.status)}</td>
-                                                    <td className="p-1.5 text-right">{row.scan_qty}</td>
-                                                    <td className="p-1.5 text-right">{row.units_x_box}</td>
-                                                    <td className="p-1.5 text-right text-[#FB7506]">${fmt(row.price)}</td>
-                                                    <td className="p-1.5 text-right">{row.total_units}</td>
-                                                    <td className="p-1.5 text-right font-bold text-[#FB7506]">${fmt(row.ext_price)}</td>
-                                                    <td className="p-1.5">{t(row.case_sh)}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                            <ScanPanel title="Invoice Lots Scan OUT" icon={ScanLine} rows={scanOutRows as any[]} loading={loadingScanOut}/>
+                            <PanelGrid
+                                title="Invoiced Stock Lots"
+                                icon={FileText}
+                                recordCount={(invoiceRows as any[]).length > 0 ? (invoiceRows as any[]).length : undefined}
+                                menuItems={[{ label: "Download CSV", icon: Download, color: "orange", onClick: () => {} }]}
+                                className="flex-1 min-w-0"
+                            >
+                                <table className="min-w-full text-xs text-left">
+                                    <thead className="bg-[#4F4F4F] text-white font-bold text-[11px] uppercase sticky top-0">
+                                        <tr className="divide-x divide-[#DBD9D9]/30">{["InvoiceNo","Invoice Date","Customer","Description","Lot","BoxQty","void","Status","ScanQty","UxBox","Price","TUnits","ExtPrice","Case"].map(h => (
+                                            <th key={h} className="p-1.5 whitespace-nowrap">{h}</th>
+                                        ))}</tr>
+                                    </thead>
+                                    <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
+                                        {!selRow && <tr><td colSpan={14} className="p-6 text-center text-gray-400">Select a packing row above.</td></tr>}
+                                        {selRow && loadingInvoice && <tr><td colSpan={14} className="p-6 text-center text-gray-400">Loading...</td></tr>}
+                                        {selRow && !loadingInvoice && (invoiceRows as any[]).length === 0 && <tr><td colSpan={14} className="p-6 text-center text-gray-300 italic">No invoiced lots.</td></tr>}
+                                        {(invoiceRows as any[]).map((row: any) => (
+                                            <tr key={row.unico} onClick={() => setSelInvoice(row)}
+                                                className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", selInvoice?.unico === row.unico ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
+                                                <td className="p-1.5 font-bold text-purple-600 whitespace-nowrap">{t(row.invoice_no)}</td>
+                                                <td className="p-1.5 whitespace-nowrap">{t(row.invoice_date)?.split("T")[0]}</td>
+                                                <td className="p-1.5 whitespace-nowrap truncate max-w-[100px]">{t(row.customer)}</td>
+                                                <td className="p-1.5 font-semibold text-green-600 truncate max-w-[140px]">{t(row.description)}</td>
+                                                <td className="p-1.5 text-right">{row.lote}</td>
+                                                <td className="p-1.5 text-right font-bold text-[#FB7506]">{row.box_qty}</td>
+                                                <td className="p-1.5">{row.void ? "Yes" : "No"}</td>
+                                                <td className="p-1.5">{t(row.status)}</td>
+                                                <td className="p-1.5 text-right">{row.scan_qty}</td>
+                                                <td className="p-1.5 text-right">{row.units_x_box}</td>
+                                                <td className="p-1.5 text-right text-[#FB7506]">${fmt(row.price)}</td>
+                                                <td className="p-1.5 text-right">{row.total_units}</td>
+                                                <td className="p-1.5 text-right font-bold text-[#FB7506]">${fmt(row.ext_price)}</td>
+                                                <td className="p-1.5">{t(row.case_sh)}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </PanelGrid>
+
+                            <PanelGrid
+                                title="Invoice Lots Scan OUT"
+                                icon={ScanLine}
+                                recordCount={(scanOutRows as any[]).length > 0 ? (scanOutRows as any[]).length : undefined}
+                                className="w-72 shrink-0"
+                            >
+                                <table className="min-w-full text-xs">
+                                    <thead className="bg-[#4F4F4F] text-white font-bold text-[11px] uppercase sticky top-0">
+                                        <tr className="divide-x divide-[#DBD9D9]/30">
+                                            {["ScanTime","Barcode","Rack","Grower"].map(h => <th key={h} className="p-1.5 whitespace-nowrap">{h}</th>)}
+                                        </tr>
+                                    </thead>
+                                    <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
+                                        {loadingScanOut && <tr><td colSpan={4} className="p-4 text-center text-gray-400">Loading...</td></tr>}
+                                        {!loadingScanOut && (scanOutRows as any[]).length === 0 && <tr><td colSpan={4} className="p-4 text-center text-gray-300 italic">No scan data</td></tr>}
+                                        {(scanOutRows as any[]).map((r, i) => (
+                                            <tr key={i} className="hover:bg-gray-50 divide-x divide-[#DBD9D9]">
+                                                <td className="p-1.5 whitespace-nowrap text-[10px] text-green-600 font-semibold">{t(r.ScanTime)?.replace("T", " ").substring(0, 16)}</td>
+                                                <td className="p-1.5 font-bold text-blue-600 text-[10px]">{t(r.barcode)}</td>
+                                                <td className="p-1.5 text-[10px]">{t(r.rack)}</td>
+                                                <td className="p-1.5 text-[10px] truncate max-w-[80px]">{t(r.grower)}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </PanelGrid>
                         </>
                     )}
                 </div>
