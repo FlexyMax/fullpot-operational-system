@@ -3,7 +3,7 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { executeProcedure } from "@/lib/db";
 import { getCompanyInfo } from "@/lib/reports/companyInfo";
 import { ReportPDF, type ReportColumn } from "@/components/reports/ReportPDF";
-import { t, fmt, fmtDate, fmtDateTime, skipKey, buildSubtitle, DATE_KEYS, AMOUNT_KEYS } from "@/lib/reports/reportUtils";
+import { t, fmt, fmtDate, fmtDateTime, skipKey, extractVendorInfo, buildSubtitle, DATE_KEYS, AMOUNT_KEYS } from "@/lib/reports/reportUtils";
 
 // SP: sp_flower_growers_payments_by_dates_report
 // Params: lcgrower_uq, ldpayments_from, ldpayments_to
@@ -43,12 +43,19 @@ export async function GET(req: NextRequest) {
         return new Response(header ? `${header}\r\n${body}` : "", { headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="payments_${grower_uq||"all"}.csv"` } });
     }
 
-    // Use the known fixed columns when the SP returns them; fall back to dynamic
+    const isSingle = !!grower_uq;
+
+    // Use the known fixed columns when the SP returns them; fall back to dynamic.
+    // When single vendor, drop GROWER (it goes to the vendorInfo header instead).
     const hasKnown = rows.length > 0 && Object.keys(rows[0]).some(k => KNOWN_KEYS.has(k));
-    const columns  = hasKnown ? COLUMNS : Object.keys(rows[0] ?? {}).map(key => ({
-        key, label: key.replace(/_/g, " "), width: 1,
-        align: (AMOUNT_KEYS.has(key) ? "right" : "left") as "left" | "right",
-    }));
+    const columns  = hasKnown
+        ? (isSingle ? COLUMNS.filter(c => c.key !== "GROWER") : COLUMNS)
+        : Object.keys(rows[0] ?? {}).map(key => ({
+            key, label: key.replace(/_/g, " "), width: 1,
+            align: (AMOUNT_KEYS.has(key) ? "right" : "left") as "left" | "right",
+        }));
+
+    const vendorInfo = isSingle ? extractVendorInfo(rows[0], grower_name) : undefined;
 
     const subtitle = buildSubtitle(
         grower_name ? `Vendor: ${grower_name}` : grower_uq ? `Vendor: ${grower_uq}` : "All Vendors",
@@ -57,7 +64,7 @@ export async function GET(req: NextRequest) {
     );
 
     const buffer = await renderToBuffer(
-        <ReportPDF company={company} title="Payments by Date" subtitle={subtitle} columns={columns} rows={rows} landscape />
+        <ReportPDF company={company} title="Payments by Date" subtitle={subtitle} vendorInfo={vendorInfo} columns={columns} rows={rows} landscape />
     );
     return new Response(new Uint8Array(buffer), {
         headers: { "Content-Type": "application/pdf", "Content-Disposition": `inline; filename="payments_${grower_uq||"all"}.pdf"` },

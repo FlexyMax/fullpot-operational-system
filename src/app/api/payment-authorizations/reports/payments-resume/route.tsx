@@ -3,7 +3,7 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { executeProcedure } from "@/lib/db";
 import { getCompanyInfo } from "@/lib/reports/companyInfo";
 import { ReportPDF } from "@/components/reports/ReportPDF";
-import { t, fmt, fmtDate, fmtDateTime, skipKey, buildColumns, buildSubtitle, DATE_KEYS, AMOUNT_KEYS } from "@/lib/reports/reportUtils";
+import { t, fmt, fmtDate, fmtDateTime, skipKey, buildColumns, extractVendorInfo, buildSubtitle, DATE_KEYS, AMOUNT_KEYS } from "@/lib/reports/reportUtils";
 
 // SP: sp_flower_growers_payments_by_dates_resume_report
 // Params: lcgrower_uq, ldpayments_from, ldpayments_to
@@ -22,7 +22,8 @@ export async function GET(req: NextRequest) {
         getCompanyInfo(),
     ]);
 
-    const rows = r.recordset ?? [];
+    const rows     = r.recordset ?? [];
+    const isSingle = !!grower_uq;
 
     if (sp.get("format") === "csv") {
         const keys   = rows.length ? Object.keys(rows[0]).filter(k => !skipKey(k)) : [];
@@ -31,8 +32,10 @@ export async function GET(req: NextRequest) {
         return new Response(header ? `${header}\r\n${body}` : "", { headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="payments_resume_${grower_uq||"all"}.csv"` } });
     }
 
-    const columns = buildColumns(rows, false);
+    const columns = buildColumns(rows, isSingle);
     if (!columns.length) columns.push({ key: "_empty", label: "No data", width: 1 });
+
+    const vendorInfo = isSingle ? extractVendorInfo(rows[0], grower_name) : undefined;
 
     const subtitle = buildSubtitle(
         grower_name ? `Vendor: ${grower_name}` : grower_uq ? `Vendor: ${grower_uq}` : "All Vendors",
@@ -41,7 +44,7 @@ export async function GET(req: NextRequest) {
     );
 
     const buffer = await renderToBuffer(
-        <ReportPDF company={company} title="Payments Resume" subtitle={subtitle} columns={columns} rows={rows} landscape />
+        <ReportPDF company={company} title="Payments Resume" subtitle={subtitle} vendorInfo={vendorInfo} columns={columns} rows={rows} landscape />
     );
     return new Response(new Uint8Array(buffer), {
         headers: { "Content-Type": "application/pdf", "Content-Disposition": `inline; filename="payments_resume_${grower_uq||"all"}.pdf"` },
