@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { RotateCcw, XCircle, RefreshCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fetchRecordAudit } from "@/lib/audit";
@@ -57,9 +58,9 @@ export function AuditLogModal({ recordId, disabled, size = "sm", bareButton = fa
                 <RotateCcw size={iconSize} />
             </button>
 
-            {/* ── Modal ──────────────────────────────────────────────── */}
-            {open && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+            {/* ── Modal (portal to document.body to escape stacking contexts) ── */}
+            {open && createPortal(
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
                     <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col">
                         {/* Header */}
                         <div className="h-10 bg-[#333030] rounded-t-xl flex items-center justify-between px-4 shrink-0">
@@ -142,7 +143,8 @@ export function AuditLogModal({ recordId, disabled, size = "sm", bareButton = fa
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </>
     );

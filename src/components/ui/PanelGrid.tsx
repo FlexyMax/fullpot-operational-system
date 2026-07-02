@@ -164,7 +164,7 @@ export default function PanelGrid({
 
   // Filter out real (non-separator) items
   const realItems = menuItems?.filter(isRealItem) ?? [];
-  const hasMenu = realItems.length > 1;
+  const hasMenu = realItems.length >= 1;
   const singleItem = realItems.length === 1 ? realItems[0] : null;
 
   const btnBgMap: Record<string, string> = {

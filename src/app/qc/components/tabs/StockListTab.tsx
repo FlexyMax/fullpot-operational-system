@@ -328,7 +328,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                                 <div className="flex items-center gap-1">
                                     {canCreate && selRow && (
                                         <button onClick={() => onSendToWarehouse?.(selRow)}
-                                            className="flex items-center gap-1.5 text-[11px] font-bold bg-[#FB7506] hover:bg-orange-500 text-white px-3 py-1 rounded transition-colors">
+                                            className="flex items-center gap-1.5 text-[11px] font-bold bg-[#FB7506] hover:bg-orange-500 text-white px-3 h-7 rounded transition-colors">
                                             <ArrowRight size={11}/> Send to Warehouse
                                         </button>
                                     )}
