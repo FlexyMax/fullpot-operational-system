@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeQuery } from "@/lib/db";
+import { serverAuditLog } from "@/lib/serverAudit";
+const PANTA = "52961702";
 
 const ALLOWED = new Set(["acceso", "crear", "editar", "borrar", "consultar", "reportes"]);
 
@@ -13,6 +15,7 @@ export async function PUT(req: NextRequest) {
             `UPDATE usuarios_accesos SET ${field} = ${value ? 1 : 0} WHERE user_uq = '${txt(userUnico)}'`,
             true
         );
+        serverAuditLog(PANTA, "Edit", "usuarios_accesos", userUnico, field).catch(() => {});
         return NextResponse.json({ success: true });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });

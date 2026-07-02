@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { serverAuditLog } from "@/lib/serverAudit";
+const PANTA = "52961702";
 
 // ── SPs confirmed NOT in DB (verified via EXEC test 2026-05-20) ───────────────
 // sp_flower_awbs_delete                      → AWBs module: Delete AWB
@@ -12,6 +14,21 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 // All other SPs that previously showed as "not found" DO exist — the DB user
 // lacks VIEW DEFINITION permission, so sys.parameters returned no rows for them.
 // They are executed below with no parameters (confirmed via EXEC with no args).
+
+const MUTATION_ACTIONS = new Set([
+    "update-ready", "update-ready-invoice", "update-ready-date",
+    "send", "send-by-date",
+]);
+
+const QB_TABLE: Record<string, string> = {
+    purchases:        "flower_packing_box",
+    ocharges:         "flower_awb_charges",
+    "purchases-credits": "flower_accounts_pay_cr",
+    sales:            "flower_invoice",
+    "sales-costs":    "flower_invoice_costs",
+    "sales-credits":  "flower_invoice_box_crdb",
+    payments:         "flower_accounts_income",
+};
 
 export async function POST(req: NextRequest, context: { params: Promise<{ tab: string; action: string }> }) {
     try {
@@ -257,6 +274,11 @@ export async function POST(req: NextRequest, context: { params: Promise<{ tab: s
             body.lcCharge_uq || body.lcpacking_uq || body.lcawbcode_aux ||
             body.lcpacking_box || body.lcawbcode || ""
         );
+
+        if (MUTATION_ACTIONS.has(action)) {
+            const tabla = QB_TABLE[tab] || tab;
+            serverAuditLog(PANTA, "Edit", tabla, spUnico, action).catch(() => {});
+        }
 
         return NextResponse.json({ success: true, data: normalizedData, message: result.recordset?.[0]?.message, unico: spUnico });
     } catch (error: any) {

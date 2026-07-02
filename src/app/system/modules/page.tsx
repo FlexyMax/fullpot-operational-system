@@ -622,48 +622,51 @@ function ScreenFormModal({ mode, form, setForm, saving, modName, reports, loadin
 
                     {mode === "edit" && (
                         <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col min-h-0">
-                            <div className="flex items-center justify-between mb-2">
-                                <h3 className="text-sm font-black text-gray-700 uppercase tracking-wider flex items-center gap-2">
-                                    <FileText size={16} className="text-[#FB7506]" /> Reports
-                                </h3>
-                                <div className="flex gap-2">
-                                    <button onClick={onAddReport} className="text-[10px] uppercase font-black tracking-wider bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded transition-colors flex items-center gap-1">
+                            <PanelGrid
+                                title="Reports"
+                                icon={FileText}
+                                recordCount={reports.length > 0 ? reports.length : undefined}
+                                refreshing={loadingRpt}
+                                className="border border-gray-200 rounded max-h-[220px]"
+                                headerRight={
+                                    <button onClick={onAddReport} className="flex items-center gap-1 px-2 h-7 text-[10px] uppercase font-black tracking-wider bg-green-500 hover:bg-green-600 text-white rounded transition-colors">
                                         <Plus size={12} /> Add
                                     </button>
-                                </div>
-                            </div>
-                            <div className="border border-gray-200 rounded overflow-auto max-h-[200px]">
+                                }
+                            >
                                 {loadingRpt ? (
                                     <div className="p-4 text-center text-xs text-gray-400 animate-pulse">Loading...</div>
                                 ) : reports.length === 0 ? (
                                     <div className="p-4 text-center text-xs text-gray-400">No reports configured.</div>
                                 ) : (
-                                    <table className="min-w-full text-xs text-left">
-                                        <thead className="bg-gray-50 border-b">
-                                            <tr className="text-gray-500 uppercase tracking-wider">
-                                                <th className="p-2 font-black">Title</th>
-                                                <th className="p-2 font-black border-l">Path</th>
-                                                <th className="p-2 font-black border-l text-center">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
+                                    <PanelGridTable>
+                                        <PanelGridThead>
+                                            <PanelGridTh>Title</PanelGridTh>
+                                            <PanelGridTh>Path</PanelGridTh>
+                                            <PanelGridTh className="text-center">Actions</PanelGridTh>
+                                        </PanelGridThead>
+                                        <PanelGridTbody>
                                             {reports.map((r: any) => (
-                                                <tr key={r.unico} onClick={() => setSelRpt(r.unico)} onDoubleClick={() => onEditReport(r)}
-                                                    className={cn("border-b cursor-pointer transition-colors", selRpt === r.unico ? "bg-blue-50" : "hover:bg-gray-50")}>
-                                                    <td className="p-2 font-semibold text-gray-700 truncate max-w-[150px]">{t(r.titulo)}</td>
-                                                    <td className="p-2 text-gray-500 border-l truncate max-w-[200px]">{t(r.path)}</td>
-                                                    <td className="p-1 border-l text-center">
+                                                <PanelGridTr
+                                                    key={r.unico}
+                                                    onClick={() => setSelRpt(r.unico)}
+                                                    onDoubleClick={() => onEditReport(r)}
+                                                    className={cn("cursor-pointer", selRpt === r.unico && "!bg-[#FB7506]/10")}
+                                                >
+                                                    <PanelGridTd className="font-semibold text-gray-700 truncate max-w-[150px]">{t(r.titulo)}</PanelGridTd>
+                                                    <PanelGridTd className="text-gray-500 truncate max-w-[200px]">{t(r.path)}</PanelGridTd>
+                                                    <PanelGridTd className="text-center">
                                                         <div className="flex items-center justify-center gap-1">
                                                             <button onClick={(e) => { e.stopPropagation(); onEditReport(r); }} className="p-1 text-blue-500 hover:bg-blue-100 rounded" title="Edit"><Pencil size={12} /></button>
                                                             <button onClick={(e) => { e.stopPropagation(); onDeleteReport(r); }} className="p-1 text-red-500 hover:bg-red-100 rounded" title="Delete"><Trash2 size={12} /></button>
                                                         </div>
-                                                    </td>
-                                                </tr>
+                                                    </PanelGridTd>
+                                                </PanelGridTr>
                                             ))}
-                                        </tbody>
-                                    </table>
+                                        </PanelGridTbody>
+                                    </PanelGridTable>
                                 )}
-                            </div>
+                            </PanelGrid>
                         </div>
                     )}
                 </div>

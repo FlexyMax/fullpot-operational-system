@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
+import { serverAuditLog } from "@/lib/serverAudit";
+const PANTA = "52961702";
 
 export async function POST(req: NextRequest) {
     const { userfrom_uq, userto_uq } = await req.json();
@@ -10,6 +12,7 @@ export async function POST(req: NextRequest) {
             lcuser_from_uq: userfrom_uq,
             lcuser_to_uq:   userto_uq,
         }, true);
+        serverAuditLog(PANTA, "Insert", "usuarios_accesos", userto_uq, `Copy from ${userfrom_uq}`).catch(() => {});
         return NextResponse.json({
             success: true,
             message: result.recordset[0]?.Message ?? result.recordset[0]?.message ?? "Done",

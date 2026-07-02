@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { serverAuditLog } from "@/lib/serverAudit";
+const PANTA = "52961702";
 
 export async function GET(req: NextRequest) {
     const unico = req.nextUrl.searchParams.get("unico");
@@ -36,6 +38,7 @@ export async function PUT(req: NextRequest) {
             lcTarget_uq:   String(targetUq ?? "").padEnd(8).substring(0, 8),
         }, true);
         const row = (result.recordset as any[])[0];
+        serverAuditLog(PANTA, "Edit", "usuarios_accesos", targetUq || rows[0]?.unico || "", "Batch Permissions").catch(() => {});
         return NextResponse.json({ success: true, updated: row?.updated ?? rows.length });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
