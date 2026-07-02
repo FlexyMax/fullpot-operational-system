@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { X, ChevronDown, Download, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import PanelGrid from "@/components/ui/PanelGrid";
+import { AuditLogModal } from "@/components/AuditLogModal";
 const EMPTY_ARR: any[] = [];
 
 const t = (v: any) => String(v ?? "").trim();
@@ -70,12 +71,13 @@ export default function TransitBoxesTab() {
             recordCount={countLabel}
             onRefresh={() => refetch()}
             refreshing={loading}
-            onLog={() => {}}
             searchValue={search}
             onSearchChange={setSearch}
             searchPlaceholder="Search..."
             menuItems={[{ label: "Download CSV", icon: Download, color: "orange", onClick: () => {} }]}
             headerRight={
+                <div className="flex items-center gap-1">
+                <AuditLogModal recordId={null} disabled/>
                 <div className="relative flex items-center mr-2">
                     <select value={year} onChange={e => setYear(Number(e.target.value))}
                         className="fos-input py-1 text-[11px] w-24 pr-8 appearance-none">
@@ -88,6 +90,7 @@ export default function TransitBoxesTab() {
                         <X size={9} className="text-gray-400"/>
                         <ChevronDown size={9} className="text-gray-400"/>
                     </div>
+                </div>
                 </div>
             }
             className="h-full shadow-sm"

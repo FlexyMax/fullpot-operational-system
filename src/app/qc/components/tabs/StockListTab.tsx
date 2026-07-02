@@ -6,6 +6,7 @@ import { RefreshCw, ChevronDown, X, Trash2, Pencil, ArrowRight, Package, Warehou
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import PanelGrid from "@/components/ui/PanelGrid";
+import { AuditLogModal } from "@/components/AuditLogModal";
 import { useQCContext } from "../../context/QCContext";
 const EMPTY_ARR: any[] = [];
 
@@ -99,7 +100,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
         return () => obs.disconnect();
     }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-    const { data: scanInRows = EMPTY_ARR, isFetching: loadingScanIn } = useQuery({
+    const { data: scanInRows = EMPTY_ARR, isFetching: loadingScanIn, refetch: refetchScanIn } = useQuery({
         queryKey: ["qc-scan-in", selRow?.unico, refreshTrigger],
         queryFn: () => qcPost("/api/qc/stock/racks-by-lot", { pkboxUq: selRow.unico }),
         enabled: !!selRow?.unico,
@@ -107,7 +108,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
         select: (d: any) => d.data ?? [],
     });
 
-    const { data: stockRows = EMPTY_ARR, isFetching: loadingStock } = useQuery({
+    const { data: stockRows = EMPTY_ARR, isFetching: loadingStock, refetch: refetchStock } = useQuery({
         queryKey: ["qc-stock-by-box", selRow?.unico, refreshTrigger],
         queryFn: () => qcPost("/api/qc/stock/stock-by-box", { pkboxUq: selRow.unico }),
         enabled: !!selRow?.unico && subTab === "warehouse-stock",
@@ -115,7 +116,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
         select: (d: any) => d.data ?? [],
     });
 
-    const { data: invoiceRows = EMPTY_ARR, isFetching: loadingInvoice } = useQuery({
+    const { data: invoiceRows = EMPTY_ARR, isFetching: loadingInvoice, refetch: refetchInvoice } = useQuery({
         queryKey: ["qc-invoiced-by-box", selRow?.unico],
         queryFn: () => qcPost("/api/qc/stock/invoiced-by-box", { pkboxUq: selRow.unico }),
         enabled: !!selRow?.unico && subTab === "invoiced-lots",
@@ -123,7 +124,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
         select: (d: any) => d.data ?? [],
     });
 
-    const { data: scanOutRows = EMPTY_ARR, isFetching: loadingScanOut } = useQuery({
+    const { data: scanOutRows = EMPTY_ARR, isFetching: loadingScanOut, refetch: refetchScanOut } = useQuery({
         queryKey: ["qc-scan-out", selInvoice?.unico],
         queryFn: () => qcPost("/api/qc/stock/racks-by-invoice", { invoiceBoxUq: selInvoice.unico }),
         enabled: !!selInvoice?.unico && subTab === "invoiced-lots",
@@ -203,8 +204,8 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                     recordCount={countLabel}
                     onRefresh={() => refetchPacking()}
                     refreshing={loadingPacking}
-                    onLog={() => {}}
                     menuItems={[{ label: "Download CSV", icon: Download, color: "orange", onClick: () => {} }]}
+                    headerRight={<AuditLogModal recordId={selRow?.unico} disabled={!selRow}/>}
                     className="flex-1 min-w-0 shadow-sm"
                 >
                     <table className="min-w-full text-xs text-left">
@@ -271,6 +272,9 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                     title="Lots Scan IN"
                     icon={ScanLine}
                     recordCount={(scanInRows as any[]).length > 0 ? (scanInRows as any[]).length : undefined}
+                    onRefresh={() => refetchScanIn()}
+                    refreshing={loadingScanIn}
+                    headerRight={<AuditLogModal recordId={selRow?.unico} disabled={!selRow}/>}
                     className="w-72 shrink-0 shadow-sm"
                 >
                     <table className="min-w-full text-xs">
@@ -317,14 +321,19 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                             title="Packing List Boxes transferred to Stock"
                             icon={Warehouse}
                             recordCount={(stockRows as any[]).length > 0 ? (stockRows as any[]).length : undefined}
+                            onRefresh={() => refetchStock()}
+                            refreshing={loadingStock}
                             menuItems={[{ label: "Download CSV", icon: Download, color: "orange", onClick: () => {} }]}
                             headerRight={
-                                canCreate && selRow ? (
-                                    <button onClick={() => onSendToWarehouse?.(selRow)}
-                                        className="flex items-center gap-1.5 text-[11px] font-bold bg-[#FB7506] hover:bg-orange-500 text-white px-3 py-1 rounded transition-colors mr-1">
-                                        <ArrowRight size={11}/> Send to Warehouse
-                                    </button>
-                                ) : undefined
+                                <div className="flex items-center gap-1">
+                                    {canCreate && selRow && (
+                                        <button onClick={() => onSendToWarehouse?.(selRow)}
+                                            className="flex items-center gap-1.5 text-[11px] font-bold bg-[#FB7506] hover:bg-orange-500 text-white px-3 py-1 rounded transition-colors">
+                                            <ArrowRight size={11}/> Send to Warehouse
+                                        </button>
+                                    )}
+                                    <AuditLogModal recordId={selStock?.unico} disabled={!selStock}/>
+                                </div>
                             }
                             className="flex-1 min-w-0"
                         >
@@ -377,7 +386,10 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                                 title="Invoiced Stock Lots"
                                 icon={FileText}
                                 recordCount={(invoiceRows as any[]).length > 0 ? (invoiceRows as any[]).length : undefined}
+                                onRefresh={() => refetchInvoice()}
+                                refreshing={loadingInvoice}
                                 menuItems={[{ label: "Download CSV", icon: Download, color: "orange", onClick: () => {} }]}
+                                headerRight={<AuditLogModal recordId={selInvoice?.unico} disabled={!selInvoice}/>}
                                 className="flex-1 min-w-0"
                             >
                                 <table className="min-w-full text-xs text-left">
@@ -417,6 +429,9 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                                 title="Invoice Lots Scan OUT"
                                 icon={ScanLine}
                                 recordCount={(scanOutRows as any[]).length > 0 ? (scanOutRows as any[]).length : undefined}
+                                onRefresh={() => refetchScanOut()}
+                                refreshing={loadingScanOut}
+                                headerRight={<AuditLogModal recordId={selInvoice?.unico} disabled={!selInvoice}/>}
                                 className="w-72 shrink-0"
                             >
                                 <table className="min-w-full text-xs">

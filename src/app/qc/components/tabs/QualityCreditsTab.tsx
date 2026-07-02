@@ -6,6 +6,7 @@ import { Plus, Pencil, Trash2, Download, Award, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import PanelGrid from "@/components/ui/PanelGrid";
+import { AuditLogModal } from "@/components/AuditLogModal";
 import { useQCContext } from "../../context/QCContext";
 const EMPTY_ARR: any[] = [];
 
@@ -72,7 +73,7 @@ export default function QualityCreditsTab({ onAddQC, onEditQC }: Props) {
         return () => obs.disconnect();
     }, [hasMore, allRows.length]);
 
-    const { data: creditRows = EMPTY_ARR, isFetching: loadingCredits } = useQuery({
+    const { data: creditRows = EMPTY_ARR, isFetching: loadingCredits, refetch: refetchCredits } = useQuery({
         queryKey: ["qc-credits-by-box", selRow?.unico, refreshTrigger],
         queryFn:  () => qcPost("/api/qc/credits/by-box", { pkboxUq: selRow.unico }),
         enabled:  !!selRow?.unico,
@@ -125,8 +126,8 @@ export default function QualityCreditsTab({ onAddQC, onEditQC }: Props) {
                 searchPlaceholder="Search lots, AWB, farm..."
                 onRefresh={() => { setVisibleCount(STEP); setSearchKey(k => k + 1); }}
                 refreshing={loadingSearch}
-                onLog={() => {}}
                 menuItems={[{ label: "Download CSV", icon: Download, color: "orange", onClick: () => {} }]}
+                headerRight={<AuditLogModal recordId={selRow?.unico} disabled={!selRow}/>}
                 className="flex-[3] min-h-0 shadow-sm"
             >
                 <table className="min-w-full text-xs text-left">
@@ -172,7 +173,8 @@ export default function QualityCreditsTab({ onAddQC, onEditQC }: Props) {
                 title="Quality Credits by Lot"
                 icon={Award}
                 recordCount={(creditRows as any[]).length > 0 ? (creditRows as any[]).length : undefined}
-                onLog={() => {}}
+                onRefresh={() => refetchCredits()}
+                refreshing={loadingCredits}
                 menuItems={[
                     { label: "Add QC Credit",    icon: Plus,   color: "green",  onClick: () => { if (!selRow) { toast.error("Select a lot first."); return; } onAddQC?.(selRow); },             disabled: !canCreate },
                     { label: "Edit QC Credit",   icon: Pencil, color: "orange", onClick: () => { if (!selCredit) { toast.error("Select a QC credit first."); return; } onEditQC?.(selRow, selCredit); }, disabled: !canEdit || !selCredit },
@@ -180,6 +182,7 @@ export default function QualityCreditsTab({ onAddQC, onEditQC }: Props) {
                     { separator: true },
                     { label: "Download CSV",     icon: Download, color: "orange", onClick: () => {} },
                 ]}
+                headerRight={<AuditLogModal recordId={selCredit?.unico} disabled={!selCredit}/>}
                 className="flex-[2] min-h-0 shadow-sm"
             >
                 <table className="min-w-full text-xs text-left">

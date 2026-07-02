@@ -6,6 +6,7 @@ import { RefreshCw, Pencil, Trash2, History, Calendar, Download, ChevronLeft, Ch
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import PanelGrid from "@/components/ui/PanelGrid";
+import { AuditLogModal } from "@/components/AuditLogModal";
 import { useQCContext } from "../../context/QCContext";
 const EMPTY_ARR: any[] = [];
 
@@ -219,7 +220,7 @@ export default function QCHistoryTab({ onEditQC }: Props) {
                     recordCount={(dateRows as any[]).length > 0 ? (dateRows as any[]).length : undefined}
                     onRefresh={() => refetchDates()}
                     refreshing={loadingDates}
-                    onLog={() => {}}
+                    headerRight={<AuditLogModal recordId={null} disabled/>}
                     className="hidden md:flex w-52 shrink-0 shadow-sm"
                 >
                     <table className="w-full text-xs text-left">
@@ -250,13 +251,13 @@ export default function QCHistoryTab({ onEditQC }: Props) {
                     recordCount={!loadingHistory && selDate && (historyRows as any[]).length > 0 ? (historyRows as any[]).length : undefined}
                     onRefresh={() => refetchHistory()}
                     refreshing={loadingHistory}
-                    onLog={() => {}}
                     menuItems={[
                         { label: "Edit QC Credit",   icon: Pencil, color: "orange", onClick: handleEdit,   disabled: !canEdit   || !selRow },
                         { label: "Delete QC Credit", icon: Trash2, color: "red",    onClick: handleDelete, disabled: !canDelete || !selRow },
                         { separator: true },
                         { label: "Download CSV",     icon: Download, color: "orange", onClick: () => {} },
                     ]}
+                    headerRight={<AuditLogModal recordId={selRow?.unico} disabled={!selRow}/>}
                     className="flex-1 min-w-0 shadow-sm"
                 >
                     <table className="min-w-full text-xs text-left">

@@ -219,8 +219,8 @@ export default function QCModal({ mode, lot, credit, onClose, onSaved }: QCModal
     const title = isEdit ? "Vendor PO - Update" : `Vendor PO - ${lot?.lote ?? ""} | ${(lot?.description ?? "").substring(0, 35)}`;
 
     return (
-        <div className="fixed inset-0 bg-black/40 flex items-start justify-center z-50 p-4 overflow-y-auto">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg my-4 flex flex-col">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col">
 
                 {/* ── Header ─────────────────────────────────── */}
                 <div className="bg-[#374151] rounded-t-2xl flex items-center justify-between px-4 py-3 shrink-0">
@@ -230,129 +230,133 @@ export default function QCModal({ mode, lot, credit, onClose, onSaved }: QCModal
                     </button>
                 </div>
 
-                {/* ── Lot info ────────────────────────────────── */}
-                <div className="px-5 pt-4 pb-3 grid grid-cols-2 gap-x-6 gap-y-1 border-b">
-                    <InfoRow label="Vendor"            value={lot?.grower}/>
-                    <InfoRow label="City"              value={lot?.city ?? lot?.farm}/>
-                    <InfoRow label="Product"           value={lot?.description}/>
-                    <div/>
-                    <InfoRow label="Price x Stem"      value={lot?.sprice_x_unit ?? lot?.price_x_u}/>
-                    <InfoRow label="Case"              value={lot?.case_sh ?? lot?.case_name}/>
-                    <InfoRow label="Lot"               value={lot?.lote}/>
-                    <InfoRow label="Qty In"            value={lot?.qty_whouse ?? lot?.box_qty}/>
-                    <InfoRow label="Units x Box"       value={lot?.tunits_x_box}/>
-                    <InfoRow label="Bunches x Box"     value={lot?.up_x_pack ?? lot?.pbbunches_case}/>
-                    <InfoRow label="Units x Bunch"     value={lot?.units_x_bunch ?? lot?.cr_units_bunch}/>
-                    <InfoRow label="Landing Cost x Unit" value={lot?.c_cost_x_u}/>
-                    <InfoRow label="Flower Cost x Unit"  value={lot?.flower_cost ?? lot?.f_cost_x_u}/>
-                    <InfoRow label="Total Cost x Unit"   value={lot?.t_cost_x_u}/>
-                </div>
+                {/* ── Scrollable body ─────────────────────────── */}
+                <div className="flex-1 overflow-y-auto min-h-0">
 
-                {error && <div className="mx-5 mt-3 p-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-600 font-semibold">{error}</div>}
-
-                {/* ── Form ────────────────────────────────────── */}
-                <div className="px-5 py-4 space-y-4">
-
-                    {/* Row 1: Date + Reason */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <Field label="QC Credit Date" required>
-                            <Input type="date" value={form.crDate} onChange={e => set("crDate", e.target.value)}/>
-                        </Field>
-                        <Field label="Credit Reasons List" required>
-                            <select value={form.reasonUq} onChange={e => set("reasonUq", e.target.value)}
-                                className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-green-400 bg-white">
-                                <option value="">— Select —</option>
-                                {(reasons as any[]).map((r: any) => (
-                                    <option key={r.unico ?? r.UNICO} value={r.unico ?? r.UNICO}>{r.reason ?? r.description ?? r.DESCRIPTION}</option>
-                                ))}
-                            </select>
-                        </Field>
-                    </div>
-
-                    {/* Row 2: Top checkboxes */}
-                    <div className="flex gap-8">
-                        <CBRow label="Inventory Adjusts" checked={form.invAdjusts} onChange={v => set("invAdjusts", v)}/>
-                        <CBRow label="Vendor Credit"     checked={form.vendorCredit} onChange={v => set("vendorCredit", v)}/>
-                    </div>
-
-                    {/* Row 3: CR fields */}
-                    <div className="grid grid-cols-3 gap-3">
-                        <Field label="CR Units x Box" required>
-                            <Input type="number" step="1" value={form.crUnitsBox} onChange={e => setNum("crUnitsBox", e.target.value)}/>
-                        </Field>
-                        <Field label="CR Boxes" required>
-                            <Input type="number" step="1" value={form.crBoxes} onChange={e => setNum("crBoxes", e.target.value)}/>
-                        </Field>
-                        <Field label="CR Total Units" required>
-                            <Input type="number" value={form.crTotalUnits} readOnly/>
-                        </Field>
-                    </div>
-
-                    {/* Row 4: Cost inputs */}
-                    <div className="grid grid-cols-3 gap-3">
-                        <Field label="Labor Cost x Unit">
-                            <Input type="number" step="0.01" value={form.laborCost} onChange={e => setNum("laborCost", e.target.value)}/>
-                        </Field>
-                        <Field label="Fumigation">
-                            <Input type="number" step="0.01" value={form.fumigationCost} onChange={e => setNum("fumigationCost", e.target.value)}/>
-                        </Field>
-                        <Field label="Replacement Cost x Unit">
-                            <Input type="number" step="0.01" value={form.replacementCost} onChange={e => setNum("replacementCost", e.target.value)}/>
-                        </Field>
-                    </div>
-
-                    {/* Row 5: Computed costs */}
-                    <div className="grid grid-cols-3 gap-3">
-                        <Field label="QC Landing Cost">
-                            <Input type="number" value={form.landingCost.toFixed(2)} readOnly/>
-                        </Field>
+                    {/* Lot info */}
+                    <div className="px-5 pt-4 pb-3 grid grid-cols-2 gap-x-6 gap-y-1 border-b">
+                        <InfoRow label="Vendor"            value={lot?.grower}/>
+                        <InfoRow label="City"              value={lot?.city ?? lot?.farm}/>
+                        <InfoRow label="Product"           value={lot?.description}/>
                         <div/>
-                        <Field label="QC Farm Cost">
-                            <Input type="number" value={form.farmCost.toFixed(2)} readOnly/>
-                        </Field>
+                        <InfoRow label="Price x Stem"      value={lot?.sprice_x_unit ?? lot?.price_x_u}/>
+                        <InfoRow label="Case"              value={lot?.case_sh ?? lot?.case_name}/>
+                        <InfoRow label="Lot"               value={lot?.lote}/>
+                        <InfoRow label="Qty In"            value={lot?.qty_whouse ?? lot?.box_qty}/>
+                        <InfoRow label="Units x Box"       value={lot?.tunits_x_box}/>
+                        <InfoRow label="Bunches x Box"     value={lot?.up_x_pack ?? lot?.pbbunches_case}/>
+                        <InfoRow label="Units x Bunch"     value={lot?.units_x_bunch ?? lot?.cr_units_bunch}/>
+                        <InfoRow label="Landing Cost x Unit" value={lot?.c_cost_x_u}/>
+                        <InfoRow label="Flower Cost x Unit"  value={lot?.flower_cost ?? lot?.f_cost_x_u}/>
+                        <InfoRow label="Total Cost x Unit"   value={lot?.t_cost_x_u}/>
                     </div>
 
-                    {/* Row 6: 2-column checkbox grid */}
-                    <div className="grid grid-cols-2 gap-x-8 gap-y-3">
-                        <CBRow label="Cost Farm"    checked={form.farmApply}        onChange={v => set("farmApply", v)}/>
-                        <CBRow label="Pending"      checked={form.pending}          onChange={v => set("pending", v)}/>
-                        <CBRow label="Landing Cost" checked={form.freightApply}     onChange={v => set("freightApply", v)}/>
-                        <CBRow label="Warning"      checked={form.warning}          onChange={v => set("warning", v)}/>
-                        <CBRow label="Labor"        checked={form.laborApply}       onChange={v => set("laborApply", v)}/>
-                        <CBRow label="Check USDA"   checked={form.usda}             onChange={v => set("usda", v)}/>
-                        <CBRow label="Fumigation"   checked={form.fumigation}       onChange={v => set("fumigation", v)}/>
-                        <CBRow label="Reject"       checked={form.reject}           onChange={v => set("reject", v)}/>
-                        <CBRow label="Replacement"  checked={form.replacementApply} onChange={v => set("replacementApply", v)}/>
-                        <CBRow label="Sent"         checked={form.sent}             onChange={v => set("sent", v)}/>
-                        <CBRow label="Calculate"    checked={form.calculate}        onChange={v => set("calculate", v)}/>
-                        <CBRow label="Show %"       checked={form.showPercent}      onChange={v => set("showPercent", v)}/>
+                    {error && <div className="mx-5 mt-3 p-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-600 font-semibold">{error}</div>}
+
+                    {/* ── Form ────────────────────────────────────── */}
+                    <div className="px-5 py-4 space-y-4">
+
+                        {/* Row 1: Date + Reason */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <Field label="QC Credit Date" required>
+                                <Input type="date" value={form.crDate} onChange={e => set("crDate", e.target.value)}/>
+                            </Field>
+                            <Field label="Credit Reasons List" required>
+                                <select value={form.reasonUq} onChange={e => set("reasonUq", e.target.value)}
+                                    className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-green-400 bg-white">
+                                    <option value="">— Select —</option>
+                                    {(reasons as any[]).map((r: any) => (
+                                        <option key={r.unico ?? r.UNICO} value={r.unico ?? r.UNICO}>{r.reason ?? r.description ?? r.DESCRIPTION}</option>
+                                    ))}
+                                </select>
+                            </Field>
+                        </div>
+
+                        {/* Row 2: Top checkboxes */}
+                        <div className="flex gap-8">
+                            <CBRow label="Inventory Adjusts" checked={form.invAdjusts} onChange={v => set("invAdjusts", v)}/>
+                            <CBRow label="Vendor Credit"     checked={form.vendorCredit} onChange={v => set("vendorCredit", v)}/>
+                        </div>
+
+                        {/* Row 3: CR fields */}
+                        <div className="grid grid-cols-3 gap-3">
+                            <Field label="CR Units x Box" required>
+                                <Input type="number" step="1" value={form.crUnitsBox} onChange={e => setNum("crUnitsBox", e.target.value)}/>
+                            </Field>
+                            <Field label="CR Boxes" required>
+                                <Input type="number" step="1" value={form.crBoxes} onChange={e => setNum("crBoxes", e.target.value)}/>
+                            </Field>
+                            <Field label="CR Total Units" required>
+                                <Input type="number" value={form.crTotalUnits} readOnly/>
+                            </Field>
+                        </div>
+
+                        {/* Row 4: Cost inputs */}
+                        <div className="grid grid-cols-3 gap-3">
+                            <Field label="Labor Cost x Unit">
+                                <Input type="number" step="0.01" value={form.laborCost} onChange={e => setNum("laborCost", e.target.value)}/>
+                            </Field>
+                            <Field label="Fumigation">
+                                <Input type="number" step="0.01" value={form.fumigationCost} onChange={e => setNum("fumigationCost", e.target.value)}/>
+                            </Field>
+                            <Field label="Replacement Cost x Unit">
+                                <Input type="number" step="0.01" value={form.replacementCost} onChange={e => setNum("replacementCost", e.target.value)}/>
+                            </Field>
+                        </div>
+
+                        {/* Row 5: Computed costs */}
+                        <div className="grid grid-cols-3 gap-3">
+                            <Field label="QC Landing Cost">
+                                <Input type="number" value={form.landingCost.toFixed(2)} readOnly/>
+                            </Field>
+                            <div/>
+                            <Field label="QC Farm Cost">
+                                <Input type="number" value={form.farmCost.toFixed(2)} readOnly/>
+                            </Field>
+                        </div>
+
+                        {/* Row 6: 2-column checkbox grid */}
+                        <div className="grid grid-cols-2 gap-x-8 gap-y-3">
+                            <CBRow label="Cost Farm"    checked={form.farmApply}        onChange={v => set("farmApply", v)}/>
+                            <CBRow label="Pending"      checked={form.pending}          onChange={v => set("pending", v)}/>
+                            <CBRow label="Landing Cost" checked={form.freightApply}     onChange={v => set("freightApply", v)}/>
+                            <CBRow label="Warning"      checked={form.warning}          onChange={v => set("warning", v)}/>
+                            <CBRow label="Labor"        checked={form.laborApply}       onChange={v => set("laborApply", v)}/>
+                            <CBRow label="Check USDA"   checked={form.usda}             onChange={v => set("usda", v)}/>
+                            <CBRow label="Fumigation"   checked={form.fumigation}       onChange={v => set("fumigation", v)}/>
+                            <CBRow label="Reject"       checked={form.reject}           onChange={v => set("reject", v)}/>
+                            <CBRow label="Replacement"  checked={form.replacementApply} onChange={v => set("replacementApply", v)}/>
+                            <CBRow label="Sent"         checked={form.sent}             onChange={v => set("sent", v)}/>
+                            <CBRow label="Calculate"    checked={form.calculate}        onChange={v => set("calculate", v)}/>
+                            <CBRow label="Show %"       checked={form.showPercent}      onChange={v => set("showPercent", v)}/>
+                        </div>
+
+                        {/* Row 7: Suggested + % + Amount */}
+                        <div className="grid grid-cols-3 gap-3">
+                            <Field label="Suggested QC Amount">
+                                <Input type="number" value={form.suggested.toFixed(2)} readOnly/>
+                            </Field>
+                            <Field label="QC %">
+                                <Input type="number" value={form.percentage} onChange={e => setNum("percentage", e.target.value)} readOnly={form.vendorCredit}/>
+                            </Field>
+                            <Field label="Credit Amount" required>
+                                <Input type="number" step="0.01" value={form.amount}
+                                    onChange={e => setNum("amount", e.target.value)}
+                                    readOnly={form.vendorCredit}
+                                    className={form.vendorCredit ? "" : "border-green-300 focus:border-green-500"}/>
+                            </Field>
+                        </div>
+
+                        {/* Notes */}
+                        <textarea value={form.notes} onChange={e => set("notes", e.target.value)} rows={3}
+                            placeholder="Notes..."
+                            className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-green-400 resize-none"/>
+
                     </div>
-
-                    {/* Row 7: Suggested + % + Amount */}
-                    <div className="grid grid-cols-3 gap-3">
-                        <Field label="Suggested QC Amount">
-                            <Input type="number" value={form.suggested.toFixed(2)} readOnly/>
-                        </Field>
-                        <Field label="QC %">
-                            <Input type="number" value={form.percentage} onChange={e => setNum("percentage", e.target.value)} readOnly={form.vendorCredit}/>
-                        </Field>
-                        <Field label="Credit Amount" required>
-                            <Input type="number" step="0.01" value={form.amount}
-                                onChange={e => setNum("amount", e.target.value)}
-                                readOnly={form.vendorCredit}
-                                className={form.vendorCredit ? "" : "border-green-300 focus:border-green-500"}/>
-                        </Field>
-                    </div>
-
-                    {/* Notes */}
-                    <textarea value={form.notes} onChange={e => set("notes", e.target.value)} rows={3}
-                        placeholder="Notes..."
-                        className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-green-400 resize-none"/>
-
                 </div>
 
-                {/* ── Submit button ────────────────────────────── */}
-                <div className="px-5 pb-5 shrink-0">
+                {/* ── Footer ──────────────────────────────────── */}
+                <div className="px-5 py-4 shrink-0 border-t border-gray-100">
                     <button onClick={save} disabled={saving}
                         className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-sm font-black transition-colors">
                         {saving ? <RefreshCcw size={16} className="animate-spin"/> : <Save size={16}/>}

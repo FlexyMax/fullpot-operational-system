@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Calendar, XCircle, Download, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import PanelGrid from "@/components/ui/PanelGrid";
+import { AuditLogModal } from "@/components/AuditLogModal";
 const EMPTY_ARR: any[] = [];
 
 const t = (v: any) => String(v ?? "").trim();
@@ -171,7 +172,7 @@ export default function CancelledPurchasesTab() {
                 recordCount={(dateRows as any[]).length > 0 ? (dateRows as any[]).length : undefined}
                 onRefresh={() => {}}
                 refreshing={loadingDates}
-                onLog={() => {}}
+                headerRight={<AuditLogModal recordId={null} disabled/>}
                 className="hidden md:flex w-56 shrink-0 shadow-sm"
             >
                 <table className="w-full text-xs text-left">
@@ -203,9 +204,13 @@ export default function CancelledPurchasesTab() {
                 icon={XCircle}
                 recordCount={!loadingCancel && selDate && (cancelRows as any[]).length > 0 ? (cancelRows as any[]).length : undefined}
                 onRefresh={() => {}}
-                onLog={() => {}}
                 menuItems={[{ label: "Download CSV", icon: Download, color: "orange", onClick: () => {} }]}
-                headerRight={pagination}
+                headerRight={
+                    <div className="flex items-center gap-1">
+                        {pagination}
+                        <AuditLogModal recordId={null} disabled/>
+                    </div>
+                }
                 className="flex-1 min-h-0 shadow-sm"
             >
                 <table className="min-w-full text-xs text-left">
