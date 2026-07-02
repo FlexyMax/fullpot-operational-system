@@ -1,3 +1,44 @@
+## Design Documents — READ BEFORE WRITING SPs OR ROUTES
+
+The project has mandatory design documents. Read them before writing any SP, API route, or component:
+
+| Document | Purpose |
+|---|---|
+| `DEVELOPMENT_STANDARDS.md` | Route patterns, audit logging, permissions, auto-select, React Query rules |
+| `DESIGN_SYSTEM.md` | Visual tokens, component patterns, layout rules |
+| `MISSING_SPS.md` | Which SPs are missing or use direct SQL workarounds — check before creating new ones |
+| `AccountsPayable.md` | AP page spec with verified SP parameter names |
+| `CLAUDE.md` (this file) | SP authorization, design checklist, graphify |
+
+### SP CRUD architecture (sp_NC_* naming convention)
+
+```sql
+-- Standard new SP template:
+CREATE PROCEDURE [dbo].[sp_NC_<table>_insert]
+    -- params ...
+AS BEGIN
+    SET NOCOUNT ON;
+    DECLARE @lcunico   char(8)       = LEFT(NEWID(), 8);  -- PK generation
+    DECLARE @llerror   bit           = 0;
+    DECLARE @lcmessage varchar(1000) = '';
+
+    -- ... INSERT / UPDATE / DELETE ...
+    IF @@ROWCOUNT >= 1 SET @lcmessage = 'Transaction OK';
+    ELSE BEGIN SET @llerror = 1; SET @lcmessage = 'SQL command error, try again'; END
+
+    SELECT @lcunico AS unico, @lcmessage AS Message, @llerror AS Error;
+END
+```
+
+Route error check (db.ts auto-throws on lowercase `error=1`; NC_ SPs use uppercase so route must check explicitly):
+```ts
+const row = result.recordset?.[0];
+if (row?.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
+return NextResponse.json({ success: true, unico: row?.unico, message: row?.Message });
+```
+
+---
+
 ## Stored Procedure (SP) Authorization Rule — MANDATORY
 
 Before creating, modifying, or deleting ANY stored procedure in any database (fullpot, sistema, or other):
