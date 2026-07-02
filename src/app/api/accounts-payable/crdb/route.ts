@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
+import { serverAuditLog } from "@/lib/serverAudit";
+
+const PANTA = "XD6Z7067";
+const TABLA = "flower_accounts_pay_crdb";
 
 export async function GET(req: NextRequest) {
     const unico = req.nextUrl.searchParams.get("unico");
@@ -27,6 +31,7 @@ export async function POST(req: NextRequest) {
         });
         const row = result.recordset?.[0];
         if (row?.Error) return NextResponse.json({ success: false, error: row.Message || "Business rule violation" }, { status: 400 });
+        serverAuditLog(PANTA, "Insert", TABLA, row?.unico ?? "").catch(() => {});
         return NextResponse.json({ success: true, unico: row?.unico ?? null, message: row?.Message || "Credit/Debit added." });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -49,6 +54,7 @@ export async function PUT(req: NextRequest) {
         });
         const row = result.recordset?.[0];
         if (row?.Error) return NextResponse.json({ success: false, error: row.Message || "Business rule violation" }, { status: 400 });
+        serverAuditLog(PANTA, "Edit", TABLA, unico).catch(() => {});
         return NextResponse.json({ success: true, unico: row?.unico ?? unico, message: row?.Message || "Credit/Debit updated." });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -62,6 +68,7 @@ export async function DELETE(req: NextRequest) {
         const result = await executeProcedure("sp_NC_accounts_pay_crdb_delete", { unico });
         const row = result.recordset?.[0];
         if (row?.Error) return NextResponse.json({ success: false, error: row.Message || "Business rule violation" }, { status: 400 });
+        serverAuditLog(PANTA, "Delete", TABLA, unico).catch(() => {});
         return NextResponse.json({ success: true, unico: row?.unico ?? unico, message: row?.Message || "Credit/Debit deleted." });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });

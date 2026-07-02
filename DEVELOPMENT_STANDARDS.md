@@ -283,6 +283,35 @@ Every API route that performs a write operation should:
 
 4. **Never expose:** `password`, `userid`, binary fields (logo, photo) in GET responses.
 
+5. **Server-side audit log after every successful CRUD** — call `serverAuditLog` from `@/lib/serverAudit`
+   immediately before the success `return`. Fire-and-forget (`.catch(() => {})`).
+
+   ```ts
+   import { serverAuditLog } from "@/lib/serverAudit";
+
+   const PANTA = "XD6Z7067"; // panta_uq for this page (from PANTA map in audit.ts)
+   const TABLA = "flower_accounts_pay"; // main table
+
+   // POST — after SP succeeds:
+   serverAuditLog(PANTA, "Insert", TABLA, row.unico).catch(() => {});
+
+   // PUT — after SP succeeds:
+   serverAuditLog(PANTA, "Edit", TABLA, body.lcunico).catch(() => {});
+
+   // DELETE — after SP succeeds:
+   serverAuditLog(PANTA, "Delete", TABLA, unico).catch(() => {});
+
+   // Sub-operations (e.g. approve, copy):
+   serverAuditLog(PANTA, "Edit", TABLA, ap_uq, "Approve PO Cost").catch(() => {});
+   ```
+
+   **Why server-side instead of (or in addition to) client-side `logAction`:**
+   - Server-side fires even if the user closes the tab immediately after the CRUD
+   - Cannot be skipped by a direct API call that bypasses the frontend
+   - The client-side `logAction` (in `useAuditLog`) remains as a UX convenience — both coexist and both write to bitacora. The duplicate entries are acceptable; they simply show "Edit from browser + Edit from server" for the same record.
+
+   **Reference implementation:** `src/app/api/accounts-payable/invoice/route.ts` (first page to use this pattern).
+
 ---
 
 ## Currently Implemented Pages (Reference)

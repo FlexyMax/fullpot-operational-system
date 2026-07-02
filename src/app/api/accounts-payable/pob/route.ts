@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
+import { serverAuditLog } from "@/lib/serverAudit";
+
+const PANTA = "XD6Z7067";
+const TABLA = "flower_accounts_pay_pobs";
 
 export async function GET(req: NextRequest) {
     const ap_uq = req.nextUrl.searchParams.get("ap_uq");
@@ -16,13 +20,14 @@ export async function POST(req: NextRequest) {
     const { ap_uq, pob_uq, cost, ap_type_uq } = await req.json();
     try {
         const result = await executeProcedure("sp_flower_accounts_pay_pob_insert", {
-            lcap_uq:    ap_uq,
-            lcpob_uq:   pob_uq,
-            lncost:     cost,
-            lcaptype_uq: ap_type_uq
+            lcap_uq:     ap_uq,
+            lcpob_uq:    pob_uq,
+            lncost:      cost,
+            lcaptype_uq: ap_type_uq,
         });
         const row = result.recordset?.[0];
         if (row?.Error) return NextResponse.json({ success: false, error: row.Message || "Business rule violation" }, { status: 400 });
+        serverAuditLog(PANTA, "Insert", TABLA, row?.unico ?? ap_uq ?? "").catch(() => {});
         return NextResponse.json({ success: true, unico: row?.unico ?? null, message: "PO record added." });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -36,10 +41,11 @@ export async function PUT(req: NextRequest) {
             lcunico:     unico,
             lcpob_uq:    pob_uq,
             lncost:      cost,
-            lcaptype_uq: ap_type_uq
+            lcaptype_uq: ap_type_uq,
         });
         const row = result.recordset?.[0];
         if (row?.Error) return NextResponse.json({ success: false, error: row.Message || "Business rule violation" }, { status: 400 });
+        serverAuditLog(PANTA, "Edit", TABLA, unico ?? "").catch(() => {});
         return NextResponse.json({ success: true, unico, message: "PO record updated." });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -53,6 +59,7 @@ export async function DELETE(req: NextRequest) {
         const result = await executeProcedure("sp_flower_accounts_pay_pob_delete", { lcunico: unico });
         const row = result.recordset?.[0];
         if (row?.Error) return NextResponse.json({ success: false, error: row.Message || "Business rule violation" }, { status: 400 });
+        serverAuditLog(PANTA, "Delete", TABLA, unico).catch(() => {});
         return NextResponse.json({ success: true, unico, message: "PO record deleted." });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
