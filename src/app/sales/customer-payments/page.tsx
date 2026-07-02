@@ -7,7 +7,7 @@ import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tansta
 import {
     RefreshCcw, Search, Check, XCircle, Save, X, Trash2,
     Plus, Pencil, AlertCircle, Users, FileText, CreditCard,
-    ChevronRight, Printer, Mail, BarChart2, DollarSign, CheckCircle,
+    ChevronLeft, ChevronRight, Printer, Mail, BarChart2, DollarSign, CheckCircle,
     Bell, Banknote, Calendar, RotateCcw, Building2, LayoutGrid
 } from "lucide-react";
 import { GridMenu } from "@/components/GridMenu";
@@ -93,6 +93,85 @@ function StatementPreviewModal({ html, onClose, customer }: any) {
                 <iframe srcDoc={html} className="border rounded" style={{minWidth:"700px",width:"100%",height:"65vh"}} title="Statement Preview"/>
             </div>
         </Modal>
+    );
+}
+
+// ─── CrDbCalendar ─────────────────────────────────────────────────────────────
+const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const DAY_LABELS  = ["Su","Mo","Tu","We","Th","Fr","Sa"];
+
+function CrDbCalendar({ dates, selectedDate, onSelect }: {
+    dates: any[];
+    selectedDate: string | null;
+    onSelect: (iso: string) => void;
+}) {
+    const now = new Date();
+    const [viewYear,  setViewYear]  = useState(now.getFullYear());
+    const [viewMonth, setViewMonth] = useState(now.getMonth());
+
+    useEffect(() => {
+        if (dates.length > 0) {
+            const iso = normalizeToISODate(dates[0].cddate ?? dates[0].cd_date);
+            if (iso) {
+                const d = new Date(iso + "T00:00:00");
+                if (!isNaN(d.getTime())) { setViewMonth(d.getMonth()); setViewYear(d.getFullYear()); }
+            }
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [dates.length]);
+
+    const countMap: Record<string, number> = {};
+    for (const row of dates) {
+        const iso = normalizeToISODate(row.cddate ?? row.cd_date);
+        if (iso) countMap[iso] = Number(row.records ?? 1);
+    }
+
+    const prevM = () => viewMonth === 0 ? (setViewMonth(11), setViewYear(y => y - 1)) : setViewMonth(m => m - 1);
+    const nextM = () => viewMonth === 11 ? (setViewMonth(0),  setViewYear(y => y + 1)) : setViewMonth(m => m + 1);
+    const firstDOW  = new Date(viewYear, viewMonth, 1).getDay();
+    const daysInMon = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const todayISO  = new Date().toISOString().split("T")[0];
+
+    return (
+        <div className="bg-white border border-[#DBD9D9] rounded-md overflow-hidden shrink-0">
+            <div className="h-10 bg-[#374151] flex items-center justify-between px-3 shrink-0">
+                <button onClick={prevM} className="text-white hover:text-orange-400 p-1 rounded transition-colors">
+                    <ChevronLeft size={14}/>
+                </button>
+                <span className="font-bold text-[12px] text-white">{MONTH_NAMES[viewMonth]} {viewYear}</span>
+                <button onClick={nextM} className="text-white hover:text-orange-400 p-1 rounded transition-colors">
+                    <ChevronRight size={14}/>
+                </button>
+            </div>
+            <div className="grid grid-cols-7 px-1 pt-1.5 pb-0.5">
+                {DAY_LABELS.map(d => <div key={d} className="text-center text-[9px] font-bold text-gray-400">{d}</div>)}
+            </div>
+            <div className="grid grid-cols-7 gap-0.5 px-1 pb-2">
+                {Array.from({ length: firstDOW }, (_, i) => <div key={`e${i}`}/>)}
+                {Array.from({ length: daysInMon }, (_, i) => {
+                    const day    = i + 1;
+                    const iso    = `${viewYear}-${String(viewMonth+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+                    const count  = countMap[iso];
+                    const hasDat = count !== undefined && count > 0;
+                    const isSel  = selectedDate === iso;
+                    const isTod  = iso === todayISO;
+                    return (
+                        <div key={day} onClick={() => hasDat && onSelect(iso)}
+                            className={cn("flex flex-col items-center justify-start py-1 rounded min-h-[40px] transition-colors",
+                                hasDat ? "cursor-pointer" : "cursor-default",
+                                isSel ? "bg-blue-500" : hasDat ? "bg-green-50 hover:bg-green-100" : "",
+                                isTod && !isSel ? "ring-2 ring-inset ring-blue-400" : "")}>
+                            <span className={cn("text-[10px] leading-none mb-0.5",
+                                isSel ? "text-white font-bold" : isTod ? "text-blue-600 font-bold" : hasDat ? "text-gray-700 font-semibold" : "text-gray-300")}>{day}</span>
+                            {hasDat && (
+                                <div className={cn("w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold",
+                                    isSel ? "bg-white text-blue-600" : "bg-green-500 text-white")}>{count}</div>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
     );
 }
 
@@ -425,12 +504,17 @@ export default function CustomerPaymentsPage() {
             />
 
             {/* Tab bar — scrollable on mobile */}
-            <div className="h-12 bg-white flex items-end px-4 gap-2 shrink-0 overflow-x-auto scrollbar-none border-b border-gray-200">
+            <div className="h-12 bg-white flex items-end px-2 gap-1 shrink-0 overflow-x-auto scrollbar-none border-b border-gray-200">
                 {(["customer","invoices","payments","crdb","statement","corporate"] as const).map(tab => (
                     <button key={tab} onClick={()=>setActiveTab(tab)}
-                        className={cn("px-3 sm:px-4 h-8 text-[10px] font-black uppercase tracking-wider rounded-t transition-all whitespace-nowrap shrink-0",
+                        className={cn("px-2 sm:px-4 h-8 text-[10px] font-black uppercase tracking-wider rounded-t transition-all whitespace-nowrap shrink-0",
                             activeTab===tab ? TAB_ACTIVE : TAB_COLORS[tab])}>
-                        {tab==="customer"?"Customer":tab==="invoices"?"Invoices":tab==="payments"?"Payments":tab==="crdb"?"Cr / Db":tab==="statement"?"Statement":"Corporate"}
+                        <span className="sm:hidden">
+                            {tab==="customer"?"Cust":tab==="invoices"?"Inv":tab==="payments"?"Pay":tab==="crdb"?"CR/DB":tab==="statement"?"Stmt":"Corp"}
+                        </span>
+                        <span className="hidden sm:inline">
+                            {tab==="customer"?"Customer":tab==="invoices"?"Invoices":tab==="payments"?"Payments":tab==="crdb"?"Cr / Db":tab==="statement"?"Statement":"Corporate"}
+                        </span>
                     </button>
                 ))}
             </div>
@@ -439,7 +523,7 @@ export default function CustomerPaymentsPage() {
             {activeTab === "customer" && (
                 <div className="flex flex-col flex-1 overflow-hidden p-1.5 gap-1.5">
                     {/* Mobile-only global actions bar (above filter row) */}
-                    <div className="md:hidden bg-white border-b border-gray-100 px-3 py-1.5 flex items-center gap-1.5 shrink-0 overflow-x-auto scrollbar-none">
+                    <div className="md:hidden bg-white border-b border-gray-100 px-3 py-1.5 flex flex-wrap items-center gap-1.5 shrink-0">
                         {creditCount > 0 && (
                             <button onClick={()=>setCreditModal(true)}
                                 className="relative flex items-center gap-1 px-2.5 py-1.5 text-[14px] font-semibold uppercase rounded border border-green-300 bg-green-50 text-green-700 whitespace-nowrap transition-colors shrink-0">
@@ -618,6 +702,7 @@ export default function CustomerPaymentsPage() {
             {activeTab === "invoices" && (
                 <div className="flex flex-col flex-1 overflow-hidden p-1.5 gap-1.5">
                     {/* Balance filter bar */}
+                    {selCustBar}
                     <div className="bg-gray-100 border border-gray-200 rounded-lg px-2 py-1 flex items-center gap-2 shrink-0">
                         <span className="text-[10px] font-black text-gray-500 uppercase">Filter:</span>
                         <label className="flex items-center gap-1 cursor-pointer text-xs font-bold">
@@ -629,7 +714,6 @@ export default function CustomerPaymentsPage() {
                             <span className={cn(!balanceFilter?"text-[#FB7506]":"text-gray-500")}>Bal = 0</span>
                         </label>
                     </div>
-                    {selCustBar}
 
                     {/* Invoices grid */}
                     <PanelGrid
@@ -891,17 +975,24 @@ export default function CustomerPaymentsPage() {
             {activeTab === "crdb" && (
                 <div className="flex flex-col flex-1 overflow-hidden p-1.5 gap-1.5">
                     {selCustBar}
+                    {/* Mobile: month calendar */}
+                    <div className="md:hidden shrink-0">
+                        <CrDbCalendar
+                            dates={crdbDates as any[]}
+                            selectedDate={selCrDbDate}
+                            onSelect={iso => { setSelCrDbDate(iso); setSelCrDb(null); }}
+                        />
+                    </div>
                     {/* Two-column layout */}
                     <div className="flex gap-1.5 flex-1 overflow-hidden min-h-0">
-                        {/* Left: Date picker */}
-                        {/* Left: Date picker */}
+                        {/* Left: Date list — desktop only */}
                         <PanelGrid
                             title="Dates"
                             icon={Calendar}
                             recordCount={(crdbDates as any[]).length}
                             onRefresh={refetchCrdbDates}
                             refreshing={loadingCrdbDates}
-                            className="w-44 shrink-0 flex flex-col min-h-0"
+                            className="hidden md:flex w-44 shrink-0 flex-col min-h-0"
                         >
                                 <PanelGridTable>
                                     <PanelGridThead>
