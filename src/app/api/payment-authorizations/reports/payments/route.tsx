@@ -2,23 +2,13 @@ import { NextRequest } from "next/server";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { executeProcedure } from "@/lib/db";
 import { getCompanyInfo } from "@/lib/reports/companyInfo";
-import { ReportPDF, type ReportColumn } from "@/components/reports/ReportPDF";
-import { t, fmt, fmtDate, fmtDateTime, skipKey, extractVendorInfo, buildSubtitle, DATE_KEYS, AMOUNT_KEYS } from "@/lib/reports/reportUtils";
+import { ReportPDF } from "@/components/reports/ReportPDF";
+import { t, fmtDate, fmtDateTime, skipKey, buildColumns, extractVendorInfo, buildSubtitle, DATE_KEYS, AMOUNT_KEYS } from "@/lib/reports/reportUtils";
 
 // SP: sp_flower_growers_payments_by_dates_report
 // Params: lcgrower_uq, ldpayments_from, ldpayments_to
-
-// Known column layout from VFP ws_outcomes_payments.frx
-const COLUMNS: ReportColumn[] = [
-    { key: "OUT_DATE",      label: "Date",         width: 1.0, render: r => fmtDate(r.OUT_DATE) },
-    { key: "OUT_DOCUMENT",  label: "Document",     width: 1.0 },
-    { key: "STATUS",        label: "Status",       width: 0.9 },
-    { key: "BANK",          label: "Bank",         width: 1.4 },
-    { key: "GROWER",        label: "Vendor",       width: 1.8 },
-    { key: "FARM",          label: "Farm",         width: 1.4 },
-    { key: "TOTAL_PAYMENT", label: "Total Payment",width: 1.2, align: "right", render: r => fmt(r.TOTAL_PAYMENT) },
-];
-const KNOWN_KEYS = new Set(["OUT_DATE","OUT_DOCUMENT","STATUS","BANK","GROWER","FARM","TOTAL_PAYMENT"]);
+// NOTE: SP returns column names with spaces (e.g. "OUT DATE"), not underscores.
+// buildColumns handles this via normKey() — do NOT use hardcoded COLUMNS here.
 
 export async function GET(req: NextRequest) {
     const sp            = req.nextUrl.searchParams;
@@ -34,7 +24,8 @@ export async function GET(req: NextRequest) {
         getCompanyInfo(),
     ]);
 
-    const rows = r.recordset ?? [];
+    const rows     = r.recordset ?? [];
+    const isSingle = !!grower_uq;
 
     if (sp.get("format") === "csv") {
         const keys   = rows.length ? Object.keys(rows[0]).filter(k => !skipKey(k)) : [];
@@ -43,17 +34,8 @@ export async function GET(req: NextRequest) {
         return new Response(header ? `${header}\r\n${body}` : "", { headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="payments_${grower_uq||"all"}.csv"` } });
     }
 
-    const isSingle = !!grower_uq;
-
-    // Use the known fixed columns when the SP returns them; fall back to dynamic.
-    // When single vendor, drop GROWER (it goes to the vendorInfo header instead).
-    const hasKnown = rows.length > 0 && Object.keys(rows[0]).some(k => KNOWN_KEYS.has(k));
-    const columns  = hasKnown
-        ? (isSingle ? COLUMNS.filter(c => c.key !== "GROWER") : COLUMNS)
-        : Object.keys(rows[0] ?? {}).map(key => ({
-            key, label: key.replace(/_/g, " "), width: 1,
-            align: (AMOUNT_KEYS.has(key) ? "right" : "left") as "left" | "right",
-        }));
+    const columns    = buildColumns(rows, isSingle);
+    if (!columns.length) columns.push({ key: "_empty", label: "No data", width: 1 });
 
     const vendorInfo = isSingle ? extractVendorInfo(rows[0], grower_name) : undefined;
 

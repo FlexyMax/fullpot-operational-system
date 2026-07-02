@@ -16,6 +16,9 @@ export const AMOUNT_KEYS = new Set([
     "CD_AMOUNT","CD_AMMOUNT","CD_TOTAL","CD_BALANCE",
     "INVOICE_AMOUNT","INVOICE_BALANCE",
     "B30","B60","B90","B91",
+    // payment-detail SP columns (space-separated names normalized via normKey)
+    "LINE_VALUE","LINE_BALANCE","LINE_CREDITS","LINE_DEBITS",
+    "PAYMENT","OUT_BALANCE",
 ]);
 
 // Columns whose values are formatted as dates
