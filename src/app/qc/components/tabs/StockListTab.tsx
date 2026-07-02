@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { RefreshCw, Download, ChevronDown, X, Trash2, Pencil, ArrowRight, Package, Warehouse, FileText, ScanLine } from "lucide-react";
+import { RefreshCw, Download, ChevronDown, X, Trash2, Pencil, ArrowRight, Package, Warehouse, FileText, ScanLine, AlignJustify } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -34,35 +34,51 @@ function HelpIcon() {
     );
 }
 
-function SubGridToolbar({ total, download }: { total: number; download?: boolean }) {
+// ── Unified grid header — title + count badge + icons ────────────────────────
+function GridHeader({
+    title, icon: Icon, count, total, onRefresh, onDownload, refreshing, actions, right,
+}: {
+    title: string;
+    icon?: LucideIcon;
+    count?: number;
+    total?: number;
+    onRefresh?: () => void;
+    onDownload?: () => void;
+    refreshing?: boolean;
+    actions?: React.ReactNode;
+    right?: React.ReactNode;
+}) {
     return (
-        <div className="h-9 border-b border-[#DBD9D9] flex items-center px-3 gap-3 shrink-0 bg-white text-xs justify-between">
-            <div className="flex items-center gap-2 text-gray-400 min-w-0">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input type="text" placeholder="Search..." className="outline-none text-[11px] w-32 text-black placeholder-gray-400"/>
-            </div>
-            <div className="flex items-center gap-3 shrink-0">
-                {download !== false && (
-                    <button className="flex items-center gap-1 text-gray-500 hover:text-black font-semibold">
-                        <Download size={11}/> <span className="text-[10px]">Download</span>
-                    </button>
-                )}
-                {total > 0 && <span className="text-[10px] text-gray-500 whitespace-nowrap">{total.toLocaleString()} Records</span>}
-            </div>
-        </div>
-    );
-}
-
-function SubGridHeader({ title, icon: Icon, actions }: { title: string; icon?: LucideIcon; actions?: React.ReactNode }) {
-    return (
-        <div className="h-8 bg-white flex items-center justify-between px-3 shrink-0 rounded-t-lg border-b border-[#DBD9D9]">
+        <div className="h-9 bg-white flex items-center justify-between px-3 shrink-0 border-b border-[#DBD9D9]">
             <div className="flex items-center gap-2 min-w-0">
                 {Icon && <Icon size={14} className="text-[#FB7506] shrink-0"/>}
-                <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">{title}</span>
+                <span className="text-[#4F4F4F] text-[13px] font-bold uppercase tracking-tight truncate">{title}</span>
+                {count !== undefined && count > 0 && (
+                    <span className="bg-[#FB7506]/10 text-[#FB7506] text-[10px] font-bold rounded-full px-2 py-0.5 shrink-0 whitespace-nowrap">
+                        {total !== undefined && total !== count ? `${count.toLocaleString()} / ${total.toLocaleString()}` : count.toLocaleString()}
+                    </span>
+                )}
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-                <RefreshCw size={12} className="text-gray-400 cursor-pointer hover:text-[#FB7506]"/>
+            <div className="flex items-center gap-1 shrink-0">
+                {right}
                 {actions}
+                {onDownload && (
+                    <button onClick={onDownload} title="Download"
+                        className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors">
+                        <Download size={13}/>
+                    </button>
+                )}
+                <button title="Log" className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-[#FB7506] transition-colors">
+                    <AlignJustify size={13}/>
+                </button>
+                {onRefresh !== undefined ? (
+                    <button onClick={onRefresh} title="Refresh"
+                        className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-[#FB7506] transition-colors">
+                        <RefreshCw size={13} className={refreshing ? "animate-spin" : ""}/>
+                    </button>
+                ) : (
+                    <RefreshCw size={13} className="text-gray-300 p-1.5 box-content"/>
+                )}
             </div>
         </div>
     );
@@ -70,24 +86,19 @@ function SubGridHeader({ title, icon: Icon, actions }: { title: string; icon?: L
 
 function ScanPanel({ title, icon: Icon, rows, loading }: { title: string; icon?: LucideIcon; rows: any[]; loading: boolean }) {
     return (
-        <div className="w-80 flex flex-col border-l border-[#DBD9D9] shrink-0 overflow-hidden">
-            <div className="h-8 bg-white flex items-center justify-between px-3 shrink-0 border-b border-[#DBD9D9]">
-                <div className="flex items-center gap-2 min-w-0">
-                    {Icon && <Icon size={14} className="text-[#FB7506] shrink-0"/>}
-                    <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">{title}</span>
-                </div>
-                <RefreshCw size={12} className="text-gray-400 cursor-pointer hover:text-[#FB7506]"/>
-            </div>
-            <SubGridToolbar total={rows.length} download={false}/>
+        <div className="w-72 flex flex-col border-l border-[#DBD9D9] shrink-0 overflow-hidden">
+            <GridHeader title={title} icon={Icon} count={rows.length > 0 ? rows.length : undefined}/>
             <div className="overflow-auto flex-1">
                 <table className="min-w-full text-xs">
                     <thead className="bg-[#4F4F4F] text-white font-bold text-[11px] uppercase sticky top-0">
-                        <tr className="divide-x divide-[#DBD9D9]/30">{["ScanTime","Barcode","Rack","Grower"].map(h => <th key={h} className="p-1.5 whitespace-nowrap">{h}</th>)}</tr>
+                        <tr className="divide-x divide-[#DBD9D9]/30">
+                            {["ScanTime","Barcode","Rack","Grower"].map(h => <th key={h} className="p-1.5 whitespace-nowrap">{h}</th>)}
+                        </tr>
                     </thead>
                     <tbody className="fos-grid-tbody divide-y divide-[#DBD9D9]">
                         {loading && <tr><td colSpan={4} className="p-4 text-center text-gray-400">Loading...</td></tr>}
                         {!loading && rows.length === 0 && <tr><td colSpan={4} className="p-4 text-center text-gray-300 italic">No scan data</td></tr>}
-                        {(rows as any[]).map((r, i) => (
+                        {rows.map((r, i) => (
                             <tr key={i} className="hover:bg-gray-50 divide-x divide-[#DBD9D9]">
                                 <td className="p-1.5 whitespace-nowrap text-[10px] text-green-600 font-semibold">{t(r.ScanTime)?.replace("T", " ").substring(0, 16)}</td>
                                 <td className="p-1.5 font-bold text-blue-600 text-[10px]">{t(r.barcode)}</td>
@@ -127,7 +138,6 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
         select: (d: any) => d.data ?? [],
     });
 
-    // Infinite-scroll packing list
     const {
         data: packingData,
         isFetching: loadingPacking,
@@ -154,7 +164,6 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
     const packingRows  = packingData?.pages.flatMap((p: any) => p?.data ?? []) ?? [];
     const totalRecords = packingData?.pages[0]?.data?.[0]?.QueryTotalRecords ?? 0;
 
-    // Load next page when sentinel becomes visible
     useEffect(() => {
         const el = sentinelRef.current;
         if (!el) return;
@@ -264,39 +273,21 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
 
             {/* ── Main split: packing grid + Lots Scan IN ──────── */}
             <div className="flex bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-[3] min-h-0">
-                {/* Packing grid */}
                 <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-                    {/* Header */}
-                    <div className="h-8 bg-white flex items-center justify-between px-3 shrink-0 border-b border-[#DBD9D9]">
-                        <div className="flex items-center gap-2 min-w-0">
-                            <Package size={14} className="text-[#FB7506] shrink-0"/>
-                            <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">Packing List Boxes</span>
-                        </div>
-                        <div className="flex items-center gap-3 shrink-0">
-                            {totalRecords > 0 && (
-                                <span className="text-[10px] text-gray-400">
-                                    {packingRows.length.toLocaleString()} / {totalRecords.toLocaleString()}
-                                </span>
-                            )}
-                            <RefreshCw size={12} className="text-gray-400 cursor-pointer hover:text-[#FB7506]" onClick={() => refetchPacking()}/>
-                        </div>
-                    </div>
-                    {/* Toolbar (search + download, no pagination) */}
-                    <div className="h-9 border-b border-[#DBD9D9] flex items-center px-3 gap-3 shrink-0 bg-white text-xs justify-between">
-                        <div className="flex items-center gap-2 text-gray-400 min-w-0">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                            <input type="text" placeholder="Search..." className="outline-none text-[11px] w-32 text-black placeholder-gray-400"/>
-                        </div>
-                        <button className="flex items-center gap-1 text-[10px] text-gray-500 hover:text-black font-semibold shrink-0">
-                            <Download size={11}/> Download
-                        </button>
-                    </div>
-                    {/* Infinite scroll table */}
+                    <GridHeader
+                        title="Packing List Boxes"
+                        icon={Package}
+                        count={packingRows.length}
+                        total={totalRecords}
+                        onDownload={() => {}}
+                        onRefresh={() => refetchPacking()}
+                        refreshing={loadingPacking}
+                    />
                     <div className="overflow-auto flex-1">
                         <table className="min-w-full text-xs text-left">
                             <thead className="bg-[#4F4F4F] text-white font-bold text-[11px] uppercase sticky top-0 z-10">
                                 <tr className="divide-x divide-[#DBD9D9]/30">
-                                    <th className="p-1.5 w-10">+QC</th>
+                                    <th className="p-1.5 w-12">+QC</th>
                                     <th className="p-1.5 whitespace-nowrap">AvailableDate</th>
                                     <th className="p-1.5 whitespace-nowrap">InvoiceDate</th>
                                     <th className="p-1.5 whitespace-nowrap">PbookDate</th>
@@ -326,7 +317,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                                             <td className="p-1 text-center" onClick={e => e.stopPropagation()}>
                                                 {canCreate && (
                                                     <button onClick={() => onAddQC?.(row)}
-                                                        className="px-1.5 py-0.5 bg-green-500 hover:bg-green-600 text-white text-[9px] font-black rounded">
+                                                        className="px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-[11px] font-black rounded transition-colors">
                                                         QC
                                                     </button>
                                                 )}
@@ -348,15 +339,12 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                                 })}
                             </tbody>
                         </table>
-                        {/* Infinite scroll sentinel */}
                         <div ref={sentinelRef} className="flex items-center justify-center py-2 text-[10px] text-gray-400">
                             {isFetchingNextPage && "Loading more..."}
-                            {!isFetchingNextPage && !hasNextPage && packingRows.length > 0 && ""}
                         </div>
                     </div>
                 </div>
 
-                {/* Right: Lots Scan IN */}
                 <ScanPanel title="Lots Scan IN" icon={ScanLine} rows={scanInRows as any[]} loading={loadingScanIn}/>
             </div>
 
@@ -377,20 +365,22 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
 
                 <div className="flex flex-1 min-h-0 overflow-hidden">
 
-                    {/* Warehouse Stock */}
                     {subTab === "warehouse-stock" && (
                         <div className="flex flex-col flex-1 overflow-hidden">
-                            <SubGridHeader title="Packing List Boxes transferred to Stock" icon={Warehouse}
-                                actions={
+                            <GridHeader
+                                title="Packing List Boxes transferred to Stock"
+                                icon={Warehouse}
+                                count={(stockRows as any[]).length || undefined}
+                                onDownload={() => {}}
+                                right={
                                     canCreate && selRow ? (
                                         <button onClick={() => onSendToWarehouse?.(selRow)}
-                                            className="flex items-center gap-1 text-[10px] font-bold bg-[#FB7506] hover:bg-orange-500 text-white px-2 py-0.5 rounded">
-                                            <ArrowRight size={9}/> Send to Warehouse
+                                            className="flex items-center gap-1.5 text-[11px] font-bold bg-[#FB7506] hover:bg-orange-500 text-white px-3 py-1 rounded transition-colors mr-1">
+                                            <ArrowRight size={11}/> Send to Warehouse
                                         </button>
                                     ) : undefined
                                 }
                             />
-                            <SubGridToolbar total={(stockRows as any[]).length}/>
                             <div className="overflow-auto flex-1">
                                 <table className="min-w-full text-xs text-left">
                                     <thead className="bg-[#4F4F4F] text-white font-bold text-[11px] uppercase sticky top-0">
@@ -424,8 +414,8 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                                                 <td className="p-1.5 whitespace-nowrap truncate max-w-[80px]">{t(row.box_id)}</td>
                                                 <td className="p-1.5">
                                                     <div className="flex gap-1">
-                                                        {canEdit && <button onClick={e => { e.stopPropagation(); onEditTransfer?.(row); }} className="text-amber-500 hover:text-amber-700" title="Edit Transfer"><Pencil size={11}/></button>}
-                                                        {canDelete && <button onClick={e => { e.stopPropagation(); toastConfirm("Delete this transfer?", () => deleteTransfer.mutate(row)); }} className="text-red-500 hover:text-red-700" title="Delete Transfer"><Trash2 size={11}/></button>}
+                                                        {canEdit && <button onClick={e => { e.stopPropagation(); onEditTransfer?.(row); }} className="text-amber-500 hover:text-amber-700" title="Edit Transfer"><Pencil size={12}/></button>}
+                                                        {canDelete && <button onClick={e => { e.stopPropagation(); toastConfirm("Delete this transfer?", () => deleteTransfer.mutate(row)); }} className="text-red-500 hover:text-red-700" title="Delete Transfer"><Trash2 size={12}/></button>}
                                                     </div>
                                                 </td>
                                             </tr>
@@ -436,12 +426,15 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                         </div>
                     )}
 
-                    {/* Invoiced Stock Lots */}
                     {subTab === "invoiced-lots" && (
                         <>
                             <div className="flex flex-col flex-1 overflow-hidden">
-                                <SubGridHeader title="Invoiced Stock Lots" icon={FileText}/>
-                                <SubGridToolbar total={(invoiceRows as any[]).length}/>
+                                <GridHeader
+                                    title="Invoiced Stock Lots"
+                                    icon={FileText}
+                                    count={(invoiceRows as any[]).length || undefined}
+                                    onDownload={() => {}}
+                                />
                                 <div className="overflow-auto flex-1">
                                     <table className="min-w-full text-xs text-left">
                                         <thead className="bg-[#4F4F4F] text-white font-bold text-[11px] uppercase sticky top-0">
