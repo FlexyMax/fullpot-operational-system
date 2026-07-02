@@ -1,8 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
-import { X, ClipboardList, RefreshCcw, Check, Search } from "lucide-react";
+import { X, ClipboardList, RefreshCcw, Check } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import PanelGrid from "@/components/ui/PanelGrid";
 
 const t = (v: any) => String(v ?? "").trim();
 const norm = (rows: any[]) => rows.map(r => { const n: any = {}; for (const [k, v] of Object.entries(r)) n[k.toUpperCase()] = v; return n; });
@@ -18,38 +19,40 @@ interface Props {
 }
 
 export function ModalBoxPO({ open, onClose, packUq, ldship_date, userId, onSuccess }: Props) {
-    const [poSearch,   setPoSearch]   = useState("");
-    const [poRows,     setPoRows]     = useState<any[]>([]);
-    const [loading,    setLoading]    = useState(false);
-    const [selPO,      setSelPO]      = useState<any>(null);
-    const [qtyShip,    setQtyShip]    = useState(0);
-    const [saving,     setSaving]     = useState(false);
+    const [allPoRows, setAllPoRows] = useState<any[]>([]);
+    const [poSearch,  setPoSearch]  = useState("");
+    const [loading,   setLoading]   = useState(false);
+    const [selPO,     setSelPO]     = useState<any>(null);
+    const [qtyShip,   setQtyShip]   = useState(0);
+    const [saving,    setSaving]    = useState(false);
 
-    const doSearch = async () => {
-        if (!poSearch.trim()) return;
+    const loadPOs = async () => {
         setLoading(true);
         try {
             const res = await fetch(`/api/inventory-entry/purchase-orders?ship_date=${ldship_date}&grower_uq=`);
             const d = await res.json();
-            const rows = norm((d.summary ?? d.byGrower ?? d) as any[]);
-            setPoRows(rows.filter(r => {
-                const s = poSearch.toLowerCase();
-                return t(r.PORDER_NO ?? r.PORDER ?? "").toLowerCase().includes(s) ||
-                       t(r.GROWER ?? "").toLowerCase().includes(s) ||
-                       t(r.DESCRIPTION ?? "").toLowerCase().includes(s);
-            }));
+            setAllPoRows(norm((d.summary ?? d.byGrower ?? d) as any[]));
         } catch {
-            setPoRows([]);
+            setAllPoRows([]);
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        if (!open) { setSelPO(null); setPoRows([]); setPoSearch(""); }
+        if (!open) { setSelPO(null); setAllPoRows([]); setPoSearch(""); return; }
+        loadPOs();
     }, [open]);
 
     if (!open) return null;
+
+    const filtered = allPoRows.filter(r => {
+        if (!poSearch.trim()) return true;
+        const s = poSearch.toLowerCase();
+        return t(r.PORDER_NO ?? r.PORDER ?? "").toLowerCase().includes(s) ||
+               t(r.GROWER ?? "").toLowerCase().includes(s) ||
+               t(r.DESCRIPTION ?? "").toLowerCase().includes(s);
+    });
 
     const handleSave = async () => {
         if (!selPO) { toast.error("Select a PO first."); return; }
@@ -91,42 +94,36 @@ export function ModalBoxPO({ open, onClose, packUq, ldship_date, userId, onSucce
                     </div>
                     <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors"><X size={16} /></button>
                 </div>
-                <div className="p-3 border-b shrink-0 flex gap-2">
-                    <div className="relative flex-1">
-                        <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
-                        <input
-                            value={poSearch}
-                            onChange={e => setPoSearch(e.target.value)}
-                            onKeyDown={e => e.key === "Enter" && doSearch()}
-                            className={fInput + " pl-6 w-full"}
-                            placeholder="Search PO by number, grower or product..."
-                            autoFocus
-                        />
-                    </div>
-                    <button onClick={doSearch} className="px-3 py-1 bg-gray-700 text-white text-xs font-bold rounded hover:bg-gray-800 flex items-center gap-1 shrink-0">
-                        {loading ? <RefreshCcw size={11} className="animate-spin" /> : <Search size={11} />}
-                        Search
-                    </button>
-                </div>
-                <div className="flex-1 overflow-y-auto min-h-0">
+
+                <PanelGrid
+                    title="Purchase Orders"
+                    icon={ClipboardList}
+                    recordCount={filtered.length}
+                    searchValue={poSearch}
+                    onSearchChange={setPoSearch}
+                    searchPlaceholder="Filter by PO, grower or product..."
+                    onRefresh={loadPOs}
+                    refreshing={loading}
+                    className="flex-1 min-h-0 rounded-none border-x-0 border-b-0"
+                >
                     <table className="w-full text-xs">
                         <thead className="bg-gray-100 sticky top-0">
                             <tr>
                                 {["PO #","Grower","Description","Ship Date","Qty Ord","Qty Pend","Price"].map(h => (
-                                    <th key={h} className="p-2 text-left font-bold text-gray-700 border-r border-gray-200 whitespace-nowrap">{h}</th>
+                                    <th key={h} className="p-2 text-left font-bold text-gray-700 border-r border-gray-200 whitespace-nowrap last:border-r-0">{h}</th>
                                 ))}
                             </tr>
                         </thead>
                         <tbody>
-                            {poRows.length === 0 ? (
-                                <tr><td colSpan={7} className="p-4 text-center text-gray-400 italic">{loading ? "" : "Search POs above"}</td></tr>
-                            ) : poRows.map((row: any, i: number) => {
+                            {filtered.length === 0 ? (
+                                <tr><td colSpan={7} className="p-4 text-center text-gray-400 italic">{loading ? "" : "No purchase orders found"}</td></tr>
+                            ) : filtered.map((row: any, i: number) => {
                                 const uq  = t(row.UNICO ?? row.PORDER_UQ ?? "");
                                 const sel = selPO && (t(selPO.UNICO ?? selPO.PORDER_UQ ?? "") === uq);
                                 return (
                                     <tr key={i} onClick={() => setSelPO(row)}
-                                        className={cn("border-b border-gray-100 cursor-pointer transition-colors", sel ? "bg-blue-100 ring-1 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50")}>
-                                        <td className={cn("p-2 border-r border-gray-100 font-mono", sel && "text-blue-700")}>{t(row.PORDER_NO ?? row.PORDER ?? uq)}</td>
+                                        className={cn("border-b border-gray-100 cursor-pointer transition-colors", sel ? "!bg-[#FB7506]/10 ring-1 ring-inset ring-[#FB7506]/30" : "odd:bg-white even:bg-gray-50 hover:!bg-[#FB7506]/10")}>
+                                        <td className={cn("p-2 border-r border-gray-100 font-mono", sel && "text-[#FB7506] font-bold")}>{t(row.PORDER_NO ?? row.PORDER ?? uq)}</td>
                                         <td className="p-2 border-r border-gray-100 max-w-[100px] truncate">{t(row.GROWER ?? "")}</td>
                                         <td className="p-2 border-r border-gray-100 max-w-[120px] truncate">{t(row.DESCRIPTION ?? row.PRODUCT ?? "")}</td>
                                         <td className="p-2 border-r border-gray-100">{t(row.SHIP_DATE ?? row.SHIPDATE ?? "").substring(0, 10)}</td>
@@ -138,10 +135,11 @@ export function ModalBoxPO({ open, onClose, packUq, ldship_date, userId, onSucce
                             })}
                         </tbody>
                     </table>
-                </div>
+                </PanelGrid>
+
                 {selPO && (
-                    <div className="p-3 border-t bg-blue-50 shrink-0 flex items-center gap-3">
-                        <span className="text-xs text-blue-700 font-bold truncate flex-1">
+                    <div className="p-3 border-t bg-orange-50 shrink-0 flex items-center gap-3">
+                        <span className="text-xs text-[#FB7506] font-bold truncate flex-1">
                             Selected: {t(selPO.PORDER_NO ?? selPO.PORDER ?? "")} — {t(selPO.DESCRIPTION ?? selPO.GROWER ?? "")}
                         </span>
                         <label className={fLabel + " whitespace-nowrap"}>Qty to Ship:</label>
@@ -149,6 +147,7 @@ export function ModalBoxPO({ open, onClose, packUq, ldship_date, userId, onSucce
                             className={fInput + " w-20 text-right"} />
                     </div>
                 )}
+
                 <div className="flex justify-end gap-2 px-4 py-3 bg-gray-50 border-t shrink-0">
                     <button onClick={onClose} className="px-4 py-2 rounded border border-gray-200 text-xs font-black uppercase text-gray-600 hover:bg-gray-100 transition-colors">
                         Cancel

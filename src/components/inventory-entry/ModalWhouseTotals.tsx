@@ -3,6 +3,7 @@ import { useState, useCallback } from "react";
 import { X, BarChart2, RefreshCcw, Search } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import PanelGrid from "@/components/ui/PanelGrid";
 
 const t = (v: any) => String(v ?? "").trim();
 const today = () => new Date().toISOString().split("T")[0];
@@ -78,15 +79,21 @@ export function ModalWhouseTotals({ open, onClose, lddate, warehouses }: Props) 
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto min-h-0">
-                    {!whouse && !loading && rows.length === 0 && (
+                <PanelGrid
+                    title="WH Totals"
+                    icon={BarChart2}
+                    recordCount={rows.length > 0 ? rows.length : undefined}
+                    onRefresh={whouse ? doSearch : undefined}
+                    refreshing={loading}
+                    className="flex-1 min-h-0 rounded-none border-x-0 border-b-0"
+                >
+                    {!whouse && rows.length === 0 ? (
                         <div className="p-6 text-center text-gray-400 text-xs italic">Select a warehouse and click Search</div>
-                    )}
-                    {(rows.length > 0 || (whouse && !loading)) && (
+                    ) : (
                         <table className="w-full text-xs">
                             <thead className="bg-gray-100 sticky top-0">
                                 <tr>
-                                    {["AWB Code", "Records", "Boxes", "Full Boxes", "WH Status", "Delayed"].map(h => (
+                                    {["AWB Code","Records","Boxes","Full Boxes","WH Status","Delayed"].map(h => (
                                         <th key={h} className="p-2 text-left font-bold text-gray-700 border-r border-gray-200 whitespace-nowrap last:border-r-0">{h}</th>
                                     ))}
                                 </tr>
@@ -111,12 +118,11 @@ export function ModalWhouseTotals({ open, onClose, lddate, warehouses }: Props) 
                             </tbody>
                         </table>
                     )}
-                </div>
+                </PanelGrid>
 
                 <div className="px-4 py-2 bg-gray-50 border-t shrink-0 flex items-center justify-between">
                     <span className="text-[10px] text-gray-400">
-                        {rows.length > 0 ? `${rows.length} record(s)` : ""}
-                        {whouseName ? ` — ${t(whouseName.WAREHOUSE ?? whouseName.WP_NAME ?? whouseName.UNICO)}` : ""}
+                        {whouseName ? t(whouseName.WAREHOUSE ?? whouseName.WP_NAME ?? whouseName.UNICO) : ""}
                     </span>
                     <button onClick={onClose} className="px-4 py-2 rounded border border-gray-200 text-xs font-black uppercase text-gray-600 hover:bg-gray-100 transition-colors">
                         Close

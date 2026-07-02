@@ -3,6 +3,7 @@ import { useState } from "react";
 import { X, Trash2, RefreshCcw, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import PanelGrid from "@/components/ui/PanelGrid";
 
 const t = (v: any) => String(v ?? "").trim();
 const fmt2 = (v: any) => parseFloat(v ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -77,15 +78,21 @@ export function ModalDeletePackingDetails({ open, onClose, packUq, packingDetail
                     </div>
                     <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors"><X size={16} /></button>
                 </div>
-                <div className="flex-1 overflow-y-auto min-h-0">
+
+                <PanelGrid
+                    title="Boxes"
+                    icon={Trash2}
+                    recordCount={packingDetails.length}
+                    className="flex-1 min-h-0 rounded-none border-x-0 border-b-0"
+                >
                     <table className="w-full text-xs">
                         <thead className="bg-gray-100 sticky top-0">
                             <tr>
-                                <th className="p-2 border-r border-gray-200">
+                                <th className="p-2 border-r border-gray-200 w-8">
                                     <input type="checkbox" checked={selected.size === packingDetails.length && packingDetails.length > 0} onChange={toggleAll} className="accent-red-500" />
                                 </th>
                                 {["Product","Case","Qty","Units","Price","T.Price","Lote","Customer"].map(h => (
-                                    <th key={h} className="p-2 text-left font-bold text-gray-700 border-r border-gray-200 whitespace-nowrap">{h}</th>
+                                    <th key={h} className="p-2 text-left font-bold text-gray-700 border-r border-gray-200 whitespace-nowrap last:border-r-0">{h}</th>
                                 ))}
                             </tr>
                         </thead>
@@ -104,7 +111,7 @@ export function ModalDeletePackingDetails({ open, onClose, packUq, packingDetail
                                         </td>
                                         <td className="p-2 border-r border-gray-100 max-w-[120px] truncate">{t(row.DESCRIPTION ?? row.PRODUCT ?? "")}</td>
                                         <td className="p-2 border-r border-gray-100">{t(row.CASE ?? "")}</td>
-                                        <td className="p-2 border-r border-gray-100 text-right">{t(row.BOX_QTY ?? row.BOX_QTY ?? "")}</td>
+                                        <td className="p-2 border-r border-gray-100 text-right">{t(row.BOX_QTY ?? "")}</td>
                                         <td className="p-2 border-r border-gray-100 text-right">{t(row.TOTAL_UNITS ?? "")}</td>
                                         <td className="p-2 border-r border-gray-100 text-right">{fmt2(row.PRICE_X_U ?? row.PRICE ?? 0)}</td>
                                         <td className="p-2 border-r border-gray-100 text-right font-bold">{fmt2(row.T_PRICE ?? 0)}</td>
@@ -115,7 +122,8 @@ export function ModalDeletePackingDetails({ open, onClose, packUq, packingDetail
                             })}
                         </tbody>
                     </table>
-                </div>
+                </PanelGrid>
+
                 {confirmed && selected.size > 0 && (
                     <div className="px-4 py-2 bg-red-50 border-t border-red-200 shrink-0 flex items-center gap-2">
                         <AlertCircle size={14} className="text-red-500 shrink-0" />
@@ -124,6 +132,7 @@ export function ModalDeletePackingDetails({ open, onClose, packUq, packingDetail
                         </span>
                     </div>
                 )}
+
                 <div className="flex items-center justify-between gap-2 px-4 py-3 bg-gray-50 border-t shrink-0">
                     <span className="text-[10px] text-gray-400">{selected.size} of {packingDetails.length} selected</span>
                     <div className="flex gap-2">

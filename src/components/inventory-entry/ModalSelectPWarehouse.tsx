@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
-import { X, Warehouse, Search } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { X, Warehouse } from "lucide-react";
+import PanelGrid from "@/components/ui/PanelGrid";
 
 const t = (v: any) => String(v ?? "").trim();
 
@@ -35,23 +35,20 @@ export function ModalSelectPWarehouse({ open, onClose, warehouses, onSelect, tit
                     </div>
                     <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors"><X size={16} /></button>
                 </div>
-                <div className="p-3 border-b shrink-0">
-                    <div className="relative">
-                        <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
-                        <input
-                            value={search}
-                            onChange={e => setSearch(e.target.value)}
-                            className="fos-input h-7 text-xs pl-6 w-full"
-                            placeholder="Search warehouses..."
-                            autoFocus
-                        />
-                    </div>
-                </div>
-                <div className="flex-1 overflow-y-auto">
+
+                <PanelGrid
+                    title="Warehouses"
+                    icon={Warehouse}
+                    recordCount={filtered.length}
+                    searchValue={search}
+                    onSearchChange={setSearch}
+                    searchPlaceholder="Search warehouses..."
+                    className="flex-1 min-h-0 rounded-none border-x-0 border-b-0"
+                >
                     <table className="w-full text-xs">
                         <thead className="bg-gray-100 sticky top-0">
                             <tr>
-                                <th className="p-2 text-left font-bold text-gray-700 border-r border-gray-200">Code</th>
+                                <th className="p-2 text-left font-bold text-gray-700 border-r border-gray-200 w-20">Code</th>
                                 <th className="p-2 text-left font-bold text-gray-700">Warehouse</th>
                             </tr>
                         </thead>
@@ -61,16 +58,19 @@ export function ModalSelectPWarehouse({ open, onClose, warehouses, onSelect, tit
                             ) : filtered.map((w: any, i: number) => (
                                 <tr key={i}
                                     onClick={() => { onSelect(w); onClose(); }}
-                                    className="border-b border-gray-100 cursor-pointer odd:bg-white even:bg-gray-50 hover:bg-blue-50 transition-colors">
+                                    className="border-b border-gray-100 cursor-pointer odd:bg-white even:bg-gray-50 hover:!bg-[#FB7506]/10 transition-colors">
                                     <td className="p-2 border-r border-gray-100 font-mono text-gray-500">{t(w.UNICO)}</td>
                                     <td className="p-2 font-semibold text-gray-800">{t(w.WAREHOUSE ?? w.WP_NAME ?? w.UNICO)}</td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
-                </div>
-                <div className="px-4 py-2 bg-gray-50 border-t shrink-0">
-                    <span className="text-[10px] text-gray-400">{filtered.length} warehouses</span>
+                </PanelGrid>
+
+                <div className="px-4 py-2 bg-gray-50 border-t shrink-0 flex justify-end">
+                    <button onClick={onClose} className="px-4 py-2 rounded border border-gray-200 text-xs font-black uppercase text-gray-600 hover:bg-gray-100 transition-colors">
+                        Cancel
+                    </button>
                 </div>
             </div>
         </div>

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { X, ShoppingCart, RefreshCcw, Check, Search } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import PanelGrid from "@/components/ui/PanelGrid";
 
 const t = (v: any) => String(v ?? "").trim();
 const norm = (rows: any[]) => rows.map(r => { const n: any = {}; for (const [k, v] of Object.entries(r)) n[k.toUpperCase()] = v; return n; });
@@ -21,13 +22,13 @@ interface Props {
 // the user find that packing the same way every other "attach to a packing" action in this app does:
 // AWB code + date, same lookup ModalBoxPO/the AWB's Packings tab already use.
 export function ModalAddPOToInventory({ open, onClose, poLine, defaultDate, userId, onSuccess }: Props) {
-    const [awbCode,   setAwbCode]   = useState("");
-    const [date,      setDate]      = useState(defaultDate);
-    const [packings,  setPackings]  = useState<any[]>([]);
-    const [loading,   setLoading]   = useState(false);
-    const [selPack,   setSelPack]   = useState<any>(null);
-    const [qtyShip,   setQtyShip]   = useState(0);
-    const [saving,    setSaving]    = useState(false);
+    const [awbCode,  setAwbCode]  = useState("");
+    const [date,     setDate]     = useState(defaultDate);
+    const [packings, setPackings] = useState<any[]>([]);
+    const [loading,  setLoading]  = useState(false);
+    const [selPack,  setSelPack]  = useState<any>(null);
+    const [qtyShip,  setQtyShip]  = useState(0);
+    const [saving,   setSaving]   = useState(false);
 
     if (!open) return null;
 
@@ -109,11 +110,18 @@ export function ModalAddPOToInventory({ open, onClose, poLine, defaultDate, user
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto min-h-0">
+                <PanelGrid
+                    title="Destination Packings"
+                    icon={ShoppingCart}
+                    recordCount={packings.length > 0 ? packings.length : undefined}
+                    onRefresh={awbCode ? doFind : undefined}
+                    refreshing={loading}
+                    className="flex-1 min-h-0 rounded-none border-x-0 border-b-0"
+                >
                     <table className="w-full text-xs">
                         <thead className="bg-gray-100 sticky top-0">
                             <tr>
-                                {["Grower", "Packing No.", "Invoice", "Status"].map(h => (
+                                {["Grower","Packing No.","Invoice","Status"].map(h => (
                                     <th key={h} className="p-2 text-left font-bold text-gray-700 border-r border-gray-200 whitespace-nowrap last:border-r-0">{h}</th>
                                 ))}
                             </tr>
@@ -126,9 +134,9 @@ export function ModalAddPOToInventory({ open, onClose, poLine, defaultDate, user
                                 const sel = selPack && t(selPack.PACK_UQ ?? selPack.UNICO ?? "") === uq;
                                 return (
                                     <tr key={i} onClick={() => setSelPack(row)}
-                                        className={cn("border-b border-gray-100 cursor-pointer transition-colors", sel ? "bg-blue-100 ring-1 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50")}>
+                                        className={cn("border-b border-gray-100 cursor-pointer transition-colors", sel ? "!bg-[#FB7506]/10 ring-1 ring-inset ring-[#FB7506]/30" : "odd:bg-white even:bg-gray-50 hover:!bg-[#FB7506]/10")}>
                                         <td className="p-2 border-r border-gray-100 max-w-[140px] truncate">{t(row.GROWER ?? "")}</td>
-                                        <td className="p-2 border-r border-gray-100">{t(row.PACKING_NO ?? "")}</td>
+                                        <td className={cn("p-2 border-r border-gray-100", sel && "font-bold text-[#FB7506]")}>{t(row.PACKING_NO ?? "")}</td>
                                         <td className="p-2 border-r border-gray-100">{t(row.INVOICE_NO ?? "")}</td>
                                         <td className="p-2">{t(row.STATUS ?? "")}</td>
                                     </tr>
@@ -136,11 +144,11 @@ export function ModalAddPOToInventory({ open, onClose, poLine, defaultDate, user
                             })}
                         </tbody>
                     </table>
-                </div>
+                </PanelGrid>
 
                 {selPack && (
-                    <div className="p-3 border-t bg-blue-50 shrink-0 flex items-center gap-3">
-                        <span className="text-xs text-blue-700 font-bold truncate flex-1">
+                    <div className="p-3 border-t bg-orange-50 shrink-0 flex items-center gap-3">
+                        <span className="text-xs text-[#FB7506] font-bold truncate flex-1">
                             Destination: {t(selPack.GROWER ?? "")} — {t(selPack.PACKING_NO ?? "")}
                         </span>
                         <label className={fLabel + " whitespace-nowrap"}>Qty to Ship:</label>

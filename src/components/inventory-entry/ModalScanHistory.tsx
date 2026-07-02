@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
-import { X, ScanLine, RefreshCcw } from "lucide-react";
+import { X, ScanLine } from "lucide-react";
 import { toast } from "sonner";
+import PanelGrid from "@/components/ui/PanelGrid";
 
 const t = (v: any) => String(v ?? "").trim();
 
@@ -16,14 +17,19 @@ export function ModalScanHistory({ open, onClose, boxUnico, lote }: Props) {
     const [rows,    setRows]    = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        if (!open || !boxUnico) return;
+    const load = () => {
+        if (!boxUnico) return;
         setLoading(true);
         fetch(`/api/inventory-entry/boxes/${boxUnico}/scan-history`)
             .then(r => r.json())
             .then(d => setRows(Array.isArray(d) ? d : []))
             .catch(e => toast.error(e.message))
             .finally(() => setLoading(false));
+    };
+
+    useEffect(() => {
+        if (!open || !boxUnico) return;
+        load();
     }, [open, boxUnico]);
 
     if (!open) return null;
@@ -35,15 +41,22 @@ export function ModalScanHistory({ open, onClose, boxUnico, lote }: Props) {
                     <div className="flex items-center gap-2">
                         <ScanLine size={16} className="text-[#FB7506]" />
                         <span className="font-black text-[10px] text-white uppercase tracking-widest">Scan History — Lot {lote}</span>
-                        {loading && <RefreshCcw size={11} className="text-gray-400 animate-spin ml-1" />}
                     </div>
                     <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors"><X size={16} /></button>
                 </div>
-                <div className="flex-1 overflow-y-auto">
+
+                <PanelGrid
+                    title="Scan Events"
+                    icon={ScanLine}
+                    recordCount={rows.length}
+                    onRefresh={load}
+                    refreshing={loading}
+                    className="flex-1 min-h-0 rounded-none border-x-0 border-b-0"
+                >
                     <table className="w-full text-xs">
                         <thead className="bg-gray-100 sticky top-0">
                             <tr>
-                                {["Timestamp", "Box No.", "Qty In", "Qty Out", "Total", "Barcode", "Rack"].map(h => (
+                                {["Timestamp","Box No.","Qty In","Qty Out","Total","Barcode","Rack"].map(h => (
                                     <th key={h} className="p-2 text-left font-bold text-gray-700 border-r border-gray-200 whitespace-nowrap last:border-r-0">{h}</th>
                                 ))}
                             </tr>
@@ -64,9 +77,9 @@ export function ModalScanHistory({ open, onClose, boxUnico, lote }: Props) {
                             ))}
                         </tbody>
                     </table>
-                </div>
-                <div className="px-4 py-2 bg-gray-50 border-t shrink-0 flex items-center justify-between">
-                    <span className="text-[10px] text-gray-400">{rows.length > 0 ? `${rows.length} scan event(s)` : ""}</span>
+                </PanelGrid>
+
+                <div className="px-4 py-2 bg-gray-50 border-t shrink-0 flex justify-end">
                     <button onClick={onClose} className="px-4 py-2 rounded border border-gray-200 text-xs font-black uppercase text-gray-600 hover:bg-gray-100 transition-colors">
                         Close
                     </button>

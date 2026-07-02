@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { X, Plane, RefreshCcw, Plus, Pencil, Trash2, Save, Search, AlertCircle } from "lucide-react";
+import { X, Plane, RefreshCcw, Plus, Pencil, Trash2, Save, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import PanelGrid from "@/components/ui/PanelGrid";
 
 const t = (v: any) => String(v ?? "").trim();
 const today = () => new Date().toISOString().split("T")[0];
@@ -167,15 +168,17 @@ export function ModalAWBSetup({ open, onClose, userId, defaultDate, defaultAwbco
 
                 {mode === "list" && (
                     <>
-                        <div className="p-3 border-b shrink-0 flex gap-2">
-                            <input value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === "Enter" && doSearch()}
-                                className={fInput + " flex-1"} placeholder="Search AWB..." />
-                            <button onClick={doSearch} className="px-3 py-1 bg-gray-700 text-white text-xs font-bold rounded hover:bg-gray-800 flex items-center gap-1 shrink-0">
-                                {loading ? <RefreshCcw size={11} className="animate-spin" /> : <Search size={11} />}
-                                Search
-                            </button>
-                        </div>
-                        <div className="flex-1 overflow-y-auto min-h-0">
+                        <PanelGrid
+                            title="AWB Records"
+                            icon={Plane}
+                            recordCount={rows.length}
+                            searchValue={search}
+                            onSearchChange={setSearch}
+                            searchPlaceholder="Search AWB..."
+                            onRefresh={doSearch}
+                            refreshing={loading}
+                            className="flex-1 min-h-0 rounded-none border-x-0 border-b-0"
+                        >
                             <table className="w-full text-xs">
                                 <thead className="bg-gray-100 sticky top-0">
                                     <tr>
@@ -189,7 +192,7 @@ export function ModalAWBSetup({ open, onClose, userId, defaultDate, defaultAwbco
                                     {rows.length === 0 ? (
                                         <tr><td colSpan={4} className="p-4 text-center text-gray-400 italic">{loading ? "" : "No AWB setups found"}</td></tr>
                                     ) : rows.map((row: any, i: number) => (
-                                        <tr key={i} className="border-b border-gray-100 odd:bg-white even:bg-gray-50">
+                                        <tr key={i} className="border-b border-gray-100 odd:bg-white even:bg-gray-50 hover:!bg-[#FB7506]/10 transition-colors">
                                             <td className="p-2 border-r border-gray-100 font-mono font-bold">{t(row.AWBCODE)}</td>
                                             <td className="p-2 border-r border-gray-100">{fmtDate(row.AWBDATE ?? row.DATE_INVO ?? "")}</td>
                                             <td className="p-2 border-r border-gray-100">{t(row.CITY ?? row.CITY_UQ ?? row.DESCRIPTION ?? "")}</td>
@@ -203,9 +206,11 @@ export function ModalAWBSetup({ open, onClose, userId, defaultDate, defaultAwbco
                                     ))}
                                 </tbody>
                             </table>
-                        </div>
-                        <div className="px-4 py-2 bg-gray-50 border-t shrink-0">
-                            <span className="text-[10px] text-gray-400">{rows.length} record(s)</span>
+                        </PanelGrid>
+                        <div className="px-4 py-2 bg-gray-50 border-t shrink-0 flex justify-end">
+                            <button onClick={onClose} className="px-4 py-2 rounded border border-gray-200 text-xs font-black uppercase text-gray-600 hover:bg-gray-100 transition-colors">
+                                Close
+                            </button>
                         </div>
                     </>
                 )}

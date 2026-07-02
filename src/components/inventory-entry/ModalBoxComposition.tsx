@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { X, Layers, RefreshCcw, Check, Search, Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import PanelGrid from "@/components/ui/PanelGrid";
 
 const t = (v: any) => String(v ?? "").trim();
 const int = (v: any) => { const n = parseInt(String(v ?? 0), 10); return isNaN(n) ? 0 : n; };
@@ -25,7 +25,7 @@ export function ModalBoxComposition({ open, onClose, boxUnico, boxLabel, onSucce
     const [loading, setLoading] = useState(false);
     const [saving,  setSaving]  = useState(false);
 
-    const [adding,    setAdding]    = useState(false);
+    const [adding,     setAdding]     = useState(false);
     const [prodSearch, setProdSearch] = useState("");
     const [prodRows,   setProdRows]   = useState<any[]>([]);
     const [searching,  setSearching]  = useState(false);
@@ -123,17 +123,31 @@ export function ModalBoxComposition({ open, onClose, boxUnico, boxLabel, onSucce
                     <div className="flex items-center gap-2">
                         <Layers size={16} className="text-[#FB7506]" />
                         <span className="font-black text-[10px] text-white uppercase tracking-widest">Composition — {boxLabel || boxUnico}</span>
-                        {loading && <RefreshCcw size={11} className="text-gray-400 animate-spin ml-1" />}
                     </div>
                     <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors"><X size={16} /></button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto min-h-0">
+                <PanelGrid
+                    title="Composition Rows"
+                    icon={Layers}
+                    recordCount={rows.length}
+                    onRefresh={loadRows}
+                    refreshing={loading}
+                    headerRight={
+                        !adding ? (
+                            <button onClick={() => setAdding(true)}
+                                className="flex items-center gap-1 h-7 px-2 text-[10px] font-bold bg-green-600 hover:bg-green-500 text-white rounded transition-colors">
+                                <Plus size={12} /> Add Product
+                            </button>
+                        ) : undefined
+                    }
+                    className="flex-1 min-h-0 rounded-none border-x-0 border-b-0"
+                >
                     <table className="w-full text-xs">
                         <thead className="bg-gray-100 sticky top-0">
                             <tr>
                                 {["Description","Bunch/Case","Units/Bunch","Grow $","Sale $","Total Sale",""].map(h => (
-                                    <th key={h} className="p-2 text-left font-bold text-gray-700 border-r border-gray-200 whitespace-nowrap">{h}</th>
+                                    <th key={h} className="p-2 text-left font-bold text-gray-700 border-r border-gray-200 whitespace-nowrap last:border-r-0">{h}</th>
                                 ))}
                             </tr>
                         </thead>
@@ -157,9 +171,9 @@ export function ModalBoxComposition({ open, onClose, boxUnico, boxLabel, onSucce
                             ))}
                         </tbody>
                     </table>
-                </div>
+                </PanelGrid>
 
-                {adding ? (
+                {adding && (
                     <div className="p-3 border-t bg-gray-50 shrink-0 space-y-2">
                         <div className="relative">
                             {searching
@@ -178,7 +192,7 @@ export function ModalBoxComposition({ open, onClose, boxUnico, boxLabel, onSucce
                             <div className="max-h-32 overflow-y-auto border border-gray-200 rounded bg-white">
                                 {prodRows.map((p: any, i: number) => (
                                     <div key={i} onClick={() => pickProduct(p)}
-                                        className="px-2 py-1 text-xs cursor-pointer hover:bg-blue-50 border-b border-gray-50 last:border-0 truncate">
+                                        className="px-2 py-1 text-xs cursor-pointer hover:bg-[#FB7506]/10 border-b border-gray-50 last:border-0 truncate">
                                         {t(p.DESCRIPTION)}
                                     </div>
                                 ))}
@@ -202,25 +216,27 @@ export function ModalBoxComposition({ open, onClose, boxUnico, boxLabel, onSucce
                                 <input type="number" step="0.01" value={newRow.salesprice} onChange={e => setNewRow(p => ({ ...p, salesprice: num(e.target.value) }))} className={fInput + " text-right"} />
                             </div>
                         </div>
-                        <div className="flex justify-end gap-2">
-                            <button onClick={() => setAdding(false)} className="px-3 py-1.5 rounded border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-100">Cancel</button>
-                            <button onClick={handleAdd} disabled={saving || !newRow.product_uq}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#FB7506] hover:bg-orange-600 disabled:opacity-40 text-white text-xs font-bold">
-                                {saving ? <RefreshCcw size={11} className="animate-spin" /> : <Check size={11} />} Add Row
-                            </button>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="flex justify-between items-center px-4 py-3 bg-gray-50 border-t shrink-0">
-                        <button onClick={() => setAdding(true)}
-                            className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded bg-green-600 hover:bg-green-500 text-white text-xs font-bold")}>
-                            <Plus size={12} /> Add Product
-                        </button>
-                        <button onClick={onClose} className="px-4 py-2 rounded border border-gray-200 text-xs font-black uppercase text-gray-600 hover:bg-gray-100 transition-colors">
-                            Close
-                        </button>
                     </div>
                 )}
+
+                <div className="flex justify-between items-center px-4 py-3 bg-gray-50 border-t shrink-0">
+                    {adding ? (
+                        <>
+                            <button onClick={() => setAdding(false)} className="px-4 py-2 rounded border border-gray-200 text-xs font-black uppercase text-gray-600 hover:bg-gray-100 transition-colors">
+                                Cancel
+                            </button>
+                            <button onClick={handleAdd} disabled={saving || !newRow.product_uq}
+                                className="flex items-center gap-1.5 px-5 py-2 rounded bg-[#FB7506] hover:bg-orange-600 disabled:opacity-40 text-white text-xs font-black uppercase tracking-wider transition-all">
+                                {saving ? <RefreshCcw size={11} className="animate-spin" /> : <Check size={11} />}
+                                Add Row
+                            </button>
+                        </>
+                    ) : (
+                        <button onClick={onClose} className="ml-auto px-4 py-2 rounded border border-gray-200 text-xs font-black uppercase text-gray-600 hover:bg-gray-100 transition-colors">
+                            Close
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
     );
