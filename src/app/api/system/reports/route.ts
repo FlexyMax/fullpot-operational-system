@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { serverAuditLog } from "@/lib/serverAudit";
+const PANTA = "52961702";
 
 const bit = (v: any) => (v ? 1 : 0);
 
@@ -31,7 +33,9 @@ export async function POST(req: NextRequest) {
         }, true);
         const row = r.recordset?.[0] || {};
         if (row.error) return NextResponse.json({ success: false, error: row.message }, { status: 400 });
-        return NextResponse.json({ success: true, unico: String(row.unico || "").trim(), message: row.message });
+        const unico = String(row.unico || "").trim();
+        serverAuditLog(PANTA, "Insert", "pantalla_reportes", unico).catch(() => {});
+        return NextResponse.json({ success: true, unico, message: row.message });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }

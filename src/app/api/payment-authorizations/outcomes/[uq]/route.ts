@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
+import { serverAuditLog } from "@/lib/serverAudit";
+const PANTA = "52961702";
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ uq: string }> }) {
     const { uq } = await params;
@@ -27,6 +29,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ uq: 
             details:      details ?? "",
             pay_doc:      parseInt(pay_doc)       || 0,
         });
+        serverAuditLog(PANTA, "Edit", "flower_accounts_outcomes", uq).catch(() => {});
         return NextResponse.json({ success: true });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -38,6 +41,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     const { uq } = await params;
     try {
         await executeProcedure("SP_flower_accounts_outcome_Delete", { unico: uq });
+        serverAuditLog(PANTA, "Delete", "flower_accounts_outcomes", uq).catch(() => {});
         return NextResponse.json({ success: true });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });

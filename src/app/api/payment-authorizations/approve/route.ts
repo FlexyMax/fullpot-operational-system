@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
+import { serverAuditLog } from "@/lib/serverAudit";
+const PANTA = "52961702";
 
 // POST { unico, approved: true|false }
 export async function POST(req: NextRequest) {
@@ -11,6 +13,7 @@ export async function POST(req: NextRequest) {
             lcunico:    unico,
             llapproved: approved ? 1 : 0,
         });
+        serverAuditLog(PANTA, "Edit", "flower_accounts_pay", unico, approved ? "Approve" : "Unapprove").catch(() => {});
         return NextResponse.json({ success: true, data: r.recordset[0] ?? null });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });

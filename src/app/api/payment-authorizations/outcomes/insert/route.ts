@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
+import { serverAuditLog } from "@/lib/serverAudit";
+const PANTA = "52961702";
 
 // POST { bank_uq, supplier_uq, out_ammount, out_total, details, pay_doc }
 export async function POST(req: NextRequest) {
@@ -14,7 +16,9 @@ export async function POST(req: NextRequest) {
             details:     body.details     ?? "",
             pay_doc:     body.pay_doc     ?? 0,
         });
-        return NextResponse.json({ success: true, data: r.recordset[0] ?? null });
+        const rec = r.recordset[0] ?? null;
+        serverAuditLog(PANTA, "Insert", "flower_accounts_outcomes", rec?.unico ?? body.bank_uq).catch(() => {});
+        return NextResponse.json({ success: true, data: rec });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }

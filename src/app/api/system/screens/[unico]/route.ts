@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { serverAuditLog } from "@/lib/serverAudit";
+const PANTA = "52961702";
 
 const bit = (v: any) => (v ? 1 : 0);
 type P = { params: Promise<{ unico: string }> };
@@ -38,6 +40,7 @@ export async function PUT(req: NextRequest, { params }: P) {
         }, true);
         const row = r.recordset?.[0] || {};
         if (row.error) return NextResponse.json({ success: false, error: row.message }, { status: 400 });
+        serverAuditLog(PANTA, "Edit", "pantallas", unico).catch(() => {});
         return NextResponse.json({ success: true, message: row.message });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -55,6 +58,7 @@ export async function DELETE(_req: NextRequest, { params }: P) {
         }, true);
         const row = r.recordset?.[0] || {};
         if (row.error) return NextResponse.json({ success: false, error: row.message }, { status: 400 });
+        serverAuditLog(PANTA, "Delete", "pantallas", unico).catch(() => {});
         return NextResponse.json({ success: true, message: row.message });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });

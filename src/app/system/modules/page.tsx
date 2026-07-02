@@ -225,16 +225,24 @@ export default function ModuleScreenSetupPage() {
         const file = e.target.files?.[0]; if (!file) return;
         try {
             const text = await file.text(); const json = JSON.parse(text);
-            if (!confirm("Import and update Modules, Screens and Reports? Existing records will be updated.")) return;
-            const res  = await fetch("/api/system/modules/import", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(json) });
-            const data = await res.json();
-            if (data.success) {
-                const { modules: m, screens: s, reports: r } = data.imported;
-                logAction("Insert", selModUnico || "import", "JSON Import");
-                toast.success(`Imported: ${m} modules, ${s} screens, ${r} reports`);
-                await qc.invalidateQueries({ queryKey: ["sys-mods"] });
-            } else { toast.error(data.error); }
-        } catch (e:any) { toast.error("Error reading file: " + e.message); }
+            const doImport = async () => {
+                try {
+                    const res = await fetch("/api/system/modules/import", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(json) });
+                    const data = await res.json();
+                    if (data.success) {
+                        const { modules: m, screens: s, reports: r } = data.imported;
+                        logAction("Insert", selModUnico || "import", "JSON Import");
+                        toast.success(`Imported: ${m} modules, ${s} screens, ${r} reports`);
+                        await qc.invalidateQueries({ queryKey: ["sys-mods"] });
+                    } else { toast.error(data.error); }
+                } catch (err: any) { toast.error("Import failed: " + err.message); }
+            };
+            toast("Import and update Modules, Screens and Reports? Existing records will be updated.", {
+                duration: 10000,
+                action: { label: "Confirm", onClick: doImport },
+                cancel: { label: "Cancel", onClick: () => {} },
+            });
+        } catch (e: any) { toast.error("Error reading file: " + e.message); }
         e.target.value = "";
     };
 

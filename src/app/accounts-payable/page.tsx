@@ -1882,6 +1882,7 @@ function POModal({ invoice, pobs, apTypes, onClose, onAdd, onEdit, onDelete, onA
     const [mode, setMode] = useState<"view" | "add" | "edit">("view");
     const [selectedPob, setSelectedPob] = useState<any>(null);
     const [pobResult, setPobResult] = useState<any>(null);
+    const [delPobConf, setDelPobConf] = useState(false);
 
     const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<PobForm>({
         resolver: zodResolver(pobSchema),
@@ -1994,7 +1995,7 @@ function POModal({ invoice, pobs, apTypes, onClose, onAdd, onEdit, onDelete, onA
                                 {selectedPob && (
                                     <>
                                         <button onClick={() => { setMode("edit"); reset({ po_no: selectedPob.porder_no, cost: parseMoney(selectedPob.cost), ap_type_uq: selectedPob.ap_type_uq }); }} className="flex items-center gap-1 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded text-[10px] font-black uppercase text-blue-700 transition-all"><Pencil size={10} /> Modify</button>
-                                        <button onClick={() => { if (confirm("Delete this PO record?")) onDelete(selectedPob.unico); }} className="flex items-center gap-1 bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded text-[10px] font-black uppercase text-red-600 transition-all"><Trash2 size={10} /> Delete</button>
+                                        <button onClick={() => { if (!delPobConf) { setDelPobConf(true); toast.warning("Click Delete again to confirm."); setTimeout(() => setDelPobConf(false), 4000); return; } setDelPobConf(false); onDelete(selectedPob.unico); }} className="flex items-center gap-1 bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded text-[10px] font-black uppercase text-red-600 transition-all"><Trash2 size={10} /> {delPobConf ? "Confirm?" : "Delete"}</button>
                                     </>
                                 )}
                                 {!invoice?.approved && (

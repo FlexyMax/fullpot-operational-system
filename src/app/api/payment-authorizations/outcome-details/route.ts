@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
+import { serverAuditLog } from "@/lib/serverAudit";
+const PANTA = "52961702";
 
 // GET ?acc_payd_uq=...
 export async function GET(req: NextRequest) {
@@ -24,7 +26,9 @@ export async function POST(req: NextRequest) {
             out_ammount: body.out_ammount ?? 0,
             acc_payd_uq: body.acc_payd_uq ?? "",
         });
-        return NextResponse.json({ success: true, data: r.recordset[0] ?? null });
+        const rec = r.recordset[0] ?? null;
+        serverAuditLog(PANTA, "Insert", "flower_accounts_outcome_details", rec?.unico ?? body.outcome_uq).catch(() => {});
+        return NextResponse.json({ success: true, data: rec });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }
@@ -41,6 +45,7 @@ export async function PUT(req: NextRequest) {
             out_ammount: body.out_ammount ?? 0,
             acc_payd_uq: body.acc_payd_uq ?? "",
         });
+        serverAuditLog(PANTA, "Edit", "flower_accounts_outcome_details", body.unico).catch(() => {});
         return NextResponse.json({ success: true, data: r.recordset[0] ?? null });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -55,6 +60,7 @@ export async function DELETE(req: NextRequest) {
         await executeProcedure("sp_flower_accounts_outcome_details_delete", {
             lcunico: body.unico,
         });
+        serverAuditLog(PANTA, "Delete", "flower_accounts_outcome_details", body.unico).catch(() => {});
         return NextResponse.json({ success: true });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });

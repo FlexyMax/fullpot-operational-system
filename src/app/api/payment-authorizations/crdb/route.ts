@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
+import { serverAuditLog } from "@/lib/serverAudit";
+const PANTA = "52961702";
 
 // GET  ?invoice_uq=xxx  → sp_flower_accounts_pay_credits_debits
 // POST                  → sp_flower_accounts_pay_cr_insert
@@ -30,6 +32,7 @@ export async function POST(req: NextRequest) {
         });
         const result = r.recordset?.[0];
         if (result?.error === 1) return NextResponse.json({ success: false, error: result.message }, { status: 422 });
+        serverAuditLog(PANTA, "Insert", "flower_accounts_pay_cr", result?.unico ?? acc_pay_uq).catch(() => {});
         return NextResponse.json({ success: true, data: result });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -50,6 +53,7 @@ export async function PUT(req: NextRequest) {
         });
         const result = r.recordset?.[0];
         if (result?.error === 1) return NextResponse.json({ success: false, error: result.message }, { status: 422 });
+        serverAuditLog(PANTA, "Edit", "flower_accounts_pay_cr", unico).catch(() => {});
         return NextResponse.json({ success: true, data: result });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -62,6 +66,7 @@ export async function DELETE(req: NextRequest) {
         const r = await executeProcedure("sp_flower_accounts_pay_cr_delete", { lccrdb_uq: crdb_uq });
         const result = r.recordset?.[0];
         if (result?.error === 1) return NextResponse.json({ success: false, error: result.message }, { status: 422 });
+        serverAuditLog(PANTA, "Delete", "flower_accounts_pay_cr", crdb_uq).catch(() => {});
         return NextResponse.json({ success: true });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
