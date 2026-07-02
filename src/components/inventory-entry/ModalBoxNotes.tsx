@@ -16,12 +16,10 @@ export function ModalBoxNotes({ open, onClose, boxUnico, onSuccess }: Props) {
     const [notes,   setNotes]   = useState("");
     const [loading, setLoading] = useState(false);
     const [saving,  setSaving]  = useState(false);
-    const [error,   setError]   = useState<string | null>(null);
 
     useEffect(() => {
         if (!open || !boxUnico) return;
         setLoading(true);
-        setError(null);
         fetch(`/api/inventory-entry/boxes/${boxUnico}/notes`)
             .then(r => r.json())
             .then(d => {
@@ -36,7 +34,7 @@ export function ModalBoxNotes({ open, onClose, boxUnico, onSuccess }: Props) {
     if (!open) return null;
 
     const handleSave = async () => {
-        setSaving(true); setError(null);
+        setSaving(true);
         try {
             const res = await fetch(`/api/inventory-entry/boxes/${boxUnico}/notes`, {
                 method: "PUT",
@@ -49,7 +47,7 @@ export function ModalBoxNotes({ open, onClose, boxUnico, onSuccess }: Props) {
             onSuccess();
             onClose();
         } catch (e: any) {
-            setError(e.message);
+            toast.error(e.message);
         } finally {
             setSaving(false);
         }
@@ -76,7 +74,6 @@ export function ModalBoxNotes({ open, onClose, boxUnico, onSuccess }: Props) {
                         className="fos-input text-xs w-full resize-none"
                     />
                     <div className="text-right text-[10px] text-gray-400">{notes.length}/250</div>
-                    {error && <p className="text-xs text-red-500 bg-red-50 rounded p-2">{error}</p>}
                 </div>
                 <div className="flex justify-end gap-2 px-4 py-3 bg-gray-50 border-t shrink-0">
                     <button onClick={onClose} className="px-4 py-2 rounded border border-gray-200 text-xs font-black uppercase text-gray-600 hover:bg-gray-100 transition-colors">

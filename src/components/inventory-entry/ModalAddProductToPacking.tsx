@@ -25,7 +25,6 @@ export function ModalAddProductToPacking({ open, onClose, packUq, product, cases
     const [stem_pack,   setStemPack]   = useState(false);
     const [price_x_u,   setPriceXU]    = useState(0);
     const [saving,      setSaving]     = useState(false);
-    const [error,       setError]      = useState<string | null>(null);
 
     useEffect(() => {
         if (!open || !product) return;
@@ -35,7 +34,6 @@ export function ModalAddProductToPacking({ open, onClose, packUq, product, cases
         setStemPack(Boolean(product.STEM_PACK));
         setBoxQty(0);
         setPriceXU(num(product.SALES_PRICE ?? 0));
-        setError(null);
     }, [open, product]);
 
     if (!open) return null;
@@ -45,8 +43,8 @@ export function ModalAddProductToPacking({ open, onClose, packUq, product, cases
 
     const handleSave = async () => {
         if (!packUq) { toast.error("Select a packing first."); return; }
-        if (!box_qty) { setError("Box Qty is required."); return; }
-        setSaving(true); setError(null);
+        if (!box_qty) { toast.error("Box Qty is required."); return; }
+        setSaving(true);
         try {
             const res = await fetch("/api/inventory-entry/boxes", {
                 method: "POST",
@@ -67,7 +65,7 @@ export function ModalAddProductToPacking({ open, onClose, packUq, product, cases
             onSuccess();
             onClose();
         } catch (e: any) {
-            setError(e.message);
+            toast.error(e.message);
         } finally {
             setSaving(false);
         }
@@ -127,7 +125,6 @@ export function ModalAddProductToPacking({ open, onClose, packUq, product, cases
                         <div>Units/Box: <span className="font-bold">{unitsXBox.toLocaleString()}</span></div>
                         <div>Total Units: <span className="font-bold">{totalUnits.toLocaleString()}</span></div>
                     </div>
-                    {error && <p className="text-xs text-red-500 bg-red-50 rounded p-2">{error}</p>}
                 </div>
                 <div className="flex justify-end gap-2 px-4 py-3 bg-gray-50 border-t shrink-0">
                     <button onClick={onClose} className="px-4 py-2 rounded border border-gray-200 text-xs font-black uppercase text-gray-600 hover:bg-gray-100 transition-colors">

@@ -39,12 +39,10 @@ export function ModalEditBox({ open, onClose, boxUnico, cases, userId, onSuccess
     const [form,    setForm]    = useState<any>(EMPTY);
     const [loading, setLoading] = useState(false);
     const [saving,  setSaving]  = useState(false);
-    const [error,   setError]   = useState<string | null>(null);
 
     useEffect(() => {
         if (!open || !boxUnico) return;
         setLoading(true);
-        setError(null);
         fetch(`/api/inventory-entry/boxes/${boxUnico}`)
             .then(r => r.json())
             .then(d => {
@@ -73,7 +71,7 @@ export function ModalEditBox({ open, onClose, boxUnico, cases, userId, onSuccess
                     inventory_notes: t(f.inventory_notes),
                 }));
             })
-            .catch(e => setError(e.message))
+            .catch(e => toast.error(e.message))
             .finally(() => setLoading(false));
     }, [open, boxUnico]);
 
@@ -96,7 +94,7 @@ export function ModalEditBox({ open, onClose, boxUnico, cases, userId, onSuccess
     };
 
     const handleSave = async () => {
-        setSaving(true); setError(null);
+        setSaving(true);
         try {
             const res = await fetch(`/api/inventory-entry/boxes/${boxUnico}`, {
                 method: "PUT",
@@ -109,7 +107,7 @@ export function ModalEditBox({ open, onClose, boxUnico, cases, userId, onSuccess
             onSuccess();
             onClose();
         } catch (e: any) {
-            setError(e.message);
+            toast.error(e.message);
         } finally {
             setSaving(false);
         }
@@ -239,7 +237,6 @@ export function ModalEditBox({ open, onClose, boxUnico, cases, userId, onSuccess
                             rows={2} className="fos-input text-xs resize-none py-1" maxLength={250} />
                     </div>
 
-                    {error && <p className="text-xs text-red-500 bg-red-50 rounded p-2">{error}</p>}
                 </div>
 
                 <div className="flex justify-end gap-2 px-4 py-3 bg-gray-50 border-t shrink-0">

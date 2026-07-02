@@ -20,12 +20,10 @@ export function ModalSendToWhouse({ open, onClose, packUq, warehouses, userId, o
     const [awbcode,    setAwbcode]    = useState("");
     const [loading,    setLoading]    = useState(false);
     const [saving,     setSaving]     = useState(false);
-    const [error,      setError]      = useState<string | null>(null);
 
     useEffect(() => {
         if (!open || !packUq) return;
         setLoading(true);
-        setError(null);
         fetch(`/api/inventory-entry/packings/${packUq}`)
             .then(r => r.json())
             .then(d => {
@@ -43,7 +41,7 @@ export function ModalSendToWhouse({ open, onClose, packUq, warehouses, userId, o
 
     const handleSave = async () => {
         if (!t(whouseUq)) { toast.error("Select a warehouse."); return; }
-        setSaving(true); setError(null);
+        setSaving(true);
         try {
             const res = await fetch(`/api/inventory-entry/packings/${packUq}/to-whouse`, {
                 method: "POST",
@@ -56,7 +54,7 @@ export function ModalSendToWhouse({ open, onClose, packUq, warehouses, userId, o
             onSuccess();
             onClose();
         } catch (e: any) {
-            setError(e.message);
+            toast.error(e.message);
         } finally {
             setSaving(false);
         }
@@ -99,7 +97,6 @@ export function ModalSendToWhouse({ open, onClose, packUq, warehouses, userId, o
                             ))}
                         </select>
                     </div>
-                    {error && <p className="text-xs text-red-500 bg-red-50 rounded p-2">{error}</p>}
                 </div>
                 <div className="flex justify-end gap-2 px-4 py-3 bg-gray-50 border-t shrink-0">
                     <button onClick={onClose} className="px-4 py-2 rounded border border-gray-200 text-xs font-black uppercase text-gray-600 hover:bg-gray-100 transition-colors">

@@ -7,7 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     Package, RefreshCcw, Plus, Pencil, Trash2,
     Search, X, Save, ChevronDown, Calendar, FileText,
-    AlertCircle, Check, Copy, ArrowRight, Warehouse,
+    Check, Copy, ArrowRight, Warehouse,
     ClipboardList, Boxes, BarChart2, Plane,
     ShoppingCart, Flower2, Layers, Tag, ScanLine, MapPin, History,
 } from "lucide-react";
@@ -189,7 +189,6 @@ export default function InventoryEntryPage() {
     const [modalPackingMode, setModalPackingMode] = useState<"add" | "edit">("add");
     const [packForm,         setPackForm]         = useState<any>(EMPTY_PACKING);
     const [packSaving,       setPackSaving]       = useState(false);
-    const [packError,        setPackError]        = useState<string | null>(null);
 
     // ── Box edit modal ────────────────────────────────────────────────────────
     const [modalEditBox, setModalEditBox] = useState(false);
@@ -555,15 +554,14 @@ export default function InventoryEntryPage() {
             const code = t(lcawbcode);
             setPackForm({ ...EMPTY_PACKING, airline_code: code.substring(0, 3), awbnumber: code.substring(3) });
         }
-        setPackError(null);
         setModalPackingMode(mode);
         setModalPacking(true);
     };
 
     const handleSavePacking = async () => {
-        if (!t(packForm.grower_uq)) { setPackError("Vendor is required."); return; }
-        if ((packForm.airline_code + packForm.awbnumber).length !== 11) { setPackError("AWB code must be 3-letter airline code + 8-digit number."); return; }
-        setPackSaving(true); setPackError(null);
+        if (!t(packForm.grower_uq)) { toast.error("Vendor is required."); return; }
+        if ((packForm.airline_code + packForm.awbnumber).length !== 11) { toast.error("AWB code must be 3-letter airline code + 8-digit number."); return; }
+        setPackSaving(true);
         try {
             const payload = {
                 grower_uq:      packForm.grower_uq,
@@ -599,7 +597,7 @@ export default function InventoryEntryPage() {
             }
             setModalPacking(false);
             handleRefresh();
-        } catch (e: any) { setPackError(e.message); }
+        } catch (e: any) { toast.error(e.message); }
         finally { setPackSaving(false); }
     };
 
@@ -1707,11 +1705,6 @@ export default function InventoryEntryPage() {
                                 <span className="font-black text-[10px] text-white uppercase tracking-widest">
                                     {modalPackingMode === "add" ? "New Packing" : "Edit Packing"}
                                 </span>
-                                {packError && (
-                                    <span className="flex items-center gap-1 text-amber-400 text-[10px] font-bold ml-2 truncate">
-                                        <AlertCircle size={12} />{packError}
-                                    </span>
-                                )}
                             </div>
                             <div className="flex items-center gap-1.5 px-2">
                                 <button onClick={handleSavePacking} disabled={packSaving}

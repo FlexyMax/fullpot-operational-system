@@ -23,7 +23,6 @@ export function ModalBoxWHControl({ open, onClose, boxUnico, cases, userId, onSu
     const [info,    setInfo]    = useState({ ...EMPTY_INFO });
     const [loading, setLoading] = useState(false);
     const [saving,  setSaving]  = useState(false);
-    const [error,   setError]   = useState<string | null>(null);
     // VFP "repacking.scx": lnramoscajafull = original packs_box / original case's factor — held fixed for
     // this editing session and reapplied whenever the user switches Case, so bunches/case rescales correctly.
     const [fullCaseBunches, setFullCaseBunches] = useState(0);
@@ -31,7 +30,6 @@ export function ModalBoxWHControl({ open, onClose, boxUnico, cases, userId, onSu
     useEffect(() => {
         if (!open || !boxUnico) return;
         setLoading(true);
-        setError(null);
         fetch(`/api/inventory-entry/boxes/${boxUnico}`)
             .then(r => r.json())
             .then(d => {
@@ -76,7 +74,7 @@ export function ModalBoxWHControl({ open, onClose, boxUnico, cases, userId, onSu
     const total_units  = units_x_box * form.box_qty;
 
     const handleSave = async () => {
-        setSaving(true); setError(null);
+        setSaving(true);
         try {
             const res = await fetch(`/api/inventory-entry/boxes/${boxUnico}/wh-control`, {
                 method: "PUT",
@@ -95,7 +93,7 @@ export function ModalBoxWHControl({ open, onClose, boxUnico, cases, userId, onSu
             onSuccess();
             onClose();
         } catch (e: any) {
-            setError(e.message);
+            toast.error(e.message);
         } finally {
             setSaving(false);
         }
@@ -156,7 +154,6 @@ export function ModalBoxWHControl({ open, onClose, boxUnico, cases, userId, onSu
                         <div>Units/Box: <span className="font-bold">{units_x_box.toLocaleString()}</span></div>
                         <div>Total Units: <span className="font-bold">{total_units.toLocaleString()}</span></div>
                     </div>
-                    {error && <p className="text-xs text-red-500 bg-red-50 rounded p-2">{error}</p>}
                 </div>
                 <div className="flex justify-end gap-2 px-4 py-3 bg-gray-50 border-t shrink-0">
                     <button onClick={onClose} className="px-4 py-2 rounded border border-gray-200 text-xs font-black uppercase text-gray-600 hover:bg-gray-100 transition-colors">

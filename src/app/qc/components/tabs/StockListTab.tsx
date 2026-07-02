@@ -47,11 +47,12 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
     const [warehouse, setWarehouse] = useState("%");
     const [search,    setSearch]    = useState("");
 
-    const [selRow,     setSelRow]     = useState<any>(null);
-    const [selStock,   setSelStock]   = useState<any>(null);
-    const [selInvoice, setSelInvoice] = useState<any>(null);
-    const [subTab,     setSubTab]     = useState<SubTab>("warehouse-stock");
-    const [scanModal,  setScanModal]  = useState(false);
+    const [selRow,       setSelRow]       = useState<any>(null);
+    const [selStock,     setSelStock]     = useState<any>(null);
+    const [selInvoice,   setSelInvoice]   = useState<any>(null);
+    const [subTab,       setSubTab]       = useState<SubTab>("warehouse-stock");
+    const [scanModal,    setScanModal]    = useState(false);
+    const [scanOutModal, setScanOutModal] = useState(false);
 
     const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -401,7 +402,17 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                                 onRefresh={() => refetchInvoice()}
                                 refreshing={loadingInvoice}
                                 onDownload={() => {}}
-                                headerRight={<AuditLogModal recordId={selInvoice?.unico} disabled={!selInvoice}/>}
+                                headerRight={
+                                    <div className="flex items-center gap-1">
+                                        <button
+                                            onClick={() => selInvoice ? setScanOutModal(true) : toast.error("Select an invoice row first")}
+                                            className="md:hidden flex items-center gap-1 h-7 px-2 text-[10px] font-bold bg-blue-500 hover:bg-blue-600 text-white rounded transition-colors"
+                                        >
+                                            <ScanLine size={12}/> Scan OUT
+                                        </button>
+                                        <AuditLogModal recordId={selInvoice?.unico} disabled={!selInvoice}/>
+                                    </div>
+                                }
                                 className="flex-1 min-w-0"
                             >
                                 <table className="min-w-full text-xs text-left">
@@ -444,7 +455,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                                 onRefresh={() => refetchScanOut()}
                                 refreshing={loadingScanOut}
                                 headerRight={<AuditLogModal recordId={selInvoice?.unico} disabled={!selInvoice}/>}
-                                className="w-72 shrink-0"
+                                className="hidden md:flex w-72 shrink-0 shadow-sm"
                             >
                                 <table className="min-w-full text-xs">
                                     <thead className="bg-[#4F4F4F] text-white font-bold text-[11px] uppercase sticky top-0">
@@ -470,6 +481,57 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                     )}
                 </div>
             </div>
+
+            {/* ── Scan OUT modal (mobile only) ─────────────────── */}
+            {scanOutModal && createPortal(
+                <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-[200]">
+                    <div className="bg-white rounded-t-2xl shadow-2xl w-full max-h-[75vh] flex flex-col overflow-hidden">
+                        <div className="h-10 bg-[#333030] rounded-t-2xl flex items-center justify-between px-4 shrink-0">
+                            <div className="flex items-center gap-2">
+                                <ScanLine size={14} className="text-[#FB7506]"/>
+                                <span className="font-black text-[11px] uppercase tracking-widest text-white">
+                                    Invoice Lots Scan OUT {selInvoice?.invoice_no ? `— ${selInvoice.invoice_no}` : ""}
+                                </span>
+                            </div>
+                            <button onClick={() => setScanOutModal(false)}>
+                                <XCircle size={16} className="text-gray-400 hover:text-white transition-colors"/>
+                            </button>
+                        </div>
+                        <div className="overflow-auto flex-1">
+                            {loadingScanOut && <div className="p-8 text-center text-gray-400 text-sm">Loading...</div>}
+                            {!loadingScanOut && (scanOutRows as any[]).length === 0 && (
+                                <div className="p-8 text-center text-gray-400 text-sm italic">No scan data for this invoice lot.</div>
+                            )}
+                            {(scanOutRows as any[]).length > 0 && (
+                                <table className="min-w-full text-xs">
+                                    <thead className="bg-[#4F4F4F] text-white font-bold text-[11px] uppercase sticky top-0">
+                                        <tr className="divide-x divide-[#DBD9D9]/30">
+                                            {["ScanTime","Barcode","Rack","Grower"].map(h => <th key={h} className="p-2 whitespace-nowrap">{h}</th>)}
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-[#DBD9D9]">
+                                        {(scanOutRows as any[]).map((r: any, i: number) => (
+                                            <tr key={i} className="divide-x divide-[#DBD9D9]">
+                                                <td className="p-2 whitespace-nowrap text-[10px] text-green-600 font-semibold">{t(r.ScanTime)?.replace("T", " ").substring(0, 16)}</td>
+                                                <td className="p-2 font-bold text-blue-600 text-[10px]">{t(r.barcode)}</td>
+                                                <td className="p-2 text-[10px]">{t(r.rack)}</td>
+                                                <td className="p-2 text-[10px]">{t(r.grower)}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
+                        </div>
+                        <div className="px-4 py-2 bg-gray-50 border-t shrink-0 flex justify-end">
+                            <button onClick={() => setScanOutModal(false)}
+                                className="px-4 py-1.5 rounded-lg border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors">
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
 
             {/* ── Scan IN modal (mobile only) ───────────────────── */}
             {scanModal && createPortal(

@@ -1,6 +1,7 @@
 "use client";
 import { useState, useCallback } from "react";
 import { X, BarChart2, RefreshCcw, Search } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const t = (v: any) => String(v ?? "").trim();
@@ -18,12 +19,10 @@ export function ModalWhouseTotals({ open, onClose, lddate, warehouses }: Props) 
     const [whouse,  setWhouse]  = useState("");
     const [rows,    setRows]    = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
-    const [error,   setError]   = useState<string | null>(null);
 
     const doSearch = useCallback(async () => {
         if (!whouse) return;
         setLoading(true);
-        setError(null);
         try {
             const res = await fetch(`/api/inventory-entry/whouse-totals?date=${date}&whouse=${encodeURIComponent(whouse)}`);
             const d = await res.json();
@@ -34,7 +33,7 @@ export function ModalWhouseTotals({ open, onClose, lddate, warehouses }: Props) 
                 return n;
             }));
         } catch (e: any) {
-            setError(e.message);
+            toast.error(e.message);
         } finally {
             setLoading(false);
         }
@@ -80,7 +79,6 @@ export function ModalWhouseTotals({ open, onClose, lddate, warehouses }: Props) 
                 </div>
 
                 <div className="flex-1 overflow-y-auto min-h-0">
-                    {error && <div className="text-xs text-red-500 p-3 bg-red-50 border-b border-red-100">{error}</div>}
                     {!whouse && !loading && rows.length === 0 && (
                         <div className="p-6 text-center text-gray-400 text-xs italic">Select a warehouse and click Search</div>
                     )}

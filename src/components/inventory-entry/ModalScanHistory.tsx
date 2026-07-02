@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { X, ScanLine, RefreshCcw } from "lucide-react";
+import { toast } from "sonner";
 
 const t = (v: any) => String(v ?? "").trim();
 
@@ -14,16 +15,14 @@ interface Props {
 export function ModalScanHistory({ open, onClose, boxUnico, lote }: Props) {
     const [rows,    setRows]    = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
-    const [error,   setError]   = useState<string | null>(null);
 
     useEffect(() => {
         if (!open || !boxUnico) return;
         setLoading(true);
-        setError(null);
         fetch(`/api/inventory-entry/boxes/${boxUnico}/scan-history`)
             .then(r => r.json())
             .then(d => setRows(Array.isArray(d) ? d : []))
-            .catch(e => setError(e.message))
+            .catch(e => toast.error(e.message))
             .finally(() => setLoading(false));
     }, [open, boxUnico]);
 
@@ -41,7 +40,6 @@ export function ModalScanHistory({ open, onClose, boxUnico, lote }: Props) {
                     <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors"><X size={16} /></button>
                 </div>
                 <div className="flex-1 overflow-y-auto">
-                    {error && <div className="text-xs text-red-500 p-3 bg-red-50 border-b border-red-100">{error}</div>}
                     <table className="w-full text-xs">
                         <thead className="bg-gray-100 sticky top-0">
                             <tr>

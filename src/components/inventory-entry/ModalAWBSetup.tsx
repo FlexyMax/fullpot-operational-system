@@ -27,7 +27,6 @@ export function ModalAWBSetup({ open, onClose, userId, defaultDate, defaultAwbco
     const [mode,    setMode]    = useState<"list" | "edit">("list");
     const [form,    setForm]    = useState({ ...EMPTY_FORM });
     const [saving,  setSaving]  = useState(false);
-    const [error,   setError]   = useState<string | null>(null);
     const [delConf, setDelConf] = useState(false);
 
     const doSearch = useCallback(async () => {
@@ -64,7 +63,6 @@ export function ModalAWBSetup({ open, onClose, userId, defaultDate, defaultAwbco
     }, [open]);
 
     const openEdit = async (unico?: string) => {
-        setError(null);
         setDelConf(false);
         if (!unico) {
             setForm({ ...EMPTY_FORM, awbcode: search, awbdate: defaultDate ?? today() });
@@ -86,8 +84,8 @@ export function ModalAWBSetup({ open, onClose, userId, defaultDate, defaultAwbco
     };
 
     const handleSave = async () => {
-        if (!t(form.awbcode)) { setError("AWB Code is required."); return; }
-        setSaving(true); setError(null);
+        if (!t(form.awbcode)) { toast.error("AWB Code is required."); return; }
+        setSaving(true);
         try {
             let res: Response;
             if (selUnico) {
@@ -109,7 +107,7 @@ export function ModalAWBSetup({ open, onClose, userId, defaultDate, defaultAwbco
             setMode("list");
             doSearch();
         } catch (e: any) {
-            setError(e.message);
+            toast.error(e.message);
         } finally {
             setSaving(false);
         }
@@ -241,7 +239,6 @@ export function ModalAWBSetup({ open, onClose, userId, defaultDate, defaultAwbco
                                     </select>
                                 </div>
                             </div>
-                            {error && <p className="text-xs text-red-500 bg-red-50 rounded p-2">{error}</p>}
                             {delConf && (
                                 <div className="flex items-center gap-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded p-2 font-bold">
                                     <AlertCircle size={13} className="shrink-0" />
