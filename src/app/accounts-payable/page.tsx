@@ -267,7 +267,7 @@ export default function AccountsPayablePage() {
             <AppHeader title="Accounts Payable" />
 
             {/* ── Toolbar ─────────────────────────────────────────────────── */}
-            <div className="bg-[#F5F3F3] border border-[#DBD9D9] rounded-lg flex items-center px-4 py-2.5 gap-3 shrink-0 shadow-sm mx-2 mt-2">
+            <div className="bg-[#F5F3F3] border border-[#DBD9D9] rounded-lg flex flex-wrap items-center px-4 py-2.5 gap-x-3 gap-y-1.5 shrink-0 shadow-sm mx-2 mt-2">
                 <div className="flex items-center gap-2">
                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Year:</span>
                     <select
@@ -306,7 +306,7 @@ export default function AccountsPayablePage() {
                 >
                     <Clock size={11} /> Pending AP
                 </button>
-                <div className="ml-auto flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                <div className="hidden sm:flex ml-auto items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">
                     {selectedInvoice && (
                         <>
                             <span className="text-gray-300">|</span>
@@ -388,7 +388,6 @@ export default function AccountsPayablePage() {
                         icon={FileText}
                         recordCount={invoices.length}
                         refreshing={loadingInvoices}
-                        onLog={selectedUnico ? () => {} : undefined}
                         headerRight={
                             <div className="flex items-center gap-0.5">
                                 <button onClick={() => setSearchModal(true)} title="Search" className="p-1.5 text-gray-400 hover:text-[#FB7506] hover:bg-gray-100 rounded transition-colors"><Search size={13} /></button>
@@ -425,7 +424,7 @@ export default function AccountsPayablePage() {
                                     {invoices.map((inv: any, i: number) => (
                                         <PanelGridTr key={inv.unico || i} selected={selectedUnico === inv.unico} onClick={() => { const desel = selectedUnico === inv.unico; setUnico(desel ? null : inv.unico); setSelectedPobIdx(-1); setSelectedCrdbIdx(-1); setActiveBar(desel ? null : "invoices"); }}>
                                             <PanelGridTd className="font-medium max-w-[180px] truncate">{String(inv.grower || "").trim()}</PanelGridTd>
-                                            <PanelGridTd className="font-semibold text-blue-700">{String(inv.invoice_no || "").trim()}</PanelGridTd>
+                                            <PanelGridTd className="font-semibold text-[#FB7506]">{String(inv.invoice_no || "").trim()}</PanelGridTd>
                                             <PanelGridTd align="right">{formatMoney(inv.estimated)}</PanelGridTd>
                                             <PanelGridTd align="right" className="font-semibold">{formatMoney(inv.amount)}</PanelGridTd>
                                             <PanelGridTd align="right" className="text-green-600">{formatMoney(inv.credits)}</PanelGridTd>
@@ -1243,7 +1242,7 @@ function PendingAPModal({ onClose }: { onClose: () => void }) {
                                             <tbody>
                                                 {invoices.map((inv, ii) => (
                                                     <tr key={ii} className="border-b odd:bg-white even:bg-gray-50">
-                                                        <td className="p-2 font-semibold text-blue-700">{String(inv.invoice_no ?? "").trim()}</td>
+                                                        <td className="p-2 font-semibold text-[#FB7506]">{String(inv.invoice_no ?? "").trim()}</td>
                                                         <td className="p-2 border-l border-gray-100">{formatDateEST(normalizeToISODate(inv.ap_date))}</td>
                                                         <td className="p-2 border-l border-gray-100 text-right">{formatMoney(inv.ammount)}</td>
                                                         <td className="p-2 border-l border-gray-100 text-right text-green-600">{formatMoney(inv.cre_ammount)}</td>
@@ -1482,7 +1481,7 @@ function APSearchModal({ growers, onClose, onLocate }: {
                                         )}
                                     >
                                         <td className="p-2 border-r border-gray-100 font-medium truncate max-w-[180px]">{String(inv.grower || "").trim()}</td>
-                                        <td className="p-2 border-r border-gray-100 font-semibold text-blue-700">{String(inv.invoice_no || "").trim()}</td>
+                                        <td className="p-2 border-r border-gray-100 font-semibold text-[#FB7506]">{String(inv.invoice_no || "").trim()}</td>
                                         <td className="p-2 border-r border-gray-100 text-right">{formatMoney(inv.estimated)}</td>
                                         <td className="p-2 border-r border-gray-100 text-right font-semibold">{formatMoney(inv.amount)}</td>
                                         <td className="p-2 border-r border-gray-100 text-right text-green-600">{formatMoney(inv.credits)}</td>
@@ -1946,12 +1945,12 @@ function POModal({ invoice, pobs, apTypes, onClose, onAdd, onEdit, onDelete, onA
                             ) : pobs.map((p: any, i: number) => (
                                 <tr key={i} onClick={() => setSelectedPob(p)} className={cn(
                                     "border-b text-gray-600 cursor-pointer transition-colors",
-                                    selectedPob?.unico === p.unico ? "!bg-blue-100 ring-2 ring-inset ring-blue-300" : "odd:bg-white even:bg-gray-50 hover:bg-blue-50"
+                                    selectedPob?.unico === p.unico ? "!bg-[#FB7506]/10" : "odd:bg-white even:bg-gray-50 hover:bg-gray-50"
                                 )}>
                                     <td className="p-2 border-r border-gray-100">{p.ap_type}</td>
                                     <td className="p-2 border-r border-gray-100">{formatDateEST(p.ap_date)}</td>
                                     <td className="p-2 border-r border-gray-100 text-right">{formatMoney(p.ammount)}</td>
-                                    <td className="p-2 border-r border-gray-100 font-semibold text-blue-700">{p.porder_no}</td>
+                                    <td className="p-2 border-r border-gray-100 font-semibold text-[#FB7506]">{p.porder_no}</td>
                                     <td className="p-2 border-r border-gray-100">{formatDateEST(p.po_date)}</td>
                                     <td className="p-2 text-right font-semibold text-orange-600">{formatMoney(p.cost)}</td>
                                 </tr>
