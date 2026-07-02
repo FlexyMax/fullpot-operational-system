@@ -117,11 +117,11 @@ function QCPage() {
                 <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1">
 
                     {/* Tab bar */}
-                    <div className="h-10 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-end px-2 shrink-0 gap-0.5 overflow-x-auto">
+                    <div className="h-12 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-end px-2 shrink-0 gap-0.5 overflow-x-auto scrollbar-none">
                         {TABS.map(tab => (
                             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                                 className={cn(
-                                    "flex items-center gap-1.5 px-3 h-8 text-[10px] font-black uppercase tracking-wider rounded-t transition-all whitespace-nowrap",
+                                    "flex items-center gap-1.5 px-3 h-10 text-[10px] font-black uppercase tracking-wider rounded-t transition-all whitespace-nowrap",
                                     activeTab === tab.id
                                         ? "bg-white text-[#FB7506] border-b-2 border-[#FB7506]"
                                         : "text-gray-500 hover:text-[#FB7506] hover:bg-white/60"

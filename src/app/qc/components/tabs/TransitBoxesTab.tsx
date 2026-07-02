@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
-import { X, ChevronDown, Truck } from "lucide-react";
+import { X, ChevronDown, Truck, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import PanelGrid from "@/components/ui/PanelGrid";
 import { AuditLogModal } from "@/components/AuditLogModal";
@@ -27,6 +28,7 @@ export default function TransitBoxesTab() {
     const [search,       setSearch]       = useState("");
     const [visibleCount, setVisibleCount] = useState(STEP);
     const [selRow,       setSelRow]       = useState<any>(null);
+    const [detailModal,  setDetailModal]  = useState(false);
 
     const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -66,6 +68,7 @@ export default function TransitBoxesTab() {
         : undefined;
 
     return (
+        <>
         <PanelGrid
             title="Boxes in Transit Delivery Date"
             icon={Truck}
@@ -109,7 +112,7 @@ export default function TransitBoxesTab() {
                     {!loading && allRows.length === 0 && <tr><td colSpan={17} className="p-8 text-center text-gray-400">No transit boxes for the selected year.</td></tr>}
                     {(rows as any[]).map((row: any, i: number) => (
                         <tr key={row.unico ?? i}
-                            onClick={() => setSelRow(row)}
+                            onClick={() => { setSelRow(row); setDetailModal(true); }}
                             style={{ backgroundColor: selRow?.unico === (row.unico ?? i) ? undefined : (row.backColor || undefined) }}
                             className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", selRow?.unico === (row.unico ?? i) ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
                             <td className="p-2 whitespace-nowrap">{t(row.AvailableDate)?.split("T")[0]}</td>
@@ -137,5 +140,63 @@ export default function TransitBoxesTab() {
                 {hasMore && !loading && "Loading more..."}
             </div>
         </PanelGrid>
+
+        {/* ── Row detail modal ─────────────────────────────────────── */}
+        {detailModal && selRow && createPortal(
+            <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-[200]">
+                <div className="bg-white rounded-t-2xl shadow-2xl w-full max-h-[80vh] flex flex-col overflow-hidden">
+                    <div className="h-10 bg-[#333030] rounded-t-2xl flex items-center justify-between px-4 shrink-0">
+                        <div className="flex items-center gap-2">
+                            <Truck size={14} className="text-[#FB7506]"/>
+                            <span className="font-black text-[11px] uppercase tracking-widest text-white">
+                                Transit Box — Lot {selRow.lote}
+                            </span>
+                        </div>
+                        <button onClick={() => setDetailModal(false)}>
+                            <XCircle size={16} className="text-gray-400 hover:text-white transition-colors"/>
+                        </button>
+                    </div>
+                    <div className="overflow-auto flex-1 p-4">
+                        <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-xs">
+                            {[
+                                ["Available Date",  t(selRow.AvailableDate)?.split("T")[0]],
+                                ["Invoice Date",    t(selRow.box_date)?.split("T")[0]],
+                                ["Warehouse",       t(selRow.Warehouse)],
+                                ["AWB Code",        t(selRow.awbcode)],
+                                ["Lot",             selRow.lote],
+                                ["Case",            t(selRow.case_sh)],
+                                ["Box Qty",         selRow.box_qty],
+                                ["Qty Transit",     selRow.qty_transit],
+                                ["Qty Hold",        selRow.qty_hold],
+                                ["Qty Adjust",      selRow.qty_adj],
+                                ["Stock",           selRow.stock],
+                                ["Units / Box",     selRow.tunits_x_box],
+                                ["Total Units",     selRow.total_units],
+                                ["Market",          t(selRow.market)],
+                                ["AP Invoice",      t(selRow.APInvoice)],
+                                ["AP Amount",       selRow.APAmount ? `$${Number(selRow.APAmount).toFixed(2)}` : "—"],
+                            ].map(([label, value]) => (
+                                <div key={label as string} className="flex flex-col gap-0.5">
+                                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-wider">{label}</span>
+                                    <span className="font-semibold text-gray-800">{value || "—"}</span>
+                                </div>
+                            ))}
+                            <div className="col-span-2 flex flex-col gap-0.5">
+                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Description</span>
+                                <span className="font-semibold text-[#FB7506]">{t(selRow.description) || "—"}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="px-4 py-2 bg-gray-50 border-t shrink-0 flex justify-end">
+                        <button onClick={() => setDetailModal(false)}
+                            className="px-4 py-1.5 rounded-lg border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>,
+            document.body
+        )}
+        </>
     );
 }
