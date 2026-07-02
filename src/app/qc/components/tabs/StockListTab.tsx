@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { RefreshCw, ChevronDown, X, Trash2, Pencil, ArrowRight, Package, Warehouse, FileText, ScanLine, XCircle } from "lucide-react";
+import { RefreshCw, RefreshCcw, ChevronDown, X, Trash2, Pencil, ArrowRight, Package, Warehouse, FileText, ScanLine, XCircle, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import PanelGrid from "@/components/ui/PanelGrid";
@@ -53,6 +53,7 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
     const [subTab,       setSubTab]       = useState<SubTab>("warehouse-stock");
     const [scanModal,    setScanModal]    = useState(false);
     const [scanOutModal, setScanOutModal] = useState(false);
+    const [openMenu,     setOpenMenu]     = useState<{ row: any; rect: DOMRect } | null>(null);
 
     const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -334,9 +335,6 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                             title="Packing List Boxes transferred to Stock"
                             icon={Warehouse}
                             recordCount={(stockRows as any[]).length > 0 ? (stockRows as any[]).length : undefined}
-                            onRefresh={() => refetchStock()}
-                            refreshing={loadingStock}
-                            onDownload={() => {}}
                             headerRight={
                                 <div className="flex items-center gap-1">
                                     {canCreate && selRow && (
@@ -346,6 +344,16 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                                         </button>
                                     )}
                                     <AuditLogModal recordId={selStock?.unico} disabled={!selStock}/>
+                                    <button onClick={() => refetchStock()}
+                                        className="text-gray-400 hover:text-[#FB7506] transition-all hover:rotate-180 duration-500 p-1"
+                                        title="Refresh">
+                                        <RefreshCcw size={16} className={loadingStock ? "animate-spin" : ""}/>
+                                    </button>
+                                    <button onClick={() => {}}
+                                        className="text-gray-400 hover:text-[#FB7506] transition-all p-1"
+                                        title="Download CSV">
+                                        <Download size={16}/>
+                                    </button>
                                 </div>
                             }
                             className="flex-1 min-w-0"
@@ -380,11 +388,18 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                                             <td className="p-1.5 text-right">{fmt(row.price_x_u)}</td>
                                             <td className="p-1.5 text-right">{row.tunits_x_box}</td>
                                             <td className="p-1.5 whitespace-nowrap truncate max-w-[80px]">{t(row.box_id)}</td>
-                                            <td className="p-1.5">
-                                                <div className="flex gap-1">
-                                                    {canEdit && <button onClick={e => { e.stopPropagation(); onEditTransfer?.(row); }} className="text-amber-500 hover:text-amber-700" title="Edit Transfer"><Pencil size={12}/></button>}
-                                                    {canDelete && <button onClick={e => { e.stopPropagation(); toastConfirm("Delete this transfer?", () => deleteTransfer.mutate(row)); }} className="text-red-500 hover:text-red-700" title="Delete Transfer"><Trash2 size={12}/></button>}
-                                                </div>
+                                            <td className="p-1.5" onClick={e => e.stopPropagation()}>
+                                                <button
+                                                    onClick={e => {
+                                                        const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                                                        setOpenMenu(v => v?.row.unico === row.unico ? null : { row, rect });
+                                                    }}
+                                                    className="flex flex-col gap-[3px] items-center justify-center w-6 h-6 rounded hover:bg-gray-100 transition-colors"
+                                                >
+                                                    <span className="block w-4 h-[2px] bg-[#FB7506] rounded-full" />
+                                                    <span className="block w-4 h-[2px] bg-[#FB7506] rounded-full" />
+                                                    <span className="block w-4 h-[2px] bg-[#FB7506] rounded-full" />
+                                                </button>
                                             </td>
                                         </tr>
                                     ))}
@@ -481,6 +496,31 @@ export default function StockListTab({ onSendToWarehouse, onEditTransfer, onAddQ
                     )}
                 </div>
             </div>
+
+            {/* ── Per-row action menu ──────────────────────────── */}
+            {openMenu && createPortal(
+                <>
+                    <div className="fixed inset-0 z-[99]" onClick={() => setOpenMenu(null)} />
+                    <div className="fixed z-[100] bg-white border border-gray-200 shadow-xl py-1 rounded-sm overflow-hidden"
+                        style={{ top: openMenu.rect.bottom + 4, right: window.innerWidth - openMenu.rect.right, minWidth: 160 }}>
+                        {canEdit && (
+                            <button
+                                onClick={() => { onEditTransfer?.(openMenu.row); setOpenMenu(null); }}
+                                className="w-full flex items-center gap-3 px-3 py-2 text-[12px] font-semibold uppercase hover:bg-[#FB7506]/10 text-left text-amber-600 transition-colors">
+                                <Pencil size={13}/> Edit
+                            </button>
+                        )}
+                        {canDelete && (
+                            <button
+                                onClick={() => { setOpenMenu(null); toastConfirm("Delete this transfer?", () => deleteTransfer.mutate(openMenu.row)); }}
+                                className="w-full flex items-center gap-3 px-3 py-2 text-[12px] font-semibold uppercase hover:bg-[#FB7506]/10 text-left text-red-500 transition-colors">
+                                <Trash2 size={13}/> Delete
+                            </button>
+                        )}
+                    </div>
+                </>,
+                document.body
+            )}
 
             {/* ── Scan OUT modal (mobile only) ─────────────────── */}
             {scanOutModal && createPortal(

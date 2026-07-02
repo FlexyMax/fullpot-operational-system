@@ -21,9 +21,10 @@ interface Props {
 }
 
 export function ModalBoxComposition({ open, onClose, boxUnico, boxLabel, onSuccess }: Props) {
-    const [rows,    setRows]    = useState<any[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [saving,  setSaving]  = useState(false);
+    const [rows,        setRows]        = useState<any[]>([]);
+    const [loading,     setLoading]     = useState(false);
+    const [saving,      setSaving]      = useState(false);
+    const [delCompUnico, setDelCompUnico] = useState("");
 
     const [adding,     setAdding]     = useState(false);
     const [prodSearch, setProdSearch] = useState("");
@@ -42,7 +43,7 @@ export function ModalBoxComposition({ open, onClose, boxUnico, boxLabel, onSucce
     };
 
     useEffect(() => {
-        if (!open) { setAdding(false); setProdRows([]); setProdSearch(""); setNewRow({ ...EMPTY_ROW }); return; }
+        if (!open) { setAdding(false); setProdRows([]); setProdSearch(""); setNewRow({ ...EMPTY_ROW }); setDelCompUnico(""); return; }
         loadRows();
     }, [open, boxUnico]);
 
@@ -100,7 +101,13 @@ export function ModalBoxComposition({ open, onClose, boxUnico, boxLabel, onSucce
     };
 
     const handleDelete = async (compUnico: string) => {
-        if (!confirm("Remove this composition row?")) return;
+        if (delCompUnico !== compUnico) {
+            setDelCompUnico(compUnico);
+            toast.warning("Click the delete button again to confirm removal.");
+            setTimeout(() => setDelCompUnico(""), 4000);
+            return;
+        }
+        setDelCompUnico("");
         try {
             const res = await fetch(`/api/inventory-entry/boxes/${boxUnico}/composition/${compUnico}`, { method: "DELETE" });
             const d = await res.json();
@@ -163,7 +170,8 @@ export function ModalBoxComposition({ open, onClose, boxUnico, boxLabel, onSucce
                                     <td className="p-2 border-r border-gray-100 text-right">{fmt2(r.SALESPRICE)}</td>
                                     <td className="p-2 border-r border-gray-100 text-right font-semibold">{fmt2(r.TOTAL_SALE)}</td>
                                     <td className="p-2 text-center">
-                                        <button onClick={() => handleDelete(t(r.UNICO ?? r.COMPOSITION_UQ))} className="text-red-400 hover:text-red-600">
+                                        <button onClick={() => handleDelete(t(r.UNICO ?? r.COMPOSITION_UQ))}
+                                            className={delCompUnico === t(r.UNICO ?? r.COMPOSITION_UQ) ? "text-red-600 animate-pulse" : "text-red-400 hover:text-red-600"}>
                                             <Trash2 size={13} />
                                         </button>
                                     </td>

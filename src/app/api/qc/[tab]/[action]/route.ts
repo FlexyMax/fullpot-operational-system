@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { serverAuditLog } from "@/lib/serverAudit";
+
+const PANTA = "52961702";
 
 // ── SPs confirmed NOT in DB (2026-05-21) ─────────────────────────────────────
 // sp_flower_packing_stock_insert  → Tab 2: Send to Warehouse (insert new transfer)
@@ -19,6 +22,10 @@ export async function POST(
         const { tab, action } = await context.params;
         let procName = "";
         let spParams: Record<string, any> = {};
+        let auditAction: "Insert" | "Edit" | "Delete" | "" = "";
+        let auditTabla  = "";
+        let auditReg    = "";
+        let auditExt    = "";
 
         switch (tab) {
 
@@ -67,10 +74,12 @@ export async function POST(
                     procName = "sp_flower_warehouse_packing_box_barcodes_racks";
                     spParams = { lcPk_box_uq: body.pkboxUq };
                 } else if (action === "delete-transfer") {
-                    if (!body.unico || !body.userUq)
+                    const userUq = body.userUq || (session as any)?.user?.id || "";
+                    if (!body.unico || !userUq)
                         return NextResponse.json({ success: false, error: "unico and userUq required." }, { status: 400 });
                     procName = "sp_flower_packing_stock_delete";
-                    spParams = { lcunico: body.unico, lcuser_uq: body.userUq };
+                    spParams = { lcunico: body.unico, lcuser_uq: userUq };
+                    auditAction = "Delete"; auditTabla = "flower_packing_stock"; auditReg = body.unico;
                 } else if (action === "update-transfer") {
                     if (!body.pkstockUq)
                         return NextResponse.json({ success: false, error: "pkstockUq required." }, { status: 400 });
@@ -80,6 +89,7 @@ export async function POST(
                         lnprice_x_u:  parseFloat(body.priceXU)  || 0,
                         lnbox_units:  parseInt(body.boxUnits)   || 0,
                     };
+                    auditAction = "Edit"; auditTabla = "flower_packing_stock"; auditReg = body.pkstockUq;
                 } else if (action === "insert-transfer") {
                     // sp_flower_packing_stock_insert does not exist in the database
                     return NextResponse.json({ success: false, missing: true,
@@ -130,6 +140,7 @@ export async function POST(
                     if (!b.crBoxes)   return NextResponse.json({ success: false, error: "Boxes is required." }, { status: 400 });
                     if (!b.amount)    return NextResponse.json({ success: false, error: "Amount is required." }, { status: 400 });
                     procName = "sp_flower_packing_quality_credits_insert";
+                    auditAction = "Insert"; auditTabla = "flower_packing_quality_credits"; auditReg = "";
                     spParams = {
                         lcpkbox_uq:           b.pkboxUq,
                         lcreason_uq:          b.reasonUq,
@@ -161,6 +172,7 @@ export async function POST(
                     if (!b.unico)     return NextResponse.json({ success: false, error: "unico required." }, { status: 400 });
                     if (!b.reasonUq)  return NextResponse.json({ success: false, error: "Reason is required." }, { status: 400 });
                     procName = "sp_flower_packing_quality_credits_update";
+                    auditAction = "Edit"; auditTabla = "flower_packing_quality_credits"; auditReg = b.unico;
                     spParams = {
                         lcunico:              b.unico,
                         lcreason_uq:          b.reasonUq,
@@ -192,6 +204,7 @@ export async function POST(
                     if (!body.unico) return NextResponse.json({ success: false, error: "unico required." }, { status: 400 });
                     procName = "sp_flower_packing_quality_credits_delete";
                     spParams = { lcunico: body.unico };
+                    auditAction = "Delete"; auditTabla = "flower_packing_quality_credits"; auditReg = body.unico;
                 }
                 break;
 
@@ -234,6 +247,11 @@ export async function POST(
 
         if (result.recordset?.[0]?.error === true || result.recordset?.[0]?.error === 1) {
             return NextResponse.json({ success: false, error: result.recordset[0].message || "Database Error" });
+        }
+
+        if (auditAction) {
+            const reg = auditReg || result.recordset?.[0]?.unico ?? result.recordset?.[0]?.UNICO ?? "";
+            serverAuditLog(PANTA, auditAction as "Insert" | "Edit" | "Delete", auditTabla, reg, auditExt || undefined).catch(() => {});
         }
 
         const total = result.recordset?.[0]?.QueryTotalRecords ?? result.recordset?.length ?? 0;

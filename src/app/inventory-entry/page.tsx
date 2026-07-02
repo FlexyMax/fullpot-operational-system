@@ -189,6 +189,9 @@ export default function InventoryEntryPage() {
     const [modalPackingMode, setModalPackingMode] = useState<"add" | "edit">("add");
     const [packForm,         setPackForm]         = useState<any>(EMPTY_PACKING);
     const [packSaving,       setPackSaving]       = useState(false);
+    const [delPackConf,      setDelPackConf]      = useState(false);
+    const [delBoxConf,       setDelBoxConf]       = useState(false);
+    const [sendLabelConf,    setSendLabelConf]    = useState(false);
 
     // ── Box edit modal ────────────────────────────────────────────────────────
     const [modalEditBox, setModalEditBox] = useState(false);
@@ -494,7 +497,13 @@ export default function InventoryEntryPage() {
 
     const handleSendLabel = async () => {
         if (!lcpack_uq) { toast.error("Select a packing first."); return; }
-        if (!confirm("Do you want to resend the label?")) return;
+        if (!sendLabelConf) {
+            setSendLabelConf(true);
+            toast.warning("Click 'PDF Label' again to confirm sending the label.");
+            setTimeout(() => setSendLabelConf(false), 4000);
+            return;
+        }
+        setSendLabelConf(false);
         try {
             const res = await fetch(`/api/inventory-entry/packings/${lcpack_uq}/send-label`, { method: "POST" });
             const d = await res.json();
@@ -507,7 +516,13 @@ export default function InventoryEntryPage() {
     const handleDeletePacking = async () => {
         if (!lcpack_uq) { toast.error("Select a packing first."); return; }
         if (!perms.canDelete) { toast.error("You are not authorized to delete records."); return; }
-        if (!confirm("Delete this packing? This action cannot be undone.")) return;
+        if (!delPackConf) {
+            setDelPackConf(true);
+            toast.warning("Click DELETE PACKING again to confirm. This cannot be undone.");
+            setTimeout(() => setDelPackConf(false), 4000);
+            return;
+        }
+        setDelPackConf(false);
         try {
             const res = await fetch(`/api/inventory-entry/packings/${lcpack_uq}`, {
                 method: "DELETE", headers: { "Content-Type": "application/json" },
@@ -621,7 +636,13 @@ export default function InventoryEntryPage() {
     const handleDeleteBox = async () => {
         if (!lcpk_box_uq) { toast.error("Select a box first."); return; }
         if (!perms.canDelete) { toast.error("Not authorized."); return; }
-        if (!confirm("Delete this box?")) return;
+        if (!delBoxConf) {
+            setDelBoxConf(true);
+            toast.warning("Click DELETE BOX again to confirm.");
+            setTimeout(() => setDelBoxConf(false), 4000);
+            return;
+        }
+        setDelBoxConf(false);
         try {
             const res = await fetch(`/api/inventory-entry/boxes/${lcpk_box_uq}`, {
                 method: "DELETE", headers: { "Content-Type": "application/json" },
@@ -942,7 +963,7 @@ export default function InventoryEntryPage() {
 
                             {/* Row 2: Vendors / Packings */}
                             <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0 max-h-[320px]">
-                                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between pl-3 pr-0 shrink-0 gap-2 overflow-x-auto">
+                                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between pl-3 pr-0 shrink-0 gap-2 overflow-x-auto no-scrollbar">
                                     <div className="flex items-center gap-2 flex-1 min-w-0">
                                         <Package size={14} className="text-[#FB7506] shrink-0" />
                                         <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] truncate">
@@ -1050,7 +1071,7 @@ export default function InventoryEntryPage() {
 
                             {/* Row 3: Boxes Detail */}
                             <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0 h-[320px]">
-                                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between pl-3 pr-0 shrink-0 gap-2 overflow-x-auto">
+                                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between pl-3 pr-0 shrink-0 gap-2 overflow-x-auto no-scrollbar">
                                     <div className="flex items-center gap-2 flex-1 min-w-0">
                                         <Boxes size={14} className="text-[#FB7506] shrink-0" />
                                         <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] truncate">
@@ -1699,24 +1720,14 @@ export default function InventoryEntryPage() {
                     <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden"
                         onClick={e => e.stopPropagation()}>
 
-                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-0 rounded-t-lg shrink-0">
+                        <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2 rounded-t-lg shrink-0">
                             <div className="flex items-center gap-2">
                                 <Package size={16} className="text-[#FB7506]" />
                                 <span className="font-black text-[10px] text-white uppercase tracking-widest">
                                     {modalPackingMode === "add" ? "New Packing" : "Edit Packing"}
                                 </span>
                             </div>
-                            <div className="flex items-center gap-1.5 px-2">
-                                <button onClick={handleSavePacking} disabled={packSaving}
-                                    className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all">
-                                    {packSaving ? <RefreshCcw size={14} className="animate-spin" /> : <Save size={14} />}
-                                    {packSaving ? "Saving..." : "Save"}
-                                </button>
-                                <button onClick={() => setModalPacking(false)}
-                                    className="flex items-center gap-1.5 bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-all">
-                                    <X size={14} /> Cancel
-                                </button>
-                            </div>
+                            <button onClick={() => setModalPacking(false)} className="text-gray-400 hover:text-white transition-colors"><X size={16} /></button>
                         </div>
 
                         <div className="overflow-y-auto flex-1 p-4">
@@ -1782,6 +1793,16 @@ export default function InventoryEntryPage() {
                                         rows={2} className="fos-input text-xs resize-none py-1" />
                                 </div>
                             </div>
+                        </div>
+                        <div className="flex justify-end gap-2 px-4 py-3 bg-gray-50 border-t shrink-0">
+                            <button onClick={() => setModalPacking(false)} className="px-4 py-2 rounded border border-gray-200 text-xs font-black uppercase text-gray-600 hover:bg-gray-100 transition-colors">
+                                Cancel
+                            </button>
+                            <button onClick={handleSavePacking} disabled={packSaving}
+                                className="flex items-center gap-2 px-5 py-2 rounded bg-[#FB7506] hover:bg-orange-600 disabled:opacity-40 text-white text-xs font-black uppercase tracking-wider transition-all">
+                                {packSaving ? <RefreshCcw size={12} className="animate-spin" /> : <Save size={12} />}
+                                {packSaving ? "Saving..." : modalPackingMode === "add" ? "Create" : "Save"}
+                            </button>
                         </div>
                     </div>
                 </div>
