@@ -206,7 +206,7 @@ function BuyersQuotasModal({ productUq, productDesc, onClose }: { productUq: str
         finally { setSaving(false); }
     };
     const deleteQuota = async () => {
-        if (!selQuota || !confirm("Delete this quota?")) return;
+        if (!selQuota) return;
         setSaving(true);
         try {
             const res = await fetch(`/api/masters/items/products/quota/${selQuota.unico}`, { method:"DELETE" });
@@ -1044,7 +1044,7 @@ export default function Tab2() {
             const data = await res.json();
             if (!data.success) throw new Error(data.error);
             onSuccess(data);
-        } catch(e:any) { setFormError(e.message); toast.error(e.message); }
+        } catch(e:any) { toast.error(e.message); }
         finally { setSaving(false); }
     };
 
@@ -1061,38 +1061,36 @@ export default function Tab2() {
     const deleteProduct = () => doCrud(`/api/masters/items/products/${selProduct?.unico}`, "DELETE", {}, () => { logAction("Delete", selProduct?.unico, "Product"); setSelProduct(null); refetchAll(); toast.success("Product deleted."); setProductModal(null); });
 
     const openModal = (mode: "add"|"edit"|"copy") => {
-        if (mode!=="add" && !selProduct) { setFormError(NO_PROD); return; }
-        if ((mode==="add"||mode==="copy") && !perms.canCreate) { setFormError(PERMISSION_MSGS.create); return; }
-        if (mode==="edit" && !perms.canEdit) { setFormError(PERMISSION_MSGS.edit); return; }
-        // sp_NC_products_general_list returns class_uq/subclass_uq — use them to pre-fill cascade in Edit/Copy
+        if (mode!=="add" && !selProduct) { toast.error(NO_PROD); return; }
+        if ((mode==="add"||mode==="copy") && !perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; }
+        if (mode==="edit" && !perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; }
         const f = mode==="add"
             ? {...EMPTY_PROD2}
             : { ...selProduct, class_filter: selProduct.class_uq ?? "", subclass_filter: selProduct.subclass_uq ?? "" };
         setProductForm(f); setFormError(null); setProductModal({mode});
     };
 
-    const requireProduct = (fn: ()=>void) => { if (!selProduct) { setFormError(NO_PROD); return; } fn(); };
+    const requireProduct = (fn: ()=>void) => { if (!selProduct) { toast.error(NO_PROD); return; } fn(); };
 
-    const handlePrebook = async (type: "recipe"|"upc"|"sales", data: any) => {
+    const handlePrebook = async (type: "recipe"|"upc"|"sales", _data: any) => {
         setShowPrebook(null);
-        setFormError("This feature is coming soon — SP not yet available in database.");
+        toast.info("Coming soon — SP not yet available in database.");
     };
 
     const handleDirectAction = async (action: "default-charge"|"extended-recipe") => {
-        if (!selProduct) { setFormError(NO_PROD); return; }
-        if (!confirm(`Confirm: ${action.replace("-"," ")}?`)) return;
-        setFormError(`Coming soon — sp_flower_products_${action.replace("-","_")} not found in database.`);
+        if (!selProduct) { toast.error(NO_PROD); return; }
+        toast.info(`Coming soon — sp_flower_products_${action.replace("-","_")} not found in database.`);
     };
 
     const handlePrint = async (type: "bouquet"|"box"|"extended") => {
-        if (!selProduct) { setFormError(NO_PROD); return; }
-        if (!perms.canReport) { setFormError(PERMISSION_MSGS.report); return; }
-        if (type !== "bouquet") { setFormError(`${type} composition print — Coming soon (SP not found in DB).`); return; }
+        if (!selProduct) { toast.error(NO_PROD); return; }
+        if (!perms.canReport) { toast.error(PERMISSION_MSGS.report); return; }
+        if (type !== "bouquet") { toast.info(`${type} composition print — Coming soon (SP not found in DB).`); return; }
         try {
             const r = await fetch(`/api/masters/items/products/${selProduct.unico}/print-composition?type=bouquet`);
             const d = await r.json();
-            alert(`Bouquet Composition: ${d.length ?? 0} record(s). Print functionality coming soon.`);
-        } catch(e:any){ setFormError(e.message); }
+            toast.info(`Bouquet Composition: ${d.length ?? 0} record(s). Print functionality coming soon.`);
+        } catch(e:any){ toast.error(e.message); }
     };
 
     // Dropdown state for toolbar dropdowns
@@ -1107,11 +1105,11 @@ export default function Tab2() {
                 <div className="flex flex-wrap items-center gap-1">
                     <Btn icon={Plus}    label="Add"    color="green"  onClick={()=>openModal("add")}    disabled={!perms.canCreate}/>
                     <Btn icon={Pencil}  label="Edit"   color="blue"   onClick={()=>openModal("edit")}   disabled={!selProduct||!perms.canEdit}/>
-                    <Btn icon={Trash2}  label="Delete" color="red"    onClick={()=>{if(!selProduct){setFormError(NO_PROD);return;} if(!perms.canDelete){setFormError(PERMISSION_MSGS.delete);return;} setProductModal({mode:"delete"});}} disabled={!selProduct||!perms.canDelete}/>
+                    <Btn icon={Trash2}  label="Delete" color="red"    onClick={()=>{if(!selProduct){toast.error(NO_PROD);return;} if(!perms.canDelete){toast.error(PERMISSION_MSGS.delete);return;} setProductModal({mode:"delete"});}} disabled={!selProduct||!perms.canDelete}/>
                     <Btn icon={Copy}    label="Copy"   color="gray"   onClick={()=>openModal("copy")}   disabled={!selProduct||!perms.canCreate}/>
                     <div className="w-px h-5 bg-gray-300 mx-0.5"/>
-                    <Btn icon={Layers}  label="Bouquet" color="amber"  onClick={()=>requireProduct(()=>setFormError("Bouquet Composition — Coming soon"))}  disabled={!selProduct}/>
-                    <Btn icon={Box}     label="Box"     color="amber"  onClick={()=>requireProduct(()=>setFormError("Box Composition — Coming soon"))}        disabled={!selProduct}/>
+                    <Btn icon={Layers}  label="Bouquet" color="amber"  onClick={()=>requireProduct(()=>toast.info("Bouquet Composition — Coming soon"))}  disabled={!selProduct}/>
+                    <Btn icon={Box}     label="Box"     color="amber"  onClick={()=>requireProduct(()=>toast.info("Box Composition — Coming soon"))}        disabled={!selProduct}/>
                     <div className="w-px h-5 bg-gray-300 mx-0.5"/>
                     <Btn icon={Shuffle}      label="Alternatives" color="purple" onClick={()=>requireProduct(()=>setShowAlt(true))}    disabled={!selProduct}/>
                     <Btn icon={BookOpen}     label="Recipes"      color="purple" onClick={()=>requireProduct(()=>setShowRecipe(true))} disabled={!selProduct}/>
@@ -1147,8 +1145,8 @@ export default function Tab2() {
                         </div>}
                     </div>
                     <div className="w-px h-5 bg-gray-300 mx-0.5"/>
-                    <Btn icon={ClipboardList} label="Update Stock" color="gray"   onClick={()=>{if(!perms.canEdit){setFormError(PERMISSION_MSGS.edit);return;} setShowStock(true);}} disabled={!perms.canEdit}/>
-                    <Btn icon={BarChart2}     label="PO Prices"    color="gray"   onClick={()=>{if(!perms.canCreate){setFormError(PERMISSION_MSGS.create);return;} setShowPO(true);}}/>
+                    <Btn icon={ClipboardList} label="Update Stock" color="gray"   onClick={()=>{if(!perms.canEdit){toast.error(PERMISSION_MSGS.edit);return;} setShowStock(true);}} disabled={!perms.canEdit}/>
+                    <Btn icon={BarChart2}     label="PO Prices"    color="gray"   onClick={()=>{if(!perms.canCreate){toast.error(PERMISSION_MSGS.create);return;} setShowPO(true);}}/>
                     <div className="w-px h-5 bg-gray-300 mx-0.5"/>
                     <Btn icon={Package}  label="Dflt Charge"  color="amber" onClick={()=>handleDirectAction("default-charge")}  disabled={!selProduct}/>
                     <Btn icon={Layers}   label="Ext. Recipe"  color="amber" onClick={()=>handleDirectAction("extended-recipe")}  disabled={!selProduct}/>
@@ -1175,12 +1173,6 @@ export default function Tab2() {
                 </div>
                 {(loadingP||fetchingMoreProds) && <RefreshCcw size={11} className="text-gray-400 animate-spin"/>}
                 <span className="text-[9px] text-gray-400 shrink-0">{products.length.toLocaleString()} / {totalRecords.toLocaleString()} products</span>
-                {formError && (
-                    <span className="flex items-center gap-1 text-amber-600 text-[9px] font-bold ml-1 min-w-0">
-                        <span className="truncate max-w-[300px]">{formError}</span>
-                        <button onClick={()=>setFormError(null)} className="ml-1 text-gray-400 hover:text-gray-600 shrink-0"><X size={10}/></button>
-                    </span>
-                )}
             </div>
 
             {/* Products Grid */}

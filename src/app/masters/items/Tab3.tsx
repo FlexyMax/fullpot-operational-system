@@ -11,6 +11,9 @@ import { cn } from "@/lib/utils";
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { toast } from "sonner";
+import PanelGrid from "@/components/ui/PanelGrid";
+import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
+import { AuditLogModal } from "@/components/AuditLogModal";
 const EMPTY_ARR: any[] = [];
 
 const t  = (v: any) => String(v ?? "").trim();
@@ -77,6 +80,161 @@ function MiniGrid({ cols, rows, selUnico, onSelect, loading, empty, sentinel }: 
                     {sentinel && <tr><td colSpan={cols.length} className="p-0">{sentinel}</td></tr>}
                 </tbody>
             </table>
+        </div>
+    );
+}
+
+// ─── PacksModal ───────────────────────────────────────────────────────────────
+const EMPTY_PACK = { grade_uq:"", stems_bunch:0, fbox:0, hbox:"0", qbox:0, ebox:0 };
+
+function PacksModal({ variety, onClose }: { variety: any; onClose: () => void }) {
+    const [packs,    setPacks]    = useState<any[]>([]);
+    const [loading,  setLoading]  = useState(true);
+    const [selRow,   setSelRow]   = useState<any>(null);
+    const [form,     setForm]     = useState<any>({...EMPTY_PACK});
+    const [formMode, setFormMode] = useState<"add"|"edit"|null>(null);
+    const [saving,   setSaving]   = useState(false);
+    const [err,      setErr]      = useState<string|null>(null);
+
+    const { data: grades = EMPTY_ARR } = useQuery({ queryKey:["packs-gr"], queryFn:()=>sF("/api/masters/items/grades"), staleTime:120000 });
+
+    const load = useCallback(async () => {
+        setLoading(true);
+        try { setPacks(await sF(`/api/masters/items/varieties/${variety.unico}/packs`)); }
+        catch(e:any){ setErr(e.message); }
+        finally { setLoading(false); }
+    }, [variety.unico]);
+
+    useEffect(() => { load(); }, [load]);
+
+    const openAdd = () => { setSelRow(null); setForm({...EMPTY_PACK}); setErr(null); setFormMode("add"); };
+    const openEdit = () => {
+        if (!selRow) { setErr("Select a row first."); return; }
+        setForm({ grade_uq: selRow.grade_uq, stems_bunch: selRow.stems_bunch, fbox: selRow.fbox, hbox: selRow.hbox, qbox: selRow.qbox, ebox: selRow.ebox });
+        setErr(null); setFormMode("edit");
+    };
+
+    const save = async () => {
+        if (!form.grade_uq) { setErr("Select a grade."); return; }
+        setSaving(true); setErr(null);
+        try {
+            if (formMode === "add") {
+                const r = await fetch(`/api/masters/items/varieties/${variety.unico}/packs`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(form) });
+                const d = await r.json();
+                if (!d.success) throw new Error(d.error);
+                toast.success("Pack created.");
+            } else {
+                const r = await fetch(`/api/masters/items/varieties/${variety.unico}/packs/${selRow.unico}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(form) });
+                const d = await r.json();
+                if (!d.success) throw new Error(d.error);
+                toast.success("Pack updated.");
+            }
+            setFormMode(null); setSelRow(null); await load();
+        } catch(e:any){ setErr(e.message); toast.error(e.message); }
+        finally { setSaving(false); }
+    };
+
+    const deletePack = async () => {
+        if (!selRow) return;
+        setSaving(true); setErr(null);
+        try {
+            const r = await fetch(`/api/masters/items/varieties/${variety.unico}/packs/${selRow.unico}`, { method:"DELETE" });
+            const d = await r.json();
+            if (!d.success) throw new Error(d.error);
+            toast.success("Pack deleted."); setSelRow(null); setFormMode(null); await load();
+        } catch(e:any){ setErr(e.message); toast.error(e.message); }
+        finally { setSaving(false); }
+    };
+
+    const S = (k: string, v: any) => setForm((p: any) => ({...p, [k]: v}));
+
+    return (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl w-full sm:max-w-2xl flex flex-col" style={{maxHeight:"80vh"}}>
+                {/* Header */}
+                <div className="h-10 bg-[#374151] rounded-t-xl flex items-center justify-between px-4 shrink-0">
+                    <div className="flex items-center gap-2">
+                        <Box size={14} className="text-[#FB7506]"/>
+                        <span className="font-black text-[10px] uppercase tracking-widest text-white">Box Composition — {t(variety.variety)}</span>
+                        {err && <span className="text-amber-400 text-[9px] font-bold ml-2 truncate max-w-[200px]">{err}</span>}
+                    </div>
+                    <button onClick={onClose}><XCircle size={15} className="text-gray-400 hover:text-white"/></button>
+                </div>
+
+                {/* Grid */}
+                <PanelGrid icon={Box} title="Packs" recordCount={packs.length}
+                    refreshing={loading} onRefresh={load}
+                    headerRight={<AuditLogModal recordId={selRow?.unico} disabled={!selRow}/>}
+                    className="flex-1 min-h-0 rounded-none border-x-0 border-b-0"
+                    menuItems={[
+                        { label:"Add",    icon:Plus,   color:"green", onClick: openAdd },
+                        { label:"Edit",   icon:Pencil, color:"blue",  onClick: openEdit, disabled:!selRow },
+                        { label:"Delete", icon:Trash2, color:"red",   onClick: deletePack, disabled:!selRow },
+                    ]}>
+                    <PanelGridTable>
+                        <PanelGridThead>
+                            <PanelGridTh>Grade</PanelGridTh>
+                            <PanelGridTh className="w-12">Code</PanelGridTh>
+                            <PanelGridTh className="w-16" align="right">Stems/Bch</PanelGridTh>
+                            <PanelGridTh className="w-12" align="right">FBox</PanelGridTh>
+                            <PanelGridTh className="w-12" align="right">HBox</PanelGridTh>
+                            <PanelGridTh className="w-12" align="right">QBox</PanelGridTh>
+                            <PanelGridTh className="w-12" align="right">EBox</PanelGridTh>
+                        </PanelGridThead>
+                        <PanelGridTbody>
+                            {packs.map(p => (
+                                <PanelGridTr key={p.unico} selected={selRow?.unico === p.unico}
+                                    onClick={() => setSelRow(selRow?.unico === p.unico ? null : p)}>
+                                    <PanelGridTd>{t(p.grado)}</PanelGridTd>
+                                    <PanelGridTd className="text-[#FB7506] font-mono text-[11px]">{t(p.grade_sh)}</PanelGridTd>
+                                    <PanelGridTd align="right">{p.stems_bunch}</PanelGridTd>
+                                    <PanelGridTd align="right">{p.fbox}</PanelGridTd>
+                                    <PanelGridTd align="right">{t(p.hbox)}</PanelGridTd>
+                                    <PanelGridTd align="right">{p.qbox}</PanelGridTd>
+                                    <PanelGridTd align="right">{p.ebox}</PanelGridTd>
+                                </PanelGridTr>
+                            ))}
+                            {!loading && packs.length === 0 && (
+                                <PanelGridTr onClick={()=>{}}><PanelGridTd colSpan={7} className="text-center text-gray-300 italic text-xs py-4">No packs configured</PanelGridTd></PanelGridTr>
+                            )}
+                        </PanelGridTbody>
+                    </PanelGridTable>
+                </PanelGrid>
+
+                {/* Inline form */}
+                {formMode && (
+                    <div className="border-t border-[#DBD9D9] px-4 py-3 bg-gray-50 shrink-0">
+                        <div className="grid grid-cols-7 gap-2 text-xs mb-3">
+                            <div className="col-span-2 flex flex-col gap-0.5">
+                                <label className="text-[9px] font-black text-gray-400 uppercase">Grade *</label>
+                                <select value={form.grade_uq} onChange={e=>S("grade_uq",e.target.value)} className="fos-input py-1">
+                                    <option value="">— Select —</option>
+                                    {(grades as any[]).map((g:any)=><option key={g.unico} value={g.unico}>{t(g.grado)}</option>)}
+                                </select>
+                            </div>
+                            {([{l:"Stems/Bch",k:"stems_bunch"},{l:"FBox",k:"fbox"},{l:"HBox",k:"hbox"},{l:"QBox",k:"qbox"},{l:"EBox",k:"ebox"}] as const).map(f=>(
+                                <div key={f.k} className="flex flex-col gap-0.5">
+                                    <label className="text-[9px] font-black text-gray-400 uppercase">{f.l}</label>
+                                    <input type="number" value={form[f.k]} onChange={e=>S(f.k, f.k==="hbox" ? e.target.value : parseInt(e.target.value)||0)} className="fos-input py-1 text-right"/>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="flex justify-end gap-2">
+                            <button onClick={()=>{setFormMode(null);setErr(null);}} className="px-3 py-1.5 rounded border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-100">Cancel</button>
+                            <button onClick={save} disabled={saving}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#FB7506] hover:bg-orange-600 text-white text-xs font-black disabled:opacity-50">
+                                {saving?<RefreshCcw size={11} className="animate-spin"/>:<Save size={11}/>}
+                                {saving?"Saving...":(formMode==="add"?"Create Pack":"Save Pack")}
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Footer */}
+                <div className="flex justify-end px-4 py-2 border-t border-[#DBD9D9] bg-gray-50 rounded-b-xl shrink-0">
+                    <button onClick={onClose} className="px-4 py-1.5 rounded border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-100">Close</button>
+                </div>
+            </div>
         </div>
     );
 }
@@ -446,7 +604,6 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety }: Tab3Pro
     const [compSearch,   setCompSearch]   = useState("");
     const [debSearch,    setDebSearch]    = useState("");
     const [selComponent, setSelComponent] = useState<any>(null);
-    const [error,        setError]        = useState<string|null>(null);
 
     // Modal state
     const [varietyModal, setVarietyModal] = useState<{mode:"add"|"edit"|"delete"}|null>(null);
@@ -455,6 +612,7 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety }: Tab3Pro
     const [formError,    setFormError]    = useState<string|null>(null);
     const [showBOGO,     setShowBOGO]     = useState(false);
     const [showBogoWH,   setShowBogoWH]   = useState(false);
+    const [showPacks,    setShowPacks]    = useState(false);
     const [showPrebook,  setShowPrebook]  = useState<"recipe"|"upc"|"sales"|null>(null);
     const [prebookOpen,  setPrebookOpen]  = useState<"recipe"|"upc"|"sales"|null>(null);
 
@@ -473,15 +631,15 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety }: Tab3Pro
             const data = await res.json();
             if (!data.success) throw new Error(data.error);
             onSuccess(data);
-        } catch(e:any) { setFormError(e.message); toast.error(e.message); }
+        } catch(e:any) { setFormError(e.message); toast.error(e.message); } // setFormError shows in modal header
         finally { setSaving(false); }
     };
 
     const openVarietyModal = async (mode: "add"|"edit"|"delete") => {
-        if (mode !== "add" && !selVariety) { setError("Select a variety first."); return; }
-        if (mode === "add"    && !perms.canCreate) { setError(PERMISSION_MSGS.create); return; }
-        if (mode === "edit"   && !perms.canEdit)   { setError(PERMISSION_MSGS.edit);   return; }
-        if (mode === "delete" && !perms.canDelete) { setError(PERMISSION_MSGS.delete); return; }
+        if (mode !== "add" && !selVariety) { toast.error("Select a variety first."); return; }
+        if (mode === "add"    && !perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; }
+        if (mode === "edit"   && !perms.canEdit)   { toast.error(PERMISSION_MSGS.edit);   return; }
+        if (mode === "delete" && !perms.canDelete) { toast.error(PERMISSION_MSGS.delete); return; }
 
         if (mode === "edit" && selVariety) {
             // Fetch full variety data for the form
@@ -509,17 +667,17 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety }: Tab3Pro
     };
     const deleteVariety = () => doCrud(`/api/masters/items/varieties/${selVariety?.unico}`, "DELETE", {}, () => { logAction("Delete", selVariety?.unico); setSelVariety(null); refetchVr(); toast.success("Variety deleted."); setVarietyModal(null); });
 
-    const requireComp = (fn: ()=>void) => { if (!selComponent) { setError(NO_COMP); return; } fn(); };
+    const requireComp = (fn: ()=>void) => { if (!selComponent) { toast.error(NO_COMP); return; } fn(); };
 
     const handleBogoClean = async () => {
-        if (!confirm("Do you want to clean all BOGO settings?")) return;
         try {
             const res = await fetch("/api/masters/items/subclass-bogo/clean-all", { method:"PUT" });
             const d = await res.json();
             if (!d.success) throw new Error(d.error);
             logAction("Edit", "", "BOGO Cleaner");
+            toast.success("BOGO settings cleared.");
             refetchComp();
-        } catch(e:any){ setError((e as any).message); }
+        } catch(e:any){ toast.error((e as any).message); }
     };
 
     return (
@@ -533,9 +691,9 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety }: Tab3Pro
                     { label: "BOGO", icon: Box, color: "amber", onClick: ()=>requireComp(()=>setShowBOGO(true)), disabled: !selComponent },
                     { label: "BOGO WH", icon: Box, color: "amber", onClick: ()=>requireComp(()=>setShowBogoWH(true)), disabled: !selComponent },
                     { label: "BOGO Cleaner", icon: Trash2, color: "red", onClick: handleBogoClean },
-                    { label: "Bouquet", icon: Layers, color: "amber", onClick: ()=>setError("Bouquet Composition — Coming soon"), disabled: !selVariety },
-                    { label: "Box", icon: Box, color: "amber", onClick: ()=>setError("Box Composition — Coming soon"), disabled: !selVariety },
-                    { label: "Update Stock", icon: ClipboardList, color: "gray", onClick: ()=>setError("Update Stock — use Tab 2") },
+                    { label: "Bouquet", icon: Layers, color: "amber", onClick: ()=>toast.info("Bouquet Composition — Coming soon"), disabled: !selVariety },
+                    { label: "Box", icon: Box, color: "amber", onClick: ()=>{ if(!selVariety){toast.error("Select a variety first.");return;} setShowPacks(true); }, disabled: !selVariety },
+                    { label: "Update Stock", icon: ClipboardList, color: "gray", onClick: ()=>toast.info("Update Stock — use Tab 2") },
                 ]} />
                 {/* Prebook dropdowns */}
                 {(["recipe","upc","sales"] as const).map(type=>{
@@ -557,14 +715,6 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety }: Tab3Pro
                     );
                 })}
             </div>
-
-            {/* Error bar */}
-            {error && (
-                <div className="px-3 py-1 bg-amber-50 border-b border-amber-200 flex items-center gap-2 shrink-0">
-                    <span className="text-amber-700 text-[9px] font-bold flex-1">{error}</span>
-                    <button onClick={()=>setError(null)}><X size={10} className="text-amber-500 hover:text-amber-700"/></button>
-                </div>
-            )}
 
             {/* Two-panel layout */}
             <div className="flex-1 flex gap-1.5 p-1.5 overflow-hidden">
@@ -640,6 +790,10 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety }: Tab3Pro
                     saving={saving} error={formError}/>
             )}
 
+            {showPacks && selVariety && (
+                <PacksModal variety={selVariety} onClose={()=>setShowPacks(false)}/>
+            )}
+
             {showBOGO && selComponent && (
                 <SubclassBOGOModal
                     subclaUq={selComponent.subcla_uq}
@@ -660,7 +814,7 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety }: Tab3Pro
                     productDesc={t(selVariety.variety)}
                     showDeletePrior={showPrebook==="recipe"}
                     showChangeCase={showPrebook==="recipe"}
-                    onConfirm={()=>{ setShowPrebook(null); setError("Coming soon — SP not yet available in database."); }}
+                    onConfirm={()=>{ setShowPrebook(null); toast.info("Coming soon — SP not yet available in database."); }}
                     onClose={()=>setShowPrebook(null)}/>
             )}
         </div>
