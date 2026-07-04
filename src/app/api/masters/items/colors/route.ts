@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure, executeQuery } from "@/lib/db";
 import crypto from "crypto";
+import { serverAuditLog } from "@/lib/serverAudit";
+const PANTA = "52961702";
 
 // sp_flower_colors_list has NO params — returns all colors. Filter client-side.
 // Color CRUD SPs don't exist → direct SQL on flower_varieties_colors
@@ -25,6 +27,7 @@ export async function POST(req: NextRequest) {
             INSERT INTO flower_varieties_colors (unico, color, color_sh, display, mix, timestamp)
             VALUES ('${txt(unico)}', '${txt(b.color)}', '${txt(b.color_sh)}',
                     ${bit(b.display)}, ${bit(b.mix)}, GETDATE())`);
+        serverAuditLog(PANTA, "Insert", "flower_varieties_colors", unico, b.color).catch(() => {});
         return NextResponse.json({ success: true, unico, message: "Color created." });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });

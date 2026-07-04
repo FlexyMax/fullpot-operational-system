@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure, executeQuery } from "@/lib/db";
 import crypto from "crypto";
+import { serverAuditLog } from "@/lib/serverAudit";
+const PANTA = "52961702";
 
 // Grades CRUD uses sp_flower_grades_list for reading, direct SQL for write
 // (sp_flower_grade_insert/update/delete do not exist in FULLPOT DB as of 2026-05-16)
@@ -27,6 +29,7 @@ export async function POST(req: NextRequest) {
             INSERT INTO flower_clases_grados (unico, class_uq, grado, grade_sh, display, timestamp)
             VALUES ('${txt(unico)}', '${txt(b.class_uq || "")}', '${txt(b.grado)}',
                     '${txt(b.grade_sh)}', ${bit(b.display)}, GETDATE())`);
+        serverAuditLog(PANTA, "Insert", "flower_clases_grados", unico, b.grado).catch(() => {});
         return NextResponse.json({ success: true, unico, message: "Grade created." });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });

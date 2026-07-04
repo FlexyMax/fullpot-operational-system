@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useState, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import PanelGrid from "@/components/ui/PanelGrid";
+import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
 import {
     ChevronRight, Plus, Pencil, Trash2, Save, X, RefreshCcw,
     Check, XCircle, Search, Tag, Layers, Box, Palette, Package
@@ -67,70 +68,6 @@ function CrudModal({ title, icon: Icon, form, setForm, fields, onSave, onDelete,
                     </button>
                 </div>
             </div>
-        </div>
-    );
-}
-
-// ─── Right-panel card ─────────────────────────────────────────────────────────
-function RightCard({ icon: Icon, title, loading, recordId, menuItems, children }: any) {
-    const [open, setOpen] = useState(false);
-    const COLORS: Record<string,{icon:string;text:string}> = {
-        green:{icon:"text-green-600",text:"text-green-700"}, blue:{icon:"text-blue-500",text:"text-gray-800"},
-        red:{icon:"text-red-500",text:"text-gray-800"}, gray:{icon:"text-gray-500",text:"text-gray-700"},
-    };
-    const btnRef = useRef<HTMLButtonElement>(null);
-    const [pos, setPos] = useState({ top: 0, right: 0 });
-    const [mounted, setMounted] = useState(false);
-    useEffect(() => { setMounted(true); }, []);
-    const toggle = () => {
-        if (!open && btnRef.current) {
-            const r = btnRef.current.getBoundingClientRect();
-            setPos({ top: r.bottom + 4, right: window.innerWidth - r.right });
-        }
-        setOpen(o=>!o);
-    };
-    return (
-        <div className="flex flex-col overflow-hidden flex-1 min-h-0 rounded-lg border border-[#DBD9D9] shadow-sm bg-white">
-            <div className="h-10 bg-white flex items-center justify-between pl-3 pr-0 shrink-0 border-b border-[#DBD9D9]">
-                <div className="flex items-center gap-2">
-                    <Icon size={15} className="text-[#FB7506]"/>
-                    <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">{title}</span>
-                    <AuditLogModal recordId={recordId} disabled={!recordId}/>
-                    {loading && <RefreshCcw size={11} className="text-gray-400 animate-spin"/>}
-                </div>
-                <button ref={btnRef} onClick={toggle}
-                    className={cn("h-10 w-10 flex items-center justify-center hover:bg-gray-100 rounded-tr-lg cursor-pointer transition-colors", open ? "flex-row gap-[5px]" : "flex-col gap-[5px]")}>
-                    {open ? (
-                        <>
-                            <span className="block h-5 w-[2px] bg-[#FB7506] rounded-full" />
-                            <span className="block h-5 w-[2px] bg-[#FB7506] rounded-full" />
-                            <span className="block h-5 w-[2px] bg-[#FB7506] rounded-full" />
-                        </>
-                    ) : (
-                        <>
-                            <span className="block w-5 h-[2px] bg-[#FB7506] rounded-full" />
-                            <span className="block w-5 h-[2px] bg-[#FB7506] rounded-full" />
-                            <span className="block w-5 h-[2px] bg-[#FB7506] rounded-full" />
-                        </>
-                    )}
-                </button>
-                {mounted && open && createPortal(
-                    <div style={{ position: "fixed", top: pos.top, right: pos.right, zIndex: 100, minWidth: 220 }}
-                        className="bg-white border border-gray-200 rounded-sm shadow-xl py-1 overflow-hidden" onMouseLeave={()=>setOpen(false)}>
-                        {menuItems.map((item: any, i: number) => {
-                            const c = COLORS[item.color]||COLORS.gray;
-                            const isDisabled = !!item.disabled;
-                            return <button key={i} onClick={()=>{item.onClick();setOpen(false);}} disabled={isDisabled}
-                                className={cn("w-full flex items-center gap-3 px-4 py-2.5 text-[14px] font-semibold uppercase hover:bg-[#FB7506]/10 disabled:opacity-40 transition-colors text-left")}>
-                                <item.icon size={16} className={c.icon}/>
-                                <span className={c.text}>{item.label}</span>
-                            </button>;
-                        })}
-                    </div>,
-                    document.body
-                )}
-            </div>
-            <div className="overflow-auto flex-1">{children}</div>
         </div>
     );
 }
@@ -691,106 +628,106 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
             <div className="flex flex-col gap-1.5 overflow-hidden shrink-0 h-[65vh] md:h-auto md:w-[42%] md:flex-none">
 
                 {/* Grades */}
-                <RightCard icon={Layers} title="Grades" loading={loadingGr} recordId={selGrade?.unico}
+                <PanelGrid icon={Layers} title="Grades" recordCount={(grades as any[]).length}
+                    refreshing={loadingGr} onRefresh={()=>refetchGr()}
+                    headerRight={<AuditLogModal recordId={selGrade?.unico} disabled={!selGrade}/>}
+                    className="flex-1 min-h-0"
                     menuItems={[
                         { label:"Add Grade",    icon:Plus,   color:"green", onClick:()=>{ setSelGrade(null); openModal("grade","add",undefined,{...EMPTY_GRADE}); } },
                         { label:"Edit Grade",   icon:Pencil, color:"blue",  onClick:()=>{ if(selGrade) openModal("grade","edit",selGrade); }, disabled:!selGrade },
                         { label:"Delete Grade", icon:Trash2, color:"red",   onClick:()=>{ if(selGrade) openModal("grade","delete",selGrade); }, disabled:!selGrade },
                     ]}>
-                    <table className="min-w-full text-left">
-                        <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
-                            <tr className="divide-x divide-[#DBD9D9]/30">
-                                <th className="p-2">Grade</th>
-                                <th className="p-2 w-16">Code</th>
-                                <th className="p-2 w-12 text-center">Show</th>
-                                <th className="p-2 w-12 text-center">Nat.</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#DBD9D9] fos-grid-tbody">
-                            {(grades as any[]).map((g:any) => {
-                                const isSel = selGrade?.unico === g.unico;
-                                return (
-                                    <tr key={g.unico} onClick={()=>setSelGrade(isSel ? null : g)}
-                                        className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", isSel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
-                                        <td className="p-2 font-medium">{t(g.grado)}</td>
-                                        <td className="p-2 text-gray-500">{t(g.grade_sh)}</td>
-                                        <td className="p-2 text-center">{g.display?<Check size={11} className="text-green-500 mx-auto"/>:"—"}</td>
-                                        <td className="p-2 text-center">{g.fnational?<Check size={11} className="text-blue-400 mx-auto"/>:"—"}</td>
-                                    </tr>
-                                );
-                            })}
-                            {!loadingGr && (grades as any[]).length===0 && <tr><td colSpan={4} className="p-4 text-center text-gray-300 italic text-xs">No grades</td></tr>}
-                        </tbody>
-                    </table>
-                </RightCard>
+                    <PanelGridTable>
+                        <PanelGridThead>
+                            <PanelGridTh>Grade</PanelGridTh>
+                            <PanelGridTh className="w-16">Code</PanelGridTh>
+                            <PanelGridTh className="w-12" align="center">Show</PanelGridTh>
+                            <PanelGridTh className="w-12" align="center">Nat.</PanelGridTh>
+                        </PanelGridThead>
+                        <PanelGridTbody>
+                            {(grades as any[]).map((g:any) => (
+                                <PanelGridTr key={g.unico} selected={selGrade?.unico === g.unico}
+                                    onClick={()=>setSelGrade(selGrade?.unico===g.unico ? null : g)}>
+                                    <PanelGridTd>{t(g.grado)}</PanelGridTd>
+                                    <PanelGridTd className="text-[#FB7506] font-mono text-[11px]">{t(g.grade_sh)}</PanelGridTd>
+                                    <PanelGridTd align="center">{g.display?<Check size={11} className="text-green-500 mx-auto"/>:"—"}</PanelGridTd>
+                                    <PanelGridTd align="center">{g.fnational?<Check size={11} className="text-blue-400 mx-auto"/>:"—"}</PanelGridTd>
+                                </PanelGridTr>
+                            ))}
+                            {!loadingGr && (grades as any[]).length===0 && (
+                                <PanelGridTr onClick={()=>{}}><PanelGridTd colSpan={4} className="text-center text-gray-300 italic text-xs py-4">No grades</PanelGridTd></PanelGridTr>
+                            )}
+                        </PanelGridTbody>
+                    </PanelGridTable>
+                </PanelGrid>
 
                 {/* Colors */}
-                <RightCard icon={Palette} title="Colors" loading={loadingCo} recordId={selColor?.unico}
+                <PanelGrid icon={Palette} title="Colors" recordCount={(colors as any[]).length}
+                    refreshing={loadingCo} onRefresh={()=>refetchCo()}
+                    headerRight={<AuditLogModal recordId={selColor?.unico} disabled={!selColor}/>}
+                    className="flex-1 min-h-0"
                     menuItems={[
                         { label:"Add Color",    icon:Plus,   color:"green", onClick:()=>{ setSelColor(null); openModal("color","add",undefined,{...EMPTY_COLOR}); } },
                         { label:"Edit Color",   icon:Pencil, color:"blue",  onClick:()=>{ if(selColor) openModal("color","edit",selColor); }, disabled:!selColor },
                         { label:"Delete Color", icon:Trash2, color:"red",   onClick:()=>{ if(selColor) openModal("color","delete",selColor); }, disabled:!selColor },
                     ]}>
-                    <table className="min-w-full text-left">
-                        <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
-                            <tr className="divide-x divide-[#DBD9D9]/30">
-                                <th className="p-2">Color</th>
-                                <th className="p-2 w-16">Code</th>
-                                <th className="p-2 w-12 text-center">Show</th>
-                                <th className="p-2 w-12 text-center">Mix</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#DBD9D9] fos-grid-tbody">
-                            {(colors as any[]).map((c:any) => {
-                                const isSel = selColor?.unico === c.unico;
-                                return (
-                                    <tr key={c.unico} onClick={()=>setSelColor(isSel ? null : c)}
-                                        className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", isSel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
-                                        <td className="p-2 font-medium">{t(c.color)}</td>
-                                        <td className="p-2 text-gray-500">{t(c.color_sh)}</td>
-                                        <td className="p-2 text-center">{c.display?<Check size={11} className="text-green-500 mx-auto"/>:"—"}</td>
-                                        <td className="p-2 text-center">{c.mix?<Check size={11} className="text-blue-400 mx-auto"/>:"—"}</td>
-                                    </tr>
-                                );
-                            })}
-                            {!loadingCo && (colors as any[]).length===0 && <tr><td colSpan={4} className="p-4 text-center text-gray-300 italic text-xs">No colors</td></tr>}
-                        </tbody>
-                    </table>
-                </RightCard>
+                    <PanelGridTable>
+                        <PanelGridThead>
+                            <PanelGridTh>Color</PanelGridTh>
+                            <PanelGridTh className="w-16">Code</PanelGridTh>
+                            <PanelGridTh className="w-12" align="center">Show</PanelGridTh>
+                            <PanelGridTh className="w-12" align="center">Mix</PanelGridTh>
+                        </PanelGridThead>
+                        <PanelGridTbody>
+                            {(colors as any[]).map((c:any) => (
+                                <PanelGridTr key={c.unico} selected={selColor?.unico === c.unico}
+                                    onClick={()=>setSelColor(selColor?.unico===c.unico ? null : c)}>
+                                    <PanelGridTd>{t(c.color)}</PanelGridTd>
+                                    <PanelGridTd className="text-[#FB7506] font-mono text-[11px]">{t(c.color_sh)}</PanelGridTd>
+                                    <PanelGridTd align="center">{c.display?<Check size={11} className="text-green-500 mx-auto"/>:"—"}</PanelGridTd>
+                                    <PanelGridTd align="center">{c.mix?<Check size={11} className="text-blue-400 mx-auto"/>:"—"}</PanelGridTd>
+                                </PanelGridTr>
+                            ))}
+                            {!loadingCo && (colors as any[]).length===0 && (
+                                <PanelGridTr onClick={()=>{}}><PanelGridTd colSpan={4} className="text-center text-gray-300 italic text-xs py-4">No colors</PanelGridTd></PanelGridTr>
+                            )}
+                        </PanelGridTbody>
+                    </PanelGridTable>
+                </PanelGrid>
 
                 {/* Cases */}
-                <RightCard icon={Box} title="Cases" loading={loadingCs} recordId={selCase?.unico}
+                <PanelGrid icon={Box} title="Cases" recordCount={(cases as any[]).length}
+                    refreshing={loadingCs} onRefresh={()=>refetchCs()}
+                    headerRight={<AuditLogModal recordId={selCase?.unico} disabled={!selCase}/>}
+                    className="flex-1 min-h-0"
                     menuItems={[
                         { label:"Add Case",    icon:Plus,   color:"green", onClick:()=>{ setSelCase(null); openModal("case","add",undefined,{...EMPTY_CASE}); } },
                         { label:"Edit Case",   icon:Pencil, color:"blue",  onClick:()=>{ if(selCase) openModal("case","edit",selCase); }, disabled:!selCase },
                         { label:"Delete Case", icon:Trash2, color:"red",   onClick:()=>{ if(selCase) openModal("case","delete",selCase); }, disabled:!selCase },
                     ]}>
-                    <table className="min-w-full text-left">
-                        <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
-                            <tr className="divide-x divide-[#DBD9D9]/30">
-                                <th className="p-2">Name</th>
-                                <th className="p-2 w-16">Code</th>
-                                <th className="p-2 w-16 text-right">Factor</th>
-                                <th className="p-2 w-12 text-center">Show</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#DBD9D9] fos-grid-tbody">
-                            {(cases as any[]).map((c:any) => {
-                                const isSel = selCase?.unico === c.unico;
-                                return (
-                                    <tr key={c.unico} onClick={()=>setSelCase(isSel ? null : c)}
-                                        className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", isSel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
-                                        <td className="p-2 font-medium">{t(c.case_name)}</td>
-                                        <td className="p-2 text-gray-500">{t(c.case_sh)}</td>
-                                        <td className="p-2 text-right">{parseFloat(c.factor||0).toFixed(2)}</td>
-                                        <td className="p-2 text-center">{c.display?<Check size={11} className="text-green-500 mx-auto"/>:"—"}</td>
-                                    </tr>
-                                );
-                            })}
-                            {!loadingCs && (cases as any[]).length===0 && <tr><td colSpan={4} className="p-4 text-center text-gray-300 italic text-xs">No cases</td></tr>}
-                        </tbody>
-                    </table>
-                </RightCard>
+                    <PanelGridTable>
+                        <PanelGridThead>
+                            <PanelGridTh>Name</PanelGridTh>
+                            <PanelGridTh className="w-16">Code</PanelGridTh>
+                            <PanelGridTh className="w-16" align="right">Factor</PanelGridTh>
+                            <PanelGridTh className="w-12" align="center">Show</PanelGridTh>
+                        </PanelGridThead>
+                        <PanelGridTbody>
+                            {(cases as any[]).map((c:any) => (
+                                <PanelGridTr key={c.unico} selected={selCase?.unico === c.unico}
+                                    onClick={()=>setSelCase(selCase?.unico===c.unico ? null : c)}>
+                                    <PanelGridTd>{t(c.case_name)}</PanelGridTd>
+                                    <PanelGridTd className="text-[#FB7506] font-mono text-[11px]">{t(c.case_sh)}</PanelGridTd>
+                                    <PanelGridTd align="right">{parseFloat(c.factor||0).toFixed(2)}</PanelGridTd>
+                                    <PanelGridTd align="center">{c.display?<Check size={11} className="text-green-500 mx-auto"/>:"—"}</PanelGridTd>
+                                </PanelGridTr>
+                            ))}
+                            {!loadingCs && (cases as any[]).length===0 && (
+                                <PanelGridTr onClick={()=>{}}><PanelGridTd colSpan={4} className="text-center text-gray-300 italic text-xs py-4">No cases</PanelGridTd></PanelGridTr>
+                            )}
+                        </PanelGridTbody>
+                    </PanelGridTable>
+                </PanelGrid>
             </div>
 
             {/* ── Modal ──────────────────────────────────────────────────────── */}
