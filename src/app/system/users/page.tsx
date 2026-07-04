@@ -239,7 +239,7 @@ export default function UsersDefinitionPage() {
                         <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border-b border-gray-100 shrink-0">
                             <select
                                 value={accionFilter}
-                                onChange={(e: Event) => setAccionFilter((e.target as HTMLSelectElement).value)}
+                                onChange={e => setAccionFilter(e.target.value)}
                                 className="fos-input h-7 text-xs w-32 pr-1"
                             >
                                 <option value="">All Actions</option>
