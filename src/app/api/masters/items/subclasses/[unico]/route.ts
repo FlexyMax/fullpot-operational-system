@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { executeProcedure, executeQuery } from "@/lib/db";
+import { executeProcedure } from "@/lib/db";
 import { serverAuditLog } from "@/lib/serverAudit";
 const PANTA = "52961702";
 
@@ -12,7 +12,7 @@ type P = { params: Promise<{ unico: string }> };
 export async function GET(_req: NextRequest, { params }: P) {
     const { unico } = await params;
     try {
-        const r = await executeQuery(`SELECT * FROM flower_subclases WHERE unico='${txt(unico)}'`);
+        const r = await executeProcedure("sp_NC_subclasses_uq", { lcunico: unico });
         return NextResponse.json(r.recordset[0] ?? null);
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });

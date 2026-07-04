@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { executeProcedure, executeQuery } from "@/lib/db";
+import { executeProcedure } from "@/lib/db";
 import { serverAuditLog } from "@/lib/serverAudit";
 const PANTA = "52961702";
 
@@ -10,12 +10,7 @@ export async function GET(_req: NextRequest, { params }: P) {
     const { unico } = await params;
     try {
         // sp_flower_variety_uq may not exist — fall back to direct query for full field set
-        const r = await executeQuery(
-            `SELECT unico, subcla_uq, class_uq, variety, variety_sh, color_uq,
-                    display, changecolor, active, mix, details, expi_days, expo_days,
-                    nac_days, variety_oldcode, tolerance
-             FROM flower_varieties WHERE unico='${txt(unico)}'`
-        );
+        const r = await executeProcedure("sp_NC_varieties_uq", { lcunico: unico });
         return NextResponse.json(r.recordset[0] ?? null);
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });

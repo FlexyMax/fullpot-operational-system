@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
-import { executeQuery } from "@/lib/db";
+import { executeProcedure } from "@/lib/db";
 
 export async function GET() {
     try {
-        const r = await executeQuery(
-            `SELECT unico, salesman_name, salesman_sh FROM flower_salesmen WHERE active=1 ORDER BY salesman_name`
-        );
+        const r = await executeProcedure("sp_NC_salesmen_list", {});
         return NextResponse.json(r.recordset);
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });

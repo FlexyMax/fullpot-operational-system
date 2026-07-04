@@ -1,17 +1,12 @@
 import { NextResponse } from "next/server";
-import { executeQuery, executeProcedure } from "@/lib/db";
+import { executeProcedure } from "@/lib/db";
 import { serverAuditLog } from "@/lib/serverAudit";
 const PANTA = "52961702";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ unico: string }> }) {
     const { unico } = await params;
     try {
-        const r = await executeQuery(
-            `SELECT s.unico, s.subclase, s.sub_sh, c.clase, s.bogo, s.bogo_days, s.bogo_percent
-             FROM flower_subclases s
-             INNER JOIN flower_clases c ON s.class_uq = c.unico
-             WHERE s.unico = '${unico.replace(/'/g,"''")}' `
-        );
+        const r = await executeProcedure("sp_NC_subclass_bogo_uq", { lcunico: unico });
         return NextResponse.json(r.recordset?.[0] ?? null);
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });

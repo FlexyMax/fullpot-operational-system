@@ -1,14 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { executeProcedure, executeQuery } from "@/lib/db";
-import crypto from "crypto";
+import { executeProcedure } from "@/lib/db";
 import { serverAuditLog } from "@/lib/serverAudit";
 const PANTA = "52961702";
-
-// sp_flower_colors_list has NO params — returns all colors. Filter client-side.
-// Color CRUD SPs don't exist → direct SQL on flower_varieties_colors
-const txt   = (v: any) => String(v ?? "").replace(/'/g, "''");
-const bit   = (v: any) => (v ? 1 : 0);
-const genUq = () => crypto.randomBytes(4).toString("hex").toUpperCase();
 
 export async function GET() {
     try {
@@ -21,14 +14,17 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
     const b = await req.json();
-    const unico = genUq();
     try {
-        await executeQuery(`
-            INSERT INTO flower_varieties_colors (unico, color, color_sh, display, mix, timestamp)
-            VALUES ('${txt(unico)}', '${txt(b.color)}', '${txt(b.color_sh)}',
-                    ${bit(b.display)}, ${bit(b.mix)}, GETDATE())`);
-        serverAuditLog(PANTA, "Insert", "flower_varieties_colors", unico, b.color).catch(() => {});
-        return NextResponse.json({ success: true, unico, message: "Color created." });
+        const r = await executeProcedure("sp_NC_colors_insert", {
+            lccolor:    b.color    || "",
+            lccolor_sh: b.color_sh || "",
+            lldisplay:  b.display  ? 1 : 0,
+            llmix:      b.mix      ? 1 : 0,
+        });
+        const row = r.recordset?.[0];
+        if (row?.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
+        serverAuditLog(PANTA, "Insert", "flower_varieties_colors", row?.unico ?? "", b.color).catch(() => {});
+        return NextResponse.json({ success: true, unico: row?.unico, message: row?.Message });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }
