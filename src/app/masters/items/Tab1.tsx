@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { AuditLogModal } from "@/components/AuditLogModal";
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
+import { toast } from "sonner";
 const EMPTY_ARR: any[] = [];
 
 const t   = (v: any) => String(v ?? "").trim();
@@ -421,8 +422,10 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
             if (type === "grade")   refetchGr();
             if (type === "color")   refetchCo();
             if (type === "case")    refetchCs();
+            const verb = mode === "add" ? "created" : mode === "edit" ? "updated" : "deleted";
+            toast.success(`${type.charAt(0).toUpperCase()+type.slice(1)} ${verb}.`);
             setModal(null);
-        } catch(e:any) { setMError(e.message); }
+        } catch(e:any) { setMError(e.message); toast.error(e.message); }
         finally { setSaving(false); }
     };
 

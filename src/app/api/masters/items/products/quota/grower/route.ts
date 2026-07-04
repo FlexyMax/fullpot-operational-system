@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
+import { serverAuditLog } from "@/lib/serverAudit";
+const PANTA = "52961702";
 
 // POST = add grower to quota, DELETE = remove grower from quota
 // sp_flower_products_buyers_quotas_growers_iud @lcfpbg_uq (quota unico), @lcgrower_uq, @lldelete
@@ -15,6 +17,7 @@ export async function POST(req: Request) {
         });
         const row = r.recordset?.[0];
         if (row?.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
+        serverAuditLog(PANTA, "Insert", "flower_products_quotas_growers", fpbg_uq, grower_uq).catch(() => {});
         return NextResponse.json({ success: true });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -32,6 +35,7 @@ export async function DELETE(req: Request) {
         });
         const row = r.recordset?.[0];
         if (row?.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
+        serverAuditLog(PANTA, "Delete", "flower_products_quotas_growers", fpbg_uq, grower_uq).catch(() => {});
         return NextResponse.json({ success: true });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });

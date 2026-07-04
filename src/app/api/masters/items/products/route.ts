@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
+import { serverAuditLog } from "@/lib/serverAudit";
+const PANTA = "52961702";
 
 export async function GET(req: NextRequest) {
     const variety_uq = req.nextUrl.searchParams.get("variety_uq") || "%";
@@ -81,6 +83,7 @@ export async function POST(req: NextRequest) {
         });
         const row = r.recordset[0];
         if (row?.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
+        serverAuditLog(PANTA, "Insert", "flower_products", row?.unico ?? "", b.variety_uq).catch(() => {});
         return NextResponse.json({ success: true, unico: row?.unico, message: row?.Message || "Product created." });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });

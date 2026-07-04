@@ -11,6 +11,7 @@ import { GridMenu } from "@/components/GridMenu";
 import { cn } from "@/lib/utils";
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
+import { toast } from "sonner";
 const EMPTY_ARR: any[] = [];
 
 const t  = (v: any) => String(v ?? "").trim();
@@ -1043,7 +1044,7 @@ export default function Tab2() {
             const data = await res.json();
             if (!data.success) throw new Error(data.error);
             onSuccess(data);
-        } catch(e:any) { setFormError(e.message); }
+        } catch(e:any) { setFormError(e.message); toast.error(e.message); }
         finally { setSaving(false); }
     };
 
@@ -1052,12 +1053,12 @@ export default function Tab2() {
         if (!productForm.up_x_pack) { setFormError("Units per pack is required."); return; }
         const body = { ...productForm };
         if (productModal?.mode==="add"||productModal?.mode==="copy") {
-            doCrud("/api/masters/items/products", "POST", body, d => { logAction("Insert", d.unico, productModal!.mode==="copy"?"Copy Product":"Product"); refetchAll(); setProductModal(null); });
+            doCrud("/api/masters/items/products", "POST", body, d => { logAction("Insert", d.unico, productModal!.mode==="copy"?"Copy Product":"Product"); refetchAll(); toast.success("Product created."); setProductModal(null); });
         } else {
-            doCrud(`/api/masters/items/products/${selProduct?.unico}`, "PUT", body, () => { logAction("Edit", selProduct?.unico, "Product"); refetchAll(); setProductModal(null); });
+            doCrud(`/api/masters/items/products/${selProduct?.unico}`, "PUT", body, () => { logAction("Edit", selProduct?.unico, "Product"); refetchAll(); toast.success("Product updated."); setProductModal(null); });
         }
     };
-    const deleteProduct = () => doCrud(`/api/masters/items/products/${selProduct?.unico}`, "DELETE", {}, () => { logAction("Delete", selProduct?.unico, "Product"); setSelProduct(null); refetchAll(); setProductModal(null); });
+    const deleteProduct = () => doCrud(`/api/masters/items/products/${selProduct?.unico}`, "DELETE", {}, () => { logAction("Delete", selProduct?.unico, "Product"); setSelProduct(null); refetchAll(); toast.success("Product deleted."); setProductModal(null); });
 
     const openModal = (mode: "add"|"edit"|"copy") => {
         if (mode!=="add" && !selProduct) { setFormError(NO_PROD); return; }

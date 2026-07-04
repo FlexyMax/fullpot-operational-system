@@ -10,6 +10,7 @@ import { GridMenu } from "@/components/GridMenu";
 import { cn } from "@/lib/utils";
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
+import { toast } from "sonner";
 const EMPTY_ARR: any[] = [];
 
 const t  = (v: any) => String(v ?? "").trim();
@@ -199,7 +200,7 @@ function SubclassBOGOModal({ subclaUq, onClose, onSaved }: { subclaUq: string; o
             const res = await fetch(`/api/masters/items/subclass-bogo/${subclaUq}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(form) });
             const d = await res.json();
             if (!d.success) throw new Error(d.error);
-            onSaved(); onClose();
+            toast.success("BOGO updated."); onSaved(); onClose();
         } catch(e:any){ setErr(e.message); }
         finally { setSaving(false); }
     };
@@ -472,7 +473,7 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety }: Tab3Pro
             const data = await res.json();
             if (!data.success) throw new Error(data.error);
             onSuccess(data);
-        } catch(e:any) { setFormError(e.message); }
+        } catch(e:any) { setFormError(e.message); toast.error(e.message); }
         finally { setSaving(false); }
     };
 
@@ -501,12 +502,12 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety }: Tab3Pro
         if (!varietyForm.variety_sh?.trim()) { setFormError("Variety code is empty."); return; }
         if (!varietyForm.subcla_uq)          { setFormError("Subclass is empty."); return; }
         if (varietyModal?.mode === "add") {
-            doCrud("/api/masters/items/varieties", "POST", varietyForm, d => { logAction("Insert", d.unico); refetchVr(); setVarietyModal(null); });
+            doCrud("/api/masters/items/varieties", "POST", varietyForm, d => { logAction("Insert", d.unico); refetchVr(); toast.success("Variety created."); setVarietyModal(null); });
         } else {
-            doCrud(`/api/masters/items/varieties/${selVariety?.unico}`, "PUT", varietyForm, () => { logAction("Edit", selVariety?.unico); refetchVr(); setVarietyModal(null); });
+            doCrud(`/api/masters/items/varieties/${selVariety?.unico}`, "PUT", varietyForm, () => { logAction("Edit", selVariety?.unico); refetchVr(); toast.success("Variety updated."); setVarietyModal(null); });
         }
     };
-    const deleteVariety = () => doCrud(`/api/masters/items/varieties/${selVariety?.unico}`, "DELETE", {}, () => { logAction("Delete", selVariety?.unico); setSelVariety(null); refetchVr(); setVarietyModal(null); });
+    const deleteVariety = () => doCrud(`/api/masters/items/varieties/${selVariety?.unico}`, "DELETE", {}, () => { logAction("Delete", selVariety?.unico); setSelVariety(null); refetchVr(); toast.success("Variety deleted."); setVarietyModal(null); });
 
     const requireComp = (fn: ()=>void) => { if (!selComponent) { setError(NO_COMP); return; } fn(); };
 
