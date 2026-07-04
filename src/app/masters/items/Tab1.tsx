@@ -517,8 +517,8 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
 
     return (
         <div className="flex flex-col md:flex-row gap-1.5 flex-1 p-1.5 overflow-y-auto md:overflow-hidden">
-            {/* ── Left: Hierarchy Tree — below cards on mobile, left on desktop ─ */}
-            <div className="order-last md:order-first flex flex-col overflow-hidden bg-white rounded-lg border border-[#DBD9D9] shadow-sm shrink-0 h-[85vh] md:h-auto md:flex-1 md:min-h-0 md:w-[58%] md:flex-none">
+            {/* ── Left: Hierarchy Tree — top on mobile, left on desktop ─ */}
+            <div className="flex flex-col overflow-hidden bg-white rounded-lg border border-[#DBD9D9] shadow-sm shrink-0 h-[85vh] md:h-auto md:flex-1 md:min-h-0 md:w-[58%] md:flex-none">
                 {/* Tree header */}
                 <div className="h-10 bg-white flex items-center justify-between pl-3 pr-3 shrink-0 border-b border-[#DBD9D9]">
                     <div className="flex items-center gap-2">
@@ -687,8 +687,8 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                 </div>
             </div>
 
-            {/* ── Right: Grades + Colors + Cases — top on mobile, right on desktop ─ */}
-            <div className="order-first md:order-last flex flex-col gap-1.5 overflow-hidden shrink-0 h-[65vh] md:h-auto md:w-[42%] md:flex-none">
+            {/* ── Right: Grades + Colors + Cases — below hierarchy on mobile, right on desktop ─ */}
+            <div className="flex flex-col gap-1.5 overflow-hidden shrink-0 h-[65vh] md:h-auto md:w-[42%] md:flex-none">
 
                 {/* Mobile: Grades + Colors side by side (top row). Desktop: stacked */}
                 <div className="flex flex-row md:flex-col gap-1.5 flex-[1.2] min-h-0 overflow-hidden">
