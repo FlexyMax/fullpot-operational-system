@@ -240,7 +240,7 @@ export default function UsersDefinitionPage() {
                             <select
                                 value={accionFilter}
                                 onChange={e => setAccionFilter(e.target.value)}
-                                className="fos-input h-7 text-xs w-32 pr-1"
+                                className="shrink-0 h-7 w-32 text-[11px] font-semibold text-gray-600 bg-white border border-gray-200 rounded px-2 outline-none focus:border-[#FB7506] cursor-pointer"
                             >
                                 <option value="">All Actions</option>
                                 <option value="Insert">Insert</option>
@@ -249,23 +249,23 @@ export default function UsersDefinitionPage() {
                                 <option value="Entrada">Entrada</option>
                                 <option value="Salida">Salida</option>
                             </select>
-                            <div className="relative flex-1 max-w-xs">
+                            <div className="relative flex-1 min-w-0">
                                 <Search size={11} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                                 <input
                                     type="text"
                                     value={logSearch}
                                     onChange={e => setLogSearch(e.target.value)}
                                     placeholder="Search table, record, ext-action…"
-                                    className="fos-input h-7 text-xs pl-6 w-full"
+                                    className="w-full h-7 text-[11px] font-semibold text-gray-600 bg-white border border-gray-200 rounded pl-6 pr-2 outline-none focus:border-[#FB7506]"
                                 />
                             </div>
                             {(accionFilter || logSearch) && (
                                 <button onClick={() => { setAccionFilter(""); setLogSearch(""); }}
-                                    className="text-[10px] font-bold text-gray-400 hover:text-red-500 uppercase tracking-wider transition-colors">
+                                    className="shrink-0 text-[10px] font-bold text-gray-400 hover:text-red-500 uppercase tracking-wider transition-colors">
                                     Clear
                                 </button>
                             )}
-                            <span className="text-[10px] text-gray-400 ml-auto">{filteredLogData.length} shown</span>
+                            <span className="shrink-0 text-[10px] text-gray-400">{filteredLogData.length} shown</span>
                         </div>
 
                         {(loadingLog && logData.length === 0) ? (
