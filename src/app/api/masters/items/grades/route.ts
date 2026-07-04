@@ -18,7 +18,6 @@ export async function POST(req: NextRequest) {
     const b = await req.json();
     try {
         const r = await executeProcedure("sp_NC_grades_insert", {
-            lcclass_uq:  b.class_uq  || "",
             lcgrado:     b.grado     || "",
             lcgrade_sh:  b.grade_sh  || "",
             lldisplay:   b.display   ? 1 : 0,
@@ -26,7 +25,7 @@ export async function POST(req: NextRequest) {
         });
         const row = r.recordset?.[0];
         if (row?.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
-        serverAuditLog(PANTA, "Insert", "flower_clases_grados", row?.unico ?? "", b.grado).catch(() => {});
+        serverAuditLog(PANTA, "Insert", "flower_products_grades", row?.unico ?? "", b.grado).catch(() => {});
         return NextResponse.json({ success: true, unico: row?.unico, message: row?.Message });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });

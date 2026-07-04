@@ -18,7 +18,7 @@ export async function PUT(req: NextRequest, { params }: P) {
         });
         const row = r.recordset?.[0];
         if (row?.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
-        serverAuditLog(PANTA, "Edit", "flower_clases_grados", unico, b.grado).catch(() => {});
+        serverAuditLog(PANTA, "Edit", "flower_products_grades", unico, b.grado).catch(() => {});
         return NextResponse.json({ success: true, message: row?.Message });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -31,7 +31,7 @@ export async function DELETE(_req: NextRequest, { params }: P) {
         const r = await executeProcedure("sp_NC_grades_delete", { lcunico: unico });
         const row = r.recordset?.[0];
         if (row?.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
-        serverAuditLog(PANTA, "Delete", "flower_clases_grados", unico, "").catch(() => {});
+        serverAuditLog(PANTA, "Delete", "flower_products_grades", unico, "").catch(() => {});
         return NextResponse.json({ success: true, message: row?.Message });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
