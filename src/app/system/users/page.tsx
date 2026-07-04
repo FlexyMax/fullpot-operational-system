@@ -73,6 +73,12 @@ export default function UsersDefinitionPage() {
     const logData:  any[] = logPages?.pages.flatMap((p: any) => p.data) ?? [];
     const logTotal: number = (logPages?.pages[0] as any)?.total ?? 0;
 
+    const logActions = useMemo(() => {
+        const s = new Set<string>();
+        logData.forEach((r: any) => { const a = String(r.accion || "").trim(); if (a) s.add(a); });
+        return Array.from(s).sort();
+    }, [logData]);
+
     const filteredLogData = useMemo(() => {
         let data = logData;
         if (accionFilter) data = data.filter((r: any) => String(r.accion || "").trim() === accionFilter);
@@ -205,8 +211,39 @@ export default function UsersDefinitionPage() {
                 </PanelGridTable>
             </PanelGrid>
 
-            {/* Activity Log panel — embedded below main grid (VFP: Detallecontrol1) */}
+            {/* Activity Log — filter toolbar (same gray container style as rest of app) */}
             <div ref={logPanelRef}>
+            {selectedRow && (
+                <div className="bg-[#F5F3F3] border border-[#DBD9D9] rounded-lg mx-2 mt-2 px-3 py-2 flex items-center gap-2 shrink-0 shadow-sm">
+                    <select
+                        value={accionFilter}
+                        onChange={e => setAccionFilter(e.target.value)}
+                        className="shrink-0 h-7 w-36 text-[11px] font-semibold text-gray-600 bg-white border border-gray-200 rounded px-2 outline-none focus:border-[#FB7506] cursor-pointer"
+                    >
+                        <option value="">All Actions</option>
+                        {logActions.map(a => <option key={a} value={a}>{a}</option>)}
+                    </select>
+                    <div className="relative flex-1 min-w-0">
+                        <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                        <input
+                            type="text"
+                            value={logSearch}
+                            onChange={e => setLogSearch(e.target.value)}
+                            placeholder="Search table, record, ext-action…"
+                            className="w-full pl-7 pr-3 py-1.5 text-xs border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506] bg-white"
+                        />
+                    </div>
+                    {(accionFilter || logSearch) && (
+                        <button onClick={() => { setAccionFilter(""); setLogSearch(""); }}
+                            className="shrink-0 text-[10px] font-bold text-gray-400 hover:text-red-500 uppercase tracking-wider transition-colors">
+                            Clear
+                        </button>
+                    )}
+                    <span className="shrink-0 text-[10px] text-gray-400 font-semibold">{filteredLogData.length} shown</span>
+                </div>
+            )}
+
+            {/* Activity Log panel */}
             <PanelGrid
                 title={selectedRow ? `Activity Log — ${selectedRow.username}` : "Activity Log"}
                 icon={Calendar}
@@ -226,114 +263,80 @@ export default function UsersDefinitionPage() {
                         </button>
                     </div>
                 ) : undefined}
-                className="mx-2 mt-2 mb-3 h-[360px] shrink-0"
+                className="mx-2 mt-1 mb-3 h-[360px] shrink-0"
             >
                 {!selectedRow ? (
                     <div className="h-full flex flex-col items-center justify-center text-gray-300 gap-2">
                         <Users size={28} className="opacity-20" />
                         <p className="text-xs font-bold uppercase tracking-widest">Select a user to view activity log</p>
                     </div>
+                ) : (loadingLog && logData.length === 0) ? (
+                    <div className="h-full flex items-center justify-center text-gray-400 text-xs font-bold italic">
+                        Loading activity...
+                    </div>
+                ) : logData.length === 0 ? (
+                    <div className="h-full flex items-center justify-center text-gray-400 text-xs font-bold italic">
+                        No activity found for selected dates
+                    </div>
+                ) : filteredLogData.length === 0 ? (
+                    <div className="h-full flex items-center justify-center text-gray-400 text-xs font-bold italic">
+                        No records match the current filter
+                    </div>
                 ) : (
-                    <>
-                        {/* Filter bar */}
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border-b border-gray-100 shrink-0">
-                            <select
-                                value={accionFilter}
-                                onChange={e => setAccionFilter(e.target.value)}
-                                className="shrink-0 h-7 w-32 text-[11px] font-semibold text-gray-600 bg-white border border-gray-200 rounded px-2 outline-none focus:border-[#FB7506] cursor-pointer"
-                            >
-                                <option value="">All Actions</option>
-                                <option value="Insert">Insert</option>
-                                <option value="Edit">Edit</option>
-                                <option value="Delete">Delete</option>
-                                <option value="Entrada">Entrada</option>
-                                <option value="Salida">Salida</option>
-                            </select>
-                            <div className="relative flex-1 min-w-0">
-                                <Search size={11} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                                <input
-                                    type="text"
-                                    value={logSearch}
-                                    onChange={e => setLogSearch(e.target.value)}
-                                    placeholder="Search table, record, ext-action…"
-                                    className="w-full h-7 text-[11px] font-semibold text-gray-600 bg-white border border-gray-200 rounded pl-6 pr-2 outline-none focus:border-[#FB7506]"
-                                />
-                            </div>
-                            {(accionFilter || logSearch) && (
-                                <button onClick={() => { setAccionFilter(""); setLogSearch(""); }}
-                                    className="shrink-0 text-[10px] font-bold text-gray-400 hover:text-red-500 uppercase tracking-wider transition-colors">
-                                    Clear
-                                </button>
-                            )}
-                            <span className="shrink-0 text-[10px] text-gray-400">{filteredLogData.length} shown</span>
-                        </div>
-
-                        {(loadingLog && logData.length === 0) ? (
-                            <div className="flex-1 flex items-center justify-center text-gray-400 text-xs font-bold italic">
-                                Loading activity...
-                            </div>
-                        ) : logData.length === 0 ? (
-                            <div className="flex-1 flex items-center justify-center text-gray-400 text-xs font-bold italic">
-                                No activity found for selected dates
-                            </div>
-                        ) : filteredLogData.length === 0 ? (
-                            <div className="flex-1 flex items-center justify-center text-gray-400 text-xs font-bold italic">
-                                No records match the current filter
-                            </div>
-                        ) : (
-                            <PanelGridTable>
-                                <PanelGridThead>
-                                    <PanelGridTh>Date</PanelGridTh>
-                                    <PanelGridTh>Action</PanelGridTh>
-                                    <PanelGridTh>Ext-Action</PanelGridTh>
-                                    <PanelGridTh>Screen</PanelGridTh>
-                                    <PanelGridTh>Module</PanelGridTh>
-                                    <PanelGridTh>Company</PanelGridTh>
-                                </PanelGridThead>
-                                <PanelGridTbody>
-                                    {filteredLogData.map((row: any, i: number) => (
-                                        <PanelGridTr key={i}>
-                                            <PanelGridTd className="text-gray-600 whitespace-nowrap">
-                                                {row.fecha ? new Date(row.fecha).toLocaleString("en-US", { timeZone: "America/New_York" }) : ""}
-                                            </PanelGridTd>
-                                            <PanelGridTd>
-                                                <span className={cn(
-                                                    "px-1.5 py-0.5 rounded text-[9px] font-black uppercase",
-                                                    String(row.accion).trim() === "Insert"  ? "bg-green-100 text-green-700"   :
-                                                    String(row.accion).trim() === "Delete"  ? "bg-red-100 text-red-600"       :
-                                                    String(row.accion).trim() === "Edit"    ? "bg-blue-100 text-blue-700"     :
-                                                    String(row.accion).trim() === "Entrada" ? "bg-purple-100 text-purple-700" :
-                                                    String(row.accion).trim() === "Salida"  ? "bg-gray-100 text-gray-500"     :
-                                                    "bg-orange-100 text-orange-700"
-                                                )}>
-                                                    {String(row.accion || "").trim()}
-                                                </span>
-                                            </PanelGridTd>
-                                            <PanelGridTd className="text-gray-500 truncate max-w-[160px]">
-                                                {String(row.ext_accion || "").trim()}
-                                            </PanelGridTd>
-                                            <PanelGridTd className="truncate max-w-[180px]">
-                                                {String(row.pantalla || "").trim()}
-                                            </PanelGridTd>
-                                            <PanelGridTd className="truncate max-w-[140px] text-gray-500">
-                                                {String(row.modulo || "").trim()}
-                                            </PanelGridTd>
-                                            <PanelGridTd className="text-gray-400">
-                                                {String(row.empresa || "").trim()}
-                                            </PanelGridTd>
-                                        </PanelGridTr>
-                                    ))}
-                                    {/* Infinite scroll sentinel */}
-                                    <tr><td colSpan={6}>
-                                        <div ref={sentinelRef} className="h-1" />
-                                        {isFetchingNextPage && (
-                                            <p className="text-center text-[11px] text-gray-400 italic py-1">Loading more...</p>
-                                        )}
-                                    </td></tr>
-                                </PanelGridTbody>
-                            </PanelGridTable>
-                        )}
-                    </>
+                    <PanelGridTable>
+                        <PanelGridThead>
+                            <PanelGridTh>Date</PanelGridTh>
+                            <PanelGridTh>Action</PanelGridTh>
+                            <PanelGridTh>Ext-Action</PanelGridTh>
+                            <PanelGridTh>Screen</PanelGridTh>
+                            <PanelGridTh>Module</PanelGridTh>
+                            <PanelGridTh>Company</PanelGridTh>
+                        </PanelGridThead>
+                        <PanelGridTbody>
+                            {filteredLogData.map((row: any, i: number) => {
+                                const accion = String(row.accion || "").trim().toUpperCase();
+                                return (
+                                    <PanelGridTr key={i}>
+                                        <PanelGridTd className="text-gray-600 whitespace-nowrap">
+                                            {row.fecha ? new Date(row.fecha).toLocaleString("en-US", { timeZone: "America/New_York" }) : ""}
+                                        </PanelGridTd>
+                                        <PanelGridTd>
+                                            <span className={cn(
+                                                "px-1.5 py-0.5 rounded text-[9px] font-black uppercase",
+                                                accion === "INSERT"               ? "bg-green-100 text-green-700"   :
+                                                accion === "DELETE"               ? "bg-red-100 text-red-600"       :
+                                                accion === "EDIT" || accion === "UPDATE" ? "bg-blue-100 text-blue-700" :
+                                                accion === "ENTRADA" || accion === "LOGIN"  ? "bg-purple-100 text-purple-700" :
+                                                accion === "SALIDA"  || accion === "LOGOUT" ? "bg-gray-100 text-gray-500"    :
+                                                "bg-orange-100 text-orange-700"
+                                            )}>
+                                                {String(row.accion || "").trim()}
+                                            </span>
+                                        </PanelGridTd>
+                                        <PanelGridTd className="text-gray-500 truncate max-w-[160px]">
+                                            {String(row.ext_accion || "").trim()}
+                                        </PanelGridTd>
+                                        <PanelGridTd className="truncate max-w-[180px]">
+                                            {String(row.pantalla || "").trim()}
+                                        </PanelGridTd>
+                                        <PanelGridTd className="truncate max-w-[140px] text-gray-500">
+                                            {String(row.modulo || "").trim()}
+                                        </PanelGridTd>
+                                        <PanelGridTd className="text-gray-400">
+                                            {String(row.empresa || "").trim()}
+                                        </PanelGridTd>
+                                    </PanelGridTr>
+                                );
+                            })}
+                            {/* Infinite scroll sentinel */}
+                            <tr><td colSpan={6}>
+                                <div ref={sentinelRef} className="h-1" />
+                                {isFetchingNextPage && (
+                                    <p className="text-center text-[11px] text-gray-400 italic py-1">Loading more...</p>
+                                )}
+                            </td></tr>
+                        </PanelGridTbody>
+                    </PanelGridTable>
                 )}
             </PanelGrid>
             </div>
