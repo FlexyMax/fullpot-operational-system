@@ -250,7 +250,7 @@ export async function POST(
         }
 
         if (auditAction) {
-            const reg = auditReg || result.recordset?.[0]?.unico ?? result.recordset?.[0]?.UNICO ?? "";
+            const reg = auditReg || (result.recordset?.[0]?.unico ?? result.recordset?.[0]?.UNICO ?? "");
             serverAuditLog(PANTA, auditAction as "Insert" | "Edit" | "Delete", auditTabla, reg, auditExt || undefined).catch(() => {});
         }
 
