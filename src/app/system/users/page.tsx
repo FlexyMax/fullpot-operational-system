@@ -87,7 +87,11 @@ export default function UsersDefinitionPage() {
             data = data.filter((r: any) =>
                 String(r.tabla      || "").toLowerCase().includes(q) ||
                 String(r.registro   || "").toLowerCase().includes(q) ||
-                String(r.ext_accion || "").toLowerCase().includes(q)
+                String(r.ext_accion || "").toLowerCase().includes(q) ||
+                String(r.accion     || "").toLowerCase().includes(q) ||
+                String(r.pantalla   || "").toLowerCase().includes(q) ||
+                String(r.modulo     || "").toLowerCase().includes(q) ||
+                String(r.empresa    || "").toLowerCase().includes(q)
             );
         }
         return data;
