@@ -1,6 +1,7 @@
 # Stage 1: Install dependencies
 FROM node:20-alpine AS deps
 RUN apk add --no-cache libc6-compat
+RUN npm install -g npm@11.18.0
 WORKDIR /app
 COPY package*.json ./
 COPY scripts ./scripts
@@ -9,6 +10,7 @@ RUN npm ci
 # Stage 2: Build the Next.js app
 FROM node:20-alpine AS builder
 RUN apk add --no-cache libc6-compat
+RUN npm install -g npm@11.18.0
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
