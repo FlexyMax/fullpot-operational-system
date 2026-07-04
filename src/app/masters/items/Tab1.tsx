@@ -690,9 +690,6 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
             {/* ── Right: Grades + Colors + Cases — below hierarchy on mobile, right on desktop ─ */}
             <div className="flex flex-col gap-1.5 overflow-hidden shrink-0 h-[65vh] md:h-auto md:w-[42%] md:flex-none">
 
-                {/* Mobile: Grades + Colors side by side (top row). Desktop: stacked */}
-                <div className="flex flex-row md:flex-col gap-1.5 flex-[1.2] min-h-0 overflow-hidden">
-
                 {/* Grades */}
                 <RightCard icon={Layers} title="Grades" loading={loadingGr} recordId={selGrade?.unico}
                     menuItems={[
@@ -761,9 +758,7 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
                     </table>
                 </RightCard>
 
-                </div>{/* end Grades+Colors row */}
-
-                {/* Cases — below Grades/Colors on mobile, 3rd in stack on desktop */}
+                {/* Cases */}
                 <RightCard icon={Box} title="Cases" loading={loadingCs} recordId={selCase?.unico}
                     menuItems={[
                         { label:"Add Case",    icon:Plus,   color:"green", onClick:()=>{ setSelCase(null); openModal("case","add",undefined,{...EMPTY_CASE}); } },
