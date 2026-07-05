@@ -545,18 +545,7 @@ interface Tab3Props {
 }
 
 // ─── Tab 3 Main ───────────────────────────────────────────────────────────────
-export default function Tab3({ selSubclass, selVariety, setSelVariety }: Tab3Props) {
-    // Fetch varieties for the left panel based on selSubclass
-    const { data: varieties = EMPTY_ARR, isFetching: loadingVr, refetch: refetchVr } = useQuery({
-        queryKey: ["tab3-vr", selSubclass?.unico],
-        queryFn:  () => sF(`/api/masters/items/varieties?subclass_uq=${selSubclass.unico}&search=%`),
-        enabled:  !!selSubclass?.unico,
-        staleTime: 30000,
-    });
-    useEffect(() => {
-        if ((varieties as any[]).length > 0 && !selVariety) setSelVariety((varieties as any[])[0]);
-        else if (!(varieties as any[]).length) setSelVariety(null);
-    }, [varieties]);
+export default function Tab3({ selSubclass: _selSubclass, selVariety, setSelVariety: _setSelVariety }: Tab3Props) {
     const { logAction } = useAuditLog("items-setup", "flower_varieties");
     const perms         = usePagePermissions("items-setup");
 
@@ -607,7 +596,7 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety }: Tab3Pro
         } else if (mode === "delete") {
             setVarietyForm({ ...EMPTY_VD, ...selVariety });
         } else {
-            setVarietyForm({ ...EMPTY_VD, subcla_uq: selSubclass?.unico || "" });
+            setVarietyForm({ ...EMPTY_VD, subcla_uq: _selSubclass?.unico || "" });
         }
         setFormError(null); setVarietyModal({ mode });
     };
@@ -617,12 +606,12 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety }: Tab3Pro
         if (!varietyForm.variety_sh?.trim()) { setFormError("Variety code is empty."); return; }
         if (!varietyForm.subcla_uq)          { setFormError("Subclass is empty."); return; }
         if (varietyModal?.mode === "add") {
-            doCrud("/api/masters/items/varieties", "POST", varietyForm, d => { logAction("Insert", d.unico); refetchVr(); toast.success("Variety created."); setVarietyModal(null); });
+            doCrud("/api/masters/items/varieties", "POST", varietyForm, d => { logAction("Insert", d.unico); toast.success("Variety created."); setVarietyModal(null); });
         } else {
-            doCrud(`/api/masters/items/varieties/${selVariety?.unico}`, "PUT", varietyForm, () => { logAction("Edit", selVariety?.unico); refetchVr(); toast.success("Variety updated."); setVarietyModal(null); });
+            doCrud(`/api/masters/items/varieties/${selVariety?.unico}`, "PUT", varietyForm, () => { logAction("Edit", selVariety?.unico); toast.success("Variety updated."); setVarietyModal(null); });
         }
     };
-    const deleteVariety = () => doCrud(`/api/masters/items/varieties/${selVariety?.unico}`, "DELETE", {}, () => { logAction("Delete", selVariety?.unico); setSelVariety(null); refetchVr(); toast.success("Variety deleted."); setVarietyModal(null); });
+    const deleteVariety = () => doCrud(`/api/masters/items/varieties/${selVariety?.unico}`, "DELETE", {}, () => { logAction("Delete", selVariety?.unico); toast.success("Variety deleted."); setVarietyModal(null); });
 
     const requireComp = (fn: ()=>void) => { if (!selComponent) { toast.error(NO_COMP); return; } fn(); };
 
@@ -639,39 +628,28 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety }: Tab3Pro
 
     return (
         <div className="flex flex-col flex-1 overflow-hidden">
-            {/* Two-panel layout */}
-            <div className="flex-1 flex gap-1.5 p-1.5 overflow-hidden">
-                {/* Left: Varieties by Subclass */}
-                <PanelGrid
-                    icon={Layers}
-                    title={`Varieties${selSubclass ? ` — ${t(selSubclass.subclase)}` : ""}`}
-                    onRefresh={refetchVr}
-                    refreshing={loadingVr}
-                    headerRight={<AuditLogModal recordId={selVariety?.unico} disabled={!selVariety}/>}
-                    menuItems={[
-                        { label:"Insert", icon:Plus,   color:"green", onClick:()=>openVarietyModal("add"),    disabled:!perms.canCreate },
-                        { label:"Update", icon:Pencil, color:"blue",  onClick:()=>openVarietyModal("edit"),   disabled:!selVariety||!perms.canEdit },
-                        { label:"Delete", icon:Trash2, color:"red",   onClick:()=>openVarietyModal("delete"), disabled:!selVariety||!perms.canDelete },
-                    ]}
-                    className="w-2/5 flex-shrink-0 min-h-0"
-                >
-                    <MiniGrid
-                        cols={[
-                            { key:"variety",     label:"Variety",  className:"font-medium" },
-                            { key:"color",       label:"Color",    className:"text-gray-500" },
-                            { key:"active",      label:"Active",   className:"text-center", render:(v:any)=>v?<Check size={9} className="text-green-500 mx-auto"/>:"—" },
-                            { key:"variety_sh",  label:"Code",     className:"text-gray-400" },
-                            { key:"changecolor", label:"CC",       className:"text-center", render:(v:any)=>v?<Check size={9} className="text-blue-400 mx-auto"/>:"—" },
-                        ]}
-                        rows={varieties}
-                        selUnico={selVariety?.unico}
-                        onSelect={setSelVariety}
-                        loading={loadingVr}
-                        empty={selSubclass ? "No varieties" : "Select a subclass in Hierarchy"}
-                    />
-                </PanelGrid>
+            {/* Variety context toolbar */}
+            <div className="bg-[#F5F3F3] border-b border-[#DBD9D9] px-2 py-1 shrink-0 flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-500 uppercase tracking-wide shrink-0">
+                    <Layers size={13} className="text-[#FB7506]"/>
+                    {selVariety
+                        ? <><span className="text-[#4F4F4F]">{t(selVariety.variety)}</span><span className="text-[#FB7506] font-mono">{t(selVariety.variety_sh)}</span></>
+                        : <span className="text-gray-300 font-normal italic normal-case">Select a variety in Hierarchy</span>
+                    }
+                </div>
+                <div className="w-px h-5 bg-gray-300"/>
+                <Btn icon={Plus}   label="Insert" color="green" onClick={()=>openVarietyModal("add")}    disabled={!perms.canCreate}/>
+                <Btn icon={Pencil} label="Update" color="blue"  onClick={()=>openVarietyModal("edit")}   disabled={!selVariety||!perms.canEdit}/>
+                <Btn icon={Trash2} label="Delete" color="red"   onClick={()=>openVarietyModal("delete")} disabled={!selVariety||!perms.canDelete}/>
+                <div className="w-px h-5 bg-gray-300"/>
+                <Btn icon={Box}    label="Packs"  color="amber" onClick={()=>{ if(!selVariety){toast.error("Select a variety first.");return;} setShowPacks(true);}} disabled={!selVariety}/>
+                <div className="ml-auto">
+                    <AuditLogModal recordId={selVariety?.unico} disabled={!selVariety}/>
+                </div>
+            </div>
 
-                {/* Right: Components search */}
+            {/* Components / Search — full width */}
+            <div className="flex-1 overflow-hidden p-1.5">
                 <PanelGrid
                     icon={Search}
                     title="Components / Search"
@@ -685,7 +663,7 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety }: Tab3Pro
                         { label:"BOGO WH",      icon:Box,   color:"orange", onClick:()=>requireComp(()=>setShowBogoWH(true)), disabled:!selComponent },
                         { label:"BOGO Cleaner", icon:Trash2,color:"red",    onClick:handleBogoClean },
                     ]}
-                    className="flex-1 min-h-0"
+                    className="flex-1 min-h-0 h-full"
                 >
                     <MiniGrid
                         cols={[
