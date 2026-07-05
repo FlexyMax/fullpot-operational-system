@@ -35,6 +35,7 @@ export interface PanelGridProps {
   onLog?: () => void;
   menuItems?: PanelMenuItem[];
   headerRight?: React.ReactNode;
+  subheader?: React.ReactNode;
   children?: React.ReactNode;
   className?: string;
   onScroll?: (e: React.UIEvent<HTMLDivElement>) => void;
@@ -158,6 +159,7 @@ export default function PanelGrid({
   onLog,
   menuItems,
   headerRight,
+  subheader,
   children,
   className,
   onScroll,
@@ -303,6 +305,11 @@ export default function PanelGrid({
           )}
         </div>
       </div>
+
+      {/* Subheader (functional toolbar inside panel) */}
+      {subheader && (
+        <div className="shrink-0 border-b border-[#DBD9D9]">{subheader}</div>
+      )}
 
       {/* Record count bar */}
       {recordCount !== undefined && (
