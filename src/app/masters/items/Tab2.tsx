@@ -5,9 +5,11 @@ import { useQuery, useInfiniteQuery, useQueryClient } from "@tanstack/react-quer
 import {
     Plus, Pencil, Trash2, Save, X, RefreshCcw, Search, Check, XCircle,
     Copy, Layers, Box, Shuffle, BookOpen, Users, Calendar, BarChart2,
-    ClipboardList, Printer, Menu, ChevronDown, Package, Upload, ImageIcon
+    ClipboardList, Printer, ChevronDown, Package, Upload, ImageIcon
 } from "lucide-react";
 import { GridMenu } from "@/components/GridMenu";
+import PanelGrid from "@/components/ui/PanelGrid";
+import { AuditLogModal } from "@/components/AuditLogModal";
 import { cn } from "@/lib/utils";
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
@@ -1093,90 +1095,65 @@ export default function Tab2() {
         } catch(e:any){ toast.error(e.message); }
     };
 
-    // Dropdown state for toolbar dropdowns
     const [prebookOpen, setPrebookOpen] = useState<"recipe"|"upc"|"sales"|null>(null);
-    const [printOpen,   setPrintOpen]   = useState(false);
+
+    const subheaderBar = (
+        <div className="bg-[#F5F3F3] px-2 py-1 flex flex-wrap items-center gap-1">
+            <Btn icon={Shuffle}   label="Alternatives" color="purple" sm onClick={()=>requireProduct(()=>setShowAlt(true))}    disabled={!selProduct}/>
+            <Btn icon={BookOpen}  label="Recipes"      color="purple" sm onClick={()=>requireProduct(()=>setShowRecipe(true))} disabled={!selProduct}/>
+            <Btn icon={Users}     label="Quotas"       color="purple" sm onClick={()=>requireProduct(()=>setShowQuota(true))}  disabled={!selProduct}/>
+            <div className="w-px h-5 bg-gray-300 mx-0.5"/>
+            {(["recipe","upc","sales"] as const).map(type => {
+                const labels: Record<string,string> = { recipe:"Recipe→Prebook", upc:"UPC→Prebook", sales:"Sales→Prebook" };
+                const subLabels: Record<string,string> = { recipe:"Fill Recipe in Prebooks", upc:"Fill UPC Info in Prebooks", sales:"Fill Sales Info in Prebooks" };
+                return (
+                    <div key={type} className="relative">
+                        <button onClick={()=>setPrebookOpen(p=>p===type?null:type)} disabled={!selProduct}
+                            className="flex items-center gap-0.5 bg-blue-700 hover:bg-blue-800 disabled:opacity-40 text-white text-[9px] font-black uppercase px-2 h-6 rounded">
+                            <Calendar size={9}/> {labels[type]} <ChevronDown size={8}/>
+                        </button>
+                        {prebookOpen===type && (
+                            <div className="absolute top-full left-0 mt-0.5 bg-white border border-gray-200 rounded shadow-lg z-20 w-48 text-xs">
+                                <button onClick={()=>{setPrebookOpen(null);requireProduct(()=>setShowPrebook(type));}} className="w-full text-left px-3 py-2 hover:bg-gray-50 font-semibold">{subLabels[type]}</button>
+                            </div>
+                        )}
+                    </div>
+                );
+            })}
+            <div className="w-px h-5 bg-gray-300 mx-0.5"/>
+            <Btn icon={ClipboardList} label="Update Stock" color="gray"  sm onClick={()=>{if(!perms.canEdit){toast.error(PERMISSION_MSGS.edit);return;} setShowStock(true);}} disabled={!perms.canEdit}/>
+            <Btn icon={BarChart2}     label="PO Prices"    color="gray"  sm onClick={()=>{if(!perms.canCreate){toast.error(PERMISSION_MSGS.create);return;} setShowPO(true);}}/>
+            <div className="w-px h-5 bg-gray-300 mx-0.5"/>
+            <Btn icon={Package} label="Dflt Charge" color="amber" sm onClick={()=>handleDirectAction("default-charge")} disabled={!selProduct}/>
+            <Btn icon={Layers}  label="Ext. Recipe" color="amber" sm onClick={()=>handleDirectAction("extended-recipe")} disabled={!selProduct}/>
+        </div>
+    );
 
     return (
-        <div className="flex flex-col flex-1 overflow-hidden">
-            {/* Toolbar */}
-            <div className="bg-[#F5F3F3] border-b border-[#DBD9D9] px-2 py-1 shrink-0 space-y-1">
-                {/* Row 1 */}
-                <div className="flex flex-wrap items-center gap-1">
-                    <Btn icon={Plus}    label="Add"    color="green"  onClick={()=>openModal("add")}    disabled={!perms.canCreate}/>
-                    <Btn icon={Pencil}  label="Edit"   color="blue"   onClick={()=>openModal("edit")}   disabled={!selProduct||!perms.canEdit}/>
-                    <Btn icon={Trash2}  label="Delete" color="red"    onClick={()=>{if(!selProduct){toast.error(NO_PROD);return;} if(!perms.canDelete){toast.error(PERMISSION_MSGS.delete);return;} setProductModal({mode:"delete"});}} disabled={!selProduct||!perms.canDelete}/>
-                    <Btn icon={Copy}    label="Copy"   color="gray"   onClick={()=>openModal("copy")}   disabled={!selProduct||!perms.canCreate}/>
-                    <div className="w-px h-5 bg-gray-300 mx-0.5"/>
-                    <Btn icon={Layers}  label="Bouquet" color="amber"  onClick={()=>requireProduct(()=>toast.info("Bouquet Composition — Coming soon"))}  disabled={!selProduct}/>
-                    <Btn icon={Box}     label="Box"     color="amber"  onClick={()=>requireProduct(()=>toast.info("Box Composition — Coming soon"))}        disabled={!selProduct}/>
-                    <div className="w-px h-5 bg-gray-300 mx-0.5"/>
-                    <Btn icon={Shuffle}      label="Alternatives" color="purple" onClick={()=>requireProduct(()=>setShowAlt(true))}    disabled={!selProduct}/>
-                    <Btn icon={BookOpen}     label="Recipes"      color="purple" onClick={()=>requireProduct(()=>setShowRecipe(true))} disabled={!selProduct}/>
-                    <Btn icon={Users}        label="Quotas"       color="purple" onClick={()=>requireProduct(()=>setShowQuota(true))}  disabled={!selProduct}/>
-                </div>
-                {/* Row 2 */}
-                <div className="flex flex-wrap items-center gap-1">
-                    {/* Recipe To Prebook */}
-                    <div className="relative">
-                        <button onClick={()=>setPrebookOpen(p=>p==="recipe"?null:"recipe")} disabled={!selProduct} className="flex items-center gap-0.5 bg-blue-700 hover:bg-blue-800 disabled:opacity-40 text-white text-[9px] font-black uppercase px-2 py-1 rounded">
-                            <Calendar size={9}/> Recipe→Prebook <ChevronDown size={8}/>
-                        </button>
-                        {prebookOpen==="recipe" && <div className="absolute top-full left-0 mt-0.5 bg-white border border-gray-200 rounded shadow-lg z-20 w-48 text-xs">
-                            <button onClick={()=>{setPrebookOpen(null);requireProduct(()=>setShowPrebook("recipe"));}} className="w-full text-left px-3 py-2 hover:bg-gray-50 font-semibold border-b">Fill Recipe in Prebooks</button>
-                        </div>}
-                    </div>
-                    {/* UPC To Prebook */}
-                    <div className="relative">
-                        <button onClick={()=>setPrebookOpen(p=>p==="upc"?null:"upc")} disabled={!selProduct} className="flex items-center gap-0.5 bg-blue-700 hover:bg-blue-800 disabled:opacity-40 text-white text-[9px] font-black uppercase px-2 py-1 rounded">
-                            <Calendar size={9}/> UPC→Prebook <ChevronDown size={8}/>
-                        </button>
-                        {prebookOpen==="upc" && <div className="absolute top-full left-0 mt-0.5 bg-white border border-gray-200 rounded shadow-lg z-20 w-44 text-xs">
-                            <button onClick={()=>{setPrebookOpen(null);requireProduct(()=>setShowPrebook("upc"));}} className="w-full text-left px-3 py-2 hover:bg-gray-50 font-semibold border-b">Fill UPC Info in Prebooks</button>
-                        </div>}
-                    </div>
-                    {/* Sales Info To Prebook */}
-                    <div className="relative">
-                        <button onClick={()=>setPrebookOpen(p=>p==="sales"?null:"sales")} disabled={!selProduct} className="flex items-center gap-0.5 bg-blue-700 hover:bg-blue-800 disabled:opacity-40 text-white text-[9px] font-black uppercase px-2 py-1 rounded">
-                            <Calendar size={9}/> Sales→Prebook <ChevronDown size={8}/>
-                        </button>
-                        {prebookOpen==="sales" && <div className="absolute top-full left-0 mt-0.5 bg-white border border-gray-200 rounded shadow-lg z-20 w-48 text-xs">
-                            <button onClick={()=>{setPrebookOpen(null);requireProduct(()=>setShowPrebook("sales"));}} className="w-full text-left px-3 py-2 hover:bg-gray-50 font-semibold border-b">Fill Sales Info in Prebooks</button>
-                        </div>}
-                    </div>
-                    <div className="w-px h-5 bg-gray-300 mx-0.5"/>
-                    <Btn icon={ClipboardList} label="Update Stock" color="gray"   onClick={()=>{if(!perms.canEdit){toast.error(PERMISSION_MSGS.edit);return;} setShowStock(true);}} disabled={!perms.canEdit}/>
-                    <Btn icon={BarChart2}     label="PO Prices"    color="gray"   onClick={()=>{if(!perms.canCreate){toast.error(PERMISSION_MSGS.create);return;} setShowPO(true);}}/>
-                    <div className="w-px h-5 bg-gray-300 mx-0.5"/>
-                    <Btn icon={Package}  label="Dflt Charge"  color="amber" onClick={()=>handleDirectAction("default-charge")}  disabled={!selProduct}/>
-                    <Btn icon={Layers}   label="Ext. Recipe"  color="amber" onClick={()=>handleDirectAction("extended-recipe")}  disabled={!selProduct}/>
-                    {/* Print Composition */}
-                    <div className="relative">
-                        <button onClick={()=>setPrintOpen(p=>!p)} disabled={!selProduct||!perms.canReport} className="flex items-center gap-0.5 bg-gray-600 hover:bg-gray-700 disabled:opacity-40 text-white text-[9px] font-black uppercase px-2 py-1 rounded">
-                            <Printer size={9}/> Print Comp. <ChevronDown size={8}/>
-                        </button>
-                        {printOpen && <div className="absolute top-full left-0 mt-0.5 bg-white border border-gray-200 rounded shadow-lg z-20 w-44 text-xs" onMouseLeave={()=>setPrintOpen(false)}>
-                            <button onClick={()=>{setPrintOpen(false);handlePrint("bouquet");}} className="w-full text-left px-3 py-2 hover:bg-gray-50 border-b">Bouquet</button>
-                            <button onClick={()=>{setPrintOpen(false);handlePrint("box");}}     className="w-full text-left px-3 py-2 hover:bg-gray-50 border-b">Box</button>
-                            <button onClick={()=>{setPrintOpen(false);handlePrint("extended");}} className="w-full text-left px-3 py-2 hover:bg-gray-50">Extended</button>
-                        </div>}
-                    </div>
-                </div>
-            </div>
-
-            {/* Search + error */}
-            <div className="px-2 py-1 border-b border-[#DBD9D9] bg-white flex items-center gap-2 shrink-0">
-                <div className="relative flex-1 max-w-xs">
-                    <Search size={11} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400"/>
-                    <input value={searchText} onChange={e=>setSearchText(e.target.value)} placeholder="Search products (description, EDI code, class)..."
-                        className="w-full pl-7 pr-2 py-1 text-[10px] bg-white border border-[#DBD9D9] rounded outline-none focus:ring-1 focus:ring-[#FB7506]"/>
-                </div>
-                {(loadingP||fetchingMoreProds) && <RefreshCcw size={11} className="text-gray-400 animate-spin"/>}
-                <span className="text-[9px] text-gray-400 shrink-0">{products.length.toLocaleString()} / {totalRecords.toLocaleString()} products</span>
-            </div>
-
-            {/* Products Grid */}
-            <div className="flex-1 overflow-auto">
+        <div className="flex flex-col flex-1 overflow-hidden p-1.5">
+            <PanelGrid
+                icon={Package}
+                title="All Products"
+                recordCount={`${products.length.toLocaleString()} / ${totalRecords.toLocaleString()}`}
+                searchValue={searchText}
+                onSearchChange={setSearchText}
+                searchPlaceholder="Search products (description, EDI code, class)..."
+                onRefresh={refetchAll}
+                refreshing={loadingP || fetchingMoreProds}
+                headerRight={<AuditLogModal recordId={selProduct?.unico} disabled={!selProduct}/>}
+                subheader={subheaderBar}
+                menuItems={[
+                    { label:"Add",    icon:Plus,   color:"green", onClick:()=>openModal("add"),    disabled:!perms.canCreate },
+                    { label:"Edit",   icon:Pencil, color:"blue",  onClick:()=>openModal("edit"),   disabled:!selProduct||!perms.canEdit },
+                    { label:"Delete", icon:Trash2, color:"red",   onClick:()=>{if(!selProduct){toast.error(NO_PROD);return;} if(!perms.canDelete){toast.error(PERMISSION_MSGS.delete);return;} setProductModal({mode:"delete"});}, disabled:!selProduct||!perms.canDelete },
+                    { label:"Copy",   icon:Copy,   color:"gray",  onClick:()=>openModal("copy"),   disabled:!selProduct||!perms.canCreate },
+                    { separator: true },
+                    { label:"Bouquet",  icon:Layers,  color:"orange", onClick:()=>requireProduct(()=>handlePrint("bouquet")),  disabled:!selProduct||!perms.canReport },
+                    { label:"Box",      icon:Box,     color:"orange", onClick:()=>requireProduct(()=>toast.info("Box Composition — Coming soon")), disabled:!selProduct },
+                    { label:"Extended", icon:Printer, color:"orange", onClick:()=>requireProduct(()=>handlePrint("extended")), disabled:!selProduct||!perms.canReport },
+                ]}
+                className="flex-1 min-h-0"
+            >
                 <table className="min-w-full text-left">
                     <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                         <tr>
@@ -1243,7 +1220,7 @@ export default function Tab2() {
                         )}
                     </tbody>
                 </table>
-            </div>
+            </PanelGrid>
 
             {/* ── Modals ──────────────────────────────────────────────────────── */}
 
