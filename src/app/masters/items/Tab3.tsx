@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useQuery, useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import {
     Plus, Pencil, Trash2, Save, X, RefreshCcw, Search, Check, XCircle,
-    Layers, Box, Calendar, ChevronDown
+    Layers, Box
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuditLog } from "@/lib/audit";
@@ -537,46 +537,6 @@ function WarehouseBOGOModal({ initialSalesmanUq, onClose, logAction }: { initial
     );
 }
 
-// ─── PreBookDateModal (inline — Tab3 reuse) ───────────────────────────────────
-function PreBookDateModal({ title, productDesc, showDeletePrior, showChangeCase, onConfirm, onClose }: any) {
-    const today = new Date().toISOString().split("T")[0];
-    const [dateFrom, setDateFrom] = useState(today);
-    const [dateTo,   setDateTo]   = useState(today);
-    const [delPrior, setDelPrior] = useState(false);
-    const [chgCase,  setChgCase]  = useState(false);
-    const [err,      setErr]      = useState<string|null>(null);
-
-    const confirm = () => {
-        if (!dateFrom||!dateTo) { setErr("Invalid date."); return; }
-        if (dateTo < dateFrom)  { setErr("Invalid date range."); return; }
-        onConfirm({ date_from: dateFrom, date_to: dateTo, delete_prior: delPrior, change_case: chgCase });
-    };
-    return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 sm:p-4">
-            <div className="bg-white rounded-t-xl sm:rounded-xl shadow-2xl w-full sm:w-80 max-h-[85vh]">
-                <div className="h-10 bg-[#374151] rounded-t-xl flex items-center justify-between px-4">
-                    <div className="flex items-center gap-2"><Calendar size={13} className="text-[#FB7506]"/><span className="font-black text-[10px] uppercase text-white">{title}</span></div>
-                    <button onClick={onClose}><XCircle size={15} className="text-gray-400 hover:text-white"/></button>
-                </div>
-                <div className="p-4 space-y-3 text-xs">
-                    <div><span className="text-[9px] font-black text-gray-400 uppercase">Product / Variety</span><p className="text-gray-600 mt-0.5">{productDesc}</p></div>
-                    {err && <p className="text-red-500 text-[9px] font-bold">{err}</p>}
-                    <div className="grid grid-cols-2 gap-2">
-                        <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Date From *</label><input type="date" value={dateFrom} onChange={e=>setDateFrom(e.target.value)} className="fos-input text-xs py-1"/></div>
-                        <div className="flex flex-col gap-0.5"><label className="text-[9px] font-black text-gray-400 uppercase">Date To *</label><input type="date" value={dateTo} onChange={e=>setDateTo(e.target.value)} className="fos-input text-xs py-1"/></div>
-                    </div>
-                    {showDeletePrior && <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={delPrior} onChange={e=>setDelPrior(e.target.checked)} className="w-3.5 h-3.5 accent-[#FB7506]"/><span>Delete Prior Recipe</span></label>}
-                    {showChangeCase  && <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={chgCase}  onChange={e=>setChgCase(e.target.checked)}  className="w-3.5 h-3.5 accent-[#FB7506]"/><span>Change Case</span></label>}
-                </div>
-                <div className="flex justify-end gap-2 px-4 py-3 bg-gray-50 border-t rounded-b-xl">
-                    <button onClick={onClose} className="px-3 py-1.5 rounded border text-xs font-bold text-gray-600 hover:bg-gray-100">Cancel</button>
-                    <button onClick={confirm} className="px-4 py-1.5 rounded bg-[#FB7506] hover:bg-orange-600 text-white text-xs font-black">Confirm</button>
-                </div>
-            </div>
-        </div>
-    );
-}
-
 // ─── Tab 3 Props ──────────────────────────────────────────────────────────────
 interface Tab3Props {
     selSubclass:   any;
@@ -612,8 +572,6 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety }: Tab3Pro
     const [showBOGO,     setShowBOGO]     = useState(false);
     const [showBogoWH,   setShowBogoWH]   = useState(false);
     const [showPacks,    setShowPacks]    = useState(false);
-    const [showPrebook,  setShowPrebook]  = useState<"recipe"|"upc"|"sales"|null>(null);
-    const [prebookOpen,  setPrebookOpen]  = useState<"recipe"|"upc"|"sales"|null>(null);
 
     useEffect(() => { const t = setTimeout(()=>setDebSearch(compSearch), 300); return ()=>clearTimeout(t); }, [compSearch]);
 
@@ -681,27 +639,6 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety }: Tab3Pro
 
     return (
         <div className="flex flex-col flex-1 overflow-hidden">
-            {/* Functional toolbar — above panels */}
-            <div className="bg-[#F5F3F3] border-b border-[#DBD9D9] px-2 py-1 shrink-0 flex flex-wrap items-center gap-1">
-                {(["recipe","upc","sales"] as const).map(type=>{
-                    const labels: Record<string,string> = { recipe:"Recipe→Prebook", upc:"UPC→Prebook", sales:"Sales→Prebook" };
-                    const subLabels: Record<string,string> = { recipe:"Fill Recipe in Prebooks", upc:"Fill UPC Info in Prebooks", sales:"Fill Sales Info in Prebooks" };
-                    return (
-                        <div key={type} className="relative">
-                            <button onClick={()=>setPrebookOpen(p=>p===type?null:type)} disabled={!selVariety}
-                                className="flex items-center gap-0.5 bg-blue-700 hover:bg-blue-800 disabled:opacity-40 text-white text-[9px] font-black uppercase px-2 h-7 rounded">
-                                <Calendar size={9}/> {labels[type]} <ChevronDown size={8}/>
-                            </button>
-                            {prebookOpen===type && (
-                                <div className="absolute top-full left-0 mt-0.5 bg-white border border-gray-200 rounded shadow-lg z-20 w-48 text-xs">
-                                    <button onClick={()=>{setPrebookOpen(null);setShowPrebook(type);}} className="w-full text-left px-3 py-2 hover:bg-gray-50 font-semibold">{subLabels[type]}</button>
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
-            </div>
-
             {/* Two-panel layout */}
             <div className="flex-1 flex gap-1.5 p-1.5 overflow-hidden">
                 {/* Left: Varieties by Subclass */}
@@ -801,15 +738,6 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety }: Tab3Pro
                     logAction={logAction}/>
             )}
 
-            {showPrebook && selVariety && (
-                <PreBookDateModal
-                    title={showPrebook==="recipe"?"Fill Recipe in Prebooks":showPrebook==="upc"?"Fill UPC Info in Prebooks":"Fill Sales Info in Prebooks"}
-                    productDesc={t(selVariety.variety)}
-                    showDeletePrior={showPrebook==="recipe"}
-                    showChangeCase={showPrebook==="recipe"}
-                    onConfirm={()=>{ setShowPrebook(null); toast.info("Coming soon — SP not yet available in database."); }}
-                    onClose={()=>setShowPrebook(null)}/>
-            )}
         </div>
     );
 }
