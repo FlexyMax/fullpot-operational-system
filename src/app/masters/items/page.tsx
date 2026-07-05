@@ -52,13 +52,7 @@ export default function ItemsSetupPage() {
                 />
             )}
             {activeTab === 2 && <Tab2/>}
-            {activeTab === 3 && (
-                <Tab3
-                    selSubclass={selSubclass}
-                    selVariety={selVariety}
-                    setSelVariety={setSelVariety}
-                />
-            )}
+            {activeTab === 3 && <Tab3 />}
 
             <AppFooter areaLabel="Masters" />
         </div>
