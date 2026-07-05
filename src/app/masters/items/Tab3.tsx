@@ -723,7 +723,7 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety }: Tab3Pro
                         { label:"BOGO WH",      icon:Box,          color:"orange", onClick:()=>requireComp(()=>setShowBogoWH(true)),                 disabled:!selComponent },
                         { label:"BOGO Cleaner", icon:Trash2,       color:"red",    onClick:handleBogoClean },
                     ]}
-                    className="w-2/5 flex-shrink-0"
+                    className="w-2/5 flex-shrink-0 min-h-0"
                 >
                     <MiniGrid
                         cols={[
@@ -742,21 +742,16 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety }: Tab3Pro
                 </PanelGrid>
 
                 {/* Right: Components search */}
-                <div className="flex-1 bg-white rounded-lg border border-[#DBD9D9] shadow-sm flex flex-col overflow-hidden">
-                    <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center px-3 gap-2 shrink-0">
-                        <Search size={15} className="text-[#FB7506]"/>
-                        <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">Components / Search</span>
-                        {(loadComp||fetchingMoreComp) && <RefreshCcw size={11} className="text-gray-400 animate-spin"/>}
-                        {compTotal > 0 && <span className="text-gray-400 text-[10px] ml-1">{components.length}/{compTotal}</span>}
-                    </div>
-                    <div className="p-1.5 bg-[#F5F3F3] border-b border-[#DBD9D9] shrink-0">
-                        <div className="relative">
-                            <Search size={9} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400"/>
-                            <input value={compSearch} onChange={e=>setCompSearch(e.target.value)}
-                                placeholder="Search: Class  Subclass  Color  Variety  Item  Component"
-                                className="w-full pl-6 pr-2 py-0.5 text-[10px] bg-white border border-[#DBD9D9] rounded outline-none focus:ring-1 focus:ring-[#FB7506]"/>
-                        </div>
-                    </div>
+                <PanelGrid
+                    icon={Search}
+                    title="Components / Search"
+                    recordCount={compTotal > 0 ? `${components.length} / ${compTotal}` : undefined}
+                    searchValue={compSearch}
+                    onSearchChange={setCompSearch}
+                    searchPlaceholder="Search: Class  Subclass  Color  Variety  Item  Component"
+                    refreshing={loadComp || fetchingMoreComp}
+                    className="flex-1 min-h-0"
+                >
                     <MiniGrid
                         cols={[
                             { key:"clase",        label:"Class",      className:"text-gray-500 text-[9px]" },
@@ -776,7 +771,7 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety }: Tab3Pro
                         empty={debSearch ? "No results" : "Type to search components"}
                         sentinel={<div ref={compSentinel} className="h-1"/>}
                     />
-                </div>
+                </PanelGrid>
             </div>
 
             {/* ── Modals ──────────────────────────────────────────────────── */}
