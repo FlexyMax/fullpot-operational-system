@@ -649,16 +649,9 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety }: Tab3Pro
                     refreshing={loadingVr}
                     headerRight={<AuditLogModal recordId={selVariety?.unico} disabled={!selVariety}/>}
                     menuItems={[
-                        { label:"Insert",       icon:Plus,         color:"green",  onClick:()=>openVarietyModal("add"),                              disabled:!perms.canCreate },
-                        { label:"Update",       icon:Pencil,       color:"blue",   onClick:()=>openVarietyModal("edit"),                             disabled:!selVariety||!perms.canEdit },
-                        { label:"Delete",       icon:Trash2,       color:"red",    onClick:()=>openVarietyModal("delete"),                           disabled:!selVariety||!perms.canDelete },
-                        { separator:true },
-                        { label:"Bouquet",      icon:Layers,       color:"orange", onClick:()=>toast.info("Bouquet Composition — Coming soon"),      disabled:!selVariety },
-                        { label:"Box",          icon:Box,          color:"orange", onClick:()=>{ if(!selVariety){toast.error("Select a variety first.");return;} setShowPacks(true); }, disabled:!selVariety },
-                        { separator:true },
-                        { label:"BOGO",         icon:Box,          color:"orange", onClick:()=>requireComp(()=>setShowBOGO(true)),                   disabled:!selComponent },
-                        { label:"BOGO WH",      icon:Box,          color:"orange", onClick:()=>requireComp(()=>setShowBogoWH(true)),                 disabled:!selComponent },
-                        { label:"BOGO Cleaner", icon:Trash2,       color:"red",    onClick:handleBogoClean },
+                        { label:"Insert", icon:Plus,   color:"green", onClick:()=>openVarietyModal("add"),    disabled:!perms.canCreate },
+                        { label:"Update", icon:Pencil, color:"blue",  onClick:()=>openVarietyModal("edit"),   disabled:!selVariety||!perms.canEdit },
+                        { label:"Delete", icon:Trash2, color:"red",   onClick:()=>openVarietyModal("delete"), disabled:!selVariety||!perms.canDelete },
                     ]}
                     className="w-2/5 flex-shrink-0 min-h-0"
                 >
@@ -674,7 +667,7 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety }: Tab3Pro
                         selUnico={selVariety?.unico}
                         onSelect={setSelVariety}
                         loading={loadingVr}
-                        empty={selSubclass ? "No varieties" : "Select a subclass in Tab 1"}
+                        empty={selSubclass ? "No varieties" : "Select a subclass in Hierarchy"}
                     />
                 </PanelGrid>
 
@@ -687,6 +680,11 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety }: Tab3Pro
                     onSearchChange={setCompSearch}
                     searchPlaceholder="Search: Class  Subclass  Color  Variety  Item  Component"
                     refreshing={loadComp || fetchingMoreComp}
+                    menuItems={[
+                        { label:"BOGO",         icon:Box,   color:"orange", onClick:()=>requireComp(()=>setShowBOGO(true)),   disabled:!selComponent },
+                        { label:"BOGO WH",      icon:Box,   color:"orange", onClick:()=>requireComp(()=>setShowBogoWH(true)), disabled:!selComponent },
+                        { label:"BOGO Cleaner", icon:Trash2,color:"red",    onClick:handleBogoClean },
+                    ]}
                     className="flex-1 min-h-0"
                 >
                     <MiniGrid
