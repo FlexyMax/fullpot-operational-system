@@ -1097,40 +1097,40 @@ export default function Tab2() {
 
     const [prebookOpen, setPrebookOpen] = useState<"recipe"|"upc"|"sales"|null>(null);
 
-    const subheaderBar = (
-        <div className="bg-[#F5F3F3] px-2 py-1 flex flex-wrap items-center gap-1">
-            <Btn icon={Shuffle}   label="Alternatives" color="purple" sm onClick={()=>requireProduct(()=>setShowAlt(true))}    disabled={!selProduct}/>
-            <Btn icon={BookOpen}  label="Recipes"      color="purple" sm onClick={()=>requireProduct(()=>setShowRecipe(true))} disabled={!selProduct}/>
-            <Btn icon={Users}     label="Quotas"       color="purple" sm onClick={()=>requireProduct(()=>setShowQuota(true))}  disabled={!selProduct}/>
-            <div className="w-px h-5 bg-gray-300 mx-0.5"/>
-            {(["recipe","upc","sales"] as const).map(type => {
-                const labels: Record<string,string> = { recipe:"Recipe→Prebook", upc:"UPC→Prebook", sales:"Sales→Prebook" };
-                const subLabels: Record<string,string> = { recipe:"Fill Recipe in Prebooks", upc:"Fill UPC Info in Prebooks", sales:"Fill Sales Info in Prebooks" };
-                return (
-                    <div key={type} className="relative">
-                        <button onClick={()=>setPrebookOpen(p=>p===type?null:type)} disabled={!selProduct}
-                            className="flex items-center gap-0.5 bg-blue-700 hover:bg-blue-800 disabled:opacity-40 text-white text-[9px] font-black uppercase px-2 h-6 rounded">
-                            <Calendar size={9}/> {labels[type]} <ChevronDown size={8}/>
-                        </button>
-                        {prebookOpen===type && (
-                            <div className="absolute top-full left-0 mt-0.5 bg-white border border-gray-200 rounded shadow-lg z-20 w-48 text-xs">
-                                <button onClick={()=>{setPrebookOpen(null);requireProduct(()=>setShowPrebook(type));}} className="w-full text-left px-3 py-2 hover:bg-gray-50 font-semibold">{subLabels[type]}</button>
-                            </div>
-                        )}
-                    </div>
-                );
-            })}
-            <div className="w-px h-5 bg-gray-300 mx-0.5"/>
-            <Btn icon={ClipboardList} label="Update Stock" color="gray"  sm onClick={()=>{if(!perms.canEdit){toast.error(PERMISSION_MSGS.edit);return;} setShowStock(true);}} disabled={!perms.canEdit}/>
-            <Btn icon={BarChart2}     label="PO Prices"    color="gray"  sm onClick={()=>{if(!perms.canCreate){toast.error(PERMISSION_MSGS.create);return;} setShowPO(true);}}/>
-            <div className="w-px h-5 bg-gray-300 mx-0.5"/>
-            <Btn icon={Package} label="Dflt Charge" color="amber" sm onClick={()=>handleDirectAction("default-charge")} disabled={!selProduct}/>
-            <Btn icon={Layers}  label="Ext. Recipe" color="amber" sm onClick={()=>handleDirectAction("extended-recipe")} disabled={!selProduct}/>
-        </div>
-    );
-
     return (
-        <div className="flex flex-col flex-1 overflow-hidden p-1.5">
+        <div className="flex flex-col flex-1 overflow-hidden">
+            {/* Functional toolbar — above PanelGrid */}
+            <div className="bg-[#F5F3F3] border-b border-[#DBD9D9] px-2 py-1 shrink-0 flex flex-wrap items-center gap-1">
+                <Btn icon={Shuffle}   label="Alternatives" color="purple" onClick={()=>requireProduct(()=>setShowAlt(true))}    disabled={!selProduct}/>
+                <Btn icon={BookOpen}  label="Recipes"      color="purple" onClick={()=>requireProduct(()=>setShowRecipe(true))} disabled={!selProduct}/>
+                <Btn icon={Users}     label="Quotas"       color="purple" onClick={()=>requireProduct(()=>setShowQuota(true))}  disabled={!selProduct}/>
+                <div className="w-px h-5 bg-gray-300 mx-0.5"/>
+                {(["recipe","upc","sales"] as const).map(type => {
+                    const labels: Record<string,string> = { recipe:"Recipe→Prebook", upc:"UPC→Prebook", sales:"Sales→Prebook" };
+                    const subLabels: Record<string,string> = { recipe:"Fill Recipe in Prebooks", upc:"Fill UPC Info in Prebooks", sales:"Fill Sales Info in Prebooks" };
+                    return (
+                        <div key={type} className="relative">
+                            <button onClick={()=>setPrebookOpen(p=>p===type?null:type)} disabled={!selProduct}
+                                className="flex items-center gap-0.5 bg-blue-700 hover:bg-blue-800 disabled:opacity-40 text-white text-[9px] font-black uppercase px-2 h-7 rounded">
+                                <Calendar size={9}/> {labels[type]} <ChevronDown size={8}/>
+                            </button>
+                            {prebookOpen===type && (
+                                <div className="absolute top-full left-0 mt-0.5 bg-white border border-gray-200 rounded shadow-lg z-20 w-48 text-xs">
+                                    <button onClick={()=>{setPrebookOpen(null);requireProduct(()=>setShowPrebook(type));}} className="w-full text-left px-3 py-2 hover:bg-gray-50 font-semibold">{subLabels[type]}</button>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+                <div className="w-px h-5 bg-gray-300 mx-0.5"/>
+                <Btn icon={ClipboardList} label="Update Stock" color="gray"  onClick={()=>{if(!perms.canEdit){toast.error(PERMISSION_MSGS.edit);return;} setShowStock(true);}} disabled={!perms.canEdit}/>
+                <Btn icon={BarChart2}     label="PO Prices"    color="gray"  onClick={()=>{if(!perms.canCreate){toast.error(PERMISSION_MSGS.create);return;} setShowPO(true);}}/>
+                <div className="w-px h-5 bg-gray-300 mx-0.5"/>
+                <Btn icon={Package} label="Dflt Charge" color="amber" onClick={()=>handleDirectAction("default-charge")} disabled={!selProduct}/>
+                <Btn icon={Layers}  label="Ext. Recipe" color="amber" onClick={()=>handleDirectAction("extended-recipe")} disabled={!selProduct}/>
+            </div>
+
+            <div className="flex-1 overflow-hidden p-1.5">
             <PanelGrid
                 icon={Package}
                 title="All Products"
@@ -1141,7 +1141,6 @@ export default function Tab2() {
                 onRefresh={refetchAll}
                 refreshing={loadingP || fetchingMoreProds}
                 headerRight={<AuditLogModal recordId={selProduct?.unico} disabled={!selProduct}/>}
-                subheader={subheaderBar}
                 menuItems={[
                     { label:"Add",    icon:Plus,   color:"green", onClick:()=>openModal("add"),    disabled:!perms.canCreate },
                     { label:"Edit",   icon:Pencil, color:"blue",  onClick:()=>openModal("edit"),   disabled:!selProduct||!perms.canEdit },
@@ -1152,7 +1151,7 @@ export default function Tab2() {
                     { label:"Box",      icon:Box,     color:"orange", onClick:()=>requireProduct(()=>toast.info("Box Composition — Coming soon")), disabled:!selProduct },
                     { label:"Extended", icon:Printer, color:"orange", onClick:()=>requireProduct(()=>handlePrint("extended")), disabled:!selProduct||!perms.canReport },
                 ]}
-                className="flex-1 min-h-0"
+                className="flex-1 min-h-0 h-full"
             >
                 <table className="min-w-full text-left">
                     <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
@@ -1221,6 +1220,8 @@ export default function Tab2() {
                     </tbody>
                 </table>
             </PanelGrid>
+
+            </div>{/* end p-1.5 wrapper */}
 
             {/* ── Modals ──────────────────────────────────────────────────────── */}
 

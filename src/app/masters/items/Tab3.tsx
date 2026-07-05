@@ -4,9 +4,8 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useQuery, useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import {
     Plus, Pencil, Trash2, Save, X, RefreshCcw, Search, Check, XCircle,
-    Layers, Box, ClipboardList, Calendar, ChevronDown
+    Layers, Box, Calendar, ChevronDown
 } from "lucide-react";
-import { GridMenu } from "@/components/GridMenu";
 import { cn } from "@/lib/utils";
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
@@ -682,33 +681,20 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety }: Tab3Pro
 
     return (
         <div className="flex flex-col flex-1 overflow-hidden">
-            {/* Toolbar */}
-            <div className="bg-[#F5F3F3] border-b border-[#DBD9D9] px-2 py-1 shrink-0 flex items-center gap-2">
-                <GridMenu items={[
-                    { label: "Insert", icon: Plus, color: "green", onClick: ()=>openVarietyModal("add"), disabled: !perms.canCreate },
-                    { label: "Update", icon: Pencil, color: "orange", onClick: ()=>openVarietyModal("edit"), disabled: !selVariety||!perms.canEdit },
-                    { label: "Delete", icon: Trash2, color: "red", onClick: ()=>openVarietyModal("delete"), disabled: !selVariety||!perms.canDelete },
-                    { label: "BOGO", icon: Box, color: "amber", onClick: ()=>requireComp(()=>setShowBOGO(true)), disabled: !selComponent },
-                    { label: "BOGO WH", icon: Box, color: "amber", onClick: ()=>requireComp(()=>setShowBogoWH(true)), disabled: !selComponent },
-                    { label: "BOGO Cleaner", icon: Trash2, color: "red", onClick: handleBogoClean },
-                    { label: "Bouquet", icon: Layers, color: "amber", onClick: ()=>toast.info("Bouquet Composition — Coming soon"), disabled: !selVariety },
-                    { label: "Box", icon: Box, color: "amber", onClick: ()=>{ if(!selVariety){toast.error("Select a variety first.");return;} setShowPacks(true); }, disabled: !selVariety },
-                    { label: "Update Stock", icon: ClipboardList, color: "gray", onClick: ()=>toast.info("Update Stock — use Tab 2") },
-                ]} />
-                {/* Prebook dropdowns */}
+            {/* Functional toolbar — above panels */}
+            <div className="bg-[#F5F3F3] border-b border-[#DBD9D9] px-2 py-1 shrink-0 flex flex-wrap items-center gap-1">
                 {(["recipe","upc","sales"] as const).map(type=>{
                     const labels: Record<string,string> = { recipe:"Recipe→Prebook", upc:"UPC→Prebook", sales:"Sales→Prebook" };
+                    const subLabels: Record<string,string> = { recipe:"Fill Recipe in Prebooks", upc:"Fill UPC Info in Prebooks", sales:"Fill Sales Info in Prebooks" };
                     return (
                         <div key={type} className="relative">
                             <button onClick={()=>setPrebookOpen(p=>p===type?null:type)} disabled={!selVariety}
-                                className="flex items-center gap-0.5 bg-blue-700 hover:bg-blue-800 disabled:opacity-40 text-white text-[9px] font-black uppercase px-2 py-1 rounded">
+                                className="flex items-center gap-0.5 bg-blue-700 hover:bg-blue-800 disabled:opacity-40 text-white text-[9px] font-black uppercase px-2 h-7 rounded">
                                 <Calendar size={9}/> {labels[type]} <ChevronDown size={8}/>
                             </button>
                             {prebookOpen===type && (
                                 <div className="absolute top-full left-0 mt-0.5 bg-white border border-gray-200 rounded shadow-lg z-20 w-48 text-xs">
-                                    <button onClick={()=>{setPrebookOpen(null);setShowPrebook(type);}} className="w-full text-left px-3 py-2 hover:bg-gray-50 font-semibold">
-                                        {type==="recipe"?"Fill Recipe in Prebooks":type==="upc"?"Fill UPC Info in Prebooks":"Fill Sales Info in Prebooks"}
-                                    </button>
+                                    <button onClick={()=>{setPrebookOpen(null);setShowPrebook(type);}} className="w-full text-left px-3 py-2 hover:bg-gray-50 font-semibold">{subLabels[type]}</button>
                                 </div>
                             )}
                         </div>
@@ -719,14 +705,26 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety }: Tab3Pro
             {/* Two-panel layout */}
             <div className="flex-1 flex gap-1.5 p-1.5 overflow-hidden">
                 {/* Left: Varieties by Subclass */}
-                <div className="w-2/5 bg-white rounded-lg border border-[#DBD9D9] shadow-sm flex flex-col overflow-hidden">
-                    <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center px-3 shrink-0">
-                        <Layers size={15} className="text-[#FB7506] mr-2"/>
-                        <span className="text-[#4F4F4F] text-[14px] font-bold uppercase tracking-tight truncate">
-                            Varieties {selSubclass ? `— ${t(selSubclass.subclase)}` : ""}
-                        </span>
-                        {loadingVr && <RefreshCcw size={11} className="text-gray-400 animate-spin ml-2"/>}
-                    </div>
+                <PanelGrid
+                    icon={Layers}
+                    title={`Varieties${selSubclass ? ` — ${t(selSubclass.subclase)}` : ""}`}
+                    onRefresh={refetchVr}
+                    refreshing={loadingVr}
+                    headerRight={<AuditLogModal recordId={selVariety?.unico} disabled={!selVariety}/>}
+                    menuItems={[
+                        { label:"Insert",       icon:Plus,         color:"green",  onClick:()=>openVarietyModal("add"),                              disabled:!perms.canCreate },
+                        { label:"Update",       icon:Pencil,       color:"blue",   onClick:()=>openVarietyModal("edit"),                             disabled:!selVariety||!perms.canEdit },
+                        { label:"Delete",       icon:Trash2,       color:"red",    onClick:()=>openVarietyModal("delete"),                           disabled:!selVariety||!perms.canDelete },
+                        { separator:true },
+                        { label:"Bouquet",      icon:Layers,       color:"orange", onClick:()=>toast.info("Bouquet Composition — Coming soon"),      disabled:!selVariety },
+                        { label:"Box",          icon:Box,          color:"orange", onClick:()=>{ if(!selVariety){toast.error("Select a variety first.");return;} setShowPacks(true); }, disabled:!selVariety },
+                        { separator:true },
+                        { label:"BOGO",         icon:Box,          color:"orange", onClick:()=>requireComp(()=>setShowBOGO(true)),                   disabled:!selComponent },
+                        { label:"BOGO WH",      icon:Box,          color:"orange", onClick:()=>requireComp(()=>setShowBogoWH(true)),                 disabled:!selComponent },
+                        { label:"BOGO Cleaner", icon:Trash2,       color:"red",    onClick:handleBogoClean },
+                    ]}
+                    className="w-2/5 flex-shrink-0"
+                >
                     <MiniGrid
                         cols={[
                             { key:"variety",     label:"Variety",  className:"font-medium" },
@@ -741,7 +739,7 @@ export default function Tab3({ selSubclass, selVariety, setSelVariety }: Tab3Pro
                         loading={loadingVr}
                         empty={selSubclass ? "No varieties" : "Select a subclass in Tab 1"}
                     />
-                </div>
+                </PanelGrid>
 
                 {/* Right: Components search */}
                 <div className="flex-1 bg-white rounded-lg border border-[#DBD9D9] shadow-sm flex flex-col overflow-hidden">

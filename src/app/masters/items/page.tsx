@@ -37,7 +37,7 @@ export default function ItemsSetupPage() {
                             activeTab===tab
                                 ? "bg-white text-[#FB7506] border-b-2 border-[#FB7506]"
                                 : "text-gray-500 hover:text-[#FB7506] hover:bg-white/60")}>
-                        {tab===1 ? "Tab 1 — Hierarchy" : tab===2 ? "Tab 2 — All Products" : "Tab 3 — Varieties / Components"}
+                        {tab===1 ? "Hierarchy" : tab===2 ? "All Products" : "Varieties / Components"}
                     </button>
                 ))}
             </div>
