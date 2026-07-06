@@ -7,8 +7,9 @@ import {
     Copy, Layers, Box, Shuffle, BookOpen, Users, Calendar, BarChart2,
     ClipboardList, Printer, ChevronDown, Package, Upload, ImageIcon
 } from "lucide-react";
-import { GridMenu } from "@/components/GridMenu";
 import PanelGrid from "@/components/ui/PanelGrid";
+import BunchRecipeModal from "./BunchRecipeModal";
+import BoxRecipeModal from "./BoxRecipeModal";
 import { AuditLogModal } from "@/components/AuditLogModal";
 import { cn } from "@/lib/utils";
 import { useAuditLog } from "@/lib/audit";
@@ -1001,7 +1002,9 @@ export default function Tab2() {
     const [showQuota,    setShowQuota]    = useState(false);
     const [showPO,       setShowPO]       = useState(false);
     const [showStock,    setShowStock]    = useState(false);
-    const [showPrebook,  setShowPrebook]  = useState<"recipe"|"upc"|"sales"|null>(null);
+    const [showPrebook,     setShowPrebook]     = useState<"recipe"|"upc"|"sales"|null>(null);
+    const [showBunchRecipe, setShowBunchRecipe] = useState(false);
+    const [showBoxRecipe,   setShowBoxRecipe]   = useState(false);
 
     // Debounce search
     useEffect(() => {
@@ -1126,8 +1129,11 @@ export default function Tab2() {
                 <Btn icon={ClipboardList} label="Update Stock" color="gray"  onClick={()=>{if(!perms.canEdit){toast.error(PERMISSION_MSGS.edit);return;} setShowStock(true);}} disabled={!perms.canEdit}/>
                 <Btn icon={BarChart2}     label="PO Prices"    color="gray"  onClick={()=>{if(!perms.canCreate){toast.error(PERMISSION_MSGS.create);return;} setShowPO(true);}}/>
                 <div className="w-px h-5 bg-gray-300 mx-0.5"/>
-                <Btn icon={Package} label="Dflt Charge" color="amber" onClick={()=>handleDirectAction("default-charge")} disabled={!selProduct}/>
-                <Btn icon={Layers}  label="Ext. Recipe" color="amber" onClick={()=>handleDirectAction("extended-recipe")} disabled={!selProduct}/>
+                <Btn icon={Package}  label="Dflt Charge"   color="amber"  onClick={()=>handleDirectAction("default-charge")}                                  disabled={!selProduct}/>
+                <Btn icon={Layers}   label="Ext. Recipe"   color="amber"  onClick={()=>handleDirectAction("extended-recipe")}                               disabled={!selProduct}/>
+                <div className="w-px h-5 bg-gray-300 mx-0.5"/>
+                <Btn icon={BookOpen} label="Bunch Recipe"  color="purple" onClick={()=>requireProduct(()=>setShowBunchRecipe(true))} disabled={!selProduct}/>
+                <Btn icon={Box}      label="Box Recipe"    color="purple" onClick={()=>requireProduct(()=>setShowBoxRecipe(true))}   disabled={!selProduct}/>
             </div>
 
             <div className="flex-1 overflow-hidden p-1.5">
@@ -1147,9 +1153,8 @@ export default function Tab2() {
                     { label:"Delete", icon:Trash2, color:"red",   onClick:()=>{if(!selProduct){toast.error(NO_PROD);return;} if(!perms.canDelete){toast.error(PERMISSION_MSGS.delete);return;} setProductModal({mode:"delete"});}, disabled:!selProduct||!perms.canDelete },
                     { label:"Copy",   icon:Copy,   color:"gray",  onClick:()=>openModal("copy"),   disabled:!selProduct||!perms.canCreate },
                     { separator: true },
-                    { label:"Bouquet",  icon:Layers,  color:"orange", onClick:()=>requireProduct(()=>handlePrint("bouquet")),  disabled:!selProduct||!perms.canReport },
-                    { label:"Box",      icon:Box,     color:"orange", onClick:()=>requireProduct(()=>toast.info("Box Composition — Coming soon")), disabled:!selProduct },
-                    { label:"Extended", icon:Printer, color:"orange", onClick:()=>requireProduct(()=>handlePrint("extended")), disabled:!selProduct||!perms.canReport },
+                    { label:"Print Recipe",   icon:Printer, color:"orange", onClick:()=>requireProduct(()=>handlePrint("bouquet")),  disabled:!selProduct||!perms.canReport },
+                    { label:"Extended Recipe",icon:Layers,  color:"orange", onClick:()=>requireProduct(()=>handlePrint("extended")), disabled:!selProduct||!perms.canReport },
                 ]}
                 className="flex-1 min-h-0 h-full"
             >
@@ -1224,6 +1229,13 @@ export default function Tab2() {
             </div>{/* end p-1.5 wrapper */}
 
             {/* ── Modals ──────────────────────────────────────────────────────── */}
+
+            {showBunchRecipe && selProduct && (
+                <BunchRecipeModal product={selProduct} onClose={()=>setShowBunchRecipe(false)}/>
+            )}
+            {showBoxRecipe && selProduct && (
+                <BoxRecipeModal product={selProduct} onClose={()=>setShowBoxRecipe(false)}/>
+            )}
 
             {productModal && productModal.mode !== "delete" && (
                 <ProductsModalTab2 mode={productModal.mode} form={productForm} setForm={setProductForm}
