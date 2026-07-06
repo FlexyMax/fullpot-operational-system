@@ -14,6 +14,7 @@ import { AuditLogModal } from "@/components/AuditLogModal";
 import { cn } from "@/lib/utils";
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
+import { ReportModal } from "@/components/reports/ReportModal";
 import { toast } from "sonner";
 const EMPTY_ARR: any[] = [];
 
@@ -1003,8 +1004,9 @@ export default function Tab2() {
     const [showPO,       setShowPO]       = useState(false);
     const [showStock,    setShowStock]    = useState(false);
     const [showPrebook,     setShowPrebook]     = useState<"recipe"|"upc"|"sales"|null>(null);
-    const [showBunchRecipe, setShowBunchRecipe] = useState(false);
-    const [showBoxRecipe,   setShowBoxRecipe]   = useState(false);
+    const [showBunchRecipe,  setShowBunchRecipe]  = useState(false);
+    const [showBoxRecipe,    setShowBoxRecipe]    = useState(false);
+    const [reportModalUrl,   setReportModalUrl]   = useState<string | null>(null);
 
     // Debounce search
     useEffect(() => {
@@ -1087,15 +1089,12 @@ export default function Tab2() {
         toast.info(`Coming soon — sp_flower_products_${action.replace("-","_")} not found in database.`);
     };
 
-    const handlePrint = async (type: "bouquet"|"box"|"extended") => {
+    const handlePrint = (type: "bouquet"|"extended") => {
         if (!selProduct) { toast.error(NO_PROD); return; }
         if (!perms.canReport) { toast.error(PERMISSION_MSGS.report); return; }
-        if (type !== "bouquet") { toast.info(`${type} composition print — Coming soon (SP not found in DB).`); return; }
-        try {
-            const r = await fetch(`/api/masters/items/products/${selProduct.unico}/print-composition?type=bouquet`);
-            const d = await r.json();
-            toast.info(`Bouquet Composition: ${d.length ?? 0} record(s). Print functionality coming soon.`);
-        } catch(e:any){ toast.error(e.message); }
+        if (type === "extended") { toast.info("Extended Recipe — Coming soon."); return; }
+        // SP auto-detects bouquet vs combo-box composition based on product assembly data
+        setReportModalUrl(`/api/masters/items/products/${selProduct.unico}/print-composition`);
     };
 
     const [prebookOpen, setPrebookOpen] = useState<"recipe"|"upc"|"sales"|null>(null);
@@ -1236,6 +1235,7 @@ export default function Tab2() {
             {showBoxRecipe && selProduct && (
                 <BoxRecipeModal product={selProduct} onClose={()=>setShowBoxRecipe(false)}/>
             )}
+            <ReportModal url={reportModalUrl} onClose={() => setReportModalUrl(null)} />
 
             {productModal && productModal.mode !== "delete" && (
                 <ProductsModalTab2 mode={productModal.mode} form={productForm} setForm={setProductForm}
