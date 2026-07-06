@@ -184,6 +184,9 @@ export default function BunchRecipeModal({ product, onClose }: Props) {
 
     const save = async () => {
         if (!form.variety_uq) { setErr("Select a variety."); return; }
+        if (!form.grade_uq)   { setErr("Select a grade."); return; }
+        if (!form.color_uq)   { setErr("Select a color."); return; }
+        if (!form.unit)        { setErr("Select a unit."); return; }
         if (!form.qty || form.qty <= 0) { setErr("Qty must be greater than 0."); return; }
         setSaving(true); setErr(null);
         try {
@@ -329,20 +332,22 @@ export default function BunchRecipeModal({ product, onClose }: Props) {
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                             <Combobox
                                 label="Grade"
+                                required
                                 options={gradeOptions}
                                 value={form.grade_uq}
                                 inputValue={form.grade_text}
-                                placeholder="Any grade"
+                                placeholder="Select grade…"
                                 onInputChange={v => S({ grade_text: v, grade_uq: "" })}
                                 onSelect={(key, label) => S({ grade_uq: key, grade_text: label })}
                                 onClear={() => S({ grade_uq: "", grade_text: "" })}
                             />
                             <Combobox
                                 label="Color"
+                                required
                                 options={colorOptions}
                                 value={form.color_uq}
                                 inputValue={form.color_text}
-                                placeholder="Any color"
+                                placeholder="Select color…"
                                 onInputChange={v => S({ color_text: v, color_uq: "" })}
                                 onSelect={(key, label) => S({ color_uq: key, color_text: label })}
                                 onClear={() => S({ color_uq: "", color_text: "" })}
@@ -355,10 +360,11 @@ export default function BunchRecipeModal({ product, onClose }: Props) {
                             </div>
                             <Combobox
                                 label="Unit"
+                                required
                                 options={unitOptions}
                                 value={form.unit}
                                 inputValue={form.unit_text}
-                                placeholder="None"
+                                placeholder="Select unit…"
                                 onInputChange={v => S({ unit_text: v, unit: "" })}
                                 onSelect={(key, label) => S({ unit: key, unit_text: label })}
                                 onClear={() => S({ unit: "", unit_text: "" })}
@@ -384,26 +390,29 @@ export default function BunchRecipeModal({ product, onClose }: Props) {
                             </div>
                         </div>
 
-                        <div className="flex justify-end gap-2 pt-1">
-                            <button onClick={cancel}
-                                className="px-3 py-1.5 rounded border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-100">
-                                Cancel
-                            </button>
-                            <button onClick={save} disabled={saving || !form.variety_uq}
-                                className="flex items-center gap-1.5 px-4 py-1.5 rounded bg-[#FB7506] hover:bg-orange-600 text-white text-xs font-black disabled:opacity-50">
-                                {saving ? <RefreshCcw size={11} className="animate-spin" /> : <Save size={11} />}
-                                {saving ? "Saving..." : formMode === "add" ? "Add Row" : "Save Changes"}
-                            </button>
-                        </div>
                     </div>
                 )}
 
                 {/* Footer */}
-                <div className="flex justify-end px-4 py-2 border-t border-[#DBD9D9] bg-gray-50 rounded-b-xl shrink-0">
-                    <button onClick={onClose}
-                        className="px-4 py-1.5 rounded border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-100">
-                        Close
-                    </button>
+                <div className="flex justify-end gap-2 px-4 py-2 border-t border-[#DBD9D9] bg-gray-50 rounded-b-xl shrink-0">
+                    {formMode ? (
+                        <>
+                            <button onClick={cancel}
+                                className="px-3 py-1.5 rounded border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-100">
+                                Cancel
+                            </button>
+                            <button onClick={save} disabled={saving}
+                                className="flex items-center gap-1.5 px-4 py-1.5 rounded bg-[#FB7506] hover:bg-orange-600 text-white text-xs font-black disabled:opacity-50">
+                                {saving ? <RefreshCcw size={11} className="animate-spin" /> : <Save size={11} />}
+                                {saving ? "Saving..." : formMode === "add" ? "Add Row" : "Save Changes"}
+                            </button>
+                        </>
+                    ) : (
+                        <button onClick={onClose}
+                            className="px-4 py-1.5 rounded border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-100">
+                            Close
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
