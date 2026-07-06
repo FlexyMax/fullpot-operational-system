@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
 
+const nullIfEmpty = (v: any) => (v === "" || v == null) ? null : v;
+
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ unico: string }> }) {
     const { unico } = await params;
     try {
@@ -20,8 +22,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ uni
             lcproduct_uq: unico,
             lcvariety_uq: variety_uq,
             lnqty:        qty ?? 1,
-            lcgrade_uq:   grade_uq ?? "",
-            lccolor_uq:   color_uq ?? "",
+            lcgrade_uq:   nullIfEmpty(grade_uq),
+            lccolor_uq:   nullIfEmpty(color_uq),
             lcnotes:      notes ?? "",
             lcunit:       unit ?? "",
         });
