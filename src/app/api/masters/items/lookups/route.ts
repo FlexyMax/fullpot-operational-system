@@ -8,7 +8,7 @@ export async function GET() {
             executeProcedure("sp_flower_colors_list", {}),
             executeProcedure("sp_flower_cases_list",  {}),
             executeProcedure("sp_NC_varieties_types_list", {}),
-            executeProcedure("sp_flower_products_units", { lcsearch: "%" }).catch(() => ({ recordset: [] })),
+            executeProcedure("sp_flower_products_units", { lcunit: "%" }).catch(() => ({ recordset: [] })),
         ]);
         return NextResponse.json({
             grades:  grades.recordset,
