@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Save, RefreshCcw, XCircle, BookOpen, Check } from "lucide-react";
+import { Plus, Pencil, Trash2, Save, RefreshCcw, XCircle, BookOpen, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import PanelGrid from "@/components/ui/PanelGrid";
@@ -23,11 +23,8 @@ export default function BunchRecipeModal({ product, onClose }: Props) {
     const [saving,    setSaving]    = useState(false);
     const [err,       setErr]       = useState<string | null>(null);
     const [varSearch, setVarSearch] = useState("");
-    const [debVar,    setDebVar]    = useState("");
     const [varOpen,   setVarOpen]   = useState(false);
     const varRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => { const id = setTimeout(() => setDebVar(varSearch), 300); return () => clearTimeout(id); }, [varSearch]);
 
     // Close variety dropdown on outside click
     useEffect(() => {
@@ -45,11 +42,21 @@ export default function BunchRecipeModal({ product, onClose }: Props) {
     const { data: lookups }             = useQuery({ queryKey: ["items-look"],     queryFn: () => sF("/api/masters/items/lookups"),               staleTime: 600000 });
     const units: any[] = (lookups as any)?.units ?? EMPTY_ARR;
 
-    const { data: varieties = EMPTY_ARR, isFetching: loadVar } = useQuery({
-        queryKey: ["var-recipes", debVar],
-        queryFn:  () => sF(`/api/masters/items/lookups/varieties-for-recipes?search=${encodeURIComponent(debVar || "%")}`),
-        staleTime: 30000,
+    // Load all varieties once; filter client-side for instant results
+    const { data: allVarieties = EMPTY_ARR, isFetching: loadVar } = useQuery({
+        queryKey: ["var-recipes-all"],
+        queryFn:  () => sF("/api/masters/items/lookups/varieties-for-recipes?search=%25"),
+        staleTime: 300000,
     });
+
+    const filteredVarieties = (() => {
+        if (!varSearch.trim()) return allVarieties as any[];
+        const words = varSearch.trim().toLowerCase().split(/\s+/);
+        return (allVarieties as any[]).filter(v => {
+            const hay = t(v.dato).toLowerCase();
+            return words.every(w => hay.includes(w));
+        });
+    })();
 
     const S = (k: string, v: any) => setForm((p: any) => ({ ...p, [k]: v }));
 
@@ -72,7 +79,9 @@ export default function BunchRecipeModal({ product, onClose }: Props) {
                 unit:            t(full?.unit ?? selRow.unit),
                 notes:           t(full?.notes),
             });
-            setVarSearch(t(selRow.variety));
+            // Build display string from the full varieties list
+            const match = (allVarieties as any[]).find((v: any) => v.unico === t(full?.variety_uq));
+            setVarSearch(match ? t(match.dato) : t(selRow.variety));
             setVarOpen(false);
             setFormMode("edit");
         } catch (e: any) { toast.error(e.message); }
@@ -122,8 +131,7 @@ export default function BunchRecipeModal({ product, onClose }: Props) {
     const selectVariety = (v: any) => {
         S("variety_uq", v.unico);
         S("color_uq",   v.color_uq || "");
-        S("variety_display", t(v.dato || `${v.variety} – ${v.subclase} – ${v.clase}`));
-        setVarSearch(t(v.dato || `${v.variety} – ${v.subclase} – ${v.clase}`));
+        setVarSearch(t(v.dato || `${v.variety} - ${v.subclase} - ${v.clase}`));
         setVarOpen(false);
     };
 
@@ -214,36 +222,67 @@ export default function BunchRecipeModal({ product, onClose }: Props) {
                             {formMode === "add" ? "Add" : "Modify"} Variety
                         </p>
 
-                        {/* Variety — Subclass — Class picker */}
+                        {/* Variety picker */}
                         <div className="flex flex-col gap-0.5" ref={varRef}>
-                            <label className="text-[9px] font-black text-gray-400 uppercase">Variety — Subclass — Class *</label>
+                            <label className="text-[9px] font-black text-gray-400 uppercase">
+                                Variety — Subclass — Class *
+                                {loadVar && <RefreshCcw size={8} className="inline ml-1 animate-spin text-gray-300" />}
+                            </label>
                             <div className="relative">
-                                <input
-                                    placeholder="Type to search varieties..."
-                                    value={varSearch}
-                                    onChange={e => {
-                                        setVarSearch(e.target.value);
-                                        S("variety_uq", "");
-                                        S("color_uq", "");
-                                        setVarOpen(true);
-                                    }}
-                                    onFocus={() => { if (varSearch) setVarOpen(true); }}
-                                    className={cn("fos-input text-xs py-1.5 w-full pr-8", form.variety_uq && "border-green-400")}
-                                />
-                                {loadVar && (
-                                    <RefreshCcw size={10} className="absolute right-2 top-1/2 -translate-y-1/2 animate-spin text-gray-400" />
+                                {/* Selected badge */}
+                                {form.variety_uq && !varOpen ? (
+                                    <div className="flex items-center gap-1.5 fos-input py-1.5 border-green-400 text-xs">
+                                        <Check size={10} className="text-green-500 shrink-0" />
+                                        <span className="flex-1 truncate font-medium">{varSearch}</span>
+                                        <button type="button" onMouseDown={e => { e.preventDefault(); setVarSearch(""); S("variety_uq", ""); S("color_uq", ""); setVarOpen(true); }}
+                                            className="shrink-0 text-gray-300 hover:text-red-400 transition-colors">
+                                            <X size={10} />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <input
+                                        autoFocus={formMode === "add"}
+                                        placeholder={loadVar ? "Loading varieties…" : "Type variety, subclass, or class…"}
+                                        value={varSearch}
+                                        onChange={e => { setVarSearch(e.target.value); S("variety_uq", ""); S("color_uq", ""); setVarOpen(true); }}
+                                        onFocus={() => setVarOpen(true)}
+                                        className="fos-input text-xs py-1.5 w-full"
+                                    />
                                 )}
-                                {form.variety_uq && !loadVar && (
-                                    <Check size={10} className="absolute right-2 top-1/2 -translate-y-1/2 text-green-500" />
-                                )}
-                                {varOpen && varSearch && !form.variety_uq && varieties.length > 0 && (
-                                    <div className="absolute z-20 top-full left-0 right-0 mt-0.5 border border-gray-200 rounded bg-white shadow-xl max-h-44 overflow-y-auto text-xs">
-                                        {(varieties as any[]).map((v: any) => (
-                                            <div key={v.unico} onMouseDown={() => selectVariety(v)}
-                                                className="px-3 py-2 cursor-pointer hover:bg-[#FB7506]/10 border-b border-gray-50 last:border-0 italic">
-                                                {t(v.dato)}
+
+                                {/* Dropdown */}
+                                {varOpen && (
+                                    <div className="absolute z-20 top-full left-0 right-0 mt-0.5 border border-gray-200 rounded-lg bg-white shadow-2xl overflow-hidden" style={{ maxHeight: "220px" }}>
+                                        {filteredVarieties.length === 0 ? (
+                                            <div className="px-3 py-3 text-[10px] text-gray-400 italic text-center">
+                                                {varSearch ? `No varieties match "${varSearch}"` : "Type to filter…"}
                                             </div>
-                                        ))}
+                                        ) : (
+                                            <div className="overflow-y-auto" style={{ maxHeight: "220px" }}>
+                                                {filteredVarieties.slice(0, 120).map((v: any) => {
+                                                    const variety   = t(v.variety);
+                                                    const subclase  = t(v.subclase);
+                                                    const clase     = t(v.clase);
+                                                    const colorName = t(v.color);
+                                                    return (
+                                                        <div key={v.unico} onMouseDown={() => selectVariety(v)}
+                                                            className="px-3 py-2 cursor-pointer hover:bg-[#FB7506]/10 border-b border-gray-50 last:border-0 flex items-start justify-between gap-2">
+                                                            <div className="min-w-0">
+                                                                <div className="font-semibold text-[11px] text-gray-800 leading-tight truncate">
+                                                                    {variety}{colorName ? <span className="text-gray-400 font-normal"> · {colorName}</span> : ""}
+                                                                </div>
+                                                                <div className="text-[9px] text-gray-400 leading-tight mt-0.5">{subclase} · {clase}</div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                                {filteredVarieties.length > 120 && (
+                                                    <div className="px-3 py-1.5 text-[9px] text-gray-400 italic border-t border-gray-100 text-center">
+                                                        {filteredVarieties.length - 120} more — type more to narrow
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
