@@ -699,7 +699,7 @@ function PreBookDateModal({ title, productDesc, showDeletePrior, showChangeCase,
 }
 
 // ─── Products Modal (Tab 2 version — with cascading variety selector) ─────────
-const EMPTY_PROD2 = { class_filter:"", subclass_filter:"", variety_uq:"", type_uq:"", dis_type:false, dis_class:true, dis_subcla:true, dis_variety:true, color_uq:"", dis_color:true, grade_uq:"", dis_grade:true, case_uq:"", dis_case:true, up_x_pack:1, pack_unit:"", stem_pack:false, up_x_case:1, min_pur_price:0, sales_price:0, inv_track:true, auto_description:true, web:false, mix_class:false, mix_subclass:false, mix_color:false, mix_grade:false, old_description:"", old_code:"", upc:"", boxcode:"", boxcode2:"", remarks:"", customer_uq:"", weight:0, retail_price:0, upc_text:"", color_breakdown:"", upc_notes:"", additional_notes:"", rotation:0, country_of_origin:"", shopify_name:"", shopify_color:"", shopify_size:"", shopify_subtype:"", shopify_variety:"", active:true };
+const EMPTY_PROD2 = { class_filter:"", subclass_filter:"", variety_uq:"", type_uq:"", dis_type:false, dis_class:true, dis_subcla:true, dis_variety:true, color_uq:"", dis_color:true, grade_uq:"", dis_grade:true, case_uq:"", dis_case:true, up_x_pack:1, pack_unit:"", stem_pack:false, up_x_case:1, min_pur_price:0, sales_price:0, inv_track:true, auto_description:true, web:false, mix_class:false, mix_subclass:false, mix_color:false, mix_grade:false, description:"", old_description:"", old_code:"", upc:"", boxcode:"", boxcode2:"", remarks:"", customer_uq:"", weight:0, retail_price:0, upc_text:"", color_breakdown:"", upc_notes:"", additional_notes:"", rotation:0, country_of_origin:"", shopify_name:"", shopify_color:"", shopify_size:"", shopify_subtype:"", shopify_variety:"", active:true };
 
 function ProductsModalTab2({ mode, form, setForm, lookups, onSave, onClose, saving, error }: any) {
     const [noteTab, setNoteTab] = useState("remarks");
@@ -724,34 +724,42 @@ function ProductsModalTab2({ mode, form, setForm, lookups, onSave, onClose, savi
                 </div>
 
                 <div className="overflow-y-auto flex-1 p-4 space-y-3 text-xs">
-                    {/* Variety selector (add/copy mode) */}
-                    {(mode==="add"||mode==="copy") && (
-                        <div className="border border-[#FB7506]/30 rounded p-2 bg-orange-50/30 grid grid-cols-3 gap-2">
-                            <div className="flex flex-col gap-0.5">
-                                <label className="text-[9px] font-black text-gray-400 uppercase">Class *</label>
-                                <select value={form.class_filter||""} onChange={e=>setForm((p:any)=>({...p,class_filter:e.target.value,subclass_filter:"",variety_uq:""}))} className="fos-input text-xs py-1">
-                                    <option value="">— Select —</option>
-                                    {(classes as any[]).map((c:any)=><option key={c.unico} value={c.unico}>{t(c.clase)}</option>)}
-                                </select>
-                            </div>
-                            <div className="flex flex-col gap-0.5">
-                                <label className="text-[9px] font-black text-gray-400 uppercase">Subclass *</label>
-                                <select value={form.subclass_filter||""} onChange={e=>setForm((p:any)=>({...p,subclass_filter:e.target.value,variety_uq:""}))} disabled={!form.class_filter} className="fos-input text-xs py-1 disabled:opacity-50">
-                                    <option value="">— Select —</option>
-                                    {(subclasses as any[]).map((s:any)=><option key={s.unico} value={s.unico}>{t(s.subclase)}</option>)}
-                                </select>
-                            </div>
-                            <div className="flex flex-col gap-0.5">
-                                <label className="text-[9px] font-black text-gray-400 uppercase">Variety *</label>
-                                <select value={form.variety_uq||""} onChange={e=>setForm((p:any)=>({...p,variety_uq:e.target.value}))} disabled={!form.subclass_filter} className="fos-input text-xs py-1 disabled:opacity-50">
-                                    <option value="">— Select —</option>
-                                    {(varieties as any[]).map((v:any)=><option key={v.unico} value={v.unico}>{t(v.variety)}</option>)}
-                                </select>
-                            </div>
+                    {/* Class / Subclass / Variety — all modes */}
+                    <div className="border border-[#FB7506]/30 rounded p-2 bg-orange-50/30 grid grid-cols-3 gap-2">
+                        <div className="flex flex-col gap-0.5">
+                            <label className="text-[9px] font-black text-gray-400 uppercase">Class {mode!=="edit"&&"*"}</label>
+                            <select value={form.class_filter||""} onChange={e=>setForm((p:any)=>({...p,class_filter:e.target.value,subclass_filter:"",variety_uq:""}))} className="fos-input text-xs py-1">
+                                <option value="">— Select —</option>
+                                {(classes as any[]).map((c:any)=><option key={c.unico} value={c.unico}>{t(c.clase)}</option>)}
+                            </select>
                         </div>
-                    )}
-                    {mode==="edit" && (
-                        <div className="text-xs text-gray-600 font-bold border-b border-gray-100 pb-1">{t(form.description)}</div>
+                        <div className="flex flex-col gap-0.5">
+                            <label className="text-[9px] font-black text-gray-400 uppercase">Subclass {mode!=="edit"&&"*"}</label>
+                            <select value={form.subclass_filter||""} onChange={e=>setForm((p:any)=>({...p,subclass_filter:e.target.value,variety_uq:""}))} disabled={!form.class_filter} className="fos-input text-xs py-1 disabled:opacity-50">
+                                <option value="">— Select —</option>
+                                {(subclasses as any[]).map((s:any)=><option key={s.unico} value={s.unico}>{t(s.subclase)}</option>)}
+                            </select>
+                        </div>
+                        <div className="flex flex-col gap-0.5">
+                            <label className="text-[9px] font-black text-gray-400 uppercase">Variety {mode!=="edit"&&"*"}</label>
+                            <select value={form.variety_uq||""} onChange={e=>setForm((p:any)=>({...p,variety_uq:e.target.value}))} disabled={!form.subclass_filter} className="fos-input text-xs py-1 disabled:opacity-50">
+                                <option value="">— Select —</option>
+                                {(varieties as any[]).map((v:any)=><option key={v.unico} value={v.unico}>{t(v.variety)}</option>)}
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Description — visible only when auto_description is off */}
+                    {!form.auto_description && (
+                        <div className="flex flex-col gap-0.5">
+                            <label className="text-[9px] font-black text-gray-400 uppercase">Description *</label>
+                            <input
+                                value={form.description||""}
+                                onChange={e=>setForm((p:any)=>({...p,description:e.target.value}))}
+                                className="fos-input text-xs py-1.5"
+                                placeholder="Enter product description…"
+                            />
+                        </div>
                     )}
 
                     {/* Type / Grade / Case */}
