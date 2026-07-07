@@ -625,7 +625,7 @@ export default function Tab3() {
                     menuItems={[
                         { label:"Edit",   icon:Pencil, color:"blue",  onClick:()=>openVarietyModal("edit"),   disabled:!selComponent||!perms.canEdit },
                         { label:"Delete", icon:Trash2, color:"red",   onClick:()=>openVarietyModal("delete"), disabled:!selComponent||!perms.canDelete },
-                        { label:"Packs",  icon:Box,    color:"amber", onClick:()=>{ if(!selComponent){toast.error("Select a variety first.");return;} setShowPacks(true); }, disabled:!selComponent },
+                        { label:"Packs",  icon:Box,    color:"orange", onClick:()=>{ if(!selComponent){toast.error("Select a variety first.");return;} setShowPacks(true); }, disabled:!selComponent },
                     ]}
                     className="flex-1 min-h-0 h-full"
                 >
