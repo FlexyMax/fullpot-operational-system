@@ -1098,6 +1098,8 @@ export default function Tab2() {
         if (!productForm.variety_uq && (productModal?.mode==="add"||productModal?.mode==="copy")) { setFormError("Select a variety first."); return; }
         if (!productForm.up_x_pack) { setFormError("Units per pack is required."); return; }
         const body = { ...productForm };
+        // Trigger reads old_descri when new_descri=0; mirror description → old_description for the SP
+        if (!body.auto_description) body.old_description = body.description || "";
         if (productModal?.mode==="add"||productModal?.mode==="copy") {
             doCrud("/api/masters/items/products", "POST", body, d => { logAction("Insert", d.unico, productModal!.mode==="copy"?"Copy Product":"Product"); refetchAll(); toast.success("Product created."); setProductModal(null); });
         } else {
@@ -1122,6 +1124,8 @@ export default function Tab2() {
                 class_filter:    src.class_uq    ?? "",
                 subclass_filter: src.subclass_uq ?? "",
                 auto_description: src.auto_description ?? src.new_descri ?? true,
+                // description shown in the input = old_descri (trigger source of truth when new_descri=0)
+                description:      (src.old_descri ?? src.description ?? "").trim(),
                 old_description:  src.old_description ?? src.old_descri ?? "",
                 shopify_name:     src.shopify_name    ?? src.Shopify_name    ?? "",
                 shopify_color:    src.shopify_color   ?? src.Shopify_color   ?? "",
