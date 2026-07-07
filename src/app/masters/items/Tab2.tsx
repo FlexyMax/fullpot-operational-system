@@ -17,6 +17,7 @@ import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { ReportModal } from "@/components/reports/ReportModal";
 import { toast } from "sonner";
+import { useItemsStore } from "@/store/useItemsStore";
 const EMPTY_ARR: any[] = [];
 
 const t  = (v: any) => String(v ?? "").trim();
@@ -1047,8 +1048,7 @@ export default function Tab2() {
     const { logAction } = useAuditLog("items-setup", "flower_products");
     const perms         = usePagePermissions("items-setup");
 
-    const [selProduct,   setSelProduct]   = useState<any>(null);
-    const [searchText,   setSearchText]   = useState("");
+    const { t2Search: searchText, setT2Search: setSearchText, t2SelProduct: selProduct, setT2SelProduct: setSelProduct } = useItemsStore();
     const [debSearch,    setDebSearch]    = useState("");
     const [productImages, setProductImages] = useState<Record<string, string>>({});
     const [imageModal,    setImageModal]    = useState<any>(null);

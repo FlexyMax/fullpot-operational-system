@@ -13,6 +13,7 @@ import { AuditLogModal } from "@/components/AuditLogModal";
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { toast } from "sonner";
+import { useItemsStore } from "@/store/useItemsStore";
 const EMPTY_ARR: any[] = [];
 
 const t   = (v: any) => String(v ?? "").trim();
@@ -283,18 +284,19 @@ function ProductEditModal({ unico, vrUnico, onSaved, onClose }: { unico:string; 
     );
 }
 
-// ─── Tab1 Props ───────────────────────────────────────────────────────────────
-interface Tab1Props {
-    selSubclass:    any;
-    setSelSubclass: (s: any) => void;
-    selVariety:     any;
-    setSelVariety:  (v: any) => void;
-}
-
-export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVariety }: Tab1Props) {
+export default function Tab1() {
     const qc = useQueryClient();
     const { logAction } = useAuditLog("items-setup", "flower_varieties");
     const perms         = usePagePermissions("items-setup");
+
+    const {
+        t1ClassSearch: classSearch, setT1ClassSearch: setClassSearch,
+        t1SelSubclass: selSubclass, setT1SelSubclass: setSelSubclass,
+        t1SelVariety:  selVariety,  setT1SelVariety:  setSelVariety,
+        t1SelGrade:    selGrade,    setT1SelGrade:    setSelGrade,
+        t1SelColor:    selColor,    setT1SelColor:    setSelColor,
+        t1SelCase:     selCase,     setT1SelCase:     setSelCase,
+    } = useItemsStore();
 
     // ── Tree state ────────────────────────────────────────────────────────────
     const [expandedCl,  setExpandedCl]  = useState<Set<string>>(new Set());
@@ -304,7 +306,6 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
     const [vrMap,       setVrMap]       = useState<Record<string, any[]>>({});
     const [productsMap, setProductsMap] = useState<Record<string, any[]>>({});
     const [loadingNode, setLoadingNode] = useState<Set<string>>(new Set());
-    const [classSearch, setClassSearch] = useState("");
 
     // ── Queries ───────────────────────────────────────────────────────────────
     const { data: classes = EMPTY_ARR, isFetching: loadingCl, refetch: refetchCl } =
@@ -315,12 +316,6 @@ export default function Tab1({ selSubclass, setSelSubclass, selVariety, setSelVa
         useQuery({ queryKey:["t1-co"], queryFn:()=>sF("/api/masters/items/colors"), staleTime:60000 });
     const { data: cases = EMPTY_ARR, isFetching: loadingCs, refetch: refetchCs } =
         useQuery({ queryKey:["t1-cs"], queryFn:()=>sF("/api/masters/items/cases"), staleTime:60000 });
-
-    // ── Modal state ───────────────────────────────────────────────────────────
-    // ── Right-panel selection state ───────────────────────────────────────────
-    const [selGrade, setSelGrade] = useState<any>(null);
-    const [selColor, setSelColor] = useState<any>(null);
-    const [selCase,  setSelCase]  = useState<any>(null);
 
     const [modal,         setModal]         = useState<{type:"class"|"subclass"|"grade"|"color"|"case"|"variety"|"product"; mode:"add"|"edit"|"delete"; target?: any}|null>(null);
     const [form,          setForm]          = useState<any>({});

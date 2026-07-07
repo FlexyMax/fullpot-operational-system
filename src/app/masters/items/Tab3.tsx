@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import PanelGrid from "@/components/ui/PanelGrid";
 import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
 import { AuditLogModal } from "@/components/AuditLogModal";
+import { useItemsStore } from "@/store/useItemsStore";
 const EMPTY_ARR: any[] = [];
 
 const t  = (v: any) => String(v ?? "").trim();
@@ -553,9 +554,8 @@ export default function Tab3() {
     const { logAction } = useAuditLog("items-setup", "flower_varieties");
     const perms         = usePagePermissions("items-setup");
 
-    const [compSearch,   setCompSearch]   = useState("");
-    const [debSearch,    setDebSearch]    = useState("");
-    const [selComponent, setSelComponent] = useState<any>(null);
+    const { t3Search: compSearch, setT3Search: setCompSearch, t3SelComponent: selComponent, setT3SelComponent: setSelComponent } = useItemsStore();
+    const [debSearch, setDebSearch] = useState("");
 
     // Modal state
     const [varietyModal, setVarietyModal] = useState<{mode:"add"|"edit"|"delete"}|null>(null);

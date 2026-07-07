@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { AppFooter } from "@/components/layout/AppFooter";
 import { cn } from "@/lib/utils";
+import { useItemsStore } from "@/store/useItemsStore";
 import Tab1 from "./Tab1";
 import Tab2 from "./Tab2";
 import Tab3 from "./Tab3";
@@ -13,10 +14,7 @@ import Tab3 from "./Tab3";
 export default function ItemsSetupPage() {
     const { status } = useSession();
     const router = useRouter();
-
-    const [activeTab,    setActiveTab]    = useState<1|2|3>(1);
-    const [selSubclass,  setSelSubclass]  = useState<any>(null);
-    const [selVariety,   setSelVariety]   = useState<any>(null);
+    const { activeTab, setActiveTab } = useItemsStore();
 
     useEffect(() => {
         if (status === "unauthenticated") router.push("/login");
@@ -43,16 +41,9 @@ export default function ItemsSetupPage() {
             </div>
 
             {/* Content */}
-            {activeTab === 1 && (
-                <Tab1
-                    selSubclass={selSubclass}
-                    setSelSubclass={setSelSubclass}
-                    selVariety={selVariety}
-                    setSelVariety={setSelVariety}
-                />
-            )}
+            {activeTab === 1 && <Tab1/>}
             {activeTab === 2 && <Tab2/>}
-            {activeTab === 3 && <Tab3 />}
+            {activeTab === 3 && <Tab3/>}
 
             <AppFooter areaLabel="Masters" />
         </div>
