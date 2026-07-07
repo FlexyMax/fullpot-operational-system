@@ -37,7 +37,8 @@ export default function BoxRecipeModal({ product, onClose }: Props) {
 
     const { data: products = EMPTY_ARR, isFetching: loadProds } = useQuery({
         queryKey: ["prods-solid", debProd],
-        queryFn:  () => sF(`/api/masters/items/lookups/products-solid?search=${encodeURIComponent(debProd || "%")}`),
+        queryFn:  () => sF(`/api/masters/items/lookups/products-solid?search=${encodeURIComponent(debProd)}`),
+        enabled:  debProd.length >= 2,
         staleTime: 60000,
     });
 
@@ -166,7 +167,7 @@ export default function BoxRecipeModal({ product, onClose }: Props) {
                             <label className="text-[9px] font-black text-gray-400 uppercase">Product *</label>
                             <div className="flex gap-1.5 items-center">
                                 <input
-                                    placeholder="Type to search products..."
+                                    placeholder="Type 2+ characters to search products with recipe…"
                                     value={prodSearch}
                                     onChange={e => { setProdSearch(e.target.value); if (formMode === "add") S("assproduct_uq", ""); }}
                                     className="fos-input text-xs py-1 flex-1"
@@ -210,20 +211,23 @@ export default function BoxRecipeModal({ product, onClose }: Props) {
                             </div>
                         </div>
 
-                        <div className="flex justify-end gap-2 pt-1">
+                    </div>
+                )}
+
+                {/* Footer */}
+                <div className="flex justify-end gap-2 px-4 py-2 border-t border-[#DBD9D9] bg-gray-50 rounded-b-xl shrink-0">
+                    {formMode ? (
+                        <>
                             <button onClick={cancel} className="px-3 py-1.5 rounded border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-100">Cancel</button>
                             <button onClick={save} disabled={saving || !form.assproduct_uq}
                                 className="flex items-center gap-1.5 px-4 py-1.5 rounded bg-[#FB7506] hover:bg-orange-600 text-white text-xs font-black disabled:opacity-50">
                                 {saving ? <RefreshCcw size={11} className="animate-spin" /> : <Save size={11} />}
                                 {saving ? "Saving..." : formMode === "add" ? "Add Row" : "Save Changes"}
                             </button>
-                        </div>
-                    </div>
-                )}
-
-                {/* Footer */}
-                <div className="flex justify-end px-4 py-2 border-t border-[#DBD9D9] bg-gray-50 rounded-b-xl shrink-0">
-                    <button onClick={onClose} className="px-4 py-1.5 rounded border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-100">Close</button>
+                        </>
+                    ) : (
+                        <button onClick={onClose} className="px-4 py-1.5 rounded border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-100">Close</button>
+                    )}
                 </div>
             </div>
         </div>
