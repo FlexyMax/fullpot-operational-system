@@ -1040,9 +1040,6 @@ export default function Tab2() {
     const [formError,    setFormError]    = useState<string|null>(null);
 
     // Modal visibility flags
-    const [showAlt,      setShowAlt]      = useState(false);
-    const [showRecipe,   setShowRecipe]   = useState(false);
-    const [showQuota,    setShowQuota]    = useState(false);
     const [showPO,       setShowPO]       = useState(false);
     const [showStock,    setShowStock]    = useState(false);
     const [showPrebook,     setShowPrebook]     = useState<"recipe"|"upc"|"sales"|null>(null);
@@ -1126,11 +1123,6 @@ export default function Tab2() {
         toast.info("Coming soon — SP not yet available in database.");
     };
 
-    const handleDirectAction = async (action: "default-charge"|"extended-recipe") => {
-        if (!selProduct) { toast.error(NO_PROD); return; }
-        toast.info(`Coming soon — sp_flower_products_${action.replace("-","_")} not found in database.`);
-    };
-
     const handlePrint = (type: "bouquet"|"extended") => {
         if (!selProduct) { toast.error(NO_PROD); return; }
         if (!perms.canReport) { toast.error(PERMISSION_MSGS.report); return; }
@@ -1145,10 +1137,6 @@ export default function Tab2() {
         <div className="flex flex-col flex-1 overflow-hidden">
             {/* Functional toolbar — above PanelGrid */}
             <div className="bg-[#F5F3F3] border-b border-[#DBD9D9] px-2 py-1 shrink-0 flex flex-wrap items-center gap-1">
-                <Btn icon={Shuffle}   label="Alternatives" color="purple" onClick={()=>requireProduct(()=>setShowAlt(true))}    disabled={!selProduct}/>
-                <Btn icon={BookOpen}  label="Recipes"      color="purple" onClick={()=>requireProduct(()=>setShowRecipe(true))} disabled={!selProduct}/>
-                <Btn icon={Users}     label="Quotas"       color="purple" onClick={()=>requireProduct(()=>setShowQuota(true))}  disabled={!selProduct}/>
-                <div className="w-px h-5 bg-gray-300 mx-0.5"/>
                 {(["recipe","upc","sales"] as const).map(type => {
                     const labels: Record<string,string> = { recipe:"Recipe→Prebook", upc:"UPC→Prebook", sales:"Sales→Prebook" };
                     const subLabels: Record<string,string> = { recipe:"Fill Recipe in Prebooks", upc:"Fill UPC Info in Prebooks", sales:"Fill Sales Info in Prebooks" };
@@ -1169,9 +1157,6 @@ export default function Tab2() {
                 <div className="w-px h-5 bg-gray-300 mx-0.5"/>
                 <Btn icon={ClipboardList} label="Update Stock" color="gray"  onClick={()=>{if(!perms.canEdit){toast.error(PERMISSION_MSGS.edit);return;} setShowStock(true);}} disabled={!perms.canEdit}/>
                 <Btn icon={BarChart2}     label="PO Prices"    color="gray"  onClick={()=>{if(!perms.canCreate){toast.error(PERMISSION_MSGS.create);return;} setShowPO(true);}}/>
-                <div className="w-px h-5 bg-gray-300 mx-0.5"/>
-                <Btn icon={Package}  label="Dflt Charge"   color="amber"  onClick={()=>handleDirectAction("default-charge")}                                  disabled={!selProduct}/>
-                <Btn icon={Layers}   label="Ext. Recipe"   color="amber"  onClick={()=>handleDirectAction("extended-recipe")}                               disabled={!selProduct}/>
                 <div className="w-px h-5 bg-gray-300 mx-0.5"/>
                 <Btn icon={BookOpen} label="Bunch Recipe"  color="purple" onClick={()=>requireProduct(()=>setShowBunchRecipe(true))} disabled={!selProduct}/>
                 <Btn icon={Box}      label="Box Recipe"    color="purple" onClick={()=>requireProduct(()=>setShowBoxRecipe(true))}   disabled={!selProduct}/>
@@ -1195,7 +1180,6 @@ export default function Tab2() {
                     { label:"Copy",   icon:Copy,   color:"gray",  onClick:()=>openModal("copy"),   disabled:!selProduct||!perms.canCreate },
                     { separator: true },
                     { label:"Print Recipe",   icon:Printer, color:"orange", onClick:()=>requireProduct(()=>handlePrint("bouquet")),  disabled:!selProduct||!perms.canReport },
-                    { label:"Extended Recipe",icon:Layers,  color:"orange", onClick:()=>requireProduct(()=>handlePrint("extended")), disabled:!selProduct||!perms.canReport },
                 ]}
                 className="flex-1 min-h-0 h-full"
             >
@@ -1298,28 +1282,6 @@ export default function Tab2() {
                         </div>
                     </div>
                 </div>
-            )}
-
-            {showAlt && selProduct && (
-                <DualListModal title="Alternative Products" productDesc={t(selProduct.description)} productUq={selProduct.unico}
-                    availUrl={(s,p)=>`/api/masters/items/products/alternatives/available?product_uq=${selProduct.unico}&search=${encodeURIComponent(s)}&page=${p}&pageSize=${PAGE_SIZE}`}
-                    assignedUrl={`/api/masters/items/products/${selProduct.unico}/alternatives`}
-                    onAdd={async (item)=>{ const r=await fetch("/api/masters/items/products/alternative",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({product_uq:selProduct.unico,alt_product_uq:item.unico})}); const d=await r.json(); if(!d.success) throw new Error(d.error); logAction("Edit",selProduct.unico,"Add Alternative"); }}
-                    onRemove={async (item)=>{ const r=await fetch(`/api/masters/items/products/alternative/${item.unico}`,{method:"DELETE"}); const d=await r.json(); if(!d.success) throw new Error(d.error); logAction("Edit",selProduct.unico,"Remove Alternative"); }}
-                    onClose={()=>setShowAlt(false)}/>
-            )}
-
-            {showRecipe && selProduct && (
-                <DualListModal title="Season Recipes" productDesc={t(selProduct.description)} productUq={selProduct.unico}
-                    availUrl={(s,p)=>`/api/masters/items/products/recipes/available?product_uq=${selProduct.unico}&search=${encodeURIComponent(s)}&page=${p}&pageSize=${PAGE_SIZE}`}
-                    assignedUrl={`/api/masters/items/products/${selProduct.unico}/recipes`}
-                    onAdd={async (item)=>{ const r=await fetch("/api/masters/items/products/recipe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({product_uq:selProduct.unico,recipe_uq:item.unico})}); const d=await r.json(); if(!d.success) throw new Error(d.error); logAction("Edit",selProduct.unico,"Add Recipe"); }}
-                    onRemove={async (item)=>{ const r=await fetch(`/api/masters/items/products/recipe/${item.unico}`,{method:"DELETE"}); const d=await r.json(); if(!d.success) throw new Error(d.error); logAction("Edit",selProduct.unico,"Remove Recipe"); }}
-                    onClose={()=>setShowRecipe(false)}/>
-            )}
-
-            {showQuota && selProduct && (
-                <BuyersQuotasModal productUq={selProduct.unico} productDesc={t(selProduct.description)} onClose={()=>setShowQuota(false)}/>
             )}
 
             {showPO && <POPricesModal onClose={()=>setShowPO(false)}/>}
