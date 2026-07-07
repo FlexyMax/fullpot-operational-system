@@ -902,7 +902,9 @@ function ImageModal({ product, onClose, onFirstImageChanged }: {
             const j = await r.json();
             if (!r.ok || !j.url) throw new Error(j.error || "Upload failed");
             const newImages = [...images, j.url];
+            const newKeys   = [...keys, j.key ?? ""];
             setImages(newImages);
+            setKeys(newKeys);
             setSelIdx(newImages.length - 1);
             setFile(null); setPreview(null);
             if (newImages.length === 1 || j.number === 1)

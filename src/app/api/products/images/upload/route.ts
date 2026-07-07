@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
         resetCache();
 
         const publicUrl = `https://${BUCKET}.${REGION}.digitaloceanspaces.com/${key}`;
-        return NextResponse.json({ url: publicUrl, number: nextNum });
+        return NextResponse.json({ url: publicUrl, key, number: nextNum });
     } catch (err: any) {
         console.error("[products/images/upload]", err.message);
         return NextResponse.json({ error: err.message }, { status: 500 });
