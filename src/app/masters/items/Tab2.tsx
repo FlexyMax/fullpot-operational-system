@@ -728,21 +728,39 @@ function ProductsModalTab2({ mode, form, setForm, lookups, onSave, onClose, savi
                     {/* Class / Subclass / Variety — all modes */}
                     <div className="border border-[#FB7506]/30 rounded p-2 bg-orange-50/30 grid grid-cols-3 gap-2">
                         <div className="flex flex-col gap-0.5">
-                            <label className="text-[9px] font-black text-gray-400 uppercase">Class {mode!=="edit"&&"*"}</label>
+                            <div className="flex items-center gap-1.5">
+                                <label className="text-[9px] font-black text-gray-400 uppercase">Class {mode!=="edit"&&"*"}</label>
+                                <label className="flex items-center gap-0.5 cursor-pointer">
+                                    <input type="checkbox" checked={!!form.dis_class} onChange={e=>setForm((p:any)=>({...p,dis_class:e.target.checked}))} className="w-3 h-3 accent-[#FB7506]"/>
+                                    <span className="text-[8px] text-gray-400">Show</span>
+                                </label>
+                            </div>
                             <select value={form.class_filter||""} onChange={e=>setForm((p:any)=>({...p,class_filter:e.target.value,subclass_filter:"",variety_uq:""}))} className="fos-input text-xs py-1">
                                 <option value="">— Select —</option>
                                 {(classes as any[]).map((c:any)=><option key={c.unico} value={c.unico}>{t(c.clase)}</option>)}
                             </select>
                         </div>
                         <div className="flex flex-col gap-0.5">
-                            <label className="text-[9px] font-black text-gray-400 uppercase">Subclass {mode!=="edit"&&"*"}</label>
+                            <div className="flex items-center gap-1.5">
+                                <label className="text-[9px] font-black text-gray-400 uppercase">Subclass {mode!=="edit"&&"*"}</label>
+                                <label className="flex items-center gap-0.5 cursor-pointer">
+                                    <input type="checkbox" checked={!!form.dis_subcla} onChange={e=>setForm((p:any)=>({...p,dis_subcla:e.target.checked}))} className="w-3 h-3 accent-[#FB7506]"/>
+                                    <span className="text-[8px] text-gray-400">Show</span>
+                                </label>
+                            </div>
                             <select value={form.subclass_filter||""} onChange={e=>setForm((p:any)=>({...p,subclass_filter:e.target.value,variety_uq:""}))} disabled={!form.class_filter} className="fos-input text-xs py-1 disabled:opacity-50">
                                 <option value="">— Select —</option>
                                 {(subclasses as any[]).map((s:any)=><option key={s.unico} value={s.unico}>{t(s.subclase)}</option>)}
                             </select>
                         </div>
                         <div className="flex flex-col gap-0.5">
-                            <label className="text-[9px] font-black text-gray-400 uppercase">Variety {mode!=="edit"&&"*"}</label>
+                            <div className="flex items-center gap-1.5">
+                                <label className="text-[9px] font-black text-gray-400 uppercase">Variety {mode!=="edit"&&"*"}</label>
+                                <label className="flex items-center gap-0.5 cursor-pointer">
+                                    <input type="checkbox" checked={!!form.dis_variety} onChange={e=>setForm((p:any)=>({...p,dis_variety:e.target.checked}))} className="w-3 h-3 accent-[#FB7506]"/>
+                                    <span className="text-[8px] text-gray-400">Show</span>
+                                </label>
+                            </div>
                             <select value={form.variety_uq||""} onChange={e=>setForm((p:any)=>({...p,variety_uq:e.target.value}))} disabled={!form.subclass_filter} className="fos-input text-xs py-1 disabled:opacity-50">
                                 <option value="">— Select —</option>
                                 {(varieties as any[]).map((v:any)=><option key={v.unico} value={v.unico}>{t(v.variety)}</option>)}
