@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
             lnmin_pur_price:        num(b.min_pur_price || 0),
             lnsales_price:          num(b.sales_price || 0),
             llinv_track:            bit(b.inv_track),
-            llauto_description:     bit(b.auto_description !== false),  // new_descri in spec
+            llauto_description:     bit(b.auto_description),
             llweb:                  bit(b.web),
             llmix_class:            bit(b.mix_class),
             llmix_subclass:         bit(b.mix_subclass),

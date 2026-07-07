@@ -26,6 +26,7 @@ export async function PUT(req: NextRequest, { params }: P) {
         // 49 params (lcunico first) — verified 2026-05-16
         const r = await executeProcedure("sp_flower_products_update_from_varieties", {
             lcunico:                unico,
+            lcdescription:          txt(b.description || ""),
             lctype_uq:              txt(b.type_uq || ""),
             lldis_type:             bit(b.dis_type),
             lcvariety_uq:           txt(b.variety_uq),
@@ -45,8 +46,8 @@ export async function PUT(req: NextRequest, { params }: P) {
             lnmin_pur_price:        num(b.min_pur_price || 0),
             lnsales_price:          num(b.sales_price || 0),
             llinv_track:            bit(b.inv_track),
-            llactive:               bit(b.active !== false),
-            llauto_description:     bit(b.auto_description !== false),
+            llactive:               bit(b.active),
+            llauto_description:     bit(b.auto_description),
             llweb:                  bit(b.web),
             llmix_class:            bit(b.mix_class),
             llmix_subclass:         bit(b.mix_subclass),
