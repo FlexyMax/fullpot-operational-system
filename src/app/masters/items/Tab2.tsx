@@ -953,7 +953,7 @@ function ImageModal({ product, onClose, onFirstImageChanged }: {
                 </div>
 
                 {/* Main image */}
-                <div className="w-full bg-gray-50 border-b border-[#DBD9D9] shrink-0" style={{ aspectRatio: "4/3" }}>
+                <div className="flex-1 min-h-0 bg-gray-50 border-b border-[#DBD9D9] overflow-hidden">
                     {loading
                         ? <div className="w-full h-full flex items-center justify-center"><RefreshCcw size={20} className="animate-spin text-gray-300" /></div>
                         : <img src={displayed} alt={t(product.description)}
@@ -977,7 +977,7 @@ function ImageModal({ product, onClose, onFirstImageChanged }: {
                 )}
 
                 {/* Upload area */}
-                <div className="px-4 py-3 flex-1 overflow-y-auto">
+                <div className="px-4 py-3 shrink-0">
                     <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Add New Image</p>
                     <div
                         className={cn("border-2 border-dashed rounded-xl p-3 text-center cursor-pointer transition-colors",
