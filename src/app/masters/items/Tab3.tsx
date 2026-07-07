@@ -239,14 +239,17 @@ function PacksModal({ variety, onClose }: { variety: any; onClose: () => void })
 }
 
 // ─── VarietyDefinitionModal ───────────────────────────────────────────────────
-const EMPTY_VD = { subcla_uq:"", variety_sh:"", variety:"", color_uq:"", display:true, changecolor:false, expi_days:0, nac_days:0, details:"", variety_oldcode:"", tolerance:0, active:true, mix:false };
+const EMPTY_VD = { subcla_uq:"", class_uq:"", variety_sh:"", variety:"", color_uq:"", display:true, changecolor:false, expi_days:0, nac_days:0, details:"", variety_oldcode:"", tolerance:0, active:true, mix:false };
 
 function VarietyDefinitionModal({ mode, form, setForm, onSave, onDelete, onClose, saving, error }: any) {
     const isDelete = mode === "delete";
     const isEdit   = mode === "edit";
 
-    const { data: subclasses = EMPTY_ARR } = useQuery({ queryKey:["vd-sc"], queryFn:()=>sF("/api/masters/items/subclasses?class_uq=%&search=%"), staleTime:60000 });
-    const { data: colors = EMPTY_ARR } = useQuery({ queryKey:["items-co"], queryFn:()=>sF("/api/masters/items/colors"), staleTime:60000 });
+    const [classUq, setClassUq] = useState<string>(form.class_uq || "");
+
+    const { data: classes    = EMPTY_ARR } = useQuery({ queryKey:["vd-cl"],          queryFn:()=>sF("/api/masters/items/classes?search=%"),                                                   staleTime:60000 });
+    const { data: subclasses = EMPTY_ARR } = useQuery({ queryKey:["vd-sc", classUq], queryFn:()=>sF(`/api/masters/items/subclasses?class_uq=${classUq}&search=%`), enabled:!!classUq, staleTime:60000 });
+    const { data: colors     = EMPTY_ARR } = useQuery({ queryKey:["items-co"],        queryFn:()=>sF("/api/masters/items/colors"),                                                            staleTime:60000 });
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 sm:p-4">
@@ -270,13 +273,22 @@ function VarietyDefinitionModal({ mode, form, setForm, onSave, onDelete, onClose
                         </div>
                     ) : (
                         <>
-                            {/* Class - Subclass */}
-                            <div className="flex flex-col gap-0.5">
-                                <label className="text-[9px] font-black text-gray-400 uppercase">Class — Subclass *</label>
-                                <select value={form.subcla_uq||""} onChange={e=>setForm((p:any)=>({...p,subcla_uq:e.target.value}))} className="fos-input text-xs py-1">
-                                    <option value="">— Select —</option>
-                                    {(subclasses as any[]).map((s:any)=><option key={s.unico} value={s.unico}>{t(s.display||`${s.clase} — ${s.subclase}`)}</option>)}
-                                </select>
+                            {/* Class → Subclass cascade */}
+                            <div className="grid grid-cols-2 gap-2">
+                                <div className="flex flex-col gap-0.5">
+                                    <label className="text-[9px] font-black text-gray-400 uppercase">Class *</label>
+                                    <select value={classUq} onChange={e=>{ setClassUq(e.target.value); setForm((p:any)=>({...p,subcla_uq:""})); }} className="fos-input text-xs py-1">
+                                        <option value="">— Select —</option>
+                                        {(classes as any[]).map((c:any)=><option key={c.unico} value={c.unico}>{t(c.clase)}</option>)}
+                                    </select>
+                                </div>
+                                <div className="flex flex-col gap-0.5">
+                                    <label className="text-[9px] font-black text-gray-400 uppercase">Subclass *</label>
+                                    <select value={form.subcla_uq||""} onChange={e=>setForm((p:any)=>({...p,subcla_uq:e.target.value}))} disabled={!classUq} className="fos-input text-xs py-1 disabled:opacity-50">
+                                        <option value="">— Select —</option>
+                                        {(subclasses as any[]).map((s:any)=><option key={s.unico} value={s.unico}>{t(s.subclase)}</option>)}
+                                    </select>
+                                </div>
                             </div>
                             <div className="grid grid-cols-3 gap-2">
                                 <div className="flex flex-col gap-0.5">
@@ -581,8 +593,8 @@ export default function Tab3() {
         if (mode === "edit" && selComponent) {
             try {
                 const data = await sF(`/api/masters/items/varieties/${selComponent.unico}`);
-                setVarietyForm({ ...EMPTY_VD, ...data, subcla_uq: data.subcla_uq || "" });
-            } catch { setVarietyForm({ ...EMPTY_VD, ...selComponent, subcla_uq: selComponent.subcla_uq || "" }); }
+                setVarietyForm({ ...EMPTY_VD, ...data, subcla_uq: data.subcla_uq || "", class_uq: data.clase_uq || data.class_uq || selComponent.clase_uq || selComponent.class_uq || "" });
+            } catch { setVarietyForm({ ...EMPTY_VD, ...selComponent, subcla_uq: selComponent.subcla_uq || "", class_uq: selComponent.clase_uq || selComponent.class_uq || "" }); }
         } else if (mode === "delete") {
             setVarietyForm({ ...EMPTY_VD, ...selComponent });
         } else {
