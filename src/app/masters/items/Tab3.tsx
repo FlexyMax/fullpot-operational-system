@@ -19,7 +19,7 @@ const t  = (v: any) => String(v ?? "").trim();
 const n2 = (v: any) => parseFloat(v ?? 0).toFixed(2);
 const sF = async (url: string) => { const r = await fetch(url); const j = await r.json(); if (!r.ok) throw new Error(j?.error || `HTTP ${r.status}`); return j; };
 const NO_COMP = "There isn't a selected component. / No hay componente seleccionado.";
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 200;
 const nextPage  = (last: any) => (last.page ?? 1) * (last.pageSize ?? PAGE_SIZE) < (last.total ?? 0) ? (last.page ?? 1) + 1 : undefined;
 const getPages  = (data: any) => data?.pages?.flatMap((p: any) => p.records ?? p) ?? [];
 const getTotal  = (data: any) => data?.pages?.[0]?.total ?? 0;
@@ -558,7 +558,7 @@ export default function Tab3() {
     useEffect(() => { const t = setTimeout(()=>setDebSearch(compSearch), 300); return ()=>clearTimeout(t); }, [compSearch]);
 
     const { data: compPages, isFetching: loadComp, fetchNextPage: fetchMoreComp, hasNextPage: hasMoreComp, isFetchingNextPage: fetchingMoreComp, refetch: refetchComp } =
-        useInfiniteQuery({ queryKey:["tab3-comp", debSearch], queryFn:({pageParam})=>sF(`/api/masters/items/components?search=${encodeURIComponent(debSearch||"%")}&page=${pageParam}&pageSize=${PAGE_SIZE}`), initialPageParam:1, getNextPageParam: nextPage, staleTime:30000 });
+        useInfiniteQuery({ queryKey:["tab3-comp", debSearch], queryFn:({pageParam})=>sF(`/api/masters/items/components?search=${encodeURIComponent(debSearch)}&page=${pageParam}`), initialPageParam:1, getNextPageParam: nextPage, staleTime:30000 });
     const components = getPages(compPages);
     const compTotal  = getTotal(compPages);
     const compSentinel = useSentinel(() => fetchMoreComp(), !!(hasMoreComp && !fetchingMoreComp));
