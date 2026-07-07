@@ -551,8 +551,6 @@ export default function Tab3() {
     const [varietyForm,  setVarietyForm]  = useState<any>({...EMPTY_VD});
     const [saving,       setSaving]       = useState(false);
     const [formError,    setFormError]    = useState<string|null>(null);
-    const [showBOGO,     setShowBOGO]     = useState(false);
-    const [showBogoWH,   setShowBogoWH]   = useState(false);
     const [showPacks,    setShowPacks]    = useState(false);
 
     useEffect(() => { const t = setTimeout(()=>setDebSearch(compSearch), 300); return ()=>clearTimeout(t); }, [compSearch]);
@@ -605,28 +603,11 @@ export default function Tab3() {
     };
     const deleteVariety = () => doCrud(`/api/masters/items/varieties/${selComponent?.unico}`, "DELETE", {}, () => { logAction("Delete", selComponent?.unico); toast.success("Variety deleted."); setVarietyModal(null); setSelComponent(null); refetchComp(); });
 
-    const requireComp = (fn: ()=>void) => { if (!selComponent) { toast.error(NO_COMP); return; } fn(); };
-
-    const handleBogoClean = async () => {
-        try {
-            const res = await fetch("/api/masters/items/subclass-bogo/clean-all", { method:"PUT" });
-            const d = await res.json();
-            if (!d.success) throw new Error(d.error);
-            logAction("Edit", "", "BOGO Cleaner");
-            toast.success("BOGO settings cleared.");
-            refetchComp();
-        } catch(e:any){ toast.error((e as any).message); }
-    };
-
     return (
         <div className="flex flex-col flex-1 overflow-hidden">
             {/* Toolbar */}
             <div className="bg-[#F5F3F3] border-b border-[#DBD9D9] px-2 py-1 shrink-0 flex flex-wrap items-center gap-1">
-                <Btn icon={Plus}   label="Insert" color="green" onClick={()=>openVarietyModal("add")}    disabled={!perms.canCreate}/>
-                <Btn icon={Pencil} label="Update" color="blue"  onClick={()=>openVarietyModal("edit")}   disabled={!selComponent||!perms.canEdit}/>
-                <Btn icon={Trash2} label="Delete" color="red"   onClick={()=>openVarietyModal("delete")} disabled={!selComponent||!perms.canDelete}/>
-                <div className="w-px h-5 bg-gray-300 mx-0.5"/>
-                <Btn icon={Box}    label="Packs"  color="amber" onClick={()=>{ if(!selComponent){toast.error("Select a variety first.");return;} setShowPacks(true);}} disabled={!selComponent}/>
+                <Btn icon={Plus} label="Insert" color="green" onClick={()=>openVarietyModal("add")} disabled={!perms.canCreate}/>
             </div>
 
             {/* Components / Search — full width */}
@@ -642,9 +623,9 @@ export default function Tab3() {
                     refreshing={loadComp || fetchingMoreComp}
                     headerRight={<AuditLogModal recordId={selComponent?.unico} disabled={!selComponent}/>}
                     menuItems={[
-                        { label:"BOGO",         icon:Box,   color:"orange", onClick:()=>requireComp(()=>setShowBOGO(true)),   disabled:!selComponent },
-                        { label:"BOGO WH",      icon:Box,   color:"orange", onClick:()=>requireComp(()=>setShowBogoWH(true)), disabled:!selComponent },
-                        { label:"BOGO Cleaner", icon:Trash2,color:"red",    onClick:handleBogoClean },
+                        { label:"Edit",   icon:Pencil, color:"blue",  onClick:()=>openVarietyModal("edit"),   disabled:!selComponent||!perms.canEdit },
+                        { label:"Delete", icon:Trash2, color:"red",   onClick:()=>openVarietyModal("delete"), disabled:!selComponent||!perms.canDelete },
+                        { label:"Packs",  icon:Box,    color:"amber", onClick:()=>{ if(!selComponent){toast.error("Select a variety first.");return;} setShowPacks(true); }, disabled:!selComponent },
                     ]}
                     className="flex-1 min-h-0 h-full"
                 >
@@ -681,20 +662,6 @@ export default function Tab3() {
 
             {showPacks && selComponent && (
                 <PacksModal variety={selComponent} onClose={()=>setShowPacks(false)}/>
-            )}
-
-            {showBOGO && selComponent && (
-                <SubclassBOGOModal
-                    subclaUq={selComponent.subcla_uq}
-                    onClose={()=>setShowBOGO(false)}
-                    onSaved={()=>{ logAction("Edit", selComponent.subcla_uq, "BOGO"); refetchComp(); }}/>
-            )}
-
-            {showBogoWH && (
-                <WarehouseBOGOModal
-                    initialSalesmanUq={selComponent?.salesman_uq}
-                    onClose={()=>setShowBogoWH(false)}
-                    logAction={logAction}/>
             )}
 
         </div>
