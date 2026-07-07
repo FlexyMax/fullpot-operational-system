@@ -1099,11 +1099,22 @@ export default function Tab2() {
         if (!productForm.up_x_pack) { setFormError("Units per pack is required."); return; }
         const body = { ...productForm };
         // Trigger reads old_descri when new_descri=0; mirror description → old_description for the SP
-        if (!body.auto_description) body.old_description = body.description || "";
+        if (!body.auto_description) {
+            if (!body.description?.trim()) { setFormError("Enter a description (Auto Description is off)."); return; }
+            body.old_description = body.description.trim();
+        }
+        console.log("[saveProduct]", { auto_description: body.auto_description, description: body.description, old_description: body.old_description });
         if (productModal?.mode==="add"||productModal?.mode==="copy") {
             doCrud("/api/masters/items/products", "POST", body, d => { logAction("Insert", d.unico, productModal!.mode==="copy"?"Copy Product":"Product"); refetchAll(); toast.success("Product created."); setProductModal(null); });
         } else {
-            doCrud(`/api/masters/items/products/${selProduct?.unico}`, "PUT", body, () => { logAction("Edit", selProduct?.unico, "Product"); refetchAll(); toast.success("Product updated."); setProductModal(null); });
+            doCrud(`/api/masters/items/products/${selProduct?.unico}`, "PUT", body, async () => {
+                logAction("Edit", selProduct?.unico, "Product");
+                const verify = await fetch(`/api/masters/items/products/${selProduct?.unico}`).then(r=>r.json()).catch(()=>null);
+                console.log("[saveProduct verify]", { old_descri: verify?.old_descri, description: verify?.description, new_descri: verify?.new_descri });
+                refetchAll();
+                toast.success("Product updated.");
+                setProductModal(null);
+            });
         }
     };
     const deleteProduct = () => doCrud(`/api/masters/items/products/${selProduct?.unico}`, "DELETE", {}, () => { logAction("Delete", selProduct?.unico, "Product"); setSelProduct(null); refetchAll(); toast.success("Product deleted."); setProductModal(null); });

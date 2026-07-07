@@ -22,6 +22,7 @@ export async function GET(_req: NextRequest, { params }: P) {
 export async function PUT(req: NextRequest, { params }: P) {
     const { unico } = await params;
     const b = await req.json();
+    console.log("[products PUT]", unico, { auto_description: b.auto_description, description: b.description, old_description: b.old_description });
     try {
         // 49 params (lcunico first) — verified 2026-05-16
         const r = await executeProcedure("sp_flower_products_update_from_varieties", {
@@ -76,6 +77,7 @@ export async function PUT(req: NextRequest, { params }: P) {
             lcShopify_variety:      txt(b.shopify_variety || ""),
         });
         const row = r.recordset[0];
+        console.log("[products PUT result]", row);
         if (row?.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
         serverAuditLog(PANTA, "Edit", "flower_products", unico, "").catch(() => {});
         return NextResponse.json({ success: true, message: row?.Message || "Product updated." });
