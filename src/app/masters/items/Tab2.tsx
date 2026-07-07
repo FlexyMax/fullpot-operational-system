@@ -901,14 +901,15 @@ function ImageModal({ product, onClose, onFirstImageChanged }: {
             const r = await fetch("/api/products/images/upload", { method: "POST", body: fd });
             const j = await r.json();
             if (!r.ok || !j.url) throw new Error(j.error || "Upload failed");
-            const newImages = [...images, j.url];
-            const newKeys   = [...keys, j.key ?? ""];
+            // Re-fetch to get authoritative images+keys (upload resets cache, so this is fresh)
+            const fresh = await fetch(`/api/products/images/product?uq=${encodeURIComponent(uq)}`).then(r => r.json());
+            const newImages = (fresh.images?.length ? fresh.images : [...images, j.url]);
+            const newKeys   = (fresh.keys?.length   ? fresh.keys   : [...keys,   j.key ?? ""]);
             setImages(newImages);
             setKeys(newKeys);
             setSelIdx(newImages.length - 1);
             setFile(null); setPreview(null);
-            if (newImages.length === 1 || j.number === 1)
-                onFirstImageChanged(uq, j.url);
+            if (j.number === 1) onFirstImageChanged(uq, j.url);
         } catch(e: any) { setError(e.message); }
         finally { setUploading(false); }
     };
