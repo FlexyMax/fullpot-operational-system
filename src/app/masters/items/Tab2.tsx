@@ -1119,7 +1119,7 @@ export default function Tab2() {
         // Trigger reads old_descri when new_descri=0; mirror description → old_description for the SP
         if (!body.auto_description) {
             if (!body.description?.trim()) { setFormError("Enter a description (Auto Description is off)."); return; }
-            body.old_description = body.description.trim();
+            body.old_description = body.description.trim().toUpperCase();
         }
         console.log("[saveProduct]", { auto_description: body.auto_description, description: body.description, old_description: body.old_description });
         if (productModal?.mode==="add"||productModal?.mode==="copy") {
