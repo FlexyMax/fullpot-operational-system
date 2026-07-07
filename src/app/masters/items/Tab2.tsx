@@ -901,10 +901,10 @@ function ImageModal({ product, onClose, onFirstImageChanged }: {
             const r = await fetch("/api/products/images/upload", { method: "POST", body: fd });
             const j = await r.json();
             if (!r.ok || !j.url) throw new Error(j.error || "Upload failed");
-            // Re-fetch to get authoritative images+keys (upload resets cache, so this is fresh)
-            const fresh = await fetch(`/api/products/images/product?uq=${encodeURIComponent(uq)}`).then(r => r.json());
-            const newImages = (fresh.images?.length ? fresh.images : [...images, j.url]);
-            const newKeys   = (fresh.keys?.length   ? fresh.keys   : [...keys,   j.key ?? ""]);
+            // Derive key from URL — always available regardless of server version
+            const uploadedKey = j.key ?? j.url.split(".digitaloceanspaces.com/")[1] ?? "";
+            const newImages = [...images, j.url];
+            const newKeys   = [...keys, uploadedKey];
             setImages(newImages);
             setKeys(newKeys);
             setSelIdx(newImages.length - 1);
