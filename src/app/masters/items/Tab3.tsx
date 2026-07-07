@@ -53,7 +53,7 @@ function Btn({ icon:Icon, label, color="gray", onClick, disabled=false, sm=false
 function MiniGrid({ cols, rows, selUnico, onSelect, loading, empty, sentinel }: any) {
     return (
         <div className="overflow-auto flex-1">
-            <table className="min-w-full text-left">
+            <table className="min-w-full text-left text-[13px]">
                 <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                     <tr className="divide-x divide-[#DBD9D9]/30">{cols.map((c: any) => <th key={c.key} className={cn("p-2 whitespace-nowrap", c.className)}>{c.label}</th>)}</tr>
                 </thead>
@@ -643,15 +643,15 @@ export default function Tab3() {
                 >
                     <MiniGrid
                         cols={[
-                            { key:"clase",        label:"Class",             className:"text-gray-500 text-[10px]" },
-                            { key:"subclase",     label:"Subclass",          className:"text-gray-500 text-[10px]" },
-                            { key:"color",        label:"Color",             className:"text-gray-500 text-[10px]" },
-                            { key:"variety",      label:"Variety / Component", className:"font-medium text-[11px]" },
-                            { key:"tolerance",    label:"PO Tol.",           className:"text-right text-[10px] w-16" },
-                            { key:"variety_live", label:"Exp Days",          className:"text-right text-[10px] w-16" },
-                            { key:"bogo",         label:"Bogo",              className:"text-center text-[9px] w-10", render:(v:any)=>t(v)==="Yes"?<Check size={9} className="text-green-500 mx-auto"/>:"—" },
-                            { key:"bogo_days",    label:"BDays",             className:"text-right text-[9px] w-12" },
-                            { key:"bogo_percent", label:"Bogo%",             className:"text-right text-[9px] w-12", render:(v:any)=>n2(v) },
+                            { key:"clase",        label:"Class",             className:"text-gray-500" },
+                            { key:"subclase",     label:"Subclass",          className:"text-gray-500" },
+                            { key:"color",        label:"Color",             className:"text-gray-500" },
+                            { key:"variety",      label:"Variety / Component", className:"font-medium" },
+                            { key:"tolerance",    label:"PO Tol.",           className:"text-right w-16" },
+                            { key:"variety_live", label:"Exp Days",          className:"text-right w-16" },
+                            { key:"bogo",         label:"Bogo",              className:"text-center w-10", render:(v:any)=>t(v)==="Yes"?<Check size={9} className="text-green-500 mx-auto"/>:"—" },
+                            { key:"bogo_days",    label:"BDays",             className:"text-right w-12" },
+                            { key:"bogo_percent", label:"Bogo%",             className:"text-right w-12", render:(v:any)=>n2(v) },
                         ]}
                         rows={components}
                         selUnico={selComponent?.unico}

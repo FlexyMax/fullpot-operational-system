@@ -1198,7 +1198,7 @@ export default function Tab2() {
                 ]}
                 className="flex-1 min-h-0 h-full"
             >
-                <table className="min-w-full text-left">
+                <table className="min-w-full text-left text-[13px]">
                     <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                         <tr>
                             <th className="px-2 py-2 whitespace-nowrap border-r border-[#DBD9D9]/30 text-center w-10">Img</th>
