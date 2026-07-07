@@ -26,7 +26,6 @@ export async function PUT(req: NextRequest, { params }: P) {
         // 49 params (lcunico first) — verified 2026-05-16
         const r = await executeProcedure("sp_flower_products_update_from_varieties", {
             lcunico:                unico,
-            lcdescription:          txt(b.description || ""),
             lctype_uq:              txt(b.type_uq || ""),
             lldis_type:             bit(b.dis_type),
             lcvariety_uq:           txt(b.variety_uq),
