@@ -53,11 +53,11 @@ function Btn({ icon:Icon, label, color="gray", onClick, disabled=false, sm=false
 function MiniGrid({ cols, rows, selUnico, onSelect, loading, empty, sentinel }: any) {
     return (
         <div className="overflow-auto flex-1">
-            <table className="min-w-full text-left text-[13px]">
-                <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
-                    <tr className="divide-x divide-[#DBD9D9]/30">{cols.map((c: any) => <th key={c.key} className={cn("p-2 whitespace-nowrap", c.className)}>{c.label}</th>)}</tr>
-                </thead>
-                <tbody className="divide-y divide-[#DBD9D9] fos-grid-tbody">
+            <PanelGridTable>
+                <PanelGridThead>
+                    {cols.map((c: any) => <PanelGridTh key={c.key} className={c.className}>{c.label}</PanelGridTh>)}
+                </PanelGridThead>
+                <PanelGridTbody>
                     {loading
                         ? <tr><td colSpan={cols.length} className="p-4 text-center text-gray-300 italic text-xs">Loading...</td></tr>
                         : rows.length === 0
@@ -65,20 +65,19 @@ function MiniGrid({ cols, rows, selUnico, onSelect, loading, empty, sentinel }: 
                             : rows.map((r: any, i: number) => {
                                 const isSel = selUnico && selUnico === r.unico;
                                 return (
-                                    <tr key={r.unico||i} onClick={() => onSelect?.(r)}
-                                        className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", isSel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50/80")}>
+                                    <PanelGridTr key={r.unico||i} selected={isSel} onClick={() => onSelect?.(r)}>
                                         {cols.map((c: any) => (
-                                            <td key={c.key} className={cn("p-2", c.className)}>
+                                            <PanelGridTd key={c.key} className={c.className}>
                                                 {c.render ? c.render(r[c.key], r) : t(r[c.key])}
-                                            </td>
+                                            </PanelGridTd>
                                         ))}
-                                    </tr>
+                                    </PanelGridTr>
                                 );
                             })
                     }
                     {sentinel && <tr><td colSpan={cols.length} className="p-0">{sentinel}</td></tr>}
-                </tbody>
-            </table>
+                </PanelGridTbody>
+            </PanelGridTable>
         </div>
     );
 }

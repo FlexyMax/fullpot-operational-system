@@ -8,6 +8,7 @@ import {
     ClipboardList, Printer, ChevronDown, Package, Upload, ImageIcon
 } from "lucide-react";
 import PanelGrid from "@/components/ui/PanelGrid";
+import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
 import BunchRecipeModal from "./BunchRecipeModal";
 import BoxRecipeModal from "./BoxRecipeModal";
 import { AuditLogModal } from "@/components/AuditLogModal";
@@ -1198,72 +1199,69 @@ export default function Tab2() {
                 ]}
                 className="flex-1 min-h-0 h-full"
             >
-                <table className="min-w-full text-left text-[13px]">
-                    <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
-                        <tr>
-                            <th className="px-2 py-2 whitespace-nowrap border-r border-[#DBD9D9]/30 text-center w-10">Img</th>
-                            <th className="px-3 py-2 whitespace-nowrap border-r border-[#DBD9D9]/30 sticky left-0 bg-[#4F4F4F] min-w-[220px]">Description</th>
-                            <th className="px-3 py-2 whitespace-nowrap border-r border-[#DBD9D9]/30 text-center w-16">PriceStem</th>
-                            <th className="px-3 py-2 whitespace-nowrap border-r border-[#DBD9D9]/30 text-right w-16">Packs</th>
-                            <th className="px-3 py-2 whitespace-nowrap border-r border-[#DBD9D9]/30 text-right w-18">Units/Pack</th>
-                            <th className="px-3 py-2 whitespace-nowrap border-r border-[#DBD9D9]/30 text-right w-18">UnitsSale</th>
-                            <th className="px-3 py-2 whitespace-nowrap border-r border-[#DBD9D9]/30 w-18">Case</th>
-                            <th className="px-3 py-2 whitespace-nowrap border-r border-[#DBD9D9]/30 w-24">BoxCode</th>
-                            <th className="px-3 py-2 whitespace-nowrap border-r border-[#DBD9D9]/30 w-24">EDICode</th>
-                            <th className="px-3 py-2 whitespace-nowrap border-r border-[#DBD9D9]/30 w-32">UPC</th>
-                            <th className="px-3 py-2 whitespace-nowrap border-r border-[#DBD9D9]/30 text-right w-18">Retail</th>
-                            <th className="px-3 py-2 whitespace-nowrap border-r border-[#DBD9D9]/30 text-right w-18">Weight</th>
-                            <th className="px-3 py-2 whitespace-nowrap border-r border-[#DBD9D9]/30 text-right w-18">Rotation</th>
-                            <th className="px-3 py-2 whitespace-nowrap border-r border-[#DBD9D9]/30 text-center w-14">Web</th>
-                            <th className="px-3 py-2 whitespace-nowrap border-r border-[#DBD9D9]/30 text-center w-14">Active</th>
-                            <th className="px-3 py-2 whitespace-nowrap border-r border-[#DBD9D9]/30 text-center w-14">Inven.</th>
-                            <th className="px-3 py-2 whitespace-nowrap w-32">Customer</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#DBD9D9] fos-grid-tbody">
+                <PanelGridTable>
+                    <PanelGridThead>
+                        <PanelGridTh align="center" className="w-10">Img</PanelGridTh>
+                        <PanelGridTh className="sticky left-0 bg-[#4F4F4F] min-w-[220px]">Description</PanelGridTh>
+                        <PanelGridTh align="center" className="w-16">PriceStem</PanelGridTh>
+                        <PanelGridTh align="right"  className="w-16">Packs</PanelGridTh>
+                        <PanelGridTh align="right"  className="w-18">Units/Pack</PanelGridTh>
+                        <PanelGridTh align="right"  className="w-18">UnitsSale</PanelGridTh>
+                        <PanelGridTh className="w-18">Case</PanelGridTh>
+                        <PanelGridTh className="w-24">BoxCode</PanelGridTh>
+                        <PanelGridTh className="w-24">EDICode</PanelGridTh>
+                        <PanelGridTh className="w-32">UPC</PanelGridTh>
+                        <PanelGridTh align="right"  className="w-18">Retail</PanelGridTh>
+                        <PanelGridTh align="right"  className="w-18">Weight</PanelGridTh>
+                        <PanelGridTh align="right"  className="w-18">Rotation</PanelGridTh>
+                        <PanelGridTh align="center" className="w-14">Web</PanelGridTh>
+                        <PanelGridTh align="center" className="w-14">Active</PanelGridTh>
+                        <PanelGridTh align="center" className="w-14">Inven.</PanelGridTh>
+                        <PanelGridTh className="w-32">Customer</PanelGridTh>
+                    </PanelGridThead>
+                    <PanelGridTbody>
                         {products.map((p:any) => {
                             const isSel = selProduct?.unico === p.unico;
                             return (
-                                <tr key={p.unico} onClick={()=>setSelProduct(p)} onDoubleClick={()=>openModal("edit")}
-                                    className={cn("cursor-pointer transition-colors", isSel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50/80")}>
-                                    <td className="px-2 py-1 border-r border-[#DBD9D9] text-center w-10" onClick={e => e.stopPropagation()}>
+                                <PanelGridTr key={p.unico} selected={isSel} onClick={()=>setSelProduct(p)} onDoubleClick={()=>openModal("edit")}>
+                                    <PanelGridTd align="center" className="w-10 py-1">
                                         <img
                                             src={productImages[t(p.unico)] || DEFAULT_THUMB}
                                             alt="" width={28} height={28}
                                             className="w-7 h-7 object-cover rounded border border-[#DBD9D9] cursor-pointer hover:opacity-80 hover:ring-2 hover:ring-[#FB7506] transition-all inline-block"
                                             onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }}
-                                            onClick={() => setImageModal(p)}
+                                            onClick={e => { e.stopPropagation(); setImageModal(p); }}
                                         />
-                                    </td>
-                                    <td className={cn("px-3 py-2 border-r border-[#DBD9D9] font-medium truncate max-w-[220px] sticky left-0", isSel ? "bg-[#FB7506]/10" : "bg-white")} title={t(p.description_uq||p.description)}>{t(p.description)}</td>
-                                    <td className="px-3 py-2 border-r border-[#DBD9D9] text-center">{p.stem_pack ? <Check size={11} className="text-green-500 mx-auto"/> : "—"}</td>
-                                    <td className="px-3 py-2 border-r border-[#DBD9D9] text-right">{t(p.up_x_case)}</td>
-                                    <td className="px-3 py-2 border-r border-[#DBD9D9] text-right">{t(p.up_x_pack)}</td>
-                                    <td className="px-3 py-2 border-r border-[#DBD9D9] text-right">{t(p.total_units)}</td>
-                                    <td className="px-3 py-2 border-r border-[#DBD9D9] text-gray-500">{t(p.case_sh)}</td>
-                                    <td className="px-3 py-2 border-r border-[#DBD9D9] text-gray-400">{t(p.boxcode)}</td>
-                                    <td className="px-3 py-2 border-r border-[#DBD9D9] text-gray-400">{t(p.old_code)}</td>
-                                    <td className="px-3 py-2 border-r border-[#DBD9D9] text-gray-400">{t(p.upc)}</td>
-                                    <td className="px-3 py-2 border-r border-[#DBD9D9] text-right">{n2(p.retail_price)}</td>
-                                    <td className="px-3 py-2 border-r border-[#DBD9D9] text-right">{n2(p.weight)}</td>
-                                    <td className="px-3 py-2 border-r border-[#DBD9D9] text-right">{t(p.rotation)}</td>
-                                    <td className="px-3 py-2 border-r border-[#DBD9D9] text-center">{p.web    ? <Check size={11} className="text-green-500 mx-auto"/> : "—"}</td>
-                                    <td className="px-3 py-2 border-r border-[#DBD9D9] text-center">{p.active ? <Check size={11} className="text-green-500 mx-auto"/> : "—"}</td>
-                                    <td className="px-3 py-2 border-r border-[#DBD9D9] text-center">{p.inv_track ? <Check size={11} className="text-blue-400 mx-auto"/> : "—"}</td>
-                                    <td className="px-3 py-2 text-gray-400 truncate max-w-[128px]">{t(p.customer)}</td>
-                                </tr>
+                                    </PanelGridTd>
+                                    <PanelGridTd className={cn("font-medium truncate max-w-[220px] sticky left-0", isSel ? "bg-[#FB7506]/10" : "bg-white")} title={t(p.description_uq||p.description)}>{t(p.description)}</PanelGridTd>
+                                    <PanelGridTd align="center">{p.stem_pack ? <Check size={11} className="text-green-500 mx-auto"/> : "—"}</PanelGridTd>
+                                    <PanelGridTd align="right">{t(p.up_x_case)}</PanelGridTd>
+                                    <PanelGridTd align="right">{t(p.up_x_pack)}</PanelGridTd>
+                                    <PanelGridTd align="right">{t(p.total_units)}</PanelGridTd>
+                                    <PanelGridTd className="text-gray-500">{t(p.case_sh)}</PanelGridTd>
+                                    <PanelGridTd className="text-gray-400">{t(p.boxcode)}</PanelGridTd>
+                                    <PanelGridTd className="text-gray-400">{t(p.old_code)}</PanelGridTd>
+                                    <PanelGridTd className="text-gray-400">{t(p.upc)}</PanelGridTd>
+                                    <PanelGridTd align="right">{n2(p.retail_price)}</PanelGridTd>
+                                    <PanelGridTd align="right">{n2(p.weight)}</PanelGridTd>
+                                    <PanelGridTd align="right">{t(p.rotation)}</PanelGridTd>
+                                    <PanelGridTd align="center">{p.web    ? <Check size={11} className="text-green-500 mx-auto"/> : "—"}</PanelGridTd>
+                                    <PanelGridTd align="center">{p.active ? <Check size={11} className="text-green-500 mx-auto"/> : "—"}</PanelGridTd>
+                                    <PanelGridTd align="center">{p.inv_track ? <Check size={11} className="text-blue-400 mx-auto"/> : "—"}</PanelGridTd>
+                                    <PanelGridTd className="text-gray-400 truncate max-w-[128px]">{t(p.customer)}</PanelGridTd>
+                                </PanelGridTr>
                             );
                         })}
                         <tr ref={prodSentinel}>
-                            <td colSpan={17} className="h-1 py-0">
+                            <td colSpan={17} className="h-1 p-0 border-0">
                                 {fetchingMoreProds && <div className="text-center py-1.5 text-[9px] text-gray-400"><RefreshCcw size={9} className="inline animate-spin mr-1"/>Loading more...</div>}
                             </td>
                         </tr>
                         {!loadingP && products.length === 0 && (
                             <tr><td colSpan={17} className="p-4 text-center text-gray-300 italic">No products found</td></tr>
                         )}
-                    </tbody>
-                </table>
+                    </PanelGridTbody>
+                </PanelGridTable>
             </PanelGrid>
 
             </div>{/* end p-1.5 wrapper */}
