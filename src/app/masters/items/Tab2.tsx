@@ -912,29 +912,29 @@ function ImageModal({ product, onClose, onFirstImageChanged }: {
     const displayed = preview || images[selIdx] || DEFAULT_THUMB;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-             onClick={onClose}>
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col max-h-[90vh]"
-                 onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
+            <div className="bg-white rounded-xl shadow-2xl w-full sm:max-w-sm flex flex-col" style={{ maxHeight: "92vh" }}>
+
                 {/* Header */}
-                <div className="bg-[#0d1b2a] px-4 py-3 flex items-center justify-between shrink-0">
-                    <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 bg-[#FB7506] rounded-lg flex items-center justify-center shrink-0">
-                            <ImageIcon size={15} className="text-white" />
-                        </div>
-                        <div>
-                            <span className="font-black text-[12px] text-white uppercase tracking-widest">Product Images</span>
-                            <p className="text-[10px] text-white/50 truncate max-w-[200px]">{t(product.description)}</p>
-                        </div>
+                <div className="h-10 bg-[#374151] rounded-t-xl flex items-center justify-between px-4 shrink-0">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <ImageIcon size={14} className="text-[#FB7506] shrink-0" />
+                        <span className="font-black text-[10px] uppercase tracking-widest text-white truncate">
+                            Product Images — {t(product.description)}
+                        </span>
+                        {!loading && (
+                            <span className="text-[9px] text-white/40 shrink-0 ml-1">
+                                {images.length} photo{images.length !== 1 ? "s" : ""}
+                            </span>
+                        )}
                     </div>
-                    <div className="flex items-center gap-2">
-                        {!loading && <span className="text-[10px] text-white/40">{images.length} photo{images.length !== 1 ? "s" : ""}</span>}
-                        <button onClick={onClose} className="text-white/50 hover:text-white text-lg font-light leading-none">—</button>
-                    </div>
+                    <button onClick={onClose} className="shrink-0 ml-2">
+                        <XCircle size={15} className="text-gray-400 hover:text-white" />
+                    </button>
                 </div>
 
                 {/* Main image */}
-                <div className="w-full bg-gray-50 shrink-0" style={{ aspectRatio: "4/3" }}>
+                <div className="w-full bg-gray-50 border-b border-[#DBD9D9] shrink-0" style={{ aspectRatio: "4/3" }}>
                     {loading
                         ? <div className="w-full h-full flex items-center justify-center"><RefreshCcw size={20} className="animate-spin text-gray-300" /></div>
                         : <img src={displayed} alt={t(product.description)}
@@ -945,7 +945,7 @@ function ImageModal({ product, onClose, onFirstImageChanged }: {
 
                 {/* Thumbnail strip */}
                 {images.length > 0 && (
-                    <div className="flex gap-2 px-3 py-2 overflow-x-auto shrink-0 bg-gray-50 border-t border-gray-100">
+                    <div className="flex gap-2 px-3 py-2 overflow-x-auto shrink-0 bg-gray-50 border-b border-[#DBD9D9]">
                         {images.map((url, i) => (
                             <button key={i} onClick={() => { setSelIdx(i); setPreview(null); setFile(null); }}
                                 className={cn("shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition-all",
@@ -969,7 +969,7 @@ function ImageModal({ product, onClose, onFirstImageChanged }: {
                         onDrop={e => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f) pickFile(f); }}>
                         <Upload size={16} className="mx-auto text-gray-400 mb-1" />
                         <p className="text-[10px] font-bold text-gray-500">{file ? file.name : "Click or drag image here"}</p>
-                        <p className="text-[9px] text-gray-400 mt-0.5">JPG · PNG · WEBP — public-read · auto-numbered</p>
+                        <p className="text-[9px] text-gray-400 mt-0.5">JPG · PNG · WEBP — auto-numbered</p>
                         <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
                                onChange={e => { const f = e.target.files?.[0]; if (f) pickFile(f); }} />
                     </div>
@@ -977,11 +977,15 @@ function ImageModal({ product, onClose, onFirstImageChanged }: {
                 </div>
 
                 {/* Footer */}
-                <div className="px-4 pb-4 shrink-0">
+                <div className="flex justify-end gap-2 px-4 py-2 border-t border-[#DBD9D9] bg-gray-50 rounded-b-xl shrink-0">
+                    <button onClick={onClose}
+                        className="px-3 py-1.5 rounded border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-100">
+                        Close
+                    </button>
                     <button onClick={upload} disabled={!file || uploading}
-                        className="w-full flex items-center justify-center gap-2 py-3 text-[13px] font-black text-white bg-[#FB7506] hover:bg-orange-500 active:bg-orange-600 rounded-xl disabled:opacity-40 transition-colors">
-                        {uploading ? <RefreshCcw size={15} className="animate-spin" /> : <Upload size={15} />}
-                        {uploading ? "Uploading…" : `Upload as image #${images.length + 1}`}
+                        className="flex items-center gap-1.5 px-4 py-1.5 rounded bg-[#FB7506] hover:bg-orange-600 text-white text-xs font-black disabled:opacity-50">
+                        {uploading ? <RefreshCcw size={11} className="animate-spin" /> : <Upload size={11} />}
+                        {uploading ? "Uploading…" : `Upload #${images.length + 1}`}
                     </button>
                 </div>
             </div>
