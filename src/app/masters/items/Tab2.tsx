@@ -1106,13 +1106,33 @@ export default function Tab2() {
     };
     const deleteProduct = () => doCrud(`/api/masters/items/products/${selProduct?.unico}`, "DELETE", {}, () => { logAction("Delete", selProduct?.unico, "Product"); setSelProduct(null); refetchAll(); toast.success("Product deleted."); setProductModal(null); });
 
-    const openModal = (mode: "add"|"edit"|"copy") => {
+    const openModal = async (mode: "add"|"edit"|"copy") => {
         if (mode!=="add" && !selProduct) { toast.error(NO_PROD); return; }
         if ((mode==="add"||mode==="copy") && !perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; }
         if (mode==="edit" && !perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; }
-        const f = mode==="add"
-            ? {...EMPTY_PROD2}
-            : { ...selProduct, class_filter: selProduct.class_uq ?? "", subclass_filter: selProduct.subclass_uq ?? "" };
+        let f: any;
+        if (mode === "add") {
+            f = {...EMPTY_PROD2};
+        } else {
+            // List SP returns only summary columns — fetch full record so all FK fields (pack_unit, grade_uq, etc.) are populated
+            const full = await sF(`/api/masters/items/products/${selProduct!.unico}`).catch(() => null);
+            const src = full ?? selProduct!;
+            f = {
+                ...EMPTY_PROD2, ...src,
+                class_filter:    src.class_uq    ?? "",
+                subclass_filter: src.subclass_uq ?? "",
+                auto_description: src.auto_description ?? src.new_descri ?? true,
+                old_description:  src.old_description ?? src.old_descri ?? "",
+                shopify_name:     src.shopify_name    ?? src.Shopify_name    ?? "",
+                shopify_color:    src.shopify_color   ?? src.Shopify_color   ?? "",
+                shopify_size:     src.shopify_size    ?? src.Shopify_size    ?? "",
+                shopify_subtype:  src.shopify_subtype ?? src.Shopify_subtype ?? "",
+                shopify_variety:  src.shopify_variety ?? src.Shopify_variety ?? "",
+                country_of_origin: src.country_of_origin ?? src.Country_of_Origin ?? "",
+                hardgoods_cost:   src.hardgoods_cost   ?? src.Hardgoods_cost_per_unit ?? 0,
+                labor_cost:       src.labor_cost       ?? src.Labor_cost_per_unit      ?? "0",
+            };
+        }
         setProductForm(f); setFormError(null); setProductModal({mode});
     };
 
