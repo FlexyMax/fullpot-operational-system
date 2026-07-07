@@ -96,7 +96,7 @@ function ProductEditModal({ unico, vrUnico, onSaved, onClose }: { unico:string; 
         setForm({
             ...product,
             // Map DB column names → form field names expected by PUT route
-            old_description:  product.old_descri       || "",
+            old_description:  (product.old_descri ?? product.description ?? "").trim(),
             auto_description: !!product.new_descri,
             country_of_origin: product.Country_of_Origin || "",
             hardgoods_cost:   product.Hardgoods_cost_per_unit || 0,
@@ -113,9 +113,14 @@ function ProductEditModal({ unico, vrUnico, onSaved, onClose }: { unico:string; 
 
     const save = async () => {
         if (!form) return;
+        if (!form.auto_description && !form.old_description?.trim()) {
+            setError("Enter a description (Auto Description is off)."); return;
+        }
+        const body = { ...form };
+        if (!body.auto_description) body.old_description = body.old_description.trim().toUpperCase();
         setSaving(true); setError(null);
         try {
-            const res = await fetch(`/api/masters/items/products/${unico}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(form) });
+            const res = await fetch(`/api/masters/items/products/${unico}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body) });
             const d = await res.json();
             if (!d.success) throw new Error(d.error || d.message);
             onSaved();
@@ -228,11 +233,6 @@ function ProductEditModal({ unico, vrUnico, onSaved, onClose }: { unico:string; 
                             </div>
                         ))}
                     </div>
-                    {/* Old description */}
-                    <div className="flex flex-col gap-0.5">
-                        <label className="text-[9px] font-black text-gray-400 uppercase">Old Description</label>
-                        <input value={F("old_description")||""} onChange={e=>S("old_description",e.target.value)} className="fos-input py-1"/>
-                    </div>
                     {/* Checkboxes */}
                     <div className="flex flex-wrap gap-4 border-t border-gray-100 pt-2">
                         {[{k:"stem_pack",l:"Price by Stem"},{k:"inv_track",l:"Inventory"},{k:"auto_description",l:"Auto Description"},{k:"web",l:"Web Publish"},{k:"active",l:"Active"},{k:"mix_class",l:"Mix Class"},{k:"mix_subclass",l:"Mix Subclass"},{k:"mix_color",l:"Mix Color"},{k:"mix_grade",l:"Mix Grade"}].map(f=>(
@@ -242,6 +242,13 @@ function ProductEditModal({ unico, vrUnico, onSaved, onClose }: { unico:string; 
                             </label>
                         ))}
                     </div>
+                    {/* Description — only when auto_description is OFF */}
+                    {!F("auto_description") && (
+                        <div className="flex flex-col gap-0.5">
+                            <label className="text-[9px] font-black text-gray-400 uppercase">Description *</label>
+                            <input value={F("old_description")||""} onChange={e=>S("old_description",e.target.value)} className="fos-input py-1" placeholder="Enter product description…"/>
+                        </div>
+                    )}
                     {/* Notes */}
                     <div className="border border-gray-200 rounded-lg overflow-hidden">
                         <div className="flex border-b border-gray-200 bg-gray-50">
