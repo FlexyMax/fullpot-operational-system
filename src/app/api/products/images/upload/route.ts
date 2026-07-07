@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 
         const ext = file.type.includes("png") ? "png" : file.type.includes("webp") ? "webp" : "jpg";
 
-        const { ListObjectsV2Command, PutObjectCommand } = await import("@aws-sdk/client-s3");
+        const { ListObjectsV2Command, PutObjectCommand, PutObjectAclCommand } = await import("@aws-sdk/client-s3");
         const s3 = await getS3();
 
         // Find next available number
@@ -48,6 +48,13 @@ export async function POST(req: NextRequest) {
             Body:        Buffer.from(bytes),
             ContentType: file.type,
             ACL:         "public-read",
+        }));
+
+        // DO Spaces sometimes ignores ACL on PutObject — explicit PUT ?acl request guarantees public-read
+        await s3.send(new PutObjectAclCommand({
+            Bucket: BUCKET,
+            Key:    key,
+            ACL:    "public-read",
         }));
 
         resetCache();
