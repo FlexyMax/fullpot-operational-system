@@ -14,9 +14,10 @@ export async function GET(req: NextRequest) {
 
         const norm = uq.trim().toUpperCase();
         const [cache, s3] = await Promise.all([ensureCache(), getS3()]);
-        const keys = cache.get(norm) ?? [];
-        const images = await Promise.all(keys.map(k => signKey(s3, k).catch(() => null)));
-        return NextResponse.json({ images: images.filter(Boolean) });
+        const keys   = cache.get(norm) ?? [];
+        const urls   = await Promise.all(keys.map(k => signKey(s3, k).catch(() => null)));
+        const valid  = keys.map((k, i) => ({ key: k, url: urls[i] })).filter(p => p.url);
+        return NextResponse.json({ images: valid.map(p => p.url), keys: valid.map(p => p.key) });
     } catch (err: any) {
         console.error("[products/images/product]", err.message);
         return NextResponse.json({ error: err.message }, { status: 500 });

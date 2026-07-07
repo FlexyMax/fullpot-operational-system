@@ -3,6 +3,25 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { BUCKET, REGION, PREFIX, getS3, resetCache } from "../_cache";
 
+// DELETE /api/products/images/upload — body: { key: string }
+export async function DELETE(req: NextRequest) {
+    const session = await getServerSession(authOptions);
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    try {
+        const { key } = await req.json();
+        if (!key || !key.startsWith(PREFIX))
+            return NextResponse.json({ error: "Invalid key" }, { status: 400 });
+        const { DeleteObjectCommand } = await import("@aws-sdk/client-s3");
+        const s3 = await getS3();
+        await s3.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }));
+        resetCache();
+        return NextResponse.json({ success: true });
+    } catch (err: any) {
+        console.error("[products/images/delete]", err.message);
+        return NextResponse.json({ error: err.message }, { status: 500 });
+    }
+}
+
 // POST /api/products/images/upload — multipart/form-data: file (Blob), product_uq (string)
 // Auto-numbers: finds highest existing -{n} for this product, uploads as -{n+1}
 // Sets ACL public-read so images are accessible without signed URL too

@@ -861,11 +861,13 @@ function ImageModal({ product, onClose, onFirstImageChanged }: {
     onFirstImageChanged: (uq: string, url: string) => void;
 }) {
     const [images,    setImages]    = useState<string[]>([]);
+    const [keys,      setKeys]      = useState<string[]>([]);
     const [selIdx,    setSelIdx]    = useState(0);
     const [loading,   setLoading]   = useState(true);
     const [file,      setFile]      = useState<File|null>(null);
     const [preview,   setPreview]   = useState<string|null>(null);
     const [uploading, setUploading] = useState(false);
+    const [deleting,  setDeleting]  = useState(false);
     const [error,     setError]     = useState<string|null>(null);
     const [dragging,  setDragging]  = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -877,8 +879,8 @@ function ImageModal({ product, onClose, onFirstImageChanged }: {
         setLoading(true);
         fetch(`/api/products/images/product?uq=${encodeURIComponent(uq)}`)
             .then(r => r.json())
-            .then(j => { setImages(j.images ?? []); setSelIdx(0); })
-            .catch(() => setImages([]))
+            .then(j => { setImages(j.images ?? []); setKeys(j.keys ?? []); setSelIdx(0); })
+            .catch(() => { setImages([]); setKeys([]); })
             .finally(() => setLoading(false));
     }, [uq]);
 
@@ -907,6 +909,23 @@ function ImageModal({ product, onClose, onFirstImageChanged }: {
                 onFirstImageChanged(uq, j.url);
         } catch(e: any) { setError(e.message); }
         finally { setUploading(false); }
+    };
+
+    const deleteImage = async () => {
+        const key = keys[selIdx];
+        if (!key) return;
+        setDeleting(true); setError(null);
+        try {
+            const r = await fetch("/api/products/images/upload", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key }) });
+            const j = await r.json();
+            if (!j.success) throw new Error(j.error || "Delete failed");
+            const newImages = images.filter((_, i) => i !== selIdx);
+            const newKeys   = keys.filter((_, i) => i !== selIdx);
+            setImages(newImages); setKeys(newKeys);
+            setSelIdx(Math.max(0, Math.min(selIdx, newImages.length - 1)));
+            toast.success("Image deleted.");
+        } catch(e: any) { setError(e.message); toast.error(e.message); }
+        finally { setDeleting(false); }
     };
 
     const displayed = preview || images[selIdx] || DEFAULT_THUMB;
@@ -977,16 +996,23 @@ function ImageModal({ product, onClose, onFirstImageChanged }: {
                 </div>
 
                 {/* Footer */}
-                <div className="flex justify-end gap-2 px-4 py-2 border-t border-[#DBD9D9] bg-gray-50 rounded-b-xl shrink-0">
-                    <button onClick={onClose}
-                        className="px-3 py-1.5 rounded border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-100">
-                        Close
+                <div className="flex justify-between gap-2 px-4 py-2 border-t border-[#DBD9D9] bg-gray-50 rounded-b-xl shrink-0">
+                    <button onClick={deleteImage} disabled={!keys[selIdx] || !!preview || deleting || loading}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-red-200 text-xs font-bold text-red-600 hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed">
+                        {deleting ? <RefreshCcw size={11} className="animate-spin" /> : <Trash2 size={11} />}
+                        {deleting ? "Deleting…" : "Delete"}
                     </button>
-                    <button onClick={upload} disabled={!file || uploading}
-                        className="flex items-center gap-1.5 px-4 py-1.5 rounded bg-[#FB7506] hover:bg-orange-600 text-white text-xs font-black disabled:opacity-50">
-                        {uploading ? <RefreshCcw size={11} className="animate-spin" /> : <Upload size={11} />}
-                        {uploading ? "Uploading…" : `Upload #${images.length + 1}`}
-                    </button>
+                    <div className="flex gap-2">
+                        <button onClick={onClose}
+                            className="px-3 py-1.5 rounded border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-100">
+                            Close
+                        </button>
+                        <button onClick={upload} disabled={!file || uploading}
+                            className="flex items-center gap-1.5 px-4 py-1.5 rounded bg-[#FB7506] hover:bg-orange-600 text-white text-xs font-black disabled:opacity-50">
+                            {uploading ? <RefreshCcw size={11} className="animate-spin" /> : <Upload size={11} />}
+                            {uploading ? "Uploading…" : `Upload #${images.length + 1}`}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
