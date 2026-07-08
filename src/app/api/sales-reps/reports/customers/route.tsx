@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
     if (sp.get("format") === "csv") {
         const keys   = rows.length ? Object.keys(rows[0]).filter(k => !skipKey(k)) : [];
         const header = keys.join(",");
-        const body   = rows.map(row =>
+        const body   = rows.map((row: any) =>
             keys.map(k => {
                 const v  = row[k];
                 const ku = k.replace(/ /g, "_").toUpperCase();
