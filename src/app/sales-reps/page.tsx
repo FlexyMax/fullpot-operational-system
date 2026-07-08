@@ -1354,7 +1354,7 @@ function ModalSalesRepsReports({
         } else {
             const uq  = salesUq || "%";
             const rec = salesReps.find(r => tv(r.UNICO) === salesUq);
-            const name = rec ? `${tv(rec.FIRST_NAME)} ${tv(rec.LAST_NAME)}`.trim() : "";
+            const name = rec ? `${tv(rec.SALESMAN_FNAME)} ${tv(rec.SALESMAN_LNAME)}`.trim() : "";
             onOpen(`/api/sales-reps/reports/customers?lcunico=${encodeURIComponent(uq)}&name=${encodeURIComponent(name)}`);
         }
     };
@@ -1388,7 +1388,7 @@ function ModalSalesRepsReports({
                                 <option value="">All Salesmen</option>
                                 {salesReps.map((r: any) => (
                                     <option key={tv(r.UNICO)} value={tv(r.UNICO)}>
-                                        {`${tv(r.FIRST_NAME)} ${tv(r.LAST_NAME)}`.trim()} ({tv(r.OLD_CODE ?? r.old_code ?? "")})
+                                        {`${tv(r.SALESMAN_FNAME)} ${tv(r.SALESMAN_LNAME)}`.trim()} ({tv(r.OLD_CODE ?? "")})
                                     </option>
                                 ))}
                             </select>
