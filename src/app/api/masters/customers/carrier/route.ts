@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
+import { serverAuditLog } from "@/lib/serverAudit";
+
+const PANTA = "52961702";
 
 const txt = (v: any) => String(v ?? "").replace(/'/g, "''");
 const bit = (v: any) => (v ? 1 : 0);
@@ -29,6 +32,7 @@ export async function POST(req: NextRequest) {
         });
         const row = r.recordset[0];
         if (row?.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
+        serverAuditLog(PANTA, "Insert", "flower_carriers_customers", row?.unico ?? "").catch(() => {});
         return NextResponse.json({ success: true, unico: row?.unico, message: row?.Message || "Carrier added." });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });

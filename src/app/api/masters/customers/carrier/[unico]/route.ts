@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
+import { serverAuditLog } from "@/lib/serverAudit";
+
+const PANTA = "52961702";
 
 const txt = (v: any) => String(v ?? "").replace(/'/g, "''");
 const bit = (v: any) => (v ? 1 : 0);
@@ -20,6 +23,7 @@ export async function PUT(req: NextRequest, { params }: P) {
         });
         const row = r.recordset[0];
         if (row?.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
+        serverAuditLog(PANTA, "Edit", "flower_carriers_customers", unico).catch(() => {});
         return NextResponse.json({ success: true, message: row?.Message || "Carrier updated." });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -32,6 +36,7 @@ export async function DELETE(_req: NextRequest, { params }: P) {
         const r = await executeProcedure("sp_flower_customers_shipto_carriers_delete", { lcshipto_carrier_uq: unico });
         const row = r.recordset[0];
         if (row?.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
+        serverAuditLog(PANTA, "Delete", "flower_carriers_customers", unico).catch(() => {});
         return NextResponse.json({ success: true, message: row?.Message || "Carrier deleted." });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });

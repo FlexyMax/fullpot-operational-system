@@ -1,24 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
-import { executeQuery } from "@/lib/db";
-import crypto from "crypto";
+import { executeProcedure } from "@/lib/db";
+import { serverAuditLog } from "@/lib/serverAudit";
 
-const txt = (v: any) => String(v ?? "").replace(/'/g, "''");
-const bit = (v: any) => (v ? 1 : 0);
-const genUq = () => crypto.randomBytes(4).toString("hex").toUpperCase();
+const PANTA = "52961702";
+const txt   = (v: any) => String(v ?? "").trim();
+const bit   = (v: any) => (v ? 1 : 0);
 
 export async function POST(req: NextRequest) {
     const b = await req.json();
-    const unico = genUq();
     try {
-        await executeQuery(`
-            INSERT INTO flower_customers_users
-                (unico, customer_uq, fname, lname, username, password, makeinvoice, makeprebook,
-                 makecredit, viewaccount, viewproducts, viewhistory, active, email, phone)
-            VALUES ('${txt(unico)}','${txt(b.customer_uq)}','${txt(b.fname)}','${txt(b.lname)}',
-                    '${txt(b.username)}','${txt(b.password)}',${bit(b.makeinvoice)},${bit(b.makeprebook)},
-                    ${bit(b.makecredit)},${bit(b.viewaccount)},${bit(b.viewproducts)},${bit(b.viewhistory)},
-                    ${bit(b.active)},'${txt(b.email)}','${txt(b.phone)}')`);
-        return NextResponse.json({ success: true, unico, message: "Web user created." });
+        const r = await executeProcedure("sp_NC_customers_web_user_insert", {
+            lccustomer_uq:  txt(b.customer_uq),
+            lcfname:        txt(b.fname),
+            lclname:        txt(b.lname),
+            lcusername:     txt(b.username),
+            lcpassword:     txt(b.password),
+            llmakeinvoice:  bit(b.makeinvoice),
+            llmakeprebook:  bit(b.makeprebook),
+            llmakecredit:   bit(b.makecredit),
+            llviewaccount:  bit(b.viewaccount),
+            llviewproducts: bit(b.viewproducts),
+            llviewhistory:  bit(b.viewhistory),
+            llactive:       bit(b.active),
+            lcemail:        txt(b.email),
+            lcphone:        txt(b.phone),
+        });
+        const row = r.recordset?.[0];
+        if (row?.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
+        serverAuditLog(PANTA, "Insert", "flower_customers_users", row?.unico ?? "").catch(() => {});
+        return NextResponse.json({ success: true, unico: row?.unico, message: row?.Message || "Web user created." });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }

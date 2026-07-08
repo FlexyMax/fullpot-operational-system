@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { AppFooter } from "@/components/layout/AppFooter";
+import { toast } from "sonner";
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { AuditLogModal } from "@/components/AuditLogModal";
@@ -240,9 +241,10 @@ export default function CustomersSetupPage() {
                 const data = await res.json(); if (!data.success) throw new Error(data.error);
             }
             logAction(custModal?.mode === "add" ? "Insert" : "Edit", unico!);
+            toast.success(custModal?.mode === "add" ? "Customer created." : "Customer updated.");
             await qc.invalidateQueries({ queryKey: ["cust-list"] });
             setCustModal(null);
-        } catch (e: any) { setFormError(e.message); }
+        } catch (e: any) { setFormError(e.message); toast.error(e.message); }
         finally { setSaving(false); }
     };
 
@@ -252,10 +254,11 @@ export default function CustomersSetupPage() {
             const res  = await fetch(`/api/masters/customers/${selCust.unico}`, { method:"DELETE" });
             const data = await res.json(); if (!data.success) throw new Error(data.error);
             logAction("Delete", selCust.unico);
+            toast.success("Customer deleted.");
             setSelCust(null);
             await qc.invalidateQueries({ queryKey: ["cust-list"] });
             setCustModal(null);
-        } catch (e: any) { setFormError(e.message); }
+        } catch (e: any) { setFormError(e.message); toast.error(e.message); }
         finally { setSaving(false); }
     };
 
@@ -267,18 +270,21 @@ export default function CustomersSetupPage() {
                 const res  = await fetch("/api/masters/customers/shipto", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({...shiptoForm, cust_uq: selCust.unico}) });
                 const data = await res.json(); if (!data.success) throw new Error(data.error);
                 logAction("Insert", data.unico || selCust.unico, "ShipTo");
+                toast.success("Ship-to created.");
             } else if (shiptoModal?.mode === "edit") {
                 const res  = await fetch(`/api/masters/customers/shipto/${selShipto.unico}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(shiptoForm) });
                 const data = await res.json(); if (!data.success) throw new Error(data.error);
                 logAction("Edit", selShipto.unico, "ShipTo");
+                toast.success("Ship-to updated.");
             } else {
                 const res  = await fetch(`/api/masters/customers/shipto/${selShipto.unico}`, { method:"DELETE" });
                 const data = await res.json(); if (!data.success) throw new Error(data.error);
                 logAction("Delete", selShipto.unico, "ShipTo");
+                toast.success("Ship-to deleted.");
                 setSelShipto(null);
             }
             await refetchShiptos(); setShiptoModal(null);
-        } catch (e: any) { setFormError(e.message); }
+        } catch (e: any) { setFormError(e.message); toast.error(e.message); }
         finally { setSaving(false); }
     };
 
@@ -290,18 +296,21 @@ export default function CustomersSetupPage() {
                 const res  = await fetch("/api/masters/customers/carrier", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({...carrierForm, customer_uq: selCust.unico, shipto_uq: selShipto?.unico||""}) });
                 const data = await res.json(); if (!data.success) throw new Error(data.error);
                 logAction("Insert", data.unico || selCust.unico, "Carrier");
+                toast.success("Carrier added.");
             } else if (carrierModal?.mode === "edit") {
                 const res  = await fetch(`/api/masters/customers/carrier/${selCarrier.unico}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({...carrierForm, shipto_uq: selShipto?.unico||""}) });
                 const data = await res.json(); if (!data.success) throw new Error(data.error);
                 logAction("Edit", selCarrier.unico, "Carrier");
+                toast.success("Carrier updated.");
             } else {
                 const res  = await fetch(`/api/masters/customers/carrier/${selCarrier.unico}`, { method:"DELETE" });
                 const data = await res.json(); if (!data.success) throw new Error(data.error);
                 logAction("Delete", selCarrier.unico, "Carrier");
+                toast.success("Carrier deleted.");
                 setSelCarrier(null);
             }
             await refetchCarriers(); setCarrierModal(null);
-        } catch (e: any) { setFormError(e.message); }
+        } catch (e: any) { setFormError(e.message); toast.error(e.message); }
         finally { setSaving(false); }
     };
 
@@ -322,18 +331,21 @@ export default function CustomersSetupPage() {
                 const res  = await fetch("/api/masters/customers/web-user", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({...webUserForm, customer_uq: selCust.unico}) });
                 const data = await res.json(); if (!data.success) throw new Error(data.error);
                 logAction("Insert", data.unico || selCust.unico, "WebUser");
+                toast.success("Web user created.");
             } else if (webUserModal?.mode === "edit") {
                 const res  = await fetch(`/api/masters/customers/web-user/${selWebUser.unico}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(webUserForm) });
                 const data = await res.json(); if (!data.success) throw new Error(data.error);
                 logAction("Edit", selWebUser.unico, "WebUser");
+                toast.success("Web user updated.");
             } else {
                 const res  = await fetch(`/api/masters/customers/web-user/${selWebUser.unico}`, { method:"DELETE" });
                 const data = await res.json(); if (!data.success) throw new Error(data.error);
                 logAction("Delete", selWebUser.unico, "WebUser");
+                toast.success("Web user deleted.");
                 setSelWebUser(null);
             }
             await refetchWebUsers(); setWebUserModal(null);
-        } catch (e: any) { setFormError(e.message); }
+        } catch (e: any) { setFormError(e.message); toast.error(e.message); }
         finally { setSaving(false); }
     };
 
@@ -345,8 +357,9 @@ export default function CustomersSetupPage() {
             const res  = await fetch(`/api/masters/customers/${selCust.unico}/messages`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(msgForm) });
             const data = await res.json(); if (!data.success) throw new Error(data.error);
             logAction("Insert", data.unico || selCust.unico, "Message");
+            toast.success("Message added.");
             await refetchMsgs(); setMsgModal(false); setMsgForm({ comments:"", deadline:"", user_to:"" });
-        } catch (e: any) { setFormError(e.message); }
+        } catch (e: any) { setFormError(e.message); toast.error(e.message); }
         finally { setSaving(false); }
     };
 

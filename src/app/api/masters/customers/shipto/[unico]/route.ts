@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure, executeQuery } from "@/lib/db";
+import { serverAuditLog } from "@/lib/serverAudit";
+
+const PANTA = "52961702";
 
 const txt = (v: any) => String(v ?? "").replace(/'/g, "''");
 const num = (v: any) => { const n = parseFloat(String(v||0)); return isNaN(n) ? 0 : n; };
@@ -38,6 +41,7 @@ export async function PUT(req: NextRequest, { params }: P) {
         });
         const row = r.recordset[0];
         if (row?.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
+        serverAuditLog(PANTA, "Edit", "flower_customer_shipto", unico).catch(() => {});
         return NextResponse.json({ success: true, message: row?.Message || "Ship-to updated." });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -53,6 +57,7 @@ export async function DELETE(_req: NextRequest, { params }: P) {
         const r = await executeProcedure("sp_flower_customers_shipto_delete", { lcunico: unico });
         const row = r.recordset[0];
         if (row?.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
+        serverAuditLog(PANTA, "Delete", "flower_customer_shipto", unico).catch(() => {});
         return NextResponse.json({ success: true, message: row?.Message || "Ship-to deleted." });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
