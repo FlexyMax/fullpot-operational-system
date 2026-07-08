@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     let r: any, company: any;
     try {
         [r, company] = await Promise.all([
-            executeProcedure("sp_flower_customers_by_salesman_report", { lcunico }),
+            executeProcedure("sp_flower_customers_by_salesman_report", { lcsalesman_uq: lcunico }),
             getCompanyInfo(),
         ]);
     } catch (err: any) {
