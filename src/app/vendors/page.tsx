@@ -261,7 +261,7 @@ export default function VendorsPage() {
     const [selGrpUq,   setSelGrpUq]   = useState<string | null>(null);
 
     // Web Settings modal
-    const [wsForm,     setWsForm]     = useState({ flower_system: false, send_file_warehouse: false, chk_boxes: false, chk_stems: false, auto_packing: false, special_contributor: false, international: false, whouse_farm_id: "", clave: "" });
+    const [wsForm,     setWsForm]     = useState({ clave: "", change_password: false, inventory_from_products: false, chk_boxes: false, chk_stems: false, web_packing: false, web_credits: false, web_demand: false, web_consignations: false, cot_farm: "" });
     const [wsSaving,   setWsSaving]   = useState(false);
     const [wsError,    setWsError]    = useState<string | null>(null);
     const [showWsPass, setShowWsPass] = useState(false);
@@ -479,100 +479,53 @@ export default function VendorsPage() {
     };
 
     // ── Web Settings modal ────────────────────────────────────────────────────
-    const handleOpenWs = () => {
+    const handleOpenWs = async () => {
         if (!selectedUq) return;
-        const rec = (vendorsList as any[]).find(r => t(r.UNICO) === selectedUq);
-        if (!rec) return;
-        setWsForm({
-            flower_system:       Boolean(rec.FLOWER_SYSTEM),
-            send_file_warehouse: Boolean(rec.SEND_FILE_WAREHOUSE),
-            chk_boxes:           Boolean(rec.WEB_CONFIRM_BOXES),
-            chk_stems:           Boolean(rec.WEB_CONFIRM_STEMS),
-            auto_packing:        Boolean(rec.AUTO_PACKING),
-            special_contributor: Boolean(rec.SPECIAL_CONTRIBUTOR),
-            international:       Boolean(rec.INTERNATIONAL),
-            whouse_farm_id:      t(rec.WHOUSE_FARM_ID) || t(rec.FARM),
-            clave:               t(rec.CLAVE),
-        });
-        setWsError(null);
-        setShowWsPass(false);
-        setWsModal(true);
+        try {
+            const r = await fetch(`/api/vendors/${selectedUq}`);
+            const d = await r.json();
+            if (!d) { toast.error("Vendor not found."); return; }
+            const fill: any = {};
+            for (const [k, v] of Object.entries(d as object)) fill[k.toLowerCase()] = v;
+            setWsForm({
+                clave:                   t(fill.password ?? fill.clave ?? ""),
+                change_password:         Boolean(fill.change_password),
+                inventory_from_products: Boolean(fill.inventory_from_products),
+                chk_boxes:               Boolean(fill.web_confirm_boxes),
+                chk_stems:               Boolean(fill.web_confirm_stems),
+                web_packing:             Boolean(fill.web_packing),
+                web_credits:             Boolean(fill.web_credits),
+                web_demand:              Boolean(fill.web_demand),
+                web_consignations:       Boolean(fill.web_consignations),
+                cot_farm:                fill.cot_farm ? String(fill.cot_farm).split("T")[0] : "",
+            });
+            setWsError(null);
+            setShowWsPass(false);
+            setWsModal(true);
+        } catch (e: any) {
+            toast.error(e.message);
+        }
     };
 
     const handleSaveWs = async () => {
         setWsSaving(true);
         setWsError(null);
         try {
-            const r = await fetch(`/api/vendors/${selectedUq}`);
-            const d = await r.json();
-            if (!d) throw new Error("Vendor not found.");
-            const fill: any = {};
-            for (const [k, v] of Object.entries(d as object)) fill[k.toLowerCase()] = v;
-            const payload = {
-                ...EMPTY_FORM,
-                unico:                   t(fill.unico),
-                grower:                  t(fill.grower),
-                farm:                    t(fill.farm),
-                source:                  t(fill.source),
-                nit_ruc:                 t(fill.nit_ruc),
-                active:                  Boolean(fill.active),
-                officeadd1:              t(fill.officeadd1),
-                officeadd2:              t(fill.officeadd2),
-                farm_add1:               t(fill.farm_add1),
-                farm_add2:               t(fill.farm_add2),
-                fob:                     t(fill.fob),
-                city:                    t(fill.city),
-                country:                 t(fill.country),
-                phone_1:                 t(fill.phone_1),
-                phone_2:                 t(fill.phone_2),
-                fax_1:                   t(fill.fax_1),
-                fax_2:                   t(fill.fax_2),
-                celular:                 t(fill.celular),
-                email_1:                 t(fill.email_1),
-                email_2:                 t(fill.email_2),
-                msn_yahoo:               t(fill.msn_yahoo),
-                manager:                 t(fill.manager),
-                secretary:               t(fill.secretary),
-                production:              Boolean(fill.production),
-                salesman:                t(fill.sales_person ?? fill.salesman ?? ""),
-                ship_days:               parseInt(fill.ship_days ?? 0) || 0,
-                old_code:                t(fill.edi_code ?? fill.old_code ?? ""),
-                bank:                    t(fill.bankname ?? fill.bank ?? ""),
-                bank_account:            t(fill.bank_account),
-                change_password:         Boolean(fill.change_password),
-                qb_flower:               Boolean(fill.qb_flower),
-                qb_freight:              Boolean(fill.qb_freight),
-                apply_freight:           Boolean(fill.apply_freight),
-                duties:                  Boolean(fill.duties),
-                broker:                  Boolean(fill.broker),
-                handling:                Boolean(fill.handling),
-                ocharges:                Boolean(fill.ocharges),
-                commission:              parseFloat(fill.con_comi ?? fill.commission ?? 0) || 0,
-                fuel_discount:           parseFloat(fill.fuel ?? fill.fuel_discount ?? 0) || 0,
-                sales_factor:            parseFloat(fill.sales_factor ?? 0) || 0,
-                pack_disc:               parseFloat(fill.pack_p_ret ?? fill.pack_disc ?? 0) || 0,
-                pack_return:             parseFloat(fill.pack_return ?? 0) || 0,
-                text_invoice:            t(fill.text_invoice),
-                text_packing:            t(fill.text_label ?? fill.text_packing ?? ""),
-                inventory_from_products: Boolean(fill.inventory_from_products),
-                terms_uq:                t(fill.terms_uq ?? fill.terms ?? ""),
-                agency_uq:               t(fill.type_uq ?? fill.agency_uq ?? ""),
-                group_uq:                t(fill.cargo_uq ?? fill.group_uq ?? ""),
-                // Web fields from the form:
-                flower_system:           wsForm.flower_system,
-                send_file_warehouse:     wsForm.send_file_warehouse,
-                chk_boxes:               wsForm.chk_boxes,
-                chk_stems:               wsForm.chk_stems,
-                auto_packing:            wsForm.auto_packing,
-                special_contributor:     wsForm.special_contributor,
-                international:           wsForm.international,
-                whouse_farm_id:          wsForm.whouse_farm_id,
-                clave:                   wsForm.clave,
-            };
-            const res = await fetch(`/api/vendors/${selectedUq}`, {
+            const res = await fetch(`/api/vendors/${selectedUq}/web`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
+                body: JSON.stringify({
+                    clave:                   wsForm.clave,
+                    change_password:         wsForm.change_password,
+                    inventory_from_products: wsForm.inventory_from_products,
+                    web_confirm_boxes:       wsForm.chk_boxes,
+                    web_confirm_stems:       wsForm.chk_stems,
+                    web_packing:             wsForm.web_packing,
+                    web_credits:             wsForm.web_credits,
+                    web_demand:              wsForm.web_demand,
+                    web_consignations:       wsForm.web_consignations,
+                    cot_farm:                wsForm.cot_farm || null,
+                }),
             });
             const dr = await res.json();
             if (!dr.success) throw new Error(dr.error || "Save failed");
@@ -1643,13 +1596,14 @@ export default function VendorsPage() {
                                 <div className="bg-gray-50 rounded p-3 border border-gray-100">
                                     <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                                         {([
-                                            { key: "flower_system",       label: "Flower System" },
-                                            { key: "send_file_warehouse", label: "Send File Warehouse" },
                                             { key: "chk_boxes",           label: "Web Confirm Boxes" },
                                             { key: "chk_stems",           label: "Web Confirm Stems" },
-                                            { key: "auto_packing",        label: "Auto Packing" },
-                                            { key: "special_contributor", label: "Special Contributor" },
-                                            { key: "international",       label: "International" },
+                                            { key: "web_packing",         label: "Web Packing" },
+                                            { key: "web_credits",         label: "Web Credits" },
+                                            { key: "web_demand",          label: "Web Demand" },
+                                            { key: "web_consignations",   label: "Web Consignations" },
+                                            { key: "change_password",     label: "Force Pwd Change" },
+                                            { key: "inventory_from_products", label: "Inv. from Products" },
                                         ] as { key: keyof typeof wsForm; label: string }[]).map(({ key, label }) => (
                                             <label key={key} className="flex items-center gap-2 cursor-pointer py-0.5">
                                                 <input type="checkbox"
@@ -1662,16 +1616,6 @@ export default function VendorsPage() {
                                     </div>
                                 </div>
 
-                                {/* WH Farm ID */}
-                                <div className="flex flex-col gap-0.5">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">WH Farm ID</label>
-                                    <input value={wsForm.whouse_farm_id}
-                                        onChange={e => setWsForm(p => ({ ...p, whouse_farm_id: e.target.value }))}
-                                        placeholder={t(rec.FARM ?? "")}
-                                        className="fos-input h-8 text-xs font-mono uppercase" />
-                                    <span className="text-[10px] text-gray-400 mt-0.5">Farm code: <span className="font-mono font-bold text-[#FB7506]">{t(rec.FARM ?? "")}</span></span>
-                                </div>
-
                                 {/* Password */}
                                 <div className="flex flex-col gap-0.5">
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Web Portal Password</label>
@@ -1680,6 +1624,7 @@ export default function VendorsPage() {
                                             type={showWsPass ? "text" : "password"}
                                             value={wsForm.clave}
                                             onChange={e => setWsForm(p => ({ ...p, clave: e.target.value }))}
+                                            maxLength={8}
                                             className="fos-input h-8 text-xs w-full pr-8" />
                                         <button type="button"
                                             onClick={() => setShowWsPass(p => !p)}
@@ -1687,6 +1632,15 @@ export default function VendorsPage() {
                                             {showWsPass ? <EyeOff size={14} /> : <Eye size={14} />}
                                         </button>
                                     </div>
+                                    <span className="text-[10px] text-gray-400 mt-0.5">Max 8 characters</span>
+                                </div>
+
+                                {/* Cot Farm Date */}
+                                <div className="flex flex-col gap-0.5">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Quotation from Farm</label>
+                                    <input type="date" value={wsForm.cot_farm}
+                                        onChange={e => setWsForm(p => ({ ...p, cot_farm: e.target.value }))}
+                                        className="fos-input h-8 text-xs" />
                                 </div>
                             </div>
 
