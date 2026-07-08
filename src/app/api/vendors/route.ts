@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
+import { serverAuditLog } from "@/lib/serverAudit";
 
+const PANTA = "52961702";
 const bit = (v: any) => (v ? 1 : 0);
 const num = (v: any) => { const n = parseFloat(String(v ?? 0)); return isNaN(n) ? 0 : n; };
 const int = (v: any) => { const n = parseInt(String(v ?? 0), 10); return isNaN(n) ? 0 : n; };
@@ -121,6 +123,7 @@ export async function POST(req: NextRequest) {
         });
         const row = r.recordset?.[0];
         if (row?.error === 1 || row?.Error === 1) return NextResponse.json({ success: false, error: row.message || row.Message }, { status: 400 });
+        serverAuditLog(PANTA, "Insert", "flower_growers", row?.unico ?? row?.UNICO ?? "").catch(() => {});
         return NextResponse.json({ success: true, unico: row?.unico ?? row?.UNICO });
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });

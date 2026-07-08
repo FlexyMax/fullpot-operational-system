@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
+import { serverAuditLog } from "@/lib/serverAudit";
+
+const PANTA = "52961702";
 
 export async function GET(req: NextRequest) {
     const grower_uq = req.nextUrl.searchParams.get("grower_uq") || "";
@@ -30,6 +33,7 @@ export async function POST(req: NextRequest) {
         });
         const row = r.recordset?.[0];
         if (row?.error === 1 || row?.Error === 1) return NextResponse.json({ success: false, error: row.message || row.Message }, { status: 400 });
+        serverAuditLog(PANTA, "Insert", "flower_growers_class", String(b.grower_uq ?? "")).catch(() => {});
         return NextResponse.json({ success: true });
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });
@@ -44,6 +48,7 @@ export async function DELETE(req: NextRequest) {
         });
         const row = r.recordset?.[0];
         if (row?.error === 1 || row?.Error === 1) return NextResponse.json({ success: false, error: row.message || row.Message }, { status: 400 });
+        serverAuditLog(PANTA, "Delete", "flower_growers_class", String(b.unico ?? "")).catch(() => {});
         return NextResponse.json({ success: true });
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });

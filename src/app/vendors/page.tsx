@@ -6,15 +6,14 @@ import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     Building2, RefreshCcw, Plus, Minus, Pencil, Trash2,
-    Search, X, Save, ChevronRight, ChevronLeft, ChevronDown,
-    FileText, AlertCircle, Calendar, Check,
+    Search, X, Save, ChevronRight, ChevronLeft,
+    FileText, AlertCircle,
     Download, Globe, Settings2,
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { GridMenu } from "@/components/GridMenu";
 import PanelGrid from "@/components/ui/PanelGrid";
 import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
 import { usePagePermissions } from "@/lib/permissions";
@@ -735,7 +734,7 @@ export default function VendorsPage() {
             <AppHeader title="Vendors" />
 
             {/* Search toolbar */}
-            <div className="bg-white border-b border-gray-200 px-3 py-2 flex items-center gap-2 shrink-0 shadow-sm flex-wrap">
+            <div className="bg-[#F5F3F3] border border-[#DBD9D9] rounded-lg mx-2 mt-2 px-3 py-2 flex items-center gap-2 shrink-0 shadow-sm flex-wrap">
                 <div className="relative flex-1 md:flex-none">
                     <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input type="text" value={search} onChange={e => setSearch(e.target.value)}
@@ -828,7 +827,7 @@ export default function VendorsPage() {
                                                         if (isExp) {
                                                             setExpandedVendorUnico(null);
                                                         } else {
-                                                            handleSelectRow(row);
+                                                            if (!selected) handleSelectRow(row);
                                                             setExpandedVendorUnico(uq);
                                                         }
                                                     }}
@@ -836,7 +835,7 @@ export default function VendorsPage() {
                                                     {isExp ? <Minus size={11} className="text-[#FB7506]" /> : <Plus size={11} className="text-gray-400" />}
                                                 </button>
                                             </PanelGridTd>
-                                            <PanelGridTd className="font-mono">{t(row.FARM)}</PanelGridTd>
+                                            <PanelGridTd className="font-mono font-bold text-[#FB7506]">{t(row.FARM)}</PanelGridTd>
                                             <PanelGridTd className="font-bold">{t(row.GROWER)}</PanelGridTd>
                                             <PanelGridTd>{t(row.SOURCE)}</PanelGridTd>
                                             <PanelGridTd>{t(row.OFFICEADD1)}</PanelGridTd>
@@ -987,64 +986,56 @@ export default function VendorsPage() {
                             <button onClick={() => setStmtModal(false)} className="text-gray-400 hover:text-white transition-colors"><X size={16} /></button>
                         </div>
                         
-                        <div className="bg-gray-50 border-b border-gray-200 px-3 py-2 flex flex-wrap items-center gap-2 shrink-0">
-                            <Calendar size={14} className="text-gray-400" />
-                            <div className="flex items-center gap-1">
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-wide">From</label>
-                                <input type="date" value={stmtFrom} onChange={e => setStmtFrom(e.target.value)}
-                                    className="h-7 text-xs border border-gray-200 rounded px-1.5 outline-none focus:ring-1 focus:ring-[#FB7506]" />
-                            </div>
-                            <div className="flex items-center gap-1">
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-wide">To</label>
-                                <input type="date" value={stmtTo} onChange={e => setStmtTo(e.target.value)}
-                                    className="h-7 text-xs border border-gray-200 rounded px-1.5 outline-none focus:ring-1 focus:ring-[#FB7506]" />
-                            </div>
-                            <button
-                                onClick={() => setStmtKey(k => k + 1)}
-                                className="flex items-center gap-1 px-2 py-1 bg-[#FB7506] hover:bg-orange-600 text-white rounded text-[10px] font-black uppercase tracking-wide transition-colors">
-                                {loadingStmt ? <RefreshCcw size={12} className="animate-spin" /> : <RefreshCcw size={12} />}
-                                Load
-                            </button>
-                            {loadingStmt && <RefreshCcw size={12} className="animate-spin text-gray-400" />}
-                        </div>
-
-                        <div className="flex-1 overflow-auto flex flex-col min-h-0 bg-white">
-                            <table className="min-w-full text-left">
-                                <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
-                                    <tr>
-                                        {["Invoice", "PO", "Inv.Date", "Amount", "Payments", "Credits", "Debits", "Balance", "Due Date", "Accum.Bal"].map(h => (
-                                            <th key={h} className="px-2 py-1.5 font-black text-[10px] text-gray-600 uppercase tracking-wide whitespace-nowrap border-r border-gray-200 last:border-r-0">{h}</th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-50 text-xs">
-                                    {loadingStmt ? (
-                                        <tr><td colSpan={10} className="p-4 text-center"><RefreshCcw size={14} className="animate-spin mx-auto text-gray-400" /></td></tr>
-                                    ) : stmtRows.length === 0 ? (
-                                        <tr><td colSpan={10} className="p-6 text-center text-gray-300 italic">No statement records</td></tr>
-                                    ) : stmtRows.map((row: any, i: number) => (
-                                        <tr key={i} className="hover:bg-gray-50">
-                                            <td className="px-2 py-1.5 border-r border-gray-50 font-mono truncate max-w-[90px]">{t(row.INVOICE_NO ?? "")}</td>
-                                            <td className="px-2 py-1.5 border-r border-gray-50 truncate max-w-[70px]">{row.PORDER_NO ? t(row.PORDER_NO) : ""}</td>
-                                            <td className="px-2 py-1.5 border-r border-gray-50 whitespace-nowrap">{fmtDate(row.DATE_ORDER ?? row.INVOICE_DATE ?? "")}</td>
-                                            <td className="px-2 py-1.5 border-r border-gray-50 text-right font-mono">{fmt(row.AMMOUNT ?? 0)}</td>
-                                            <td className="px-2 py-1.5 border-r border-gray-50 text-right font-mono">{fmt(row.PAYMENTS ?? 0)}</td>
-                                            <td className="px-2 py-1.5 border-r border-gray-50 text-right font-mono">{fmt(row.CREDITS ?? 0)}</td>
-                                            <td className="px-2 py-1.5 border-r border-gray-50 text-right font-mono">{fmt(row.DEBITS ?? 0)}</td>
-                                            <td className={cn("px-2 py-1.5 border-r border-gray-50 text-right font-mono font-bold",
-                                                parseFloat(row.TOTAL_BALANCE ?? 0) > 0 ? "text-red-600" : "text-green-700")}>
-                                                {fmt(row.TOTAL_BALANCE ?? 0)}
-                                            </td>
-                                            <td className="px-2 py-1.5 border-r border-gray-50 whitespace-nowrap">{t(row.DUE_DATE ?? "")}</td>
-                                            <td className={cn("px-2 py-1.5 text-right font-mono font-bold",
-                                                parseFloat(row.ACCUMULATED ?? 0) > 0 ? "text-red-600" : "text-green-700")}>
-                                                {fmt(row.ACCUMULATED ?? 0)}
-                                            </td>
-                                        </tr>
+                        <PanelGrid
+                            title="Statement"
+                            icon={FileText}
+                            recordCount={stmtRows.length}
+                            refreshing={loadingStmt}
+                            className="flex-1 min-h-0 rounded-none border-x-0 border-b-0"
+                            headerRight={
+                                <div className="flex items-center gap-2">
+                                    <input type="date" value={stmtFrom} onChange={e => setStmtFrom(e.target.value)}
+                                        className="border border-[#DBD9D9] bg-white text-xs rounded px-2 h-7 outline-none focus:ring-1 focus:ring-[#FB7506]" />
+                                    <span className="text-gray-400 text-[10px] font-bold uppercase">to</span>
+                                    <input type="date" value={stmtTo} onChange={e => setStmtTo(e.target.value)}
+                                        className="border border-[#DBD9D9] bg-white text-xs rounded px-2 h-7 outline-none focus:ring-1 focus:ring-[#FB7506]" />
+                                    <button onClick={() => setStmtKey(k => k + 1)}
+                                        className="h-7 px-3 bg-[#FB7506] hover:bg-orange-600 text-white rounded text-xs font-bold transition-colors">Load</button>
+                                </div>
+                            }
+                        >
+                            <PanelGridTable>
+                                <PanelGridThead>
+                                    {["Invoice", "PO", "Inv.Date", "Amount", "Payments", "Credits", "Debits", "Balance", "Due Date", "Accum.Bal"].map(h => (
+                                        <PanelGridTh key={h}>{h}</PanelGridTh>
                                     ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                </PanelGridThead>
+                                <PanelGridTbody>
+                                    {loadingStmt ? (
+                                        <tr><PanelGridTd colSpan={10} className="text-center"><RefreshCcw size={14} className="animate-spin mx-auto text-gray-400" /></PanelGridTd></tr>
+                                    ) : stmtRows.length === 0 ? (
+                                        <tr><PanelGridTd colSpan={10} className="text-center italic text-gray-400">No statement records</PanelGridTd></tr>
+                                    ) : stmtRows.map((row: any, i: number) => (
+                                        <PanelGridTr key={i}>
+                                            <PanelGridTd className="font-mono truncate max-w-[90px]">{t(row.INVOICE_NO ?? "")}</PanelGridTd>
+                                            <PanelGridTd className="truncate max-w-[70px]">{row.PORDER_NO ? t(row.PORDER_NO) : ""}</PanelGridTd>
+                                            <PanelGridTd className="whitespace-nowrap">{fmtDate(row.DATE_ORDER ?? row.INVOICE_DATE ?? "")}</PanelGridTd>
+                                            <PanelGridTd className="text-right font-mono">{fmt(row.AMMOUNT ?? 0)}</PanelGridTd>
+                                            <PanelGridTd className="text-right font-mono">{fmt(row.PAYMENTS ?? 0)}</PanelGridTd>
+                                            <PanelGridTd className="text-right font-mono">{fmt(row.CREDITS ?? 0)}</PanelGridTd>
+                                            <PanelGridTd className="text-right font-mono">{fmt(row.DEBITS ?? 0)}</PanelGridTd>
+                                            <PanelGridTd className={cn("text-right font-mono font-bold", parseFloat(row.TOTAL_BALANCE ?? 0) > 0 ? "text-red-600" : "text-green-700")}>
+                                                {fmt(row.TOTAL_BALANCE ?? 0)}
+                                            </PanelGridTd>
+                                            <PanelGridTd className="whitespace-nowrap">{t(row.DUE_DATE ?? "")}</PanelGridTd>
+                                            <PanelGridTd className={cn("text-right font-mono font-bold", parseFloat(row.ACCUMULATED ?? 0) > 0 ? "text-red-600" : "text-green-700")}>
+                                                {fmt(row.ACCUMULATED ?? 0)}
+                                            </PanelGridTd>
+                                        </PanelGridTr>
+                                    ))}
+                                </PanelGridTbody>
+                            </PanelGridTable>
+                        </PanelGrid>
                     </div>
                 </div>
             )}
@@ -1064,36 +1055,36 @@ export default function VendorsPage() {
                             </div>
                             <button onClick={() => setPendingModal(false)} className="text-gray-400 hover:text-white transition-colors"><X size={16} /></button>
                         </div>
-                        <div className="bg-gray-50 border-b border-gray-200 px-3 py-2 flex items-center gap-2 shrink-0">
-                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-wide">Showing pending invoices up to today</span>
-                            {loadingStmt && <RefreshCcw size={12} className="animate-spin text-gray-400 ml-auto" />}
-                        </div>
-                        <div className="flex-1 overflow-auto bg-white">
-                            <table className="min-w-full text-left">
-                                <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
-                                    <tr>
-                                        {["Invoice", "Inv.Date", "Amount", "Payments", "Balance"].map(h => (
-                                            <th key={h} className="px-2 py-1.5 font-black text-[10px] text-gray-600 uppercase tracking-wide whitespace-nowrap border-r border-gray-200 last:border-r-0">{h}</th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-50 text-xs">
-                                    {loadingStmt ? (
-                                        <tr><td colSpan={5} className="p-4 text-center"><RefreshCcw size={14} className="animate-spin mx-auto text-gray-400" /></td></tr>
-                                    ) : pendingRows.length === 0 ? (
-                                        <tr><td colSpan={5} className="p-6 text-center text-gray-300 italic">No pending invoices</td></tr>
-                                    ) : pendingRows.map((row: any, i: number) => (
-                                        <tr key={i} className="hover:bg-gray-50">
-                                            <td className="px-2 py-1.5 border-r border-gray-50 font-mono truncate max-w-[90px]">{t(row.INVOICE_NO ?? "")}</td>
-                                            <td className="px-2 py-1.5 border-r border-gray-50 whitespace-nowrap">{fmtDate(row.DATE_ORDER ?? row.INVOICE_DATE ?? "")}</td>
-                                            <td className="px-2 py-1.5 border-r border-gray-50 text-right font-mono">{fmt(row.AMMOUNT ?? 0)}</td>
-                                            <td className="px-2 py-1.5 border-r border-gray-50 text-right font-mono">{fmt(row.PAYMENTS ?? 0)}</td>
-                                            <td className={cn("px-2 py-1.5 text-right font-mono font-bold", parseFloat(row.TOTAL_BALANCE ?? 0) > 0 ? "text-red-600" : "text-green-700")}>{fmt(row.TOTAL_BALANCE ?? 0)}</td>
-                                        </tr>
+                        <PanelGrid
+                            title="Pending Invoices"
+                            icon={AlertCircle}
+                            recordCount={pendingRows.length}
+                            refreshing={loadingStmt}
+                            className="flex-1 min-h-0 rounded-none border-x-0 border-b-0"
+                        >
+                            <PanelGridTable>
+                                <PanelGridThead>
+                                    {["Invoice", "Inv.Date", "Amount", "Payments", "Balance"].map(h => (
+                                        <PanelGridTh key={h}>{h}</PanelGridTh>
                                     ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                </PanelGridThead>
+                                <PanelGridTbody>
+                                    {loadingStmt ? (
+                                        <tr><PanelGridTd colSpan={5} className="text-center"><RefreshCcw size={14} className="animate-spin mx-auto text-gray-400" /></PanelGridTd></tr>
+                                    ) : pendingRows.length === 0 ? (
+                                        <tr><PanelGridTd colSpan={5} className="text-center italic text-gray-400">No pending invoices</PanelGridTd></tr>
+                                    ) : pendingRows.map((row: any, i: number) => (
+                                        <PanelGridTr key={i}>
+                                            <PanelGridTd className="font-mono truncate max-w-[90px]">{t(row.INVOICE_NO ?? "")}</PanelGridTd>
+                                            <PanelGridTd className="whitespace-nowrap">{fmtDate(row.DATE_ORDER ?? row.INVOICE_DATE ?? "")}</PanelGridTd>
+                                            <PanelGridTd className="text-right font-mono">{fmt(row.AMMOUNT ?? 0)}</PanelGridTd>
+                                            <PanelGridTd className="text-right font-mono">{fmt(row.PAYMENTS ?? 0)}</PanelGridTd>
+                                            <PanelGridTd className={cn("text-right font-mono font-bold", parseFloat(row.TOTAL_BALANCE ?? 0) > 0 ? "text-red-600" : "text-green-700")}>{fmt(row.TOTAL_BALANCE ?? 0)}</PanelGridTd>
+                                        </PanelGridTr>
+                                    ))}
+                                </PanelGridTbody>
+                            </PanelGridTable>
+                        </PanelGrid>
                     </div>
                 </div>
             )}
@@ -1610,25 +1601,27 @@ export default function VendorsPage() {
                         </div>
 
                         {/* Groups list */}
-                        <div className="flex-1 overflow-auto">
-                            <table className="min-w-full text-left">
-                                <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
-                                    <tr>
-                                        <th className="px-3 py-1.5 font-black text-[10px] text-gray-600 uppercase tracking-wide">Group Name</th>
-                                        <th className="px-2 py-1.5 w-16 text-center font-black text-[10px] text-gray-600 uppercase tracking-wide">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-50 text-xs">
+                        <PanelGrid
+                            title="Groups"
+                            icon={Building2}
+                            recordCount={(groupsList as any[]).length}
+                            className="flex-1 min-h-0 rounded-none border-x-0 border-b-0"
+                        >
+                            <PanelGridTable>
+                                <PanelGridThead>
+                                    <PanelGridTh>Group Name</PanelGridTh>
+                                    <PanelGridTh className="w-16 text-center">Actions</PanelGridTh>
+                                </PanelGridThead>
+                                <PanelGridTbody>
                                     {(groupsList as any[]).length === 0 ? (
-                                        <tr><td colSpan={2} className="p-4 text-center text-gray-300 italic">No groups</td></tr>
+                                        <tr><PanelGridTd colSpan={2} className="text-center italic text-gray-400">No groups</PanelGridTd></tr>
                                     ) : (groupsList as any[]).map((row: any, i: number) => {
                                         const uq = t(row.UNICO);
                                         const sel = selGrpUq === uq;
                                         return (
-                                            <tr key={i} onClick={() => setSelGrpUq(sel ? null : uq)}
-                                                className={cn("cursor-pointer transition-colors", sel ? "!bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50")}>
-                                                <td className="px-3 py-1.5">{t(row.GROWERTYPE)}</td>
-                                                <td className="px-2 py-1 text-center">
+                                            <PanelGridTr key={i} selected={sel} onClick={() => setSelGrpUq(sel ? null : uq)}>
+                                                <PanelGridTd>{t(row.GROWERTYPE)}</PanelGridTd>
+                                                <PanelGridTd className="text-center">
                                                     <div className="flex items-center justify-center gap-1">
                                                         <button onClick={e => { e.stopPropagation(); setGrpForm({ unico: uq, growertype: t(row.GROWERTYPE) }); setGrpMode("edit"); setSelGrpUq(uq); }}
                                                             className="p-1 text-orange-500 hover:bg-orange-50 rounded transition-colors" title="Edit">
@@ -1639,13 +1632,13 @@ export default function VendorsPage() {
                                                             <Trash2 size={12} />
                                                         </button>
                                                     </div>
-                                                </td>
-                                            </tr>
+                                                </PanelGridTd>
+                                            </PanelGridTr>
                                         );
                                     })}
-                                </tbody>
-                            </table>
-                        </div>
+                                </PanelGridTbody>
+                            </PanelGridTable>
+                        </PanelGrid>
                     </div>
                 </div>
             )}
