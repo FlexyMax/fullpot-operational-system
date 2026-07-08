@@ -328,7 +328,7 @@ export default function CarriersDefinitionPage() {
             </div>
 
             {/* ── Full-page grid ─────────────────────────────────────────────── */}
-            <div className="flex flex-1 min-h-0 p-2">
+            <div className={cn("flex flex-1 min-h-0 px-2 pt-2", selUnico ? "pb-[76px] md:pb-2" : "pb-2")}>
                 <PanelGrid
                     className="flex-1"
                     title="Carriers"
@@ -361,6 +361,18 @@ export default function CarriersDefinitionPage() {
                             >
                                 <Users size={12} />
                                 <span className="hidden sm:inline">Customers</span>
+                            </button>
+                            <button
+                                onClick={() => { if (selUnico) { setOtherForm({ internal_delivery: Boolean(form.internal_delivery) }); setOthersModal(true); } }}
+                                disabled={!selUnico}
+                                title="Other Settings"
+                                className={cn(
+                                    "flex items-center gap-1 px-2 h-7 rounded text-[10px] font-black uppercase tracking-wider transition-all",
+                                    selUnico ? "bg-gray-100 text-gray-700 hover:bg-gray-200" : "text-gray-500 cursor-not-allowed opacity-40"
+                                )}
+                            >
+                                <Settings size={12} />
+                                <span className="hidden sm:inline">Others</span>
                             </button>
                             <AuditLogModal recordId={selUnico} disabled={!selUnico} />
                         </div>
