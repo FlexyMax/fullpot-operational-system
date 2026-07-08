@@ -7,7 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     Building2, RefreshCcw, Plus, Minus, Pencil, Trash2,
     Search, X, Save, ChevronRight, ChevronLeft,
-    FileText, AlertCircle,
+    FileText, AlertCircle, Eye, EyeOff,
     Download, Globe, Settings2,
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
@@ -260,6 +260,12 @@ export default function VendorsPage() {
     const [grpError,   setGrpError]   = useState<string | null>(null);
     const [selGrpUq,   setSelGrpUq]   = useState<string | null>(null);
 
+    // Web Settings modal
+    const [wsForm,     setWsForm]     = useState({ flower_system: false, send_file_warehouse: false, chk_boxes: false, chk_stems: false, auto_packing: false, special_contributor: false, international: false, whouse_farm_id: "", clave: "" });
+    const [wsSaving,   setWsSaving]   = useState(false);
+    const [wsError,    setWsError]    = useState<string | null>(null);
+    const [showWsPass, setShowWsPass] = useState(false);
+
     // ── Queries ───────────────────────────────────────────────────────────────
     const [vendorsPage, setVendorsPage] = useState(1);
     const [vendorsList, setVendorsList] = useState<any[]>([]);
@@ -469,6 +475,115 @@ export default function VendorsPage() {
             setModalOpen(true);
         } catch (e: any) {
             toast.error(e.message);
+        }
+    };
+
+    // ── Web Settings modal ────────────────────────────────────────────────────
+    const handleOpenWs = () => {
+        if (!selectedUq) return;
+        const rec = (vendorsList as any[]).find(r => t(r.UNICO) === selectedUq);
+        if (!rec) return;
+        setWsForm({
+            flower_system:       Boolean(rec.FLOWER_SYSTEM),
+            send_file_warehouse: Boolean(rec.SEND_FILE_WAREHOUSE),
+            chk_boxes:           Boolean(rec.WEB_CONFIRM_BOXES),
+            chk_stems:           Boolean(rec.WEB_CONFIRM_STEMS),
+            auto_packing:        Boolean(rec.AUTO_PACKING),
+            special_contributor: Boolean(rec.SPECIAL_CONTRIBUTOR),
+            international:       Boolean(rec.INTERNATIONAL),
+            whouse_farm_id:      t(rec.WHOUSE_FARM_ID) || t(rec.FARM),
+            clave:               t(rec.CLAVE),
+        });
+        setWsError(null);
+        setShowWsPass(false);
+        handleOpenWs();
+    };
+
+    const handleSaveWs = async () => {
+        setWsSaving(true);
+        setWsError(null);
+        try {
+            const r = await fetch(`/api/vendors/${selectedUq}`);
+            const d = await r.json();
+            if (!d) throw new Error("Vendor not found.");
+            const fill: any = {};
+            for (const [k, v] of Object.entries(d as object)) fill[k.toLowerCase()] = v;
+            const payload = {
+                ...EMPTY_FORM,
+                unico:                   t(fill.unico),
+                grower:                  t(fill.grower),
+                farm:                    t(fill.farm),
+                source:                  t(fill.source),
+                nit_ruc:                 t(fill.nit_ruc),
+                active:                  Boolean(fill.active),
+                officeadd1:              t(fill.officeadd1),
+                officeadd2:              t(fill.officeadd2),
+                farm_add1:               t(fill.farm_add1),
+                farm_add2:               t(fill.farm_add2),
+                fob:                     t(fill.fob),
+                city:                    t(fill.city),
+                country:                 t(fill.country),
+                phone_1:                 t(fill.phone_1),
+                phone_2:                 t(fill.phone_2),
+                fax_1:                   t(fill.fax_1),
+                fax_2:                   t(fill.fax_2),
+                celular:                 t(fill.celular),
+                email_1:                 t(fill.email_1),
+                email_2:                 t(fill.email_2),
+                msn_yahoo:               t(fill.msn_yahoo),
+                manager:                 t(fill.manager),
+                secretary:               t(fill.secretary),
+                production:              Boolean(fill.production),
+                salesman:                t(fill.sales_person ?? fill.salesman ?? ""),
+                ship_days:               parseInt(fill.ship_days ?? 0) || 0,
+                old_code:                t(fill.edi_code ?? fill.old_code ?? ""),
+                bank:                    t(fill.bankname ?? fill.bank ?? ""),
+                bank_account:            t(fill.bank_account),
+                change_password:         Boolean(fill.change_password),
+                qb_flower:               Boolean(fill.qb_flower),
+                qb_freight:              Boolean(fill.qb_freight),
+                apply_freight:           Boolean(fill.apply_freight),
+                duties:                  Boolean(fill.duties),
+                broker:                  Boolean(fill.broker),
+                handling:                Boolean(fill.handling),
+                ocharges:                Boolean(fill.ocharges),
+                commission:              parseFloat(fill.con_comi ?? fill.commission ?? 0) || 0,
+                fuel_discount:           parseFloat(fill.fuel ?? fill.fuel_discount ?? 0) || 0,
+                sales_factor:            parseFloat(fill.sales_factor ?? 0) || 0,
+                pack_disc:               parseFloat(fill.pack_p_ret ?? fill.pack_disc ?? 0) || 0,
+                pack_return:             parseFloat(fill.pack_return ?? 0) || 0,
+                text_invoice:            t(fill.text_invoice),
+                text_packing:            t(fill.text_label ?? fill.text_packing ?? ""),
+                inventory_from_products: Boolean(fill.inventory_from_products),
+                terms_uq:                t(fill.terms_uq ?? fill.terms ?? ""),
+                agency_uq:               t(fill.type_uq ?? fill.agency_uq ?? ""),
+                group_uq:                t(fill.cargo_uq ?? fill.group_uq ?? ""),
+                // Web fields from the form:
+                flower_system:           wsForm.flower_system,
+                send_file_warehouse:     wsForm.send_file_warehouse,
+                chk_boxes:               wsForm.chk_boxes,
+                chk_stems:               wsForm.chk_stems,
+                auto_packing:            wsForm.auto_packing,
+                special_contributor:     wsForm.special_contributor,
+                international:           wsForm.international,
+                whouse_farm_id:          wsForm.whouse_farm_id,
+                clave:                   wsForm.clave,
+            };
+            const res = await fetch(`/api/vendors/${selectedUq}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            const dr = await res.json();
+            if (!dr.success) throw new Error(dr.error || "Save failed");
+            logAction("Edit", selectedUq!);
+            toast.success("Web settings saved.");
+            qc.invalidateQueries({ queryKey: ["vendors-list"] });
+            setWsModal(false);
+        } catch (e: any) {
+            setWsError(e.message);
+        } finally {
+            setWsSaving(false);
         }
     };
 
@@ -785,7 +900,7 @@ export default function VendorsPage() {
                                 className="flex items-center gap-1.5 h-7 px-3 bg-white border border-[#DBD9D9] hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed text-[#4F4F4F] rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors whitespace-nowrap">
                                 <Settings2 size={14} /> Classes
                             </button>
-                            <button onClick={() => setWsModal(true)} disabled={!selectedUq}
+                            <button onClick={() => handleOpenWs()} disabled={!selectedUq}
                                 className="flex items-center gap-1.5 h-7 px-3 bg-white border border-[#DBD9D9] hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed text-[#4F4F4F] rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors whitespace-nowrap">
                                 <Globe size={14} /> Web
                             </button>
@@ -936,7 +1051,7 @@ export default function VendorsPage() {
                         <span className="text-[9px] font-black uppercase tracking-wider">Classes</span>
                     </button>
 
-                    <button onClick={() => setWsModal(true)} 
+                    <button onClick={() => handleOpenWs()} 
                         className="flex flex-col items-center gap-1 text-gray-600 transition-colors hover:text-blue-500 min-w-[56px] shrink-0">
                         <Globe size={20} className="text-blue-500" />
                         <span className="text-[9px] font-black uppercase tracking-wider">Web</span>
@@ -1515,43 +1630,75 @@ export default function VendorsPage() {
                                 </div>
                                 <button onClick={() => setWsModal(false)} className="text-gray-400 hover:text-white transition-colors"><X size={16} /></button>
                             </div>
-                            <div className="p-4 space-y-3 text-xs overflow-y-auto">
-                                <div className="bg-gray-50 rounded p-3 border border-gray-100 space-y-2">
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {[
-                                            { label: "Flower System",       field: "FLOWER_SYSTEM" },
-                                            { label: "Send File Warehouse", field: "SEND_FILE_WAREHOUSE" },
-                                            { label: "Web Confirm Boxes",   field: "WEB_CONFIRM_BOXES" },
-                                            { label: "Web Confirm Stems",   field: "WEB_CONFIRM_STEMS" },
-                                            { label: "Auto Packing",        field: "AUTO_PACKING" },
-                                            { label: "Special Contributor", field: "SPECIAL_CONTRIBUTOR" },
-                                            { label: "International",       field: "INTERNATIONAL" },
-                                        ].map(({ label, field }) => (
-                                            <div key={field} className="flex items-center justify-between gap-2">
-                                                <span className="text-[10px] font-black text-gray-500 uppercase tracking-wider">{label}</span>
-                                                <span className={cn("text-[10px] font-black", rec[field] ? "text-green-600" : "text-gray-300")}>
-                                                    {rec[field] ? "YES" : "NO"}
-                                                </span>
-                                            </div>
+
+                            <div className="p-4 space-y-4 overflow-y-auto flex-1 text-xs">
+                                {wsError && (
+                                    <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded p-2">
+                                        <AlertCircle size={14} className="text-red-500 shrink-0" />
+                                        <span className="text-xs text-red-600">{wsError}</span>
+                                    </div>
+                                )}
+
+                                {/* Web permission checkboxes */}
+                                <div className="bg-gray-50 rounded p-3 border border-gray-100">
+                                    <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                                        {([
+                                            { key: "flower_system",       label: "Flower System" },
+                                            { key: "send_file_warehouse", label: "Send File Warehouse" },
+                                            { key: "chk_boxes",           label: "Web Confirm Boxes" },
+                                            { key: "chk_stems",           label: "Web Confirm Stems" },
+                                            { key: "auto_packing",        label: "Auto Packing" },
+                                            { key: "special_contributor", label: "Special Contributor" },
+                                            { key: "international",       label: "International" },
+                                        ] as { key: keyof typeof wsForm; label: string }[]).map(({ key, label }) => (
+                                            <label key={key} className="flex items-center gap-2 cursor-pointer py-0.5">
+                                                <input type="checkbox"
+                                                    checked={Boolean(wsForm[key])}
+                                                    onChange={e => setWsForm(p => ({ ...p, [key]: e.target.checked }))}
+                                                    className="w-4 h-4 accent-[#FB7506] shrink-0" />
+                                                <span className="text-[10px] font-black text-gray-600 uppercase tracking-wider">{label}</span>
+                                            </label>
                                         ))}
                                     </div>
                                 </div>
-                                <div className="space-y-1">
-                                    <div className="flex flex-col gap-0.5">
-                                        <span className="text-[10px] font-black text-gray-500 uppercase tracking-wider">WH Farm ID</span>
-                                        <span className="font-mono text-gray-800 text-xs">{t(rec.WHOUSE_FARM_ID ?? "") || "—"}</span>
-                                    </div>
-                                    <div className="flex flex-col gap-0.5 mt-1">
-                                        <span className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Password</span>
-                                        <span className="font-mono text-gray-800 text-xs">{t(rec.CLAVE ?? "") || "—"}</span>
+
+                                {/* WH Farm ID */}
+                                <div className="flex flex-col gap-0.5">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">WH Farm ID</label>
+                                    <input value={wsForm.whouse_farm_id}
+                                        onChange={e => setWsForm(p => ({ ...p, whouse_farm_id: e.target.value }))}
+                                        placeholder={t(rec.FARM ?? "")}
+                                        className="fos-input h-8 text-xs font-mono uppercase" />
+                                    <span className="text-[10px] text-gray-400 mt-0.5">Farm code: <span className="font-mono font-bold text-[#FB7506]">{t(rec.FARM ?? "")}</span></span>
+                                </div>
+
+                                {/* Password */}
+                                <div className="flex flex-col gap-0.5">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Web Portal Password</label>
+                                    <div className="relative">
+                                        <input
+                                            type={showWsPass ? "text" : "password"}
+                                            value={wsForm.clave}
+                                            onChange={e => setWsForm(p => ({ ...p, clave: e.target.value }))}
+                                            className="fos-input h-8 text-xs w-full pr-8" />
+                                        <button type="button"
+                                            onClick={() => setShowWsPass(p => !p)}
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                            {showWsPass ? <EyeOff size={14} /> : <Eye size={14} />}
+                                        </button>
                                     </div>
                                 </div>
-                                <p className="text-[10px] text-gray-400 italic">To edit these settings, use the vendor Setup form (Edit button).</p>
                             </div>
-                            <div className="flex justify-end px-4 py-3 bg-gray-50 border-t shrink-0">
+
+                            <div className="flex justify-end gap-2 px-4 py-3 bg-gray-50 border-t shrink-0">
                                 <button onClick={() => setWsModal(false)}
                                     className="px-4 py-2 rounded border border-gray-200 text-xs font-black uppercase text-gray-600 hover:bg-gray-100 transition-colors">
-                                    Close
+                                    Cancel
+                                </button>
+                                <button onClick={handleSaveWs} disabled={wsSaving}
+                                    className="flex items-center gap-2 px-5 py-2 rounded bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white text-xs font-black uppercase tracking-wider transition-all">
+                                    {wsSaving ? <RefreshCcw size={12} className="animate-spin" /> : <Save size={12} />}
+                                    {wsSaving ? "Saving..." : "Save"}
                                 </button>
                             </div>
                         </div>
