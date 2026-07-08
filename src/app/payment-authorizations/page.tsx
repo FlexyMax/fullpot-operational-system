@@ -54,7 +54,7 @@ const toastConfirm = (msg: string, onConfirm: () => void) => {
 };
 
 // ─── Modal wrapper ─────────────────────────────────────────────────────────────
-function Modal({ title, icon: Icon, onClose, children, footer, size = "md" }: any) {
+function Modal({ title, icon: Icon, onClose, children, footer, size = "md", noInnerPad = false }: any) {
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 sm:p-4">
             <div className={cn(
@@ -68,7 +68,7 @@ function Modal({ title, icon: Icon, onClose, children, footer, size = "md" }: an
                     </div>
                     <button onClick={onClose}><XCircle size={16} className="text-gray-400 hover:text-white" /></button>
                 </div>
-                <div className="overflow-y-auto flex-1 p-4">{children}</div>
+                <div className={noInnerPad ? "flex-1 min-h-0 flex flex-col" : "overflow-y-auto flex-1 p-4"}>{children}</div>
                 {footer && <div className="flex justify-end gap-2 px-4 py-3 bg-gray-50 border-t rounded-b-xl shrink-0">{footer}</div>}
             </div>
         </div>
@@ -358,7 +358,7 @@ function ModalCRDB({ invoiceUq, invoiceNo, growerName, onClose, onOpen, logActio
         : <span className="inline-flex px-1.5 py-0.5 rounded text-[9px] font-black bg-red-100 text-red-600">DEBIT</span>;
 
     return (
-        <Modal title={`Credits / Debits — Invoice ${invoiceNo}`} icon={CreditCard} onClose={onClose} size="xl"
+        <Modal title={`Credits / Debits — Invoice ${invoiceNo}`} icon={CreditCard} onClose={onClose} size="xl" noInnerPad
             footer={
                 mode === "form" ? (
                     <>
@@ -373,54 +373,58 @@ function ModalCRDB({ invoiceUq, invoiceNo, growerName, onClose, onOpen, logActio
             }>
 
             {mode === "form" ? (
-                <div className="flex flex-col gap-4">
-                    <div className="flex items-center gap-6">
-                        <label className="text-[10px] font-bold text-gray-500 uppercase">Type</label>
-                        {(["C", "D"] as const).map(tp => (
-                            <label key={tp} className="flex items-center gap-1.5 text-xs cursor-pointer">
-                                <input type="radio" checked={formType === tp} onChange={() => setFormType(tp)} className="accent-orange-500" />
-                                <span className={tp === "C" ? "text-green-700 font-bold" : "text-red-600 font-bold"}>{tp === "C" ? "Credit" : "Debit"}</span>
-                            </label>
-                        ))}
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="flex flex-col gap-1">
-                            <label className="text-[10px] font-bold text-gray-500 uppercase">Date</label>
-                            <input type="date" value={formDate} onChange={e => setFormDate(e.target.value)} className="border rounded px-2 py-1 text-sm" />
+                <div className="overflow-y-auto flex-1 p-4">
+                    <div className="flex flex-col gap-4">
+                        <div className="flex items-center gap-6">
+                            <label className="text-[10px] font-bold text-gray-500 uppercase">Type</label>
+                            {(["C", "D"] as const).map(tp => (
+                                <label key={tp} className="flex items-center gap-1.5 text-xs cursor-pointer">
+                                    <input type="radio" checked={formType === tp} onChange={() => setFormType(tp)} className="accent-orange-500" />
+                                    <span className={tp === "C" ? "text-green-700 font-bold" : "text-red-600 font-bold"}>{tp === "C" ? "Credit" : "Debit"}</span>
+                                </label>
+                            ))}
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="flex flex-col gap-1">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase">Date</label>
+                                <input type="date" value={formDate} onChange={e => setFormDate(e.target.value)} className="border rounded px-2 py-1 text-sm" />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase">Amount</label>
+                                <input type="number" step="0.01" min="0" value={formAmount} onChange={e => setFormAmount(e.target.value)} className="border rounded px-2 py-1 text-sm text-right" />
+                            </div>
                         </div>
                         <div className="flex flex-col gap-1">
-                            <label className="text-[10px] font-bold text-gray-500 uppercase">Amount</label>
-                            <input type="number" step="0.01" min="0" value={formAmount} onChange={e => setFormAmount(e.target.value)} className="border rounded px-2 py-1 text-sm text-right" />
+                            <label className="text-[10px] font-bold text-gray-500 uppercase">Reason</label>
+                            <select value={formReason} onChange={e => setFormReason(e.target.value)} className="border rounded px-2 py-1 text-sm">
+                                <option value="">— Select —</option>
+                                {reasonsList.map((r: any) => <option key={t(r.UNICO)} value={t(r.UNICO)}>{t(r.REASON)}</option>)}
+                            </select>
                         </div>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                        <label className="text-[10px] font-bold text-gray-500 uppercase">Reason</label>
-                        <select value={formReason} onChange={e => setFormReason(e.target.value)} className="border rounded px-2 py-1 text-sm">
-                            <option value="">— Select —</option>
-                            {reasonsList.map((r: any) => <option key={t(r.UNICO)} value={t(r.UNICO)}>{t(r.REASON)}</option>)}
-                        </select>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                        <label className="text-[10px] font-bold text-gray-500 uppercase">Details / Notes</label>
-                        <input type="text" value={formDetails} onChange={e => setFormDetails(e.target.value)} maxLength={100} className="border rounded px-2 py-1 text-sm" />
+                        <div className="flex flex-col gap-1">
+                            <label className="text-[10px] font-bold text-gray-500 uppercase">Details / Notes</label>
+                            <input type="text" value={formDetails} onChange={e => setFormDetails(e.target.value)} maxLength={100} className="border rounded px-2 py-1 text-sm" />
+                        </div>
                     </div>
                 </div>
             ) : (
-                <div className="flex flex-col gap-3">
-                    <div className="flex items-center gap-2 justify-between">
-                        <span className="text-xs text-gray-500">{growerName}</span>
-                        <div className="flex gap-2">
-                            {perms.canCreate && (
-                                <>
-                                    <button onClick={() => openAdd("C")} className="flex items-center gap-1 px-3 h-7 rounded bg-green-600 text-white text-[11px] font-bold hover:bg-green-700"><Plus size={11} />Credit</button>
-                                    <button onClick={() => openAdd("D")} className="flex items-center gap-1 px-3 h-7 rounded bg-red-500 text-white text-[11px] font-bold hover:bg-red-600"><Plus size={11} />Debit</button>
-                                </>
-                            )}
-                            <button onClick={() => refetch()} title="Refresh" className="p-1.5 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700">
-                                <RefreshCcw size={13} className={isFetching ? "animate-spin" : ""} />
-                            </button>
-                        </div>
-                    </div>
+                <PanelGrid
+                    className="flex-1 min-h-0 rounded-none border-x-0 border-b-0"
+                    title="Credits / Debits"
+                    icon={CreditCard}
+                    recordCount={crdbList.length}
+                    refreshing={isFetching}
+                    onRefresh={() => refetch()}
+                    subheader={growerName ? <span className="px-3 pb-1 block text-xs text-gray-500">{growerName}</span> : undefined}
+                    headerRight={
+                        perms.canCreate ? (
+                            <div className="flex items-center gap-1">
+                                <button onClick={() => openAdd("C")} className="flex items-center gap-1 px-2 h-7 rounded bg-green-600 text-white text-[10px] font-bold hover:bg-green-700"><Plus size={10} />Credit</button>
+                                <button onClick={() => openAdd("D")} className="flex items-center gap-1 px-2 h-7 rounded bg-red-500 text-white text-[10px] font-bold hover:bg-red-600"><Plus size={10} />Debit</button>
+                            </div>
+                        ) : undefined
+                    }
+                >
                     <PanelGridTable>
                         <PanelGridThead>
                             <PanelGridTh align="center">#</PanelGridTh>
@@ -478,7 +482,7 @@ function ModalCRDB({ invoiceUq, invoiceNo, growerName, onClose, onOpen, logActio
                             </PanelGridTfoot>
                         )}
                     </PanelGridTable>
-                </div>
+                </PanelGrid>
             )}
         </Modal>
     );
@@ -1366,6 +1370,7 @@ export default function PaymentAuthorizationsPage() {
                     icon={BarChart2}
                     onClose={() => { setQuarterSummaryModal(false); setQSumSel(null); setQSumDetail([]); }}
                     size="xl"
+                    noInnerPad
                     footer={
                         qSumSel ? (
                             <div className="flex justify-between w-full">
@@ -1385,11 +1390,16 @@ export default function PaymentAuthorizationsPage() {
                     }>
                     {qSumSel ? (
                         loadingQSumDetail ? (
-                            <div className="flex items-center gap-2 text-gray-400 text-xs py-4"><Loader2 size={14} className="animate-spin" />Loading detail…</div>
+                            <div className="flex-1 flex items-center justify-center gap-2 text-gray-400 text-xs"><Loader2 size={14} className="animate-spin" />Loading detail…</div>
                         ) : qSumDetail.length === 0 ? (
-                            <p className="text-xs text-gray-400 italic py-4">No invoices found for this vendor in the last 4 months.</p>
+                            <div className="flex-1 flex items-center justify-center"><p className="text-xs text-gray-400 italic">No invoices found for this vendor in the last 4 months.</p></div>
                         ) : (
-                            <div className="overflow-auto">
+                            <PanelGrid
+                                className="flex-1 min-h-0 rounded-none border-x-0 border-b-0"
+                                title={qSumSel.name}
+                                icon={BarChart2}
+                                recordCount={qSumDetail.length}
+                            >
                                 <PanelGridTable>
                                     <PanelGridThead>
                                         {Object.keys(qSumDetail[0]).filter(c => !skipDetailCol(c)).map(c => <PanelGridTh key={c}>{c.replace(/_/g, " ")}</PanelGridTh>)}
@@ -1402,22 +1412,27 @@ export default function PaymentAuthorizationsPage() {
                                         ))}
                                     </PanelGridTbody>
                                 </PanelGridTable>
-                            </div>
+                            </PanelGrid>
                         )
                     ) : loadingVendorsSummary ? (
-                        <div className="flex items-center gap-2 text-gray-400 text-xs py-4"><Loader2 size={14} className="animate-spin" />Loading…</div>
+                        <div className="flex-1 flex items-center justify-center gap-2 text-gray-400 text-xs"><Loader2 size={14} className="animate-spin" />Loading…</div>
                     ) : vendorsSummary.length === 0 ? (
-                        <p className="text-xs text-gray-400 italic py-4">No records found for the last 4 months.</p>
+                        <div className="flex-1 flex items-center justify-center"><p className="text-xs text-gray-400 italic">No records found for the last 4 months.</p></div>
                     ) : (
-                        <div className="overflow-auto">
-                            <p className="text-[10px] text-gray-400 italic mb-2">Click a vendor to see invoice detail</p>
+                        <PanelGrid
+                            className="flex-1 min-h-0 rounded-none border-x-0 border-b-0"
+                            title="All Vendors"
+                            icon={BarChart2}
+                            recordCount={(vendorsSummary as any[]).length}
+                            subheader={<span className="px-3 pb-1 block text-[10px] text-gray-400 italic">Click a vendor to see invoice detail</span>}
+                        >
                             <PanelGridTable>
                                 <PanelGridThead>
                                     {Object.keys(vendorsSummary[0]).filter(c => !skipModalCol(c)).map(c => <PanelGridTh key={c}>{c.replace(/_/g, " ")}</PanelGridTh>)}
                                 </PanelGridThead>
                                 <PanelGridTbody>
                                     {(vendorsSummary as any[]).map((row, i) => (
-                                        <PanelGridTr key={i} className="cursor-pointer" onClick={async () => {
+                                        <PanelGridTr key={i} onClick={async () => {
                                             const uq   = t(row.UNICO ?? row.GROWER_UQ ?? row.SUPPLIER_UQ ?? "");
                                             const name = t(row.GROWER ?? row.SUPPLIER ?? row.GROWER_NAME ?? row.NAME ?? "");
                                             if (!uq) return;
@@ -1434,21 +1449,26 @@ export default function PaymentAuthorizationsPage() {
                                     ))}
                                 </PanelGridTbody>
                             </PanelGridTable>
-                        </div>
+                        </PanelGrid>
                     )}
                 </Modal>
             )}
 
             {/* 4 Months Detail modal */}
             {quarterDetailModal && (
-                <Modal title={`4 Months Detail — ${store.lcgrower}`} icon={BarChart2} onClose={() => setQuarterDetailModal(false)} size="xl"
+                <Modal title={`4 Months Detail — ${store.lcgrower}`} icon={BarChart2} onClose={() => setQuarterDetailModal(false)} size="xl" noInnerPad
                     footer={<button onClick={() => setQuarterDetailModal(false)} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Close</button>}>
                     {loadingQDetail ? (
-                        <div className="flex items-center gap-2 text-gray-400 text-xs"><Loader2 size={14} className="animate-spin" />Loading…</div>
+                        <div className="flex-1 flex items-center justify-center gap-2 text-gray-400 text-xs"><Loader2 size={14} className="animate-spin" />Loading…</div>
                     ) : quarterDetail.length === 0 ? (
-                        <p className="text-xs text-gray-400 italic">No detail records found.</p>
+                        <div className="flex-1 flex items-center justify-center"><p className="text-xs text-gray-400 italic">No detail records found.</p></div>
                     ) : (
-                        <div className="overflow-auto">
+                        <PanelGrid
+                            className="flex-1 min-h-0 rounded-none border-x-0 border-b-0"
+                            title={store.lcgrower}
+                            icon={BarChart2}
+                            recordCount={quarterDetail.length}
+                        >
                             <PanelGridTable>
                                 <PanelGridThead>
                                     {Object.keys(quarterDetail[0]).map(c => <PanelGridTh key={c}>{c}</PanelGridTh>)}
@@ -1461,7 +1481,7 @@ export default function PaymentAuthorizationsPage() {
                                     ))}
                                 </PanelGridTbody>
                             </PanelGridTable>
-                        </div>
+                        </PanelGrid>
                     )}
                 </Modal>
             )}
