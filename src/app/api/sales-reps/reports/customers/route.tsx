@@ -12,10 +12,18 @@ export async function GET(req: NextRequest) {
     const lcunico = sp.get("lcunico") ?? "%";
     const name    = sp.get("name")    ?? "";
 
-    const [r, company] = await Promise.all([
-        executeProcedure("sp_flower_customers_by_salesman_report", { lcunico }),
-        getCompanyInfo(),
-    ]);
+    let r: any, company: any;
+    try {
+        [r, company] = await Promise.all([
+            executeProcedure("sp_flower_customers_by_salesman_report", { lcunico }),
+            getCompanyInfo(),
+        ]);
+    } catch (err: any) {
+        return new Response(JSON.stringify({ error: err.message }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+        });
+    }
 
     const rows = r.recordset ?? [];
 
