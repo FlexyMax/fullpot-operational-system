@@ -46,7 +46,9 @@ export async function GET(req: NextRequest) {
         });
     }
 
-    const columns = buildColumns(rows, false);
+    // Salesman columns are already shown in the subtitle — skip them from rows
+    const SALESMAN_SKIP = new Set(["IDENTITY_COLUMN", "SALESMAN_FNAME", "SALESMAN_LNAME", "SALESMAN_NAME"]);
+    const columns = buildColumns(rows, false, SALESMAN_SKIP);
     if (!columns.length) columns.push({ key: "_empty", label: "No data", width: 1 });
 
     const subtitle = [
