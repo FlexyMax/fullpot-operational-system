@@ -887,19 +887,10 @@ export default function CustomersSetupPage() {
                                 <span className="font-black text-xs uppercase tracking-widest text-white truncate">
                                     Statement — {t(selCust?.customer)}
                                 </span>
-                                {loadingStmt && <RefreshCcw size={14} className="text-gray-400 animate-spin ml-2" />}
                             </div>
-                            <div className="flex items-center gap-3">
-                                <div className="flex items-center gap-2">
-                                    <input type="date" value={stmtFrom} onChange={e => setStmtFrom(e.target.value)} className="bg-gray-700 border-none outline-none text-white text-xs rounded px-2 h-7" />
-                                    <span className="text-gray-400 text-[10px] font-bold uppercase">to</span>
-                                    <input type="date" value={stmtTo} onChange={e => setStmtTo(e.target.value)} className="bg-gray-700 border-none outline-none text-white text-xs rounded px-2 h-7" />
-                                    <button onClick={() => { setStmtEnabled(true); refetchStmt(); }} className="h-7 px-3 bg-[#FB7506] hover:bg-orange-600 text-white rounded text-xs font-bold transition-colors">Load</button>
-                                </div>
-                                <button onClick={() => setStmtModal(false)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
-                                    <X size={18} />
-                                </button>
-                            </div>
+                            <button onClick={() => setStmtModal(false)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+                                <X size={18} />
+                            </button>
                         </div>
                         <PanelGrid
                             title="Statement"
@@ -907,6 +898,14 @@ export default function CustomersSetupPage() {
                             recordCount={stmtEnabled ? (statement as any[]).length : undefined}
                             refreshing={loadingStmt}
                             className="flex-1 min-h-0 rounded-none border-x-0 border-b-0"
+                            headerRight={
+                                <div className="flex items-center gap-2">
+                                    <input type="date" value={stmtFrom} onChange={e => setStmtFrom(e.target.value)} className="border border-[#DBD9D9] bg-white text-xs rounded px-2 h-7 outline-none focus:ring-1 focus:ring-[#FB7506]" />
+                                    <span className="text-gray-400 text-[10px] font-bold uppercase">to</span>
+                                    <input type="date" value={stmtTo} onChange={e => setStmtTo(e.target.value)} className="border border-[#DBD9D9] bg-white text-xs rounded px-2 h-7 outline-none focus:ring-1 focus:ring-[#FB7506]" />
+                                    <button onClick={() => { setStmtEnabled(true); refetchStmt(); }} className="h-7 px-3 bg-[#FB7506] hover:bg-orange-600 text-white rounded text-xs font-bold transition-colors">Load</button>
+                                </div>
+                            }
                         >
                             {!stmtEnabled ? <div className="h-40 flex items-center justify-center text-gray-400 text-sm font-bold uppercase">Select date range and click Load</div>
                             : (statement as any[]).length === 0 ? <div className="h-40 flex items-center justify-center text-gray-400 text-sm italic">{loadingStmt ? "Loading..." : "No statement records"}</div>
