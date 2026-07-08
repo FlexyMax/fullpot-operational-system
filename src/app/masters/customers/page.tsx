@@ -380,7 +380,7 @@ export default function CustomersSetupPage() {
             <AppHeader title="Customers" />
 
             {/* Search toolbar */}
-            <div className="bg-white border-b border-gray-200 px-3 py-2 flex items-center gap-2 shrink-0 shadow-sm flex-wrap">
+            <div className="bg-[#F5F3F3] border-b border-[#DBD9D9] px-3 py-2 flex items-center gap-2 shrink-0 flex-wrap">
                 <div className="relative">
                     <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input type="text" value={search} onChange={e => setSearch(e.target.value)}
@@ -492,7 +492,7 @@ export default function CustomersSetupPage() {
                                     <Fragment key={c.unico}>
                                         <PanelGridTr selected={isSel} onClick={() => selectCustomer(c)}>
                                             <PanelGridTd className="w-6 pl-1 pr-0">
-                                                <button onClick={e => { e.stopPropagation(); if (isExp) { setExpandedCustUnico(null); } else { selectCustomer(c); setExpandedCustUnico(c.unico); } }}
+                                                <button onClick={e => { e.stopPropagation(); if (isExp) { setExpandedCustUnico(null); } else { if (!isSel) selectCustomer(c); setExpandedCustUnico(c.unico); } }}
                                                     className="p-0.5 rounded hover:bg-gray-200 transition-colors">
                                                     {isExp ? <Minus size={11} className="text-[#FB7506]" /> : <Plus size={11} className="text-gray-400" />}
                                                 </button>
@@ -679,10 +679,9 @@ export default function CustomersSetupPage() {
                                                                         { label: "Delete User", icon: Trash2, color: "orange", onClick: () => { if(selWebUser) { setFormError(null); setWebUserModal({ mode:"delete" }); } }, disabled: !selWebUser || !perms.canDelete },
                                                                     ]}
                                                                 >
-                                                                    <div className="overflow-auto">
-                                                                        {(webUsers as any[]).length === 0 ? <div className="h-32 flex items-center justify-center text-gray-400 text-xs italic">{loadingWebUsers ? "Loading..." : "No web users"}</div> : (
-                                                                            <PanelGridTable>
-                                                                                <PanelGridThead>
+                                                                    {(webUsers as any[]).length === 0 ? <div className="h-32 flex items-center justify-center text-gray-400 text-xs italic">{loadingWebUsers ? "Loading..." : "No web users"}</div> : (
+                                                                        <PanelGridTable>
+                                                                            <PanelGridThead>
                                                                                     <PanelGridTh>User</PanelGridTh>
                                                                                     <PanelGridTh>Login</PanelGridTh>
                                                                                     <PanelGridTh align="center">Active</PanelGridTh>
@@ -718,7 +717,6 @@ export default function CustomersSetupPage() {
                                                                                 </PanelGridTbody>
                                                                             </PanelGridTable>
                                                                         )}
-                                                                    </div>
                                                                 </PanelGrid>
                                                             </div>
                                                         )}
@@ -734,33 +732,31 @@ export default function CustomersSetupPage() {
                                                                         { label: "Add Message", icon: Plus, color: "green", onClick: () => { setMsgForm({ comments:"", deadline:"", user_to:"" }); setFormError(null); setMsgModal(true); }, disabled: !selCust || !perms.canCreate },
                                                                     ]}
                                                                 >
-                                                                    <div className="overflow-auto">
-                                                                        {(messages as any[]).length === 0 ? <div className="h-32 flex items-center justify-center text-gray-400 text-xs italic">{loadingMsgs ? "Loading..." : "No messages"}</div> : (
-                                                                            <PanelGridTable>
-                                                                                <PanelGridThead>
-                                                                                    <PanelGridTh>Message</PanelGridTh>
-                                                                                    <PanelGridTh>Date</PanelGridTh>
-                                                                                    <PanelGridTh>Deadline</PanelGridTh>
-                                                                                    <PanelGridTh>Taken By</PanelGridTh>
-                                                                                    <PanelGridTh>To</PanelGridTh>
-                                                                                </PanelGridThead>
-                                                                                <PanelGridTbody>
-                                                                                    {(messages as any[]).map((m: any, i: number) => {
-                                                                                        const isSel = selMessage?.unico === m.unico;
-                                                                                        return (
-                                                                                            <PanelGridTr key={m.unico||i} selected={isSel} onClick={() => setSelMessage(isSel ? null : m)}>
-                                                                                                <PanelGridTd className="truncate max-w-[300px]">{t(m.grid_message)}</PanelGridTd>
-                                                                                                <PanelGridTd className="whitespace-nowrap text-gray-500">{formatDateEST(normalizeToISODate(m.add_date))}</PanelGridTd>
-                                                                                                <PanelGridTd className="whitespace-nowrap text-gray-500">{formatDateEST(normalizeToISODate(m.deadline))}</PanelGridTd>
-                                                                                                <PanelGridTd>{t(m.taken_by)}</PanelGridTd>
-                                                                                                <PanelGridTd>{t(m.user_destination)}</PanelGridTd>
-                                                                                            </PanelGridTr>
-                                                                                        );
-                                                                                    })}
-                                                                                </PanelGridTbody>
-                                                                            </PanelGridTable>
-                                                                        )}
-                                                                    </div>
+                                                                    {(messages as any[]).length === 0 ? <div className="h-32 flex items-center justify-center text-gray-400 text-xs italic">{loadingMsgs ? "Loading..." : "No messages"}</div> : (
+                                                                        <PanelGridTable>
+                                                                            <PanelGridThead>
+                                                                                <PanelGridTh>Message</PanelGridTh>
+                                                                                <PanelGridTh>Date</PanelGridTh>
+                                                                                <PanelGridTh>Deadline</PanelGridTh>
+                                                                                <PanelGridTh>Taken By</PanelGridTh>
+                                                                                <PanelGridTh>To</PanelGridTh>
+                                                                            </PanelGridThead>
+                                                                            <PanelGridTbody>
+                                                                                {(messages as any[]).map((m: any, i: number) => {
+                                                                                    const isSel = selMessage?.unico === m.unico;
+                                                                                    return (
+                                                                                        <PanelGridTr key={m.unico||i} selected={isSel} onClick={() => setSelMessage(isSel ? null : m)}>
+                                                                                            <PanelGridTd className="truncate max-w-[300px]">{t(m.grid_message)}</PanelGridTd>
+                                                                                            <PanelGridTd className="whitespace-nowrap text-gray-500">{formatDateEST(normalizeToISODate(m.add_date))}</PanelGridTd>
+                                                                                            <PanelGridTd className="whitespace-nowrap text-gray-500">{formatDateEST(normalizeToISODate(m.deadline))}</PanelGridTd>
+                                                                                            <PanelGridTd>{t(m.taken_by)}</PanelGridTd>
+                                                                                            <PanelGridTd>{t(m.user_destination)}</PanelGridTd>
+                                                                                        </PanelGridTr>
+                                                                                    );
+                                                                                })}
+                                                                            </PanelGridTbody>
+                                                                        </PanelGridTable>
+                                                                    )}
                                                                 </PanelGrid>
                                                             </div>
                                                         )}
@@ -879,7 +875,7 @@ export default function CustomersSetupPage() {
             {/* ── MESSAGE MODAL ─────────────────────────────────────────── */}
             {msgModal && (
                 <MsgModal form={msgForm} setForm={setMsgForm} error={formError} saving={saving}
-                    users={[]} onSave={saveMsg} onClose={() => { setMsgModal(false); setFormError(null); }} />
+                    onSave={saveMsg} onClose={() => { setMsgModal(false); setFormError(null); }} />
             )}
             {/* ── STATEMENT MODAL ───────────────────────────────────────── */}
             {stmtModal && (
@@ -905,7 +901,13 @@ export default function CustomersSetupPage() {
                                 </button>
                             </div>
                         </div>
-                        <div className="overflow-auto flex-1 bg-white">
+                        <PanelGrid
+                            title="Statement"
+                            icon={FileText}
+                            recordCount={stmtEnabled ? (statement as any[]).length : undefined}
+                            refreshing={loadingStmt}
+                            className="flex-1 min-h-0 rounded-none border-x-0 border-b-0"
+                        >
                             {!stmtEnabled ? <div className="h-40 flex items-center justify-center text-gray-400 text-sm font-bold uppercase">Select date range and click Load</div>
                             : (statement as any[]).length === 0 ? <div className="h-40 flex items-center justify-center text-gray-400 text-sm italic">{loadingStmt ? "Loading..." : "No statement records"}</div>
                             : (
@@ -938,7 +940,7 @@ export default function CustomersSetupPage() {
                                     </PanelGridTbody>
                                 </PanelGridTable>
                             )}
-                        </div>
+                        </PanelGrid>
                     </div>
                 </div>
             )}
@@ -1199,7 +1201,7 @@ function CarrierModal({ mode, form, setForm, error, saving, carriers, onSave, on
     const DAYS = ["mon","tue","wed","thu","fri","sat","sun"];
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md flex flex-col">
                 <div className="h-10 bg-[#374151] rounded-t-xl flex items-center justify-between px-4 shrink-0">
                     <div className="flex items-center gap-2"><Truck size={14} className="text-[#FB7506]" /><span className="font-black text-[11px] uppercase tracking-widest text-white">{mode==="add"?"Add Carrier":"Edit Carrier"}</span>{error && <span className="text-amber-400 text-[9px] font-bold ml-2">{error}</span>}</div>
                     <button onClick={onClose}><XCircle size={16} className="text-gray-400 hover:text-white" /></button>
@@ -1245,7 +1247,7 @@ function WebUserModal({ mode, form, setForm, error, saving, onSave, onClose }: a
     ];
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md flex flex-col">
                 <div className="h-10 bg-[#374151] rounded-t-xl flex items-center justify-between px-4 shrink-0">
                     <div className="flex items-center gap-2"><Users size={14} className="text-[#FB7506]" /><span className="font-black text-[11px] uppercase tracking-widest text-white">{mode==="add"?"Add Web User":"Edit Web User"}</span>{error && <span className="text-amber-400 text-[9px] font-bold ml-2">{error}</span>}</div>
                     <button onClick={onClose}><XCircle size={16} className="text-gray-400 hover:text-white" /></button>
@@ -1281,10 +1283,10 @@ function WebUserModal({ mode, form, setForm, error, saving, onSave, onClose }: a
 }
 
 // ─── Message Modal ────────────────────────────────────────────────────────────
-function MsgModal({ form, setForm, error, saving, users, onSave, onClose }: any) {
+function MsgModal({ form, setForm, error, saving, onSave, onClose }: any) {
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md flex flex-col">
                 <div className="h-10 bg-[#374151] rounded-t-xl flex items-center justify-between px-4 shrink-0">
                     <div className="flex items-center gap-2"><MessageSquare size={14} className="text-[#FB7506]" /><span className="font-black text-[11px] uppercase tracking-widest text-white">Add Comment</span>{error && <span className="text-amber-400 text-[9px] font-bold ml-2">{error}</span>}</div>
                     <button onClick={onClose}><XCircle size={16} className="text-gray-400 hover:text-white" /></button>
