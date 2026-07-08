@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { AppFooter } from "@/components/layout/AppFooter";
+import { ReportModal } from "@/components/reports/ReportModal";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import PanelGrid from "@/components/ui/PanelGrid";
@@ -155,7 +156,7 @@ function DualPanel({
         <div className="flex flex-col md:flex-row gap-4 h-full min-h-0">
             {/* Available (Left) */}
             <div className="flex-1 flex flex-col min-h-0 border border-gray-200 rounded-lg shadow-sm bg-white overflow-hidden" style={{ minHeight: "200px" }}>
-                <div className="bg-gray-50 border-b border-gray-200 px-3 py-2 flex justify-between items-center shrink-0">
+                <div className="bg-[#F5F3F3] border-b border-[#DBD9D9] px-3 py-2 flex justify-between items-center shrink-0">
                     <span className="font-black text-[11px] text-gray-700 uppercase tracking-widest">Available</span>
                     <span className="text-[10px] font-bold bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded">{availableRows.length}</span>
                 </div>
@@ -203,7 +204,7 @@ function DualPanel({
 
             {/* Assigned (Right) */}
             <div className="flex-1 flex flex-col min-h-0 border border-gray-200 rounded-lg shadow-sm bg-white overflow-hidden" style={{ minHeight: "200px" }}>
-                <div className="bg-gray-50 border-b border-gray-200 px-3 py-2 flex justify-between items-center shrink-0">
+                <div className="bg-[#F5F3F3] border-b border-[#DBD9D9] px-3 py-2 flex justify-between items-center shrink-0">
                     <span className="font-black text-[11px] text-gray-700 uppercase tracking-widest">Assigned</span>
                     <span className="text-[10px] font-bold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">{assignedRows.length}</span>
                 </div>
@@ -290,6 +291,10 @@ export default function SalesRepsPage() {
     const [selCustUq,    setSelCustUq]    = useState<string | null>(null);
     const [newSalesUq,   setNewSalesUq]   = useState<string | null>(null);
     const [custSaving,   setCustSaving]   = useState(false);
+
+    // Reports
+    const [reportsModal,  setReportsModal]  = useState(false);
+    const [reportModalUrl, setReportModalUrl] = useState<string | null>(null);
 
     // ── Queries ───────────────────────────────────────────────────────────────
     const { data: salesRepsList = EMPTY_ARR, isFetching: loadingList, refetch: refetchList } = useQuery({
@@ -717,7 +722,7 @@ export default function SalesRepsPage() {
             <AppHeader title="Sales Reps" />
 
             {/* Search toolbar */}
-            <div className="bg-white border-b border-gray-200 px-3 py-2 flex items-center gap-2 shrink-0 shadow-sm flex-wrap">
+            <div className="bg-[#F5F3F3] border-b border-[#DBD9D9] px-3 py-2 flex items-center gap-2 shrink-0 shadow-sm flex-wrap">
                 <div className="relative flex-1 md:flex-none">
                     <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input type="text" value={search} onChange={e => setSearch(e.target.value)}
@@ -740,7 +745,7 @@ export default function SalesRepsPage() {
                             { label: "Edit Rep", icon: Pencil, color: "orange", onClick: handleEdit, disabled: !selectedUq || !perms.canEdit },
                             { label: "Delete Rep", icon: Trash2, color: "orange", onClick: handleDelete, disabled: !selectedUq || !perms.canDelete },
                             { separator: true },
-                            { label: "Reports", icon: FileText, color: "gray", onClick: () => toast.info("Reports coming soon."), disabled: !perms.canReport },
+                            { label: "Reports", icon: FileText, color: "gray", onClick: () => setReportsModal(true), disabled: !perms.canReport },
                         ]}
                         headerRight={
                             <div className="hidden md:flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1 sm:pb-0">
@@ -760,18 +765,6 @@ export default function SalesRepsPage() {
                         }
                         className="flex-1 min-h-0 flex flex-col"
                     >
-
-                    {/* Search */}
-                    <div className="p-2 border-b border-gray-100 shrink-0 bg-gray-50">
-                        <div className="relative max-w-sm">
-                            <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input
-                                type="text" value={search} onChange={e => setSearch(e.target.value)}
-                                placeholder="Search reps..."
-                                className="w-full pl-7 pr-2 h-8 text-xs border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506]"
-                            />
-                        </div>
-                    </div>
 
                     {/* List rows */}
                     <div className="overflow-y-auto flex-1">
@@ -865,7 +858,7 @@ export default function SalesRepsPage() {
                             {/* ── Tab 1: Customers ── */}
                             {activeModal === "customers" && (
                                 <div className="flex flex-col flex-1 min-h-0 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-                                    <div className="h-12 bg-gray-50 border-b border-gray-200 flex items-center justify-between px-4 shrink-0">
+                                    <div className="h-12 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-center justify-between px-4 shrink-0">
                                         <span className="font-black text-xs text-gray-700 uppercase tracking-widest">
                                             Assigned Customers
                                         </span>
@@ -1191,7 +1184,7 @@ export default function SalesRepsPage() {
                                         {currentSalesman ? `${t(currentSalesman.SALESMAN_FNAME)} ${t(currentSalesman.SALESMAN_LNAME)}`.trim() : "Unknown Salesman"}
                                     </h2>
                                 </div>
-                                <div className="bg-gray-50 border-b border-gray-200 px-3 py-2 flex justify-between items-center shrink-0">
+                                <div className="bg-[#F5F3F3] border-b border-[#DBD9D9] px-3 py-2 flex justify-between items-center shrink-0">
                                     <span className="font-black text-[11px] text-gray-700 uppercase tracking-widest flex items-center gap-2">
                                         Customers by Salesman
                                         {loadingCustomers && <RefreshCcw size={12} className="animate-spin text-gray-400" />}
@@ -1242,7 +1235,7 @@ export default function SalesRepsPage() {
                                         ))}
                                     </select>
                                 </div>
-                                <div className="bg-gray-50 border-b border-gray-200 px-3 py-2 flex justify-between items-center shrink-0">
+                                <div className="bg-[#F5F3F3] border-b border-[#DBD9D9] px-3 py-2 flex justify-between items-center shrink-0">
                                     <span className="font-black text-[11px] text-gray-700 uppercase tracking-widest flex items-center gap-2">
                                         Customers by Salesman
                                         {loadingNewCustomers && <RefreshCcw size={12} className="animate-spin text-gray-400" />}
@@ -1317,6 +1310,16 @@ export default function SalesRepsPage() {
                 </div>
             </div>
 
+            {/* ─── Reports Picker Modal ──────────────────────────────────────────────────── */}
+            {reportsModal && (
+                <ModalSalesRepsReports
+                    salesReps={salesRepsList as any[]}
+                    defaultUq={selectedUq ?? ""}
+                    onClose={() => setReportsModal(false)}
+                    onOpen={url => { setReportModalUrl(url); setReportsModal(false); }}
+                />
+            )}
+
             {/* ─── Mobile FAB (Add) ──────────────────────────────────────────────────────── */}
             <div className={cn("md:hidden fixed bottom-6 right-6 z-40 transition-all duration-300", selectedUq ? "opacity-0 translate-y-8 pointer-events-none" : "opacity-100 translate-y-0")}>
                 {perms.canCreate && (
@@ -1327,6 +1330,76 @@ export default function SalesRepsPage() {
                 )}
             </div>
 
+            <ReportModal url={reportModalUrl} onClose={() => setReportModalUrl(null)} />
+        </div>
+    );
+}
+
+// ─── Reports Picker Modal ─────────────────────────────────────────────────────
+function ModalSalesRepsReports({
+    salesReps, defaultUq, onClose, onOpen,
+}: {
+    salesReps: any[];
+    defaultUq: string;
+    onClose: () => void;
+    onOpen: (url: string) => void;
+}) {
+    const tv = (v: any) => String(v ?? "").trim();
+    const [report, setReport] = useState<"list" | "customers">("list");
+    const [salesUq, setSalesUq] = useState(defaultUq ?? "");
+
+    const handleRun = () => {
+        if (report === "list") {
+            onOpen("/api/sales-reps/reports/list");
+        } else {
+            const uq  = salesUq || "%";
+            const rec = salesReps.find(r => tv(r.UNICO) === salesUq);
+            const name = rec ? `${tv(rec.FIRST_NAME)} ${tv(rec.LAST_NAME)}`.trim() : "";
+            onOpen(`/api/sales-reps/reports/customers?lcunico=${encodeURIComponent(uq)}&name=${encodeURIComponent(name)}`);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={onClose}>
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden" onClick={e => e.stopPropagation()}>
+                <div className="h-10 bg-[#374151] flex items-center justify-between pl-3 pr-2">
+                    <div className="flex items-center gap-2">
+                        <FileText size={15} className="text-[#FB7506]" />
+                        <span className="font-black text-[11px] text-white uppercase tracking-widest">Sales Reps Reports</span>
+                    </div>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white p-1 rounded hover:bg-white/10 transition-colors"><X size={15} /></button>
+                </div>
+                <div className="p-4 flex flex-col gap-4">
+                    <div className="flex flex-col gap-2">
+                        {(["list", "customers"] as const).map(r => (
+                            <label key={r} className="flex items-center gap-2.5 cursor-pointer p-2.5 rounded-lg border border-gray-200 hover:border-[#FB7506]/50 hover:bg-orange-50 transition-all">
+                                <input type="radio" name="report" value={r} checked={report === r} onChange={() => setReport(r)} className="accent-[#FB7506] w-3.5 h-3.5" />
+                                <span className="text-xs font-bold text-gray-700">
+                                    {r === "list" ? "Sales Reps List" : "Customers by Salesman"}
+                                </span>
+                            </label>
+                        ))}
+                    </div>
+                    {report === "customers" && (
+                        <div className="flex flex-col gap-1">
+                            <label className="text-[9px] font-black text-gray-400 uppercase">Salesman</label>
+                            <select value={salesUq} onChange={e => setSalesUq(e.target.value)}
+                                className="fos-input h-8 text-xs bg-gray-50 border border-gray-200 focus:ring-[#FB7506]">
+                                <option value="">All Salesmen</option>
+                                {salesReps.map((r: any) => (
+                                    <option key={tv(r.UNICO)} value={tv(r.UNICO)}>
+                                        {`${tv(r.FIRST_NAME)} ${tv(r.LAST_NAME)}`.trim()} ({tv(r.OLD_CODE ?? r.old_code ?? "")})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+                </div>
+                <div className="flex border-t border-gray-100">
+                    <button onClick={onClose} className="flex-1 py-2.5 text-xs font-bold text-gray-600 hover:bg-gray-50 border-r border-gray-100 transition-colors">Cancel</button>
+                    <button onClick={handleRun} className="flex-1 py-2.5 text-xs font-black text-[#FB7506] hover:bg-orange-50 transition-colors">Run Report</button>
+                </div>
+            </div>
         </div>
     );
 }
