@@ -496,7 +496,7 @@ export default function VendorsPage() {
         });
         setWsError(null);
         setShowWsPass(false);
-        handleOpenWs();
+        setWsModal(true);
     };
 
     const handleSaveWs = async () => {
