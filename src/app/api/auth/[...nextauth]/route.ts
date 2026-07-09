@@ -1,45 +1,42 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { executeProcedure } from "@/lib/db";
+import { consumePreAuth } from "@/lib/authCodes";
 
 export const authOptions = {
     providers: [
         CredentialsProvider({
             name: "Credentials",
             credentials: {
-                username: { label: "Username", type: "text" },
-                password: { label: "Password", type: "password" },
+                username:     { label: "Username",       type: "text" },
+                preAuthToken: { label: "Pre-Auth Token", type: "text" },
             },
             async authorize(credentials) {
-                if (!credentials?.username || !credentials?.password) return null;
+                if (!credentials?.username || !credentials?.preAuthToken) return null;
+
+                // Consume the one-time pre-auth token issued by /api/auth/verify-code
+                const preAuth = consumePreAuth(credentials.username, credentials.preAuthToken);
+                if (!preAuth) return null;
 
                 try {
-                    const loginResult = await executeProcedure("sp_flexy_login", {
-                        lcUserName: credentials.username,
-                        lcPassword: credentials.password,
-                    }, true);
-
-                    if (!loginResult.recordset || !loginResult.recordset[0]) return null;
-                    const loginData = loginResult.recordset[0];
-
                     // Minimal hydration to keep cookie size small (prevent 431)
                     const profileResult = await executeProcedure("sp_flower_salesman_uq", {
-                        lcunico: '%',
-                        lcuser_uq: loginData.unico,
+                        lcunico:   '%',
+                        lcuser_uq: preAuth.unico,
                     });
 
                     const salesProfile = profileResult.recordset[0] || {};
 
                     return {
-                        id: loginData.unico,
-                        username: credentials.username,
-                        name: salesProfile.salesman_name || loginData.name,
+                        id:           preAuth.unico,
+                        username:     credentials.username,
+                        name:         salesProfile.salesman_name || preAuth.name,
                         warehouse_uq: salesProfile.wphysical_uq,
-                        pax_ip: salesProfile.pax_terminal_ip,
+                        pax_ip:       salesProfile.pax_terminal_ip,
                     };
                 } catch (error) {
                     console.error("Auth error:", error);
-                    throw error;
+                    return null;
                 }
             },
         }),
