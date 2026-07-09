@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
+import { serverAuditLog } from "@/lib/serverAudit";
+
+const PANTA = "freights";
 
 export async function PUT(_req: NextRequest, { params }: { params: Promise<{ unico: string }> }) {
     const { unico } = await params;
@@ -7,6 +10,7 @@ export async function PUT(_req: NextRequest, { params }: { params: Promise<{ uni
         const r = await executeProcedure("sp_flower_packing_box_update_freight", { lcFreight_uq: unico });
         const row = r.recordset[0];
         if (row?.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
+        serverAuditLog(PANTA, "Edit", "flower_packing_box", unico).catch(() => {});
         return NextResponse.json({ success: true, message: row?.Message || "AWB freight rates updated." });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });

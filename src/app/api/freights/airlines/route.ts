@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { executeProcedure, executeQuery } from "@/lib/db";
+import { executeProcedure } from "@/lib/db";
+import { serverAuditLog } from "@/lib/serverAudit";
 import crypto from "crypto";
+
+const PANTA = "freights";
 
 const txt   = (v: any) => String(v ?? "").replace(/'/g, "''");
 const genUq = () => crypto.randomBytes(4).toString("hex").toUpperCase();
@@ -32,6 +35,7 @@ export async function POST(req: NextRequest) {
         });
         const row = r.recordset?.[0] || {};
         if (row.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
+        serverAuditLog(PANTA, "Insert", "flower_airlines", row.unico || row.Unico || unico).catch(() => {});
         return NextResponse.json({ success: true, unico: row.unico || row.Unico || unico });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });

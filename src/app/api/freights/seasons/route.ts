@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { executeProcedure, executeQuery } from "@/lib/db";
+import { executeProcedure } from "@/lib/db";
+import { serverAuditLog } from "@/lib/serverAudit";
 import crypto from "crypto";
+
+const PANTA = "freights";
 
 const txt    = (v: any) => String(v ?? "").replace(/'/g, "''");
 const bit    = (v: any) => (v ? 1 : 0);
 const num    = (v: any) => { const n = parseFloat(String(v||0)); return isNaN(n) ? 0 : n; };
 const genUq  = () => crypto.randomBytes(4).toString("hex").toUpperCase();
-const dt     = (v: any) => v ? `'${String(v).split("T")[0]}'` : "NULL";
 
 export async function GET(req: NextRequest) {
     const search = req.nextUrl.searchParams.get("search") || "%";
@@ -35,6 +37,7 @@ export async function POST(req: NextRequest) {
         });
         const row = r.recordset?.[0] || {};
         if (row.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
+        serverAuditLog(PANTA, "Insert", "flower_seasons", row.unico || row.Unico || unico).catch(() => {});
         return NextResponse.json({ success: true, unico: row.unico || row.Unico || unico });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });

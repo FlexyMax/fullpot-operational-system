@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
+import { serverAuditLog } from "@/lib/serverAudit";
+
+const PANTA = "freights";
 
 const txt = (v: any) => String(v ?? "").replace(/'/g, "''");
 
@@ -15,6 +18,7 @@ export async function POST(req: NextRequest) {
         });
         const row = r.recordset[0];
         if (row?.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
+        serverAuditLog(PANTA, "Insert", "flower_warehouses_physical_freights", wphysical_uq ?? "").catch(() => {});
         return NextResponse.json({ success: true, message: row?.Message || "Freights copied." });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
