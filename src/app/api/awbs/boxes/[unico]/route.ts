@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
-
-// sp_flower_packing_box_update_new params (verified):
-// @lcunico, @lccustomer_uq, @lncustomer, @lccporder_no, @lcproduct_uq,
-// @lccase_uq, @lncut, @lnbox_qty, @lnpacks_box, @lnpacks_units,
-// @lnunits_x_box, @lnfreight_cost, @lnhandling_cost, @lnduties_cost,
-// @lnbroker_cost, @lncharge_cost, @f_cost_x_u, @lnprice_x_u,
-// @lcbox_id, @lcinventory_notes
+import { serverAuditLog } from "@/lib/serverAudit";
+const PANTA = "52961702";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ unico: string }> }) {
     const { unico } = await params;
@@ -36,6 +31,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ unic
         });
         const row = r.recordset?.[0];
         if (row?.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
+        serverAuditLog(PANTA, "Edit", "flower_packing_boxes", unico).catch(() => {});
         return NextResponse.json({ success: true });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
