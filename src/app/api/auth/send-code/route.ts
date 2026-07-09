@@ -28,9 +28,19 @@ export async function POST(req: NextRequest) {
         const code = Math.floor(100000 + Math.random() * 900000).toString();
         storeCode(username, code, unico, name || username, email);
 
-        await sendVerificationCode(email, code, name || username);
+        // Race email send against a 20s timeout so the API never hangs forever
+        const emailResult = await Promise.race([
+            sendVerificationCode(email, code, name || username).then(() => ({ ok: true })),
+            new Promise<{ ok: false; error: string }>(resolve =>
+                setTimeout(() => resolve({ ok: false, error: "Email timeout — check docker logs for the code" }), 20000)
+            ),
+        ]);
 
-        // Return masked email so the UI can show where the code was sent
+        if (!emailResult.ok) {
+            console.error(`[send-code] Email timed out for ${username}. Code: ${code}`);
+            return NextResponse.json({ error: (emailResult as any).error }, { status: 500 });
+        }
+
         const [local, domain] = (email as string).split("@");
         const masked = local.slice(0, 2) + "***@" + domain;
 
