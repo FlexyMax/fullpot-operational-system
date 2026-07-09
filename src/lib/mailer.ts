@@ -1,18 +1,29 @@
 import nodemailer from "nodemailer";
 
-const transporter = nodemailer.createTransport({
-    host:   process.env.EMAIL_HOST,
-    port:   parseInt(process.env.EMAIL_PORT || "587"),
-    secure: false,
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD,
-    },
-});
+// Lazy transporter — created at call time so env vars are fully resolved
+function createTransporter() {
+    const host = process.env.EMAIL_HOST;
+    const port = parseInt(process.env.EMAIL_PORT || "587");
+    const user = process.env.EMAIL_USER;
+    const pass = process.env.EMAIL_PASSWORD;
+
+    if (!host || !user || !pass) {
+        throw new Error(
+            `Email not configured. Missing: ${[
+                !host && "EMAIL_HOST",
+                !user && "EMAIL_USER",
+                !pass && "EMAIL_PASSWORD",
+            ].filter(Boolean).join(", ")}`
+        );
+    }
+
+    return nodemailer.createTransport({ host, port, secure: false, auth: { user, pass } });
+}
 
 export async function sendVerificationCode(to: string, code: string, name: string) {
+    const transporter = createTransporter();
     await transporter.sendMail({
-        from:    `"FullPot System" <${process.env.EMAIL_FROM}>`,
+        from:    `"FullPot System" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
         to,
         subject: "Your Access Code — FullPot Operational System",
         html: `
