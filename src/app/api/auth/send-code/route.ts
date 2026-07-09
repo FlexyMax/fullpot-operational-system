@@ -19,11 +19,14 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Invalid username or password" }, { status: 401 });
         }
 
-        const { unico, name, email } = result.recordset[0];
+        const { unico, name, email: rawEmail } = result.recordset[0];
 
-        if (!email) {
+        if (!rawEmail) {
             return NextResponse.json({ error: "No email address on file for this account. Contact your administrator." }, { status: 400 });
         }
+
+        // DB may store multiple comma-separated emails — use only the first one
+        const email = String(rawEmail).split(",")[0].trim();
 
         const code = Math.floor(100000 + Math.random() * 900000).toString();
         storeCode(username, code, unico, name || username, email);
