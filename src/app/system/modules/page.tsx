@@ -138,7 +138,7 @@ export default function ModuleScreenSetupPage() {
         const err = validateScreen(); if (err) { toast.error(err); return; }
         setSavingScreen(true);
         try {
-            const body = { ...screenForm, modulo_uq: selModUnico };
+            const body = { ...screenForm, modulo_uq: screenForm.modulo_uq || selModUnico };
             if (screenModal?.mode === "add") {
                 const res  = await fetch("/api/system/screens", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
                 const data = await res.json(); if (!data.success) throw new Error(data.error);
@@ -414,7 +414,7 @@ export default function ModuleScreenSetupPage() {
 
             {/* "" Screen Modal """""""""""""""""""""""""""""""""""""""""""""" */}
             {screenModal && (
-                <ScreenFormModal mode={screenModal.mode} form={screenForm} setForm={setScreenForm} saving={savingScreen} modName={selMod ? t(selMod.nombre) : ""} reports={reports as any[]} loadingRpt={loadingRpt} onSave={saveScreen} onClose={() => setScreenModal(null)} onAddReport={() => { setReportForm({...EMPTY_REPORT, panta_uq: selScrUnico||""}); setReportModal({ mode: "add" }); }} onEditReport={(r: any) => { setReportForm({ unico: t(r.unico), panta_uq: t(r.panta_uq), nombre: t(r.nombre), titulo: t(r.titulo), path: t(r.path), descripcion: t(r.descripcion), fecha_desde: Boolean(r.fecha_desde), fecha_hasta: Boolean(r.fecha_hasta), numero_desde: Boolean(r.numero_desde), numero_hasta: Boolean(r.numero_hasta), actual: Boolean(r.actual), comprimido: Boolean(r.comprimido), detallado: Boolean(r.detallado), exportar: Boolean(r.exportar) }); setReportModal({ mode: "edit" }); }} onDeleteReport={(r: any) => { setReportForm(r); setDeleteRptDlg(true); }} />
+                <ScreenFormModal mode={screenModal.mode} form={screenForm} setForm={setScreenForm} saving={savingScreen} modules={modules as any[]} reports={reports as any[]} loadingRpt={loadingRpt} onSave={saveScreen} onClose={() => setScreenModal(null)} onAddReport={() => { setReportForm({...EMPTY_REPORT, panta_uq: selScrUnico||""}); setReportModal({ mode: "add" }); }} onEditReport={(r: any) => { setReportForm({ unico: t(r.unico), panta_uq: t(r.panta_uq), nombre: t(r.nombre), titulo: t(r.titulo), path: t(r.path), descripcion: t(r.descripcion), fecha_desde: Boolean(r.fecha_desde), fecha_hasta: Boolean(r.fecha_hasta), numero_desde: Boolean(r.numero_desde), numero_hasta: Boolean(r.numero_hasta), actual: Boolean(r.actual), comprimido: Boolean(r.comprimido), detallado: Boolean(r.detallado), exportar: Boolean(r.exportar) }); setReportModal({ mode: "edit" }); }} onDeleteReport={(r: any) => { setReportForm(r); setDeleteRptDlg(true); }} />
             )}
 
             {/* "" Report Modal """"""""""""""""""""""""""""""""""""""""""""""" */}
@@ -553,7 +553,7 @@ function ModuleFormModal({ mode, form, setForm, onSave, onClose, saving }: any) 
 }
 
 // """ Screen Form Modal """"""""""""""""""""""""""""""""""""""""""""""""""""""""
-function ScreenFormModal({ mode, form, setForm, saving, modName, reports, loadingRpt, onSave, onClose, onAddReport, onEditReport, onDeleteReport }: any) {
+function ScreenFormModal({ mode, form, setForm, saving, modules, reports, loadingRpt, onSave, onClose, onAddReport, onEditReport, onDeleteReport }: any) {
     const [selRpt, setSelRpt] = useState<string | null>(null);
     const hasWebForm = form.web_form.trim();
     return (
@@ -579,7 +579,12 @@ function ScreenFormModal({ mode, form, setForm, saving, modName, reports, loadin
                         )}
                         <div className="flex flex-col gap-0.5">
                             <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Module</label>
-                            <input readOnly value={modName} className="fos-input h-10 text-sm bg-gray-50 text-gray-500" />
+                            <select value={form.modulo_uq} onChange={e => setForm((p: any) => ({...p, modulo_uq: e.target.value}))} className="fos-input h-10 text-sm">
+                                <option value="">— Select module —</option>
+                                {(modules || []).map((m: any) => (
+                                    <option key={m.unico} value={m.unico}>{t(m.nombre)}</option>
+                                ))}
+                            </select>
                         </div>
                         <div className="flex flex-col gap-0.5 col-span-2">
                             <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Title</label>
