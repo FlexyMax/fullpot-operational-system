@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
     ShoppingCart, Package, Users, Power, Search, Loader2,
     AlertCircle, Store, Settings, BarChart2, Receipt, DollarSign,
@@ -81,6 +82,7 @@ function getGreeting(): string {
 export default function MenuPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
+    const queryClient = useQueryClient();
     const [menuData, setMenuData] = useState<Record<string, MenuItem[]>>({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -176,7 +178,7 @@ export default function MenuPage() {
                         <span className="text-[10px] font-black text-green-500 uppercase tracking-widest">Online</span>
                     </div>
                     <button
-                        onClick={() => signOut({ callbackUrl: '/login' })}
+                        onClick={() => { queryClient.clear(); signOut({ callbackUrl: '/login' }); }}
                         title="Logout"
                         className="w-8 h-8 rounded-full flex items-center justify-center bg-[#FB7506] hover:bg-[#ff8c2a] text-white transition-all shadow-sm hover:shadow-md"
                     >
@@ -301,7 +303,9 @@ export default function MenuPage() {
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
                                     {items.map((item, idx) => {
                                         const route = getRoute(item.app_page);
-                                        const isAvailable = !!route;
+                                        // SP may return field as 'acceso' or 'access'; check both
+                                        const hasAccess = Boolean(item.access) || Boolean((item as any).acceso);
+                                        const isAvailable = !!route && hasAccess;
                                         const Icon = getIcon(item.app_page);
 
                                         return (

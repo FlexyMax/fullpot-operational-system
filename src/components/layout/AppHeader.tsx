@@ -2,6 +2,7 @@
 
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Power, type LucideIcon } from "lucide-react";
 
 interface AppHeaderProps {
@@ -34,6 +35,7 @@ export function AppHeader({
 }: AppHeaderProps) {
   const { data: session } = useSession();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   return (
     <header className="h-16 bg-[#333030] flex items-center justify-between px-3 md:px-6 shrink-0 text-white">
@@ -85,7 +87,7 @@ export function AppHeader({
         </div>
         {extraRight}
         <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
+          onClick={() => { queryClient.clear(); signOut({ callbackUrl: "/login" }); }}
           title="Logout"
           className="w-8 h-8 rounded-full flex items-center justify-center bg-[#FB7506] hover:bg-[#ff8c2a] text-white transition-all shadow-sm hover:shadow-md"
         >

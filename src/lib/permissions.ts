@@ -34,6 +34,7 @@
  */
 
 import { useQuery } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 
 // ─── Pantalla unico map (verified against SISTEMA DB) ─────────────────────────
 export const SCREEN_PANTA: Record<string, string> = {
@@ -129,13 +130,16 @@ const FULL_ACCESS: PagePermissions = {
  */
 export function usePagePermissions(pageKey: string): PagePermissions {
     const pantaUq = SCREEN_PANTA[pageKey];
+    const { data: session } = useSession();
+    // Include user ID in the key so cache is scoped per user, not shared across sessions
+    const userId = (session?.user as any)?.id ?? "";
 
     const { data, isLoading } = useQuery({
-        queryKey:  ["page-perms", pageKey, pantaUq],
+        queryKey:  ["page-perms", pageKey, pantaUq, userId],
         queryFn:   () => fetch(`/api/system/permissions?panta_uq=${pantaUq || ""}`).then(r => r.json()),
         staleTime: 1000 * 60 * 5,   // 5 minutes — permissions don't change often
         retry:     false,
-        enabled:   true,
+        enabled:   !!userId,         // Don't query until user is resolved
     });
 
     if (isLoading || !data) return { ...FULL_ACCESS, loading: true };

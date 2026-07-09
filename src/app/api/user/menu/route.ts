@@ -15,10 +15,16 @@ export async function GET(req: Request) {
             lcgcuser_uq: userId,
         }, true);
 
-        // Filter for APP and SISTEMA modules only
+        // Filter for APP and SISTEMA modules, AND only items the user has access to.
+        // sp_NC_user_access_detail returns all company screens; acceso/access flag indicates
+        // whether this specific user has been granted access to that screen.
         const filteredMenu = result.recordset.filter((item: any) => {
             const mClass = String(item.module_class || '').trim().toUpperCase();
-            return mClass === 'APP' || mClass === 'SISTEMA';
+            if (mClass !== 'APP' && mClass !== 'SISTEMA') return false;
+            // Check whichever field name the SP uses (acceso = Spanish, access = possible alias)
+            const hasAccess = item.acceso === true || item.acceso === 1 ||
+                              item.access  === true || item.access  === 1;
+            return hasAccess;
         });
 
         return NextResponse.json({ success: true, menu: filteredMenu });

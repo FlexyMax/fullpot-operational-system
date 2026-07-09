@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { Lock, User, AlertCircle, Loader2, ShieldCheck, KeyRound, Power, Mail, RotateCcw, ArrowLeft } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 
@@ -27,8 +28,9 @@ export default function LoginPage() {
         useRef<HTMLInputElement>(null),
     ];
 
-    const router  = useRouter();
-    const setUser = useAuthStore((state) => state.setUser);
+    const router      = useRouter();
+    const setUser     = useAuthStore((state) => state.setUser);
+    const queryClient = useQueryClient();
 
     /* ── Step 1: validate credentials + send email code ─────────────── */
     const handleAccess = async (e: React.FormEvent) => {
@@ -79,6 +81,8 @@ export default function LoginPage() {
             });
             if (result?.error) { setError("Sign-in failed. Please try again."); return; }
 
+            // Clear any cached queries from a previous user session
+            queryClient.clear();
             const sRes     = await fetch("/api/auth/session");
             const session  = await sRes.json();
             if (session?.user) { setUser(session.user); router.push("/menu"); }

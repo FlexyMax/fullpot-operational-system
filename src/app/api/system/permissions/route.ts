@@ -52,12 +52,12 @@ export async function GET(req: NextRequest) {
         `, true);
 
         if (result.recordset.length === 0) {
-            // Page not yet registered in usuarios_accesos for this user.
-            // Default to full access to avoid lockouts on new pages.
+            // No permission record for this user+screen — deny access.
+            // If a screen should be accessible, add a row in usuarios_accesos via Access Definition.
             return NextResponse.json({
-                acceso: true, crear: true, editar: true,
-                borrar: true, consultar: true, reportes: true,
-                source: "not_found_default_full",
+                acceso: false, crear: false, editar: false,
+                borrar: false, consultar: false, reportes: false,
+                source: "not_found_no_access",
             });
         }
 
@@ -72,13 +72,12 @@ export async function GET(req: NextRequest) {
             source:    "usuarios_accesos",
         });
     } catch (err: any) {
-        // On error, return full access (fail open) to avoid UI lockouts
         console.error("[permissions]", err.message);
         return NextResponse.json({
-            acceso: true, crear: true, editar: true,
-            borrar: true, consultar: true, reportes: true,
-            source: "error_default_full",
+            acceso: false, crear: false, editar: false,
+            borrar: false, consultar: false, reportes: false,
+            source: "error_no_access",
             error:  err.message,
-        });
+        }, { status: 500 });
     }
 }
