@@ -29,7 +29,8 @@ function getRoute(appPage: string): string | null {
     if (p.includes('SALESM') || p.includes('SALES REP') || p.includes('SALES REPS') || p.includes('VENDEDOR') || p.includes('VENTAS_SALES') || p.includes('REPRESENTANT') || p.includes('SALES MEN') || p.includes('BUYER SETUP') || p.includes('BUYERS') || p.includes('VENTAS_SALESM')) return '/sales-reps';
     // VENDORS / GROWERS must be checked BEFORE the generic SALES catch
     if (p.includes('GROWER') || p.includes('VENDOR') || p.includes('PRODUCTOR') || p.includes('PRODUCCION_GROWER') || p.includes('PROVEEDOR') || p.includes('PRODUCCION GROWER') || p.includes('GROWERS SETUP') || p.includes('VENTAS_GROWER')) return '/vendors';
-    if (p.includes('SALES') || p.includes('P.O.S') || p.includes('BILLING')) return '/sales';
+    // Only P.O.S. and BILLING map to /sales — SALES ORDERS / SALES CREDITS are not yet implemented
+    if (p.includes('P.O.S') || p.includes('BILLING')) return '/sales';
     if (p.includes('ACCOUNTS PAY') || p.includes('A/P') || p.includes('A-P') || p.includes('PAYABLE')) return '/accounts-payable';
     if (p.includes('USER SETUP') || p.includes('USERS DEF') || p.includes('USER DEF')) return '/system/users';
     if (p.includes('MODULE') || p.includes('SCREEN SETUP') || p.includes('MODULO') || p.includes('PANTALLA') || p.includes('SISTEMA MODULOS') || p.includes('SISTEMA PANTALLAS')) return '/system/modules';
