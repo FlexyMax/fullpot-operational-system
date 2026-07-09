@@ -518,7 +518,7 @@ export default function FreightsSetupPage() {
                     refreshing={loadingFr}
                     menuItems={[
                         { label:"Add Rate",      icon:Plus,   color:"green", onClick:() => { if(!store.selWh){toast.error("Select a warehouse first.");return;} setFrForm({...EMPTY_FR}); store.setFrModal({mode:"add"}); }, disabled:!store.selWh || !perms.canCreate },
-                        { label:"Edit Selected", icon:Pencil, color:"blue",  onClick:() => { if(!store.selFr) return; setFrForm({ wphysical_uq: store.selFr.wphysical_uq||store.selWh?.unico, season_uq: store.selFr.season_uq||"", city_uq: store.selFr.city_uq||"", freight: store.selFr.freight||0, freight_kg: store.selFr.freight_kg||0 }); store.setFrModal({mode:"edit"}); }, disabled:!store.selFr || !perms.canEdit },
+                        { label:"Edit Selected", icon:Pencil, color:"blue",  onClick:async() => { if(!store.selFr) return; try { const d = await ff(`/api/freights/rates/${store.selFr.unico}`); setFrForm({ wphysical_uq: d.wphysical_uq||store.selWh?.unico, season_uq: d.season_uq||"", city_uq: d.city_uq||"", freight: d.freight||0, freight_kg: d.freight_kg||0 }); store.setFrModal({mode:"edit"}); } catch(e:any){toast.error(e.message);} }, disabled:!store.selFr || !perms.canEdit },
                         { label:"Delete Selected",icon:Trash2, color:"red",  onClick:() => { if(store.selFr){store.setFrModal({mode:"delete"});} }, disabled:!store.selFr || !perms.canDelete },
                         { label:"Copy From...",  icon:Copy,   color:"gray",  onClick:() => { if(!store.selWh){toast.error("Select a warehouse first.");return;} store.setCopyModal(true); }, disabled:!store.selWh },
                         { label:"Update AWBs",   icon:Zap,    color:"orange", onClick:updateAwbs, disabled:!store.selFr },
@@ -558,7 +558,7 @@ export default function FreightsSetupPage() {
                     refreshing={loadingHa}
                     menuItems={[
                         { label:"Add Rate",      icon:Plus,   color:"green", onClick:() => { if(!store.selWh){toast.error("Select a warehouse first.");return;} setHaForm({...EMPTY_HA}); store.setHaModal({mode:"add"}); }, disabled:!store.selWh || !perms.canCreate },
-                        { label:"Edit Selected", icon:Pencil, color:"blue",  onClick:() => { if(!store.selHa) return; setHaForm({ wphysical_uq: store.selHa.wphysical_uq||store.selWh?.unico, season_uq: store.selHa.season_uq||"", handling: store.selHa.handling||0 }); store.setHaModal({mode:"edit"}); }, disabled:!store.selHa || !perms.canEdit },
+                        { label:"Edit Selected", icon:Pencil, color:"blue",  onClick:async() => { if(!store.selHa) return; try { const d = await ff(`/api/freights/handling/${store.selHa.unico}`); setHaForm({ wphysical_uq: d.wphysical_uq||store.selWh?.unico, season_uq: d.season_uq||"", handling: d.handling||0 }); store.setHaModal({mode:"edit"}); } catch(e:any){toast.error(e.message);} }, disabled:!store.selHa || !perms.canEdit },
                         { label:"Delete Selected",icon:Trash2, color:"red", onClick:() => { if(store.selHa){store.setHaModal({mode:"delete"});} }, disabled:!store.selHa || !perms.canDelete },
                     ]}
                     className="flex flex-col min-h-[300px] lg:min-h-0"
@@ -592,7 +592,7 @@ export default function FreightsSetupPage() {
                     refreshing={loadingAt}
                     menuItems={[
                         { label:"Add Tariff",    icon:Plus,   color:"green", onClick:() => { if(!store.selWh){toast.error("Select a warehouse first.");return;} setAtForm({...EMPTY_AT}); store.setAtModal({mode:"add"}); }, disabled:!store.selWh || !perms.canCreate },
-                        { label:"Edit Selected", icon:Pencil, color:"blue",  onClick:() => { if(!store.selAt) return; setAtForm({ wphysical_uq: store.selAt.wphysical_uq||store.selWh?.unico, season_uq: store.selAt.season_uq||"", city_uq: store.selAt.city_uq||"", tariff: store.selAt.tariff||0 }); store.setAtModal({mode:"edit"}); }, disabled:!store.selAt || !perms.canEdit },
+                        { label:"Edit Selected", icon:Pencil, color:"blue",  onClick:async() => { if(!store.selAt) return; try { const d = await ff(`/api/freights/atpda/${store.selAt.unico}`); setAtForm({ wphysical_uq: d.wphysical_uq||store.selWh?.unico, season_uq: d.season_uq||"", city_uq: d.city_uq||"", tariff: d.tariff||0 }); store.setAtModal({mode:"edit"}); } catch(e:any){toast.error(e.message);} }, disabled:!store.selAt || !perms.canEdit },
                         { label:"Delete Selected",icon:Trash2, color:"red", onClick:() => { if(store.selAt){store.setAtModal({mode:"delete"});} }, disabled:!store.selAt || !perms.canDelete },
                     ]}
                     className="flex flex-col min-h-[300px] lg:min-h-0"
@@ -628,17 +628,22 @@ export default function FreightsSetupPage() {
                 (store.selFr || store.selHa || store.selAt) ? "translate-y-0" : "translate-y-full"
             )}>
                 <div className="flex justify-around items-center max-w-sm mx-auto">
-                    <button onClick={() => {
-                        if (store.selFr) {
-                            setFrForm({ wphysical_uq: store.selFr.wphysical_uq||store.selWh?.unico, season_uq: store.selFr.season_uq||"", city_uq: store.selFr.city_uq||"", freight: store.selFr.freight||0, freight_kg: store.selFr.freight_kg||0 });
-                            store.setFrModal({mode:"edit"});
-                        } else if (store.selHa) {
-                            setHaForm({ wphysical_uq: store.selHa.wphysical_uq||store.selWh?.unico, season_uq: store.selHa.season_uq||"", handling: store.selHa.handling||0 });
-                            store.setHaModal({mode:"edit"});
-                        } else if (store.selAt) {
-                            setAtForm({ wphysical_uq: store.selAt.wphysical_uq||store.selWh?.unico, season_uq: store.selAt.season_uq||"", city_uq: store.selAt.city_uq||"", tariff: store.selAt.tariff||0 });
-                            store.setAtModal({mode:"edit"});
-                        }
+                    <button onClick={async() => {
+                        try {
+                            if (store.selFr) {
+                                const d = await ff(`/api/freights/rates/${store.selFr.unico}`);
+                                setFrForm({ wphysical_uq: d.wphysical_uq||store.selWh?.unico, season_uq: d.season_uq||"", city_uq: d.city_uq||"", freight: d.freight||0, freight_kg: d.freight_kg||0 });
+                                store.setFrModal({mode:"edit"});
+                            } else if (store.selHa) {
+                                const d = await ff(`/api/freights/handling/${store.selHa.unico}`);
+                                setHaForm({ wphysical_uq: d.wphysical_uq||store.selWh?.unico, season_uq: d.season_uq||"", handling: d.handling||0 });
+                                store.setHaModal({mode:"edit"});
+                            } else if (store.selAt) {
+                                const d = await ff(`/api/freights/atpda/${store.selAt.unico}`);
+                                setAtForm({ wphysical_uq: d.wphysical_uq||store.selWh?.unico, season_uq: d.season_uq||"", city_uq: d.city_uq||"", tariff: d.tariff||0 });
+                                store.setAtModal({mode:"edit"});
+                            }
+                        } catch(e:any) { toast.error(e.message); }
                     }} disabled={!perms.canEdit}
                         className="flex flex-col items-center gap-1 text-gray-600 disabled:opacity-50 transition-colors hover:text-[#FB7506] min-w-[56px] shrink-0">
                         <Pencil size={20} className={perms.canEdit ? "text-[#FB7506]" : "text-gray-400"} />
