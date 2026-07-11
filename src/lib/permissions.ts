@@ -48,16 +48,16 @@ export const SCREEN_PANTA: Record<string, string> = {
     "flexy2qb":             "XD6Y7055",  // Flexy2QB (APP A-R)
 
     // ── Air Waybills ──────────────────────────────────────────────────────
-    "awbs":                 "52961702",  // fallback — register ventas_awbs in pantalla table to get real UQ
+    "awbs":                 "57BF4FC7",  // APP AWBS
 
     // ── Quality Control ────────────────────────────────────────────────
-    "qc":                   "52961702",  // fallback — register QC in pantalla table to get real UQ
+    "qc":                   "XD6Z7053",  // APP QC
 
     // ── Masters ────────────────────────────────────────────────────────────
     "customers-setup":      "HWCM1581",  // CUSTOMERS DEFINITION
     "carriers-definition":  "XD6Z7048",  // APP Carriers Center
     "freights-setup":       "XD6Z7048",  // APP Carriers Center (shared, closest match)
-    "items-setup":          "52961702",  // fallback — register dedicated pantalla record
+    "items-setup":          "52961700",  // INVENTORY CONTROL (closest match — register dedicated record if needed)
 
     // ── System Management ──────────────────────────────────────────────────
     "module-screen-setup":  "52961702",  // MODULES SETUP
@@ -65,13 +65,13 @@ export const SCREEN_PANTA: Record<string, string> = {
     "access-definition":    "52961680",  // USER ACCESS
     "companies-definition": "52961672",  // COMPANY SETUP
 
-    "payment-authorizations": "52961702",  // fallback — register in Module & Screen Setup to enforce real permissions
+    "payment-authorizations": "B3728C98",  // APP Payment Authorizations
 
-    "sales-reps":             "52961702",  // fallback — register in Module & Screen Setup to enforce real permissions
+    "sales-reps":             "XD6Z7062",  // APP Salesmen
 
-    "vendors":                "52961702",  // fallback — register in Module & Screen Setup to enforce real permissions
+    "vendors":                "XD6Z7046",  // APP Vendors Center
 
-    "inventory-entry":        "52961702",  // fallback — register in Module & Screen Setup to enforce real permissions
+    "inventory-entry":        "XD6Z7050",  // APP Inventory
 
     "business-intelligence":  "7331ED65",  // BUSINESS INTELLIGENCE (APP A-R)
 
