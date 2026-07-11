@@ -467,7 +467,7 @@ export default function SystemAccessPage() {
                                                         key={p.unico}
                                                         className={cn(
                                                             "border-b border-[#DBD9D9] transition-colors",
-                                                            saOnly ? "bg-[#FB7506]/5" :
+                                                            saLocked ? "bg-[#FB7506]/5" :
                                                             dimmed ? "opacity-40" : "bg-[#22C55E]/5 hover:bg-[#22C55E]/10"
                                                         )}
                                                     >
@@ -484,7 +484,7 @@ export default function SystemAccessPage() {
                                                                             "w-5 h-5 rounded flex items-center justify-center mx-auto transition-all",
                                                                             disabled ? "cursor-default" : "cursor-pointer hover:scale-110",
                                                                             checked
-                                                                                ? saOnly ? "bg-[#FB7506] text-white" : "bg-[#22C55E] text-white"
+                                                                                ? saLocked ? "bg-[#FB7506] text-white" : "bg-[#22C55E] text-white"
                                                                                 : "bg-white border border-[#DBD9D9] text-transparent"
                                                                         )}
                                                                     >
@@ -493,14 +493,14 @@ export default function SystemAccessPage() {
                                                                 </td>
                                                             );
                                                         })}
-                                                        <td className={cn("p-2 border-r border-[#DBD9D9] truncate max-w-[180px] font-normal flex items-center gap-1", saOnly ? "text-[#FB7506] font-bold" : !dimmed && "text-[#22C55E]")}>
-                                                            {saOnly && <ShieldAlert size={11} className="shrink-0" />}
+                                                        <td className={cn("p-2 border-r border-[#DBD9D9] truncate max-w-[180px] font-normal flex items-center gap-1", saLocked ? "text-[#FB7506] font-bold" : !dimmed && "text-[#22C55E]")}>
+                                                            {saLocked && <ShieldAlert size={11} className="shrink-0" />}
                                                             {String(p.pantalla || "").trim()}
                                                         </td>
-                                                        <td className={cn("p-2 border-r border-[#DBD9D9] truncate max-w-[150px]", !dimmed ? saOnly ? "text-[#FB7506]" : "text-[#22C55E]" : "text-gray-500")}>
+                                                        <td className={cn("p-2 border-r border-[#DBD9D9] truncate max-w-[150px]", !dimmed ? saLocked ? "text-[#FB7506]" : "text-[#22C55E]" : "text-gray-500")}>
                                                             {String(p.modulo || "").trim()}
                                                         </td>
-                                                        <td className={cn("p-2 truncate max-w-[120px]", !dimmed ? saOnly ? "text-[#FB7506]" : "text-[#22C55E]" : "text-gray-400")}>
+                                                        <td className={cn("p-2 truncate max-w-[120px]", !dimmed ? saLocked ? "text-[#FB7506]" : "text-[#22C55E]" : "text-gray-400")}>
                                                             {String(p.empresa || "").trim()}
                                                         </td>
                                                     </tr>
