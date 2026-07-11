@@ -61,9 +61,9 @@ export const SCREEN_PANTA: Record<string, string> = {
 
     // ── System Management ──────────────────────────────────────────────────
     "module-screen-setup":  "52961702",  // MODULES SETUP
-    "users-definition":     "52961702",  // fallback — register dedicated record
-    "access-definition":    "52961702",  // fallback — register dedicated record
-    "companies-definition": "52961702",  // fallback — register dedicated record
+    "users-definition":     "YK618352",  // SYSTEM USER SETUP
+    "access-definition":    "52961680",  // USER ACCESS
+    "companies-definition": "52961672",  // COMPANY SETUP
 
     "payment-authorizations": "52961702",  // fallback — register in Module & Screen Setup to enforce real permissions
 
