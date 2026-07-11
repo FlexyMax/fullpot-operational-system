@@ -9,7 +9,7 @@ const LEVELS = ["ADMINISTRADOR", "DIGITADOR 1", "DIGITADOR 2", "VISITANTE"];
 const EMPTY_FORM = {
     unico: "", cedula: "", nombres: "", apellidos: "", username: "",
     clave: "", nivel: "", cargo: "", correo: "", image: "",
-    activo: true, windows_usuario: "", windows_password: "",
+    activo: true, u2fa: false, windows_usuario: "", windows_password: "",
 };
 
 const generateUsername = (nombres: string, apellidos: string) => {
@@ -43,6 +43,7 @@ export function UserUpsertModal({ onSaved }: { onSaved: () => void }) {
                     correo:           String(selectedRow.correo    || "").trim(),
                     image:            String(selectedRow.image     || "").trim(),
                     activo:           Boolean(selectedRow.activo),
+                    u2fa:             Boolean(selectedRow.u2fa),
                     windows_usuario:  String(selectedRow.windows_usuario  || "").trim(),
                     windows_password: String(selectedRow.windows_password || "").trim(),
                 });
@@ -186,6 +187,16 @@ export function UserUpsertModal({ onSaved }: { onSaved: () => void }) {
                                 <input type="checkbox" checked={Boolean(form.activo)} disabled={mode === "add"} onChange={e => setForm(prev => ({ ...prev, activo: e.target.checked }))} className="w-4 h-4 accent-[#FB7506]" />
                                 <span className={cn("text-xs font-semibold", form.activo ? "text-green-600" : "text-gray-400")}>
                                     {form.activo ? "Yes" : "No"}
+                                </span>
+                            </label>
+                        </div>
+
+                        <div className="flex flex-col gap-1 justify-center">
+                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">2FA (U2FA)</label>
+                            <label className="flex items-center gap-2 cursor-pointer mt-1">
+                                <input type="checkbox" checked={Boolean(form.u2fa)} onChange={e => setForm(prev => ({ ...prev, u2fa: e.target.checked }))} className="w-4 h-4 accent-[#FB7506]" />
+                                <span className={cn("text-xs font-semibold", form.u2fa ? "text-[#FB7506]" : "text-gray-400")}>
+                                    {form.u2fa ? "On" : "Off"}
                                 </span>
                             </label>
                         </div>

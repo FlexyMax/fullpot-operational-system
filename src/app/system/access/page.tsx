@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
     Search, Pencil, Check, X, XCircle, RefreshCcw,
     Users, Shield, Copy, Save, CheckSquare, Square,
-    Building2, LayoutGrid, UserCheck, ChevronRight
+    Building2, LayoutGrid, UserCheck, ChevronRight, ShieldAlert
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { AppFooter } from "@/components/layout/AppFooter";
@@ -20,6 +20,13 @@ import { cn } from "@/lib/utils";
 import { useAccessStore } from "@/store/system/useAccessStore";
 import PanelGrid from "@/components/ui/PanelGrid";
 const EMPTY_ARR: any[] = [];
+
+// SUPERADMIN-only screen detection (mirrors server-side authGuards.ts logic)
+const SA_PANTA = new Set(["52961702"]);
+const SA_NAME_RE = /COMPANY\s*SETUP|COMPANIES\s*DEF|EMPRESA/i;
+const isSARow = (r: any) =>
+    SA_PANTA.has(String(r.panta_uq ?? "").trim()) ||
+    SA_NAME_RE.test(String(r.pantalla ?? ""));
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type PermField = "acceso" | "crear" | "editar" | "borrar" | "consultar" | "reportes";
@@ -39,7 +46,7 @@ const sysFetch = async (url: string) => {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function SystemAccessPage() {
-    const { status } = useSession();
+    const { data: session, status } = useSession();
     const router = useRouter();
     const qc = useQueryClient();
     const { logAction } = useAuditLog("access-definition", "usuarios_accesos");
@@ -118,7 +125,8 @@ export default function SystemAccessPage() {
         });
     }, [localPerms, filterCompany, filterModule]);
 
-    const isVisitor = String(selectedUser?.nivel ?? "").trim().toUpperCase() === "VISITANTE";
+    const isVisitor    = String(selectedUser?.nivel ?? "").trim().toUpperCase() === "VISITANTE";
+    const isSuperAdmin = String((session?.user as any)?.nivel ?? "").toUpperCase() === "SUPERADMIN";
 
     // ── Edit mode ─────────────────────────────────────────────────────────────
     const handleEdit = async () => {
@@ -182,6 +190,8 @@ export default function SystemAccessPage() {
     const togglePerm = (unico: string, field: PermField) => {
         if (!editMode) return;
         if (isVisitor && (field === "crear" || field === "editar" || field === "borrar")) return;
+        const row = localPerms.find(p => p.unico === unico);
+        if (!isSuperAdmin && row && isSARow(row)) return; // non-SA cannot toggle SA-only rows
         setLocalPerms(prev =>
             prev.map(p => p.unico === unico ? { ...p, [field]: !p[field] } : p)
         );
@@ -189,7 +199,12 @@ export default function SystemAccessPage() {
 
     // ── Column check/uncheck ──────────────────────────────────────────────────
     const checkColumn = (field: PermField, value: boolean) => {
-        const unicosInView = new Set(filteredPerms.map(p => p.unico));
+        // Non-SUPERADMIN: exclude SA-only rows from bulk toggle
+        const unicosInView = new Set(
+            filteredPerms
+                .filter(p => isSuperAdmin || !isSARow(p))
+                .map(p => p.unico)
+        );
         setLocalPerms(prev =>
             prev.map(p => unicosInView.has(p.unico) ? { ...p, [field]: value } : p)
         );
@@ -445,17 +460,20 @@ export default function SystemAccessPage() {
                                             {filteredPerms.map((p: any) => {
                                                 const local     = localPerms.find(lp => lp.unico === p.unico) ?? p;
                                                 const dimmed    = !local.acceso;
+                                                const saOnly    = isSARow(p);
+                                                const saLocked  = saOnly && !isSuperAdmin;
                                                 return (
                                                     <tr
                                                         key={p.unico}
                                                         className={cn(
                                                             "border-b border-[#DBD9D9] transition-colors",
+                                                            saOnly ? "bg-[#FB7506]/5" :
                                                             dimmed ? "opacity-40" : "bg-[#22C55E]/5 hover:bg-[#22C55E]/10"
                                                         )}
                                                     >
                                                         {PERM_FIELDS.map(field => {
                                                             const checked  = Boolean(local[field]);
-                                                            const disabled = !editMode ||
+                                                            const disabled = !editMode || saLocked ||
                                                                 (isVisitor && (field === "crear" || field === "editar" || field === "borrar"));
                                                             return (
                                                                 <td key={field} className="p-1.5 text-center border-r border-[#DBD9D9]">
@@ -466,7 +484,7 @@ export default function SystemAccessPage() {
                                                                             "w-5 h-5 rounded flex items-center justify-center mx-auto transition-all",
                                                                             disabled ? "cursor-default" : "cursor-pointer hover:scale-110",
                                                                             checked
-                                                                                ? "bg-[#22C55E] text-white"
+                                                                                ? saOnly ? "bg-[#FB7506] text-white" : "bg-[#22C55E] text-white"
                                                                                 : "bg-white border border-[#DBD9D9] text-transparent"
                                                                         )}
                                                                     >
@@ -475,13 +493,14 @@ export default function SystemAccessPage() {
                                                                 </td>
                                                             );
                                                         })}
-                                                        <td className={cn("p-2 border-r border-[#DBD9D9] truncate max-w-[180px] font-normal", !dimmed && "text-[#22C55E]")}>
+                                                        <td className={cn("p-2 border-r border-[#DBD9D9] truncate max-w-[180px] font-normal flex items-center gap-1", saOnly ? "text-[#FB7506] font-bold" : !dimmed && "text-[#22C55E]")}>
+                                                            {saOnly && <ShieldAlert size={11} className="shrink-0" />}
                                                             {String(p.pantalla || "").trim()}
                                                         </td>
-                                                        <td className={cn("p-2 border-r border-[#DBD9D9] truncate max-w-[150px]", !dimmed ? "text-[#22C55E]" : "text-gray-500")}>
+                                                        <td className={cn("p-2 border-r border-[#DBD9D9] truncate max-w-[150px]", !dimmed ? saOnly ? "text-[#FB7506]" : "text-[#22C55E]" : "text-gray-500")}>
                                                             {String(p.modulo || "").trim()}
                                                         </td>
-                                                        <td className={cn("p-2 truncate max-w-[120px]", !dimmed ? "text-[#22C55E]" : "text-gray-400")}>
+                                                        <td className={cn("p-2 truncate max-w-[120px]", !dimmed ? saOnly ? "text-[#FB7506]" : "text-[#22C55E]" : "text-gray-400")}>
                                                             {String(p.empresa || "").trim()}
                                                         </td>
                                                     </tr>

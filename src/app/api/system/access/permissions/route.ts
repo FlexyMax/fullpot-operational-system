@@ -3,6 +3,7 @@ import { executeProcedure } from "@/lib/db";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { serverAuditLog } from "@/lib/serverAudit";
+import { getSessionNivel, SUPERADMIN, isSuperAdminOnlyPerm } from "@/lib/authGuards";
 const PANTA = "52961702";
 
 export async function GET(req: NextRequest) {
@@ -23,9 +24,20 @@ export async function PUT(req: NextRequest) {
         return NextResponse.json({ error: "rows array required" }, { status: 400 });
     const session = await getServerSession(authOptions);
     const operatorUq = String((session?.user as any)?.id ?? "").padEnd(8).substring(0, 8);
+
+    // Non-SUPERADMIN operators cannot change permissions for SUPERADMIN-only screens.
+    // Strip those rows from the batch silently so only allowed rows get updated.
+    const operatorNivel = await getSessionNivel();
+    const allowedRows = operatorNivel === SUPERADMIN
+        ? rows
+        : rows.filter(r => !isSuperAdminOnlyPerm(r));
+
+    if (allowedRows.length === 0)
+        return NextResponse.json({ success: true, updated: 0 });
+
     try {
         const result = await executeProcedure("sp_NC_accesos_update_batch", {
-            lcjson: JSON.stringify(rows.map(r => ({
+            lcjson: JSON.stringify(allowedRows.map(r => ({
                 unico:     r.unico,
                 acceso:    r.acceso    ? 1 : 0,
                 crear:     r.crear     ? 1 : 0,
@@ -38,8 +50,8 @@ export async function PUT(req: NextRequest) {
             lcTarget_uq:   String(targetUq ?? "").padEnd(8).substring(0, 8),
         }, true);
         const row = (result.recordset as any[])[0];
-        serverAuditLog(PANTA, "Edit", "usuarios_accesos", targetUq || rows[0]?.unico || "", "Batch Permissions").catch(() => {});
-        return NextResponse.json({ success: true, updated: row?.updated ?? rows.length });
+        serverAuditLog(PANTA, "Edit", "usuarios_accesos", targetUq || allowedRows[0]?.unico || "", "Batch Permissions").catch(() => {});
+        return NextResponse.json({ success: true, updated: row?.updated ?? allowedRows.length });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }

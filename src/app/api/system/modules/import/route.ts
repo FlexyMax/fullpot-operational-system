@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeQuery } from "@/lib/db";
+import { requireSuperAdmin } from "@/lib/authGuards";
 
 const txt = (v: any) => String(v ?? "").replace(/'/g, "''");
 const bit = (v: any) => (v ? 1 : 0);
 const num = (v: any) => parseInt(v) || 0;
 
 export async function POST(req: NextRequest) {
+    const denied = await requireSuperAdmin();
+    if (denied) return denied;
     const { modules = [], screens = [], reports = [] } = await req.json();
     let mCount = 0, sCount = 0, rCount = 0;
 

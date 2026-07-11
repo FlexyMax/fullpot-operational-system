@@ -38,7 +38,7 @@ const EMPTY_COMPANY = {
 };
 
 export default function CompaniesPage() {
-    const { status } = useSession();
+    const { data: session, status } = useSession();
     const router = useRouter();
     const qc = useQueryClient();
     const { logAction } = useAuditLog("companies-definition", "empresas");
@@ -53,6 +53,8 @@ export default function CompaniesPage() {
     const [form, setForm] = useState<any>(EMPTY_COMPANY);
     const [saving, setSaving] = useState(false);
     const [deleteDlg, setDeleteDlg] = useState(false);
+
+    const isSuperAdmin = String((session?.user as any)?.nivel ?? "").toUpperCase() === "SUPERADMIN";
 
     useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
 
@@ -150,6 +152,19 @@ export default function CompaniesPage() {
     });
 
     if (status === "loading") return null;
+
+    if (!isSuperAdmin) return (
+        <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] font-sans text-[#333]">
+            <AppHeader title="Companies" />
+            <div className="flex-1 flex items-center justify-center">
+                <div className="text-center">
+                    <p className="text-2xl font-black text-gray-300 uppercase tracking-widest">Access Denied</p>
+                    <p className="text-xs text-gray-400 mt-2">This page requires SUPERADMIN level.</p>
+                    <button onClick={() => router.push("/menu")} className="mt-4 px-4 py-2 text-xs font-bold text-white bg-[#FB7506] rounded hover:bg-[#ff8c2a]">Back to Menu</button>
+                </div>
+            </div>
+        </div>
+    );
 
     return (
         <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">

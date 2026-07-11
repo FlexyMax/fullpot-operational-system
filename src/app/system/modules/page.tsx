@@ -36,7 +36,7 @@ const EMPTY_SCREEN: ScreenForm = { unico: "", modulo_uq: "", nombre: "", orden: 
 const EMPTY_REPORT: ReportForm = { unico: "", panta_uq: "", nombre: "", titulo: "", path: "", descripcion: "", fecha_desde: false, fecha_hasta: false, numero_desde: false, numero_hasta: false, actual: true, comprimido: false, detallado: false, exportar: false };
 
 export default function ModuleScreenSetupPage() {
-    const { status } = useSession();
+    const { data: session, status } = useSession();
     const router  = useRouter();
     const qc      = useQueryClient();
     const { logAction } = useAuditLog("module-screen-setup", "modulo");
@@ -289,7 +289,22 @@ export default function ModuleScreenSetupPage() {
         if (selScrUnico) setDeleteScrDlg(true);
     };
 
+    const isSuperAdmin = String((session?.user as any)?.nivel ?? "").toUpperCase() === "SUPERADMIN";
+
     if (status === "loading") return null;
+
+    if (!isSuperAdmin) return (
+        <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] font-sans text-[#333]">
+            <AppHeader title="Modules" />
+            <div className="flex-1 flex items-center justify-center">
+                <div className="text-center">
+                    <p className="text-2xl font-black text-gray-300 uppercase tracking-widest">Access Denied</p>
+                    <p className="text-xs text-gray-400 mt-2">This page requires SUPERADMIN level.</p>
+                    <button onClick={() => router.push("/menu")} className="mt-4 px-4 py-2 text-xs font-bold text-white bg-[#FB7506] rounded hover:bg-[#ff8c2a]">Back to Menu</button>
+                </div>
+            </div>
+        </div>
+    );
 
     return (
         <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">

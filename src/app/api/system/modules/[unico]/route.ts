@@ -3,12 +3,15 @@ import { executeProcedure } from "@/lib/db";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { serverAuditLog } from "@/lib/serverAudit";
+import { requireSuperAdmin } from "@/lib/authGuards";
 const PANTA = "52961702";
 
 const bit = (v: any) => (v ? 1 : 0);
 type P = { params: Promise<{ unico: string }> };
 
 export async function GET(_req: NextRequest, { params }: P) {
+    const denied = await requireSuperAdmin();
+    if (denied) return denied;
     const { unico } = await params;
     try {
         const r = await executeProcedure("sp_NC_modulo_info", { lcUnico: unico }, true);
@@ -19,6 +22,8 @@ export async function GET(_req: NextRequest, { params }: P) {
 }
 
 export async function PUT(req: NextRequest, { params }: P) {
+    const denied = await requireSuperAdmin();
+    if (denied) return denied;
     const { unico } = await params;
     const session = await getServerSession(authOptions);
     const operatorUq = String((session?.user as any)?.id ?? "").padEnd(8).substring(0, 8);
@@ -46,6 +51,8 @@ export async function PUT(req: NextRequest, { params }: P) {
 }
 
 export async function DELETE(_req: NextRequest, { params }: P) {
+    const denied = await requireSuperAdmin();
+    if (denied) return denied;
     const { unico } = await params;
     const session = await getServerSession(authOptions);
     const operatorUq = String((session?.user as any)?.id ?? "").padEnd(8).substring(0, 8);

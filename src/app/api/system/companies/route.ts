@@ -3,12 +3,15 @@ import { executeProcedure } from "@/lib/db";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { serverAuditLog } from "@/lib/serverAudit";
+import { requireSuperAdmin } from "@/lib/authGuards";
 const PANTA = "52961702";
 
 const txt = (v: any) => String(v ?? "");
 const bit = (v: any) => (v ? 1 : 0);
 
 export async function GET() {
+    const denied = await requireSuperAdmin();
+    if (denied) return denied;
     try {
         const r = await executeProcedure("sp_NC_empresas_lista", { llactive: false }, true);
         const companies = (r.recordset ?? []).map((row: any) => ({
@@ -30,6 +33,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+    const denied = await requireSuperAdmin();
+    if (denied) return denied;
     const session = await getServerSession(authOptions);
     const operatorUq = String((session?.user as any)?.id ?? "").padEnd(8).substring(0, 8);
     const b = await req.json();

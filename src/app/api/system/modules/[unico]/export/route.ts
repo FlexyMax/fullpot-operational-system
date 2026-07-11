@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeQuery } from "@/lib/db";
+import { requireSuperAdmin } from "@/lib/authGuards";
 
 const txt = (v: any) => String(v ?? "").replace(/'/g, "''");
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ unico: string }> }) {
+    const denied = await requireSuperAdmin();
+    if (denied) return denied;
     const { unico } = await params;
     try {
         const [mod, screens, reports] = await Promise.all([

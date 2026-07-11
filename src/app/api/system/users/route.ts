@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const {
         nombres, apellidos, username, clave, cedula, nivel,
-        cargo, correo, windows_usuario, windows_password
+        cargo, correo, u2fa, windows_usuario, windows_password
     } = body;
     try {
         const r = await executeProcedure("sp_NC_user_insert", {
@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
             lcCedula:          txt(cedula),
             lcWindowsUser:     txt(windows_usuario),
             lcWindowsPassword: txt(windows_password),
+            lcU2FA:            u2fa ? 1 : 0,
         }, true);
         const row = r.recordset?.[0] || {};
         if (row.error) return NextResponse.json({ success: false, error: row.message }, { status: 400 });

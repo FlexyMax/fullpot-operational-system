@@ -80,6 +80,8 @@ function getGreeting(): string {
     return 'Good evening';
 }
 
+const SUPERADMIN_ONLY_ROUTES = new Set(["/system/companies", "/system/modules"]);
+
 export default function MenuPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
@@ -88,6 +90,8 @@ export default function MenuPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
+
+    const isSuperAdmin = String((session?.user as any)?.nivel ?? "").toUpperCase() === "SUPERADMIN";
 
     useEffect(() => {
         if (status === "unauthenticated") {
@@ -306,6 +310,8 @@ export default function MenuPage() {
                                         const route = getRoute(item.app_page);
                                         // SP may return field as 'acceso' or 'access'; check both
                                         const hasAccess = Boolean(item.access) || Boolean((item as any).acceso);
+                                        // SUPERADMIN-only routes are hidden entirely for non-superadmins
+                                        if (route && SUPERADMIN_ONLY_ROUTES.has(route) && !isSuperAdmin) return null;
                                         const isAvailable = !!route && hasAccess;
                                         const Icon = getIcon(item.app_page);
 

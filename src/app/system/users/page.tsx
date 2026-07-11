@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Search, Users, Plus, Pencil, Trash2, Calendar, Check, Filter } from "lucide-react";
+import { Search, Users, Plus, Pencil, Trash2, Calendar, Check, Filter, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { AppFooter } from "@/components/layout/AppFooter";
@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 const apiFetch = async (url: string) => { const r = await fetch(url); const j = await r.json(); if (!r.ok) throw new Error(j?.error || `HTTP ${r.status}`); return j; };
 
 export default function UsersDefinitionPage() {
-    const { status } = useSession();
+    const { data: session, status } = useSession();
     const router = useRouter();
     const qc = useQueryClient();
     const perms = usePagePermissions("users-definition");
@@ -31,6 +31,11 @@ export default function UsersDefinitionPage() {
 
     const [deleteDialog, setDeleteDialog] = useState(false);
     const [deleting, setDeleting] = useState(false);
+
+    const isSuperAdmin = String((session?.user as any)?.nivel ?? "").toUpperCase() === "SUPERADMIN";
+    const selectedIsSuperAdmin = String(selectedRow?.nivel ?? "").toUpperCase() === "SUPERADMIN";
+    const canEditSelected   = !!selectedRow && perms.canEdit   && (!selectedIsSuperAdmin || isSuperAdmin);
+    const canDeleteSelected = !!selectedRow && perms.canDelete && (!selectedIsSuperAdmin || isSuperAdmin);
 
     // Activity log state
     const LOG_PAGE_SIZE = 20;
@@ -169,9 +174,9 @@ export default function UsersDefinitionPage() {
                 onRefresh={() => qc.invalidateQueries({ queryKey: ["sys-users-list"] })}
                 onLog={() => logPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
                 menuItems={[
-                    { label: "New User",    icon: Plus,   color: "green",  onClick: handleAdd,                        disabled: !perms.canCreate },
-                    { label: "Edit User",   icon: Pencil, color: "orange", onClick: handleEdit,                       disabled: !selectedRow || !perms.canEdit },
-                    { label: "Delete User", icon: Trash2, color: "red",    onClick: () => setDeleteDialog(true),      disabled: !selectedRow || !perms.canDelete },
+                    { label: "New User",    icon: Plus,   color: "green",  onClick: handleAdd,                   disabled: !perms.canCreate },
+                    { label: "Edit User",   icon: Pencil, color: "orange", onClick: handleEdit,                  disabled: !canEditSelected },
+                    { label: "Delete User", icon: Trash2, color: "red",    onClick: () => setDeleteDialog(true), disabled: !canDeleteSelected },
                 ]}
                 className="mx-2 mt-2 h-[420px] shrink-0"
             >
@@ -184,11 +189,12 @@ export default function UsersDefinitionPage() {
                         <PanelGridTh>E-mail</PanelGridTh>
                         <PanelGridTh className="hidden md:table-cell">Position</PanelGridTh>
                         <PanelGridTh className="hidden sm:table-cell">Level</PanelGridTh>
+                        <PanelGridTh className="text-center hidden lg:table-cell">2FA</PanelGridTh>
                         <PanelGridTh className="text-center">Active</PanelGridTh>
                     </PanelGridThead>
                     <PanelGridTbody>
                         {filteredUsers.length === 0 ? (
-                            <tr><td colSpan={8} className="p-6 text-center text-gray-300 text-xs">No users found</td></tr>
+                            <tr><td colSpan={9} className="p-6 text-center text-gray-300 text-xs">No users found</td></tr>
                         ) : filteredUsers.map((u: any) => {
                             const isSelected = selectedRow?.unico === u.unico;
                             return (
@@ -204,7 +210,15 @@ export default function UsersDefinitionPage() {
                                     <PanelGridTd className="text-gray-600">{String(u.username || "")}</PanelGridTd>
                                     <PanelGridTd className="text-gray-500">{String(u.correo || "")}</PanelGridTd>
                                     <PanelGridTd className="hidden md:table-cell text-gray-500">{String(u.cargo || "")}</PanelGridTd>
-                                    <PanelGridTd className="hidden sm:table-cell text-gray-500">{String(u.nivel || "")}</PanelGridTd>
+                                    <PanelGridTd className="hidden sm:table-cell">
+                                        {String(u.nivel || "").toUpperCase() === "SUPERADMIN"
+                                            ? <span className="inline-flex items-center gap-1 text-[#FB7506] font-black text-[10px]"><ShieldAlert size={10} /> SUPERADMIN</span>
+                                            : <span className="text-gray-500">{String(u.nivel || "")}</span>
+                                        }
+                                    </PanelGridTd>
+                                    <PanelGridTd className="text-center hidden lg:table-cell">
+                                        {u.u2fa ? <Check size={10} className="text-[#FB7506] mx-auto" /> : "—"}
+                                    </PanelGridTd>
                                     <PanelGridTd className="text-center">
                                         {u.activo ? <Check size={10} className="text-green-500 mx-auto" /> : "—"}
                                     </PanelGridTd>

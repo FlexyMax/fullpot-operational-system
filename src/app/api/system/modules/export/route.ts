@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { executeQuery } from "@/lib/db";
+import { requireSuperAdmin } from "@/lib/authGuards";
 
 export async function GET() {
+    const denied = await requireSuperAdmin();
+    if (denied) return denied;
     try {
         const [mods, screens, reports] = await Promise.all([
             executeQuery("SELECT * FROM modulo ORDER BY orden, nombre", true),

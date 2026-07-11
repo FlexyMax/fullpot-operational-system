@@ -27,12 +27,20 @@ export const authOptions = {
 
                     const salesProfile = profileResult.recordset[0] || {};
 
+                    // Get user nivel for SUPERADMIN checks
+                    let nivel = "";
+                    try {
+                        const infoResult = await executeProcedure("sp_NC_User_Info", { lcUser_uq: preAuth.unico }, true);
+                        nivel = String(infoResult.recordset?.[0]?.nivel ?? "").trim().toUpperCase();
+                    } catch { /* nivel stays "" */ }
+
                     return {
                         id:           preAuth.unico,
                         username:     credentials.username,
                         name:         salesProfile.salesman_name || preAuth.name,
                         warehouse_uq: salesProfile.wphysical_uq,
                         pax_ip:       salesProfile.pax_terminal_ip,
+                        nivel,
                     };
                 } catch (error) {
                     console.error("Auth error:", error);

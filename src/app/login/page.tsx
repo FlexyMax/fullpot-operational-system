@@ -32,7 +32,7 @@ export default function LoginPage() {
     const setUser     = useAuthStore((state) => state.setUser);
     const queryClient = useQueryClient();
 
-    /* ── Step 1: validate credentials + send email code ─────────────── */
+    /* ── Step 1: validate credentials + send email code (or bypass if U2FA off) ── */
     const handleAccess = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
@@ -45,6 +45,23 @@ export default function LoginPage() {
             });
             const data = await res.json();
             if (!res.ok) { setError(data.error || "Authentication failed"); return; }
+
+            // U2FA disabled: preAuthToken returned directly — skip step 2
+            if (!data.u2faRequired && data.preAuthToken) {
+                const result = await signIn("credentials", {
+                    username,
+                    preAuthToken: data.preAuthToken,
+                    redirect: false,
+                });
+                if (result?.error) { setError("Sign-in failed. Please try again."); return; }
+                queryClient.clear();
+                const sRes    = await fetch("/api/auth/session");
+                const session = await sRes.json();
+                if (session?.user) { setUser(session.user); router.push("/menu"); }
+                return;
+            }
+
+            // U2FA enabled: go to code verification step
             setMaskedEmail(data.maskedEmail);
             setCode(["", "", "", "", "", ""]);
             setStep("verify");
