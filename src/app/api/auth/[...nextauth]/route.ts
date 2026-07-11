@@ -31,7 +31,7 @@ export const authOptions = {
                     let nivel = "";
                     try {
                         const infoResult = await executeProcedure("sp_NC_User_Info", { lcUser_uq: preAuth.unico }, true);
-                        nivel = String(infoResult.recordset?.[0]?.nivel ?? "").trim().toUpperCase();
+                        nivel = String(infoResult.recordset?.[0]?.level ?? "").trim().toUpperCase();
                     } catch { /* nivel stays "" */ }
 
                     return {

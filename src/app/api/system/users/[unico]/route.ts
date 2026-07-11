@@ -9,7 +9,7 @@ const PANTA = "52961702";
 async function getTargetNivel(unico: string): Promise<string> {
     try {
         const r = await executeProcedure("sp_NC_User_Info", { lcUser_uq: unico }, true);
-        return String(r.recordset?.[0]?.nivel ?? "").trim().toUpperCase();
+        return String(r.recordset?.[0]?.level ?? "").trim().toUpperCase();
     } catch { return ""; }
 }
 
