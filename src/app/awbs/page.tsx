@@ -100,25 +100,19 @@ function CancelBtn({ onClick }: { onClick: () => void }) {
 }
 
 // ─── Modal 1: AWB Charges (per AWB) ──────────────────────────────────────────
-function AwbsChargesModal({ mode, charge, awbcode, onClose, onSaved }: any) {
+function AwbsChargesModal({ mode, charge, awbcode, airline, onClose, onSaved }: any) {
     const isEdit = mode === "edit";
-    const blank = { supplier_uq: "", ap_type_uq: "", awc_date: today(), invoice_date: today(), invoice_no: "", description: "", duties: 0, o_charges: 0, handling: 0, freight: 0, broker: 0, oc_ammount: 0, total_boxes: 0, full_boxes: 0, weight: 0 };
+    const blank = { supplier_uq: "", ap_type_uq: "", invoice_date: today(), invoice_no: "", description: "", freight: 0, total_boxes: 0, full_boxes: 0, weight: 0 };
     const [form, setForm] = useState<any>(isEdit ? {
         supplier_uq:  charge?.SUPPLIER_UQ  ?? "",
         ap_type_uq:   charge?.AP_TYPE_UQ   ?? "",
-        awc_date:     charge?.AWC_DATE?.split("T")[0]    ?? today(),
         invoice_date: charge?.INVOICE_DATE?.split("T")[0] ?? today(),
         invoice_no:   charge?.INVOICE_NO   ?? "",
         description:  charge?.DESCRIPTION  ?? "",
-        duties:       charge?.DUTIES       ?? 0,
-        o_charges:    charge?.O_CHARGES    ?? 0,
-        handling:     charge?.HANDLING     ?? 0,
         freight:      charge?.FREIGHT      ?? 0,
-        broker:       charge?.BROKER       ?? 0,
-        oc_ammount:   charge?.OC_AMMOUNT   ?? 0,
-        total_boxes:  charge?.TOTAL_BOXES  ?? 0,
+        total_boxes:  charge?.TOTAL_BOXES  ?? charge?.AUTO_FB  ?? 0,
         full_boxes:   charge?.FULL_BOXES   ?? 0,
-        weight:       charge?.WEIGHT       ?? 0,
+        weight:       charge?.TOTAL_WEIGHT ?? charge?.WEIGHT   ?? 0,
     } : blank);
     const [saving, setSaving] = useState(false);
     const [error,  setError]  = useState<string | null>(null);
@@ -136,7 +130,12 @@ function AwbsChargesModal({ mode, charge, awbcode, onClose, onSaved }: any) {
         if (!form.invoice_no)  { setError("Invoice is required."); return; }
         setSaving(true); setError(null);
         try {
-            const body = { ...form, awbcode };
+            const body = {
+                ...form,
+                awbcode,
+                awc_date: today(),
+                duties: 0, o_charges: 0, handling: 0, broker: 0, oc_ammount: 0,
+            };
             const url  = isEdit ? `/api/awbs/charges/${charge.UNICO}` : "/api/awbs/charges";
             const res  = await fetch(url, { method: isEdit ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
             const d    = await res.json();
@@ -154,6 +153,14 @@ function AwbsChargesModal({ mode, charge, awbcode, onClose, onSaved }: any) {
             footer={<><CancelBtn onClick={onClose} /><SaveBtn saving={saving} onClick={save} /></>}>
             {error && <p className="mb-3 text-xs text-red-600 font-semibold bg-red-50 border border-red-200 rounded px-3 py-2">{error}</p>}
             <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="flex flex-col gap-0.5">
+                    <label className={lbl}>Airline</label>
+                    <input readOnly value={airline ?? ""} className="fos-input h-9 bg-gray-50 text-[#FB7506] font-bold" />
+                </div>
+                <div className="flex flex-col gap-0.5">
+                    <label className={lbl}>AWBCode</label>
+                    <input readOnly value={awbcode ?? ""} className="fos-input h-9 bg-gray-50 text-[#FB7506] font-bold" />
+                </div>
                 <div className="col-span-2 flex flex-col gap-0.5">
                     <label className={lbl}>Supplier *</label>
                     <select {...F("supplier_uq")} className="fos-input h-9">
@@ -168,19 +175,13 @@ function AwbsChargesModal({ mode, charge, awbcode, onClose, onSaved }: any) {
                         {(chargeTypes as any[]).map((c: any) => <option key={c.UNICO ?? c.unico} value={c.UNICO ?? c.unico}>{t(c.DESCRIPTION ?? c.description)}</option>)}
                     </select>
                 </div>
-                <div className="flex flex-col gap-0.5"><label className={lbl}>Charge Date</label><input type="date" {...F("awc_date")} className="fos-input h-9" /></div>
+                <div className="col-span-2 flex flex-col gap-0.5"><label className={lbl}>Amount *</label><input {...F("freight", true)} className="fos-input h-9" /></div>
                 <div className="flex flex-col gap-0.5"><label className={lbl}>Invoice Date</label><input type="date" {...F("invoice_date")} className="fos-input h-9" /></div>
                 <div className="flex flex-col gap-0.5"><label className={lbl}>Invoice No. *</label><input {...F("invoice_no")} className="fos-input h-9" /></div>
-                <div className="flex flex-col gap-0.5"><label className={lbl}>Total Boxes</label><input {...F("total_boxes", true)} className="fos-input h-9" /></div>
-                <div className="flex flex-col gap-0.5"><label className={lbl}>Duties</label><input {...F("duties", true)} className="fos-input h-9" /></div>
-                <div className="flex flex-col gap-0.5"><label className={lbl}>O. Charges</label><input {...F("o_charges", true)} className="fos-input h-9" /></div>
-                <div className="flex flex-col gap-0.5"><label className={lbl}>Handling</label><input {...F("handling", true)} className="fos-input h-9" /></div>
-                <div className="flex flex-col gap-0.5"><label className={lbl}>Freight</label><input {...F("freight", true)} className="fos-input h-9" /></div>
-                <div className="flex flex-col gap-0.5"><label className={lbl}>Broker</label><input {...F("broker", true)} className="fos-input h-9" /></div>
-                <div className="flex flex-col gap-0.5"><label className={lbl}>OC Amount</label><input {...F("oc_ammount", true)} className="fos-input h-9" /></div>
                 <div className="flex flex-col gap-0.5"><label className={lbl}>Full Boxes</label><input {...F("full_boxes", true)} className="fos-input h-9" /></div>
-                <div className="flex flex-col gap-0.5"><label className={lbl}>Weight</label><input {...F("weight", true)} className="fos-input h-9" /></div>
-                <div className="col-span-2 flex flex-col gap-0.5"><label className={lbl}>Description</label><input {...F("description")} className="fos-input h-9" /></div>
+                <div className="flex flex-col gap-0.5"><label className={lbl}>Total Boxes</label><input {...F("total_boxes", true)} className="fos-input h-9" /></div>
+                <div className="col-span-2 flex flex-col gap-0.5"><label className={lbl}>Weight</label><input {...F("weight", true)} className="fos-input h-9" /></div>
+                <div className="col-span-2 flex flex-col gap-0.5"><label className={lbl}>Notes / Comments</label><input {...F("description")} className="fos-input h-9" /></div>
             </div>
         </FosModal>
     );
@@ -854,10 +855,15 @@ export default function AwbsPage() {
         });
     };
 
-    const handleReport = async (type: "products" | "duties") => {
+    const handleReport = async (type: "products" | "duties" | "charges") => {
         if (!selAwb) return;
         if (!perms.canReport) { toast.error(PERMISSION_MSGS.report); return; }
         try {
+            if (type === "charges") {
+                const d = await awbFetch(`/api/awbs/reports/charges?awbcode=${encodeURIComponent(selAwb.AWBCODE)}`);
+                setReportModal({ title: `Charges — AWB ${t(selAwb.AWBCODE)}`, records: d.records ?? [] });
+                return;
+            }
             const grower = type === "duties" ? (selVendor?.GROWER_UQ ?? "") : "%";
             const date   = selAwb.DATE_INVO ?? selAwb.BOX_DATE ?? dateFrom;
             const url    = type === "products"
@@ -936,8 +942,9 @@ export default function AwbsPage() {
                             { label: "Change Date", icon: Calendar, color: "orange", onClick: () => { if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } setChangeDateModal(true); }, disabled: !selAwb || !perms.canEdit },
                             { label: "Delete AWB",  icon: Trash2,   color: "red",    onClick: handleDeleteAwb, disabled: !selAwb || !perms.canDelete },
                             { separator: true },
-                            { label: "Products",      icon: Printer,   color: "gray", onClick: () => handleReport("products"),       disabled: !selAwb || !perms.canReport },
-                            { label: "Credits/Duties",icon: BarChart2, color: "gray", onClick: () => handleReport("duties"),         disabled: !selAwb || !perms.canReport },
+                            { label: "Products",      icon: Printer,   color: "gray", onClick: () => handleReport("products"),  disabled: !selAwb || !perms.canReport },
+                            { label: "AWB Charges",   icon: FileText,  color: "gray", onClick: () => handleReport("charges"),  disabled: !selAwb || !perms.canReport },
+                            { label: "Credits/Duties",icon: BarChart2, color: "gray", onClick: () => handleReport("duties"),   disabled: !selAwb || !perms.canReport },
                             { label: "Set MPF",       icon: Package,   color: "blue", onClick: () => { if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } setMpfModal(true); }, disabled: !selAwb || !perms.canEdit },
                         ]}
                         className="flex-1 min-h-0"
@@ -950,13 +957,26 @@ export default function AwbsPage() {
                                 <PanelGridTh>Box Date</PanelGridTh>
                                 <PanelGridTh>Inv Date</PanelGridTh>
                                 <PanelGridTh align="right">Boxes</PanelGridTh>
+                                <PanelGridTh align="right">F.Boxes</PanelGridTh>
                                 <PanelGridTh align="right">Units</PanelGridTh>
                                 <PanelGridTh align="right">Charge</PanelGridTh>
                                 <PanelGridTh align="right">Handling</PanelGridTh>
                                 <PanelGridTh align="right">Freight</PanelGridTh>
                                 <PanelGridTh align="right">Duties</PanelGridTh>
                                 <PanelGridTh align="right">Broker</PanelGridTh>
-                                <PanelGridTh align="right">Total</PanelGridTh>
+                                <PanelGridTh align="right">T.Charge</PanelGridTh>
+                                <PanelGridTh align="right">F.Cost</PanelGridTh>
+                                <PanelGridTh align="right">G.Cost</PanelGridTh>
+                                <PanelGridTh align="right">P.Credits</PanelGridTh>
+                                <PanelGridTh align="right">P.Debits</PanelGridTh>
+                                <PanelGridTh align="right">Net Cost</PanelGridTh>
+                                <PanelGridTh align="right">G.Sale</PanelGridTh>
+                                <PanelGridTh align="right">S.Credits</PanelGridTh>
+                                <PanelGridTh align="right">S.Debits</PanelGridTh>
+                                <PanelGridTh align="right">Net Sale</PanelGridTh>
+                                <PanelGridTh align="right">S.Price</PanelGridTh>
+                                <PanelGridTh align="right">Profit</PanelGridTh>
+                                <PanelGridTh align="right">Profit/U</PanelGridTh>
                             </PanelGridThead>
                             <PanelGridTbody>
                                 {(awbs as any[]).map((row: any) => (
@@ -967,6 +987,7 @@ export default function AwbsPage() {
                                         <PanelGridTd>{fmtDate(row.BOX_DATE)}</PanelGridTd>
                                         <PanelGridTd>{fmtDate(row.DATE_INVO)}</PanelGridTd>
                                         <PanelGridTd align="right">{row.TOTAL_BOXES}</PanelGridTd>
+                                        <PanelGridTd align="right">{row.TOTAL_FBOXES}</PanelGridTd>
                                         <PanelGridTd align="right">{row.TOTAL_UNITS}</PanelGridTd>
                                         <PanelGridTd align="right">{fmt(row.CHARGE_COST)}</PanelGridTd>
                                         <PanelGridTd align="right">{fmt(row.HANDLING_COST)}</PanelGridTd>
@@ -974,6 +995,18 @@ export default function AwbsPage() {
                                         <PanelGridTd align="right">{fmt(row.DUTIES_COST)}</PanelGridTd>
                                         <PanelGridTd align="right">{fmt(row.BROKER_COST)}</PanelGridTd>
                                         <PanelGridTd align="right" className="font-bold">{fmt(row.TOTAL_CHARGE)}</PanelGridTd>
+                                        <PanelGridTd align="right">{fmt(row.FLOWER_COST)}</PanelGridTd>
+                                        <PanelGridTd align="right">{fmt(row.GROSS_COST)}</PanelGridTd>
+                                        <PanelGridTd align="right">{fmt(row.TOTAL_PCREDITS)}</PanelGridTd>
+                                        <PanelGridTd align="right">{fmt(row.TOTAL_PDEBITS)}</PanelGridTd>
+                                        <PanelGridTd align="right" className="font-bold">{fmt(row.NET_COST)}</PanelGridTd>
+                                        <PanelGridTd align="right">{fmt(row.GROSS_SALE)}</PanelGridTd>
+                                        <PanelGridTd align="right">{fmt(row.TOTAL_SCREDITS)}</PanelGridTd>
+                                        <PanelGridTd align="right">{fmt(row.TOTAL_SDEBITS)}</PanelGridTd>
+                                        <PanelGridTd align="right" className="font-bold">{fmt(row.NET_SALE)}</PanelGridTd>
+                                        <PanelGridTd align="right">{fmt(row.SPRICE_X_UNIT)}</PanelGridTd>
+                                        <PanelGridTd align="right" className="font-semibold">{fmt(row.PROFIT)}</PanelGridTd>
+                                        <PanelGridTd align="right" className="font-semibold">{fmt(row.PROFIT_X_UNIT)}</PanelGridTd>
                                     </PanelGridTr>
                                 ))}
                                 {!(awbs as any[]).length && searchKey === 0 && emptyMsg("Set filters and click Search to load AWBs.")}
@@ -1076,37 +1109,33 @@ export default function AwbsPage() {
                             >
                                 <PanelGridTable>
                                     <PanelGridThead>
-                                        <PanelGridTh>Code</PanelGridTh>
-                                        <PanelGridTh>AP Type</PanelGridTh>
-                                        <PanelGridTh>Grower</PanelGridTh>
-                                        <PanelGridTh>AWBCode</PanelGridTh>
+                                        <PanelGridTh className="font-bold text-[#FB7506]">AWBCode</PanelGridTh>
+                                        <PanelGridTh>Airline</PanelGridTh>
                                         <PanelGridTh>Date</PanelGridTh>
-                                        <PanelGridTh align="right">O.Charges</PanelGridTh>
-                                        <PanelGridTh align="right">Handling</PanelGridTh>
-                                        <PanelGridTh align="right">Freight</PanelGridTh>
-                                        <PanelGridTh align="right">Broker</PanelGridTh>
-                                        <PanelGridTh align="right">Duties</PanelGridTh>
-                                        <PanelGridTh align="right">OC Amt</PanelGridTh>
-                                        <PanelGridTh align="right">Boxes</PanelGridTh>
+                                        <PanelGridTh>Vendor</PanelGridTh>
+                                        <PanelGridTh>Type</PanelGridTh>
+                                        <PanelGridTh>Inv. Date</PanelGridTh>
                                         <PanelGridTh>Invoice</PanelGridTh>
+                                        <PanelGridTh align="right">Amount</PanelGridTh>
+                                        <PanelGridTh align="right">T.Boxes</PanelGridTh>
+                                        <PanelGridTh align="right">Full Boxes</PanelGridTh>
+                                        <PanelGridTh align="right">Weight</PanelGridTh>
                                         <PanelGridTh>Description</PanelGridTh>
                                     </PanelGridThead>
                                     <PanelGridTbody>
                                         {(chargesTab as any[]).map((row: any) => (
                                             <PanelGridTr key={row.UNICO} selected={selCharge?.UNICO === row.UNICO} onClick={() => selCharge?.UNICO === row.UNICO ? setSelCharge(null) : setSelCharge(row)} onDoubleClick={() => { if (perms.canEdit) setChargesModal({ mode: "edit" }); }}>
-                                                <PanelGridTd className="font-mono text-[11px] text-[#FB7506] font-bold">{t(row.UNICO)}</PanelGridTd>
-                                                <PanelGridTd>{t(row.AP_TYPE)}</PanelGridTd>
-                                                <PanelGridTd>{t(row.GROWER)}</PanelGridTd>
                                                 <PanelGridTd className="font-bold text-[#FB7506]">{t(row.AWBCODE)}</PanelGridTd>
+                                                <PanelGridTd>{t(row.AIRLINE)}</PanelGridTd>
                                                 <PanelGridTd>{fmtDate(row.AWC_DATE)}</PanelGridTd>
-                                                <PanelGridTd align="right">{fmt(row.O_CHARGES)}</PanelGridTd>
-                                                <PanelGridTd align="right">{fmt(row.HANDLING)}</PanelGridTd>
-                                                <PanelGridTd align="right">{fmt(row.FREIGHT)}</PanelGridTd>
-                                                <PanelGridTd align="right">{fmt(row.BROKER)}</PanelGridTd>
-                                                <PanelGridTd align="right">{fmt(row.DUTIES)}</PanelGridTd>
-                                                <PanelGridTd align="right">{fmt(row.OC_AMMOUNT)}</PanelGridTd>
-                                                <PanelGridTd align="right">{row.TOTAL_BOXES}</PanelGridTd>
+                                                <PanelGridTd>{t(row.GROWER)}</PanelGridTd>
+                                                <PanelGridTd>{t(row.AP_TYPE)}</PanelGridTd>
+                                                <PanelGridTd>{fmtDate(row.INVOICE_DATE)}</PanelGridTd>
                                                 <PanelGridTd>{t(row.INVOICE_NO)}</PanelGridTd>
+                                                <PanelGridTd align="right" className="font-semibold">{fmt(row.FREIGHT)}</PanelGridTd>
+                                                <PanelGridTd align="right">{row.AUTO_FB ?? row.TOTAL_BOXES}</PanelGridTd>
+                                                <PanelGridTd align="right">{row.FULL_BOXES}</PanelGridTd>
+                                                <PanelGridTd align="right">{fmt(row.TOTAL_WEIGHT)}</PanelGridTd>
                                                 <PanelGridTd>{t(row.DESCRIPTION)}</PanelGridTd>
                                             </PanelGridTr>
                                         ))}
@@ -1249,20 +1278,32 @@ export default function AwbsPage() {
                             >
                                 <PanelGridTable>
                                     <PanelGridThead>
-                                        <PanelGridTh>Code</PanelGridTh>
-                                        <PanelGridTh>AWBCode</PanelGridTh>
-                                        <PanelGridTh>Product</PanelGridTh>
+                                        <PanelGridTh className="font-bold text-[#FB7506]">AWBCode</PanelGridTh>
+                                        <PanelGridTh>Vendor</PanelGridTh>
+                                        <PanelGridTh>Product / Variety</PanelGridTh>
+                                        <PanelGridTh align="right">Qty</PanelGridTh>
+                                        <PanelGridTh align="right">Cost</PanelGridTh>
+                                        <PanelGridTh>Tax Code</PanelGridTh>
+                                        <PanelGridTh align="right">%</PanelGridTh>
+                                        <PanelGridTh align="right">Duties</PanelGridTh>
                                         <PanelGridTh>Entry Code</PanelGridTh>
                                         <PanelGridTh align="right">MPF</PanelGridTh>
+                                        <PanelGridTh>AWB Date</PanelGridTh>
                                     </PanelGridThead>
                                     <PanelGridTbody>
                                         {(varieties as any[]).map((row: any, i: number) => (
                                             <PanelGridTr key={row.UNICO ?? i} selected={selVariety?.UNICO === row.UNICO} onClick={() => selVariety?.UNICO === row.UNICO ? setSelVariety(null) : setSelVariety(row)}>
-                                                <PanelGridTd className="font-mono text-[11px] text-[#FB7506] font-bold">{t(row.UNICO)}</PanelGridTd>
                                                 <PanelGridTd className="font-bold text-[#FB7506]">{t(row.AWBCODE)}</PanelGridTd>
-                                                <PanelGridTd>{t(row.PRODUCT_UQ ?? row.PRODUCT)}</PanelGridTd>
+                                                <PanelGridTd>{t(row.GROWER)}</PanelGridTd>
+                                                <PanelGridTd>{t(row.DESCRIPTION)}</PanelGridTd>
+                                                <PanelGridTd align="right">{row.QTY}</PanelGridTd>
+                                                <PanelGridTd align="right">{fmt(row.AMOUNT)}</PanelGridTd>
+                                                <PanelGridTd>{t(row.TAX_CODE)}</PanelGridTd>
+                                                <PanelGridTd align="right">{fmt(row.PORCENT)}</PanelGridTd>
+                                                <PanelGridTd align="right">{fmt(row.REAL_AMOUNT)}</PanelGridTd>
                                                 <PanelGridTd>{t(row.ENTRY_CODE)}</PanelGridTd>
                                                 <PanelGridTd align="right">{fmt(row.MPF)}</PanelGridTd>
+                                                <PanelGridTd>{fmtDate(row.AWBDATE)}</PanelGridTd>
                                             </PanelGridTr>
                                         ))}
                                         {!selAwb && emptyMsg("Select an AWB from the grid above.")}
@@ -1283,6 +1324,7 @@ export default function AwbsPage() {
                     mode={chargesModal.mode}
                     charge={chargesModal.mode === "edit" ? selCharge : null}
                     awbcode={selAwb.AWBCODE}
+                    airline={chargesModal.mode === "edit" ? (selCharge?.AIRLINE ?? selAwb.AIRLINE) : selAwb.AIRLINE}
                     onClose={() => setChargesModal(null)}
                     onSaved={(unico: string) => {
                         logAction(chargesModal.mode === "edit" ? "Edit" : "Insert", unico, `AWB ${selAwb.AWBCODE} charge`);
