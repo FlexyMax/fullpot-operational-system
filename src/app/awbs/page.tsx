@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -277,6 +277,10 @@ function AwbsInvoiceChargesModal({ packUq, awbcode, onClose, onSaved }: any) {
 
     const { data: suppliers   = EMPTY_ARR } = useQuery({ queryKey: ["awb-suppliers"],    queryFn: () => awbFetch("/api/awbs/lookups/suppliers"),    staleTime: 60000, select: (d: any) => d.records ?? [] });
     const { data: chargeTypes = EMPTY_ARR } = useQuery({ queryKey: ["awb-chargetypes"],  queryFn: () => awbFetch("/api/awbs/lookups/charge-types"), staleTime: 60000, select: (d: any) => d.records ?? [] });
+
+    const ctMap = Object.fromEntries((chargeTypes as any[]).map((c: any) => [t(c.UNICO ?? c.unico), t(c.DESCRIPTION ?? c.description)]));
+    const spMap = Object.fromEntries((suppliers   as any[]).map((s: any) => [t(s.UNICO ?? s.unico), t(s.GROWER ?? s.grower)]));
+
     const { data: charges = EMPTY_ARR, isFetching } = useQuery({
         queryKey: ["awb-invoice-charges", packUq],
         queryFn:  () => awbFetch(`/api/awbs/invoice-charges?pack_uq=${encodeURIComponent(packUq)}`),
@@ -411,8 +415,8 @@ function AwbsInvoiceChargesModal({ packUq, awbcode, onClose, onSaved }: any) {
                                 {(charges as any[]).map((row: any) => (
                                     <PanelGridTr key={row.UNICO} selected={selCharge?.UNICO === row.UNICO} onClick={() => openEdit(row)}>
                                         <PanelGridTd className="font-bold text-[#FB7506]">{t(row.AWBCODE)}</PanelGridTd>
-                                        <PanelGridTd>{t(row.AP_TYPE_UQ)}</PanelGridTd>
-                                        <PanelGridTd>{t(row.SUPPLIER_UQ)}</PanelGridTd>
+                                        <PanelGridTd>{ctMap[t(row.AP_TYPE_UQ)] || t(row.AP_TYPE_UQ)}</PanelGridTd>
+                                        <PanelGridTd>{spMap[t(row.SUPPLIER_UQ)] || t(row.SUPPLIER_UQ)}</PanelGridTd>
                                         <PanelGridTd align="right">{fmt(row.FREIGHT)}</PanelGridTd>
                                         <PanelGridTd>{t(row.INVOICE_NO)}</PanelGridTd>
                                         <PanelGridTd>{fmtDate(row.INVOICE_DATE)}</PanelGridTd>
@@ -649,6 +653,16 @@ export default function AwbsPage() {
         if (status === "unauthenticated") router.push("/login");
     }, [status, router]);
 
+    // ── Auto-load on page entry ───────────────────────────────────────────────
+    const autoLoaded = useRef(false);
+    useEffect(() => {
+        if (status === "authenticated" && !autoLoaded.current && searchKey === 0) {
+            autoLoaded.current = true;
+            triggerSearch();
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [status]);
+
     // ── Queries — ALL hooks before any early return ──────────────────────────
     const { data: airlines = EMPTY_ARR } = useQuery({
         queryKey: ["awb-airlines"],
@@ -669,7 +683,7 @@ export default function AwbsPage() {
     const { data: vendors = EMPTY_ARR, isFetching: loadingVendors, refetch: refetchVendors } = useQuery({
         queryKey: ["awb-packing", selAwb?.AWBCODE],
         queryFn:  () => awbFetch(`/api/awbs/${encodeURIComponent(selAwb!.AWBCODE)}/packing`),
-        enabled:  !!selAwb?.AWBCODE && activeTab === "vendors",
+        enabled:  !!selAwb?.AWBCODE,
         select:   (d: any) => norm(d.records ?? []),
         staleTime: 0,
     });
@@ -677,7 +691,7 @@ export default function AwbsPage() {
     const { data: chargesTab = EMPTY_ARR, isFetching: loadingCharges, refetch: refetchCharges } = useQuery({
         queryKey: ["awb-charges", selAwb?.AWBCODE],
         queryFn:  () => awbFetch(`/api/awbs/${encodeURIComponent(selAwb!.AWBCODE)}/charges`),
-        enabled:  !!selAwb?.AWBCODE && activeTab === "charges",
+        enabled:  !!selAwb?.AWBCODE,
         select:   (d: any) => norm(d.records ?? []),
         staleTime: 0,
     });
@@ -685,7 +699,7 @@ export default function AwbsPage() {
     const { data: boxes = EMPTY_ARR, isFetching: loadingBoxes, refetch: refetchBoxes } = useQuery({
         queryKey: ["awb-boxes", selAwb?.AWBCODE],
         queryFn:  () => awbFetch(`/api/awbs/${encodeURIComponent(selAwb!.AWBCODE)}/boxes`),
-        enabled:  !!selAwb?.AWBCODE && activeTab === "boxes",
+        enabled:  !!selAwb?.AWBCODE,
         select:   (d: any) => norm(d.records ?? []),
         staleTime: 0,
     });
@@ -693,7 +707,7 @@ export default function AwbsPage() {
     const { data: byDate = EMPTY_ARR, isFetching: loadingByDate, refetch: refetchByDate } = useQuery({
         queryKey: ["awb-by-date", dateFrom, dateTo],
         queryFn:  () => awbFetch(`/api/awbs/charges-by-date?from=${dateFrom}&to=${dateTo}`),
-        enabled:  status === "authenticated" && activeTab === "by-date",
+        enabled:  status === "authenticated" && searchKey > 0,
         select:   (d: any) => norm(d.records ?? []),
         staleTime: 0,
     });
@@ -701,9 +715,25 @@ export default function AwbsPage() {
     const { data: varieties = EMPTY_ARR, isFetching: loadingVarieties, refetch: refetchVarieties } = useQuery({
         queryKey: ["awb-varieties", selAwb?.AWBCODE],
         queryFn:  () => awbFetch(`/api/awbs/${encodeURIComponent(selAwb!.AWBCODE)}/varieties`),
-        enabled:  !!selAwb?.AWBCODE && activeTab === "varieties",
+        enabled:  !!selAwb?.AWBCODE,
         select:   (d: any) => norm(d.records ?? []),
         staleTime: 0,
+    });
+
+    // ── Page-level lookups for name resolution in grids ───────────────────────
+    const { data: chargeTypesDate = EMPTY_ARR } = useQuery({
+        queryKey: ["awb-chargetypes-date"],
+        queryFn:  () => awbFetch("/api/awbs/lookups/charge-types-date"),
+        staleTime: 60000,
+        enabled:  status === "authenticated",
+        select:   (d: any) => d.records ?? [],
+    });
+    const { data: suppliersAll = EMPTY_ARR } = useQuery({
+        queryKey: ["awb-suppliers"],
+        queryFn:  () => awbFetch("/api/awbs/lookups/suppliers"),
+        staleTime: 60000,
+        enabled:  status === "authenticated",
+        select:   (d: any) => d.records ?? [],
     });
 
     // ── Guards ───────────────────────────────────────────────────────────────
@@ -734,7 +764,6 @@ export default function AwbsPage() {
             const records: any[] = norm(d.records ?? []);
             if (!records.length) { toast.error("AWB not found."); return; }
             setSelAwb(records[0]);
-            setActiveTab("vendors");
             ["awb-packing", "awb-charges", "awb-boxes", "awb-varieties"].forEach(key =>
                 qc.invalidateQueries({ queryKey: [key, records[0].AWBCODE] })
             );
@@ -744,7 +773,6 @@ export default function AwbsPage() {
     const handleSelectAwb = (row: any) => {
         if (selAwb?.AWBCODE === row.AWBCODE) { setSelAwb(null); return; }
         setSelAwb(row);
-        setActiveTab("vendors");
         ["awb-packing", "awb-charges", "awb-boxes", "awb-varieties"].forEach(key =>
             qc.invalidateQueries({ queryKey: [key, row.AWBCODE] })
         );
@@ -845,6 +873,10 @@ export default function AwbsPage() {
             <PanelGridTd colSpan={20} align="center" className="text-gray-400 italic py-8">{msg}</PanelGridTd>
         </PanelGridTr>
     );
+
+    // Name maps for by-date grid (sp_flower_awb_charges_by_date returns UQs only)
+    const ctDateMap = Object.fromEntries((chargeTypesDate as any[]).map((c: any) => [t(c.UNICO ?? c.unico), t(c.DESCRIPTION ?? c.description)]));
+    const spAllMap  = Object.fromEntries((suppliersAll  as any[]).map((s: any) => [t(s.UNICO ?? s.unico), t(s.GROWER ?? s.grower)]));
 
     // ── Render ───────────────────────────────────────────────────────────────
     return (
@@ -1181,8 +1213,8 @@ export default function AwbsPage() {
                                         {(byDate as any[]).map((row: any) => (
                                             <PanelGridTr key={row.UNICO} selected={selByDate?.UNICO === row.UNICO} onClick={() => selByDate?.UNICO === row.UNICO ? setSelByDate(null) : setSelByDate(row)} onDoubleClick={() => { if (perms.canEdit) setFreightsModal({ mode: "edit" }); }}>
                                                 <PanelGridTd className="font-mono text-[11px] text-[#FB7506] font-bold">{t(row.UNICO)}</PanelGridTd>
-                                                <PanelGridTd>{t(row.AP_TYPE_UQ)}</PanelGridTd>
-                                                <PanelGridTd>{t(row.SUPPLIER_UQ)}</PanelGridTd>
+                                                <PanelGridTd>{ctDateMap[t(row.AP_TYPE_UQ)] || t(row.AP_TYPE_UQ)}</PanelGridTd>
+                                                <PanelGridTd>{spAllMap[t(row.SUPPLIER_UQ)] || t(row.SUPPLIER_UQ)}</PanelGridTd>
                                                 <PanelGridTd>{fmtDate(row.CHARGE_DATE)}</PanelGridTd>
                                                 <PanelGridTd>{fmtDate(row.APPLY_FROM)}</PanelGridTd>
                                                 <PanelGridTd>{fmtDate(row.APPLY_TO)}</PanelGridTd>
