@@ -59,20 +59,20 @@ function FosModal({ title, icon: Icon, onClose, children, footer, size = "md", z
 }) {
     const maxW = { sm: "sm:max-w-lg", md: "sm:max-w-2xl", lg: "sm:max-w-3xl", xl: "sm:max-w-5xl" }[size];
     return (
-        <div className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4`} style={{ zIndex }}>
-            <div className={cn("bg-white rounded-t-xl sm:rounded-xl shadow-2xl w-full flex flex-col max-h-[92vh]", maxW)}>
-                <div className="h-10 bg-[#374151] rounded-t-xl sm:rounded-t-xl flex items-center justify-between pl-3 pr-2 border-b border-black/10 shrink-0">
-                    <div className="flex items-center gap-2">
-                        {Icon && <Icon size={16} className="text-[#FB7506]" />}
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" style={{ zIndex }}>
+            <div className={cn("bg-white rounded-t-2xl sm:rounded-xl shadow-2xl w-full flex flex-col", maxW)} style={{ maxHeight: "94dvh" }}>
+                <div className="h-11 sm:h-10 bg-[#374151] rounded-t-2xl sm:rounded-t-xl flex items-center justify-between pl-3 pr-2 border-b border-black/10 shrink-0">
+                    <div className="flex items-center gap-2 min-w-0">
+                        {Icon && <Icon size={16} className="text-[#FB7506] shrink-0" />}
                         <span className="fos-grid-header-text truncate">{title}</span>
                     </div>
-                    <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors">
-                        <X size={16} />
+                    <button onClick={onClose} className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors shrink-0">
+                        <X size={18} className="sm:hidden" /><X size={16} className="hidden sm:block" />
                     </button>
                 </div>
-                <div className="overflow-y-auto flex-1 p-4">{children}</div>
+                <div className="overflow-y-auto flex-1 p-3 sm:p-4">{children}</div>
                 {footer && (
-                    <div className="shrink-0 px-4 py-3 bg-white border-t border-gray-100 flex justify-end gap-2">
+                    <div className="shrink-0 px-3 sm:px-4 py-3 bg-white border-t border-gray-100 flex gap-2">
                         {footer}
                     </div>
                 )}
@@ -84,7 +84,7 @@ function FosModal({ title, icon: Icon, onClose, children, footer, size = "md", z
 function SaveBtn({ saving, onClick }: { saving: boolean; onClick: () => void }) {
     return (
         <button onClick={onClick} disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 rounded bg-[#FB7506] hover:bg-orange-600 text-white text-sm font-black disabled:opacity-50 transition-colors">
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 rounded bg-[#FB7506] hover:bg-orange-600 text-white text-sm font-black disabled:opacity-50 transition-colors">
             {saving ? <RefreshCcw size={13} className="animate-spin" /> : <Save size={13} />}
             {saving ? "Saving..." : "Save"}
         </button>
@@ -93,7 +93,7 @@ function SaveBtn({ saving, onClick }: { saving: boolean; onClick: () => void }) 
 
 function CancelBtn({ onClick }: { onClick: () => void }) {
     return (
-        <button onClick={onClick} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors">
+        <button onClick={onClick} className="flex-1 sm:flex-none px-4 py-2.5 sm:py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors">
             Cancel
         </button>
     );
@@ -179,38 +179,38 @@ function AwbsChargesModal({ mode, charge, awbcode, airline, onClose, onSaved }: 
             <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="flex flex-col gap-0.5">
                     <label className={lbl}>Airline</label>
-                    <input readOnly value={airline ?? ""} className="fos-input h-9 bg-gray-50 text-[#FB7506] font-bold" />
+                    <input readOnly value={airline ?? ""} className="fos-input h-10 sm:h-9 bg-gray-50 text-[#FB7506] font-bold" />
                 </div>
                 <div className="flex flex-col gap-0.5">
                     <label className={lbl}>AWBCode</label>
-                    <input readOnly value={awbcode ?? ""} className="fos-input h-9 bg-gray-50 text-[#FB7506] font-bold" />
+                    <input readOnly value={awbcode ?? ""} className="fos-input h-10 sm:h-9 bg-gray-50 text-[#FB7506] font-bold" />
                 </div>
                 <div className="col-span-2 flex flex-col gap-0.5">
                     <label className={lbl}>Supplier *</label>
                     <input
                         type="text" placeholder="Search supplier..."
                         value={supplierSearch} onChange={e => setSupplierSearch(e.target.value)}
-                        className="fos-input h-8 mb-1 text-xs"
+                        className="fos-input h-10 sm:h-8 mb-1 text-xs"
                     />
-                    <select {...F("supplier_uq")} size={5} className="fos-input py-0 h-auto text-xs" style={{ minHeight: "7rem" }}>
+                    <select {...F("supplier_uq")} size={5} className="fos-input py-0 h-auto text-xs" style={{ minHeight: "6rem" }}>
                         <option value="">— Select Supplier —</option>
                         {filteredSuppliers.map((s: any) => <option key={s.UNICO ?? s.unico} value={s.UNICO ?? s.unico}>{t(s.GROWER ?? s.grower ?? s.SUPPLIER ?? s.supplier)}</option>)}
                     </select>
                 </div>
                 <div className="col-span-2 flex flex-col gap-0.5">
                     <label className={lbl}>Charge Type *</label>
-                    <select {...F("ap_type_uq")} className="fos-input h-9">
+                    <select {...F("ap_type_uq")} className="fos-input h-10 sm:h-9">
                         <option value="">— Select Type —</option>
                         {(chargeTypes as any[]).map((c: any) => <option key={c.UNICO ?? c.unico} value={c.UNICO ?? c.unico}>{t(c.AP_TYPE ?? c.DESCRIPTION ?? c.description)}</option>)}
                     </select>
                 </div>
-                <div className="col-span-2 flex flex-col gap-0.5"><label className={lbl}>Amount *</label><input {...F("freight", true)} className="fos-input h-9" /></div>
-                <div className="flex flex-col gap-0.5"><label className={lbl}>Invoice Date</label><input type="date" {...F("invoice_date")} className="fos-input h-9" /></div>
-                <div className="flex flex-col gap-0.5"><label className={lbl}>Invoice No. *</label><input {...F("invoice_no")} className="fos-input h-9" /></div>
-                <div className="flex flex-col gap-0.5"><label className={lbl}>Full Boxes</label><input {...F("full_boxes", true)} className="fos-input h-9" /></div>
-                <div className="flex flex-col gap-0.5"><label className={lbl}>Total Boxes</label><input {...F("total_boxes", true)} className="fos-input h-9" /></div>
-                <div className="col-span-2 flex flex-col gap-0.5"><label className={lbl}>Weight</label><input {...F("weight", true)} className="fos-input h-9" /></div>
-                <div className="col-span-2 flex flex-col gap-0.5"><label className={lbl}>Notes / Comments</label><input {...F("description")} className="fos-input h-9" /></div>
+                <div className="col-span-2 flex flex-col gap-0.5"><label className={lbl}>Amount *</label><input {...F("freight", true)} className="fos-input h-10 sm:h-9" /></div>
+                <div className="flex flex-col gap-0.5"><label className={lbl}>Invoice Date</label><input type="date" {...F("invoice_date")} className="fos-input h-10 sm:h-9" /></div>
+                <div className="flex flex-col gap-0.5"><label className={lbl}>Invoice No. *</label><input {...F("invoice_no")} className="fos-input h-10 sm:h-9" /></div>
+                <div className="flex flex-col gap-0.5"><label className={lbl}>Full Boxes</label><input {...F("full_boxes", true)} className="fos-input h-10 sm:h-9" /></div>
+                <div className="flex flex-col gap-0.5"><label className={lbl}>Total Boxes</label><input {...F("total_boxes", true)} className="fos-input h-10 sm:h-9" /></div>
+                <div className="col-span-2 flex flex-col gap-0.5"><label className={lbl}>Weight</label><input {...F("weight", true)} className="fos-input h-10 sm:h-9" /></div>
+                <div className="col-span-2 flex flex-col gap-0.5"><label className={lbl}>Notes / Comments</label><input {...F("description")} className="fos-input h-10 sm:h-9" /></div>
             </div>
         </FosModal>
     );
@@ -272,7 +272,7 @@ function AwbsFreightsModal({ mode, charge, airline, onClose, onSaved }: any) {
             <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="col-span-2 flex flex-col gap-0.5">
                     <label className={lbl}>Charge Type *</label>
-                    <select {...F("ap_type_uq")} className="fos-input h-9">
+                    <select {...F("ap_type_uq")} className="fos-input h-10 sm:h-9">
                         <option value="">— Select Charge —</option>
                         {(chargeTypes as any[]).map((c: any) => <option key={c.UNICO ?? c.unico} value={c.UNICO ?? c.unico}>{t(c.AP_TYPE ?? c.DESCRIPTION ?? c.description)}</option>)}
                     </select>
@@ -282,23 +282,23 @@ function AwbsFreightsModal({ mode, charge, airline, onClose, onSaved }: any) {
                     <input
                         type="text" placeholder="Search supplier..."
                         value={supplierSearch} onChange={e => setSupplierSearch(e.target.value)}
-                        className="fos-input h-8 mb-1 text-xs"
+                        className="fos-input h-10 sm:h-8 mb-1 text-xs"
                     />
                     <select {...F("supplier_uq")} size={4} className="fos-input py-0 h-auto text-xs" style={{ minHeight: "6rem" }}>
                         <option value="">— Select Supplier —</option>
                         {filteredSuppliers.map((s: any) => <option key={s.UNICO ?? s.unico} value={s.UNICO ?? s.unico}>{t(s.GROWER ?? s.grower ?? s.SUPPLIER ?? s.supplier)}</option>)}
                     </select>
                 </div>
-                <div className="flex flex-col gap-0.5"><label className={lbl}>O. Charges *</label><input {...F("ocharges", true)} className="fos-input h-9" /></div>
-                <div className="flex flex-col gap-0.5"><label className={lbl}>Duties</label><input {...F("duties", true)} className="fos-input h-9" /></div>
-                <div className="flex flex-col gap-0.5"><label className={lbl}>Total Boxes</label><input {...F("total_box", true)} className="fos-input h-9" /></div>
-                <div className="flex flex-col gap-0.5"><label className={lbl}>Invoice *</label><input {...F("invoice_no")} className="fos-input h-9" /></div>
-                <div className="flex flex-col gap-0.5"><label className={lbl}>Charge Date</label><input type="date" {...F("charge_date")} className="fos-input h-9" /></div>
-                <div className="flex flex-col gap-0.5"><label className={lbl}>Apply From</label><input type="date" {...F("apply_from")} className="fos-input h-9" /></div>
-                <div className="flex flex-col gap-0.5"><label className={lbl}>Apply To</label><input type="date" {...F("apply_to")} className="fos-input h-9" /></div>
+                <div className="flex flex-col gap-0.5"><label className={lbl}>O. Charges *</label><input {...F("ocharges", true)} className="fos-input h-10 sm:h-9" /></div>
+                <div className="flex flex-col gap-0.5"><label className={lbl}>Duties</label><input {...F("duties", true)} className="fos-input h-10 sm:h-9" /></div>
+                <div className="flex flex-col gap-0.5"><label className={lbl}>Total Boxes</label><input {...F("total_box", true)} className="fos-input h-10 sm:h-9" /></div>
+                <div className="flex flex-col gap-0.5"><label className={lbl}>Invoice *</label><input {...F("invoice_no")} className="fos-input h-10 sm:h-9" /></div>
+                <div className="flex flex-col gap-0.5"><label className={lbl}>Charge Date</label><input type="date" {...F("charge_date")} className="fos-input h-10 sm:h-9" /></div>
+                <div className="flex flex-col gap-0.5"><label className={lbl}>Apply From</label><input type="date" {...F("apply_from")} className="fos-input h-10 sm:h-9" /></div>
+                <div className="flex flex-col gap-0.5"><label className={lbl}>Apply To</label><input type="date" {...F("apply_to")} className="fos-input h-10 sm:h-9" /></div>
                 <div className="flex flex-col gap-0.5">
                     <label className={lbl}>Airline</label>
-                    <input readOnly value={airline ?? ""} className="fos-input h-9 bg-gray-50 text-gray-500" />
+                    <input readOnly value={airline ?? ""} className="fos-input h-10 sm:h-9 bg-gray-50 text-gray-500" />
                 </div>
                 <div className="col-span-2 flex flex-col gap-0.5"><label className={lbl}>Notes</label><textarea {...F("notes")} rows={2} className="fos-input py-1.5 resize-none" /></div>
             </div>
@@ -539,10 +539,10 @@ function AwbsBoxesModal({ box, onClose, onSaved }: any) {
     };
 
     const lbl  = "text-[10px] font-black text-gray-500 uppercase tracking-wider mb-0.5";
-    const ro   = "fos-input h-8 bg-gray-50 text-gray-600 text-xs";
-    const edit = "fos-input h-8 text-xs";
-    const roOr = "fos-input h-8 bg-gray-50 text-[#FB7506] font-bold text-xs";
-    const bold = "fos-input h-8 bg-gray-50 font-bold text-gray-800 text-xs";
+    const ro   = "fos-input h-10 sm:h-8 bg-gray-50 text-gray-600 text-xs";
+    const edit = "fos-input h-10 sm:h-8 text-xs";
+    const roOr = "fos-input h-10 sm:h-8 bg-gray-50 text-[#FB7506] font-bold text-xs";
+    const bold = "fos-input h-10 sm:h-8 bg-gray-50 font-bold text-gray-800 text-xs";
 
     const Lbl = ({ children }: any) => <label className={lbl}>{children}</label>;
     const RoField = ({ label, value, className = ro }: any) => (
@@ -554,17 +554,17 @@ function AwbsBoxesModal({ box, onClose, onSaved }: any) {
 
     return (
         <FosModal
-            title={`Inventory Entry — Box ${t(box?.BOXNUM ?? box?.UNICO)}${box?.DESCRIPTION ? ` · ${t(box.DESCRIPTION).trim()}` : ""}`}
+            title={`Box ${t(box?.BOXNUM ?? box?.UNICO)}${box?.DESCRIPTION ? ` · ${t(box.DESCRIPTION).trim()}` : ""}`}
             icon={Package} onClose={onClose} size="lg"
             footer={<><CancelBtn onClick={onClose} /><SaveBtn saving={saving} onClick={save} /></>}>
             {error && <p className="mb-3 text-xs text-red-600 font-semibold bg-red-50 border border-red-200 rounded px-3 py-2">{error}</p>}
 
-            <div className="grid grid-cols-4 gap-x-3 gap-y-2 text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-3 gap-y-2 text-xs">
                 {/* Row 1: AWBCode | Lote | Stock | Confir.Box */}
-                <RoField label="AWBCode"    value={t(box?.AWBCODE)}       className={roOr} />
-                <RoField label="Lote"       value={t(box?.LOTE)}          className={ro} />
-                <RoField label="Stock"      value={box?.STOCK ?? 0}       className={ro} />
-                <RoField label="Confir.Box" value={box?.QTY_CONFIRMED ?? 0} className={ro} />
+                <RoField label="AWBCode"    value={t(box?.AWBCODE)}          className={roOr} />
+                <RoField label="Lote"       value={t(box?.LOTE)}             className={ro} />
+                <RoField label="Stock"      value={box?.STOCK ?? 0}          className={ro} />
+                <RoField label="Confir.Box" value={box?.QTY_CONFIRMED ?? 0}  className={ro} />
 
                 {/* Row 2: Vendor (2 cols) | Case (dropdown) | Box Date */}
                 <div className="col-span-2 flex flex-col">
@@ -572,7 +572,7 @@ function AwbsBoxesModal({ box, onClose, onSaved }: any) {
                     <input readOnly value={t(box?.GROWER ?? "")} className={ro} />
                 </div>
                 <div className="flex flex-col">
-                    <Lbl>Case *</Lbl>
+                    <Lbl>Case</Lbl>
                     <select value={form.case_uq} onChange={e => setForm((p: any) => ({ ...p, case_uq: e.target.value }))} className={edit}>
                         <option value="">— Select —</option>
                         {(cases as any[]).map((c: any) => <option key={c.unico} value={c.unico}>{t(c.case_name)}</option>)}
@@ -581,43 +581,43 @@ function AwbsBoxesModal({ box, onClose, onSaved }: any) {
                 <RoField label="Box Date" value={fmtDate(box?.BOX_DATE)} className={ro} />
 
                 {/* Row 3: Customer | Units x Box | Box Qty | Total Units */}
-                <RoField label="Customer"    value={t(box?.CUSTOMER)}     className={ro} />
-                <RoField label="Units x Box" value={box?.TUNITS_X_BOX ?? 0} className={ro} />
+                <RoField label="Customer"    value={t(box?.CUSTOMER)}        className={ro} />
+                <RoField label="Units x Box" value={box?.TUNITS_X_BOX ?? 0}  className={ro} />
                 <div className="flex flex-col">
                     <Lbl>Box Qty</Lbl>
                     <input {...Fn("box_qty")} step="1" className={edit} />
                 </div>
-                <RoField label="Total Units (calc.)" value={totalUnits} className={bold} />
+                <RoField label="Total Units" value={totalUnits} className={bold} />
 
                 {/* Divider */}
-                <div className="col-span-4 border-t border-gray-200 mt-1" />
+                <div className="col-span-2 sm:col-span-4 border-t border-gray-200 mt-1" />
 
-                {/* Row 4: Per-box cost breakdown (readonly — computed by AWB charges) */}
-                <RoField label="Freight x Bx"     value={fmt(box?.FREIGHT_COST)}  className={ro} />
-                <RoField label="Handling x Bx"    value={fmt(box?.HANDLING_COST)} className={ro} />
-                <RoField label="Duties x Bx"      value={fmt(box?.DUTIES_COST)}   className={ro} />
-                <RoField label="Broker x Bx"      value={fmt(box?.BROKER_COST)}   className={ro} />
+                {/* Row 4: Per-box cost breakdown */}
+                <RoField label="Freight x Bx"  value={fmt(box?.FREIGHT_COST)}  className={ro} />
+                <RoField label="Handling x Bx" value={fmt(box?.HANDLING_COST)} className={ro} />
+                <RoField label="Duties x Bx"   value={fmt(box?.DUTIES_COST)}   className={ro} />
+                <RoField label="Broker x Bx"   value={fmt(box?.BROKER_COST)}   className={ro} />
 
                 {/* Row 5: Totals */}
-                <RoField label="T.Charges"   value={fmt(box?.TOTAL_CHARGE)}  className={bold} />
-                <RoField label="C.Cost x U"  value={fmt(box?.C_COST_X_U)}   className={ro} />
+                <RoField label="T.Charges"  value={fmt(box?.TOTAL_CHARGE)} className={bold} />
+                <RoField label="C.Cost x U" value={fmt(box?.C_COST_X_U)}  className={ro} />
                 <div className="flex flex-col">
                     <Lbl>F.Cost x U</Lbl>
                     <input {...Fn("f_cost_x_u")} className={edit} />
                 </div>
-                <RoField label="T.Cost x U"  value={fmt(box?.T_COST_X_U)}   className={bold} />
+                <RoField label="T.Cost x U" value={fmt(box?.T_COST_X_U)} className={bold} />
 
                 {/* Row 6: Bottom totals */}
-                <RoField label="F.Cost"   value={fmt(box?.FLOWER_COST)}  className={ro} />
-                <RoField label="T.Cost"   value={fmt(box?.TOTAL_COST)}   className={bold} />
+                <RoField label="F.Cost"  value={fmt(box?.FLOWER_COST)} className={ro} />
+                <RoField label="T.Cost"  value={fmt(box?.TOTAL_COST)}  className={bold} />
                 <div className="flex flex-col">
                     <Lbl>Price x U</Lbl>
                     <input {...Fn("price_x_u")} className={edit} />
                 </div>
-                <RoField label="T.Price"  value={fmt(box?.TOTAL_SALE)}  className={ro} />
+                <RoField label="T.Price" value={fmt(box?.TOTAL_SALE)} className={ro} />
 
                 {/* Notes */}
-                <div className="col-span-4 flex flex-col">
+                <div className="col-span-2 sm:col-span-4 flex flex-col">
                     <Lbl>Notes</Lbl>
                     <input value={form.inventory_notes} onChange={e => setForm((p: any) => ({ ...p, inventory_notes: e.target.value }))} className={edit} />
                 </div>
@@ -1001,18 +1001,20 @@ export default function AwbsPage() {
             <AppHeader title="AWBs — Air Waybill Costs" icon={Plane} useBack />
 
             {/* Filter bar */}
-            <div className="bg-white border-b border-gray-200 px-3 py-2 flex flex-wrap items-center gap-x-3 gap-y-2 shrink-0">
-                <div className="flex items-center gap-1.5 text-xs">
+            <div className="bg-white border-b border-gray-200 px-3 py-2 flex flex-wrap items-center gap-x-2 gap-y-2 shrink-0">
+                {/* Date range */}
+                <div className="flex items-center gap-1 text-xs">
                     <label className="text-[10px] font-black text-gray-400 uppercase whitespace-nowrap">From</label>
-                    <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="fos-input h-8 w-36 text-xs" />
+                    <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="fos-input h-9 sm:h-8 w-[7.5rem] sm:w-36 text-xs" />
                 </div>
-                <div className="flex items-center gap-1.5 text-xs">
+                <div className="flex items-center gap-1 text-xs">
                     <label className="text-[10px] font-black text-gray-400 uppercase whitespace-nowrap">To</label>
-                    <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="fos-input h-8 w-36 text-xs" />
+                    <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="fos-input h-9 sm:h-8 w-[7.5rem] sm:w-36 text-xs" />
                 </div>
-                <div className="flex items-center gap-1.5 text-xs">
+                {/* Airline — hidden on very small screens, visible from sm */}
+                <div className="hidden sm:flex items-center gap-1 text-xs">
                     <label className="text-[10px] font-black text-gray-400 uppercase whitespace-nowrap">Airline</label>
-                    <select value={airline} onChange={e => setAirline(e.target.value)} className="fos-input h-8 w-44 text-xs">
+                    <select value={airline} onChange={e => setAirline(e.target.value)} className="fos-input h-8 w-40 text-xs">
                         <option value="%">— All —</option>
                         {(airlines as any[]).map((a: any) => (
                             <option key={a.UNICO ?? a.COD_LINEA} value={a.COD_LINEA ?? a.AIRLINE}>
@@ -1022,17 +1024,30 @@ export default function AwbsPage() {
                     </select>
                 </div>
                 <button onClick={handleSearch} disabled={loadingAwbs}
-                    className="flex items-center gap-1.5 px-3 h-8 text-xs text-white font-black uppercase tracking-wide rounded bg-[#FB7506] hover:bg-orange-600 transition-colors disabled:opacity-50">
+                    className="flex items-center gap-1.5 px-3 h-9 sm:h-8 text-xs text-white font-black uppercase tracking-wide rounded bg-[#FB7506] hover:bg-orange-600 transition-colors disabled:opacity-50">
                     {loadingAwbs ? <RefreshCcw size={13} className="animate-spin" /> : <Search size={13} />}
                     {loadingAwbs ? "Loading..." : "Search"}
                 </button>
-                <div className="flex items-center gap-1.5 text-xs ml-auto">
-                    <label className="text-[10px] font-black text-gray-400 uppercase whitespace-nowrap hidden sm:block">AWB #</label>
+                {/* Airline on mobile — shown inline below dates */}
+                <div className="flex sm:hidden items-center gap-1 text-xs w-full">
+                    <label className="text-[10px] font-black text-gray-400 uppercase whitespace-nowrap">Airline</label>
+                    <select value={airline} onChange={e => setAirline(e.target.value)} className="fos-input h-9 flex-1 text-xs">
+                        <option value="%">— All —</option>
+                        {(airlines as any[]).map((a: any) => (
+                            <option key={a.UNICO ?? a.COD_LINEA} value={a.COD_LINEA ?? a.AIRLINE}>
+                                {t(a.AIRLINE)} ({t(a.COD_LINEA)})
+                            </option>
+                        ))}
+                    </select>
+                </div>
+                {/* AWB# search */}
+                <div className="flex items-center gap-1 text-xs sm:ml-auto w-full sm:w-auto">
+                    <label className="text-[10px] font-black text-gray-400 uppercase whitespace-nowrap">AWB #</label>
                     <input value={awbSearch} onChange={e => setAwbSearch(e.target.value)}
                         onKeyDown={e => e.key === "Enter" && handleAwbSearch()}
-                        placeholder="Search AWB..." className="fos-input h-8 w-36 text-xs" />
+                        placeholder="Search AWB..." className="fos-input h-9 sm:h-8 flex-1 sm:w-36 text-xs" />
                     <button onClick={handleAwbSearch} disabled={!awbSearch.trim()}
-                        className="flex items-center gap-1 px-2 h-8 text-xs text-white font-bold rounded bg-blue-600 hover:bg-blue-700 disabled:opacity-40 transition-colors">
+                        className="flex items-center gap-1 px-3 h-9 sm:h-8 text-xs text-white font-bold rounded bg-blue-600 hover:bg-blue-700 disabled:opacity-40 transition-colors">
                         <Search size={12} /> Go
                     </button>
                 </div>
@@ -1042,7 +1057,7 @@ export default function AwbsPage() {
             <div className="flex-1 flex flex-col min-h-0 p-2 gap-2 overflow-hidden">
 
                 {/* AWB List — PanelGrid */}
-                <div className="shrink-0 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col" style={{ maxHeight: "34vh" }}>
+                <div className="shrink-0 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col" style={{ maxHeight: "clamp(180px, 34vh, 320px)" }}>
                     <PanelGrid
                         title={selAwb ? `AWBs — ${t(selAwb.AWBCODE)} · ${t(selAwb.AIRLINE)} · ${fmtDate(selAwb.BOX_DATE)}` : "AWBs"}
                         icon={Plane}
