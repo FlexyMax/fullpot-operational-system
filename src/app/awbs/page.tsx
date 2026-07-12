@@ -712,7 +712,7 @@ export default function AwbsPage() {
         select:   (d: any) => norm(d.records ?? []),
     });
 
-    const { data: awbs = EMPTY_ARR, isFetching: loadingAwbs } = useQuery({
+    const { data: awbs = EMPTY_ARR, isFetching: loadingAwbs, refetch: refetchAwbs } = useQuery({
         queryKey: ["awb-list", searchKey, dateFrom, dateTo, airline],
         queryFn:  () => awbFetch(`/api/awbs/list?from=${dateFrom}&to=${dateTo}&airline=${encodeURIComponent(airline)}`),
         enabled:  status === "authenticated" && searchKey > 0,
@@ -844,6 +844,7 @@ export default function AwbsPage() {
                 logAction("Delete", row.UNICO, `AWB charge — AWB ${selAwb?.AWBCODE}`);
                 toast.success("Charge deleted.");
                 qc.invalidateQueries({ queryKey: ["awb-charges", selAwb?.AWBCODE] });
+                refetchAwbs();
                 setSelCharge(null);
             } catch (e: any) { toast.error((e as any).message); }
         });
@@ -976,6 +977,7 @@ export default function AwbsPage() {
                         icon={Plane}
                         recordCount={(awbs as any[]).length || undefined}
                         refreshing={loadingAwbs}
+                        onRefresh={() => refetchAwbs()}
                         headerRight={<AuditLogModal recordId={selAwb?.AWBCODE} disabled={!selAwb} />}
                         menuItems={[
                             { label: "Products",      icon: Printer,   color: "gray", onClick: () => handleReport("products"), disabled: !selAwb },
@@ -1366,6 +1368,7 @@ export default function AwbsPage() {
                     onSaved={(unico: string) => {
                         logAction(chargesModal.mode === "edit" ? "Edit" : "Insert", unico, `AWB ${selAwb.AWBCODE} charge`);
                         qc.invalidateQueries({ queryKey: ["awb-charges", selAwb.AWBCODE] });
+                        refetchAwbs();
                     }}
                 />
             )}
