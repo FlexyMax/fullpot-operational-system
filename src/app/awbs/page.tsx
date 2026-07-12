@@ -939,12 +939,10 @@ export default function AwbsPage() {
                         refreshing={loadingAwbs}
                         headerRight={<AuditLogModal recordId={selAwb?.AWBCODE} disabled={!selAwb} />}
                         menuItems={[
-                            { label: "Change Date", icon: Calendar, color: "orange", onClick: () => { if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } setChangeDateModal(true); }, disabled: !selAwb || !perms.canEdit },
-                            { label: "Delete AWB",  icon: Trash2,   color: "red",    onClick: handleDeleteAwb, disabled: !selAwb || !perms.canDelete },
+                            { label: "Products",      icon: Printer,   color: "gray", onClick: () => handleReport("products"), disabled: !selAwb },
+                            { label: "AWB Charges",   icon: FileText,  color: "gray", onClick: () => handleReport("charges"),  disabled: !selAwb },
+                            { label: "Credits/Duties",icon: BarChart2, color: "gray", onClick: () => handleReport("duties"),   disabled: !selAwb },
                             { separator: true },
-                            { label: "Products",      icon: Printer,   color: "gray", onClick: () => handleReport("products"),  disabled: !selAwb || !perms.canReport },
-                            { label: "AWB Charges",   icon: FileText,  color: "gray", onClick: () => handleReport("charges"),  disabled: !selAwb || !perms.canReport },
-                            { label: "Credits/Duties",icon: BarChart2, color: "gray", onClick: () => handleReport("duties"),   disabled: !selAwb || !perms.canReport },
                             { label: "Set MPF",       icon: Package,   color: "blue", onClick: () => { if (!perms.canEdit) { toast.error(PERMISSION_MSGS.edit); return; } setMpfModal(true); }, disabled: !selAwb || !perms.canEdit },
                         ]}
                         className="flex-1 min-h-0"
