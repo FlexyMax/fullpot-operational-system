@@ -121,6 +121,25 @@ function AwbsChargesModal({ mode, charge, awbcode, airline, onClose, onSaved }: 
     const { data: suppliers   = EMPTY_ARR } = useQuery({ queryKey: ["awb-suppliers"],    queryFn: () => awbFetch("/api/awbs/lookups/suppliers"),    staleTime: 60000, select: (d: any) => d.records ?? [] });
     const { data: chargeTypes = EMPTY_ARR } = useQuery({ queryKey: ["awb-chargetypes"],  queryFn: () => awbFetch("/api/awbs/lookups/charge-types"), staleTime: 60000, select: (d: any) => d.records ?? [] });
 
+    // Edit mode: SP doesn't return ap_type_uq or supplier_uq — reverse-lookup once lookups load
+    useEffect(() => {
+        if (!isEdit) return;
+        const updates: any = {};
+        if (!form.ap_type_uq && charge?.AP_TYPE && (chargeTypes as any[]).length > 0) {
+            const found = (chargeTypes as any[]).find((c: any) =>
+                t(c.AP_TYPE ?? c.DESCRIPTION ?? "").trim().toLowerCase() === t(charge.AP_TYPE ?? "").trim().toLowerCase()
+            );
+            if (found) updates.ap_type_uq = t(found.UNICO ?? found.unico);
+        }
+        if (!form.supplier_uq && charge?.GROWER && (suppliers as any[]).length > 0) {
+            const found = (suppliers as any[]).find((s: any) =>
+                t(s.GROWER ?? s.grower ?? "").trim().toLowerCase() === t(charge.GROWER ?? "").trim().toLowerCase()
+            );
+            if (found) updates.supplier_uq = t(found.UNICO ?? found.unico);
+        }
+        if (Object.keys(updates).length > 0) setForm((p: any) => ({ ...p, ...updates }));
+    }, [chargeTypes, suppliers]);
+
     const filteredSuppliers = supplierSearch.trim()
         ? (suppliers as any[]).filter((s: any) => t(s.GROWER ?? s.grower).toLowerCase().includes(supplierSearch.toLowerCase()))
         : (suppliers as any[]);
