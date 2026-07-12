@@ -487,35 +487,43 @@ function AwbsInvoiceChargesModal({ packUq, awbcode, onClose, onSaved }: any) {
 // ─── Modal 4: Box Inventory Entry ─────────────────────────────────────────────
 function AwbsBoxesModal({ box, onClose, onSaved }: any) {
     const [form, setForm] = useState<any>({
-        freight_cost:    parseFloat(box?.F_COST_X_U   ?? 0),
-        handling_cost:   0,
-        duties_cost:     0,
-        broker_cost:     0,
-        charge_cost:     0,
+        box_qty:         parseInt(box?.BOX_QTY        ?? 0),
+        case_uq:         box?.CASE_UQ     ?? "",
         f_cost_x_u:      parseFloat(box?.F_COST_X_U   ?? 0),
-        price_x_u:       parseFloat(box?.F_FCOST_X_U  ?? 0),
-        box_qty:         parseInt(box?.BOX_QTY         ?? 0),
-        units_x_box:     parseInt(box?.TOTAL_UNITS     ?? 0),
+        price_x_u:       parseFloat(box?.PRICE_X_U    ?? 0),
+        freight_cost:    parseFloat(box?.FREIGHT_COST  ?? 0),
+        handling_cost:   parseFloat(box?.HANDLING_COST ?? 0),
+        duties_cost:     parseFloat(box?.DUTIES_COST   ?? 0),
+        broker_cost:     parseFloat(box?.BROKER_COST   ?? 0),
+        charge_cost:     parseFloat(box?.CHARGE_COST   ?? 0),
+        units_x_box:     parseInt(box?.TUNITS_X_BOX   ?? 0),
+        customer_uq:     box?.CUSTOMER_UQ ?? "",
+        customer_num:    box?.CUSTOMER    ?? 0,
+        cporder_no:      box?.CPORDER_NO  ?? "",
+        product_uq:      box?.PRO_PACK_UQ ?? "",
+        cut:             box?.CUT_POINT   ?? 0,
+        packs_box:       box?.PACKS_BOX   ?? 0,
+        packs_units:     box?.PACKS_UNITS ?? 0,
+        box_id:          box?.BOX_ID      ?? "",
         inventory_notes: "",
-        customer_uq:     box?.CUSTOMER_UQ  ?? "",
-        customer_num:    box?.CUSTOMER_NUM ?? 0,
-        cporder_no:      box?.CPORDER_NO   ?? box?.PODER_NO ?? "",
-        product_uq:      box?.PRO_PACK_UQ  ?? box?.PRODUCT_UQ ?? "",
-        case_uq:         box?.CASE_UQ      ?? "",
-        cut:             box?.CUT          ?? 0,
-        packs_box:       box?.PACKS_BOX    ?? 0,
-        packs_units:     box?.PACKS_UNITS  ?? 0,
-        box_id:          box?.BOXNUM       ?? "",
     });
     const [saving, setSaving] = useState(false);
     const [error,  setError]  = useState<string | null>(null);
 
-    const totalUnits = (form.units_x_box || 0) * (form.box_qty || 0);
-    const tCostXU    = (form.freight_cost || 0) + (form.handling_cost || 0) + (form.duties_cost || 0) + (form.broker_cost || 0) + (form.charge_cost || 0);
+    const { data: cases = EMPTY_ARR } = useQuery({
+        queryKey: ["awb-cases"],
+        queryFn:  () => awbFetch("/api/awbs/lookups/cases"),
+        staleTime: 300000,
+        select: (d: any) => d.records ?? [],
+    });
 
-    const F = (key: string, num = false) => num
-        ? { type: "number" as const, step: "0.01", value: form[key] ?? 0, onChange: (e: any) => setForm((p: any) => ({ ...p, [key]: parseFloat(e.target.value) || 0 })) }
-        : { value: form[key] ?? "", onChange: (e: any) => setForm((p: any) => ({ ...p, [key]: e.target.value })) };
+    const totalUnits = (form.box_qty || 0) * (form.units_x_box || 0);
+
+    const Fn = (key: string) => ({
+        type: "number" as const, step: "0.01",
+        value: form[key] ?? 0,
+        onChange: (e: any) => setForm((p: any) => ({ ...p, [key]: parseFloat(e.target.value) || 0 })),
+    });
 
     const save = async () => {
         setSaving(true); setError(null);
@@ -530,26 +538,89 @@ function AwbsBoxesModal({ box, onClose, onSaved }: any) {
         finally { setSaving(false); }
     };
 
-    const lbl = "text-[10px] font-black text-gray-500 uppercase tracking-wider";
+    const lbl  = "text-[10px] font-black text-gray-500 uppercase tracking-wider mb-0.5";
+    const ro   = "fos-input h-8 bg-gray-50 text-gray-600 text-xs";
+    const edit = "fos-input h-8 text-xs";
+    const roOr = "fos-input h-8 bg-gray-50 text-[#FB7506] font-bold text-xs";
+    const bold = "fos-input h-8 bg-gray-50 font-bold text-gray-800 text-xs";
+
+    const Lbl = ({ children }: any) => <label className={lbl}>{children}</label>;
+    const RoField = ({ label, value, className = ro }: any) => (
+        <div className="flex flex-col">
+            <Lbl>{label}</Lbl>
+            <input readOnly value={value ?? ""} className={className} />
+        </div>
+    );
+
     return (
-        <FosModal title={`Inventory Entry — Box ${t(box?.BOXNUM ?? box?.UNICO)}`} icon={Package} onClose={onClose} size="sm"
+        <FosModal
+            title={`Inventory Entry — Box ${t(box?.BOXNUM ?? box?.UNICO)}${box?.DESCRIPTION ? ` · ${t(box.DESCRIPTION).trim()}` : ""}`}
+            icon={Package} onClose={onClose} size="lg"
             footer={<><CancelBtn onClick={onClose} /><SaveBtn saving={saving} onClick={save} /></>}>
             {error && <p className="mb-3 text-xs text-red-600 font-semibold bg-red-50 border border-red-200 rounded px-3 py-2">{error}</p>}
-            <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="flex flex-col gap-0.5"><label className={lbl}>AWBCode</label><input readOnly value={t(box?.AWBCODE)} className="fos-input h-9 bg-gray-50 text-[#FB7506] font-bold" /></div>
-                <div className="flex flex-col gap-0.5"><label className={lbl}>Customer</label><input readOnly value={t(box?.CUSTOMER)} className="fos-input h-9 bg-gray-50 text-gray-500" /></div>
-                <div className="flex flex-col gap-0.5"><label className={lbl}>Box Qty</label><input {...F("box_qty", true)} className="fos-input h-9" /></div>
-                <div className="flex flex-col gap-0.5"><label className={lbl}>Units x Box</label><input {...F("units_x_box", true)} className="fos-input h-9" /></div>
-                <div className="flex flex-col gap-0.5"><label className={lbl}>Total Units (calc.)</label><input readOnly value={totalUnits} className="fos-input h-9 bg-gray-50 font-bold text-gray-700" /></div>
-                <div className="flex flex-col gap-0.5"><label className={lbl}>F. Cost x U</label><input {...F("f_cost_x_u", true)} className="fos-input h-9" /></div>
-                <div className="flex flex-col gap-0.5"><label className={lbl}>Price x U</label><input {...F("price_x_u", true)} className="fos-input h-9" /></div>
-                <div className="flex flex-col gap-0.5"><label className={lbl}>Freight Cost</label><input {...F("freight_cost", true)} className="fos-input h-9" /></div>
-                <div className="flex flex-col gap-0.5"><label className={lbl}>Handling Cost</label><input {...F("handling_cost", true)} className="fos-input h-9" /></div>
-                <div className="flex flex-col gap-0.5"><label className={lbl}>Duties Cost</label><input {...F("duties_cost", true)} className="fos-input h-9" /></div>
-                <div className="flex flex-col gap-0.5"><label className={lbl}>Broker Cost</label><input {...F("broker_cost", true)} className="fos-input h-9" /></div>
-                <div className="flex flex-col gap-0.5"><label className={lbl}>Charge Cost</label><input {...F("charge_cost", true)} className="fos-input h-9" /></div>
-                <div className="flex flex-col gap-0.5"><label className={lbl}>Total Cost (calc.)</label><input readOnly value={fmt(tCostXU)} className="fos-input h-9 bg-gray-50 font-bold text-gray-700" /></div>
-                <div className="col-span-2 flex flex-col gap-0.5"><label className={lbl}>Notes</label><input {...F("inventory_notes")} className="fos-input h-9" /></div>
+
+            <div className="grid grid-cols-4 gap-x-3 gap-y-2 text-xs">
+                {/* Row 1: AWBCode | Lote | Stock | Confir.Box */}
+                <RoField label="AWBCode"    value={t(box?.AWBCODE)}       className={roOr} />
+                <RoField label="Lote"       value={t(box?.LOTE)}          className={ro} />
+                <RoField label="Stock"      value={box?.STOCK ?? 0}       className={ro} />
+                <RoField label="Confir.Box" value={box?.QTY_CONFIRMED ?? 0} className={ro} />
+
+                {/* Row 2: Vendor (2 cols) | Case (dropdown) | Box Date */}
+                <div className="col-span-2 flex flex-col">
+                    <Lbl>Vendor</Lbl>
+                    <input readOnly value={t(box?.GROWER ?? "")} className={ro} />
+                </div>
+                <div className="flex flex-col">
+                    <Lbl>Case *</Lbl>
+                    <select value={form.case_uq} onChange={e => setForm((p: any) => ({ ...p, case_uq: e.target.value }))} className={edit}>
+                        <option value="">— Select —</option>
+                        {(cases as any[]).map((c: any) => <option key={c.unico} value={c.unico}>{t(c.case_name)}</option>)}
+                    </select>
+                </div>
+                <RoField label="Box Date" value={fmtDate(box?.BOX_DATE)} className={ro} />
+
+                {/* Row 3: Customer | Units x Box | Box Qty | Total Units */}
+                <RoField label="Customer"    value={t(box?.CUSTOMER)}     className={ro} />
+                <RoField label="Units x Box" value={box?.TUNITS_X_BOX ?? 0} className={ro} />
+                <div className="flex flex-col">
+                    <Lbl>Box Qty</Lbl>
+                    <input {...Fn("box_qty")} step="1" className={edit} />
+                </div>
+                <RoField label="Total Units (calc.)" value={totalUnits} className={bold} />
+
+                {/* Divider */}
+                <div className="col-span-4 border-t border-gray-200 mt-1" />
+
+                {/* Row 4: Per-box cost breakdown (readonly — computed by AWB charges) */}
+                <RoField label="Freight x Bx"     value={fmt(box?.FREIGHT_COST)}  className={ro} />
+                <RoField label="Handling x Bx"    value={fmt(box?.HANDLING_COST)} className={ro} />
+                <RoField label="Duties x Bx"      value={fmt(box?.DUTIES_COST)}   className={ro} />
+                <RoField label="Broker x Bx"      value={fmt(box?.BROKER_COST)}   className={ro} />
+
+                {/* Row 5: Totals */}
+                <RoField label="T.Charges"   value={fmt(box?.TOTAL_CHARGE)}  className={bold} />
+                <RoField label="C.Cost x U"  value={fmt(box?.C_COST_X_U)}   className={ro} />
+                <div className="flex flex-col">
+                    <Lbl>F.Cost x U</Lbl>
+                    <input {...Fn("f_cost_x_u")} className={edit} />
+                </div>
+                <RoField label="T.Cost x U"  value={fmt(box?.T_COST_X_U)}   className={bold} />
+
+                {/* Row 6: Bottom totals */}
+                <RoField label="F.Cost"   value={fmt(box?.FLOWER_COST)}  className={ro} />
+                <RoField label="T.Cost"   value={fmt(box?.TOTAL_COST)}   className={bold} />
+                <div className="flex flex-col">
+                    <Lbl>Price x U</Lbl>
+                    <input {...Fn("price_x_u")} className={edit} />
+                </div>
+                <RoField label="T.Price"  value={fmt(box?.TOTAL_SALE)}  className={ro} />
+
+                {/* Notes */}
+                <div className="col-span-4 flex flex-col">
+                    <Lbl>Notes</Lbl>
+                    <input value={form.inventory_notes} onChange={e => setForm((p: any) => ({ ...p, inventory_notes: e.target.value }))} className={edit} />
+                </div>
             </div>
         </FosModal>
     );
