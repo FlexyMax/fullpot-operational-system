@@ -114,11 +114,16 @@ function AwbsChargesModal({ mode, charge, awbcode, airline, onClose, onSaved }: 
         full_boxes:   charge?.FULL_BOXES   ?? 0,
         weight:       charge?.TOTAL_WEIGHT ?? charge?.WEIGHT   ?? 0,
     } : blank);
-    const [saving, setSaving] = useState(false);
-    const [error,  setError]  = useState<string | null>(null);
+    const [saving, setSaving]             = useState(false);
+    const [error,  setError]              = useState<string | null>(null);
+    const [supplierSearch, setSupplierSearch] = useState("");
 
     const { data: suppliers   = EMPTY_ARR } = useQuery({ queryKey: ["awb-suppliers"],    queryFn: () => awbFetch("/api/awbs/lookups/suppliers"),    staleTime: 60000, select: (d: any) => d.records ?? [] });
     const { data: chargeTypes = EMPTY_ARR } = useQuery({ queryKey: ["awb-chargetypes"],  queryFn: () => awbFetch("/api/awbs/lookups/charge-types"), staleTime: 60000, select: (d: any) => d.records ?? [] });
+
+    const filteredSuppliers = supplierSearch.trim()
+        ? (suppliers as any[]).filter((s: any) => t(s.GROWER ?? s.grower).toLowerCase().includes(supplierSearch.toLowerCase()))
+        : (suppliers as any[]);
 
     const F = (key: string, num = false) => num
         ? { type: "number" as const, step: "0.01", value: form[key] ?? 0, onChange: (e: any) => setForm((p: any) => ({ ...p, [key]: parseFloat(e.target.value) || 0 })) }
@@ -163,16 +168,21 @@ function AwbsChargesModal({ mode, charge, awbcode, airline, onClose, onSaved }: 
                 </div>
                 <div className="col-span-2 flex flex-col gap-0.5">
                     <label className={lbl}>Supplier *</label>
-                    <select {...F("supplier_uq")} className="fos-input h-9">
+                    <input
+                        type="text" placeholder="Search supplier..."
+                        value={supplierSearch} onChange={e => setSupplierSearch(e.target.value)}
+                        className="fos-input h-8 mb-1 text-xs"
+                    />
+                    <select {...F("supplier_uq")} size={5} className="fos-input py-0 h-auto text-xs" style={{ minHeight: "7rem" }}>
                         <option value="">— Select Supplier —</option>
-                        {(suppliers as any[]).map((s: any) => <option key={s.UNICO ?? s.unico} value={s.UNICO ?? s.unico}>{t(s.GROWER ?? s.grower ?? s.SUPPLIER ?? s.supplier)}</option>)}
+                        {filteredSuppliers.map((s: any) => <option key={s.UNICO ?? s.unico} value={s.UNICO ?? s.unico}>{t(s.GROWER ?? s.grower ?? s.SUPPLIER ?? s.supplier)}</option>)}
                     </select>
                 </div>
                 <div className="col-span-2 flex flex-col gap-0.5">
                     <label className={lbl}>Charge Type *</label>
                     <select {...F("ap_type_uq")} className="fos-input h-9">
                         <option value="">— Select Type —</option>
-                        {(chargeTypes as any[]).map((c: any) => <option key={c.UNICO ?? c.unico} value={c.UNICO ?? c.unico}>{t(c.DESCRIPTION ?? c.description)}</option>)}
+                        {(chargeTypes as any[]).map((c: any) => <option key={c.UNICO ?? c.unico} value={c.UNICO ?? c.unico}>{t(c.AP_TYPE ?? c.DESCRIPTION ?? c.description)}</option>)}
                     </select>
                 </div>
                 <div className="col-span-2 flex flex-col gap-0.5"><label className={lbl}>Amount *</label><input {...F("freight", true)} className="fos-input h-9" /></div>
@@ -203,11 +213,16 @@ function AwbsFreightsModal({ mode, charge, airline, onClose, onSaved }: any) {
         notes:       charge?.NOTES       ?? "",
         invoice_no:  charge?.INVOICE_NO  ?? "",
     } : blankF);
-    const [saving, setSaving] = useState(false);
-    const [error,  setError]  = useState<string | null>(null);
+    const [saving, setSaving]                 = useState(false);
+    const [error,  setError]                  = useState<string | null>(null);
+    const [supplierSearch, setSupplierSearch] = useState("");
 
     const { data: suppliers   = EMPTY_ARR } = useQuery({ queryKey: ["awb-suppliers"],         queryFn: () => awbFetch("/api/awbs/lookups/suppliers"),         staleTime: 60000, select: (d: any) => d.records ?? [] });
     const { data: chargeTypes = EMPTY_ARR } = useQuery({ queryKey: ["awb-chargetypes-date"],   queryFn: () => awbFetch("/api/awbs/lookups/charge-types-date"), staleTime: 60000, select: (d: any) => d.records ?? [] });
+
+    const filteredSuppliers = supplierSearch.trim()
+        ? (suppliers as any[]).filter((s: any) => t(s.GROWER ?? s.grower).toLowerCase().includes(supplierSearch.toLowerCase()))
+        : (suppliers as any[]);
 
     const F = (key: string, num = false) => num
         ? { type: "number" as const, step: "0.01", value: form[key] ?? 0, onChange: (e: any) => setForm((p: any) => ({ ...p, [key]: parseFloat(e.target.value) || 0 })) }
@@ -240,14 +255,19 @@ function AwbsFreightsModal({ mode, charge, airline, onClose, onSaved }: any) {
                     <label className={lbl}>Charge Type *</label>
                     <select {...F("ap_type_uq")} className="fos-input h-9">
                         <option value="">— Select Charge —</option>
-                        {(chargeTypes as any[]).map((c: any) => <option key={c.UNICO ?? c.unico} value={c.UNICO ?? c.unico}>{t(c.DESCRIPTION ?? c.description)}</option>)}
+                        {(chargeTypes as any[]).map((c: any) => <option key={c.UNICO ?? c.unico} value={c.UNICO ?? c.unico}>{t(c.AP_TYPE ?? c.DESCRIPTION ?? c.description)}</option>)}
                     </select>
                 </div>
                 <div className="col-span-2 flex flex-col gap-0.5">
                     <label className={lbl}>Supplier *</label>
-                    <select {...F("supplier_uq")} className="fos-input h-9">
+                    <input
+                        type="text" placeholder="Search supplier..."
+                        value={supplierSearch} onChange={e => setSupplierSearch(e.target.value)}
+                        className="fos-input h-8 mb-1 text-xs"
+                    />
+                    <select {...F("supplier_uq")} size={4} className="fos-input py-0 h-auto text-xs" style={{ minHeight: "6rem" }}>
                         <option value="">— Select Supplier —</option>
-                        {(suppliers as any[]).map((s: any) => <option key={s.UNICO ?? s.unico} value={s.UNICO ?? s.unico}>{t(s.GROWER ?? s.grower ?? s.SUPPLIER ?? s.supplier)}</option>)}
+                        {filteredSuppliers.map((s: any) => <option key={s.UNICO ?? s.unico} value={s.UNICO ?? s.unico}>{t(s.GROWER ?? s.grower ?? s.SUPPLIER ?? s.supplier)}</option>)}
                     </select>
                 </div>
                 <div className="flex flex-col gap-0.5"><label className={lbl}>O. Charges *</label><input {...F("ocharges", true)} className="fos-input h-9" /></div>
@@ -279,7 +299,7 @@ function AwbsInvoiceChargesModal({ packUq, awbcode, onClose, onSaved }: any) {
     const { data: suppliers   = EMPTY_ARR } = useQuery({ queryKey: ["awb-suppliers"],    queryFn: () => awbFetch("/api/awbs/lookups/suppliers"),    staleTime: 60000, select: (d: any) => d.records ?? [] });
     const { data: chargeTypes = EMPTY_ARR } = useQuery({ queryKey: ["awb-chargetypes"],  queryFn: () => awbFetch("/api/awbs/lookups/charge-types"), staleTime: 60000, select: (d: any) => d.records ?? [] });
 
-    const ctMap = Object.fromEntries((chargeTypes as any[]).map((c: any) => [t(c.UNICO ?? c.unico), t(c.DESCRIPTION ?? c.description)]));
+    const ctMap = Object.fromEntries((chargeTypes as any[]).map((c: any) => [t(c.UNICO ?? c.unico), t(c.AP_TYPE ?? c.DESCRIPTION ?? c.description)]));
     const spMap = Object.fromEntries((suppliers   as any[]).map((s: any) => [t(s.UNICO ?? s.unico), t(s.GROWER ?? s.grower)]));
 
     const { data: charges = EMPTY_ARR, isFetching } = useQuery({
@@ -356,7 +376,7 @@ function AwbsInvoiceChargesModal({ packUq, awbcode, onClose, onSaved }: any) {
                         <label className={lbl}>Charge Type *</label>
                         <select value={form.ap_type_uq} onChange={e => setForm((p: any) => ({ ...p, ap_type_uq: e.target.value }))} className="fos-input h-9">
                             <option value="">— Select —</option>
-                            {(chargeTypes as any[]).map((c: any) => <option key={c.UNICO ?? c.unico} value={c.UNICO ?? c.unico}>{t(c.DESCRIPTION ?? c.description)}</option>)}
+                            {(chargeTypes as any[]).map((c: any) => <option key={c.UNICO ?? c.unico} value={c.UNICO ?? c.unico}>{t(c.AP_TYPE ?? c.DESCRIPTION ?? c.description)}</option>)}
                         </select>
                     </div>
                     <div className="flex flex-col gap-0.5">
@@ -881,7 +901,7 @@ export default function AwbsPage() {
     );
 
     // Name maps for by-date grid (sp_flower_awb_charges_by_date returns UQs only)
-    const ctDateMap = Object.fromEntries((chargeTypesDate as any[]).map((c: any) => [t(c.UNICO ?? c.unico), t(c.DESCRIPTION ?? c.description)]));
+    const ctDateMap = Object.fromEntries((chargeTypesDate as any[]).map((c: any) => [t(c.UNICO ?? c.unico), t(c.AP_TYPE ?? c.DESCRIPTION ?? c.description)]));
     const spAllMap  = Object.fromEntries((suppliersAll  as any[]).map((s: any) => [t(s.UNICO ?? s.unico), t(s.GROWER ?? s.grower)]));
 
     // ── Render ───────────────────────────────────────────────────────────────
