@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { usePagePermissions } from "@/lib/permissions";
 import AppHeader from "@/components/layout/AppHeader";
 import AppFooter from "@/components/layout/AppFooter";
+import { useScanStore, type ScanTabId } from "@/store/useScanStore";
 import PanelGrid from "@/components/ui/PanelGrid";
 import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
 import { AuditLogModal } from "@/components/AuditLogModal";
@@ -65,7 +66,6 @@ const TABS = [
     { id: "sys-less",   label: "Sys < Phy",       color: "text-orange-600", view: "system-less-physical" },
     { id: "sys-eq",     label: "Sys = Phy",       color: "text-teal-600",   view: "system-equal-physical" },
 ] as const;
-type TabId = typeof TABS[number]["id"];
 const PAGE_SIZE = 50;
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
@@ -74,8 +74,8 @@ export default function PhysicalScanPage() {
     const router = useRouter();
     const { canDelete } = usePagePermissions("scan");
 
-    const [activeTab,      setActiveTab]     = useState<TabId>("pending");
-    const [currentRack,    setCurrentRack]   = useState("RACK");
+    const { currentRack, setCurrentRack, activeTab, setActiveTab, viewKey, refresh: refreshAll } = useScanStore();
+
     const [scanning,       setScanning]      = useState(false);
     const [lastScan,       setLastScan]      = useState<{ ok: boolean; msg: string; warn?: boolean } | null>(null);
     const [pendingPage,    setPendingPage]   = useState(1);
@@ -83,7 +83,6 @@ export default function PhysicalScanPage() {
     const [pendingTotal,   setPendingTotal]  = useState(0);
     const [pendingLoading, setPendingLoading]= useState(false);
     const [hasMore,        setHasMore]       = useState(true);
-    const [viewKey,        setViewKey]       = useState(0);
     const qc = useQueryClient();
 
     // Row selection per tab
@@ -359,7 +358,7 @@ export default function PhysicalScanPage() {
                     const j = await r.json();
                     if (!r.ok || !j.success) throw new Error(j.error || "Failed");
                     toast.success("All scanned records deleted");
-                    setViewKey(k => k + 1);
+                    refreshAll();
                 } catch (e: any) { toast.error(e.message); }
             }},
             cancel: { label: "Cancel", onClick: () => {} },
@@ -370,7 +369,6 @@ export default function PhysicalScanPage() {
     if (status === "unauthenticated") { router.push("/login"); return null; }
 
     const bufferIsRack = scanBuffer.length > 0 && isRack(scanBuffer);
-    const refreshAll   = () => setViewKey(k => k + 1);
 
     return (
         <div className="flex flex-col h-[100dvh] bg-[#f4f6f8] overflow-hidden font-sans text-[#333]">
