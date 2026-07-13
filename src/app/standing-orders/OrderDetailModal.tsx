@@ -194,22 +194,7 @@ export function OrderDetailModal({ lookups, canEdit, canDelete, canReport = true
                 : "w-full h-full rounded-lg border border-[#DBD9D9] shadow-sm"
         )}>
 
-                {/* ── Panel header ─────────────────────────────────────── */}
-                <div className="h-10 bg-[#374151] border-b border-black/10 flex items-center justify-between pl-3 pr-2 shrink-0 rounded-t-lg">
-                    <div className="flex items-center gap-2 min-w-0">
-                        <FileText size={14} className="text-[#FB7506] shrink-0" />
-                        <span className="fos-grid-header-text shrink-0">
-                            Order #{t(orderRow?.SORDER_NO ?? h?.SORDER_NO)}
-                        </span>
-                        <span className="text-[11px] font-semibold text-white/60 truncate hidden sm:block">
-                            — {t(orderRow?.CUSTOMER ?? h?.CUSTOMER ?? "Loading...")}
-                        </span>
-                        {loadingDetail && <Loader2 size={11} className="animate-spin text-white/50 shrink-0" />}
-                    </div>
-                    <button onClick={clearSelection} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors shrink-0"><X size={15} /></button>
-                </div>
-
-                {/* ── Action bar (gray container) ──────────────────────── */}
+                {/* ── Action bar (gray container) — above the header ───── */}
                 <div className="bg-[#F5F3F3] border-b border-[#DBD9D9] px-3 py-1.5 flex items-center gap-1.5 shrink-0 overflow-x-auto">
                     <ABtn icon={Edit2}   label="Edit Order"     onClick={() => setHeaderModal("edit")}  disabled={!canEdit || loadingDetail} />
                     <ABtn icon={Calendar} label="Set Weeks"     onClick={() => setWeeksModal(true)} />
@@ -221,6 +206,21 @@ export function OrderDetailModal({ lookups, canEdit, canDelete, canReport = true
                     <div className="w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
                     <ABtn icon={Tractor} label="SO to Farm"    onClick={handleToFarm} disabled={working} variant="primary" />
                     <ABtn icon={Trash2}  label="Delete"         onClick={handleDeleteOrder} disabled={!canDelete || working} variant="danger" />
+                </div>
+
+                {/* ── Panel header (white) ─────────────────────────────── */}
+                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between pl-3 pr-2 shrink-0">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <FileText size={14} className="text-[#FB7506] shrink-0" />
+                        <span className="font-bold text-[12px] text-[#374151] uppercase tracking-widest shrink-0">
+                            Order #{t(orderRow?.SORDER_NO ?? h?.SORDER_NO)}
+                        </span>
+                        <span className="text-[11px] font-semibold text-gray-500 truncate hidden sm:block">
+                            — {t(orderRow?.CUSTOMER ?? h?.CUSTOMER ?? "Loading...")}
+                        </span>
+                        {loadingDetail && <Loader2 size={11} className="animate-spin text-gray-400 shrink-0" />}
+                    </div>
+                    <button onClick={clearSelection} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors shrink-0"><X size={15} /></button>
                 </div>
 
                 {/* ── Scrollable content ──────────────────────────────── */}
