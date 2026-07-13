@@ -64,6 +64,7 @@ export default function StandingOrdersPage() {
                 cases:         j.cases         ?? [],
                 cargoAgencies: j.cargoAgencies ?? [],
                 carriers:      j.carriers      ?? [],
+                seasons:       j.seasons       ?? [],
                 mySalesmanUq:  j.mySalesmanUq  ?? "",
             };
         },
@@ -108,6 +109,7 @@ export default function StandingOrdersPage() {
         cases:         lookups?.cases         ?? [],
         cargoAgencies: lookups?.cargoAgencies ?? [],
         carriers:      lookups?.carriers      ?? [],
+        seasons:       lookups?.seasons       ?? [],
     };
 
     // ── Auto-select the first order once the list first loads, so the detail

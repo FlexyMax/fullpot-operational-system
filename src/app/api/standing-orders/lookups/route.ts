@@ -7,7 +7,7 @@ export async function GET(_req: NextRequest) {
     const session = await getServerSession(authOptions);
     const userId  = (session as any)?.user?.id ?? "";
     try {
-        const [customers, salesmen, growers, warehouses, terms, cases, cargoAgencies, carriers, myProfile] = await Promise.all([
+        const [customers, salesmen, growers, warehouses, terms, cases, cargoAgencies, carriers, seasons, myProfile] = await Promise.all([
             executeProcedure("sp_flower_customers_list_to_prebooks", { lcsalesman_uq: "%" }),
             executeProcedure("sp_flower_salesman_list",              { llall: true }),
             executeProcedure("sp_flower_growers_list",               { llall: true }),
@@ -16,6 +16,7 @@ export async function GET(_req: NextRequest) {
             executeProcedure("sp_flower_cases_list",                 {}),
             executeProcedure("sp_flower_cargo_agencies_list",        { llall: true }),
             executeProcedure("sp_flower_carriers_list",              {}),
+            executeProcedure("sp_flower_seasons_list",               { lcseason: "%" }),
             userId
                 ? executeProcedure("sp_flower_salesman_uq", { lcunico: "%", lcuser_uq: userId })
                 : Promise.resolve({ recordset: [] }),
@@ -29,6 +30,7 @@ export async function GET(_req: NextRequest) {
             cases:          cases.recordset         ?? [],
             cargoAgencies:  cargoAgencies.recordset ?? [],
             carriers:       carriers.recordset      ?? [],
+            seasons:        seasons.recordset       ?? [],
             mySalesmanUq:   (myProfile as any).recordset?.[0]?.unico ?? "",
         });
     } catch (err: any) {

@@ -5,7 +5,7 @@ import { useStandingOrdersStore } from "@/stores/useStandingOrdersStore";
 import { useQuery } from "@tanstack/react-query";
 import {
     X, Loader2, Check, Trash2, Edit2, Plus,
-    Calendar, Package, ShoppingCart, FileText,
+    Calendar, CalendarRange, Package, ShoppingCart, FileText,
     UserCog, Tractor, Printer, Lock, ClipboardList,
 } from "lucide-react";
 import { GridMenu } from "@/components/GridMenu";
@@ -21,6 +21,7 @@ import { ProductsListModal }   from "./ProductsListModal";
 import { FutureStockModal }    from "./FutureStockModal";
 import { ChangeSalesmanModal } from "./ChangeSalesmanModal";
 import { ChangeCustomerModal } from "./ChangeCustomerModal";
+import { ChangeSeasonModal }   from "./ChangeSeasonModal";
 import { ReportModal }          from "@/components/reports/ReportModal";
 const EMPTY_ARR: any[] = [];
 
@@ -63,7 +64,7 @@ function ABtn({ icon: Icon, label, onClick, disabled, variant = "default" }: any
 }
 
 // ─── Props ────────────────────────────────────────────────────────────────────
-interface Lookups { customers:any[]; salesmen:any[]; warehouses:any[]; terms:any[]; cases:any[]; cargoAgencies:any[]; carriers:any[]; }
+interface Lookups { customers:any[]; salesmen:any[]; warehouses:any[]; terms:any[]; cases:any[]; cargoAgencies:any[]; carriers:any[]; seasons:any[]; }
 interface Props {
     lookups:    Lookups;
     canEdit:    boolean;
@@ -95,6 +96,7 @@ export function OrderDetailModal({ lookups, canEdit, canDelete, canReport = true
     const [futureStockModal,  setFutureStockModal]  = useState(false);
     const [changeSalesmanModal, setChangeSalesmanModal] = useState(false);
     const [changeCustomerModal, setChangeCustomerModal] = useState(false);
+    const [changeSeasonModal,   setChangeSeasonModal]   = useState(false);
     const [reportUrl,           setReportUrl]           = useState<string | null>(null);
 
     // ── Detail query
@@ -213,8 +215,9 @@ export function OrderDetailModal({ lookups, canEdit, canDelete, canReport = true
                     <ABtn icon={Calendar} label="Set Weeks"     onClick={() => setWeeksModal(true)} />
                     <ABtn icon={Printer}  label="Print"         onClick={() => setReportUrl(`/api/standing-orders/report?unico=${soUnico}`)} disabled={!canReport} />
                     <div className="w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
-                    <ABtn icon={UserCog}  label="Change Cust."  onClick={() => setChangeCustomerModal(true)} />
-                    <ABtn icon={UserCog}  label="Change Sales."  onClick={() => setChangeSalesmanModal(true)} />
+                    <ABtn icon={UserCog}      label="Change Cust."    onClick={() => setChangeCustomerModal(true)} />
+                    <ABtn icon={UserCog}      label="Change Sales."   onClick={() => setChangeSalesmanModal(true)} />
+                    <ABtn icon={CalendarRange} label="Change Season"  onClick={() => setChangeSeasonModal(true)} />
                     <div className="w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
                     <ABtn icon={Tractor} label="SO to Farm"    onClick={handleToFarm} disabled={working} variant="primary" />
                     <ABtn icon={Trash2}  label="Delete"         onClick={handleDeleteOrder} disabled={!canDelete || working} variant="danger" />
@@ -424,6 +427,16 @@ export function OrderDetailModal({ lookups, canEdit, canDelete, canReport = true
                 customers={lookups.customers} carriers={lookups.carriers}
                 onClose={() => setChangeCustomerModal(false)}
                 onSaved={() => { setChangeCustomerModal(false); refreshDetail(); refreshList(); }}
+            />
+        )}
+        {changeSeasonModal && h && (
+            <ChangeSeasonModal
+                soUnico={soUnico} orderNo={t(h.SORDER_NO)}
+                seasons={lookups.seasons ?? []}
+                currentUq={t(h.PBSEASON_UQ ?? "")}
+                salesmanUq={t(h.SALESMAN_UQ ?? "")}
+                onClose={() => setChangeSeasonModal(false)}
+                onSaved={() => { setChangeSeasonModal(false); refreshDetail(); }}
             />
         )}
         {reportUrl && <ReportModal url={reportUrl} onClose={() => setReportUrl(null)} />}
