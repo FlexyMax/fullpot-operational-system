@@ -22,6 +22,7 @@ import {
     PanelGridTbody, PanelGridTr, PanelGridTd,
 } from "@/components/ui/PanelGridTable";
 import { useAwbStore } from "@/store/useAwbStore";
+import { ReportModal } from "@/components/reports/ReportModal";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const EMPTY_ARR: any[] = [];
@@ -694,35 +695,6 @@ function ChangeDateModal({ awbcode, currentDate, onClose, onSaved }: any) {
     );
 }
 
-// ─── Modal 7: Report Viewer ───────────────────────────────────────────────────
-function ReportModal({ title, records, onClose }: any) {
-    const cols = records?.length ? Object.keys(records[0]) : [];
-    return (
-        <FosModal title={title} icon={BarChart2} onClose={onClose} size="xl"
-            footer={<CancelBtn onClick={onClose} />}>
-            <div className="overflow-auto max-h-[60vh]">
-                <PanelGridTable>
-                    <PanelGridThead>
-                        {cols.map(c => <PanelGridTh key={c}>{c}</PanelGridTh>)}
-                    </PanelGridThead>
-                    <PanelGridTbody>
-                        {(records as any[]).map((row: any, i: number) => (
-                            <PanelGridTr key={i} selected={false} onClick={() => {}}>
-                                {cols.map(c => <PanelGridTd key={c}>{t(row[c])}</PanelGridTd>)}
-                            </PanelGridTr>
-                        ))}
-                        {!records?.length && (
-                            <PanelGridTr selected={false} onClick={() => {}}>
-                                <PanelGridTd colSpan={cols.length || 1} align="center" className="text-gray-400 italic py-6">No data</PanelGridTd>
-                            </PanelGridTr>
-                        )}
-                    </PanelGridTbody>
-                </PanelGridTable>
-            </div>
-        </FosModal>
-    );
-}
-
 // ─── Main Page ────────────────────────────────────────────────────────────────
 type TabId = "vendors" | "charges" | "boxes" | "by-date" | "varieties";
 
@@ -757,7 +729,7 @@ export default function AwbsPage() {
     const [boxesModal,          setBoxesModal]          = useState(false);
     const [mpfModal,            setMpfModal]            = useState(false);
     const [changeDateModal,     setChangeDateModal]     = useState(false);
-    const [reportModal,         setReportModal]         = useState<{ title: string; records: any[] } | null>(null);
+    const [reportUrl,           setReportUrl]           = useState<string | null>(null);
 
     // ── Redirect ─────────────────────────────────────────────────────────────
     useEffect(() => {
@@ -978,23 +950,17 @@ export default function AwbsPage() {
         });
     };
 
-    const handleReport = async (type: "products" | "duties" | "charges") => {
+    const handleReport = (type: "products" | "duties" | "charges") => {
         if (!selAwb) return;
         if (!perms.canReport) { toast.error(PERMISSION_MSGS.report); return; }
-        try {
-            if (type === "charges") {
-                const d = await awbFetch(`/api/awbs/reports/charges?awbcode=${encodeURIComponent(selAwb.AWBCODE)}`);
-                setReportModal({ title: `Charges — AWB ${t(selAwb.AWBCODE)}`, records: d.records ?? [] });
-                return;
-            }
-            const grower = type === "duties" ? (selVendor?.GROWER_UQ ?? "") : "%";
-            const date   = selAwb.DATE_INVO ?? selAwb.BOX_DATE ?? dateFrom;
-            const url    = type === "products"
-                ? `/api/awbs/reports/products?date_invo=${date}&awbcode=${encodeURIComponent(selAwb.AWBCODE)}&grower_uq=${encodeURIComponent(grower)}`
-                : `/api/awbs/reports/duties?date_invo=${date}&awbcode=${encodeURIComponent(selAwb.AWBCODE)}&grower_uq=${encodeURIComponent(grower)}`;
-            const d = await awbFetch(url);
-            setReportModal({ title: type === "products" ? "Products Report" : "Credits / Duties Report", records: d.records ?? [] });
-        } catch (e: any) { toast.error((e as any).message); }
+        const awbcode = encodeURIComponent(selAwb.AWBCODE);
+        if (type === "charges") {
+            setReportUrl(`/api/awbs/reports/charges?awbcode=${awbcode}`);
+            return;
+        }
+        const grower = encodeURIComponent(type === "duties" ? (selVendor?.GROWER_UQ ?? "") : "%");
+        const date   = encodeURIComponent(t(selAwb.DATE_INVO ?? selAwb.BOX_DATE ?? dateFrom));
+        setReportUrl(`/api/awbs/reports/${type}?date_invo=${date}&awbcode=${awbcode}&grower_uq=${grower}`);
     };
 
     const emptyMsg = (msg: string) => (
@@ -1525,9 +1491,7 @@ export default function AwbsPage() {
                     }}
                 />
             )}
-            {reportModal && (
-                <ReportModal title={reportModal.title} records={reportModal.records} onClose={() => setReportModal(null)} />
-            )}
+            <ReportModal url={reportUrl} onClose={() => setReportUrl(null)} />
         </div>
     );
 }
