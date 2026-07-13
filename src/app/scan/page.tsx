@@ -412,7 +412,7 @@ export default function PhysicalScanPage() {
             <main className="flex-1 overflow-hidden flex flex-col min-h-0">
 
                 {/* ── Stats bar ────────────────────────────────────────────────── */}
-                <div className="bg-white border-b border-gray-200 px-3 py-2 shrink-0 overflow-x-auto">
+                <div className="bg-[#F5F3F3] border-b border-[#DBD9D9] px-3 py-2 shrink-0 overflow-x-auto">
                 <div className="flex items-center gap-2 min-w-max">
                     <StatBox label="Sys Stock"   value={totals?.Total_stock}       color="gray"   />
                     <StatBox label="Scanned Pcs" value={totals?.Total_stock_QPI}   color="green"  />
@@ -433,7 +433,7 @@ export default function PhysicalScanPage() {
             </div>
 
             {/* ── Scan control bar ─────────────────────────────────────────── */}
-            <div className="bg-white border-b border-gray-200 px-3 py-2 flex flex-wrap items-center gap-3 shrink-0">
+            <div className="bg-[#F5F3F3] border-b border-[#DBD9D9] px-3 py-2 flex flex-wrap items-center gap-3 shrink-0">
 
                 {/* Current rack indicator */}
                 <div className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 rounded border border-gray-200 shrink-0">
@@ -593,10 +593,10 @@ function PendingTable({ rows, loading, sentinelRef, hasMore, loadingMore }: any)
                     const diff = Number(r.Diff ?? r.diff ?? 0);
                     return (
                         <tr key={i} className={cn("border-b transition-colors text-gray-600 cursor-default", i%2===0?"bg-white":"bg-gray-50", "hover:bg-blue-50")}>
-                            <Td className="font-mono font-bold text-gray-800">{t(r.barcode)}</Td>
+                            <Td className="font-mono font-bold text-[#FB7506]">{t(r.barcode)}</Td>
                             <Td className="font-bold text-[#FB7506]">{t(r.farm)}</Td>
-                            <Td className="font-mono text-blue-700">{t(r.awbcode)}</Td>
-                            <Td className="text-right">{fmtLot(r.lote)}</Td>
+                            <Td className="font-mono font-bold text-[#FB7506]">{t(r.awbcode)}</Td>
+                            <Td className="text-right font-bold text-[#FB7506]">{fmtLot(r.lote)}</Td>
                             <Td className="text-right font-semibold">{fmtN(r.box_qty)}</Td>
                             <Td className="text-right">{fmtN(r.qty_sale)}</Td>
                             <Td className="text-right">{fmtN(r.stock)}</Td>
@@ -642,10 +642,10 @@ function AwbTable({ rows, loading, sentinelRef, hasMore, loadingMore }: any) {
                 {loading && <tr><td colSpan={13} className="p-8 text-center text-gray-400 italic"><Loader2 size={14} className="animate-spin inline mr-2" />Loading...</td></tr>}
                 {!loading && rows.map((r: any, i: number) => (
                     <tr key={i} className={cn("border-b transition-colors text-gray-600", i%2===0?"bg-white":"bg-gray-50","hover:bg-blue-50")}>
-                        <Td className="font-mono font-bold text-gray-800">{t(r.barcode)}</Td>
+                        <Td className="font-mono font-bold text-[#FB7506]">{t(r.barcode)}</Td>
                         <Td className="font-bold text-[#FB7506]">{t(r.farm)}</Td>
-                        <Td className="font-mono text-blue-700">{t(r.awbcode)}</Td>
-                        <Td className="text-right">{fmtLot(r.lote)}</Td>
+                        <Td className="font-mono font-bold text-[#FB7506]">{t(r.awbcode)}</Td>
+                        <Td className="text-right font-bold text-[#FB7506]">{fmtLot(r.lote)}</Td>
                         <Td className="text-right font-semibold">{fmtN(r.box_qty)}</Td>
                         <Td className="text-right">{fmtN(r.qty_sale)}</Td>
                         <Td className="text-right">{fmtN(r.stock)}</Td>
@@ -682,11 +682,11 @@ function ScannedBoxesTable({ rows, loading, sentinelRef, hasMore, loadingMore }:
                 {loading && <tr><td colSpan={9} className="p-8 text-center text-gray-400 italic"><Loader2 size={14} className="animate-spin inline mr-2" />Loading...</td></tr>}
                 {!loading && rows.map((r: any, i: number) => (
                     <tr key={i} className={cn("border-b text-gray-600", i%2===0?"bg-white":"bg-gray-50","hover:bg-blue-50")}>
-                        <Td className="font-mono font-bold text-blue-700">{t(r.awbcode)}</Td>
+                        <Td className="font-mono font-bold text-[#FB7506]">{t(r.awbcode)}</Td>
                         <Td>{fmtDate(r.date_invo)}</Td>
-                        <Td className="text-right">{fmtLot(r.lote)}</Td>
-                        <Td className="text-right font-bold">{fmtN(r.box_no)}</Td>
-                        <Td className="font-mono text-[10px]">{t(r.ID)}</Td>
+                        <Td className="text-right font-bold text-[#FB7506]">{fmtLot(r.lote)}</Td>
+                        <Td className="text-right font-bold text-[#FB7506]">{fmtN(r.box_no)}</Td>
+                        <Td className="font-mono text-[10px] font-bold text-[#FB7506]">{t(r.ID)}</Td>
                         <Td className="font-mono font-bold text-[#FB7506]">{t(r.rack)}</Td>
                         <Td className="max-w-[120px] truncate">{t(r.grower)}</Td>
                         <Td className="max-w-[200px] truncate">{t(r.description)}</Td>
@@ -722,8 +722,8 @@ function SysNotPhyTable({ rows, loading, sentinelRef, hasMore, loadingMore }: an
                 {rows.map((r: any, i: number) => (
                     <tr key={i} className={cn("border-b text-gray-600", i%2===0?"bg-white":"bg-gray-50","hover:bg-blue-50")}>
                         <Td className="font-bold text-[#FB7506]">{t(r.farm)}</Td>
-                        <Td className="font-mono text-blue-700">{t(r.awbcode)}</Td>
-                        <Td className="text-right">{fmtLot(r.lote)}</Td>
+                        <Td className="font-mono font-bold text-[#FB7506]">{t(r.awbcode)}</Td>
+                        <Td className="text-right font-bold text-[#FB7506]">{fmtLot(r.lote)}</Td>
                         <Td className="text-right font-semibold">{fmtN(r.box_qty)}</Td>
                         <Td className="text-right text-orange-600">{fmtN(r.qty_transit)}</Td>
                         <Td className="text-right">{fmtN(r.qty_sold)}</Td>
@@ -765,10 +765,10 @@ function SysLessPhyTable({ rows }: { rows: any[] }) {
             <tbody>
                 {rows.map((r: any, i: number) => (
                     <tr key={i} className={cn("border-b text-gray-600", i%2===0?"bg-white":"bg-gray-50","hover:bg-blue-50")}>
-                        <Td className="font-mono font-bold text-gray-800">{t(r.barcode)}</Td>
+                        <Td className="font-mono font-bold text-[#FB7506]">{t(r.barcode)}</Td>
                         <Td className="font-bold text-[#FB7506]">{t(r.farm)}</Td>
-                        <Td className="font-mono text-blue-700">{t(r.awbcode)}</Td>
-                        <Td className="text-right">{fmtLot(r.lote)}</Td>
+                        <Td className="font-mono font-bold text-[#FB7506]">{t(r.awbcode)}</Td>
+                        <Td className="text-right font-bold text-[#FB7506]">{fmtLot(r.lote)}</Td>
                         <Td>{fmtDate(r.box_date)}</Td>
                         <Td className="text-right font-semibold">{fmtN(r.box_qty)}</Td>
                         <Td className="text-right">{fmtN(r.qty_sale)}</Td>

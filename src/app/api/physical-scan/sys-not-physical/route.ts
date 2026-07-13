@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 // GET /api/physical-scan/sys-not-physical?page=1&size=50
 export async function GET(req: NextRequest) {
+    const session = await getServerSession(authOptions);
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const page = parseInt(req.nextUrl.searchParams.get("page") || "1");
     const size = parseInt(req.nextUrl.searchParams.get("size") || "50");
     try {

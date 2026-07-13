@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure, getFullpotPool } from "@/lib/db";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { serverAuditLog } from "@/lib/serverAudit";
+
+const PANTA = "XD6Z7058";
 
 // POST /api/physical-scan/scan  { compuesto, rack }
 // SP returns: { unico C(8), mensaje C(xxx), error L }  (Spanish column names)
@@ -33,6 +36,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, error: msg || "Scan rejected" }, { status: 400 });
         }
 
+        serverAuditLog(PANTA, "Insert", "flower_real_inventory_details", row?.unico ?? "").catch(() => {});
         return NextResponse.json({
             success: true,
             warning: isWarning ? msg : undefined,
@@ -48,7 +52,11 @@ export async function DELETE(req: NextRequest) {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     try {
-        await executeProcedure("sp_flower_real_inventory_details_delete", {});
+        const r   = await executeProcedure("sp_flower_real_inventory_details_delete", {});
+        const row = r.recordset?.[0];
+        if (row?.Error === 1 || row?.error === 1)
+            return NextResponse.json({ success: false, error: row.Message ?? row.mensaje ?? "Delete failed" }, { status: 400 });
+        serverAuditLog(PANTA, "Delete", "flower_real_inventory_details", "ALL").catch(() => {});
         return NextResponse.json({ success: true });
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });

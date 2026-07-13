@@ -52,6 +52,15 @@ function getRoute(appPage: string): string | null {
     return null;
 }
 
+// Display-name overrides for menu tiles whose DB label doesn't match the desired name
+const LABEL_DISPLAY: Record<string, string> = {
+    "/scan": "Physical Scan",
+};
+function getLabel(appPage: string): string {
+    const route = getRoute((appPage || '').toUpperCase());
+    return (route && LABEL_DISPLAY[route]) ? LABEL_DISPLAY[route] : appPage;
+}
+
 function getIcon(appPage: string) {
     const n = (appPage || '').toUpperCase();
     if (n.includes('SALES') || n.includes('BILLING')) return ShoppingCart;
@@ -348,7 +357,7 @@ export default function MenuPage() {
                                                         "font-black text-[10px] uppercase tracking-tight leading-tight truncate",
                                                         isAvailable ? "text-gray-800" : "text-gray-400"
                                                     )}>
-                                                        {item.app_page}
+                                                        {getLabel(item.app_page)}
                                                     </p>
                                                     {!isAvailable && (
                                                         <span className="inline-block mt-0.5 text-[8px] font-black uppercase tracking-widest bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded">

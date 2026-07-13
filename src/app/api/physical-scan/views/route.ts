@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 const VIEW_MAP: Record<string, string> = {
     "in-transit":          "sp_flower_real_inventory_in_transit",
@@ -14,6 +16,8 @@ const VIEW_MAP: Record<string, string> = {
 
 // GET /api/physical-scan/views?v=in-transit
 export async function GET(req: NextRequest) {
+    const session = await getServerSession(authOptions);
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const v = req.nextUrl.searchParams.get("v") ?? "";
     const sp = VIEW_MAP[v];
     if (!sp) return NextResponse.json({ error: `Unknown view: ${v}` }, { status: 400 });
