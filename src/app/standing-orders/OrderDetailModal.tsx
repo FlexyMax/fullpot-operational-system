@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useStandingOrdersStore } from "@/stores/useStandingOrdersStore";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -126,6 +126,13 @@ export function OrderDetailModal({ lookups, canEdit, canDelete, canReport = true
     const h     = detail?.header;
     const lines = detail?.lines ?? [];
     const selectedLine = selectedLineUnico ? lines.find((l: any) => t(l.UNICO) === selectedLineUnico) : null;
+
+    // Auto-select first line when detail loads and nothing is selected yet
+    useEffect(() => {
+        if (lines.length > 0 && !selectedLineUnico) {
+            setSelectedLineUnico(t(lines[0].UNICO));
+        }
+    }, [lines, selectedLineUnico, setSelectedLineUnico]);
 
     const modalLookups = { customers: lookups.customers, salesmen: lookups.salesmen, warehouses: lookups.warehouses, terms: lookups.terms, cargoAgencies: lookups.cargoAgencies, carriers: lookups.carriers };
 

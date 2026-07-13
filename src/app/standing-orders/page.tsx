@@ -210,10 +210,10 @@ export default function StandingOrdersPage() {
                             <PanelGridTh>Customer</PanelGridTh>
                             <PanelGridTh align="right">Order #</PanelGridTh>
                             <PanelGridTh>Day</PanelGridTh>
-                            <PanelGridTh className="hidden sm:table-cell">Start</PanelGridTh>
-                            <PanelGridTh className="hidden sm:table-cell">End</PanelGridTh>
-                            <PanelGridTh className="hidden xl:table-cell">Salesman</PanelGridTh>
-                            <PanelGridTh className="hidden xl:table-cell">Cargo</PanelGridTh>
+                            <PanelGridTh>Start</PanelGridTh>
+                            <PanelGridTh>End</PanelGridTh>
+                            <PanelGridTh>Salesman</PanelGridTh>
+                            <PanelGridTh>Cargo</PanelGridTh>
                             <PanelGridTh align="center">Act.</PanelGridTh>
                         </PanelGridThead>
                         <PanelGridTbody>
@@ -228,10 +228,10 @@ export default function StandingOrdersPage() {
                                         <PanelGridTd className="font-medium max-w-[140px] truncate">{t(o.CUSTOMER)}</PanelGridTd>
                                         <PanelGridTd align="right" className="font-bold text-[#FB7506]">{t(o.SORDER_NO)}</PanelGridTd>
                                         <PanelGridTd className="font-bold text-[#FB7506]">{t(o.SO_DAY).trim()}</PanelGridTd>
-                                        <PanelGridTd className="hidden sm:table-cell text-gray-500">{fmtDate(o.SO_STDATE)}</PanelGridTd>
-                                        <PanelGridTd className="hidden sm:table-cell text-gray-500">{fmtDate(o.SO_ENDATE)}</PanelGridTd>
-                                        <PanelGridTd className="hidden xl:table-cell max-w-[90px] truncate">{t(o.SALESMAN_NAME)}</PanelGridTd>
-                                        <PanelGridTd className="hidden xl:table-cell max-w-[80px] truncate">{t(o.AGENCY)}</PanelGridTd>
+                                        <PanelGridTd className="text-gray-500">{fmtDate(o.SO_STDATE)}</PanelGridTd>
+                                        <PanelGridTd className="text-gray-500">{fmtDate(o.SO_ENDATE)}</PanelGridTd>
+                                        <PanelGridTd className="max-w-[90px] truncate">{t(o.SALESMAN_NAME)}</PanelGridTd>
+                                        <PanelGridTd className="max-w-[80px] truncate">{t(o.AGENCY)}</PanelGridTd>
                                         <PanelGridTd align="center">{bool(o.ACTIVE) ? <Check size={11} className="text-green-500 inline" /> : ""}</PanelGridTd>
                                     </PanelGridTr>
                                 );
