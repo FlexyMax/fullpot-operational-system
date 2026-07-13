@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { X, Loader2, Check, Search } from "lucide-react";
+import { X, Loader2, Check, Search, Package } from "lucide-react";
 import { toast } from "sonner";
 
 const t = (v: any) => String(v ?? "").trim();
@@ -157,16 +157,17 @@ export function LineModal({ mode, soUnico, line, cases, onClose, onSaved }: Prop
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-            <div className="bg-white rounded-lg shadow-2xl w-full max-w-xl max-h-[92vh] flex flex-col overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-4">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-xl flex flex-col overflow-hidden" style={{ maxHeight: "94dvh" }}>
 
                 {/* Header */}
-                <div className="h-10 bg-[#374151] flex items-center justify-between px-4 shrink-0 rounded-t-lg">
-                    <span className="font-black text-[11px] text-white uppercase tracking-widest">
-                        {isEdit ? "Edit Order Line" : "Add Order Line"}
-                    </span>
-                    <button onClick={onClose} className="text-white/60 hover:text-white transition-colors">
-                        <X size={14} />
+                <div className="h-10 bg-[#374151] rounded-t-xl flex items-center justify-between pl-3 pr-2 shrink-0 border-b border-black/10">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <Package size={14} className="text-[#FB7506] shrink-0" />
+                        <span className="fos-grid-header-text">{isEdit ? "Edit Order Line" : "Add Order Line"}</span>
+                    </div>
+                    <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors shrink-0">
+                        <X size={15} />
                     </button>
                 </div>
 
@@ -270,13 +271,13 @@ export function LineModal({ mode, soUnico, line, cases, onClose, onSaved }: Prop
                 </div>
 
                 {/* Footer */}
-                <div className="h-11 bg-gray-50 border-t border-gray-200 flex items-center justify-end px-4 gap-2 shrink-0 rounded-b-lg">
+                <div className="h-10 bg-[#F5F3F3] border-t border-[#DBD9D9] flex items-center justify-end px-4 gap-2 shrink-0 rounded-b-xl">
                     <button onClick={onClose}
-                        className="px-3 py-1.5 text-[11px] font-bold text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors">
+                        className="h-7 px-3 text-[11px] font-bold text-[#4F4F4F] bg-white border border-[#DBD9D9] rounded-md hover:bg-gray-50 transition-colors">
                         Cancel
                     </button>
                     <button onClick={handleSave} disabled={saving}
-                        className="px-4 py-1.5 text-[11px] font-black text-white bg-[#FB7506] hover:bg-orange-500 rounded disabled:opacity-40 flex items-center gap-1 transition-colors">
+                        className="h-7 px-4 text-[11px] font-black text-white bg-[#FB7506] hover:bg-orange-500 rounded-md disabled:opacity-40 flex items-center gap-1 transition-colors">
                         {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />}
                         {isEdit ? "Save Changes" : "Add Line"}
                     </button>

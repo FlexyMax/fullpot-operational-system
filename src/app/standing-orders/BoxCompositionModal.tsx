@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { X, Loader2, Plus, Trash2, Search, Check } from "lucide-react";
+import { X, Loader2, Plus, Trash2, Search, Check, Box } from "lucide-react";
 import { toast } from "sonner";
+import PanelGrid from "@/components/ui/PanelGrid";
+import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
 
 const t = (v: any) => String(v ?? "").trim();
 const fmt  = (v: any) => parseFloat(v ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -31,6 +33,7 @@ export function BoxCompositionModal({ lineUnico, lineDesc, soPrice, onClose }: P
     const [loading,        setLoading]        = useState(true);
     const [adding,         setAdding]         = useState(false);
     const [deleting,       setDeleting]       = useState<string | null>(null);
+    const [selRow,         setSelRow]         = useState<string | null>(null);
 
     // Add-row form
     const [productSearch,  setProductSearch]  = useState("");
@@ -52,27 +55,28 @@ export function BoxCompositionModal({ lineUnico, lineDesc, soPrice, onClose }: P
     const af = <K extends keyof typeof addForm>(k: K, v: string) =>
         setAddForm(p => ({ ...p, [k]: v }));
 
-    // Load composition rows
+    const mapRows = (j: any[]) => j.map((x: any) => ({
+        unico:        t(x.unico        ?? x.UNICO),
+        description:  t(x.description  ?? x.DESCRIPTION),
+        bunches_case: parseInt(x.bunches_case ?? x.BUNCHES_CASE ?? 1),
+        up_x_pack:    parseInt(x.up_x_pack    ?? x.UP_X_PACK    ?? 1),
+        porcentage:   parseFloat(x.porcentage  ?? x.PORCENTAGE  ?? 0),
+        so_price:     parseFloat(x.so_price    ?? x.SO_PRICE    ?? 0),
+    }));
+
+    const fetchRows = async () => {
+        const r = await fetch(`/api/standing-orders/box-composition/${lineUnico}`);
+        const j = await r.json();
+        if (!r.ok) throw new Error(j.error || "Failed");
+        return mapRows(Array.isArray(j) ? j : []);
+    };
+
     useEffect(() => {
-        (async () => {
-            try {
-                const r = await fetch(`/api/standing-orders/box-composition/${lineUnico}`);
-                const j = await r.json();
-                if (!r.ok) throw new Error(j.error || "Failed");
-                setRows((Array.isArray(j) ? j : []).map((x: any) => ({
-                    unico:        t(x.unico        ?? x.UNICO),
-                    description:  t(x.description  ?? x.DESCRIPTION),
-                    bunches_case: parseInt(x.bunches_case ?? x.BUNCHES_CASE ?? 1),
-                    up_x_pack:    parseInt(x.up_x_pack    ?? x.UP_X_PACK    ?? 1),
-                    porcentage:   parseFloat(x.porcentage  ?? x.PORCENTAGE  ?? 0),
-                    so_price:     parseFloat(x.so_price    ?? x.SO_PRICE    ?? 0),
-                })));
-            } catch (e: any) {
-                toast.error("Failed to load composition: " + e.message);
-            } finally {
-                setLoading(false);
-            }
-        })();
+        fetchRows()
+            .then(setRows)
+            .catch((e: any) => toast.error("Failed to load composition: " + e.message))
+            .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [lineUnico]);
 
     // Close product dropdown on outside click
@@ -131,17 +135,7 @@ export function BoxCompositionModal({ lineUnico, lineDesc, soPrice, onClose }: P
             });
             const j = await r.json();
             if (!r.ok || !j.success) throw new Error(j.error || "Failed");
-            // Reload rows
-            const r2 = await fetch(`/api/standing-orders/box-composition/${lineUnico}`);
-            const j2 = await r2.json();
-            setRows((Array.isArray(j2) ? j2 : []).map((x: any) => ({
-                unico:        t(x.unico        ?? x.UNICO),
-                description:  t(x.description  ?? x.DESCRIPTION),
-                bunches_case: parseInt(x.bunches_case ?? x.BUNCHES_CASE ?? 1),
-                up_x_pack:    parseInt(x.up_x_pack    ?? x.UP_X_PACK    ?? 1),
-                porcentage:   parseFloat(x.porcentage  ?? x.PORCENTAGE  ?? 0),
-                so_price:     parseFloat(x.so_price    ?? x.SO_PRICE    ?? 0),
-            })));
+            setRows(await fetchRows());
             // Reset form
             setAddForm({ product_uq: "", product_name: "", bunches_case: "1", up_x_pack: "1", porcentage: "0", so_price: String(soPrice || 0) });
             setProductSearch("");
@@ -160,6 +154,7 @@ export function BoxCompositionModal({ lineUnico, lineDesc, soPrice, onClose }: P
             const j = await r.json();
             if (!r.ok || !j.success) throw new Error(j.error || "Failed");
             setRows(prev => prev.filter(x => x.unico !== unico));
+            if (selRow === unico) setSelRow(null);
             toast.success("Row deleted");
         } catch (e: any) {
             toast.error(e.message);
@@ -171,81 +166,84 @@ export function BoxCompositionModal({ lineUnico, lineDesc, soPrice, onClose }: P
     const totalPct = rows.reduce((s, r) => s + r.porcentage, 0);
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-            <div className="bg-white rounded-lg shadow-2xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-4">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl flex flex-col overflow-hidden" style={{ maxHeight: "94dvh" }}>
 
                 {/* Header */}
-                <div className="bg-[#374151] px-4 py-3 flex items-center justify-between shrink-0">
-                    <div>
-                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Box Composition</p>
-                        <p className="text-[13px] font-black text-white uppercase truncate max-w-[460px]">{lineDesc}</p>
+                <div className="h-10 bg-[#374151] rounded-t-xl flex items-center justify-between pl-3 pr-2 shrink-0 border-b border-black/10">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <Box size={14} className="text-[#FB7506] shrink-0" />
+                        <span className="fos-grid-header-text shrink-0">Box Composition</span>
+                        <span className="text-[11px] font-semibold text-white/60 truncate hidden sm:block">— {lineDesc}</span>
                     </div>
-                    <button onClick={onClose} className="text-white/60 hover:text-white"><X size={14} /></button>
+                    <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors shrink-0">
+                        <X size={15} />
+                    </button>
                 </div>
 
                 {/* Body */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
 
-                    {/* Existing rows */}
-                    <div>
-                        <p className="text-[10px] font-black text-[#FB7506] uppercase tracking-widest mb-2">Composition</p>
-                        {loading ? (
-                            <div className="flex items-center gap-2 py-4 text-gray-400">
-                                <Loader2 size={14} className="animate-spin" />
-                                <span className="text-[11px]">Loading...</span>
-                            </div>
-                        ) : (
-                            <div className="overflow-auto rounded border border-gray-200">
-                                <table className="min-w-full text-[11px]">
-                                    <thead>
-                                        <tr className="bg-gray-100 text-gray-700">
-                                            <th className="px-3 py-1.5 text-left font-bold">Product</th>
-                                            <th className="px-3 py-1.5 text-right font-bold">Bx/Case</th>
-                                            <th className="px-3 py-1.5 text-right font-bold">Un/Pack</th>
-                                            <th className="px-3 py-1.5 text-right font-bold">%</th>
-                                            <th className="px-3 py-1.5 text-right font-bold">Price</th>
-                                            <th className="px-3 py-1.5 text-center font-bold w-10"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {rows.map((row, i) => (
-                                            <tr key={i} className="border-t border-gray-100 odd:bg-white even:bg-gray-50">
-                                                <td className="px-3 py-1.5 font-medium">{row.description || row.unico}</td>
-                                                <td className="px-3 py-1.5 text-right">{fmtI(row.bunches_case)}</td>
-                                                <td className="px-3 py-1.5 text-right">{fmtI(row.up_x_pack)}</td>
-                                                <td className="px-3 py-1.5 text-right font-semibold">{row.porcentage.toFixed(1)}%</td>
-                                                <td className="px-3 py-1.5 text-right font-semibold">{fmt(row.so_price)}</td>
-                                                <td className="px-3 py-1.5 text-center">
+                    {/* Composition grid */}
+                    <PanelGrid title="Composition" icon={Box} recordCount={rows.length}>
+                        <PanelGridTable>
+                            <PanelGridThead>
+                                <PanelGridTh>Product</PanelGridTh>
+                                <PanelGridTh align="right">Bx/Case</PanelGridTh>
+                                <PanelGridTh align="right">Un/Pack</PanelGridTh>
+                                <PanelGridTh align="right">%</PanelGridTh>
+                                <PanelGridTh align="right">Price</PanelGridTh>
+                                <PanelGridTh className="w-10"></PanelGridTh>
+                            </PanelGridThead>
+                            <PanelGridTbody>
+                                {loading ? (
+                                    <PanelGridTr selected={false} onClick={() => {}}>
+                                        <PanelGridTd colSpan={6} align="center">
+                                            <div className="flex items-center justify-center gap-2 py-2 text-gray-400">
+                                                <Loader2 size={14} className="animate-spin" /><span>Loading...</span>
+                                            </div>
+                                        </PanelGridTd>
+                                    </PanelGridTr>
+                                ) : (
+                                    <>
+                                        {rows.map((row) => (
+                                            <PanelGridTr key={row.unico} selected={selRow === row.unico} onClick={() => setSelRow(row.unico)}>
+                                                <PanelGridTd className="font-medium">{row.description || row.unico}</PanelGridTd>
+                                                <PanelGridTd align="right">{fmtI(row.bunches_case)}</PanelGridTd>
+                                                <PanelGridTd align="right">{fmtI(row.up_x_pack)}</PanelGridTd>
+                                                <PanelGridTd align="right" className="font-semibold">{row.porcentage.toFixed(1)}%</PanelGridTd>
+                                                <PanelGridTd align="right" className="font-semibold">{fmt(row.so_price)}</PanelGridTd>
+                                                <PanelGridTd align="center">
                                                     <button
-                                                        onClick={() => handleDelete(row.unico)}
+                                                        onClick={e => { e.stopPropagation(); handleDelete(row.unico); }}
                                                         disabled={deleting === row.unico}
                                                         className="text-red-400 hover:text-red-600 disabled:opacity-40"
                                                     >
-                                                        {deleting === row.unico
-                                                            ? <Loader2 size={11} className="animate-spin" />
-                                                            : <Trash2 size={11} />}
+                                                        {deleting === row.unico ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
                                                     </button>
-                                                </td>
-                                            </tr>
+                                                </PanelGridTd>
+                                            </PanelGridTr>
                                         ))}
                                         {rows.length === 0 && (
-                                            <tr><td colSpan={6} className="px-3 py-6 text-center text-gray-400 italic">No composition rows</td></tr>
+                                            <PanelGridTr selected={false} onClick={() => {}}>
+                                                <PanelGridTd colSpan={6} align="center" className="text-gray-400 italic py-6">No composition rows</PanelGridTd>
+                                            </PanelGridTr>
                                         )}
                                         {rows.length > 0 && (
-                                            <tr className="border-t-2 border-gray-300 bg-gray-100 font-black">
-                                                <td className="px-3 py-1.5 text-gray-600">Total</td>
-                                                <td /><td />
-                                                <td className={`px-3 py-1.5 text-right ${Math.abs(totalPct - 100) < 0.1 ? "text-green-600" : "text-red-500"}`}>
+                                            <PanelGridTr selected={false} onClick={() => {}} className="border-t-2 border-gray-300 bg-gray-100 font-black">
+                                                <PanelGridTd className="text-gray-600">Total</PanelGridTd>
+                                                <PanelGridTd /><PanelGridTd />
+                                                <PanelGridTd align="right" className={Math.abs(totalPct - 100) < 0.1 ? "text-green-600" : "text-red-500"}>
                                                     {totalPct.toFixed(1)}%
-                                                </td>
-                                                <td /><td />
-                                            </tr>
+                                                </PanelGridTd>
+                                                <PanelGridTd /><PanelGridTd />
+                                            </PanelGridTr>
                                         )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                    </div>
+                                    </>
+                                )}
+                            </PanelGridTbody>
+                        </PanelGridTable>
+                    </PanelGrid>
 
                     {/* Add row form */}
                     <div className="border border-gray-200 rounded p-3 space-y-3">
@@ -308,9 +306,9 @@ export function BoxCompositionModal({ lineUnico, lineDesc, soPrice, onClose }: P
                 </div>
 
                 {/* Footer */}
-                <div className="h-11 bg-gray-50 border-t border-gray-200 flex items-center justify-end px-4 shrink-0">
+                <div className="h-10 bg-[#F5F3F3] border-t border-[#DBD9D9] flex items-center justify-end px-4 shrink-0 rounded-b-xl">
                     <button onClick={onClose}
-                        className="px-4 py-1.5 text-[11px] font-black text-white bg-[#374151] hover:bg-gray-600 rounded flex items-center gap-1 transition-colors">
+                        className="h-7 px-4 text-[11px] font-bold uppercase tracking-wide text-[#4F4F4F] bg-white hover:bg-gray-50 border border-[#DBD9D9] rounded-md flex items-center gap-1 transition-colors">
                         <Check size={10} /> Done
                     </button>
                 </div>
