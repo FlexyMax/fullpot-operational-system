@@ -43,6 +43,7 @@ function getRoute(appPage: string): string | null {
     if (p.includes('COMPAN') || p.includes('EMPRESA') || p.includes('COMPANY SETUP')) return '/system/companies';
     if (p.includes('INVENTORY ENTRY') || p.includes('PACKING LIST') || p.includes('VENTAS_INVENTORY') || p.includes('INVENTORY_ENTRY') || p.includes('APP INVENTORY')) return '/inventory-entry';
     if (p.includes('AWB') || p.includes('GUIA') || p.includes('AIRWAY') || p.includes('VENTAS_AWB')) return '/awbs';
+    if (p.includes('SCAN OUT') || p.includes('SCAN-OUT') || p.includes('SCANOUT')) return '/scan-out';
     if (p.includes('SCAN')) return '/scan';
     if (p.includes('FLEXY2QB') || p.includes('QUICKBOOKS') || p.includes('QB')) return '/flexy2qb';
     if (p.includes('QUALITY') || p.includes('CALIDAD') || p.includes(' QC') || p === 'QC') return '/qc';

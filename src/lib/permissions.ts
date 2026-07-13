@@ -77,6 +77,7 @@ export const SCREEN_PANTA: Record<string, string> = {
 
     "standing-orders":        "XD6Z7064",  // APP Standing Orders
     "scan":                   "XD6Z7058",  // APP Scan (Physical Inventory)
+    "scan-out":               "XD6Z7058",  // APP Scan Out (shared panta until dedicated record created)
 
     // Add new pages here after registering in Module & Screen Setup
 };
