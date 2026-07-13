@@ -7,7 +7,9 @@ export type ScanTabId =
     | "scanned-bx"
     | "sys-not"
     | "sys-less"
-    | "sys-eq";
+    | "sys-eq"
+    | "phy-less"
+    | "phy-not";
 
 interface ScanState {
     currentRack: string;

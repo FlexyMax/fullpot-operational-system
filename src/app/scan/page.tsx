@@ -35,6 +35,21 @@ const fmtDate = (v: any) => {
 
 const isRack = (s: string) => s.trim().length > 0 && s.trim().length <= 6;
 
+function downloadCsv(filename: string, rows: any[]) {
+    if (!rows.length) return;
+    const keys = Object.keys(rows[0]);
+    const csv = [
+        keys.join(","),
+        ...rows.map(r => keys.map(k => JSON.stringify(r[k] ?? "")).join(",")),
+    ].join("\n");
+    const a = Object.assign(document.createElement("a"), {
+        href: URL.createObjectURL(new Blob([csv], { type: "text/csv" })),
+        download: filename,
+    });
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+
 function StatBox({ label, value, color = "gray" }: { label: string; value: any; color?: string }) {
     return (
         <div className={cn(
@@ -65,6 +80,8 @@ const TABS = [
     { id: "sys-not",    label: "Sys ≠ Phy",       color: "text-purple-600", view: "system-not-physical" },
     { id: "sys-less",   label: "Sys < Phy",       color: "text-orange-600", view: "system-less-physical" },
     { id: "sys-eq",     label: "Sys = Phy",       color: "text-teal-600",   view: "system-equal-physical" },
+    { id: "phy-less",   label: "Phy < Sys",       color: "text-yellow-600", view: "physical-less-system" },
+    { id: "phy-not",    label: "Phy ≠ Sys",       color: "text-pink-600",   view: "physical-not-system" },
 ] as const;
 const PAGE_SIZE = 50;
 
@@ -256,7 +273,7 @@ export default function PhysicalScanPage() {
     const activeTabDef = TABS.find(tab => tab.id === activeTab)!;
     const { data: viewRows = EMPTY_ARR, isFetching: loadingView } = useQuery({
         queryKey: ["scan-view", activeTabDef.view, viewKey],
-        enabled:  activeTab !== "pending" && activeTab !== "in-transit" && activeTab !== "scanned-bx" && activeTab !== "sys-not",
+        enabled:  !["pending","in-transit","scanned-bx","sys-not"].includes(activeTab),
         queryFn:  async () => {
             const r = await fetch(`/api/physical-scan/views?v=${activeTabDef.view}`);
             const j = await r.json();
@@ -466,7 +483,7 @@ export default function PhysicalScanPage() {
                             )}
                         >{tab.label}</button>
                     ))}
-                    {(activeTab === "scanned-eq" || activeTab === "sys-less" || activeTab === "sys-eq") && loadingView &&
+                    {!["pending","in-transit","scanned-bx","sys-not"].includes(activeTab) && loadingView &&
                         <Loader2 size={11} className="animate-spin text-gray-400 ml-2 shrink-0" />}
                     <span className="ml-auto text-[10px] text-gray-400 font-bold px-2 shrink-0">
                         {activeTab === "pending"    ? `${pendingRows.length}/${pendingTotal}` :
@@ -485,6 +502,7 @@ export default function PhysicalScanPage() {
                         <PanelGrid icon={Clock} title="Pending Scan"
                             recordCount={`${pendingRows.length}/${pendingTotal}`}
                             onRefresh={refreshAll} refreshing={pendingLoading && pendingPage === 1}
+                            onDownload={() => downloadCsv("pending-scan.csv", pendingRows)}
                             headerRight={<AuditLogModal recordId={t(pendingRows[pendingSelRow ?? -1]?.unico)} disabled={pendingSelRow === null} />}
                             className="h-full">
                             <PanelGridTable>
@@ -546,6 +564,7 @@ export default function PhysicalScanPage() {
                         <PanelGrid icon={Plane} title="In Transit"
                             recordCount={`${transitRows.length}${transitHasMore ? "+" : ""}`}
                             onRefresh={refreshAll} refreshing={transitLoading && transitPage === 1}
+                            onDownload={() => downloadCsv("in-transit.csv", transitRows)}
                             headerRight={<AuditLogModal recordId={undefined} disabled />}
                             className="h-full">
                             <PanelGridTable>
@@ -602,6 +621,7 @@ export default function PhysicalScanPage() {
                         <PanelGrid icon={CheckCircle} title="Scan = Physical"
                             recordCount={viewRows.length}
                             onRefresh={refreshAll} refreshing={loadingView}
+                            onDownload={() => downloadCsv("scan-equal-physical.csv", viewRows)}
                             headerRight={<AuditLogModal recordId={undefined} disabled />}
                             className="h-full">
                             <PanelGridTable>
@@ -647,6 +667,7 @@ export default function PhysicalScanPage() {
                         <PanelGrid icon={Package} title="Scanned Boxes"
                             recordCount={`${scannedRows.length}${scannedHasMore ? "+" : ""}`}
                             onRefresh={refreshAll} refreshing={scannedLoading && scannedPage === 1}
+                            onDownload={() => downloadCsv("scanned-boxes.csv", scannedRows)}
                             headerRight={<AuditLogModal recordId={t(scannedRows[scannedSelRow ?? -1]?.ID)} disabled={scannedSelRow === null} />}
                             className="h-full">
                             <PanelGridTable>
@@ -695,6 +716,7 @@ export default function PhysicalScanPage() {
                         <PanelGrid icon={AlertTriangle} title="Sys ≠ Physical"
                             recordCount={`${sysNotRows.length}${sysNotHasMore ? "+" : ""}`}
                             onRefresh={refreshAll} refreshing={sysNotLoading && sysNotPage === 1}
+                            onDownload={() => downloadCsv("sys-not-physical.csv", sysNotRows)}
                             headerRight={<AuditLogModal recordId={undefined} disabled />}
                             className="h-full">
                             <PanelGridTable>
@@ -750,6 +772,7 @@ export default function PhysicalScanPage() {
                         <PanelGrid icon={TrendingDown} title="Sys < Physical"
                             recordCount={viewRows.length}
                             onRefresh={refreshAll} refreshing={loadingView}
+                            onDownload={() => downloadCsv("sys-less-physical.csv", viewRows)}
                             headerRight={<AuditLogModal recordId={undefined} disabled />}
                             className="h-full">
                             <PanelGridTable>
@@ -793,6 +816,7 @@ export default function PhysicalScanPage() {
                         <PanelGrid icon={BarChart2} title="Sys = Physical"
                             recordCount={viewRows.length}
                             onRefresh={refreshAll} refreshing={loadingView}
+                            onDownload={() => downloadCsv("sys-equal-physical.csv", viewRows)}
                             headerRight={<AuditLogModal recordId={undefined} disabled />}
                             className="h-full">
                             <PanelGridTable>
@@ -825,6 +849,95 @@ export default function PhysicalScanPage() {
                                     ))}
                                     {!loadingView && viewRows.length === 0 && (
                                         <tr><td colSpan={11} className="p-10 text-center text-gray-400 italic">No records</td></tr>
+                                    )}
+                                </PanelGridTbody>
+                            </PanelGridTable>
+                        </PanelGrid>
+                    )}
+
+                    {/* Phy < Sys — physically scanned count is less than system qty */}
+                    {activeTab === "phy-less" && (
+                        <PanelGrid icon={TrendingDown} title="Phy < Sys"
+                            recordCount={viewRows.length}
+                            onRefresh={refreshAll} refreshing={loadingView}
+                            onDownload={() => downloadCsv("physical-less-system.csv", viewRows)}
+                            headerRight={<AuditLogModal recordId={undefined} disabled />}
+                            className="h-full">
+                            <PanelGridTable>
+                                <PanelGridThead>
+                                    <PanelGridTh>Barcode</PanelGridTh><PanelGridTh>Farm</PanelGridTh><PanelGridTh>AWB</PanelGridTh>
+                                    <PanelGridTh align="right">Lot</PanelGridTh>
+                                    <PanelGridTh>Box Date</PanelGridTh>
+                                    <PanelGridTh align="right">Box Qty</PanelGridTh>
+                                    <PanelGridTh align="right">Sold</PanelGridTh>
+                                    <PanelGridTh align="right">Stock</PanelGridTh>
+                                    <PanelGridTh align="right">Scanned</PanelGridTh>
+                                    <PanelGridTh align="right">Open Inv</PanelGridTh>
+                                    <PanelGridTh>Product</PanelGridTh>
+                                </PanelGridThead>
+                                <PanelGridTbody>
+                                    {viewRows.map((r: any, i: number) => (
+                                        <PanelGridTr key={i} selected={viewSelRow === i} onClick={() => setViewSelRow(i)}>
+                                            <PanelGridTd className="font-mono font-bold text-[#FB7506]">{t(r.barcode)}</PanelGridTd>
+                                            <PanelGridTd className="font-bold text-[#FB7506]">{t(r.farm)}</PanelGridTd>
+                                            <PanelGridTd className="font-mono font-bold text-[#FB7506]">{t(r.awbcode)}</PanelGridTd>
+                                            <PanelGridTd align="right" className="font-bold text-[#FB7506]">{fmtLot(r.lote)}</PanelGridTd>
+                                            <PanelGridTd>{fmtDate(r.box_date)}</PanelGridTd>
+                                            <PanelGridTd align="right" className="font-semibold">{fmtN(r.box_qty)}</PanelGridTd>
+                                            <PanelGridTd align="right">{fmtN(r.qty_sale)}</PanelGridTd>
+                                            <PanelGridTd align="right" className="font-bold">{fmtN(r.stock)}</PanelGridTd>
+                                            <PanelGridTd align="right" className="font-bold text-green-700">{fmtN(r.QPI)}</PanelGridTd>
+                                            <PanelGridTd align="right">{fmtN(r.OBox)}</PanelGridTd>
+                                            <PanelGridTd className="max-w-[200px] truncate">{t(r.description)}</PanelGridTd>
+                                        </PanelGridTr>
+                                    ))}
+                                    {!loadingView && viewRows.length === 0 && (
+                                        <tr><td colSpan={11} className="p-10 text-center text-gray-400 italic">No records</td></tr>
+                                    )}
+                                </PanelGridTbody>
+                            </PanelGridTable>
+                        </PanelGrid>
+                    )}
+
+                    {/* Phy ≠ Sys — physically scanned but not found in system */}
+                    {activeTab === "phy-not" && (
+                        <PanelGrid icon={AlertTriangle} title="Phy ≠ Sys"
+                            recordCount={viewRows.length}
+                            onRefresh={refreshAll} refreshing={loadingView}
+                            onDownload={() => downloadCsv("physical-not-system.csv", viewRows)}
+                            headerRight={<AuditLogModal recordId={undefined} disabled />}
+                            className="h-full">
+                            <PanelGridTable>
+                                <PanelGridThead>
+                                    <PanelGridTh>Farm</PanelGridTh><PanelGridTh>AWB</PanelGridTh>
+                                    <PanelGridTh align="right">Lot</PanelGridTh>
+                                    <PanelGridTh align="right">Box Qty</PanelGridTh>
+                                    <PanelGridTh align="right">Transit</PanelGridTh>
+                                    <PanelGridTh align="right">Sold</PanelGridTh>
+                                    <PanelGridTh align="right">Stock</PanelGridTh>
+                                    <PanelGridTh align="right">Un/Box</PanelGridTh>
+                                    <PanelGridTh>Customer</PanelGridTh><PanelGridTh>Case</PanelGridTh>
+                                    <PanelGridTh>Warehouse</PanelGridTh><PanelGridTh>Product</PanelGridTh>
+                                </PanelGridThead>
+                                <PanelGridTbody>
+                                    {viewRows.map((r: any, i: number) => (
+                                        <PanelGridTr key={i} selected={viewSelRow === i} onClick={() => setViewSelRow(i)}>
+                                            <PanelGridTd className="font-bold text-[#FB7506]">{t(r.farm)}</PanelGridTd>
+                                            <PanelGridTd className="font-mono font-bold text-[#FB7506]">{t(r.awbcode)}</PanelGridTd>
+                                            <PanelGridTd align="right" className="font-bold text-[#FB7506]">{fmtLot(r.lote)}</PanelGridTd>
+                                            <PanelGridTd align="right" className="font-semibold">{fmtN(r.box_qty)}</PanelGridTd>
+                                            <PanelGridTd align="right" className="text-orange-600">{fmtN(r.qty_transit)}</PanelGridTd>
+                                            <PanelGridTd align="right">{fmtN(r.qty_sold)}</PanelGridTd>
+                                            <PanelGridTd align="right" className="font-bold">{fmtN(r.stock)}</PanelGridTd>
+                                            <PanelGridTd align="right">{fmtN(r.tunits_x_box)}</PanelGridTd>
+                                            <PanelGridTd className="max-w-[90px] truncate">{t(r.customer)}</PanelGridTd>
+                                            <PanelGridTd>{t(r.case_sh)}</PanelGridTd>
+                                            <PanelGridTd className="max-w-[90px] truncate">{t(r.wp_name)}</PanelGridTd>
+                                            <PanelGridTd className="max-w-[200px] truncate">{t(r.description)}</PanelGridTd>
+                                        </PanelGridTr>
+                                    ))}
+                                    {!loadingView && viewRows.length === 0 && (
+                                        <tr><td colSpan={12} className="p-10 text-center text-gray-400 italic">No records</td></tr>
                                     )}
                                 </PanelGridTbody>
                             </PanelGridTable>
