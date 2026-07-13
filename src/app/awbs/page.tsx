@@ -774,18 +774,6 @@ export default function AwbsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [status]);
 
-    // ── Auto-select first record after grid loads ─────────────────────────────
-    useEffect(() => {
-        if ((awbs as any[]).length > 0 && !selAwb) {
-            const first = (awbs as any[])[0];
-            setSelAwb(first);
-            ["awb-packing", "awb-charges", "awb-boxes", "awb-varieties"].forEach(key =>
-                qc.invalidateQueries({ queryKey: [key, first.AWBCODE] })
-            );
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [awbs]);
-
     // ── Queries — ALL hooks before any early return ──────────────────────────
     const { data: airlines = EMPTY_ARR } = useQuery({
         queryKey: ["awb-airlines"],
@@ -802,6 +790,18 @@ export default function AwbsPage() {
         select:   (d: any) => norm(d.records ?? []),
         staleTime: 0,
     });
+
+    // ── Auto-select first record after grid loads ─────────────────────────────
+    useEffect(() => {
+        if ((awbs as any[]).length > 0 && !selAwb) {
+            const first = (awbs as any[])[0];
+            setSelAwb(first);
+            ["awb-packing", "awb-charges", "awb-boxes", "awb-varieties"].forEach(key =>
+                qc.invalidateQueries({ queryKey: [key, first.AWBCODE] })
+            );
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [awbs]);
 
     const { data: vendors = EMPTY_ARR, isFetching: loadingVendors, refetch: refetchVendors } = useQuery({
         queryKey: ["awb-packing", selAwb?.AWBCODE],
