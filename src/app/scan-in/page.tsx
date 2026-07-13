@@ -98,7 +98,9 @@ export default function ScanInPage() {
         initial?: { unico: string; reason_uq: string; qty: number; notes: string };
     }>({ open: false, mode: "add", pkBoxUq: "" });
 
-    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [confirmOpen,      setConfirmOpen]      = useState(false);
+    const [batchConfirmOpen, setBatchConfirmOpen] = useState(false);
+    const [totalsRefreshing, setTotalsRefreshing] = useState(false);
 
     const awbInputRef  = useRef<HTMLInputElement>(null);
     const scanInputRef = useRef<HTMLInputElement>(null);
@@ -272,6 +274,19 @@ export default function ScanInPage() {
         setTimeout(() => awbInputRef.current?.focus(), 100);
     };
 
+    const refreshTotals = async () => {
+        if (!activeAwb) return;
+        setTotalsRefreshing(true);
+        try {
+            const res = await fetch(`/api/scan-in/awb?code=${encodeURIComponent(activeAwb)}`);
+            if (res.ok) {
+                const json = await res.json();
+                setTotals({ totalPieces: json.totalPieces, readPieces: json.readPieces });
+            }
+        } catch { /* silent */ }
+        finally { setTotalsRefreshing(false); }
+    };
+
     const toScan = (totals?.totalPieces ?? 0) - (totals?.readPieces ?? 0);
 
     const handleDeleteDelayed = async (unico: string) => {
@@ -341,6 +356,14 @@ export default function ScanInPage() {
                                     <StatBox label="Total Pieces" value={totals?.totalPieces ?? 0} color="blue" />
                                     <StatBox label="Scanned"      value={totals?.readPieces  ?? 0} color="green" />
                                     <StatBox label="To Scan"      value={toScan}                   color={toScan === 0 ? "green" : "orange"} />
+                                    <button
+                                        onClick={refreshTotals}
+                                        disabled={totalsRefreshing}
+                                        className="flex items-center justify-center w-7 h-7 rounded border border-gray-200 bg-white hover:bg-gray-100 text-gray-500 transition-colors disabled:opacity-40 shrink-0"
+                                        title="Refresh totals"
+                                    >
+                                        <RotateCcw size={12} className={totalsRefreshing ? "animate-spin" : ""} />
+                                    </button>
                                 </div>
 
                                 {/* Buttons */}
@@ -373,7 +396,7 @@ export default function ScanInPage() {
                                     {/* Supervisor Batch */}
                                     {canDelete && (
                                         <button
-                                            onClick={handleBatchScan}
+                                            onClick={() => setBatchConfirmOpen(true)}
                                             disabled={batching}
                                             className="flex items-center gap-1.5 px-3 h-7 text-[10px] font-black uppercase tracking-widest rounded transition-colors border bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100 disabled:opacity-50"
                                         >
@@ -805,6 +828,37 @@ export default function ScanInPage() {
                                 className="px-4 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white text-xs font-black uppercase transition-colors flex items-center gap-1.5 disabled:opacity-50">
                                 {confirming && <Loader2 size={11} className="animate-spin" />}
                                 Confirm
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Batch scan confirm dialog */}
+            {batchConfirmOpen && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[300] p-4">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm flex flex-col overflow-hidden">
+                        <div className="bg-[#374151] text-white px-4 py-3 flex items-center gap-2">
+                            <ShieldCheck size={14} className="text-purple-400" />
+                            <span className="font-black text-[11px] uppercase tracking-widest">Supervisor Batch Scan</span>
+                        </div>
+                        <div className="p-5 text-sm text-gray-700 space-y-2">
+                            <p>This will automatically scan ALL pending boxes for AWB <span className="font-black text-[#FB7506]">{activeAwb}</span>.</p>
+                            <p className="text-yellow-700 font-bold text-xs bg-yellow-50 border border-yellow-200 rounded px-3 py-2">
+                                ⚠ Supervisor action — use only when physical scan is not possible.
+                            </p>
+                        </div>
+                        <div className="bg-[#F5F3F3] border-t border-[#DBD9D9] px-4 py-3 flex justify-end gap-2">
+                            <button onClick={() => setBatchConfirmOpen(false)}
+                                className="px-4 py-1.5 rounded border border-[#DBD9D9] text-xs font-black uppercase text-gray-600 hover:bg-gray-200 transition-colors">
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => { setBatchConfirmOpen(false); handleBatchScan(); }}
+                                disabled={batching}
+                                className="px-4 py-1.5 rounded bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase transition-colors flex items-center gap-1.5 disabled:opacity-50">
+                                {batching && <Loader2 size={11} className="animate-spin" />}
+                                Run Batch
                             </button>
                         </div>
                     </div>
