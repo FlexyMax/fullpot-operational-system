@@ -38,8 +38,8 @@ export async function POST(req: NextRequest) {
             success:  true,
             message:  String(row.Message ?? "Box scanned in"),
             totals: {
-                totalPieces: Number(t.TOTAL_PIECES ?? 0),
-                readPieces:  Number(t.READ_PIECES  ?? 0),
+                totalPieces: Number(t.total_pieces ?? 0),
+                readPieces:  Number(t.read_pieces  ?? 0),
             },
         });
     } catch (err: any) {

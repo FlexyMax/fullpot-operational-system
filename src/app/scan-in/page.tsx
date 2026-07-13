@@ -129,8 +129,8 @@ export default function ScanInPage() {
 
     // Load delayed boxes when selectedLot changes
     useEffect(() => {
-        if (!selectedLot?.PKBOX_UQ) { setDelayedData([]); return; }
-        loadDelayed(t(selectedLot.PKBOX_UQ));
+        if (!selectedLot?.pkbox_uq) { setDelayedData([]); return; }
+        loadDelayed(t(selectedLot.pkbox_uq));
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedLot]);
 
@@ -281,7 +281,7 @@ export default function ScanInPage() {
             const json = await res.json();
             if (!res.ok) { toast.error(json.error || "Delete failed"); return; }
             toast.success("Deleted");
-            if (selectedLot?.PKBOX_UQ) loadDelayed(t(selectedLot.PKBOX_UQ));
+            if (selectedLot?.pkbox_uq) loadDelayed(t(selectedLot.pkbox_uq));
         } catch (e: any) { toast.error(e.message); }
     };
 
@@ -484,14 +484,14 @@ export default function ScanInPage() {
                                                             setPendingSelRow(i);
                                                             setSelectedLot(row);
                                                         }}>
-                                                        <PanelGridTd className="font-mono font-bold text-[#FB7506]">{t(row.CPORDER_NO)}</PanelGridTd>
-                                                        <PanelGridTd>{t(row.GROWER)}</PanelGridTd>
-                                                        <PanelGridTd className="font-mono text-gray-500">{t(row.BOX_DATE)}</PanelGridTd>
-                                                        <PanelGridTd className="font-bold text-[#FB7506]">{t(row.LOTE)}</PanelGridTd>
-                                                        <PanelGridTd className="max-w-[180px] truncate" title={t(row.DESCRIPTION)}>{t(row.DESCRIPTION)}</PanelGridTd>
-                                                        <PanelGridTd align="right" className="font-bold">{fmtN(row.TOTAL_PIECES)}</PanelGridTd>
-                                                        <PanelGridTd align="right">{fmtN(row.QTY_CONFIRMED)}</PanelGridTd>
-                                                        <PanelGridTd align="right" className="font-black text-[#FB7506]">{fmtN(row.READ_PIECES)}</PanelGridTd>
+                                                        <PanelGridTd className="font-mono font-bold text-[#FB7506]">{t(row.cporder_no)}</PanelGridTd>
+                                                        <PanelGridTd>{t(row.grower)}</PanelGridTd>
+                                                        <PanelGridTd className="font-mono text-gray-500">{t(row.box_date)}</PanelGridTd>
+                                                        <PanelGridTd className="font-bold text-[#FB7506]">{t(row.lote)}</PanelGridTd>
+                                                        <PanelGridTd className="max-w-[180px] truncate" title={t(row.description)}>{t(row.description)}</PanelGridTd>
+                                                        <PanelGridTd align="right" className="font-bold">{fmtN(row.total_pieces)}</PanelGridTd>
+                                                        <PanelGridTd align="right">{fmtN(row.qty_confirmed)}</PanelGridTd>
+                                                        <PanelGridTd align="right" className="font-black text-[#FB7506]">{fmtN(row.read_pieces)}</PanelGridTd>
                                                     </PanelGridTr>
                                                 ))}
                                             </PanelGridTbody>
@@ -502,13 +502,13 @@ export default function ScanInPage() {
                                     {selectedLot && (
                                         <PanelGrid
                                             icon={Package}
-                                            title={`Delayed Boxes — ${t(selectedLot.LOTE)}`}
+                                            title={`Delayed Boxes — ${t(selectedLot.lote)}`}
                                             recordCount={delayedData.length}
-                                            onRefresh={() => selectedLot?.PKBOX_UQ && loadDelayed(t(selectedLot.PKBOX_UQ))}
+                                            onRefresh={() => selectedLot?.pkbox_uq && loadDelayed(t(selectedLot.pkbox_uq))}
                                             headerRight={
                                                 <div className="flex items-center gap-1">
                                                     <button
-                                                        onClick={() => setDelayedModal({ open: true, mode: "add", pkBoxUq: t(selectedLot.PKBOX_UQ) })}
+                                                        onClick={() => setDelayedModal({ open: true, mode: "add", pkBoxUq: t(selectedLot.pkbox_uq) })}
                                                         className="flex items-center gap-1 px-2.5 h-7 text-[10px] font-black uppercase tracking-widest rounded border bg-[#374151] text-white hover:bg-[#4B5563] transition-colors"
                                                         title="Add delayed box"
                                                     >
@@ -538,22 +538,22 @@ export default function ScanInPage() {
                                                         )}
                                                         {delayedData.map((d, i) => (
                                                             <PanelGridTr key={i}>
-                                                                <PanelGridTd>{t(d.REASON)}</PanelGridTd>
-                                                                <PanelGridTd align="right" className="font-bold">{fmtN(d.QTY)}</PanelGridTd>
-                                                                <PanelGridTd className="font-mono text-gray-500">{t(d.ADD_DATE)}</PanelGridTd>
-                                                                <PanelGridTd className="max-w-[200px] truncate" title={t(d.NOTES)}>{t(d.NOTES)}</PanelGridTd>
+                                                                <PanelGridTd>{t(d.reason)}</PanelGridTd>
+                                                                <PanelGridTd align="right" className="font-bold">{fmtN(d.qty)}</PanelGridTd>
+                                                                <PanelGridTd className="font-mono text-gray-500">{t(d.add_date)}</PanelGridTd>
+                                                                <PanelGridTd className="max-w-[200px] truncate" title={t(d.notes)}>{t(d.notes)}</PanelGridTd>
                                                                 <PanelGridTd align="center">
                                                                     <div className="flex items-center justify-center gap-1">
                                                                         <button
                                                                             onClick={() => setDelayedModal({
                                                                                 open: true,
                                                                                 mode: "edit",
-                                                                                pkBoxUq: t(selectedLot.PKBOX_UQ),
+                                                                                pkBoxUq: t(selectedLot.pkbox_uq),
                                                                                 initial: {
-                                                                                    unico:      t(d.UNICO),
-                                                                                    reason_uq:  t(d.REASON_UQ ?? d.UNICO),
-                                                                                    qty:        Number(d.QTY ?? 0),
-                                                                                    notes:      t(d.NOTES),
+                                                                                    unico:      t(d.unico),
+                                                                                    reason_uq:  t(d.reason_uq ?? d.unico),
+                                                                                    qty:        Number(d.qty ?? 0),
+                                                                                    notes:      t(d.notes),
                                                                                 },
                                                                             })}
                                                                             className="p-1 rounded hover:bg-blue-50 text-blue-500 transition-colors"
@@ -562,7 +562,7 @@ export default function ScanInPage() {
                                                                             <Pencil size={12} />
                                                                         </button>
                                                                         <button
-                                                                            onClick={() => handleDeleteDelayed(t(d.UNICO))}
+                                                                            onClick={() => handleDeleteDelayed(t(d.unico))}
                                                                             className="p-1 rounded hover:bg-red-50 text-red-500 transition-colors"
                                                                             title="Delete"
                                                                         >
@@ -611,18 +611,18 @@ export default function ScanInPage() {
                                             )}
                                             {receptedData.map((row, i) => (
                                                 <PanelGridTr key={i} selected={receptedSelRow === i} onClick={() => setReceptedSelRow(i)}>
-                                                    <PanelGridTd className="font-mono font-bold text-[#FB7506]">{t(row.PACKING_NO)}</PanelGridTd>
-                                                    <PanelGridTd className="font-bold text-[#FB7506]">{t(row.INVOICE_NO)}</PanelGridTd>
-                                                    <PanelGridTd className="font-mono font-bold text-[#FB7506]">{t(row.AWBCODE)}</PanelGridTd>
-                                                    <PanelGridTd className="font-mono text-gray-500">{t(row.BOX_DATE)}</PanelGridTd>
-                                                    <PanelGridTd>{t(row.GROWER)}</PanelGridTd>
-                                                    <PanelGridTd className="font-bold text-[#FB7506]">{t(row.FARM)}</PanelGridTd>
-                                                    <PanelGridTd className="font-bold text-[#FB7506]">{t(row.PKBOX_UQ)}</PanelGridTd>
-                                                    <PanelGridTd className="max-w-[160px] truncate" title={t(row.DESCRIPTION)}>{t(row.DESCRIPTION)}</PanelGridTd>
-                                                    <PanelGridTd align="right" className="font-bold">{fmtN(row.TOTAL_BOXES)}</PanelGridTd>
-                                                    <PanelGridTd align="right">{fmtN(row.TOTAL_PIECES)}</PanelGridTd>
-                                                    <PanelGridTd align="right">{fmtN(row.STOCK_PIECES)}</PanelGridTd>
-                                                    <PanelGridTd align="right" className="font-black text-[#FB7506]">{fmtN(row.READ_PIECES)}</PanelGridTd>
+                                                    <PanelGridTd className="font-mono font-bold text-[#FB7506]">{t(row.packing_no)}</PanelGridTd>
+                                                    <PanelGridTd className="font-bold text-[#FB7506]">{t(row.invoice_no)}</PanelGridTd>
+                                                    <PanelGridTd className="font-mono font-bold text-[#FB7506]">{t(row.awbcode)}</PanelGridTd>
+                                                    <PanelGridTd className="font-mono text-gray-500">{t(row.box_date)}</PanelGridTd>
+                                                    <PanelGridTd>{t(row.grower)}</PanelGridTd>
+                                                    <PanelGridTd className="font-bold text-[#FB7506]">{t(row.farm)}</PanelGridTd>
+                                                    <PanelGridTd className="font-bold text-[#FB7506]">{t(row.pkbox_uq)}</PanelGridTd>
+                                                    <PanelGridTd className="max-w-[160px] truncate" title={t(row.description)}>{t(row.description)}</PanelGridTd>
+                                                    <PanelGridTd align="right" className="font-bold">{fmtN(row.total_boxes)}</PanelGridTd>
+                                                    <PanelGridTd align="right">{fmtN(row.total_pieces)}</PanelGridTd>
+                                                    <PanelGridTd align="right">{fmtN(row.stock_pieces)}</PanelGridTd>
+                                                    <PanelGridTd align="right" className="font-black text-[#FB7506]">{fmtN(row.read_pieces)}</PanelGridTd>
                                                 </PanelGridTr>
                                             ))}
                                         </PanelGridTbody>
@@ -659,16 +659,16 @@ export default function ScanInPage() {
                                             )}
                                             {scanListData.map((row, i) => (
                                                 <PanelGridTr key={i} selected={scanListSelRow === i} onClick={() => setScanListSelRow(i)}>
-                                                    <PanelGridTd>{t(row.GROWER)}</PanelGridTd>
-                                                    <PanelGridTd className="font-bold text-[#FB7506]">{t(row.FARM)}</PanelGridTd>
-                                                    <PanelGridTd className="font-mono font-bold text-[#FB7506]">{t(row.AWBCODE)}</PanelGridTd>
-                                                    <PanelGridTd className="font-mono text-gray-500">{t(row.AWBDATE)}</PanelGridTd>
-                                                    <PanelGridTd className="font-bold text-[#FB7506]">{t(row.LOTE)}</PanelGridTd>
-                                                    <PanelGridTd className="max-w-[160px] truncate" title={t(row.DESCRIPTION)}>{t(row.DESCRIPTION)}</PanelGridTd>
-                                                    <PanelGridTd>{t(row.CASE_SH)}</PanelGridTd>
-                                                    <PanelGridTd align="right" className="font-bold">{fmtN(row.BOX_QTY)}</PanelGridTd>
-                                                    <PanelGridTd align="right">{fmtN(row.BOX_NO)}</PanelGridTd>
-                                                    <PanelGridTd align="right" className="font-black text-[#FB7506]">{fmtN(row.QTY_IN)}</PanelGridTd>
+                                                    <PanelGridTd>{t(row.grower)}</PanelGridTd>
+                                                    <PanelGridTd className="font-bold text-[#FB7506]">{t(row.farm)}</PanelGridTd>
+                                                    <PanelGridTd className="font-mono font-bold text-[#FB7506]">{t(row.awbcode)}</PanelGridTd>
+                                                    <PanelGridTd className="font-mono text-gray-500">{t(row.awbdate)}</PanelGridTd>
+                                                    <PanelGridTd className="font-bold text-[#FB7506]">{t(row.lote)}</PanelGridTd>
+                                                    <PanelGridTd className="max-w-[160px] truncate" title={t(row.description)}>{t(row.description)}</PanelGridTd>
+                                                    <PanelGridTd>{t(row.case_sh)}</PanelGridTd>
+                                                    <PanelGridTd align="right" className="font-bold">{fmtN(row.box_qty)}</PanelGridTd>
+                                                    <PanelGridTd align="right">{fmtN(row.box_no)}</PanelGridTd>
+                                                    <PanelGridTd align="right" className="font-black text-[#FB7506]">{fmtN(row.qty_in)}</PanelGridTd>
                                                 </PanelGridTr>
                                             ))}
                                         </PanelGridTbody>
@@ -705,16 +705,16 @@ export default function ScanInPage() {
                                             )}
                                             {noScanData.map((row, i) => (
                                                 <PanelGridTr key={i} selected={noScanSelRow === i} onClick={() => setNoScanSelRow(i)}>
-                                                    <PanelGridTd>{t(row.GROWER)}</PanelGridTd>
-                                                    <PanelGridTd className="font-bold text-[#FB7506]">{t(row.FARM)}</PanelGridTd>
-                                                    <PanelGridTd className="font-mono font-bold text-[#FB7506]">{t(row.AWBCODE)}</PanelGridTd>
-                                                    <PanelGridTd className="font-mono text-gray-500">{t(row.AWBDATE)}</PanelGridTd>
-                                                    <PanelGridTd className="font-bold text-[#FB7506]">{t(row.LOTE)}</PanelGridTd>
-                                                    <PanelGridTd className="max-w-[160px] truncate" title={t(row.DESCRIPTION)}>{t(row.DESCRIPTION)}</PanelGridTd>
-                                                    <PanelGridTd>{t(row.CASE_SH)}</PanelGridTd>
-                                                    <PanelGridTd align="right" className="font-bold">{fmtN(row.BOX_QTY)}</PanelGridTd>
-                                                    <PanelGridTd align="right">{fmtN(row.BOX_NO)}</PanelGridTd>
-                                                    <PanelGridTd align="right">{fmtN(row.QTY_IN)}</PanelGridTd>
+                                                    <PanelGridTd>{t(row.grower)}</PanelGridTd>
+                                                    <PanelGridTd className="font-bold text-[#FB7506]">{t(row.farm)}</PanelGridTd>
+                                                    <PanelGridTd className="font-mono font-bold text-[#FB7506]">{t(row.awbcode)}</PanelGridTd>
+                                                    <PanelGridTd className="font-mono text-gray-500">{t(row.awbdate)}</PanelGridTd>
+                                                    <PanelGridTd className="font-bold text-[#FB7506]">{t(row.lote)}</PanelGridTd>
+                                                    <PanelGridTd className="max-w-[160px] truncate" title={t(row.description)}>{t(row.description)}</PanelGridTd>
+                                                    <PanelGridTd>{t(row.case_sh)}</PanelGridTd>
+                                                    <PanelGridTd align="right" className="font-bold">{fmtN(row.box_qty)}</PanelGridTd>
+                                                    <PanelGridTd align="right">{fmtN(row.box_no)}</PanelGridTd>
+                                                    <PanelGridTd align="right">{fmtN(row.qty_in)}</PanelGridTd>
                                                 </PanelGridTr>
                                             ))}
                                         </PanelGridTbody>
@@ -751,24 +751,24 @@ export default function ScanInPage() {
                                             )}
                                             {invoiceData.map((row, i) => (
                                                 <PanelGridTr key={i} selected={invoiceSelRow === i} onClick={() => setInvoiceSelRow(i)}>
-                                                    <PanelGridTd className="font-mono text-gray-500">{t(row.AWBDATE)}</PanelGridTd>
-                                                    <PanelGridTd>{t(row.GROWER)}</PanelGridTd>
-                                                    <PanelGridTd className="font-bold text-[#FB7506]">{t(row.LOTE)}</PanelGridTd>
-                                                    <PanelGridTd>{t(row.CUSTOMER)}</PanelGridTd>
-                                                    <PanelGridTd className="font-bold text-[#FB7506]">{t(row.INVOICE_NO)}</PanelGridTd>
-                                                    <PanelGridTd className="font-mono text-gray-500">{t(row.INVOICE_DATE)}</PanelGridTd>
+                                                    <PanelGridTd className="font-mono text-gray-500">{t(row.awbdate)}</PanelGridTd>
+                                                    <PanelGridTd>{t(row.grower)}</PanelGridTd>
+                                                    <PanelGridTd className="font-bold text-[#FB7506]">{t(row.lote)}</PanelGridTd>
+                                                    <PanelGridTd>{t(row.customer)}</PanelGridTd>
+                                                    <PanelGridTd className="font-bold text-[#FB7506]">{t(row.invoice_no)}</PanelGridTd>
+                                                    <PanelGridTd className="font-mono text-gray-500">{t(row.invoice_date)}</PanelGridTd>
                                                     <PanelGridTd>
                                                         <span className={cn(
                                                             "px-1.5 py-0.5 rounded text-[9px] font-black uppercase",
-                                                            t(row.INVOICE_STATUS).toUpperCase() === "PAID" ? "bg-green-100 text-green-700" :
+                                                            t(row.invoice_status).toUpperCase() === "PAID" ? "bg-green-100 text-green-700" :
                                                             "bg-yellow-100 text-yellow-700"
                                                         )}>
-                                                            {t(row.INVOICE_STATUS)}
+                                                            {t(row.invoice_status)}
                                                         </span>
                                                     </PanelGridTd>
-                                                    <PanelGridTd className="max-w-[160px] truncate" title={t(row.DESCRIPTION)}>{t(row.DESCRIPTION)}</PanelGridTd>
-                                                    <PanelGridTd align="right" className="font-bold">{fmtN(row.INVOICE_PIECES)}</PanelGridTd>
-                                                    <PanelGridTd>{t(row.CARRIER)}</PanelGridTd>
+                                                    <PanelGridTd className="max-w-[160px] truncate" title={t(row.description)}>{t(row.description)}</PanelGridTd>
+                                                    <PanelGridTd align="right" className="font-bold">{fmtN(row.invoice_pieces)}</PanelGridTd>
+                                                    <PanelGridTd>{t(row.carrier)}</PanelGridTd>
                                                 </PanelGridTr>
                                             ))}
                                         </PanelGridTbody>
@@ -819,7 +819,7 @@ export default function ScanInPage() {
                     initial={delayedModal.initial}
                     onClose={() => setDelayedModal((p) => ({ ...p, open: false }))}
                     onSaved={() => {
-                        if (selectedLot?.PKBOX_UQ) loadDelayed(t(selectedLot.PKBOX_UQ));
+                        if (selectedLot?.pkbox_uq) loadDelayed(t(selectedLot.pkbox_uq));
                     }}
                 />
             )}

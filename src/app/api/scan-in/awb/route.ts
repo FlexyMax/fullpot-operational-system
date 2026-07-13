@@ -26,9 +26,9 @@ export async function GET(req: NextRequest) {
         if (!row) return NextResponse.json({ error: "AWB not found" }, { status: 404 });
 
         return NextResponse.json({
-            awbcode:     String(row.AWBCODE ?? code).trim(),
-            totalPieces: Number(row.TOTAL_PIECES ?? 0),
-            readPieces:  Number(row.READ_PIECES  ?? 0),
+            awbcode:     String(row.awbcode ?? code).trim(),
+            totalPieces: Number(row.total_pieces ?? 0),
+            readPieces:  Number(row.read_pieces  ?? 0),
         });
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });
