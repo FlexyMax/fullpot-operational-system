@@ -31,7 +31,7 @@ export const DATE_KEYS = new Set([
 // VFP report metadata columns — never show in a web/PDF report
 export const VFP_SKIP = new Set([
     "REPORTE","TITULO","PDF","FRX","NOMBRE_REPORTE","REPORT","TITLE",
-    "XLS","XLS_FILE","XLSFILE","SUBTITULO","TITULO_REPORTE","SUBTITU",
+    "XLS","XLS_FILE","XLSFILE","SUBTITULO","TITULO_REPORTE","TITULOREPORTE","SUBTITU",
     "NOMBRE_TITULO","SUB_TITULO",
 ]);
 
