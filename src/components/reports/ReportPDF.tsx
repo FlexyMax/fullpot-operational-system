@@ -157,16 +157,24 @@ export function ReportPDF({ company, title, subtitle, columns, rows, group, land
                             {g.rows.map((row, i) => <Row key={i} row={row} columns={columns} />)}
                             {group.totals && (
                                 <View style={styles.subtotalRow}>
-                                    {columns.map((c, ci) => {
-                                        if (ci === 0) {
-                                            return <Text key={c.key} style={[styles.subtotalLabel, colFlex(c.width)]}>{group.totalLabel ? group.totalLabel(g.rows[0]) : "TOTAL"}</Text>;
-                                        }
-                                        if (group.totals!.includes(c.key)) {
-                                            const sum = g.rows.reduce((acc, r) => acc + (parseFloat(r[c.key]) || 0), 0);
-                                            return <Text key={c.key} style={[styles.subtotalLabel, colFlex(c.width), { textAlign: c.align ?? "left" }]}>{fmt(sum)}</Text>;
-                                        }
-                                        return <Text key={c.key} style={[styles.subtotalLabel, colFlex(c.width)]} />;
-                                    })}
+                                    {(() => {
+                                        const firstTotalIdx = columns.findIndex(c => group.totals!.includes(c.key));
+                                        const splitAt = firstTotalIdx > 0 ? firstTotalIdx : 1;
+                                        const labelWidth = columns.slice(0, splitAt).reduce((s, c) => s + c.width, 0);
+                                        const labelText = group.totalLabel ? group.totalLabel(g.rows[0]) : "TOTAL";
+                                        return [
+                                            <Text key="_label" style={[styles.subtotalLabel, colFlex(labelWidth)]}>
+                                                {labelText}
+                                            </Text>,
+                                            ...columns.slice(splitAt).map(c => {
+                                                if (group.totals!.includes(c.key)) {
+                                                    const sum = g.rows.reduce((acc, r) => acc + (parseFloat(r[c.key]) || 0), 0);
+                                                    return <Text key={c.key} style={[styles.subtotalLabel, colFlex(c.width), { textAlign: c.align ?? "left" }]}>{fmt(sum)}</Text>;
+                                                }
+                                                return <Text key={c.key} style={[styles.subtotalLabel, colFlex(c.width)]} />;
+                                            }),
+                                        ];
+                                    })()}
                                 </View>
                             )}
                         </View>
