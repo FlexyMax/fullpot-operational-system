@@ -20,8 +20,8 @@ export async function POST(req: NextRequest) {
     try {
         // Get list of pending lots with box counts
         const pendingR = await executeProcedure("sp_flower_packing_pending_scan", {
-            awb_code: awbCode,
-            lote:     "%",
+            lcawb:      awbCode,
+            lcpack_uq:  "%",
         });
         const lots: any[] = pendingR.recordset ?? [];
 
@@ -37,8 +37,8 @@ export async function POST(req: NextRequest) {
                 const barcode = farmLote + String(i).padStart(3, "0");
                 try {
                     const r = await executeProcedure("sp_flower_packing_awb_insert_pkbox_control", {
-                        awb_code: awbCode,
-                        barcode:  barcode,
+                        lcawb:       awbCode,
+                        lccompuesto: barcode,
                     });
                     const row = r.recordset?.[0];
                     if (row?.Error === true || row?.Error === 1) {

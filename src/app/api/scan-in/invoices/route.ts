@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     if (!awb) return NextResponse.json({ error: "AWB code required" }, { status: 400 });
 
     try {
-        const result = await executeProcedure("sp_flower_invoice_details_by_awb", { awb_code: awb });
+        const result = await executeProcedure("sp_flower_invoice_details_by_awb", { lcawb: awb });
         return NextResponse.json(result.recordset ?? []);
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });

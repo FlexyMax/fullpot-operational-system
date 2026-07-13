@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     if (!pk_box_uq) return NextResponse.json({ error: "pk_box_uq required" }, { status: 400 });
 
     try {
-        const result = await executeProcedure("sp_flower_packing_box_unconfirmed", { pk_box_uq });
+        const result = await executeProcedure("sp_flower_packing_box_unconfirmed", { lcpkbox_uq: pk_box_uq });
         return NextResponse.json(result.recordset ?? []);
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });
@@ -35,10 +35,10 @@ export async function POST(req: NextRequest) {
 
     try {
         const result = await executeProcedure("sp_flower_packing_box_unconfirmed_insert", {
-            packing_box_uq: String(pk_box_uq),
-            reason_uq:      String(reason_uq),
-            qty:            Number(qty),
-            notes:          String(notes ?? ""),
+            lcpacking_box_uq: String(pk_box_uq),
+            lcreason_uq:      String(reason_uq),
+            lnqty:            Number(qty),
+            lcnotes:          String(notes ?? ""),
         });
         const row = result.recordset?.[0];
         if (!row) return NextResponse.json({ error: "No response from SP" }, { status: 400 });
@@ -65,11 +65,11 @@ export async function PUT(req: NextRequest) {
 
     try {
         const result = await executeProcedure("sp_flower_packing_box_unconfirmed_update", {
-            unico:          String(unico),
-            packing_box_uq: String(pk_box_uq),
-            reason_uq:      String(reason_uq),
-            qty:            Number(qty),
-            notes:          String(notes ?? ""),
+            lcdelayed_uq:     String(unico),
+            lcpacking_box_uq: String(pk_box_uq),
+            lcreason_uq:      String(reason_uq),
+            lnqty:            Number(qty),
+            lcnotes:          String(notes ?? ""),
         });
         const row = result.recordset?.[0];
         if (!row) return NextResponse.json({ error: "No response from SP" }, { status: 400 });
@@ -92,7 +92,7 @@ export async function DELETE(req: NextRequest) {
     if (!unico) return NextResponse.json({ error: "unico required" }, { status: 400 });
 
     try {
-        const result = await executeProcedure("sp_flower_packing_box_unconfirmed_delete", { unico });
+        const result = await executeProcedure("sp_flower_packing_box_unconfirmed_delete", { lcdelayed_uq: unico });
         const row = result.recordset?.[0];
         if (!row) return NextResponse.json({ error: "No response from SP" }, { status: 400 });
         if (row.Error === true || row.Error === 1) {

@@ -14,14 +14,14 @@ export async function GET(req: NextRequest) {
 
     try {
         // Seed all boxes (idempotent — SP skips already-existing rows)
-        const seedR = await executeProcedure("sp_flower_packing_box_control_insert_in_all", { awb_code: code });
+        const seedR = await executeProcedure("sp_flower_packing_box_control_insert_in_all", { lcawb: code });
         const seedRow = seedR.recordset?.[0];
         if (seedRow?.Error === true || seedRow?.Error === 1) {
             return NextResponse.json({ error: String(seedRow.Message ?? "Seed failed") }, { status: 400 });
         }
 
         // Get totals
-        const totalsR = await executeProcedure("sp_flower_packing_awb_totals", { awb_code: code });
+        const totalsR = await executeProcedure("sp_flower_packing_awb_totals", { lcawb: code });
         const row = totalsR.recordset?.[0];
         if (!row) return NextResponse.json({ error: "AWB not found" }, { status: 404 });
 

@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
 
     try {
         const result = await executeProcedure("sp_flower_packing_box_update_confirmed", {
-            awb_code: String(awb).trim().toUpperCase(),
+            lcawbcode: String(awb).trim().toUpperCase(),
         });
         const row = result.recordset?.[0];
         if (!row) return NextResponse.json({ error: "No response from SP" }, { status: 400 });

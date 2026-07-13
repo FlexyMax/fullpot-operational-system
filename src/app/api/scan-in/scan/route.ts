@@ -19,8 +19,8 @@ export async function POST(req: NextRequest) {
 
     try {
         const scanR = await executeProcedure("sp_flower_packing_awb_insert_pkbox_control", {
-            awb_code: String(awb).trim().toUpperCase(),
-            barcode:  String(barcode).trim().toUpperCase(),
+            lcawb:       String(awb).trim().toUpperCase(),
+            lccompuesto: String(barcode).trim().toUpperCase(),
         });
         const row = scanR.recordset?.[0];
         if (!row) return NextResponse.json({ error: "No response from scan SP" }, { status: 400 });
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
         serverAuditLog(PANTA, "Insert", "flower_packing_box_control", String(row.unico ?? barcode), "Scan IN AWB").catch(() => {});
 
         // Return updated totals
-        const totalsR = await executeProcedure("sp_flower_packing_awb_totals", { awb_code: String(awb).trim().toUpperCase() });
+        const totalsR = await executeProcedure("sp_flower_packing_awb_totals", { lcawb: String(awb).trim().toUpperCase() });
         const t = totalsR.recordset?.[0] ?? {};
 
         return NextResponse.json({
