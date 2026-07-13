@@ -1149,7 +1149,7 @@ export default function AwbsPage() {
                                 headerRight={<AuditLogModal recordId={selVendor?.PACK_UQ} disabled={!selVendor} />}
                                 menuItems={[
                                     { label: "Add Invoice Charge", icon: Plus,    color: "green", onClick: () => { if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; } setInvoiceChargesModal(true); }, disabled: !selVendor || !perms.canCreate },
-                                    { label: "Print",              icon: Printer,  color: "gray",  onClick: async () => { if (!selAwb || !selVendor || !perms.canReport) { toast.error(PERMISSION_MSGS.report); return; } try { const d = await awbFetch(`/api/awbs/reports/products?date_invo=${selAwb.DATE_INVO ?? selAwb.BOX_DATE ?? dateFrom}&awbcode=${encodeURIComponent(selAwb.AWBCODE)}&grower_uq=${encodeURIComponent(selVendor.GROWER_UQ ?? "%")}`); setReportModal({ title: `Products — ${t(selVendor.GROWER)}`, records: d.records ?? [] }); } catch (e: any) { toast.error((e as any).message); } }, disabled: !selVendor || !perms.canReport },
+                                    { label: "Print",              icon: Printer,  color: "gray",  onClick: () => { if (!selAwb || !selVendor || !perms.canReport) { toast.error(PERMISSION_MSGS.report); return; } const date = encodeURIComponent(t(selAwb.DATE_INVO ?? selAwb.BOX_DATE ?? dateFrom)); setReportUrl(`/api/awbs/reports/products?date_invo=${date}&awbcode=${encodeURIComponent(selAwb.AWBCODE)}&grower_uq=${encodeURIComponent(selVendor.GROWER_UQ ?? "%")}`); }, disabled: !selVendor || !perms.canReport },
                                 ]}
                                 className="flex-1 min-h-0 h-full rounded-none border-0"
                             >
