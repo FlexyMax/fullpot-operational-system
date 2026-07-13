@@ -5,7 +5,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { serverAuditLog } from "@/lib/serverAudit";
 
 // TODO: register standing-orders in SISTEMA pantalla table and replace this unico
-const PANTA = "SO000001";
+const PANTA = "XD6Z7064";
 
 export async function POST(req: NextRequest) {
     const session = await getServerSession(authOptions);

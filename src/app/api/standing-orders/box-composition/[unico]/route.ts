@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { serverAuditLog } from "@/lib/serverAudit";
 
-const PANTA = "SO000001";
+const PANTA = "XD6Z7064";
 
 type P = { params: Promise<{ unico: string }> };
 

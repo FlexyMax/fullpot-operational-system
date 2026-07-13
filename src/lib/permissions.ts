@@ -75,6 +75,8 @@ export const SCREEN_PANTA: Record<string, string> = {
 
     "business-intelligence":  "7331ED65",  // BUSINESS INTELLIGENCE (APP A-R)
 
+    "standing-orders":        "XD6Z7064",  // APP Standing Orders
+
     // Add new pages here after registering in Module & Screen Setup
 };
 
