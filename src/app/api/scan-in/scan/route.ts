@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-        const scanR = await executeProcedure("sp_flower_packing_awb_insert_pkbox_control", {
+        const scanR = await executeProcedure("sp_NC_packing_awb_insert_pkbox_control", {
             lcawb:       String(awb).trim().toUpperCase(),
             lccompuesto: String(barcode).trim().toUpperCase(),
         });

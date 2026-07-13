@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
             for (let i = 1; i <= boxQty; i++) {
                 const barcode = farmLote + String(i).padStart(3, "0");
                 try {
-                    const r = await executeProcedure("sp_flower_packing_awb_insert_pkbox_control", {
+                    const r = await executeProcedure("sp_NC_packing_awb_insert_pkbox_control", {
                         lcawb:       awbCode,
                         lccompuesto: barcode,
                     });
