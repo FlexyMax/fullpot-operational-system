@@ -28,9 +28,12 @@ const ODD_WEEKS  = [1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31,33,35,37,39,41,43
 const EVEN_WEEKS = [2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50,52];
 
 export function SetWeeksModal({ soUnico, header, onClose, onSaved }: Props) {
-    const [weeks,   setWeeks]   = useState<WeekRow[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [saving,  setSaving]  = useState(false);
+    const [weeks,      setWeeks]      = useState<WeekRow[]>([]);
+    const [loading,    setLoading]    = useState(true);
+    const [saving,     setSaving]     = useState(false);
+    // Track individually toggled weeks — bulk ops (setGroup) persist immediately
+    // so only manual toggles need to be saved on "Save Weeks".
+    const [dirtyWeeks, setDirtyWeeks] = useState<Set<number>>(new Set());
 
     useEffect(() => {
         (async () => {
@@ -49,12 +52,14 @@ export function SetWeeksModal({ soUnico, header, onClose, onSaved }: Props) {
 
     const toggle = (week: number) => {
         setWeeks(w => w.map(r => r.week === week ? { ...r, active: !r.active } : r));
+        setDirtyWeeks(d => { const s = new Set(d); s.add(week); return s; });
     };
 
     const setGroup = async (odd: boolean, active: boolean) => {
-        // Update local state immediately
+        const group = odd ? ODD_WEEKS : EVEN_WEEKS;
         setWeeks(w => w.map(r => (r.week % 2 === (odd ? 1 : 0)) ? { ...r, active } : r));
-        // Persist to DB
+        // Bulk op persists to DB immediately — clear dirty for affected group
+        setDirtyWeeks(d => { const s = new Set(d); group.forEach(w => s.delete(w)); return s; });
         try {
             await fetch("/api/standing-orders/weeks", {
                 method: "PUT",
@@ -65,10 +70,11 @@ export function SetWeeksModal({ soUnico, header, onClose, onSaved }: Props) {
     };
 
     const handleSave = async () => {
+        // Only individually toggled weeks need saving; bulk ops are already persisted
+        if (dirtyWeeks.size === 0) { onSaved(); return; }
         setSaving(true);
         try {
-            // Save each week that has a unico (it exists in DB) individually
-            const updates = weeks.filter(w => w.unico);
+            const updates = weeks.filter(w => w.unico && dirtyWeeks.has(w.week));
             await Promise.all(updates.map(w =>
                 fetch("/api/standing-orders/weeks", {
                     method: "PUT",
