@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { serverAuditLog } from "@/lib/serverAudit";
+
+const PANTA = "SO000001";
 
 export async function POST(req: NextRequest) {
     const session = await getServerSession(authOptions);
@@ -11,12 +14,13 @@ export async function POST(req: NextRequest) {
         if (!so_uq || !salesman_uq)
             return NextResponse.json({ error: "so_uq and salesman_uq required" }, { status: 400 });
         const r = await executeProcedure("sp_flower_standing_orders_change_salesman", {
-            lcso_uq:      so_uq,
+            lcso_uq:        so_uq,
             lcsales_cus_uq: salesman_uq,
         });
         const row = r.recordset?.[0];
         if (row?.error === 1 || row?.Error === 1)
             return NextResponse.json({ success: false, error: row.message || row.Message }, { status: 400 });
+        serverAuditLog(PANTA, "Edit", "flower_sales_orders", so_uq, "Change Salesman").catch(() => {});
         return NextResponse.json({ success: true });
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });

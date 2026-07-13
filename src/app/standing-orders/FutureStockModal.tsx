@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Loader2, Search } from "lucide-react";
+import { X, Loader2, BarChart2 } from "lucide-react";
+import PanelGrid from "@/components/ui/PanelGrid";
+import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
 
-const t = (v: any) => String(v ?? "").trim();
+const t   = (v: any) => String(v ?? "").trim();
 const fmt = (v: any) => parseFloat(v ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 interface StockRow {
@@ -16,9 +18,7 @@ interface StockRow {
     unit_price:     number;
 }
 
-interface Props {
-    onClose: () => void;
-}
+interface Props { onClose: () => void; }
 
 export function FutureStockModal({ onClose }: Props) {
     const [rows,    setRows]    = useState<StockRow[]>([]);
@@ -57,66 +57,65 @@ export function FutureStockModal({ onClose }: Props) {
         : rows;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-            <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-4">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl flex flex-col overflow-hidden" style={{ maxHeight: "94dvh" }}>
 
-                {/* Header */}
-                <div className="h-10 bg-[#374151] flex items-center justify-between px-4 shrink-0 rounded-t-lg">
-                    <span className="font-black text-[11px] text-white uppercase tracking-widest">SO Future Stock — Availability Report</span>
-                    <button onClick={onClose} className="text-white/60 hover:text-white"><X size={14} /></button>
+                {/* Dark header */}
+                <div className="h-10 bg-[#374151] rounded-t-xl flex items-center justify-between pl-3 pr-2 shrink-0 border-b border-black/10">
+                    <div className="flex items-center gap-2">
+                        <BarChart2 size={14} className="text-[#FB7506]" />
+                        <span className="fos-grid-header-text">SO Future Stock — Availability</span>
+                        {loading && <Loader2 size={11} className="animate-spin text-white/50" />}
+                    </div>
+                    <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors">
+                        <X size={15} />
+                    </button>
                 </div>
 
-                {/* Search */}
-                <div className="px-3 py-2 border-b border-gray-200 flex items-center gap-2 shrink-0">
-                    <Search size={12} className="text-gray-400 shrink-0" />
-                    <input
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        placeholder="Filter by description, farm, class..."
-                        className="flex-1 text-[11px] focus:outline-none"
-                        autoFocus
-                    />
-                    {loading && <Loader2 size={12} className="animate-spin text-gray-400 shrink-0" />}
-                    <span className="text-[10px] text-gray-400 shrink-0">{filtered.length} rows</span>
-                </div>
-
-                {/* Grid */}
-                <div className="flex-1 overflow-auto min-h-0">
-                    <table className="min-w-full text-[11px] text-left">
-                        <thead className="sticky top-0 z-10">
-                            <tr className="bg-gray-100 text-gray-700">
-                                <th className="px-2 py-1.5 font-bold border-b border-gray-200">Avail. Date</th>
-                                <th className="px-2 py-1.5 font-bold border-b border-gray-200">Farm</th>
-                                <th className="px-2 py-1.5 font-bold border-b border-gray-200">Class</th>
-                                <th className="px-2 py-1.5 font-bold border-b border-gray-200">Subclass</th>
-                                <th className="px-2 py-1.5 font-bold border-b border-gray-200 min-w-[220px]">Description</th>
-                                <th className="px-2 py-1.5 font-bold border-b border-gray-200 text-right">Un/Case</th>
-                                <th className="px-2 py-1.5 font-bold border-b border-gray-200 text-right">Unit Price</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                {/* Grid — fills remaining space */}
+                <PanelGrid
+                    title=""
+                    recordCount={filtered.length}
+                    searchValue={search}
+                    onSearchChange={setSearch}
+                    searchPlaceholder="Filter by description, farm, class..."
+                    className="flex-1 min-h-0 rounded-none border-x-0 border-b-0"
+                >
+                    <PanelGridTable>
+                        <PanelGridThead>
+                            <PanelGridTh>Avail. Date</PanelGridTh>
+                            <PanelGridTh>Farm</PanelGridTh>
+                            <PanelGridTh>Class</PanelGridTh>
+                            <PanelGridTh>Subclass</PanelGridTh>
+                            <PanelGridTh>Description</PanelGridTh>
+                            <PanelGridTh align="right">Un/Case</PanelGridTh>
+                            <PanelGridTh align="right">Unit Price</PanelGridTh>
+                        </PanelGridThead>
+                        <PanelGridTbody>
                             {filtered.map((row, i) => (
-                                <tr key={i} className="border-b odd:bg-white even:bg-gray-50 hover:bg-blue-50 text-gray-700">
-                                    <td className="px-2 py-1 font-semibold text-green-700 whitespace-nowrap">{row.available_date}</td>
-                                    <td className="px-2 py-1 font-bold text-[#FB7506]">{row.farm}</td>
-                                    <td className="px-2 py-1">{row.clase}</td>
-                                    <td className="px-2 py-1">{row.subclase}</td>
-                                    <td className="px-2 py-1 font-medium">{row.description}</td>
-                                    <td className="px-2 py-1 text-right">{row.units_case.toLocaleString()}</td>
-                                    <td className="px-2 py-1 text-right font-semibold">{fmt(row.unit_price)}</td>
-                                </tr>
+                                <PanelGridTr key={i} selected={false} onClick={() => {}}>
+                                    <PanelGridTd className="font-semibold text-green-700 whitespace-nowrap">{row.available_date}</PanelGridTd>
+                                    <PanelGridTd className="font-bold text-[#FB7506]">{row.farm}</PanelGridTd>
+                                    <PanelGridTd>{row.clase}</PanelGridTd>
+                                    <PanelGridTd>{row.subclase}</PanelGridTd>
+                                    <PanelGridTd className="font-medium min-w-[220px]">{row.description}</PanelGridTd>
+                                    <PanelGridTd align="right">{row.units_case.toLocaleString()}</PanelGridTd>
+                                    <PanelGridTd align="right" className="font-semibold">{fmt(row.unit_price)}</PanelGridTd>
+                                </PanelGridTr>
                             ))}
                             {!loading && filtered.length === 0 && (
-                                <tr><td colSpan={7} className="p-8 text-center text-gray-400 italic">No availability data</td></tr>
+                                <PanelGridTr selected={false} onClick={() => {}}>
+                                    <PanelGridTd colSpan={7} align="center" className="text-gray-400 italic py-8">No availability data</PanelGridTd>
+                                </PanelGridTr>
                             )}
-                        </tbody>
-                    </table>
-                </div>
+                        </PanelGridTbody>
+                    </PanelGridTable>
+                </PanelGrid>
 
                 {/* Footer */}
-                <div className="h-10 bg-gray-50 border-t border-gray-200 flex items-center justify-end px-4 shrink-0 rounded-b-lg">
+                <div className="h-10 bg-[#F5F3F3] border-t border-[#DBD9D9] flex items-center justify-end px-4 shrink-0 rounded-b-xl">
                     <button onClick={onClose}
-                        className="px-4 py-1.5 text-[11px] font-black text-white bg-[#374151] hover:bg-gray-600 rounded transition-colors">
+                        className="h-7 px-4 text-[11px] font-bold uppercase tracking-wide text-[#4F4F4F] bg-white hover:bg-gray-50 border border-[#DBD9D9] rounded-md transition-colors">
                         Close
                     </button>
                 </div>

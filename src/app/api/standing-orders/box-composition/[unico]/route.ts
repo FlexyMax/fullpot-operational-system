@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { serverAuditLog } from "@/lib/serverAudit";
+
+const PANTA = "SO000001";
 
 type P = { params: Promise<{ unico: string }> };
 
-// GET /api/standing-orders/box-composition/[unico] — load composition rows for a line
 export async function GET(_req: NextRequest, { params }: P) {
     const { unico } = await params;
     try {
@@ -18,7 +20,6 @@ export async function GET(_req: NextRequest, { params }: P) {
     }
 }
 
-// POST /api/standing-orders/box-composition/[unico] — add a composition row
 export async function POST(req: NextRequest, { params }: P) {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -36,13 +37,14 @@ export async function POST(req: NextRequest, { params }: P) {
         const row = r.recordset?.[0];
         if (row?.error === 1 || row?.Error === 1)
             return NextResponse.json({ success: false, error: row.message || row.Message }, { status: 400 });
-        return NextResponse.json({ success: true, unico: row?.unico ?? null });
+        const newUnico = row?.unico ?? null;
+        serverAuditLog(PANTA, "Insert", "flower_sales_orders_boxes_composition", newUnico ?? unico).catch(() => {});
+        return NextResponse.json({ success: true, unico: newUnico });
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });
     }
 }
 
-// DELETE /api/standing-orders/box-composition/[unico] — delete one composition row
 export async function DELETE(_req: NextRequest, { params }: P) {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -54,6 +56,7 @@ export async function DELETE(_req: NextRequest, { params }: P) {
         const row = r.recordset?.[0];
         if (row?.error === 1 || row?.Error === 1)
             return NextResponse.json({ success: false, error: row.message || row.Message }, { status: 400 });
+        serverAuditLog(PANTA, "Delete", "flower_sales_orders_boxes_composition", unico).catch(() => {});
         return NextResponse.json({ success: true });
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });

@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import { GridMenu } from "@/components/GridMenu";
 import { cn } from "@/lib/utils";
+import PanelGrid from "@/components/ui/PanelGrid";
+import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
 import { toast } from "sonner";
 import { HeaderModal }         from "./HeaderModal";
 import { LineModal }           from "./LineModal";
@@ -36,13 +38,6 @@ const fmtDate = (v: any) => {
 const bool = (v: any) => v === true || v === 1 || String(v).toLowerCase() === "true";
 
 const WEEK_COLS: [string,string][] = [["MON","Mon"],["TUE","Tue"],["WED","Wed"],["THU","Thu"],["FRI","Fri"],["SAT","Sat"],["SUN","Sun"]];
-
-function Th({ children, className }: { children: any; className?: string }) {
-    return <th className={cn("p-2 text-left font-bold whitespace-nowrap", className)}>{children}</th>;
-}
-function Td({ children, className }: { children: any; className?: string }) {
-    return <td className={cn("p-2 whitespace-nowrap", className)}>{children}</td>;
-}
 function FieldRow({ label, value, className }: { label: string; value?: string; className?: string }) {
     return (
         <div className={cn("flex items-center gap-1.5 min-w-0", className)}>
@@ -186,18 +181,18 @@ export function OrderDetailModal({ soUnico, orderRow, lookups, canEdit, canDelet
         )}>
 
                 {/* ── Panel header ─────────────────────────────────────── */}
-                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 rounded-t-lg">
+                <div className="h-10 bg-[#374151] border-b border-black/10 flex items-center justify-between pl-3 pr-2 shrink-0 rounded-t-lg">
                     <div className="flex items-center gap-2 min-w-0">
                         <FileText size={14} className="text-[#FB7506] shrink-0" />
-                        <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] shrink-0">
+                        <span className="fos-grid-header-text shrink-0">
                             Order #{t(orderRow?.SORDER_NO ?? h?.SORDER_NO)}
                         </span>
-                        <span className="text-[12px] font-semibold text-gray-500 truncate">
+                        <span className="text-[11px] font-semibold text-white/60 truncate hidden sm:block">
                             — {t(orderRow?.CUSTOMER ?? h?.CUSTOMER ?? "Loading...")}
                         </span>
-                        {loadingDetail && <Loader2 size={11} className="animate-spin text-gray-400 shrink-0" />}
+                        {loadingDetail && <Loader2 size={11} className="animate-spin text-white/50 shrink-0" />}
                     </div>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-700 shrink-0 ml-2 p-1"><X size={16} /></button>
+                    <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors shrink-0"><X size={15} /></button>
                 </div>
 
                 {/* ── Action bar (gray container) ──────────────────────── */}
@@ -256,115 +251,109 @@ export function OrderDetailModal({ soUnico, orderRow, lookups, canEdit, canDelet
                     </div>
 
                     {/* S.O. Details */}
-                    <div className="bg-white rounded-lg border border-[#DBD9D9] overflow-hidden">
-                        {/* Detail header */}
-                        <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between pl-3 pr-0 shrink-0">
-                            <div className="flex items-center gap-2 shrink-0">
-                                <ClipboardList size={14} className="text-[#FB7506]" />
-                                <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">S.O. Details</span>
-                            </div>
-                            <div className="flex items-center gap-2 pr-2 shrink-0">
-                                <ABtn icon={Plus} label="Add Line" onClick={() => setLineModal("new")} disabled={!canEdit} variant="green" />
-                                <GridMenu items={[
-                                    { label: "Edit Line", icon: Edit2, color: "orange", onClick: () => setLineModal("edit"), disabled: !selectedLineUnico || !canEdit },
-                                    { label: "Box Comp.", icon: Package, color: "blue", onClick: () => setBoxCompModal(true), disabled: !selectedLineUnico },
-                                    { label: "Products", icon: ShoppingCart, color: "blue", onClick: () => setProductsModal(true) },
-                                    { label: "Future Stock", icon: FileText, color: "blue", onClick: () => setFutureStockModal(true), separator: true },
-                                    { label: "Del. Line", icon: Trash2, color: "red", onClick: handleDeleteLine, disabled: !selectedLineUnico || !canDelete || working },
-                                ]} />
-                            </div>
-                        </div>
-                        {/* Lines table */}
-                        <div className="overflow-auto max-h-[280px]">
-                            <table className="min-w-full text-xs text-left">
-                                <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
-                                    <tr className="divide-x divide-[#DBD9D9]/30">
-                                        <Th>Product</Th><Th>Case</Th>
-                                        <Th className="text-right">Qty</Th>
-                                        <Th className="text-right">Purch.</Th>
-                                        <Th className="text-right">Bx/Cs</Th>
-                                        <Th className="text-right">Un/Bch</Th>
-                                        <Th className="text-right">Price</Th>
-                                        <Th className="text-right">Ext.</Th>
-                                        <Th>BoxId</Th>
-                                        <Th className="text-center">Food</Th>
-                                        <Th className="text-center">Act</Th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-[#DBD9D9]">
-                                    {lines.map((l: any, i: number) => {
-                                        const uq = t(l.UNICO ?? "");
-                                        const sel = selectedLineUnico === uq;
-                                        return (
-                                            <tr key={i} onClick={() => setSelectedLineUnico(sel ? null : uq)}
-                                                className={cn("cursor-pointer transition-colors text-gray-600 divide-x divide-[#DBD9D9]",
-                                                    sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}
-                                            >
-                                                <Td className="max-w-[180px] truncate font-medium">{t(l.DESCRIPTION ?? l.DETAILS)}</Td>
-                                                <Td>{t(l.CASE_SH)}</Td>
-                                                <Td className="text-right">{fmtI(l.QTY_SORDER)}</Td>
-                                                <Td className="text-right">{fmtI(l.QTY_PORDER)}</Td>
-                                                <Td className="text-right">{fmtI(l.BUNCHES_CASE)}</Td>
-                                                <Td className="text-right">{fmtI(l.UNITS_BUNCH)}</Td>
-                                                <Td className="text-right font-semibold">{fmt(l.SO_PRICE)}</Td>
-                                                <Td className="text-right font-semibold">{fmt(l.EXT_PRICE)}</Td>
-                                                <Td>{t(l.PCCODE)}</Td>
-                                                <Td className="text-center">{bool(l.FOOD) ? <Check size={10} className="text-green-600 inline" /> : ""}</Td>
-                                                <Td className="text-center">{bool(l.ACTIVE) ? <Check size={10} className="text-green-600 inline" /> : ""}</Td>
-                                            </tr>
-                                        );
-                                    })}
-                                    {loadingDetail && <tr><td colSpan={11} className="p-4 text-center text-gray-400 italic"><Loader2 size={12} className="animate-spin inline mr-1" />Loading...</td></tr>}
-                                    {!loadingDetail && lines.length === 0 && (
-                                        <tr><td colSpan={11} className="p-4 text-center text-gray-400 italic">No order lines</td></tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <PanelGrid
+                        title="S.O. Details"
+                        icon={ClipboardList}
+                        recordCount={lines.length}
+                        refreshing={loadingDetail}
+                        headerRight={
+                            <ABtn icon={Plus} label="Add Line" onClick={() => setLineModal("new")} disabled={!canEdit} variant="green" />
+                        }
+                        menuItems={[
+                            { label: "Edit Line",    icon: Edit2,       color: "orange", onClick: () => setLineModal("edit"),       disabled: !selectedLineUnico || !canEdit },
+                            { label: "Box Comp.",    icon: Package,     color: "blue",   onClick: () => setBoxCompModal(true),      disabled: !selectedLineUnico },
+                            { label: "Products",     icon: ShoppingCart,color: "blue",   onClick: () => setProductsModal(true) },
+                            { label: "Future Stock", icon: FileText,    color: "blue",   onClick: () => setFutureStockModal(true), separator: true },
+                            { label: "Del. Line",    icon: Trash2,      color: "red",    onClick: handleDeleteLine,                disabled: !selectedLineUnico || !canDelete || working },
+                        ]}
+                        className="rounded-lg"
+                    >
+                        <PanelGridTable>
+                            <PanelGridThead>
+                                <PanelGridTh>Product</PanelGridTh>
+                                <PanelGridTh>Case</PanelGridTh>
+                                <PanelGridTh align="right">Qty</PanelGridTh>
+                                <PanelGridTh align="right">Purch.</PanelGridTh>
+                                <PanelGridTh align="right">Bx/Cs</PanelGridTh>
+                                <PanelGridTh align="right">Un/Bch</PanelGridTh>
+                                <PanelGridTh align="right">Price</PanelGridTh>
+                                <PanelGridTh align="right">Ext.</PanelGridTh>
+                                <PanelGridTh>BoxId</PanelGridTh>
+                                <PanelGridTh align="center">Food</PanelGridTh>
+                                <PanelGridTh align="center">Act</PanelGridTh>
+                            </PanelGridThead>
+                            <PanelGridTbody>
+                                {lines.map((l: any, i: number) => {
+                                    const uq  = t(l.UNICO ?? "");
+                                    const sel = selectedLineUnico === uq;
+                                    return (
+                                        <PanelGridTr key={i} selected={sel} onClick={() => setSelectedLineUnico(sel ? null : uq)}>
+                                            <PanelGridTd className="max-w-[180px] truncate font-medium">{t(l.DESCRIPTION ?? l.DETAILS)}</PanelGridTd>
+                                            <PanelGridTd className="text-[#FB7506] font-bold">{t(l.CASE_SH)}</PanelGridTd>
+                                            <PanelGridTd align="right">{fmtI(l.QTY_SORDER)}</PanelGridTd>
+                                            <PanelGridTd align="right">{fmtI(l.QTY_PORDER)}</PanelGridTd>
+                                            <PanelGridTd align="right">{fmtI(l.BUNCHES_CASE)}</PanelGridTd>
+                                            <PanelGridTd align="right">{fmtI(l.UNITS_BUNCH)}</PanelGridTd>
+                                            <PanelGridTd align="right" className="font-semibold">{fmt(l.SO_PRICE)}</PanelGridTd>
+                                            <PanelGridTd align="right" className="font-semibold">{fmt(l.EXT_PRICE)}</PanelGridTd>
+                                            <PanelGridTd className="text-[#FB7506] font-bold">{t(l.PCCODE)}</PanelGridTd>
+                                            <PanelGridTd align="center">{bool(l.FOOD)   ? <Check size={10} className="text-green-600 inline" /> : ""}</PanelGridTd>
+                                            <PanelGridTd align="center">{bool(l.ACTIVE) ? <Check size={10} className="text-green-600 inline" /> : ""}</PanelGridTd>
+                                        </PanelGridTr>
+                                    );
+                                })}
+                                {!loadingDetail && lines.length === 0 && (
+                                    <PanelGridTr selected={false} onClick={() => {}}>
+                                        <PanelGridTd colSpan={11} align="center" className="text-gray-400 italic py-6">No order lines</PanelGridTd>
+                                    </PanelGridTr>
+                                )}
+                            </PanelGridTbody>
+                        </PanelGridTable>
+                    </PanelGrid>
 
                     {/* Vendors */}
-                    <div className="bg-white rounded-lg border border-[#DBD9D9] overflow-hidden">
-                        <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center gap-2 px-3 shrink-0">
-                            <Lock size={14} className="text-[#FB7506]" />
-                            <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">Vendors Orders</span>
-                            {loadingVendors && <Loader2 size={10} className="animate-spin text-gray-400" />}
-                            {!selectedLineUnico && <span className="text-[10px] text-gray-400 font-bold ml-1">— select a line above</span>}
-                        </div>
-                        <div className="overflow-auto max-h-[160px]">
-                            <table className="min-w-full text-xs text-left">
-                                <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
-                                    <tr className="divide-x divide-[#DBD9D9]/30">
-                                        <Th>Vendor</Th>
-                                        <Th className="text-right">Qty Ord.</Th>
-                                        <Th className="text-right">Qty Conf.</Th>
-                                        <Th className="text-right">Diff</Th>
-                                        <Th className="text-right">Price</Th>
-                                        <Th>Ship Day</Th>
-                                        <Th>Details</Th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-[#DBD9D9]">
+                    <PanelGrid
+                        title="Vendors Orders"
+                        icon={Lock}
+                        recordCount={selectedLineUnico ? (vendors as any[]).length : undefined}
+                        refreshing={loadingVendors}
+                        className="rounded-lg"
+                    >
+                        {!selectedLineUnico && (
+                            <p className="text-[11px] text-gray-400 italic px-3 py-4">Select a line above to see vendor orders</p>
+                        )}
+                        {selectedLineUnico && (
+                            <PanelGridTable>
+                                <PanelGridThead>
+                                    <PanelGridTh>Vendor</PanelGridTh>
+                                    <PanelGridTh align="right">Qty Ord.</PanelGridTh>
+                                    <PanelGridTh align="right">Qty Conf.</PanelGridTh>
+                                    <PanelGridTh align="right">Diff</PanelGridTh>
+                                    <PanelGridTh align="right">Price</PanelGridTh>
+                                    <PanelGridTh>Ship Day</PanelGridTh>
+                                    <PanelGridTh>Details</PanelGridTh>
+                                </PanelGridThead>
+                                <PanelGridTbody>
                                     {(vendors as any[]).map((v: any, i: number) => (
-                                        <tr key={i} className="text-gray-600 hover:bg-gray-50 transition-colors divide-x divide-[#DBD9D9]">
-                                            <Td className="font-medium">{t(v.GROWER ?? v.VENDOR)}</Td>
-                                            <Td className="text-right">{fmtI(v.QTY_ORDER)}</Td>
-                                            <Td className="text-right">{fmtI(v.QTY_CONFIRMED)}</Td>
-                                            <Td className={cn("text-right font-bold", parseInt(v.QTY_DIFF ?? 0) !== 0 ? "text-red-600" : "")}>{fmtI(v.QTY_DIFF)}</Td>
-                                            <Td className="text-right">{fmt(v.PO_PRICE)}</Td>
-                                            <Td className="font-bold text-[#FB7506]">{t(v.SHIP_DAY).trim()}</Td>
-                                            <Td className="max-w-[200px] truncate">{t(v.DETAILS)}</Td>
-                                        </tr>
+                                        <PanelGridTr key={i} selected={false} onClick={() => {}}>
+                                            <PanelGridTd className="font-medium">{t(v.GROWER ?? v.VENDOR)}</PanelGridTd>
+                                            <PanelGridTd align="right">{fmtI(v.QTY_ORDER)}</PanelGridTd>
+                                            <PanelGridTd align="right">{fmtI(v.QTY_CONFIRMED)}</PanelGridTd>
+                                            <PanelGridTd align="right" className={cn("font-bold", parseInt(v.QTY_DIFF ?? 0) !== 0 ? "text-red-600" : "")}>{fmtI(v.QTY_DIFF)}</PanelGridTd>
+                                            <PanelGridTd align="right">{fmt(v.PO_PRICE)}</PanelGridTd>
+                                            <PanelGridTd className="font-bold text-[#FB7506]">{t(v.SHIP_DAY).trim()}</PanelGridTd>
+                                            <PanelGridTd className="max-w-[200px] truncate">{t(v.DETAILS)}</PanelGridTd>
+                                        </PanelGridTr>
                                     ))}
                                     {!loadingVendors && (vendors as any[]).length === 0 && (
-                                        <tr><td colSpan={7} className="p-4 text-center text-gray-400 italic">
-                                            {selectedLineUnico ? "No vendor orders" : "Select a line to see vendors"}
-                                        </td></tr>
+                                        <PanelGridTr selected={false} onClick={() => {}}>
+                                            <PanelGridTd colSpan={7} align="center" className="text-gray-400 italic py-4">No vendor orders</PanelGridTd>
+                                        </PanelGridTr>
                                     )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                                </PanelGridTbody>
+                            </PanelGridTable>
+                        )}
+                    </PanelGrid>
                 </div>{/* end scrollable content */}
         </div>
     );

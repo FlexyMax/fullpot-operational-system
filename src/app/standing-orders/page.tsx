@@ -206,6 +206,9 @@ export default function StandingOrdersPage() {
                     onRefresh={() => setListKey(k => k + 1)}
                     refreshing={loadingOrders}
                     headerRight={<AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} bareButton />}
+                    menuItems={[
+                        { label: "New Order", icon: Plus, color: "green", onClick: () => setNewOrderModal(true), disabled: !canEdit },
+                    ]}
                     className="flex-1 xl:flex-none xl:w-[420px] xl:shrink-0"
                 >
                     <PanelGridTable>
@@ -229,7 +232,7 @@ export default function StandingOrdersPage() {
                                         onClick={() => handleRowClick(uq, o)}
                                     >
                                         <PanelGridTd className="font-medium max-w-[140px] truncate">{t(o.CUSTOMER)}</PanelGridTd>
-                                        <PanelGridTd align="right" className="font-bold text-blue-700">{t(o.SORDER_NO)}</PanelGridTd>
+                                        <PanelGridTd align="right" className="font-bold text-[#FB7506]">{t(o.SORDER_NO)}</PanelGridTd>
                                         <PanelGridTd className="font-bold text-[#FB7506]">{t(o.SO_DAY).trim()}</PanelGridTd>
                                         <PanelGridTd className="hidden sm:table-cell text-gray-500">{fmtDate(o.SO_STDATE)}</PanelGridTd>
                                         <PanelGridTd className="hidden sm:table-cell text-gray-500">{fmtDate(o.SO_ENDATE)}</PanelGridTd>
