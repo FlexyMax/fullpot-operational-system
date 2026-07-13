@@ -42,6 +42,7 @@ function getRoute(appPage: string): string | null {
     if (p.includes('USUARIO') || p.includes('USER ACCESS') || p.includes('ACCESO') || p.includes('ACCESS DEF')) return '/system/access';
     if (p.includes('COMPAN') || p.includes('EMPRESA') || p.includes('COMPANY SETUP')) return '/system/companies';
     if (p.includes('INVENTORY ENTRY') || p.includes('PACKING LIST') || p.includes('VENTAS_INVENTORY') || p.includes('INVENTORY_ENTRY') || p.includes('APP INVENTORY')) return '/inventory-entry';
+    if (p.includes('SCAN IN') || p.includes('SCAN-IN') || p.includes('SCANIN')) return null; // Coming Soon — not yet implemented
     if (p.includes('AWB') || p.includes('GUIA') || p.includes('AIRWAY') || p.includes('VENTAS_AWB')) return '/awbs';
     if (p.includes('SCAN OUT') || p.includes('SCAN-OUT') || p.includes('SCANOUT')) return '/scan-out';
     if (p.includes('SCAN')) return '/scan';

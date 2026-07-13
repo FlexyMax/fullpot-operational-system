@@ -285,28 +285,40 @@ export default function ScanOutPage() {
                 ) : (
                     <>
                         {/* ── Stats / order bar ──────────────────────────────────── */}
-                        <div className="bg-[#F5F3F3] border-b border-[#DBD9D9] px-3 py-2 shrink-0 overflow-x-auto">
-                            <div className="flex items-center gap-3 min-w-max">
-                                {/* Order info */}
-                                <div className="flex flex-col shrink-0">
-                                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Order</span>
-                                    <span className="text-[15px] font-black text-[#FB7506]">{activeOrder.orderNo}</span>
-                                </div>
-                                <div className="flex flex-col shrink-0 max-w-[140px]">
-                                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Customer</span>
-                                    <span className="text-[11px] font-bold text-gray-700 truncate">{activeOrder.customer}</span>
-                                </div>
-                                <div className="flex flex-col shrink-0 max-w-[100px]">
-                                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Carrier</span>
-                                    <span className="text-[11px] font-bold text-gray-700 truncate">{activeOrder.destination}</span>
-                                </div>
-                                <div className="w-px h-10 bg-gray-200 mx-1" />
-                                <StatBox label="Scanned"  value={activeOrder.scanned} color="green"  />
-                                <StatBox label="To Scan"  value={activeOrder.toScan}  color={activeOrder.toScan === 0 ? "green" : "orange"} />
-                                <StatBox label="Total"    value={activeOrder.total}   color="gray"   />
-                                <div className="ml-auto shrink-0">
+                        <div className="bg-[#F5F3F3] border-b border-[#DBD9D9] px-3 py-2 shrink-0">
+                            {/* Mobile: two rows. Desktop: single row. */}
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+
+                                {/* Row 1: Order info + End Scan (mobile right) */}
+                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                    <div className="flex flex-col shrink-0">
+                                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Order</span>
+                                        <span className="text-[15px] font-black text-[#FB7506]">{activeOrder.orderNo}</span>
+                                    </div>
+                                    <div className="w-px h-8 bg-gray-200 shrink-0" />
+                                    <div className="flex flex-col min-w-0 flex-1">
+                                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Customer</span>
+                                        <span className="text-[11px] font-bold text-gray-700 truncate">{activeOrder.customer}</span>
+                                    </div>
+                                    <div className="flex flex-col min-w-0 max-w-[90px] hidden xs:flex">
+                                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Carrier</span>
+                                        <span className="text-[11px] font-bold text-gray-700 truncate">{activeOrder.destination}</span>
+                                    </div>
+                                    {/* End Scan: visible on mobile in this row */}
                                     <button onClick={handleEndScan}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded transition-colors uppercase tracking-widest">
+                                        className="ml-auto sm:hidden flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded transition-colors uppercase shrink-0">
+                                        <RotateCcw size={10} /> End
+                                    </button>
+                                </div>
+
+                                {/* Row 2: Stats + End Scan (desktop right) */}
+                                <div className="flex items-center gap-2 shrink-0">
+                                    <StatBox label="Scanned" value={activeOrder.scanned} color="green" />
+                                    <StatBox label="To Scan" value={activeOrder.toScan}  color={activeOrder.toScan === 0 ? "green" : "orange"} />
+                                    <StatBox label="Total"   value={activeOrder.total}   color="gray"  />
+                                    {/* End Scan: visible on desktop */}
+                                    <button onClick={handleEndScan}
+                                        className="hidden sm:flex ml-2 items-center gap-1.5 px-3 py-1.5 text-[10px] font-black text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded transition-colors uppercase tracking-widest shrink-0">
                                         <RotateCcw size={11} /> End Scan
                                     </button>
                                 </div>
