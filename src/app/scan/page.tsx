@@ -7,7 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     RefreshCcw, Loader2, Scan,
     Check, X, Trash2, Keyboard, MapPin,
-    Clock, Plane, Package, AlertTriangle, TrendingDown, BarChart2, CheckCircle, Truck,
+    Clock, Plane, Package, AlertTriangle, TrendingDown, BarChart2, CheckCircle,
 } from "lucide-react";
 import { cn }    from "@/lib/utils";
 import { toast } from "sonner";
@@ -410,10 +410,7 @@ export default function PhysicalScanPage() {
                             className="ml-2 flex items-center gap-1 px-2 py-1 text-[10px] font-black text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded border border-gray-200 shrink-0">
                             <RefreshCcw size={10} /> Refresh
                         </button>
-                        <button onClick={() => router.push("/scan-out")}
-                            className="ml-1 flex items-center gap-1 px-2.5 py-1 text-[10px] font-black text-white bg-[#374151] hover:bg-[#4B5563] rounded border border-[#374151] shrink-0">
-                            <Truck size={10} /> Scan Out
-                        </button>
+
                     </div>
                 </div>
 

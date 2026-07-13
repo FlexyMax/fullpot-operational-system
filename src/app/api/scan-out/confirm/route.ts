@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { serverAuditLog } from "@/lib/serverAudit";
 
-const PANTA = "XD6Z7058"; // APP Scan (shared with physical scan until scan-out gets its own pantalla record)
+const PANTA = "XD6Z7058"; // APP Scan Out
 
 // POST /api/scan-out/confirm
 // body: { pk_box_uq, invoice_box_uq, lnbox, invoice_no }

@@ -76,8 +76,9 @@ export const SCREEN_PANTA: Record<string, string> = {
     "business-intelligence":  "7331ED65",  // BUSINESS INTELLIGENCE (APP A-R)
 
     "standing-orders":        "XD6Z7064",  // APP Standing Orders
-    "scan":                   "XD6Z7058",  // APP Scan (Physical Inventory)
-    "scan-out":               "XD6Z7058",  // APP Scan Out (shared panta until dedicated record created)
+    "scan":                   "912BB18D",  // APP Physical Scan
+    "scan-out":               "XD6Z7058",  // APP Scan Out
+    "scan-in":                "CC10436A",  // APP Scan IN AWB
 
     // Add new pages here after registering in Module & Screen Setup
 };
