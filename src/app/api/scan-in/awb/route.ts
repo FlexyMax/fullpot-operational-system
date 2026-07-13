@@ -14,11 +14,8 @@ export async function GET(req: NextRequest) {
 
     try {
         // Seed all boxes (idempotent — SP skips already-existing rows)
-        const seedR = await executeProcedure("sp_NC_packing_box_control_insert_in_all", { lcawb: code });
-        const seedRow = seedR.recordset?.[0];
-        if (seedRow?.Error === true || seedRow?.Error === 1) {
-            return NextResponse.json({ error: String(seedRow.Message ?? "Seed failed") }, { status: 400 });
-        }
+        // sp_NC_* returns { unico, mensaje, error } — db.ts auto-throws on error=true
+        await executeProcedure("sp_NC_packing_box_control_insert_in_all", { lcawb: code });
 
         // Get totals
         const totalsR = await executeProcedure("sp_flower_packing_awb_totals", { lcawb: code });

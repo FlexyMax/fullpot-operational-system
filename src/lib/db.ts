@@ -71,7 +71,7 @@ export async function executeProcedure(
         if (result.recordset && result.recordset[0]) {
             const firstRow = result.recordset[0] as any;
             if (firstRow.error === 1 || firstRow.error === true) {
-                throw new Error(firstRow.message || 'Stored Procedure Error');
+                throw new Error(firstRow.message || firstRow.mensaje || 'Stored Procedure Error');
             }
         }
 

@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
     }
 
     try {
+        // db.ts auto-throws on error=true; message surfaced via err.message
         const result = await executeProcedure("sp_flower_packing_box_unconfirmed_insert", {
             lcpacking_box_uq: String(pk_box_uq),
             lcreason_uq:      String(reason_uq),
@@ -42,11 +43,8 @@ export async function POST(req: NextRequest) {
         });
         const row = result.recordset?.[0];
         if (!row) return NextResponse.json({ error: "No response from SP" }, { status: 400 });
-        if (row.Error === true || row.Error === 1) {
-            return NextResponse.json({ error: String(row.Message ?? "Insert failed") }, { status: 400 });
-        }
         serverAuditLog(PANTA, "Insert", "flower_packing_box_unconfirmed", String(row.unico ?? pk_box_uq), "Delayed box").catch(() => {});
-        return NextResponse.json({ success: true, unico: row.unico, message: row.Message });
+        return NextResponse.json({ success: true, unico: row.unico, message: row.message ?? row.mensaje });
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });
     }
@@ -73,11 +71,8 @@ export async function PUT(req: NextRequest) {
         });
         const row = result.recordset?.[0];
         if (!row) return NextResponse.json({ error: "No response from SP" }, { status: 400 });
-        if (row.Error === true || row.Error === 1) {
-            return NextResponse.json({ error: String(row.Message ?? "Update failed") }, { status: 400 });
-        }
         serverAuditLog(PANTA, "Edit", "flower_packing_box_unconfirmed", String(unico), "Delayed box update").catch(() => {});
-        return NextResponse.json({ success: true, message: row.Message });
+        return NextResponse.json({ success: true, message: row.message ?? row.mensaje });
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });
     }
@@ -95,11 +90,8 @@ export async function DELETE(req: NextRequest) {
         const result = await executeProcedure("sp_flower_packing_box_unconfirmed_delete", { lcdelayed_uq: unico });
         const row = result.recordset?.[0];
         if (!row) return NextResponse.json({ error: "No response from SP" }, { status: 400 });
-        if (row.Error === true || row.Error === 1) {
-            return NextResponse.json({ error: String(row.Message ?? "Delete failed") }, { status: 400 });
-        }
         serverAuditLog(PANTA, "Delete", "flower_packing_box_unconfirmed", unico, "Delayed box delete").catch(() => {});
-        return NextResponse.json({ success: true, message: row.Message });
+        return NextResponse.json({ success: true, message: row.message ?? row.mensaje });
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });
     }

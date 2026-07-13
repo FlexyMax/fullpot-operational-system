@@ -16,16 +16,15 @@ export async function POST(req: NextRequest) {
     if (!awb) return NextResponse.json({ error: "awb is required" }, { status: 400 });
 
     try {
+        // Returns { awbcode, message, error } — db.ts auto-throws on error=true
         const result = await executeProcedure("sp_flower_packing_box_update_confirmed", {
             lcawbcode: String(awb).trim().toUpperCase(),
         });
         const row = result.recordset?.[0];
         if (!row) return NextResponse.json({ error: "No response from SP" }, { status: 400 });
-        if (row.Error === true || row.Error === 1) {
-            return NextResponse.json({ error: String(row.Message ?? "Confirm failed") }, { status: 400 });
-        }
+
         serverAuditLog(PANTA, "Edit", "flower_packing_box_control", String(awb), "Confirm AWB Reception").catch(() => {});
-        return NextResponse.json({ success: true, message: String(row.Message ?? "AWB confirmed") });
+        return NextResponse.json({ success: true, message: String(row.message ?? "AWB confirmed") });
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });
     }

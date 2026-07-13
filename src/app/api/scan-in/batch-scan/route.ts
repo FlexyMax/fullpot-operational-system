@@ -36,17 +36,15 @@ export async function POST(req: NextRequest) {
             for (let i = 1; i <= boxQty; i++) {
                 const barcode = farmLote + String(i).padStart(3, "0");
                 try {
+                    // sp_NC_* returns { unico, mensaje, error, ... }
+                    // db.ts auto-throws on error=true; catch below captures the message
                     const r = await executeProcedure("sp_NC_packing_awb_insert_pkbox_control", {
                         lcawb:       awbCode,
                         lccompuesto: barcode,
                     });
                     const row = r.recordset?.[0];
-                    if (row?.Error === true || row?.Error === 1) {
-                        errors.push(`${barcode}: ${String(row.Message ?? "error")}`);
-                    } else {
-                        scanned++;
-                        serverAuditLog(PANTA, "Insert", "flower_packing_box_control", String(row?.unico ?? barcode), `Batch Scan IN ${awbCode}`).catch(() => {});
-                    }
+                    scanned++;
+                    serverAuditLog(PANTA, "Insert", "flower_packing_box_control", String(row?.unico ?? barcode), `Batch Scan IN ${awbCode}`).catch(() => {});
                 } catch (e: any) {
                     errors.push(`${barcode}: ${e.message}`);
                 }

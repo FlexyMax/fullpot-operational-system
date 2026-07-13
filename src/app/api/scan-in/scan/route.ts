@@ -18,28 +18,24 @@ export async function POST(req: NextRequest) {
     }
 
     try {
+        // sp_NC_* returns { unico, mensaje, error, total_pieces, read_pieces, to_scan_pieces, ... }
+        // db.ts auto-throws on error=true using firstRow.mensaje (via || firstRow.mensaje in db.ts)
         const scanR = await executeProcedure("sp_NC_packing_awb_insert_pkbox_control", {
             lcawb:       String(awb).trim().toUpperCase(),
             lccompuesto: String(barcode).trim().toUpperCase(),
         });
         const row = scanR.recordset?.[0];
         if (!row) return NextResponse.json({ error: "No response from scan SP" }, { status: 400 });
-        if (row.Error === true || row.Error === 1) {
-            return NextResponse.json({ error: String(row.Message ?? "Scan failed") }, { status: 400 });
-        }
 
         serverAuditLog(PANTA, "Insert", "flower_packing_box_control", String(row.unico ?? barcode), "Scan IN AWB").catch(() => {});
 
-        // Return updated totals
-        const totalsR = await executeProcedure("sp_flower_packing_awb_totals", { lcawb: String(awb).trim().toUpperCase() });
-        const t = totalsR.recordset?.[0] ?? {};
-
+        // SP returns updated totals directly — no need for a second SP call
         return NextResponse.json({
-            success:  true,
-            message:  String(row.Message ?? "Box scanned in"),
+            success: true,
+            message: String(row.mensaje ?? "Box scanned in"),
             totals: {
-                totalPieces: Number(t.total_pieces ?? 0),
-                readPieces:  Number(t.read_pieces  ?? 0),
+                totalPieces: Number(row.total_pieces  ?? 0),
+                readPieces:  Number(row.read_pieces   ?? 0),
             },
         });
     } catch (err: any) {
