@@ -279,12 +279,11 @@ export function OrderDetailModal({ lookups, canEdit, canDelete, canReport = true
                         recordCount={lines.length}
                         refreshing={loadingDetail}
                         headerRight={
-                            <ABtn icon={Plus} label="Add Line" onClick={() => setLineModal("new")} disabled={!canEdit} variant="green" />
+                            <ABtn icon={Plus} label="Add Line" onClick={() => setProductsModal(true)} disabled={!canEdit} variant="green" />
                         }
                         menuItems={[
                             { label: "Edit Line",    icon: Edit2,       color: "orange", onClick: () => setLineModal("edit"),       disabled: !selectedLineUnico || !canEdit },
                             { label: "Box Comp.",    icon: Package,     color: "blue",   onClick: () => setBoxCompModal(true),      disabled: !selectedLineUnico },
-                            { label: "Products",     icon: ShoppingCart,color: "blue",   onClick: () => setProductsModal(true) },
                             { label: "Future Stock", icon: FileText,    color: "blue",   onClick: () => setFutureStockModal(true), separator: true },
                             { label: "Del. Line",    icon: Trash2,      color: "red",    onClick: handleDeleteLine,                disabled: !selectedLineUnico || !canDelete || working },
                         ]}
