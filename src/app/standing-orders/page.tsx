@@ -38,7 +38,7 @@ const DAYS = ["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY","SUN
 export default function StandingOrdersPage() {
     const { status } = useSession();
     const router = useRouter();
-    const { canEdit, canDelete } = usePagePermissions("standing-orders");
+    const { canEdit, canDelete, canReport } = usePagePermissions("standing-orders");
 
     const {
         dayFilter, textSearch, myOrders, listKey,
@@ -251,6 +251,7 @@ export default function StandingOrdersPage() {
                             lookups={modalLookups}
                             canEdit={canEdit}
                             canDelete={canDelete}
+                            canReport={canReport}
                         />
                     </div>
                 )}
@@ -274,6 +275,7 @@ export default function StandingOrdersPage() {
                     lookups={modalLookups}
                     canEdit={canEdit}
                     canDelete={canDelete}
+                    canReport={canReport}
                 />
             )}
 

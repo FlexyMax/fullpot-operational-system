@@ -75,6 +75,7 @@ export function FutureStockModal({ onClose }: Props) {
                 {/* Grid — fills remaining space */}
                 <PanelGrid
                     title=""
+                    icon={BarChart2}
                     recordCount={filtered.length}
                     searchValue={search}
                     onSearchChange={setSearch}

@@ -193,7 +193,7 @@ export function BoxCompositionModal({ lineUnico, lineDesc, soPrice, onClose }: P
                                 <PanelGridTh align="right">Un/Pack</PanelGridTh>
                                 <PanelGridTh align="right">%</PanelGridTh>
                                 <PanelGridTh align="right">Price</PanelGridTh>
-                                <PanelGridTh className="w-10"></PanelGridTh>
+                                <PanelGridTh className="w-10">{""}</PanelGridTh>
                             </PanelGridThead>
                             <PanelGridTbody>
                                 {loading ? (
@@ -232,11 +232,11 @@ export function BoxCompositionModal({ lineUnico, lineDesc, soPrice, onClose }: P
                                         {rows.length > 0 && (
                                             <PanelGridTr selected={false} onClick={() => {}} className="border-t-2 border-gray-300 bg-gray-100 font-black">
                                                 <PanelGridTd className="text-gray-600">Total</PanelGridTd>
-                                                <PanelGridTd /><PanelGridTd />
+                                                <PanelGridTd>{""}</PanelGridTd><PanelGridTd>{""}</PanelGridTd>
                                                 <PanelGridTd align="right" className={Math.abs(totalPct - 100) < 0.1 ? "text-green-600" : "text-red-500"}>
                                                     {totalPct.toFixed(1)}%
                                                 </PanelGridTd>
-                                                <PanelGridTd /><PanelGridTd />
+                                                <PanelGridTd>{""}</PanelGridTd><PanelGridTd>{""}</PanelGridTd>
                                             </PanelGridTr>
                                         )}
                                     </>

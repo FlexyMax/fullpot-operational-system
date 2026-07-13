@@ -21,6 +21,7 @@ import { ProductsListModal }   from "./ProductsListModal";
 import { FutureStockModal }    from "./FutureStockModal";
 import { ChangeSalesmanModal } from "./ChangeSalesmanModal";
 import { ChangeCustomerModal } from "./ChangeCustomerModal";
+import { ReportModal }          from "@/components/reports/ReportModal";
 const EMPTY_ARR: any[] = [];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -64,13 +65,14 @@ function ABtn({ icon: Icon, label, onClick, disabled, variant = "default" }: any
 // ─── Props ────────────────────────────────────────────────────────────────────
 interface Lookups { customers:any[]; salesmen:any[]; warehouses:any[]; terms:any[]; cases:any[]; cargoAgencies:any[]; carriers:any[]; }
 interface Props {
-    lookups:   Lookups;
-    canEdit:   boolean;
-    canDelete: boolean;
-    mode?:     "modal" | "panel";
+    lookups:    Lookups;
+    canEdit:    boolean;
+    canDelete:  boolean;
+    canReport?: boolean;
+    mode?:      "modal" | "panel";
 }
 
-export function OrderDetailModal({ lookups, canEdit, canDelete, mode = "modal" }: Props) {
+export function OrderDetailModal({ lookups, canEdit, canDelete, canReport = true, mode = "modal" }: Props) {
     const {
         selectedUnico: soUnico,
         selectedRow:   orderRow,
@@ -93,6 +95,7 @@ export function OrderDetailModal({ lookups, canEdit, canDelete, mode = "modal" }
     const [futureStockModal,  setFutureStockModal]  = useState(false);
     const [changeSalesmanModal, setChangeSalesmanModal] = useState(false);
     const [changeCustomerModal, setChangeCustomerModal] = useState(false);
+    const [reportUrl,           setReportUrl]           = useState<string | null>(null);
 
     // ── Detail query
     const { data: detail, isFetching: loadingDetail } = useQuery({
@@ -208,7 +211,7 @@ export function OrderDetailModal({ lookups, canEdit, canDelete, mode = "modal" }
                 <div className="bg-[#F5F3F3] border-b border-[#DBD9D9] px-3 py-1.5 flex items-center gap-1.5 shrink-0 overflow-x-auto">
                     <ABtn icon={Edit2}   label="Edit Order"     onClick={() => setHeaderModal("edit")}  disabled={!canEdit || loadingDetail} />
                     <ABtn icon={Calendar} label="Set Weeks"     onClick={() => setWeeksModal(true)} />
-                    <ABtn icon={Printer}  label="Print"         onClick={() => {}} />
+                    <ABtn icon={Printer}  label="Print"         onClick={() => setReportUrl(`/api/standing-orders/report?unico=${soUnico}`)} disabled={!canReport} />
                     <div className="w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
                     <ABtn icon={UserCog}  label="Change Cust."  onClick={() => setChangeCustomerModal(true)} />
                     <ABtn icon={UserCog}  label="Change Sales."  onClick={() => setChangeSalesmanModal(true)} />
@@ -423,6 +426,7 @@ export function OrderDetailModal({ lookups, canEdit, canDelete, mode = "modal" }
                 onSaved={() => { setChangeCustomerModal(false); refreshDetail(); refreshList(); }}
             />
         )}
+        {reportUrl && <ReportModal url={reportUrl} onClose={() => setReportUrl(null)} />}
         </>
     );
 

@@ -180,6 +180,7 @@ export function ProductsListModal({ soUnico, cases, onClose, onAdded }: Props) {
                 {/* Grid with built-in search + infinite scroll */}
                 <PanelGrid
                     title=""
+                    icon={ShoppingCart}
                     recordCount={products.length}
                     searchValue={search}
                     onSearchChange={handleSearch}
