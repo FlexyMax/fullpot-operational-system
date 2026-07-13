@@ -59,9 +59,9 @@ function FosModal({ title, icon: Icon, onClose, children, footer, size = "md", z
 }) {
     const maxW = { sm: "sm:max-w-lg", md: "sm:max-w-2xl", lg: "sm:max-w-3xl", xl: "sm:max-w-5xl" }[size];
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" style={{ zIndex }}>
-            <div className={cn("bg-white rounded-t-2xl sm:rounded-xl shadow-2xl w-full flex flex-col", maxW)} style={{ maxHeight: "94dvh" }}>
-                <div className="h-11 sm:h-10 bg-[#374151] rounded-t-2xl sm:rounded-t-xl flex items-center justify-between pl-3 pr-2 border-b border-black/10 shrink-0">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4" style={{ zIndex }}>
+            <div className={cn("bg-white rounded-xl shadow-2xl w-full flex flex-col", maxW)} style={{ maxHeight: "94dvh" }}>
+                <div className="h-11 sm:h-10 bg-[#374151] rounded-t-xl flex items-center justify-between pl-3 pr-2 border-b border-black/10 shrink-0">
                     <div className="flex items-center gap-2 min-w-0">
                         {Icon && <Icon size={16} className="text-[#FB7506] shrink-0" />}
                         <span className="fos-grid-header-text truncate">{title}</span>
@@ -774,6 +774,18 @@ export default function AwbsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [status]);
 
+    // ── Auto-select first record after grid loads ─────────────────────────────
+    useEffect(() => {
+        if ((awbs as any[]).length > 0 && !selAwb) {
+            const first = (awbs as any[])[0];
+            setSelAwb(first);
+            ["awb-packing", "awb-charges", "awb-boxes", "awb-varieties"].forEach(key =>
+                qc.invalidateQueries({ queryKey: [key, first.AWBCODE] })
+            );
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [awbs]);
+
     // ── Queries — ALL hooks before any early return ──────────────────────────
     const { data: airlines = EMPTY_ARR } = useQuery({
         queryKey: ["awb-airlines"],
@@ -1143,11 +1155,11 @@ export default function AwbsPage() {
 
                 {/* Tab bar + Tab content */}
                 <div className="flex-1 min-h-0 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col overflow-hidden">
-                    <div className="h-10 bg-[#F5F3F3] border-b border-gray-200 flex items-end px-2 gap-0.5 shrink-0 overflow-x-auto scrollbar-none">
+                    <div className="h-12 sm:h-10 bg-[#F5F3F3] border-b border-gray-200 flex items-end px-2 gap-0.5 shrink-0 overflow-x-auto pb-0">
                         {TABS.map(tab => (
                             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                                 className={cn(
-                                    "flex items-center px-3 h-8 text-[11px] font-bold uppercase tracking-wide rounded-t transition-all whitespace-nowrap",
+                                    "flex items-center px-3 h-9 sm:h-8 text-[11px] font-bold uppercase tracking-wide rounded-t transition-all whitespace-nowrap shrink-0",
                                     activeTab === tab.id
                                         ? "bg-white text-[#FB7506] border-t-2 border-x border-b-white border-[#FB7506] -mb-px"
                                         : "text-gray-500 hover:text-[#FB7506] hover:bg-white/60"
@@ -1194,7 +1206,7 @@ export default function AwbsPage() {
                                     <PanelGridTbody>
                                         {(vendors as any[]).map((row: any) => (
                                             <PanelGridTr key={row.PACK_UQ} selected={selVendor?.PACK_UQ === row.PACK_UQ} onClick={() => selVendor?.PACK_UQ === row.PACK_UQ ? setSelVendor(null) : setSelVendor(row)}>
-                                                <PanelGridTd className="font-mono text-[11px] text-[#FB7506] font-bold">{t(row.PACK_UQ)}</PanelGridTd>
+                                                <PanelGridTd className="font-mono text-[#FB7506] font-bold">{t(row.PACK_UQ)}</PanelGridTd>
                                                 <PanelGridTd className="font-semibold">{t(row.PACKING_NO)}</PanelGridTd>
                                                 <PanelGridTd>{t(row.INVOICE_NO)}</PanelGridTd>
                                                 <PanelGridTd className="font-bold text-[#FB7506]">{t(row.AWBCODE)}</PanelGridTd>
@@ -1307,7 +1319,7 @@ export default function AwbsPage() {
                                     <PanelGridTbody>
                                         {(boxes as any[]).map((row: any) => (
                                             <PanelGridTr key={row.UNICO} selected={selBox?.UNICO === row.UNICO} onClick={() => selBox?.UNICO === row.UNICO ? setSelBox(null) : setSelBox(row)} onDoubleClick={() => { if (perms.canEdit) setBoxesModal(true); }}>
-                                                <PanelGridTd className="font-mono text-[11px] text-[#FB7506] font-bold">{t(row.UNICO)}</PanelGridTd>
+                                                <PanelGridTd className="font-mono text-[#FB7506] font-bold">{t(row.UNICO)}</PanelGridTd>
                                                 <PanelGridTd>{t(row.READY_TRAN)}</PanelGridTd>
                                                 <PanelGridTd>{t(row.SORDER_NO)}</PanelGridTd>
                                                 <PanelGridTd>{t(row.SEL)}</PanelGridTd>
@@ -1366,7 +1378,7 @@ export default function AwbsPage() {
                                     <PanelGridTbody>
                                         {(byDate as any[]).map((row: any) => (
                                             <PanelGridTr key={row.UNICO} selected={selByDate?.UNICO === row.UNICO} onClick={() => selByDate?.UNICO === row.UNICO ? setSelByDate(null) : setSelByDate(row)} onDoubleClick={() => { if (perms.canEdit) setFreightsModal({ mode: "edit" }); }}>
-                                                <PanelGridTd className="font-mono text-[11px] text-[#FB7506] font-bold">{t(row.UNICO)}</PanelGridTd>
+                                                <PanelGridTd className="font-mono text-[#FB7506] font-bold">{t(row.UNICO)}</PanelGridTd>
                                                 <PanelGridTd>{ctDateMap[t(row.AP_TYPE_UQ)] || t(row.AP_TYPE_UQ)}</PanelGridTd>
                                                 <PanelGridTd>{spAllMap[t(row.SUPPLIER_UQ)] || t(row.SUPPLIER_UQ)}</PanelGridTd>
                                                 <PanelGridTd>{fmtDate(row.CHARGE_DATE)}</PanelGridTd>
