@@ -194,20 +194,6 @@ export function OrderDetailModal({ lookups, canEdit, canDelete, canReport = true
                 : "w-full h-full rounded-lg border border-[#DBD9D9] shadow-sm"
         )}>
 
-                {/* ── Action bar (gray container) — above the header ───── */}
-                <div className="bg-[#F5F3F3] border-b border-[#DBD9D9] px-3 py-1.5 flex items-center gap-1.5 shrink-0 overflow-x-auto">
-                    <ABtn icon={Edit2}   label="Edit Order"     onClick={() => setHeaderModal("edit")}  disabled={!canEdit || loadingDetail} />
-                    <ABtn icon={Calendar} label="Set Weeks"     onClick={() => setWeeksModal(true)} />
-                    <ABtn icon={Printer}  label="Print"         onClick={() => setReportUrl(`/api/standing-orders/report?unico=${soUnico}`)} disabled={!canReport} />
-                    <div className="w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
-                    <ABtn icon={UserCog}      label="Change Cust."    onClick={() => setChangeCustomerModal(true)} />
-                    <ABtn icon={UserCog}      label="Change Sales."   onClick={() => setChangeSalesmanModal(true)} />
-                    <ABtn icon={CalendarRange} label="Change Season"  onClick={() => setChangeSeasonModal(true)} />
-                    <div className="w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
-                    <ABtn icon={Tractor} label="SO to Farm"    onClick={handleToFarm} disabled={working} variant="primary" />
-                    <ABtn icon={Trash2}  label="Delete"         onClick={handleDeleteOrder} disabled={!canDelete || working} variant="danger" />
-                </div>
-
                 {/* ── Panel header (white) ─────────────────────────────── */}
                 <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between pl-3 pr-2 shrink-0">
                     <div className="flex items-center gap-2 min-w-0">
@@ -221,6 +207,20 @@ export function OrderDetailModal({ lookups, canEdit, canDelete, canReport = true
                         {loadingDetail && <Loader2 size={11} className="animate-spin text-gray-400 shrink-0" />}
                     </div>
                     <button onClick={clearSelection} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors shrink-0"><X size={15} /></button>
+                </div>
+
+                {/* ── Action bar (gray container) ──────────────────────── */}
+                <div className="bg-[#F5F3F3] border-b border-[#DBD9D9] px-3 py-1.5 flex items-center gap-1.5 shrink-0 overflow-x-auto">
+                    <ABtn icon={Edit2}   label="Edit Order"     onClick={() => setHeaderModal("edit")}  disabled={!canEdit || loadingDetail} />
+                    <ABtn icon={Calendar} label="Set Weeks"     onClick={() => setWeeksModal(true)} />
+                    <ABtn icon={Printer}  label="Print"         onClick={() => setReportUrl(`/api/standing-orders/report?unico=${soUnico}`)} disabled={!canReport} />
+                    <div className="w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
+                    <ABtn icon={UserCog}      label="Change Cust."    onClick={() => setChangeCustomerModal(true)} />
+                    <ABtn icon={UserCog}      label="Change Sales."   onClick={() => setChangeSalesmanModal(true)} />
+                    <ABtn icon={CalendarRange} label="Change Season"  onClick={() => setChangeSeasonModal(true)} />
+                    <div className="w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
+                    <ABtn icon={Tractor} label="SO to Farm"    onClick={handleToFarm} disabled={working} variant="primary" />
+                    <ABtn icon={Trash2}  label="Delete"         onClick={handleDeleteOrder} disabled={!canDelete || working} variant="danger" />
                 </div>
 
                 {/* ── Scrollable content ──────────────────────────────── */}
