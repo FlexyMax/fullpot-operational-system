@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import { useSession }        from "next-auth/react";
 import { useRouter }         from "next/navigation";
 import { useQuery }          from "@tanstack/react-query";
@@ -12,6 +12,7 @@ import { AppHeader } from "@/components/layout/AppHeader";
 import AppFooter from "@/components/layout/AppFooter";
 import { cn }                    from "@/lib/utils";
 import { usePagePermissions }    from "@/lib/permissions";
+import { useStandingOrdersStore } from "@/stores/useStandingOrdersStore";
 import { HeaderModal }           from "./HeaderModal";
 import { OrderDetailModal }      from "./OrderDetailModal";
 import PanelGrid from "@/components/ui/PanelGrid";
@@ -39,14 +40,14 @@ export default function StandingOrdersPage() {
     const router = useRouter();
     const { canEdit, canDelete } = usePagePermissions("standing-orders");
 
-    const [dayFilter,      setDayFilter]    = useState("%");
-    const [textSearch,     setTextSearch]   = useState("");
-    const [myOrders,       setMyOrders]     = useState(false);
-    const [listKey,        setListKey]      = useState(0);
-    const [selectedUnico,  setSelectedUnico] = useState<string | null>(null);
-    const [selectedRow,    setSelectedRow]  = useState<any>(null);
-    const [showModal,      setShowModal]    = useState(false); // true = mobile modal, false = desktop panel
-    const [newOrderModal,  setNewOrderModal] = useState(false);
+    const {
+        dayFilter, textSearch, myOrders, listKey,
+        selectedUnico, selectedRow, showMobileModal,
+        newOrderModal,
+        setDayFilter, setTextSearch, setMyOrders,
+        selectOrder, clearSelection, refreshList,
+        setNewOrderModal,
+    } = useStandingOrdersStore();
 
     // ── Lookups ───────────────────────────────────────────────────────────────
     const { data: lookups } = useQuery({
@@ -116,25 +117,16 @@ export default function StandingOrdersPage() {
         if (autoSelected.current || orders.length === 0) return;
         autoSelected.current = true;
         const first = orders[0];
-        setSelectedUnico(t(first.UNICO ?? ""));
-        setSelectedRow(first);
+        selectOrder(t(first.UNICO ?? ""), first, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [orders]);
 
     if (status === "loading") return null;
     if (status === "unauthenticated") { router.push("/login"); return null; }
 
     const handleRowClick = (uq: string, row: any) => {
-        setSelectedUnico(uq);
-        setSelectedRow(row);
-        // On mobile (< 1280px) open as modal; on desktop show as inline panel
         const isDesktop = typeof window !== "undefined" && window.innerWidth >= 1280;
-        setShowModal(!isDesktop);
-    };
-
-    const handleClose = () => {
-        setSelectedUnico(null);
-        setSelectedRow(null);
-        setShowModal(false);
+        selectOrder(uq, row, !isDesktop);
     };
 
     return (
@@ -178,7 +170,7 @@ export default function StandingOrdersPage() {
                     {textSearch && <button onClick={() => setTextSearch("")}><X size={11} className="text-gray-400 hover:text-gray-600" /></button>}
                 </div>
 
-                <button onClick={() => setListKey(k => k + 1)} disabled={loadingOrders}
+                <button onClick={refreshList} disabled={loadingOrders}
                     className="flex items-center gap-1.5 h-7 px-3 text-[14px] font-semibold uppercase tracking-wide bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] rounded-md transition-all shrink-0">
                     <RefreshCcw size={14} className={loadingOrders ? "animate-spin" : ""} /> Refresh
                 </button>
@@ -203,11 +195,11 @@ export default function StandingOrdersPage() {
                     title="Orders List"
                     icon={ClipboardList}
                     recordCount={orders.length}
-                    onRefresh={() => setListKey(k => k + 1)}
+                    onRefresh={refreshList}
                     refreshing={loadingOrders}
                     headerRight={<AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} bareButton />}
                     menuItems={[
-                        { label: "New Order", icon: Plus, color: "green", onClick: () => setNewOrderModal(true), disabled: !canEdit },
+                        { label: "New Order", icon: Plus, color: "green", onClick: () => setNewOrderModal(true), disabled: !canEdit  },
                     ]}
                     className="flex-1 xl:flex-none xl:w-[420px] xl:shrink-0"
                 >
@@ -252,23 +244,19 @@ export default function StandingOrdersPage() {
                 </PanelGrid>
 
                 {/* Desktop inline detail panel (xl+, panel mode) */}
-                {selectedUnico && selectedRow && lookups && !showModal && (
+                {selectedUnico && selectedRow && lookups && !showMobileModal && (
                     <div className="hidden xl:flex xl:flex-col flex-1 min-h-0 min-w-0">
                         <OrderDetailModal
                             mode="panel"
-                            soUnico={selectedUnico}
-                            orderRow={selectedRow}
                             lookups={modalLookups}
                             canEdit={canEdit}
                             canDelete={canDelete}
-                            onClose={handleClose}
-                            onRefreshList={() => setListKey(k => k + 1)}
                         />
                     </div>
                 )}
 
                 {/* Desktop placeholder when no order selected */}
-                {(!selectedUnico || showModal) && (
+                {(!selectedUnico || showMobileModal) && (
                     <div className="hidden xl:flex flex-1 items-center justify-center bg-white rounded-lg border border-[#DBD9D9] shadow-sm min-h-0">
                         <div className="text-center text-gray-400">
                             <ClipboardList size={36} className="mx-auto mb-3 opacity-30" />
@@ -280,16 +268,12 @@ export default function StandingOrdersPage() {
             </div>
 
             {/* Mobile modal (< xl) */}
-            {showModal && selectedUnico && selectedRow && lookups && (
+            {showMobileModal && selectedUnico && selectedRow && lookups && (
                 <OrderDetailModal
                     mode="modal"
-                    soUnico={selectedUnico}
-                    orderRow={selectedRow}
                     lookups={modalLookups}
                     canEdit={canEdit}
                     canDelete={canDelete}
-                    onClose={handleClose}
-                    onRefreshList={() => setListKey(k => k + 1)}
                 />
             )}
 
@@ -301,13 +285,11 @@ export default function StandingOrdersPage() {
                     onClose={() => setNewOrderModal(false)}
                     onSaved={(unico) => {
                         setNewOrderModal(false);
-                        setListKey(k => k + 1);
+                        refreshList();
                         if (unico) {
                             setTimeout(() => {
                                 const isDesktop = typeof window !== "undefined" && window.innerWidth >= 1280;
-                                setSelectedUnico(unico);
-                                setSelectedRow({ UNICO: unico, SORDER_NO: "", CUSTOMER: "" });
-                                setShowModal(!isDesktop);
+                                selectOrder(unico, { UNICO: unico, SORDER_NO: "", CUSTOMER: "" }, !isDesktop);
                             }, 400);
                         }
                     }}

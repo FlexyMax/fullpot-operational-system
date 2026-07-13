@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useStandingOrdersStore } from "@/stores/useStandingOrdersStore";
 import { useQuery } from "@tanstack/react-query";
 import {
     X, Loader2, Check, Trash2, Edit2, Plus,
@@ -63,20 +64,25 @@ function ABtn({ icon: Icon, label, onClick, disabled, variant = "default" }: any
 // ─── Props ────────────────────────────────────────────────────────────────────
 interface Lookups { customers:any[]; salesmen:any[]; warehouses:any[]; terms:any[]; cases:any[]; cargoAgencies:any[]; carriers:any[]; }
 interface Props {
-    soUnico:       string;
-    orderRow:      any;   // normalized (uppercase keys) row from orders list
-    lookups:       Lookups;
-    canEdit:       boolean;
-    canDelete:     boolean;
-    mode?:         "modal" | "panel";  // modal = fixed overlay (mobile), panel = inline (desktop)
-    onClose:       () => void;
-    onRefreshList: () => void;
+    lookups:   Lookups;
+    canEdit:   boolean;
+    canDelete: boolean;
+    mode?:     "modal" | "panel";
 }
 
-export function OrderDetailModal({ soUnico, orderRow, lookups, canEdit, canDelete, mode = "modal", onClose, onRefreshList }: Props) {
-    const [detailKey,         setDetailKey]        = useState(0);
-    const [selectedLineUnico, setSelectedLineUnico] = useState<string | null>(null);
-    const [working,           setWorking]           = useState(false);
+export function OrderDetailModal({ lookups, canEdit, canDelete, mode = "modal" }: Props) {
+    const {
+        selectedUnico: soUnico,
+        selectedRow:   orderRow,
+        detailKey,
+        selectedLineUnico,
+        setSelectedLineUnico,
+        refreshList,
+        refreshDetail,
+        clearSelection,
+    } = useStandingOrdersStore();
+
+    const [working, setWorking] = useState(false);
 
     // Sub-modal states
     const [headerModal,       setHeaderModal]       = useState<"closed"|"edit">("closed");
@@ -91,6 +97,7 @@ export function OrderDetailModal({ soUnico, orderRow, lookups, canEdit, canDelet
     // ── Detail query
     const { data: detail, isFetching: loadingDetail } = useQuery({
         queryKey: ["so-detail", soUnico, detailKey],
+        enabled: !!soUnico,
         queryFn: async () => {
             const r = await fetch(`/api/standing-orders/detail/${soUnico}`);
             const j = await r.json();
@@ -128,14 +135,14 @@ export function OrderDetailModal({ soUnico, orderRow, lookups, canEdit, canDelet
                     const j = await r.json();
                     if (!r.ok || !j.success) throw new Error(j.error || "Failed");
                     toast.success("Order deleted");
-                    onRefreshList();
-                    onClose();
+                    refreshList();
+                    clearSelection();
                 } catch (e: any) { toast.error(e.message); }
                 finally { setWorking(false); }
             }},
             cancel: { label: "Cancel", onClick: () => {} },
         });
-    }, [soUnico, onClose, onRefreshList]);
+    }, [soUnico, clearSelection, refreshList]);
 
     const handleToFarm = useCallback(async () => {
         setWorking(true);
@@ -147,7 +154,7 @@ export function OrderDetailModal({ soUnico, orderRow, lookups, canEdit, canDelet
             const j = await r.json();
             if (!r.ok || !j.success) throw new Error(j.error || "Failed");
             toast.success("Sent to farm");
-            setDetailKey(k => k + 1);
+            refreshDetail();
         } catch (e: any) { toast.error(e.message); }
         finally { setWorking(false); }
     }, [soUnico]);
@@ -164,13 +171,15 @@ export function OrderDetailModal({ soUnico, orderRow, lookups, canEdit, canDelet
                     if (!r.ok || !j.success) throw new Error(j.error || "Failed");
                     toast.success("Line deleted");
                     setSelectedLineUnico(null);
-                    setDetailKey(k => k + 1);
+                    refreshDetail();
                 } catch (e: any) { toast.error(e.message); }
                 finally { setWorking(false); }
             }},
             cancel: { label: "Cancel", onClick: () => {} },
         });
     }, [selectedLineUnico]);
+
+    if (!soUnico) return null;
 
     const inner = (
         <div className={cn(
@@ -192,7 +201,7 @@ export function OrderDetailModal({ soUnico, orderRow, lookups, canEdit, canDelet
                         </span>
                         {loadingDetail && <Loader2 size={11} className="animate-spin text-white/50 shrink-0" />}
                     </div>
-                    <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors shrink-0"><X size={15} /></button>
+                    <button onClick={clearSelection} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors shrink-0"><X size={15} /></button>
                 </div>
 
                 {/* ── Action bar (gray container) ──────────────────────── */}
@@ -364,7 +373,7 @@ export function OrderDetailModal({ soUnico, orderRow, lookups, canEdit, canDelet
         {headerModal === "edit" && h && (
             <HeaderModal mode="edit" header={h} lookups={modalLookups}
                 onClose={() => setHeaderModal("closed")}
-                onSaved={() => { setHeaderModal("closed"); setDetailKey(k => k+1); onRefreshList(); }}
+                onSaved={() => { setHeaderModal("closed"); refreshDetail(); refreshList(); }}
             />
         )}
         {lineModal !== "closed" && (
@@ -372,7 +381,7 @@ export function OrderDetailModal({ soUnico, orderRow, lookups, canEdit, canDelet
                 line={lineModal === "edit" ? selectedLine : undefined}
                 cases={lookups.cases}
                 onClose={() => setLineModal("closed")}
-                onSaved={() => { setLineModal("closed"); setDetailKey(k => k+1); }}
+                onSaved={() => { setLineModal("closed"); refreshDetail(); }}
             />
         )}
         {weeksModal && h && (
@@ -392,7 +401,7 @@ export function OrderDetailModal({ soUnico, orderRow, lookups, canEdit, canDelet
         {productsModal && (
             <ProductsListModal soUnico={soUnico} cases={lookups.cases}
                 onClose={() => setProductsModal(false)}
-                onAdded={() => setDetailKey(k => k+1)}
+                onAdded={() => refreshDetail()}
             />
         )}
         {futureStockModal && (
@@ -403,7 +412,7 @@ export function OrderDetailModal({ soUnico, orderRow, lookups, canEdit, canDelet
                 soUnico={soUnico} orderNo={t(h.SORDER_NO)}
                 salesmen={lookups.salesmen} currentUq={t(h.SALESMAN_UQ ?? "")}
                 onClose={() => setChangeSalesmanModal(false)}
-                onSaved={() => { setChangeSalesmanModal(false); setDetailKey(k=>k+1); onRefreshList(); }}
+                onSaved={() => { setChangeSalesmanModal(false); refreshDetail(); refreshList(); }}
             />
         )}
         {changeCustomerModal && h && (
@@ -411,7 +420,7 @@ export function OrderDetailModal({ soUnico, orderRow, lookups, canEdit, canDelet
                 soUnico={soUnico} orderNo={t(h.SORDER_NO)}
                 customers={lookups.customers} carriers={lookups.carriers}
                 onClose={() => setChangeCustomerModal(false)}
-                onSaved={() => { setChangeCustomerModal(false); setDetailKey(k=>k+1); onRefreshList(); }}
+                onSaved={() => { setChangeCustomerModal(false); refreshDetail(); refreshList(); }}
             />
         )}
         </>
