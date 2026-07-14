@@ -7,16 +7,17 @@ const PANTA = "52961702";
 export async function POST(req: NextRequest) {
     const body = await req.json();
     try {
-        const r = await executeProcedure("sp_flower_accounts_outcome_insert", {
-            out_date:    new Date().toISOString(),
-            bank_uq:     body.bank_uq     ?? "",
-            supplier_uq: body.supplier_uq ?? "",
-            out_ammount: body.out_ammount ?? 0,
-            out_total:   body.out_total   ?? 0,
-            details:     body.details     ?? "",
-            pay_doc:     body.pay_doc     ?? 0,
+        const r = await executeProcedure("sp_NC_accounts_outcome_insert", {
+            out_date:     new Date().toISOString(),
+            bank_uq:      body.bank_uq      ?? "",
+            supplier_uq:  body.supplier_uq  ?? "",
+            out_ammount:  body.out_ammount  ?? 0,
+            out_total:    body.out_total    ?? 0,
+            details:      body.details      ?? "",
+            out_document: String(body.pay_doc ?? "").substring(0, 10),
         });
         const rec = r.recordset[0] ?? null;
+        if (rec?.Error) return NextResponse.json({ success: false, error: rec.Message }, { status: 400 });
         serverAuditLog(PANTA, "Insert", "flower_accounts_outcomes", rec?.unico ?? body.bank_uq).catch(() => {});
         return NextResponse.json({ success: true, data: rec });
     } catch (err: any) {
