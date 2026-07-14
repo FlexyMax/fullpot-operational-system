@@ -18,11 +18,14 @@ export async function POST(req: NextRequest) {
     }
 
     try {
+        const userUq = String((session.user as any).id ?? "").padEnd(8).substring(0, 8);
+
         // sp_NC_* returns { unico, mensaje, error, total_pieces, read_pieces, to_scan_pieces, ... }
         // db.ts auto-throws on error=true using firstRow.mensaje (via || firstRow.mensaje in db.ts)
         const scanR = await executeProcedure("sp_NC_packing_awb_insert_pkbox_control", {
             lcawb:       String(awb).trim().toUpperCase(),
             lccompuesto: String(barcode).trim().toUpperCase(),
+            lcUser_uq:   userUq,
         });
         const row = scanR.recordset?.[0];
         if (!row) return NextResponse.json({ error: "No response from scan SP" }, { status: 400 });

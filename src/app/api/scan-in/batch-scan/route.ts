@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
     if (!awb) return NextResponse.json({ error: "awb is required" }, { status: 400 });
 
     const awbCode = String(awb).trim().toUpperCase();
+    const userUq  = String((session.user as any).id ?? "").padEnd(8).substring(0, 8);
 
     try {
         // Get list of pending lots with box counts
@@ -41,6 +42,7 @@ export async function POST(req: NextRequest) {
                     const r = await executeProcedure("sp_NC_packing_awb_insert_pkbox_control", {
                         lcawb:       awbCode,
                         lccompuesto: barcode,
+                        lcUser_uq:   userUq,
                     });
                     const row = r.recordset?.[0];
                     scanned++;
