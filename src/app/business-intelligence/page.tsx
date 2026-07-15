@@ -116,25 +116,44 @@ const apiDelete = async (url: string) => {
     return j;
 };
 
+function cleanColumnState(state: ColumnState[]): ColumnState[] {
+    // Remove cube-structure flags from columnState so they do not conflict with the
+    // explicit setRowGroupColumns / setPivotColumns / setValueColumns calls.
+    return state.map((s) => ({
+        ...s,
+        rowGroup: undefined,
+        rowGroupIndex: undefined,
+        pivot: undefined,
+        pivotIndex: undefined,
+        aggFunc: undefined,
+    }));
+}
+
 function applyConfigToGrid(api: GridApi, config: BIConfigJson) {
-    // Apply row groups, pivot and value columns first so AgGrid knows the intended
-    // cube structure before we apply visibility/order/widths.
-    api.setRowGroupColumns(config.rowGroupCols ?? []);
-    api.setPivotColumns(config.pivotCols ?? []);
-    api.setValueColumns(config.valueCols?.map((v) => v.colId) ?? []);
-
-    // Restore value aggregation functions.
-    config.valueCols?.forEach((v) => {
-        const col = api.getColumnDef(v.colId);
-        if (col && v.aggFunc) {
-            api.setColumnAggFunc(v.colId, v.aggFunc);
+    try {
+        // 1. Apply visibility, order and widths first (without cube flags).
+        if (config.columnState?.length) {
+            api.applyColumnState({ state: cleanColumnState(config.columnState), applyOrder: true });
         }
-    });
 
-    if (config.columnState?.length) {
-        api.applyColumnState({ state: config.columnState, applyOrder: true });
+        // 2. Apply the cube structure explicitly.
+        api.setRowGroupColumns(config.rowGroupCols ?? []);
+        api.setPivotColumns(config.pivotCols ?? []);
+        api.setValueColumns(config.valueCols?.map((v) => v.colId) ?? []);
+
+        // 3. Restore aggregation functions for value columns.
+        config.valueCols?.forEach((v) => {
+            if (v.aggFunc) {
+                api.setColumnAggFunc(v.colId, v.aggFunc);
+            }
+        });
+
+        // 4. Restore filters.
+        api.setFilterModel(config.filterModel ?? null);
+    } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : "Unknown error";
+        toast.error("Could not apply saved configuration: " + message);
     }
-    api.setFilterModel(config.filterModel ?? null);
 }
 
 export default function BusinessIntelligencePage() {
@@ -229,7 +248,7 @@ export default function BusinessIntelligencePage() {
                 rowGroupCols: api ? api.getRowGroupColumns().map((c) => c.getColId()) : [],
                 pivotCols:    api ? api.getPivotColumns().map((c) => c.getColId()) : [],
                 valueCols:    api ? api.getValueColumns().map((c) => ({ colId: c.getColId(), aggFunc: String(c.getAggFunc() ?? "") || null })) : [],
-                columnState:  api ? api.getColumnState() : [],
+                columnState:  api ? cleanColumnState(api.getColumnState()) : [],
                 filterModel:  api ? api.getFilterModel() : null,
             };
             const body = { report_uq: selectedUnico, name: configName.trim(), config_json: JSON.stringify(payload) };
