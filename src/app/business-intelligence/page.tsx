@@ -54,8 +54,16 @@ interface BISavedConfig {
     updated_at: string;
 }
 
+interface BIValueCol {
+    colId: string;
+    aggFunc: string | null;
+}
+
 interface BIConfigJson {
     range: { fechaInicio: string; fechaFin: string };
+    rowGroupCols: string[];
+    pivotCols: string[];
+    valueCols: BIValueCol[];
     columnState: ColumnState[];
     filterModel: FilterModel | null;
 }
@@ -109,6 +117,20 @@ const apiDelete = async (url: string) => {
 };
 
 function applyConfigToGrid(api: GridApi, config: BIConfigJson) {
+    // Apply row groups, pivot and value columns first so AgGrid knows the intended
+    // cube structure before we apply visibility/order/widths.
+    api.setRowGroupColumns(config.rowGroupCols ?? []);
+    api.setPivotColumns(config.pivotCols ?? []);
+    api.setValueColumns(config.valueCols?.map((v) => v.colId) ?? []);
+
+    // Restore value aggregation functions.
+    config.valueCols?.forEach((v) => {
+        const col = api.getColumnDef(v.colId);
+        if (col && v.aggFunc) {
+            api.setColumnAggFunc(v.colId, v.aggFunc);
+        }
+    });
+
     if (config.columnState?.length) {
         api.applyColumnState({ state: config.columnState, applyOrder: true });
     }
@@ -204,8 +226,11 @@ export default function BusinessIntelligencePage() {
             const api = gridApiRef.current;
             const payload: BIConfigJson = {
                 range,
-                columnState: api ? api.getColumnState() : [],
-                filterModel: api ? api.getFilterModel() : null,
+                rowGroupCols: api ? api.getRowGroupColumns().map((c) => c.getColId()) : [],
+                pivotCols:    api ? api.getPivotColumns().map((c) => c.getColId()) : [],
+                valueCols:    api ? api.getValueColumns().map((c) => ({ colId: c.getColId(), aggFunc: String(c.getAggFunc() ?? "") || null })) : [],
+                columnState:  api ? api.getColumnState() : [],
+                filterModel:  api ? api.getFilterModel() : null,
             };
             const body = { report_uq: selectedUnico, name: configName.trim(), config_json: JSON.stringify(payload) };
             if (selectedConfigUnico) {
