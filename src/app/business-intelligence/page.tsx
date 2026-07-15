@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { LineChart, Search, Loader2, XCircle, Play, Database } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { LineChart, Search, Loader2, XCircle, Play, Database, Save, Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
@@ -12,14 +12,24 @@ import AppHeader from "@/components/layout/AppHeader";
 import AppFooter from "@/components/layout/AppFooter";
 
 import { AgGridReact } from "ag-grid-react";
-import { ModuleRegistry, AllCommunityModule, type ColDef, type GridApi, type GridReadyEvent } from "ag-grid-community";
+import {
+    ModuleRegistry,
+    AllCommunityModule,
+    type ColDef,
+    type GridApi,
+    type GridReadyEvent,
+    type ColumnState,
+    type FilterModel,
+    type ValueFormatterParams,
+} from "ag-grid-community";
 import { AllEnterpriseModule } from "ag-grid-enterprise";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
 
 ModuleRegistry.registerModules([AllCommunityModule, AllEnterpriseModule]);
 
-const EMPTY_ARR: any[] = [];
+const EMPTY_REPORTS: BIReport[] = [];
+const EMPTY_CONFIGS: BISavedConfig[] = [];
 
 interface BIReport {
     unico: string;
@@ -34,22 +44,20 @@ interface BIReportData {
     rowCount: number;
 }
 
-interface BIPivotConfig {
-    rowGroupCols: string[];
-    pivotCols: string[];
+interface BISavedConfig {
+    unico: string;
+    user_uq: string;
+    report_uq: string;
+    name: string;
+    config_json: string;
+    created_at: string;
+    updated_at: string;
 }
 
-const PIVOT_STORAGE_PREFIX = "bi-pivot-config:";
-
-function loadPivotConfig(reportKey: string): BIPivotConfig | null {
-    try {
-        const raw = localStorage.getItem(PIVOT_STORAGE_PREFIX + reportKey);
-        return raw ? JSON.parse(raw) : null;
-    } catch { return null; }
-}
-
-function savePivotConfig(reportKey: string, config: BIPivotConfig) {
-    try { localStorage.setItem(PIVOT_STORAGE_PREFIX + reportKey, JSON.stringify(config)); } catch { /* localStorage unavailable — skip persistence */ }
+interface BIConfigJson {
+    range: { fechaInicio: string; fechaFin: string };
+    columnState: ColumnState[];
+    filterModel: FilterModel | null;
 }
 
 const formatHeaderName = (col: string) => col.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
@@ -71,66 +79,195 @@ const biFetch = async (url: string) => {
     return j;
 };
 
+const apiPost = async (url: string, body: unknown) => {
+    const r = await fetch(url, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify(body),
+    });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j?.error || `HTTP ${r.status}`);
+    return j;
+};
+
+const apiPut = async (url: string, body: unknown) => {
+    const r = await fetch(url, {
+        method:  "PUT",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify(body),
+    });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j?.error || `HTTP ${r.status}`);
+    return j;
+};
+
+const apiDelete = async (url: string) => {
+    const r = await fetch(url, { method: "DELETE" });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j?.error || `HTTP ${r.status}`);
+    return j;
+};
+
+function applyConfigToGrid(api: GridApi, config: BIConfigJson) {
+    if (config.columnState?.length) {
+        api.applyColumnState({ state: config.columnState, applyOrder: true });
+    }
+    api.setFilterModel(config.filterModel ?? null);
+}
+
 export default function BusinessIntelligencePage() {
     const { status } = useSession();
     const router = useRouter();
     const { logAction } = useAuditLog("business-intelligence", "flower_store_procedures");
     const perms = usePagePermissions("business-intelligence");
+    const queryClient = useQueryClient();
 
     const [selectedUnico, setSelectedUnico] = useState<string | null>(null);
     const [search, setSearch]               = useState("");
     const [range, setRange]                 = useState(defaultRange());
     const [reportData, setReportData]       = useState<BIReportData | null>(null);
+    const [configName, setConfigName]       = useState("");
+    const [selectedConfigUnico, setSelectedConfigUnico] = useState<string | null>(null);
     const gridApiRef = useRef<GridApi | null>(null);
+    const pendingConfigRef = useRef<BIConfigJson | null>(null);
 
     useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
 
-    const { data: reports = EMPTY_ARR, isFetching: loadingReports } = useQuery<BIReport[]>({
+    const { data: reports = EMPTY_REPORTS, isFetching: loadingReports } = useQuery<BIReport[]>({
         queryKey:  ["bi-reports"],
         queryFn:   () => biFetch("/api/bi/reports"),
         staleTime: 5 * 60 * 1000,
     });
 
+    // Initialize first report once data is loaded. The list is fetched
+    // asynchronously, so the initial selection must happen after data arrives.
+    const didInitReport = useRef(false);
+    /* eslint-disable react-hooks/set-state-in-effect */
     useEffect(() => {
-        if ((reports as BIReport[]).length > 0 && !selectedUnico) {
-            setSelectedUnico((reports as BIReport[])[0].unico);
+        if (reports.length > 0 && !selectedUnico && !didInitReport.current) {
+            didInitReport.current = true;
+            setSelectedUnico(reports[0].unico);
         }
     }, [reports, selectedUnico]);
+    /* eslint-enable react-hooks/set-state-in-effect */
 
-    const selectedReport = (reports as BIReport[]).find((r) => r.unico === selectedUnico) || null;
+    const selectedReport = reports.find((r) => r.unico === selectedUnico) || null;
+
+    const { data: savedConfigs = EMPTY_CONFIGS, isFetching: loadingSavedConfigs } = useQuery<BISavedConfig[]>({
+        queryKey:  ["bi-saved-configs", selectedUnico],
+        queryFn:   () => biFetch(`/api/bi/saved-configs?report_uq=${encodeURIComponent(selectedUnico ?? "")}`),
+        enabled:   !!selectedUnico,
+        staleTime: 30 * 1000,
+    });
 
     const runReport = useMutation({
-        mutationFn: async () => {
-            if (!selectedUnico) throw new Error("Select a report first.");
-            const res = await fetch(`/api/bi/reports/${selectedUnico}/data`, {
+        mutationFn: async (reportUq?: string) => {
+            const targetUq = reportUq || selectedUnico;
+            if (!targetUq) throw new Error("Select a report first.");
+            const res = await fetch(`/api/bi/reports/${targetUq}/data`, {
                 method:  "POST",
                 headers: { "Content-Type": "application/json" },
                 body:    JSON.stringify(range),
             });
             const j = await res.json();
             if (!res.ok) throw new Error(j?.error || `HTTP ${res.status}`);
-            return j as BIReportData;
+            return { data: j as BIReportData, targetUq };
         },
-        onSuccess: (data) => {
+        onSuccess: ({ data, targetUq }) => {
             setReportData(data);
-            if (selectedUnico) {
-                logAction("Insert", selectedUnico, `${range.fechaInicio} to ${range.fechaFin} (${data.rowCount} rows)`);
+            logAction("Insert", targetUq, `${range.fechaInicio} to ${range.fechaFin} (${data.rowCount} rows)`);
+            const pending = pendingConfigRef.current;
+            if (pending && gridApiRef.current) {
+                applyConfigToGrid(gridApiRef.current, pending);
+                pendingConfigRef.current = null;
             }
             toast.success(`${data.rowCount.toLocaleString()} rows loaded.`);
         },
-        onError: (e: any) => toast.error(e.message),
+        onError: (e: Error) => toast.error(e.message),
     });
 
-    const filteredReports = useMemo(() => {
-        if (!search.trim()) return reports as BIReport[];
-        const term = search.toLowerCase();
-        return (reports as BIReport[]).filter((r) => r.title.toLowerCase().includes(term));
-    }, [reports, search]);
+    const saveConfig = useMutation({
+        mutationFn: async () => {
+            if (!selectedUnico) throw new Error("Select a report first.");
+            if (!configName.trim()) throw new Error("Enter a name for the configuration.");
+            const api = gridApiRef.current;
+            const payload: BIConfigJson = {
+                range,
+                columnState: api ? api.getColumnState() : [],
+                filterModel: api ? api.getFilterModel() : null,
+            };
+            const body = { report_uq: selectedUnico, name: configName.trim(), config_json: JSON.stringify(payload) };
+            if (selectedConfigUnico) {
+                return apiPut(`/api/bi/saved-configs/${selectedConfigUnico}`, body);
+            }
+            return apiPost("/api/bi/saved-configs", body);
+        },
+        onSuccess: (data: { unico?: string; message?: string }) => {
+            queryClient.invalidateQueries({ queryKey: ["bi-saved-configs", selectedUnico] });
+            if (data.unico && !selectedConfigUnico) setSelectedConfigUnico(data.unico);
+            toast.success(data.message || "Configuration saved.");
+        },
+        onError: (e: Error) => toast.error(e.message),
+    });
 
-    const savedConfig = useMemo(
-        () => (selectedUnico ? loadPivotConfig(selectedUnico) : null),
-        [selectedUnico]
-    );
+    const deleteConfig = useMutation({
+        mutationFn: async () => {
+            if (!selectedConfigUnico) throw new Error("Select a configuration to delete.");
+            return apiDelete(`/api/bi/saved-configs/${selectedConfigUnico}`);
+        },
+        onSuccess: (data: { message?: string }) => {
+            queryClient.invalidateQueries({ queryKey: ["bi-saved-configs", selectedUnico] });
+            setSelectedConfigUnico(null);
+            setConfigName("");
+            toast.success(data.message || "Configuration deleted.");
+        },
+        onError: (e: Error) => toast.error(e.message),
+    });
+
+    const loadConfig = useCallback((config: BISavedConfig) => {
+        let parsed: BIConfigJson;
+        try {
+            parsed = JSON.parse(config.config_json);
+        } catch {
+            toast.error("Invalid saved configuration.");
+            return;
+        }
+        setSelectedConfigUnico(config.unico);
+        setConfigName(config.name);
+        if (parsed.range?.fechaInicio && parsed.range?.fechaFin) {
+            setRange(parsed.range);
+        }
+        if (config.report_uq !== selectedUnico) {
+            setSelectedUnico(config.report_uq);
+            setReportData(null);
+        }
+        pendingConfigRef.current = parsed;
+        runReport.mutate(config.report_uq);
+    }, [selectedUnico, runReport]);
+
+    const onSelectReportChange = (unico: string) => {
+        setSelectedUnico(unico);
+        setReportData(null);
+        setSelectedConfigUnico(null);
+        setConfigName("");
+        pendingConfigRef.current = null;
+    };
+
+    const onSelectConfigChange = (unico: string) => {
+        if (!unico) {
+            setSelectedConfigUnico(null);
+            setConfigName("");
+            return;
+        }
+        const config = savedConfigs.find((c) => c.unico === unico);
+        if (config) loadConfig(config);
+    };
+
+    const filteredReports = useMemo(() => {
+        if (!search.trim()) return reports;
+        const term = search.toLowerCase();
+        return reports.filter((r) => r.title.toLowerCase().includes(term));
+    }, [reports, search]);
 
     const columnDefs: ColDef[] = useMemo(() => {
         if (!reportData) return [];
@@ -144,25 +281,21 @@ export default function BusinessIntelligencePage() {
                 enablePivot:    true,
                 enableValue:    isNumeric,
                 aggFunc:        isNumeric ? "sum" : undefined,
-                rowGroup:       savedConfig?.rowGroupCols.includes(col) ?? false,
-                pivot:          savedConfig?.pivotCols.includes(col) ?? false,
                 valueFormatter: isNumeric
-                    ? (p: any) => (p.value == null ? "" : MONEY_RE.test(col) ? `$${Number(p.value).toFixed(2)}` : Number(p.value).toLocaleString())
+                    ? (p: ValueFormatterParams) => (p.value == null ? "" : MONEY_RE.test(col) ? `$${Number(p.value).toFixed(2)}` : Number(p.value).toLocaleString())
                     : undefined,
             };
         });
-    }, [reportData, savedConfig]);
+    }, [reportData]);
 
-    const persistConfig = useCallback(() => {
-        if (!selectedUnico || !gridApiRef.current) return;
-        const api = gridApiRef.current;
-        savePivotConfig(selectedUnico, {
-            rowGroupCols: api.getRowGroupColumns().map((c) => c.getColId()),
-            pivotCols:    api.getPivotColumns().map((c) => c.getColId()),
-        });
-    }, [selectedUnico]);
-
-    const onGridReady = useCallback((e: GridReadyEvent) => { gridApiRef.current = e.api; }, []);
+    const onGridReady = useCallback((e: GridReadyEvent) => {
+        gridApiRef.current = e.api;
+        const pending = pendingConfigRef.current;
+        if (pending) {
+            applyConfigToGrid(e.api, pending);
+            pendingConfigRef.current = null;
+        }
+    }, []);
 
     if (status === "loading" || loadingReports) {
         return <div className="flex items-center justify-center h-screen"><Loader2 size={24} className="animate-spin text-[#FB7506]" /></div>;
@@ -183,7 +316,7 @@ export default function BusinessIntelligencePage() {
         <div className="h-[100dvh] bg-[#f4f6f8] flex flex-col font-sans text-[#333] overflow-hidden">
             <AppHeader title="Business Intelligence" icon={LineChart} />
 
-            {/* Toolbar */}
+            {/* Report toolbar */}
             <div className="bg-white border-b border-gray-200 px-4 py-3 flex flex-col md:flex-row md:items-end gap-3 shrink-0 shadow-sm">
                 <div className="flex-1 min-w-0">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Report</label>
@@ -199,7 +332,7 @@ export default function BusinessIntelligencePage() {
                     </div>
                     <select
                         value={selectedUnico ?? ""}
-                        onChange={(e) => { setSelectedUnico(e.target.value); setReportData(null); }}
+                        onChange={(e) => onSelectReportChange(e.target.value)}
                         className="w-full border border-gray-200 rounded px-3 py-2 text-[12px] font-bold text-gray-800 bg-white"
                     >
                         {filteredReports.map((r) => <option key={r.unico} value={r.unico}>{r.title}</option>)}
@@ -226,12 +359,70 @@ export default function BusinessIntelligencePage() {
                 </div>
 
                 <button
-                    onClick={() => runReport.mutate()}
+                    onClick={() => runReport.mutate(undefined)}
                     disabled={!selectedUnico || runReport.isPending}
                     className="flex items-center justify-center gap-2 px-4 py-2 bg-[#FB7506] hover:bg-orange-600 text-white text-[12px] font-black uppercase tracking-wide rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
                 >
                     {runReport.isPending ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
                     Run Report
+                </button>
+            </div>
+
+            {/* Saved configs toolbar */}
+            <div className="bg-gray-50 border-b border-gray-200 px-4 py-2 flex flex-col md:flex-row md:items-end gap-2 shrink-0">
+                <div className="flex-1 min-w-0">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Configuration Name</label>
+                    <input
+                        type="text"
+                        placeholder="My custom cube..."
+                        value={configName}
+                        onChange={(e) => setConfigName(e.target.value)}
+                        className="mt-1 bg-white text-gray-800 text-[11px] border border-gray-200 outline-none rounded px-3 py-2 w-full focus:ring-1 focus:ring-[#FB7506]"
+                    />
+                </div>
+
+                <div className="min-w-[220px]">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Saved Cubes</label>
+                    <select
+                        value={selectedConfigUnico ?? ""}
+                        onChange={(e) => onSelectConfigChange(e.target.value)}
+                        disabled={loadingSavedConfigs}
+                        className="mt-1 w-full border border-gray-200 rounded px-3 py-2 text-[12px] font-bold text-gray-800 bg-white disabled:opacity-50"
+                    >
+                        <option value="">{loadingSavedConfigs ? "Loading..." : "Select a saved cube"}</option>
+                        {savedConfigs.map((c) => (
+                            <option key={c.unico} value={c.unico}>{c.name}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <button
+                    onClick={() => saveConfig.mutate()}
+                    disabled={!selectedUnico || !configName.trim() || saveConfig.isPending}
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[#FB7506] hover:bg-orange-600 text-white text-[11px] font-black uppercase tracking-wide rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                >
+                    {saveConfig.isPending ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
+                    {selectedConfigUnico ? "Update" : "Save"}
+                </button>
+
+                <button
+                    onClick={() => {
+                        setSelectedConfigUnico(null);
+                        setConfigName("");
+                    }}
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-gray-200 hover:bg-gray-100 text-gray-700 text-[11px] font-black uppercase tracking-wide rounded transition-colors shrink-0"
+                >
+                    <Plus size={12} />
+                    New
+                </button>
+
+                <button
+                    onClick={() => deleteConfig.mutate()}
+                    disabled={!selectedConfigUnico || deleteConfig.isPending}
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 text-[11px] font-black uppercase tracking-wide rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                >
+                    {deleteConfig.isPending ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                    Delete
                 </button>
             </div>
 
@@ -263,9 +454,6 @@ export default function BusinessIntelligencePage() {
                                 animateRows={false}
                                 suppressAggFuncInHeader={false}
                                 onGridReady={onGridReady}
-                                onColumnRowGroupChanged={persistConfig}
-                                onColumnPivotChanged={persistConfig}
-                                onColumnValueChanged={persistConfig}
                             />
                         </div>
                     </div>
