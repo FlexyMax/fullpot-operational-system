@@ -258,7 +258,10 @@ export default function BusinessIntelligencePage() {
             return apiPost("/api/bi/saved-configs", body);
         },
         onSuccess: (data: { unico?: string; message?: string }) => {
-            queryClient.invalidateQueries({ queryKey: ["bi-saved-configs", selectedUnico] });
+            // Mark saved-configs queries as stale without an immediate refetch so the
+            // grid state is not disturbed right after the user saves.
+            queryClient.invalidateQueries({ queryKey: ["bi-saved-configs", selectedUnico], refetchType: "none" });
+            queryClient.invalidateQueries({ queryKey: ["bi-saved-configs-all"], refetchType: "none" });
             if (data.unico && !selectedConfigUnico) setSelectedConfigUnico(data.unico);
             toast.success(data.message || "Configuration saved.");
         },
@@ -271,7 +274,8 @@ export default function BusinessIntelligencePage() {
             return apiDelete(`/api/bi/saved-configs/${selectedConfigUnico}`);
         },
         onSuccess: (data: { message?: string }) => {
-            queryClient.invalidateQueries({ queryKey: ["bi-saved-configs", selectedUnico] });
+            queryClient.invalidateQueries({ queryKey: ["bi-saved-configs", selectedUnico], refetchType: "none" });
+            queryClient.invalidateQueries({ queryKey: ["bi-saved-configs-all"], refetchType: "none" });
             setSelectedConfigUnico(null);
             setConfigName("");
             toast.success(data.message || "Configuration deleted.");
