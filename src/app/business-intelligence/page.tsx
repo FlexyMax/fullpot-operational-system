@@ -458,7 +458,7 @@ export default function BusinessIntelligencePage() {
                         <div className="text-[11px] font-bold text-gray-500 shrink-0">
                             {reportData.rowCount.toLocaleString()} rows — drag fields into Row Groups / Pivot Columns / Values from the Columns panel
                         </div>
-                        <div className="ag-theme-quartz flex-1 min-h-[70vh]" style={{ width: "100%" }}>
+                        <div className="ag-theme-quartz flex-1 min-h-[80vh]" style={{ width: "100%" }}>
                             <AgGridReact
                                 theme="legacy"
                                 rowData={reportData.rows}
