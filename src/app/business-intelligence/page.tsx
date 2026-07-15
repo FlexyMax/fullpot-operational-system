@@ -317,7 +317,7 @@ export default function BusinessIntelligencePage() {
             <AppHeader title="Business Intelligence" icon={LineChart} />
 
             {/* Report toolbar */}
-            <div className="bg-white border-b border-gray-200 px-4 py-3 flex flex-col md:flex-row md:items-end gap-3 shrink-0 shadow-sm">
+            <div className="bg-white border-b border-gray-200 px-4 py-2 flex flex-col md:flex-row md:items-end gap-2 shrink-0 shadow-sm">
                 <div className="flex-1 min-w-0">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Report</label>
                     <div className="relative mt-1 mb-1.5">
@@ -369,7 +369,7 @@ export default function BusinessIntelligencePage() {
             </div>
 
             {/* Saved configs toolbar */}
-            <div className="bg-gray-50 border-b border-gray-200 px-4 py-2 flex flex-col md:flex-row md:items-end gap-2 shrink-0">
+            <div className="bg-gray-50 border-b border-gray-200 px-4 py-1.5 flex flex-col md:flex-row md:items-end gap-2 shrink-0">
                 <div className="flex-1 min-w-0">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Configuration Name</label>
                     <input
@@ -432,18 +432,18 @@ export default function BusinessIntelligencePage() {
                 </div>
             )}
 
-            <main className="flex-1 overflow-hidden p-3">
+            <main className="flex-1 overflow-y-auto p-2">
                 {!reportData ? (
                     <div className="flex flex-col items-center justify-center h-full text-gray-300 gap-3">
                         <Database size={40} />
                         <p className="text-[11px] font-black uppercase tracking-widest">Select a report and date range, then Run Report</p>
                     </div>
                 ) : (
-                    <div className="h-full flex flex-col gap-2">
+                    <div className="min-h-0 flex flex-col gap-1.5">
                         <div className="text-[11px] font-bold text-gray-500 shrink-0">
                             {reportData.rowCount.toLocaleString()} rows — drag fields into Row Groups / Pivot Columns / Values from the Columns panel
                         </div>
-                        <div className="ag-theme-quartz flex-1" style={{ width: "100%" }}>
+                        <div className="ag-theme-quartz min-h-[70vh]" style={{ width: "100%" }}>
                             <AgGridReact
                                 theme="legacy"
                                 rowData={reportData.rows}
