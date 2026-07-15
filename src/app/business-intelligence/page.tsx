@@ -160,6 +160,17 @@ export default function BusinessIntelligencePage() {
         staleTime: 30 * 1000,
     });
 
+    const { data: allSavedConfigs = EMPTY_CONFIGS } = useQuery<BISavedConfig[]>({
+        queryKey:  ["bi-saved-configs-all"],
+        queryFn:   () => biFetch("/api/bi/saved-configs"),
+        staleTime: 30 * 1000,
+    });
+
+    const reportsWithConfigs = useMemo(
+        () => new Set(allSavedConfigs.map((c) => c.report_uq)),
+        [allSavedConfigs]
+    );
+
     const runReport = useMutation({
         mutationFn: async (reportUq?: string) => {
             const targetUq = reportUq || selectedUnico;
@@ -335,7 +346,11 @@ export default function BusinessIntelligencePage() {
                         onChange={(e) => onSelectReportChange(e.target.value)}
                         className="w-full border border-gray-200 rounded px-3 py-2 text-[12px] font-bold text-gray-800 bg-white"
                     >
-                        {filteredReports.map((r) => <option key={r.unico} value={r.unico}>{r.title}</option>)}
+                        {filteredReports.map((r) => (
+                            <option key={r.unico} value={r.unico}>
+                                {r.title}{reportsWithConfigs.has(r.unico) ? "  ✓ saved" : ""}
+                            </option>
+                        ))}
                     </select>
                 </div>
 
@@ -389,7 +404,7 @@ export default function BusinessIntelligencePage() {
                         disabled={loadingSavedConfigs}
                         className="mt-1 w-full border border-gray-200 rounded px-3 py-2 text-[12px] font-bold text-gray-800 bg-white disabled:opacity-50"
                     >
-                        <option value="">{loadingSavedConfigs ? "Loading..." : "Select a saved cube"}</option>
+                        <option value="">{loadingSavedConfigs ? "Loading..." : savedConfigs.length === 0 ? "No saved cubes for this report" : "Select a saved cube"}</option>
                         {savedConfigs.map((c) => (
                             <option key={c.unico} value={c.unico}>{c.name}</option>
                         ))}
@@ -439,11 +454,11 @@ export default function BusinessIntelligencePage() {
                         <p className="text-[11px] font-black uppercase tracking-widest">Select a report and date range, then Run Report</p>
                     </div>
                 ) : (
-                    <div className="min-h-0 flex flex-col gap-1.5">
+                    <div className="h-full flex flex-col gap-1.5">
                         <div className="text-[11px] font-bold text-gray-500 shrink-0">
                             {reportData.rowCount.toLocaleString()} rows — drag fields into Row Groups / Pivot Columns / Values from the Columns panel
                         </div>
-                        <div className="ag-theme-quartz min-h-[70vh]" style={{ width: "100%" }}>
+                        <div className="ag-theme-quartz flex-1 min-h-[70vh]" style={{ width: "100%" }}>
                             <AgGridReact
                                 theme="legacy"
                                 rowData={reportData.rows}
