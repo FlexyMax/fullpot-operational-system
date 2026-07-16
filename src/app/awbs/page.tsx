@@ -714,6 +714,9 @@ export default function AwbsPage() {
     const { logAction } = useAuditLog("awbs", "flower_awbs");
     const perms          = usePagePermissions("awbs");
 
+    // ── Pending scroll after AWB search ─────────────────────────────────────
+    const pendingScrollRef = useRef<string | null>(null);
+
     // ── Zustand store ────────────────────────────────────────────────────────
     const {
         dateFrom, dateTo, airline, awbSearch, searchKey,
@@ -774,6 +777,15 @@ export default function AwbsPage() {
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [awbs]);
+
+    // ── Scroll to the AWB row after an AWB# search ────────────────────────────
+    useEffect(() => {
+        if (!pendingScrollRef.current || loadingAwbs) return;
+        const el = document.getElementById(`awb-row-${pendingScrollRef.current}`);
+        if (el) el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        pendingScrollRef.current = null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [awbs, loadingAwbs]);
 
     const { data: vendors = EMPTY_ARR, isFetching: loadingVendors, refetch: refetchVendors } = useQuery({
         queryKey: ["awb-packing", selAwb?.AWBCODE],
@@ -865,6 +877,7 @@ export default function AwbsPage() {
             setDateFrom(minDate);
             setDateTo(maxDate);
             setSelAwb({ ...records[0], AWBCODE: awbCode });
+            pendingScrollRef.current = awbCode;
             triggerSearch();
             ["awb-packing", "awb-charges", "awb-boxes", "awb-varieties"].forEach(key =>
                 qc.invalidateQueries({ queryKey: [key, awbCode] })
@@ -1090,7 +1103,7 @@ export default function AwbsPage() {
                             </PanelGridThead>
                             <PanelGridTbody>
                                 {(awbs as any[]).map((row: any) => (
-                                    <PanelGridTr key={row.AWBCODE} selected={selAwb?.AWBCODE === row.AWBCODE} onClick={() => handleSelectAwb(row)}>
+                                    <PanelGridTr key={row.AWBCODE} id={`awb-row-${row.AWBCODE}`} selected={selAwb?.AWBCODE === row.AWBCODE} onClick={() => handleSelectAwb(row)}>
                                         <PanelGridTd className="font-bold text-[#FB7506]">{t(row.AWBCODE)}</PanelGridTd>
                                         <PanelGridTd>{t(row.AIRLINE)}</PanelGridTd>
                                         <PanelGridTd>{t(row.AIRCODE)}</PanelGridTd>

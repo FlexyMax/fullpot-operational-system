@@ -67,6 +67,7 @@ export function PanelGridTr({
   children,
   className,
   style,
+  id,
   onClick,
   onDoubleClick,
   selected,
@@ -74,12 +75,14 @@ export function PanelGridTr({
   children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
+  id?: string;
   onClick?: () => void;
   onDoubleClick?: () => void;
   selected?: boolean;
 }) {
   return (
     <tr
+      id={id}
       onClick={onClick}
       onDoubleClick={onDoubleClick}
       style={style}
