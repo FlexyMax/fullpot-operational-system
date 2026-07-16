@@ -858,7 +858,7 @@ export default function AwbsPage() {
             const d = await awbFetch(`/api/awbs/search?q=${encodeURIComponent(awbSearch)}`);
             const records: any[] = norm(d.records ?? []);
             if (!records.length) { toast.error("AWB not found."); return; }
-            setSelAwb(records[0]);
+            setSelAwb({ ...records[0], AWBCODE: awbSearch.trim().toUpperCase() });
             ["awb-packing", "awb-charges", "awb-boxes", "awb-varieties"].forEach(key =>
                 qc.invalidateQueries({ queryKey: [key, records[0].AWBCODE] })
             );
