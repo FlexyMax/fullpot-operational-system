@@ -858,9 +858,16 @@ export default function AwbsPage() {
             const d = await awbFetch(`/api/awbs/search?q=${encodeURIComponent(awbSearch)}`);
             const records: any[] = norm(d.records ?? []);
             if (!records.length) { toast.error("AWB not found."); return; }
-            setSelAwb({ ...records[0], AWBCODE: awbSearch.trim().toUpperCase() });
+            const awbCode = awbSearch.trim().toUpperCase();
+            const toDate  = (v: any) => v ? new Date(v).toISOString().split("T")[0] : today();
+            const minDate = toDate(records[0].AWBDATE_MIN);
+            const maxDate = toDate(records[0].AWBDATE_MAX);
+            setDateFrom(minDate);
+            setDateTo(maxDate);
+            setSelAwb({ ...records[0], AWBCODE: awbCode });
+            triggerSearch();
             ["awb-packing", "awb-charges", "awb-boxes", "awb-varieties"].forEach(key =>
-                qc.invalidateQueries({ queryKey: [key, records[0].AWBCODE] })
+                qc.invalidateQueries({ queryKey: [key, awbCode] })
             );
         } catch (e: any) { toast.error((e as any).message); }
     };
