@@ -13,7 +13,7 @@ import { useAuditLog } from "@/lib/audit";
 import { normalizeToISODate } from "@/lib/dates";
 import { toast } from "sonner";
 import { LogRecordModal } from "@/app/flexy2qb/components/modals/LogRecordModal";
-import { downloadCSV } from "@/lib/csv";
+import { DownloadBtn } from "@/components/ui/DownloadBtn";
 
 const EMPTY_ARR: any[] = [];
 const SUB_TABS = [
@@ -100,7 +100,7 @@ export default function SalesCreditsTab() {
 
     const yrOpts: { v: string }[] = years.map((y: any) => { const v = String(y.year || y.lnYear || Object.values(y)[0]); return { v }; });
 
-    const downloadReady = () => { if (!readyData.length) { toast.error("No ready data"); return; } downloadCSV(readyData, "SalesCreditsReady2QB.csv"); };
+
 
     const mobileItems = [
         { grid: "not-ready", label: "Ready",     icon: Check,      color: "green", onClick: () => { if (selNR === undefined) return toast.error("Select a row"); markReady.mutate({ lccr_uq: notReady[selNR!]?.unico, llready: true, ldCreditPay_date: null, llByReadyByDate: false }); },                             disabled: !canWrite || selNR === undefined },
@@ -166,6 +166,7 @@ export default function SalesCreditsTab() {
                         <PanelGrid title="Not Ready" icon={Clock} recordCount={fNR.length} refreshing={loadingNR}
                             searchValue={searchNR} onSearchChange={setSearchNR}
                             onRefresh={triggerRefresh}
+                            headerRight={<DownloadBtn data={fNR} filename="sales-credits-not-ready" />}
                             onLog={() => { if (selNR === undefined || !notReady[selNR]) return toast.error("Select a row first"); setLogId(notReady[selNR].unico); }}
                             menuItems={[
                                 { label: "Ready By Credit", icon: Check, color: "green", onClick: () => { if (selNR === undefined || !notReady[selNR]) return toast.error("Select a row first"); markReady.mutate({ lccr_uq: notReady[selNR].unico, llready: true, ldCreditPay_date: null, llByReadyByDate: false }); }, disabled: !canWrite || selNR === undefined },
@@ -191,7 +192,7 @@ export default function SalesCreditsTab() {
                             searchValue={searchReady} onSearchChange={setSearchReady}
                             onRefresh={triggerRefresh}
                             onLog={() => { if (selReady === undefined || !readyData[selReady]) return toast.error("Select a row first"); setLogId(readyData[selReady].unico); }}
-                            headerRight={<button onClick={downloadReady} className="text-gray-400 hover:text-[#FB7506] transition-all p-1" title="Download CSV"><Download size={16} /></button>}
+                            headerRight={<DownloadBtn data={fReady} filename="sales-credits-ready" />}
                             menuItems={[
                                 { label: "Mark as Not Ready", icon: X, color: "red", onClick: () => { if (selReady === undefined || !readyData[selReady]) return toast.error("Select a row first"); markReady.mutate({ lccr_uq: readyData[selReady].unico, llready: false, ldCreditPay_date: null, llByReadyByDate: false }); }, disabled: !canWrite || selReady === undefined },
                                 { label: "Not Ready By Date", icon: Calendar, color: "red", onClick: () => { if (!selectedDate) return toast.error("Select a date first"); markReady.mutate({ lccr_uq: null, llready: false, ldCreditPay_date: selectedDate, llByReadyByDate: true }); }, disabled: !canWrite || !selectedDate },
@@ -218,6 +219,7 @@ export default function SalesCreditsTab() {
                         <PanelGrid title="Sent to QB" icon={CheckCheck} recordCount={fSent.length} refreshing={loadingSent}
                             searchValue={searchSent} onSearchChange={setSearchSent}
                             onRefresh={triggerRefresh}
+                            headerRight={<DownloadBtn data={fSent} filename="sales-credits-sent" />}
                             onLog={() => { if (selSent === undefined || !sentData[selSent]) return toast.error("Select a row first"); setLogId(sentData[selSent].unico); }}
                             menuItems={[
                                 { label: "Mark as Not Sent", icon: RotateCcw, color: "red", onClick: () => { if (selSent === undefined || !sentData[selSent]) return toast.error("Select a row first"); sendToQb.mutate({ lccr_uq: sentData[selSent].unico, llready: false, ldCreditPay_date: null, llByReadyByDate: false }); }, disabled: !canWrite || selSent === undefined },

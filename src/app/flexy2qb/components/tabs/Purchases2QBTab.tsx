@@ -14,6 +14,7 @@ import { normalizeToISODate } from "@/lib/dates";
 import { toast } from "sonner";
 import { LogRecordModal } from "@/app/flexy2qb/components/modals/LogRecordModal";
 import { downloadCSV } from "@/lib/csv";
+import { DownloadBtn } from "@/components/ui/DownloadBtn";
 
 const EMPTY_ARR: any[] = [];
 const SUB_TABS = [
@@ -101,8 +102,7 @@ export default function Purchases2QBTab() {
     const markReadyInvoice  = useMutation({ mutationFn: async (p: any) => (await (await fetch("/api/flexy2qb/purchases/update-ready-invoice", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(p) })).json()), onSuccess: onMutate });
     const sendToQb          = useMutation({ mutationFn: async (p: any) => (await (await fetch("/api/flexy2qb/purchases/send",                 { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(p) })).json()), onSuccess: onMutate });
 
-    const downloadTPO   = () => { if (!tpoData.length)   { toast.error("No TPO data ready");   return; } downloadCSV(tpoData,   "Bills2TPO.csv"); };
-    const downloadReady = () => { if (!readyData.length) { toast.error("No ready data");       return; } downloadCSV(readyData, "PurchasesReady2QB.csv"); };
+    const downloadTPO = () => { if (!tpoData.length) { toast.error("No TPO data ready"); return; } downloadCSV(tpoData, "Bills2TPO.csv"); };
 
     const yrOpts: { v: string }[] = years.map((y: any) => { const v = String(y.year || y.lnYear || Object.values(y)[0]); return { v }; });
 
@@ -170,6 +170,7 @@ export default function Purchases2QBTab() {
                         <PanelGrid title="Not Ready" icon={Clock} recordCount={fNR.length} refreshing={loadingNR}
                             searchValue={searchNR} onSearchChange={setSearchNR}
                             onRefresh={triggerRefresh}
+                            headerRight={<DownloadBtn data={fNR} filename="purchases-not-ready" />}
                             onLog={() => { if (selNR === undefined || !notReady[selNR]) return toast.error("Select a row first"); setLogId(notReady[selNR].pack_uq || notReady[selNR].unico); }}
                             menuItems={[
                                 { label: "Ready By Invoice", icon: Check, color: "green", onClick: () => { if (selNR === undefined || !notReady[selNR]) return toast.error("Select a row first"); markReadyInvoice.mutate({ lcpacking_uq: notReady[selNR].pack_uq, llready: true }); }, disabled: !canWrite || selNR === undefined },
@@ -195,7 +196,7 @@ export default function Purchases2QBTab() {
                             searchValue={searchReady} onSearchChange={setSearchReady}
                             onRefresh={triggerRefresh}
                             onLog={() => { if (selReady === undefined || !readyData[selReady]) return toast.error("Select a row first"); setLogId(readyData[selReady].packing_uq || readyData[selReady].unico); }}
-                            headerRight={<><button onClick={downloadTPO} className="text-green-600 hover:text-green-500 transition-all p-1" title="Download TPO CSV (Bills2TPO)"><Download size={16} /></button><button onClick={downloadReady} className="text-gray-400 hover:text-[#FB7506] transition-all p-1" title="Download CSV"><Download size={16} /></button></>}
+                            headerRight={<><button onClick={downloadTPO} className="text-green-600 hover:text-green-500 transition-all p-1" title="Download TPO CSV (Bills2TPO)"><Download size={16} /></button><DownloadBtn data={fReady} filename="purchases-ready" /></>}
                             menuItems={[
                                 { label: "Invoice Mark as Not Ready", icon: X, color: "red", onClick: () => { if (selReady === undefined || !readyData[selReady]) return toast.error("Select a row first"); markReadyInvoice.mutate({ lcpacking_uq: readyData[selReady].packing_uq, llready: false }); }, disabled: !canWrite || selReady === undefined },
                                 { label: "Mark as Not Ready By Date", icon: Calendar, color: "red", onClick: () => { if (selReady === undefined || !readyData[selReady]) return toast.error("Select a row first"); const d = readyData[selReady].awbdate || readyData[selReady].awb_date; if (!d) return toast.error("AWB date not in record"); markReadyByDate.mutate({ ldAwbDate: d, llready: false }); }, disabled: !canWrite || selReady === undefined },
@@ -222,6 +223,7 @@ export default function Purchases2QBTab() {
                         <PanelGrid title="Sent to QB" icon={CheckCheck} recordCount={fSent.length} refreshing={loadingSent}
                             searchValue={searchSent} onSearchChange={setSearchSent}
                             onRefresh={triggerRefresh}
+                            headerRight={<DownloadBtn data={fSent} filename="purchases-sent" />}
                             onLog={() => { if (selSent === undefined || !sentData[selSent]) return toast.error("Select a row first"); setLogId(sentData[selSent].pack_uq || sentData[selSent].unico); }}
                             menuItems={[
                                 { label: "Mark as Not Sent", icon: RotateCcw, color: "red", onClick: () => { if (selSent === undefined || !sentData[selSent]) return toast.error("Select a row first"); sendToQb.mutate({ lcawbcode_aux: sentData[selSent].awbcode, llready: false, llByReadyByDate: false }); }, disabled: !canWrite || selSent === undefined },

@@ -13,7 +13,7 @@ import { useAuditLog } from "@/lib/audit";
 import { normalizeToISODate } from "@/lib/dates";
 import { toast } from "sonner";
 import { LogRecordModal } from "@/app/flexy2qb/components/modals/LogRecordModal";
-import { downloadCSV } from "@/lib/csv";
+import { DownloadBtn } from "@/components/ui/DownloadBtn";
 
 const EMPTY_ARR: any[] = [];
 const SUB_TABS = [
@@ -102,7 +102,7 @@ export default function SalesCosts2QBTab() {
 
     const yrOpts: { v: string }[] = years.map((y: any) => { const v = String(y.year || y.lnYear || Object.values(y)[0]); return { v }; });
 
-    const downloadReady = () => { if (!readyData.length) { toast.error("No ready data"); return; } downloadCSV(readyData, "SalesCostsReady2QB.csv"); };
+
 
     const mobileItems = [
         { grid: "not-ready", label: "Ready",     icon: Check,      color: "green", onClick: () => { if (selNR === undefined) return toast.error("Select a row"); markReady.mutate({ lcinvoice_uq: notReady[selNR!]?.unico, llready: true }); },                                         disabled: !canWrite || selNR === undefined },
@@ -168,6 +168,7 @@ export default function SalesCosts2QBTab() {
                         <PanelGrid title="Not Ready" icon={Clock} recordCount={fNR.length} refreshing={loadingNR}
                             searchValue={searchNR} onSearchChange={setSearchNR}
                             onRefresh={triggerRefresh}
+                            headerRight={<DownloadBtn data={fNR} filename="sales-costs-not-ready" />}
                             onLog={() => { if (selNR === undefined || !notReady[selNR]) return toast.error("Select a row first"); setLogId(notReady[selNR].unico); }}
                             menuItems={[
                                 { label: "Ready By Invoice", icon: Check, color: "green", onClick: () => { if (selNR === undefined || !notReady[selNR]) return toast.error("Select a row first"); markReady.mutate({ lcinvoice_uq: notReady[selNR].unico, llready: true }); }, disabled: !canWrite || selNR === undefined },
@@ -193,7 +194,7 @@ export default function SalesCosts2QBTab() {
                             searchValue={searchReady} onSearchChange={setSearchReady}
                             onRefresh={triggerRefresh}
                             onLog={() => { if (selReady === undefined || !readyData[selReady]) return toast.error("Select a row first"); setLogId(readyData[selReady].unico); }}
-                            headerRight={<button onClick={downloadReady} className="text-gray-400 hover:text-[#FB7506] transition-all p-1" title="Download CSV"><Download size={16} /></button>}
+                            headerRight={<DownloadBtn data={fReady} filename="sales-costs-ready" />}
                             menuItems={[
                                 { label: "Invoice Mark as Not Ready", icon: X, color: "red", onClick: () => { if (selReady === undefined || !readyData[selReady]) return toast.error("Select a row first"); markReady.mutate({ lcinvoice_uq: readyData[selReady].unico, llready: false }); }, disabled: !canWrite || selReady === undefined },
                                 { label: "Mark as Not Ready By Date", icon: Calendar, color: "red", onClick: () => { if (selReady === undefined || !readyData[selReady]) return toast.error("Select a row first"); const d = readyData[selReady].invoice_date || readyData[selReady].invoicedate; if (!d) return toast.error("Invoice date not in record"); markReadyByDate.mutate({ ldInvoice_date: d, llready: false }); }, disabled: !canWrite || selReady === undefined },
@@ -220,6 +221,7 @@ export default function SalesCosts2QBTab() {
                         <PanelGrid title="Sent to QB" icon={CheckCheck} recordCount={fSent.length} refreshing={loadingSent}
                             searchValue={searchSent} onSearchChange={setSearchSent}
                             onRefresh={triggerRefresh}
+                            headerRight={<DownloadBtn data={fSent} filename="sales-costs-sent" />}
                             onLog={() => { if (selSent === undefined || !sentData[selSent]) return toast.error("Select a row first"); setLogId(sentData[selSent].unico); }}
                             menuItems={[
                                 { label: "Mark as Not Sent", icon: RotateCcw, color: "red", onClick: () => { if (selSent === undefined || !sentData[selSent]) return toast.error("Select a row first"); sendToQb.mutate({ lcinvoice_uq: sentData[selSent].unico, llsent: false }); }, disabled: !canWrite || selSent === undefined },

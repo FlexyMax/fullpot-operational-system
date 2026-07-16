@@ -13,7 +13,7 @@ import { useAuditLog } from "@/lib/audit";
 import { normalizeToISODate } from "@/lib/dates";
 import { toast } from "sonner";
 import { LogRecordModal } from "@/app/flexy2qb/components/modals/LogRecordModal";
-import { downloadCSV } from "@/lib/csv";
+import { DownloadBtn } from "@/components/ui/DownloadBtn";
 
 const EMPTY_ARR: any[] = [];
 const SUB_TABS = [
@@ -97,8 +97,6 @@ export default function PurchasesOChargesTab() {
 
     const yrOpts: { v: string }[] = years.map((y: any) => { const v = String(y.year || y.lnYear || Object.values(y)[0]); return { v }; });
 
-    const downloadReady = () => { if (!readyData.length) { toast.error("No ready data"); return; } downloadCSV(readyData, "OChargesReady2QB.csv"); };
-
     const mobileItems = [
         { grid: "not-ready", label: "By Charge", icon: Check,      color: "green", onClick: () => { if (selNR === undefined) return toast.error("Select a row"); markReady.mutate({ lcCharge_uq: notReady[selNR!]?.unico, llready: true, llUpdateByDate: false, ldawb_date: null }); }, disabled: !canWrite || selNR === undefined },
         { grid: "not-ready", label: "By Date",   icon: Calendar,   color: "green", onClick: () => { if (!selectedDate) return toast.error("Select a date"); markReady.mutate({ lcCharge_uq: null, llready: true, llUpdateByDate: true, ldawb_date: selectedDate }); },                  disabled: !canWrite || !selectedDate },
@@ -162,6 +160,7 @@ export default function PurchasesOChargesTab() {
                         <PanelGrid title="Not Ready" icon={Clock} recordCount={fNR.length} refreshing={loadingNR}
                             searchValue={searchNR} onSearchChange={setSearchNR}
                             onRefresh={triggerRefresh}
+                            headerRight={<DownloadBtn data={fNR} filename="purch-ocharges-not-ready" />}
                             onLog={() => { if (selNR === undefined || !notReady[selNR]) return toast.error("Select a row first"); setLogId(notReady[selNR].unico); }}
                             menuItems={[
                                 { label: "Ready By Charge", icon: Check,    color: "green", onClick: () => { if (selNR === undefined || !notReady[selNR]) return toast.error("Select a row first"); markReady.mutate({ lcCharge_uq: notReady[selNR].unico, llready: true, llUpdateByDate: false, ldawb_date: null }); }, disabled: !canWrite || selNR === undefined },
@@ -187,7 +186,7 @@ export default function PurchasesOChargesTab() {
                             searchValue={searchReady} onSearchChange={setSearchReady}
                             onRefresh={triggerRefresh}
                             onLog={() => { if (selReady === undefined || !readyData[selReady]) return toast.error("Select a row first"); setLogId(readyData[selReady].unico); }}
-                            headerRight={<button onClick={downloadReady} className="text-gray-400 hover:text-[#FB7506] transition-all p-1" title="Download CSV"><Download size={16} /></button>}
+                            headerRight={<DownloadBtn data={fReady} filename="purch-ocharges-ready" />}
                             menuItems={[
                                 { label: "Unmark Ready",   icon: X,          color: "red",  onClick: () => { if (selReady === undefined || !readyData[selReady]) return toast.error("Select a row first"); markReady.mutate({ lcCharge_uq: readyData[selReady].unico, llready: false, llUpdateByDate: false, ldawb_date: null }); }, disabled: !canWrite || selReady === undefined },
                                 { separator: true },
@@ -213,6 +212,7 @@ export default function PurchasesOChargesTab() {
                         <PanelGrid title="Sent to QB" icon={CheckCheck} recordCount={fSent.length} refreshing={loadingSent}
                             searchValue={searchSent} onSearchChange={setSearchSent}
                             onRefresh={triggerRefresh}
+                            headerRight={<DownloadBtn data={fSent} filename="purch-ocharges-sent" />}
                             onLog={() => { if (selSent === undefined || !sentData[selSent]) return toast.error("Select a row first"); setLogId(sentData[selSent].unico); }}
                             menuItems={[
                                 { label: "Not Sent By Charge", icon: RotateCcw, color: "red", onClick: () => { if (selSent === undefined || !sentData[selSent]) return toast.error("Select a row first"); sendToQb.mutate({ lcCharge_uq: sentData[selSent].unico, llready: false, llByReadyByDate: false, ldawb_date: null }); }, disabled: !canWrite || selSent === undefined },

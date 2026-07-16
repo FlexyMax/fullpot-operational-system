@@ -13,7 +13,7 @@ import { useAuditLog } from "@/lib/audit";
 import { normalizeToISODate } from "@/lib/dates";
 import { toast } from "sonner";
 import { LogRecordModal } from "@/app/flexy2qb/components/modals/LogRecordModal";
-import { downloadCSV } from "@/lib/csv";
+import { DownloadBtn } from "@/components/ui/DownloadBtn";
 
 const EMPTY_ARR: any[] = [];
 const SUB_TABS = [
@@ -93,7 +93,7 @@ export default function CustomerPaymentsTab() {
     const markReady = useMutation({ mutationFn: async (p: any) => (await (await fetch("/api/flexy2qb/payments/update-ready", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(p) })).json()), onSuccess: onMutate });
     const sendToQb  = useMutation({ mutationFn: async (p: any) => (await (await fetch("/api/flexy2qb/payments/send",         { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(p) })).json()), onSuccess: onMutate });
 
-    const downloadReady = () => { if (!readyData.length) { toast.error("No ready data"); return; } downloadCSV(readyData, "CustomerPaymentsReady2QB.csv"); };
+
 
     const mobileItems = [
         { grid: "not-ready", label: "Ready",     icon: Check,      color: "green", onClick: () => { if (selNR === undefined) return toast.error("Select a row"); markReady.mutate({ lcincome_uq: notReady[selNR!]?.unico, llready: true, llByReadyByDate: false }); },                                  disabled: !canWrite || selNR === undefined },
@@ -153,6 +153,7 @@ export default function CustomerPaymentsTab() {
                         <PanelGrid title="Not Ready" icon={Clock} recordCount={fNR.length} refreshing={loadingNR}
                             searchValue={searchNR} onSearchChange={setSearchNR}
                             onRefresh={triggerRefresh}
+                            headerRight={<DownloadBtn data={fNR} filename="cust-payments-not-ready" />}
                             onLog={() => { if (selNR === undefined || !notReady[selNR]) return toast.error("Select a row first"); setLogId(notReady[selNR].unico); }}
                             menuItems={[
                                 { label: "Ready By Payment", icon: Check, color: "green", onClick: () => { if (selNR === undefined || !notReady[selNR]) return toast.error("Select a row first"); markReady.mutate({ lcincome_uq: notReady[selNR].unico, llready: true, llByReadyByDate: false }); }, disabled: !canWrite || selNR === undefined },
@@ -178,7 +179,7 @@ export default function CustomerPaymentsTab() {
                             searchValue={searchReady} onSearchChange={setSearchReady}
                             onRefresh={triggerRefresh}
                             onLog={() => { if (selReady === undefined || !readyData[selReady]) return toast.error("Select a row first"); setLogId(readyData[selReady].unico); }}
-                            headerRight={<button onClick={downloadReady} className="text-gray-400 hover:text-[#FB7506] transition-all p-1" title="Download CSV"><Download size={16} /></button>}
+                            headerRight={<DownloadBtn data={fReady} filename="cust-payments-ready" />}
                             menuItems={[
                                 { label: "Payment Mark as Not Ready", icon: X, color: "red", onClick: () => { if (selReady === undefined || !readyData[selReady]) return toast.error("Select a row first"); markReady.mutate({ lcincome_uq: readyData[selReady].unico, llready: false, llByReadyByDate: false }); }, disabled: !canWrite || selReady === undefined },
                                 { label: "Mark as Not Ready By Date", icon: Calendar, color: "red", onClick: () => { if (!selectedDate) return toast.error("Select a date first"); markReady.mutate({ lcincome_uq: null, ldin_date: selectedDate, llready: false, llByReadyByDate: true }); }, disabled: !canWrite || !selectedDate },
@@ -205,6 +206,7 @@ export default function CustomerPaymentsTab() {
                         <PanelGrid title="Sent to QB" icon={CheckCheck} recordCount={fSent.length} refreshing={loadingSent}
                             searchValue={searchSent} onSearchChange={setSearchSent}
                             onRefresh={triggerRefresh}
+                            headerRight={<DownloadBtn data={fSent} filename="cust-payments-sent" />}
                             onLog={() => { if (selSent === undefined || !sentData[selSent]) return toast.error("Select a row first"); setLogId(sentData[selSent].unico); }}
                             menuItems={[
                                 { label: "Mark as Not Sent", icon: RotateCcw, color: "red", onClick: () => { if (selSent === undefined || !sentData[selSent]) return toast.error("Select a row first"); sendToQb.mutate({ lcincome_uq: sentData[selSent].unico, llready: false, llByReadyByDate: false }); }, disabled: !canWrite || selSent === undefined },
