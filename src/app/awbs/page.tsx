@@ -180,7 +180,7 @@ function AwbsChargesModal({ mode, charge, awbcode, airline, onClose, onSaved }: 
         const updates: any = {};
         if (!form.ap_type_uq && charge?.AP_TYPE && (chargeTypes as any[]).length > 0) {
             const found = (chargeTypes as any[]).find((c: any) =>
-                t(c.AP_TYPE ?? c.DESCRIPTION ?? "").trim().toLowerCase() === t(charge.AP_TYPE ?? "").trim().toLowerCase()
+                t(c.type_name ?? c.TYPE_NAME ?? c.AP_TYPE ?? "").trim().toLowerCase() === t(charge.AP_TYPE ?? "").trim().toLowerCase()
             );
             if (found) updates.ap_type_uq = t(found.UNICO ?? found.unico);
         }
@@ -243,7 +243,7 @@ function AwbsChargesModal({ mode, charge, awbcode, airline, onClose, onSaved }: 
                     <label className={lbl}>Charge Type *</label>
                     <select {...F("ap_type_uq")} className="fos-input h-10 sm:h-9">
                         <option value="">— Select Type —</option>
-                        {(chargeTypes as any[]).map((c: any) => <option key={c.UNICO ?? c.unico} value={c.UNICO ?? c.unico}>{t(c.AP_TYPE ?? c.DESCRIPTION ?? c.description)}</option>)}
+                        {(chargeTypes as any[]).map((c: any) => <option key={c.UNICO ?? c.unico} value={c.UNICO ?? c.unico}>{t(c.type_name ?? c.TYPE_NAME ?? c.AP_TYPE ?? c.DESCRIPTION ?? c.description)}</option>)}
                     </select>
                 </div>
                 <div className="col-span-2 flex flex-col gap-0.5"><label className={lbl}>Amount *</label><input {...F("freight", true)} className="fos-input h-10 sm:h-9" /></div>
@@ -311,7 +311,7 @@ function AwbsFreightsModal({ mode, charge, airline, onClose, onSaved }: any) {
                     <label className={lbl}>Charge Type *</label>
                     <select {...F("ap_type_uq")} className="fos-input h-10 sm:h-9">
                         <option value="">— Select Charge —</option>
-                        {(chargeTypes as any[]).map((c: any) => <option key={c.UNICO ?? c.unico} value={c.UNICO ?? c.unico}>{t(c.AP_TYPE ?? c.DESCRIPTION ?? c.description)}</option>)}
+                        {(chargeTypes as any[]).map((c: any) => <option key={c.UNICO ?? c.unico} value={c.UNICO ?? c.unico}>{t(c.type_name ?? c.TYPE_NAME ?? c.AP_TYPE ?? c.DESCRIPTION ?? c.description)}</option>)}
                     </select>
                 </div>
                 <div className="col-span-2 flex flex-col gap-0.5">
@@ -348,7 +348,7 @@ function AwbsInvoiceChargesModal({ packUq, awbcode, onClose, onSaved }: any) {
     const { data: suppliers   = EMPTY_ARR } = useQuery({ queryKey: ["awb-suppliers"],    queryFn: () => awbFetch("/api/awbs/lookups/suppliers"),    staleTime: 60000, select: (d: any) => d.records ?? [] });
     const { data: chargeTypes = EMPTY_ARR } = useQuery({ queryKey: ["awb-chargetypes"],  queryFn: () => awbFetch("/api/awbs/lookups/charge-types"), staleTime: 60000, select: (d: any) => d.records ?? [] });
 
-    const ctMap = Object.fromEntries((chargeTypes as any[]).map((c: any) => [t(c.UNICO ?? c.unico), t(c.AP_TYPE ?? c.DESCRIPTION ?? c.description)]));
+    const ctMap = Object.fromEntries((chargeTypes as any[]).map((c: any) => [t(c.UNICO ?? c.unico), t(c.type_name ?? c.TYPE_NAME ?? c.AP_TYPE ?? c.DESCRIPTION ?? c.description)]));
     const spMap = Object.fromEntries((suppliers   as any[]).map((s: any) => [t(s.UNICO ?? s.unico), t(s.GROWER ?? s.grower)]));
 
     const { data: charges = EMPTY_ARR, isFetching } = useQuery({
@@ -425,7 +425,7 @@ function AwbsInvoiceChargesModal({ packUq, awbcode, onClose, onSaved }: any) {
                         <label className={lbl}>Charge Type *</label>
                         <select value={form.ap_type_uq} onChange={e => setForm((p: any) => ({ ...p, ap_type_uq: e.target.value }))} className="fos-input h-9">
                             <option value="">— Select —</option>
-                            {(chargeTypes as any[]).map((c: any) => <option key={c.UNICO ?? c.unico} value={c.UNICO ?? c.unico}>{t(c.AP_TYPE ?? c.DESCRIPTION ?? c.description)}</option>)}
+                            {(chargeTypes as any[]).map((c: any) => <option key={c.UNICO ?? c.unico} value={c.UNICO ?? c.unico}>{t(c.type_name ?? c.TYPE_NAME ?? c.AP_TYPE ?? c.DESCRIPTION ?? c.description)}</option>)}
                         </select>
                     </div>
                     <div className="flex flex-col gap-0.5">
@@ -1019,7 +1019,7 @@ export default function AwbsPage() {
     );
 
     // Name maps for by-date grid (sp_flower_awb_charges_by_date returns UQs only)
-    const ctDateMap = Object.fromEntries((chargeTypesDate as any[]).map((c: any) => [t(c.UNICO ?? c.unico), t(c.AP_TYPE ?? c.DESCRIPTION ?? c.description)]));
+    const ctDateMap = Object.fromEntries((chargeTypesDate as any[]).map((c: any) => [t(c.UNICO ?? c.unico), t(c.type_name ?? c.TYPE_NAME ?? c.AP_TYPE ?? c.DESCRIPTION ?? c.description)]));
     const spAllMap  = Object.fromEntries((suppliersAll  as any[]).map((s: any) => [t(s.UNICO ?? s.unico), t(s.GROWER ?? s.grower)]));
 
     // ── Render ───────────────────────────────────────────────────────────────
