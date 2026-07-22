@@ -1076,9 +1076,17 @@ export default function PaymentAuthorizationsPage() {
                                 <div className="flex items-center gap-2">
                                     {checkedInvoices.size > 0 && (
                                         <>
-                                            <select value={selOutcomeForPay} onChange={e => setSelOutcomeForPay(e.target.value)}
+                                            <select value={selOutcomeForPay}
+                                                onChange={e => {
+                                                    if (e.target.value === "__new__") {
+                                                        setAddPaymentModal(true);
+                                                    } else {
+                                                        setSelOutcomeForPay(e.target.value);
+                                                    }
+                                                }}
                                                 className="border border-gray-300 rounded px-2 h-7 text-[13px] text-gray-700 outline-none min-w-[180px]">
                                                 <option value="">— Select Payment Auth —</option>
+                                                <option value="__new__">+ New Payment Authorization…</option>
                                                 {(openOutcomes as any[]).map((o: any) => (
                                                     <option key={t(o.UNICO)} value={t(o.UNICO)}>{t(o.DATO ?? o.DOCUMENT ?? o.UNICO)}</option>
                                                 ))}
@@ -1158,7 +1166,7 @@ export default function PaymentAuthorizationsPage() {
                                             return (
                                                 <React.Fragment key={group.key}>
                                                     {/* Month subtotal row */}
-                                                    <tr className="bg-[#2a2a2a] border-y border-[#444]">
+                                                    <tr className="bg-[#e8eaed] border-y border-[#c8ccd2]">
                                                         <td className="px-2 py-1.5 w-8 text-center">
                                                             {withBal.length > 0 && (
                                                                 <input type="checkbox"
@@ -1178,13 +1186,13 @@ export default function PaymentAuthorizationsPage() {
                                                             )}
                                                         </td>
                                                         <td colSpan={6} className="px-2 py-1.5 text-[11px] font-black text-[#FB7506] uppercase tracking-wider">
-                                                            {group.label} <span className="text-white/50 font-normal">— {group.rows.length} invoice{group.rows.length !== 1 ? "s" : ""}</span>
+                                                            {group.label} <span className="text-gray-500 font-normal">— {group.rows.length} invoice{group.rows.length !== 1 ? "s" : ""}</span>
                                                         </td>
-                                                        <td className="px-2 py-1.5 text-right text-[11px] font-black text-white">{fmt(mTotals.ammount)}</td>
-                                                        <td className="px-2 py-1.5 text-right text-[11px] font-black text-blue-300">{fmt(mTotals.payments)}</td>
-                                                        <td className="px-2 py-1.5 text-right text-[11px] font-black text-green-400">{fmt(mTotals.credits)}</td>
-                                                        <td className="px-2 py-1.5 text-right text-[11px] font-black text-red-400">{fmt(mTotals.debits)}</td>
-                                                        <td className="px-2 py-1.5 text-right text-[11px] font-black text-[#FB7506]">{fmt(mTotals.balance)}</td>
+                                                        <td className="px-2 py-1.5 text-right text-[11px] font-black text-gray-700">{fmt(mTotals.ammount)}</td>
+                                                        <td className="px-2 py-1.5 text-right text-[11px] font-black text-blue-700">{fmt(mTotals.payments)}</td>
+                                                        <td className="px-2 py-1.5 text-right text-[11px] font-black text-green-700">{fmt(mTotals.credits)}</td>
+                                                        <td className="px-2 py-1.5 text-right text-[11px] font-black text-red-600">{fmt(mTotals.debits)}</td>
+                                                        <td className="px-2 py-1.5 text-right text-[11px] font-black text-orange-600">{fmt(mTotals.balance)}</td>
                                                         <td colSpan={3} />
                                                     </tr>
                                                     {/* Invoice rows for this month */}
@@ -1492,8 +1500,12 @@ export default function PaymentAuthorizationsPage() {
                     onClose={() => setAddPaymentModal(false)}
                     onSaved={(data: any) => {
                         setAddPaymentModal(false);
-                        logAction("Insert", t(data?.unico ?? data?.UNICO ?? ""), "Insert Payment Authorization");
+                        const newUq = t(data?.unico ?? data?.UNICO ?? "");
+                        logAction("Insert", newUq, "Insert Payment Authorization");
                         qc.invalidateQueries({ queryKey: ["pa-outcomes", store.lcgrower_uq, store.ldPaymentsFrom, store.lnclose] });
+                        qc.invalidateQueries({ queryKey: ["pa-open-outcomes", store.lcgrower_uq] }).then(() => {
+                            if (newUq) setSelOutcomeForPay(newUq);
+                        });
                     }}
                 />
             )}
