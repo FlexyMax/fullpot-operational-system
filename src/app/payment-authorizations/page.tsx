@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
@@ -931,6 +931,19 @@ export default function PaymentAuthorizationsPage() {
         balance:  acc.balance  + (parseFloat(r.BALANCE)     || 0),
     }), { ammount: 0, credits: 0, debits: 0, payments: 0, balance: 0 }), [invoicesList]);
 
+    const invoicesByMonth = useMemo(() => {
+        const groups: { key: string; label: string; rows: any[] }[] = [];
+        const idx = new Map<string, number>();
+        for (const row of invoicesList as any[]) {
+            const d = new Date(row.APDATE);
+            const key   = isNaN(d.getTime()) ? "unknown" : `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+            const label = isNaN(d.getTime()) ? "Unknown Date" : d.toLocaleString("en-US", { month: "long", year: "numeric" }).toUpperCase();
+            if (!idx.has(key)) { idx.set(key, groups.length); groups.push({ key, label, rows: [] }); }
+            groups[idx.get(key)!].rows.push(row);
+        }
+        return groups;
+    }, [invoicesList]);
+
     // ── Balance filter buttons (shared style) ─────────────────────────────────
     const BalBtn = ({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) => (
         <button onClick={onClick} className={cn("px-3 h-7 text-[14px] font-semibold uppercase rounded transition-colors",
@@ -1131,45 +1144,92 @@ export default function PaymentAuthorizationsPage() {
                                     <PanelGridTbody>
                                         {invoicesList.length === 0 ? (
                                             <PanelGridTr><PanelGridTd colSpan={15} className="py-10 text-center text-gray-400 italic">No invoices found</PanelGridTd></PanelGridTr>
-                                        ) : invoicesList.map((row: any) => {
-                                            const uq       = t(row.UNICO);
-                                            const sel      = store.lcap_uq === uq;
-                                            const bal      = parseFloat(row.BALANCE) || 0;
-                                            const approved = row.APPROVED == null ? "—" : t(row.APPROVED);
+                                        ) : invoicesByMonth.map(group => {
+                                            const withBal = group.rows.filter((r: any) => (parseFloat(r.BALANCE)||0) > 0);
+                                            const allChecked = withBal.length > 0 && withBal.every((r: any) => checkedInvoices.has(t(r.UNICO)));
+                                            const someChecked = !allChecked && withBal.some((r: any) => checkedInvoices.has(t(r.UNICO)));
+                                            const mTotals = group.rows.reduce((acc: any, r: any) => ({
+                                                ammount:  acc.ammount  + (parseFloat(r.AMMOUNT)     || 0),
+                                                credits:  acc.credits  + (parseFloat(r.CRE_AMMOUNT) || 0),
+                                                debits:   acc.debits   + (parseFloat(r.DEB_AMMOUNT) || 0),
+                                                payments: acc.payments + (parseFloat(r.OUT_AMMOUNT) || 0),
+                                                balance:  acc.balance  + (parseFloat(r.BALANCE)     || 0),
+                                            }), { ammount: 0, credits: 0, debits: 0, payments: 0, balance: 0 });
                                             return (
-                                                <PanelGridTr key={uq} selected={sel} onClick={() => handleSelectInvoice(row, uq)}>
-                                                    <PanelGridTd align="center" className="w-8">
-                                                        {bal > 0 && (
-                                                            <input type="checkbox"
-                                                                checked={checkedInvoices.has(uq)}
-                                                                onChange={e => {
-                                                                    e.stopPropagation();
-                                                                    setCheckedInvoices(prev => {
-                                                                        const next = new Set(prev);
-                                                                        if (e.target.checked) next.add(uq); else next.delete(uq);
-                                                                        return next;
-                                                                    });
-                                                                }}
-                                                                onClick={e => e.stopPropagation()}
-                                                                className="cursor-pointer accent-[#FB7506]"
-                                                            />
-                                                        )}
-                                                    </PanelGridTd>
-                                                    <PanelGridTd className="font-bold text-[#FB7506]">{t(row.INVOICE_NO)}</PanelGridTd>
-                                                    <PanelGridTd align="right" className="text-[#FB7506] font-medium">{t(row.PORDER_NO) === "0" ? "" : t(row.PORDER_NO)}</PanelGridTd>
-                                                    <PanelGridTd>{fmtDate(row.APDATE)}</PanelGridTd>
-                                                    <PanelGridTd align="right">{t(row.DAYS)}</PanelGridTd>
-                                                    <PanelGridTd align="right">{t(row.PERCEN)}</PanelGridTd>
-                                                    <PanelGridTd>{fmtDate(row.DATE_DUE)}</PanelGridTd>
-                                                    <PanelGridTd align="right">{fmt(row.AMMOUNT)}</PanelGridTd>
-                                                    <PanelGridTd align="right" className="text-blue-700">{fmt(row.OUT_AMMOUNT)}</PanelGridTd>
-                                                    <PanelGridTd align="right" className="text-green-600">{fmt(row.CRE_AMMOUNT)}</PanelGridTd>
-                                                    <PanelGridTd align="right" className="text-red-500">{fmt(row.DEB_AMMOUNT)}</PanelGridTd>
-                                                    <PanelGridTd align="right" className={cn("font-bold", bal > 0 ? "text-orange-600" : "text-green-600")}>{fmt(row.BALANCE)}</PanelGridTd>
-                                                    <PanelGridTd align="center" className={cn("font-bold", approved === "Yes" ? "text-green-600" : "text-gray-400")}>{approved}</PanelGridTd>
-                                                    <PanelGridTd align="center">{row.PAY ? <Check size={12} className="text-green-500 inline" /> : ""}</PanelGridTd>
-                                                    <PanelGridTd align="right" className="font-semibold text-gray-600">{fmt(row.ACCUMULATED)}</PanelGridTd>
-                                                </PanelGridTr>
+                                                <React.Fragment key={group.key}>
+                                                    {/* Month subtotal row */}
+                                                    <tr className="bg-[#2a2a2a] border-y border-[#444]">
+                                                        <td className="px-2 py-1.5 w-8 text-center">
+                                                            {withBal.length > 0 && (
+                                                                <input type="checkbox"
+                                                                    ref={el => { if (el) el.indeterminate = someChecked; }}
+                                                                    checked={allChecked}
+                                                                    onChange={e => {
+                                                                        const ids = withBal.map((r: any) => t(r.UNICO));
+                                                                        setCheckedInvoices(prev => {
+                                                                            const next = new Set(prev);
+                                                                            if (e.target.checked) ids.forEach((id: string) => next.add(id));
+                                                                            else ids.forEach((id: string) => next.delete(id));
+                                                                            return next;
+                                                                        });
+                                                                    }}
+                                                                    className="cursor-pointer accent-[#FB7506]"
+                                                                />
+                                                            )}
+                                                        </td>
+                                                        <td colSpan={6} className="px-2 py-1.5 text-[11px] font-black text-[#FB7506] uppercase tracking-wider">
+                                                            {group.label} <span className="text-white/50 font-normal">— {group.rows.length} invoice{group.rows.length !== 1 ? "s" : ""}</span>
+                                                        </td>
+                                                        <td className="px-2 py-1.5 text-right text-[11px] font-black text-white">{fmt(mTotals.ammount)}</td>
+                                                        <td className="px-2 py-1.5 text-right text-[11px] font-black text-blue-300">{fmt(mTotals.payments)}</td>
+                                                        <td className="px-2 py-1.5 text-right text-[11px] font-black text-green-400">{fmt(mTotals.credits)}</td>
+                                                        <td className="px-2 py-1.5 text-right text-[11px] font-black text-red-400">{fmt(mTotals.debits)}</td>
+                                                        <td className="px-2 py-1.5 text-right text-[11px] font-black text-[#FB7506]">{fmt(mTotals.balance)}</td>
+                                                        <td colSpan={3} />
+                                                    </tr>
+                                                    {/* Invoice rows for this month */}
+                                                    {group.rows.map((row: any) => {
+                                                        const uq       = t(row.UNICO);
+                                                        const sel      = store.lcap_uq === uq;
+                                                        const bal      = parseFloat(row.BALANCE) || 0;
+                                                        const approved = row.APPROVED == null ? "—" : t(row.APPROVED);
+                                                        return (
+                                                            <PanelGridTr key={uq} selected={sel} onClick={() => handleSelectInvoice(row, uq)}>
+                                                                <PanelGridTd align="center" className="w-8">
+                                                                    {bal > 0 && (
+                                                                        <input type="checkbox"
+                                                                            checked={checkedInvoices.has(uq)}
+                                                                            onChange={e => {
+                                                                                e.stopPropagation();
+                                                                                setCheckedInvoices(prev => {
+                                                                                    const next = new Set(prev);
+                                                                                    if (e.target.checked) next.add(uq); else next.delete(uq);
+                                                                                    return next;
+                                                                                });
+                                                                            }}
+                                                                            onClick={e => e.stopPropagation()}
+                                                                            className="cursor-pointer accent-[#FB7506]"
+                                                                        />
+                                                                    )}
+                                                                </PanelGridTd>
+                                                                <PanelGridTd className="font-bold text-[#FB7506]">{t(row.INVOICE_NO)}</PanelGridTd>
+                                                                <PanelGridTd align="right" className="text-[#FB7506] font-medium">{t(row.PORDER_NO) === "0" ? "" : t(row.PORDER_NO)}</PanelGridTd>
+                                                                <PanelGridTd>{fmtDate(row.APDATE)}</PanelGridTd>
+                                                                <PanelGridTd align="right">{t(row.DAYS)}</PanelGridTd>
+                                                                <PanelGridTd align="right">{t(row.PERCEN)}</PanelGridTd>
+                                                                <PanelGridTd>{fmtDate(row.DATE_DUE)}</PanelGridTd>
+                                                                <PanelGridTd align="right">{fmt(row.AMMOUNT)}</PanelGridTd>
+                                                                <PanelGridTd align="right" className="text-blue-700">{fmt(row.OUT_AMMOUNT)}</PanelGridTd>
+                                                                <PanelGridTd align="right" className="text-green-600">{fmt(row.CRE_AMMOUNT)}</PanelGridTd>
+                                                                <PanelGridTd align="right" className="text-red-500">{fmt(row.DEB_AMMOUNT)}</PanelGridTd>
+                                                                <PanelGridTd align="right" className={cn("font-bold", bal > 0 ? "text-orange-600" : "text-green-600")}>{fmt(row.BALANCE)}</PanelGridTd>
+                                                                <PanelGridTd align="center" className={cn("font-bold", approved === "Yes" ? "text-green-600" : "text-gray-400")}>{approved}</PanelGridTd>
+                                                                <PanelGridTd align="center">{row.PAY ? <Check size={12} className="text-green-500 inline" /> : ""}</PanelGridTd>
+                                                                <PanelGridTd align="right" className="font-semibold text-gray-600">{fmt(row.ACCUMULATED)}</PanelGridTd>
+                                                            </PanelGridTr>
+                                                        );
+                                                    })}
+                                                </React.Fragment>
                                             );
                                         })}
                                     </PanelGridTbody>
