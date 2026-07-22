@@ -673,6 +673,11 @@ export default function PaymentAuthorizationsPage() {
     const [selOutcomeRow,  setSelOutcomeRow]  = useState<any>(null);
     const [selDetailRow,   setSelDetailRow]   = useState<any>(null);
 
+    // Multi-invoice pay
+    const [checkedInvoices,  setCheckedInvoices]  = useState<Set<string>>(new Set());
+    const [selOutcomeForPay, setSelOutcomeForPay] = useState("");
+    const [payingSelected,   setPayingSelected]   = useState(false);
+
     // Modals
     const [reportsModal,        setReportsModal]        = useState(false);
     const [paymentsReportModal, setPaymentsReportModal] = useState(false);
@@ -737,6 +742,14 @@ export default function PaymentAuthorizationsPage() {
         queryKey: ["pa-payment-invoices", store.lcoutcome_uq],
         queryFn:  () => paFetch(`/api/payment-authorizations/payment-invoices?payment_uq=${encodeURIComponent(store.lcoutcome_uq)}`).then(d => norm(Array.isArray(d) ? d : [])),
         enabled:  !!store.lcoutcome_uq,
+        staleTime: 0,
+    });
+
+    // Open payment authorizations for this vendor — used by the multi-invoice pay selector
+    const { data: openOutcomes = EMPTY_ARR, refetch: refetchOpenOutcomes } = useQuery({
+        queryKey: ["pa-open-outcomes", store.lcgrower_uq],
+        queryFn:  () => paFetch(`/api/payment-authorizations/outcomes?grower_uq=${encodeURIComponent(store.lcgrower_uq)}&ldfrom=2000-01-01&lnclose=0`).then(d => norm(Array.isArray(d) ? d : [])),
+        enabled:  !!store.lcgrower_uq,
         staleTime: 0,
     });
 
@@ -837,6 +850,37 @@ export default function PaymentAuthorizationsPage() {
         store.setOutcomeUq(desel ? "" : uq);
         setSelOutcomeRow(desel ? null : row);
         setActiveBar(desel ? null : "payments");
+    };
+
+    const handlePaySelected = async () => {
+        if (!selOutcomeForPay) { toast.warning("Select a Payment Authorization first."); return; }
+        if (!perms.canCreate)  { toast.error(PERMISSION_MSGS.create); return; }
+        const toProcess = (invoicesList as any[]).filter(row =>
+            checkedInvoices.has(t(row.UNICO)) && (parseFloat(row.BALANCE) || 0) > 0
+        );
+        if (!toProcess.length) { toast.warning("No checked invoices with balance > 0."); return; }
+        setPayingSelected(true);
+        let ok = 0, fail = 0;
+        for (const row of toProcess) {
+            try {
+                const r = await fetch("/api/payment-authorizations/outcome-details", {
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ outcome_uq: selOutcomeForPay, out_ammount: parseFloat(row.BALANCE) || 0, acc_payd_uq: t(row.UNICO) }),
+                }).then(r => r.json());
+                if (r.success) { ok++; logAction("Insert", selOutcomeForPay, `Pay Invoice ${t(row.INVOICE_NO)}`); }
+                else fail++;
+            } catch { fail++; }
+        }
+        setPayingSelected(false);
+        setCheckedInvoices(new Set());
+        setSelOutcomeForPay("");
+        if (ok > 0) {
+            toast.success(`${ok} invoice(s) linked to payment.`);
+            qc.invalidateQueries({ queryKey: ["pa-invoices", store.lcgrower_uq, invoiceBalFilter] });
+            qc.invalidateQueries({ queryKey: ["pa-outcome-details", store.lcapd_uq] });
+            qc.invalidateQueries({ queryKey: ["pa-open-outcomes", store.lcgrower_uq] });
+        }
+        if (fail > 0) toast.error(`${fail} invoice(s) failed to link.`);
     };
 
     // ── Computed ──────────────────────────────────────────────────────────────
@@ -972,7 +1016,7 @@ export default function PaymentAuthorizationsPage() {
                                     const { inv, cre, deb, net, pay, bal } = getVendorRow(row);
                                     return (
                                         <PanelGridTr key={i} selected={sel}
-                                            onClick={() => { store.setGrowerUq(uq, t(row.GROWER)); setSelInvoiceRow(null); setSelOutcomeRow(null); setInvoiceBalFilter("pos"); }}>
+                                            onClick={() => { store.setGrowerUq(uq, t(row.GROWER)); setSelInvoiceRow(null); setSelOutcomeRow(null); setInvoiceBalFilter("pos"); setCheckedInvoices(new Set()); }}>
                                             <PanelGridTd className="font-medium min-w-[180px]">
                                                 <span className="text-[#FB7506] font-bold mr-1.5">{t(row.CODE ?? row.VENDOR_CODE ?? "")}</span>
                                                 {t(row.GROWER)}
@@ -1016,10 +1060,26 @@ export default function PaymentAuthorizationsPage() {
                             refreshing={loadingInvoices || approveMutation.isPending}
                             onRefresh={refetchInvoices}
                             headerRight={
-                                <div className="flex gap-2">
-                                    <BalBtn active={invoiceBalFilter === "pos"}  onClick={() => { setInvoiceBalFilter("pos");  setSelInvoiceRow(null); store.setApUq(""); store.setApdUq(""); }} label="Bal +" />
-                                    <BalBtn active={invoiceBalFilter === "zero"} onClick={() => { setInvoiceBalFilter("zero"); setSelInvoiceRow(null); store.setApUq(""); store.setApdUq(""); }} label="Bal=0" />
-                                    <BalBtn active={invoiceBalFilter === "all"}  onClick={() => { setInvoiceBalFilter("all");  setSelInvoiceRow(null); store.setApUq(""); store.setApdUq(""); }} label="All" />
+                                <div className="flex items-center gap-2">
+                                    {checkedInvoices.size > 0 && (
+                                        <>
+                                            <select value={selOutcomeForPay} onChange={e => setSelOutcomeForPay(e.target.value)}
+                                                className="border border-gray-300 rounded px-2 h-7 text-[13px] text-gray-700 outline-none min-w-[180px]">
+                                                <option value="">— Select Payment Auth —</option>
+                                                {(openOutcomes as any[]).map((o: any) => (
+                                                    <option key={t(o.UNICO)} value={t(o.UNICO)}>{t(o.DATO ?? o.DOCUMENT ?? o.UNICO)}</option>
+                                                ))}
+                                            </select>
+                                            <button onClick={handlePaySelected} disabled={payingSelected || !selOutcomeForPay}
+                                                className="flex items-center gap-1 px-3 h-7 text-[13px] font-semibold rounded bg-[#FB7506] text-white hover:bg-[#e06700] disabled:opacity-50 transition-colors">
+                                                {payingSelected ? <Loader2 size={12} className="animate-spin" /> : <DollarSign size={12} />}
+                                                Pay {checkedInvoices.size}
+                                            </button>
+                                        </>
+                                    )}
+                                    <BalBtn active={invoiceBalFilter === "pos"}  onClick={() => { setInvoiceBalFilter("pos");  setSelInvoiceRow(null); store.setApUq(""); store.setApdUq(""); setCheckedInvoices(new Set()); }} label="Bal +" />
+                                    <BalBtn active={invoiceBalFilter === "zero"} onClick={() => { setInvoiceBalFilter("zero"); setSelInvoiceRow(null); store.setApUq(""); store.setApdUq(""); setCheckedInvoices(new Set()); }} label="Bal=0" />
+                                    <BalBtn active={invoiceBalFilter === "all"}  onClick={() => { setInvoiceBalFilter("all");  setSelInvoiceRow(null); store.setApUq(""); store.setApdUq(""); setCheckedInvoices(new Set()); }} label="All" />
                                 </div>
                             }
                             menuItems={[
@@ -1043,6 +1103,16 @@ export default function PaymentAuthorizationsPage() {
                             ) : (
                                 <PanelGridTable>
                                     <PanelGridThead>
+                                        <PanelGridTh className="w-8 text-center">
+                                            <input type="checkbox"
+                                                checked={invoicesList.length > 0 && (invoicesList as any[]).filter((r: any) => (parseFloat(r.BALANCE)||0) > 0).every((r: any) => checkedInvoices.has(t(r.UNICO)))}
+                                                onChange={e => {
+                                                    if (e.target.checked) setCheckedInvoices(new Set((invoicesList as any[]).filter((r: any) => (parseFloat(r.BALANCE)||0) > 0).map((r: any) => t(r.UNICO))));
+                                                    else setCheckedInvoices(new Set());
+                                                }}
+                                                className="cursor-pointer accent-[#FB7506]"
+                                            />
+                                        </PanelGridTh>
                                         <PanelGridTh>Invoice</PanelGridTh>
                                         <PanelGridTh align="right">PO</PanelGridTh>
                                         <PanelGridTh>Inv.Date</PanelGridTh>
@@ -1060,7 +1130,7 @@ export default function PaymentAuthorizationsPage() {
                                     </PanelGridThead>
                                     <PanelGridTbody>
                                         {invoicesList.length === 0 ? (
-                                            <PanelGridTr><PanelGridTd colSpan={14} className="py-10 text-center text-gray-400 italic">No invoices found</PanelGridTd></PanelGridTr>
+                                            <PanelGridTr><PanelGridTd colSpan={15} className="py-10 text-center text-gray-400 italic">No invoices found</PanelGridTd></PanelGridTr>
                                         ) : invoicesList.map((row: any) => {
                                             const uq       = t(row.UNICO);
                                             const sel      = store.lcap_uq === uq;
@@ -1068,6 +1138,23 @@ export default function PaymentAuthorizationsPage() {
                                             const approved = row.APPROVED == null ? "—" : t(row.APPROVED);
                                             return (
                                                 <PanelGridTr key={uq} selected={sel} onClick={() => handleSelectInvoice(row, uq)}>
+                                                    <PanelGridTd align="center" className="w-8">
+                                                        {bal > 0 && (
+                                                            <input type="checkbox"
+                                                                checked={checkedInvoices.has(uq)}
+                                                                onChange={e => {
+                                                                    e.stopPropagation();
+                                                                    setCheckedInvoices(prev => {
+                                                                        const next = new Set(prev);
+                                                                        if (e.target.checked) next.add(uq); else next.delete(uq);
+                                                                        return next;
+                                                                    });
+                                                                }}
+                                                                onClick={e => e.stopPropagation()}
+                                                                className="cursor-pointer accent-[#FB7506]"
+                                                            />
+                                                        )}
+                                                    </PanelGridTd>
                                                     <PanelGridTd className="font-bold text-[#FB7506]">{t(row.INVOICE_NO)}</PanelGridTd>
                                                     <PanelGridTd align="right" className="text-[#FB7506] font-medium">{t(row.PORDER_NO) === "0" ? "" : t(row.PORDER_NO)}</PanelGridTd>
                                                     <PanelGridTd>{fmtDate(row.APDATE)}</PanelGridTd>
@@ -1089,7 +1176,7 @@ export default function PaymentAuthorizationsPage() {
                                     {invoicesList.length > 0 && (
                                         <PanelGridTfoot>
                                             <tr>
-                                                <td className="px-2 py-2 text-[10px] font-black text-gray-600 uppercase tracking-wide" colSpan={6}>
+                                                <td className="px-2 py-2 text-[10px] font-black text-gray-600 uppercase tracking-wide" colSpan={7}>
                                                     TOTALS ({invoicesList.length} invoices)
                                                 </td>
                                                 <td className="px-2 py-2 text-right font-black text-[11px]">{fmt(invTotals.ammount)}</td>
