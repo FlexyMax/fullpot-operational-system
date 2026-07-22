@@ -100,6 +100,59 @@ function CancelBtn({ onClick }: { onClick: () => void }) {
     );
 }
 
+// ─── SupplierCombobox ─────────────────────────────────────────────────────────
+function SupplierCombobox({ suppliers, value, onChange }: { suppliers: any[]; value: string; onChange: (uq: string) => void }) {
+    const [search,  setSearch]  = useState("");
+    const [open,    setOpen]    = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+
+    const selected = (suppliers as any[]).find((s: any) => (s.UNICO ?? s.unico) === value);
+    const display  = selected ? t(selected.GROWER ?? selected.grower ?? selected.SUPPLIER ?? selected.supplier) : "";
+
+    const filtered = search.trim()
+        ? (suppliers as any[]).filter((s: any) => t(s.GROWER ?? s.grower ?? s.SUPPLIER ?? s.supplier ?? "").toLowerCase().includes(search.toLowerCase()))
+        : (suppliers as any[]);
+
+    useEffect(() => {
+        if (!open) return;
+        const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+        document.addEventListener("mousedown", h);
+        return () => document.removeEventListener("mousedown", h);
+    }, [open]);
+
+    const pick = (uq: string) => { onChange(uq); setSearch(""); setOpen(false); };
+
+    return (
+        <div ref={ref} className="relative">
+            <input
+                type="text"
+                value={open ? search : display}
+                placeholder={display || "Search supplier…"}
+                onFocus={() => { setSearch(""); setOpen(true); }}
+                onChange={e => { setSearch(e.target.value); setOpen(true); }}
+                className="fos-input h-10 sm:h-9 w-full text-xs"
+            />
+            {open && (
+                <div className="absolute z-50 left-0 right-0 top-full mt-0.5 bg-white border border-gray-300 rounded shadow-lg max-h-52 overflow-y-auto text-xs">
+                    {filtered.length === 0 ? (
+                        <div className="px-3 py-2 text-gray-400 italic">No results</div>
+                    ) : filtered.map((s: any) => {
+                        const uq   = s.UNICO ?? s.unico;
+                        const name = t(s.GROWER ?? s.grower ?? s.SUPPLIER ?? s.supplier ?? "");
+                        return (
+                            <div key={uq} onMouseDown={() => pick(uq)}
+                                className={cn("px-3 py-1.5 cursor-pointer hover:bg-[#FB7506]/10",
+                                    uq === value ? "bg-[#FB7506]/15 font-semibold text-[#FB7506]" : "text-gray-700")}>
+                                {name}
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+}
+
 // ─── Modal 1: AWB Charges (per AWB) ──────────────────────────────────────────
 function AwbsChargesModal({ mode, charge, awbcode, airline, onClose, onSaved }: any) {
     const isEdit = mode === "edit";
@@ -115,9 +168,8 @@ function AwbsChargesModal({ mode, charge, awbcode, airline, onClose, onSaved }: 
         full_boxes:   charge?.FULL_BOXES   ?? 0,
         weight:       charge?.TOTAL_WEIGHT ?? charge?.WEIGHT   ?? 0,
     } : blank);
-    const [saving, setSaving]             = useState(false);
-    const [error,  setError]              = useState<string | null>(null);
-    const [supplierSearch, setSupplierSearch] = useState("");
+    const [saving, setSaving] = useState(false);
+    const [error,  setError]  = useState<string | null>(null);
 
     const { data: suppliers   = EMPTY_ARR } = useQuery({ queryKey: ["awb-suppliers"],    queryFn: () => awbFetch("/api/awbs/lookups/suppliers"),    staleTime: 60000, select: (d: any) => d.records ?? [] });
     const { data: chargeTypes = EMPTY_ARR } = useQuery({ queryKey: ["awb-chargetypes"],  queryFn: () => awbFetch("/api/awbs/lookups/charge-types"), staleTime: 60000, select: (d: any) => d.records ?? [] });
@@ -140,10 +192,6 @@ function AwbsChargesModal({ mode, charge, awbcode, airline, onClose, onSaved }: 
         }
         if (Object.keys(updates).length > 0) setForm((p: any) => ({ ...p, ...updates }));
     }, [chargeTypes, suppliers]);
-
-    const filteredSuppliers = supplierSearch.trim()
-        ? (suppliers as any[]).filter((s: any) => t(s.GROWER ?? s.grower).toLowerCase().includes(supplierSearch.toLowerCase()))
-        : (suppliers as any[]);
 
     const F = (key: string, num = false) => num
         ? { type: "number" as const, step: "0.01", value: form[key] ?? 0, onChange: (e: any) => setForm((p: any) => ({ ...p, [key]: parseFloat(e.target.value) || 0 })) }
@@ -188,15 +236,8 @@ function AwbsChargesModal({ mode, charge, awbcode, airline, onClose, onSaved }: 
                 </div>
                 <div className="col-span-2 flex flex-col gap-0.5">
                     <label className={lbl}>Supplier *</label>
-                    <input
-                        type="text" placeholder="Search supplier..."
-                        value={supplierSearch} onChange={e => setSupplierSearch(e.target.value)}
-                        className="fos-input h-10 sm:h-8 mb-1 text-xs"
-                    />
-                    <select {...F("supplier_uq")} size={5} className="fos-input py-0 h-auto text-xs" style={{ minHeight: "6rem" }}>
-                        <option value="">— Select Supplier —</option>
-                        {filteredSuppliers.map((s: any) => <option key={s.UNICO ?? s.unico} value={s.UNICO ?? s.unico}>{t(s.GROWER ?? s.grower ?? s.SUPPLIER ?? s.supplier)}</option>)}
-                    </select>
+                    <SupplierCombobox suppliers={suppliers as any[]} value={form.supplier_uq}
+                        onChange={uq => setForm((p: any) => ({ ...p, supplier_uq: uq }))} />
                 </div>
                 <div className="col-span-2 flex flex-col gap-0.5">
                     <label className={lbl}>Charge Type *</label>
@@ -233,16 +274,11 @@ function AwbsFreightsModal({ mode, charge, airline, onClose, onSaved }: any) {
         notes:       charge?.NOTES       ?? "",
         invoice_no:  charge?.INVOICE_NO  ?? "",
     } : blankF);
-    const [saving, setSaving]                 = useState(false);
-    const [error,  setError]                  = useState<string | null>(null);
-    const [supplierSearch, setSupplierSearch] = useState("");
+    const [saving, setSaving] = useState(false);
+    const [error,  setError]  = useState<string | null>(null);
 
     const { data: suppliers   = EMPTY_ARR } = useQuery({ queryKey: ["awb-suppliers"],         queryFn: () => awbFetch("/api/awbs/lookups/suppliers"),         staleTime: 60000, select: (d: any) => d.records ?? [] });
     const { data: chargeTypes = EMPTY_ARR } = useQuery({ queryKey: ["awb-chargetypes-date"],   queryFn: () => awbFetch("/api/awbs/lookups/charge-types-date"), staleTime: 60000, select: (d: any) => d.records ?? [] });
-
-    const filteredSuppliers = supplierSearch.trim()
-        ? (suppliers as any[]).filter((s: any) => t(s.GROWER ?? s.grower).toLowerCase().includes(supplierSearch.toLowerCase()))
-        : (suppliers as any[]);
 
     const F = (key: string, num = false) => num
         ? { type: "number" as const, step: "0.01", value: form[key] ?? 0, onChange: (e: any) => setForm((p: any) => ({ ...p, [key]: parseFloat(e.target.value) || 0 })) }
@@ -280,15 +316,8 @@ function AwbsFreightsModal({ mode, charge, airline, onClose, onSaved }: any) {
                 </div>
                 <div className="col-span-2 flex flex-col gap-0.5">
                     <label className={lbl}>Supplier *</label>
-                    <input
-                        type="text" placeholder="Search supplier..."
-                        value={supplierSearch} onChange={e => setSupplierSearch(e.target.value)}
-                        className="fos-input h-10 sm:h-8 mb-1 text-xs"
-                    />
-                    <select {...F("supplier_uq")} size={4} className="fos-input py-0 h-auto text-xs" style={{ minHeight: "6rem" }}>
-                        <option value="">— Select Supplier —</option>
-                        {filteredSuppliers.map((s: any) => <option key={s.UNICO ?? s.unico} value={s.UNICO ?? s.unico}>{t(s.GROWER ?? s.grower ?? s.SUPPLIER ?? s.supplier)}</option>)}
-                    </select>
+                    <SupplierCombobox suppliers={suppliers as any[]} value={form.supplier_uq}
+                        onChange={uq => setForm((p: any) => ({ ...p, supplier_uq: uq }))} />
                 </div>
                 <div className="flex flex-col gap-0.5"><label className={lbl}>O. Charges *</label><input {...F("ocharges", true)} className="fos-input h-10 sm:h-9" /></div>
                 <div className="flex flex-col gap-0.5"><label className={lbl}>Duties</label><input {...F("duties", true)} className="fos-input h-10 sm:h-9" /></div>

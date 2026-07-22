@@ -66,7 +66,7 @@ function NewPaymentModal({ mode, income, customerUq, customerName, onClose, onSa
                         <label className="text-[9px] font-black text-gray-400 uppercase">Type *</label>
                         <select value={form.type_uq||""} onChange={e=>setForm((p:any)=>({...p,type_uq:e.target.value}))} className="fos-input py-1">
                             <option value="">— Select —</option>
-                            {(types as any[]).map((tp:any)=><option key={tp.unico} value={tp.unico}>{t(tp.type)}</option>)}
+                            {(types as any[]).map((tp:any)=><option key={tp.unico} value={tp.unico}>{t(tp.income_type)}</option>)}
                         </select>
                     </div>
                     <div className="flex flex-col gap-0.5">
