@@ -488,14 +488,76 @@ function ModalCRDB({ invoiceUq, invoiceNo, growerName, onClose, onOpen, logActio
     );
 }
 
+// ─── ModalCreateBank ──────────────────────────────────────────────────────────
+function ModalCreateBank({ onClose, onSaved }: { onClose: () => void; onSaved: (unico: string, bankName: string) => void }) {
+    const [bank,    setBank]    = useState("");
+    const [address, setAddress] = useState("");
+    const [phone,   setPhone]   = useState("");
+    const [contact, setContact] = useState("");
+    const [saving,  setSaving]  = useState(false);
+
+    const handleSave = async () => {
+        if (!bank.trim()) { toast.warning("Bank name is required."); return; }
+        setSaving(true);
+        try {
+            const r = await fetch("/api/payment-authorizations/banks", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ bank, address, phone_1: phone, contact }),
+            }).then(r => r.json());
+            if (!r.success) throw new Error(r.error || "Failed to create bank");
+            toast.success("Bank created.");
+            onSaved(r.unico, bank.trim());
+        } catch (e: any) { toast.error(e.message); }
+        finally { setSaving(false); }
+    };
+
+    return (
+        <Modal title="New Bank" icon={Building2} onClose={onClose} size="sm"
+            footer={
+                <>
+                    <button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Cancel</button>
+                    <button onClick={handleSave} disabled={saving} className="flex items-center gap-1.5 px-4 py-2 rounded bg-green-600 text-white text-sm font-bold hover:bg-green-700 disabled:opacity-50">
+                        {saving && <Loader2 size={12} className="animate-spin" />}Save
+                    </button>
+                </>
+            }>
+            <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase">Bank Name <span className="text-red-500">*</span></label>
+                    <input type="text" value={bank} onChange={e => setBank(e.target.value)} maxLength={40}
+                        placeholder="Bank name" autoFocus
+                        className="border rounded px-2 py-1 text-sm" />
+                </div>
+                <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase">Address</label>
+                    <input type="text" value={address} onChange={e => setAddress(e.target.value)} maxLength={50}
+                        className="border rounded px-2 py-1 text-sm" />
+                </div>
+                <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase">Phone</label>
+                    <input type="text" value={phone} onChange={e => setPhone(e.target.value)} maxLength={15}
+                        className="border rounded px-2 py-1 text-sm" />
+                </div>
+                <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase">Contact</label>
+                    <input type="text" value={contact} onChange={e => setContact(e.target.value)} maxLength={40}
+                        className="border rounded px-2 py-1 text-sm" />
+                </div>
+            </div>
+        </Modal>
+    );
+}
+
 // ─── ModalAddPayment ──────────────────────────────────────────────────────────
 function ModalAddPayment({ banks, supplierUq, onClose, onSaved }: any) {
-    const [bankUq,   setBankUq]   = useState("");
-    const [amount,   setAmount]   = useState("0.00");
-    const [total,    setTotal]    = useState("0.00");
-    const [details,  setDetails]  = useState("");
-    const [payDoc,   setPayDoc]   = useState("0");
-    const [saving,   setSaving]   = useState(false);
+    const [bankUq,        setBankUq]        = useState("");
+    const [localBanks,    setLocalBanks]    = useState<any[]>(banks);
+    const [amount,        setAmount]        = useState("0.00");
+    const [total,         setTotal]         = useState("0.00");
+    const [details,       setDetails]       = useState("");
+    const [payDoc,        setPayDoc]        = useState("0");
+    const [saving,        setSaving]        = useState(false);
+    const [createBankModal, setCreateBankModal] = useState(false);
 
     const handleSave = async () => {
         if (!bankUq)     { toast.warning("Select a bank."); return; }
@@ -526,10 +588,16 @@ function ModalAddPayment({ banks, supplierUq, onClose, onSaved }: any) {
             <div className="flex flex-col gap-3">
                 <div className="flex flex-col gap-1">
                     <label className="text-[10px] font-bold text-gray-500 uppercase">Bank</label>
-                    <select value={bankUq} onChange={e => setBankUq(e.target.value)} className="border rounded px-2 py-1 text-sm">
-                        <option value="">— Select Bank —</option>
-                        {banks.map((b: any) => <option key={t(b.UNICO)} value={t(b.UNICO)}>{t(b.BANK)}</option>)}
-                    </select>
+                    <div className="flex gap-1">
+                        <select value={bankUq} onChange={e => setBankUq(e.target.value)} className="border rounded px-2 py-1 text-sm flex-1">
+                            <option value="">— Select Bank —</option>
+                            {localBanks.map((b: any) => <option key={t(b.UNICO)} value={t(b.UNICO)}>{t(b.BANK)}</option>)}
+                        </select>
+                        <button onClick={() => setCreateBankModal(true)} title="New Bank"
+                            className="flex items-center justify-center w-8 rounded border border-gray-300 text-gray-500 hover:text-[#FB7506] hover:border-[#FB7506] transition-colors text-lg font-bold shrink-0">
+                            +
+                        </button>
+                    </div>
                 </div>
                 <div className="flex flex-col gap-1">
                     <label className="text-[10px] font-bold text-gray-500 uppercase">Amount</label>
@@ -548,14 +616,27 @@ function ModalAddPayment({ banks, supplierUq, onClose, onSaved }: any) {
                     <input type="text" value={details} onChange={e => setDetails(e.target.value)} maxLength={100} className="border rounded px-2 py-1 text-sm" />
                 </div>
             </div>
+            {createBankModal && (
+                <ModalCreateBank
+                    onClose={() => setCreateBankModal(false)}
+                    onSaved={(unico, bankName) => {
+                        const newBank = { UNICO: unico, BANK: bankName };
+                        setLocalBanks(prev => [...prev, newBank]);
+                        setBankUq(unico);
+                        setCreateBankModal(false);
+                    }}
+                />
+            )}
         </Modal>
     );
 }
 
 function ModalEditPayment({ uq, banks, onClose, onSaved }: { uq: string; banks: any[]; onClose: () => void; onSaved: () => void }) {
-    const [loading,   setLoading]   = useState(true);
-    const [saving,    setSaving]    = useState(false);
-    const [bankUq,    setBankUq]    = useState("");
+    const [loading,         setLoading]         = useState(true);
+    const [saving,          setSaving]          = useState(false);
+    const [bankUq,          setBankUq]          = useState("");
+    const [localBanks,      setLocalBanks]      = useState<any[]>(banks);
+    const [createBankModal, setCreateBankModal] = useState(false);
     const [outDate,   setOutDate]   = useState("");
     const [amount,    setAmount]    = useState("0.00");
     const [total,     setTotal]     = useState("0.00");
@@ -613,10 +694,16 @@ function ModalEditPayment({ uq, banks, onClose, onSaved }: { uq: string; banks: 
                 <div className="flex flex-col gap-3">
                     <div className="flex flex-col gap-1">
                         <label className="text-[10px] font-bold text-gray-500 uppercase">Bank</label>
-                        <select value={bankUq} onChange={e => setBankUq(e.target.value)} className="border rounded px-2 py-1 text-sm">
-                            <option value="">— Select Bank —</option>
-                            {banks.map((b: any) => <option key={t(b.UNICO)} value={t(b.UNICO)}>{t(b.BANK)}</option>)}
-                        </select>
+                        <div className="flex gap-1">
+                            <select value={bankUq} onChange={e => setBankUq(e.target.value)} className="border rounded px-2 py-1 text-sm flex-1">
+                                <option value="">— Select Bank —</option>
+                                {localBanks.map((b: any) => <option key={t(b.UNICO)} value={t(b.UNICO)}>{t(b.BANK)}</option>)}
+                            </select>
+                            <button onClick={() => setCreateBankModal(true)} title="New Bank"
+                                className="flex items-center justify-center w-8 rounded border border-gray-300 text-gray-500 hover:text-[#FB7506] hover:border-[#FB7506] transition-colors text-lg font-bold shrink-0">
+                                +
+                            </button>
+                        </div>
                     </div>
                     <div className="flex flex-col gap-1">
                         <label className="text-[10px] font-bold text-gray-500 uppercase">Date</label>
@@ -639,6 +726,17 @@ function ModalEditPayment({ uq, banks, onClose, onSaved }: { uq: string; banks: 
                         <input type="text" value={details} onChange={e => setDetails(e.target.value)} maxLength={100} className="border rounded px-2 py-1 text-sm" />
                     </div>
                 </div>
+            )}
+            {createBankModal && (
+                <ModalCreateBank
+                    onClose={() => setCreateBankModal(false)}
+                    onSaved={(unico, bankName) => {
+                        const newBank = { UNICO: unico, BANK: bankName };
+                        setLocalBanks(prev => [...prev, newBank]);
+                        setBankUq(unico);
+                        setCreateBankModal(false);
+                    }}
+                />
             )}
         </Modal>
     );
