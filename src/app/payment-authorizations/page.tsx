@@ -588,16 +588,13 @@ function ModalAddPayment({ banks, supplierUq, onClose, onSaved }: any) {
             <div className="flex flex-col gap-3">
                 <div className="flex flex-col gap-1">
                     <label className="text-[10px] font-bold text-gray-500 uppercase">Bank</label>
-                    <div className="flex gap-1">
-                        <select value={bankUq} onChange={e => setBankUq(e.target.value)} className="border rounded px-2 py-1 text-sm flex-1">
-                            <option value="">— Select Bank —</option>
-                            {localBanks.map((b: any) => <option key={t(b.UNICO)} value={t(b.UNICO)}>{t(b.BANK)}</option>)}
-                        </select>
-                        <button onClick={() => setCreateBankModal(true)} title="New Bank"
-                            className="flex items-center justify-center w-8 rounded border border-gray-300 text-gray-500 hover:text-[#FB7506] hover:border-[#FB7506] transition-colors text-lg font-bold shrink-0">
-                            +
-                        </button>
-                    </div>
+                    <select value={bankUq}
+                        onChange={e => { if (e.target.value === "__new_bank__") setCreateBankModal(true); else setBankUq(e.target.value); }}
+                        className="border rounded px-2 py-1 text-sm">
+                        <option value="">— Select Bank —</option>
+                        <option value="__new_bank__">+ New Bank…</option>
+                        {localBanks.map((b: any) => <option key={t(b.UNICO)} value={t(b.UNICO)}>{t(b.BANK)}</option>)}
+                    </select>
                 </div>
                 <div className="flex flex-col gap-1">
                     <label className="text-[10px] font-bold text-gray-500 uppercase">Amount</label>
@@ -694,16 +691,13 @@ function ModalEditPayment({ uq, banks, onClose, onSaved }: { uq: string; banks: 
                 <div className="flex flex-col gap-3">
                     <div className="flex flex-col gap-1">
                         <label className="text-[10px] font-bold text-gray-500 uppercase">Bank</label>
-                        <div className="flex gap-1">
-                            <select value={bankUq} onChange={e => setBankUq(e.target.value)} className="border rounded px-2 py-1 text-sm flex-1">
-                                <option value="">— Select Bank —</option>
-                                {localBanks.map((b: any) => <option key={t(b.UNICO)} value={t(b.UNICO)}>{t(b.BANK)}</option>)}
-                            </select>
-                            <button onClick={() => setCreateBankModal(true)} title="New Bank"
-                                className="flex items-center justify-center w-8 rounded border border-gray-300 text-gray-500 hover:text-[#FB7506] hover:border-[#FB7506] transition-colors text-lg font-bold shrink-0">
-                                +
-                            </button>
-                        </div>
+                        <select value={bankUq}
+                            onChange={e => { if (e.target.value === "__new_bank__") setCreateBankModal(true); else setBankUq(e.target.value); }}
+                            className="border rounded px-2 py-1 text-sm">
+                            <option value="">— Select Bank —</option>
+                            <option value="__new_bank__">+ New Bank…</option>
+                            {localBanks.map((b: any) => <option key={t(b.UNICO)} value={t(b.UNICO)}>{t(b.BANK)}</option>)}
+                        </select>
                     </div>
                     <div className="flex flex-col gap-1">
                         <label className="text-[10px] font-bold text-gray-500 uppercase">Date</label>
