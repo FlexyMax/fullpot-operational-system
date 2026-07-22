@@ -1,9 +1,20 @@
+/** De-duplicate keys produced by the API normalizer (which emits both original-case
+ *  and UPPERCASE aliases).  Keep the UPPERCASE version; drop the lowercase twin. */
+function dedupeHeaders(data: any[]): string[] {
+    const all = Object.keys(data[0]);
+    return all.filter(k => {
+        const up = k.toUpperCase();
+        // If an uppercase twin exists AND this key is not already uppercase, skip it
+        return k === up || !all.includes(up);
+    });
+}
+
 /**
  * Download an array of objects as an Excel (.xls) file using HTML table encoding.
  */
 export function downloadXLS(data: any[], filename: string): void {
     if (!data.length) return;
-    const headers = Object.keys(data[0]);
+    const headers = dedupeHeaders(data);
     const html = [
         '<table border="1">',
         `<tr>${headers.map(h => `<th><b>${h}</b></th>`).join("")}</tr>`,
@@ -23,7 +34,7 @@ export function downloadXLS(data: any[], filename: string): void {
  */
 export function downloadCSV(data: any[], filename: string): void {
     if (!data.length) return;
-    const headers = Object.keys(data[0]);
+    const headers = dedupeHeaders(data);
     const rows = data.map(r =>
         headers.map(h => `"${String(r[h] ?? "").replace(/"/g, '""')}"`).join(",")
     );
