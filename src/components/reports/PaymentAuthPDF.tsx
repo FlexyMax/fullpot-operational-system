@@ -1,4 +1,3 @@
-"use client";
 import { Document, Page, View, Text, StyleSheet, Font } from "@react-pdf/renderer";
 import type { CompanyInfo } from "@/lib/reports/companyInfo";
 
