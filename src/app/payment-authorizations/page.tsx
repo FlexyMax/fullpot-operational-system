@@ -489,16 +489,20 @@ function ModalCRDB({ invoiceUq, invoiceNo, growerName, onClose, onOpen, logActio
 }
 
 // ─── ModalPayInvoice ─────────────────────────────────────────────────────────
-function ModalPayInvoice({ row, openOutcomes, growerUq, onClose, onSaved, logAction, perms }: {
-    row: any; openOutcomes: any[]; growerUq: string;
-    onClose: () => void; onSaved: () => void;
+function ModalPayInvoice({ row, openOutcomes, growerUq, banks, onClose, onSaved, onNewOutcome, logAction, perms }: {
+    row: any; openOutcomes: any[]; growerUq: string; banks: any[];
+    onClose: () => void; onSaved: () => void; onNewOutcome: () => void;
     logAction: (action: "Edit" | "Insert" | "Delete", uq: string, desc?: string) => void;
     perms: any;
 }) {
-    const balance       = parseFloat(row.BALANCE) || 0;
+    const balance                   = parseFloat(row.BALANCE) || 0;
     const [outcomeUq,   setOutcomeUq]   = useState("");
     const [amount,      setAmount]      = useState(balance.toFixed(2));
     const [saving,      setSaving]      = useState(false);
+    const [localExtras, setLocalExtras] = useState<any[]>([]);
+    const [createOutcomeModal, setCreateOutcomeModal] = useState(false);
+
+    const allOutcomes = [...openOutcomes, ...localExtras];
 
     const amountNum = parseFloat(amount) || 0;
     const amountErr = amountNum <= 0
@@ -526,6 +530,7 @@ function ModalPayInvoice({ row, openOutcomes, growerUq, onClose, onSaved, logAct
     };
 
     return (
+        <>
         <Modal title={`Pay Invoice — ${t(row.INVOICE_NO)}`} icon={DollarSign} onClose={onClose} size="sm"
             footer={
                 <>
@@ -547,19 +552,18 @@ function ModalPayInvoice({ row, openOutcomes, growerUq, onClose, onSaved, logAct
                 {/* Payment Auth selector */}
                 <div className="flex flex-col gap-1">
                     <label className="text-[10px] font-bold text-gray-500 uppercase">Payment Authorization <span className="text-red-500">*</span></label>
-                    <select value={outcomeUq} onChange={e => setOutcomeUq(e.target.value)}
+                    <select value={outcomeUq}
+                        onChange={e => { if (e.target.value === "__new_outcome__") setCreateOutcomeModal(true); else setOutcomeUq(e.target.value); }}
                         className="border rounded px-2 py-1.5 text-sm outline-none focus:border-[#FB7506]">
                         <option value="">— Select Payment Authorization —</option>
-                        {openOutcomes.map((o: any) => (
+                        <option value="__new_outcome__">+ New Payment Authorization…</option>
+                        {allOutcomes.map((o: any) => (
                             <option key={t(o.UNICO)} value={t(o.UNICO)}>
                                 {t(o.DATO ?? o.OUT_DOCUMENT ?? o.UNICO)}
                                 {o.OUT_AMMOUNT ? ` — $${parseFloat(o.OUT_AMMOUNT).toFixed(2)}` : ""}
                             </option>
                         ))}
                     </select>
-                    {openOutcomes.length === 0 && (
-                        <span className="text-[11px] text-amber-600">No open payment authorizations for this vendor.</span>
-                    )}
                 </div>
 
                 {/* Amount */}
@@ -577,6 +581,24 @@ function ModalPayInvoice({ row, openOutcomes, growerUq, onClose, onSaved, logAct
                 </div>
             </div>
         </Modal>
+        {createOutcomeModal && (
+            <ModalAddPayment
+                banks={banks}
+                supplierUq={growerUq}
+                onClose={() => setCreateOutcomeModal(false)}
+                onSaved={(data: any) => {
+                    const newUq   = t(data?.unico ?? data?.UNICO ?? "");
+                    const newDato = t(data?.dato  ?? data?.DATO  ?? data?.out_document ?? newUq);
+                    if (newUq) {
+                        setLocalExtras(prev => [...prev, { UNICO: newUq, DATO: newDato }]);
+                        setOutcomeUq(newUq);
+                    }
+                    setCreateOutcomeModal(false);
+                    onNewOutcome();
+                }}
+            />
+        )}
+        </>
     );
 }
 
@@ -1694,6 +1716,7 @@ export default function PaymentAuthorizationsPage() {
                     row={payInvoiceRow}
                     openOutcomes={openOutcomes}
                     growerUq={store.lcgrower_uq}
+                    banks={banksList}
                     onClose={() => setPayInvoiceRow(null)}
                     onSaved={() => {
                         setPayInvoiceRow(null);
@@ -1701,6 +1724,7 @@ export default function PaymentAuthorizationsPage() {
                         qc.invalidateQueries({ queryKey: ["pa-outcome-details", store.lcapd_uq] });
                         qc.invalidateQueries({ queryKey: ["pa-open-outcomes", store.lcgrower_uq] });
                     }}
+                    onNewOutcome={() => qc.invalidateQueries({ queryKey: ["pa-open-outcomes", store.lcgrower_uq] })}
                     logAction={logAction}
                     perms={perms}
                 />
