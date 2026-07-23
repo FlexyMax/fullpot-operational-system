@@ -488,6 +488,98 @@ function ModalCRDB({ invoiceUq, invoiceNo, growerName, onClose, onOpen, logActio
     );
 }
 
+// ─── ModalPayInvoice ─────────────────────────────────────────────────────────
+function ModalPayInvoice({ row, openOutcomes, growerUq, onClose, onSaved, logAction, perms }: {
+    row: any; openOutcomes: any[]; growerUq: string;
+    onClose: () => void; onSaved: () => void;
+    logAction: (action: "Edit" | "Insert" | "Delete", uq: string, desc?: string) => void;
+    perms: any;
+}) {
+    const balance       = parseFloat(row.BALANCE) || 0;
+    const [outcomeUq,   setOutcomeUq]   = useState("");
+    const [amount,      setAmount]      = useState(balance.toFixed(2));
+    const [saving,      setSaving]      = useState(false);
+
+    const amountNum = parseFloat(amount) || 0;
+    const amountErr = amountNum <= 0
+        ? "Amount must be greater than 0"
+        : amountNum > balance
+        ? `Cannot exceed balance (${balance.toFixed(2)})`
+        : "";
+
+    const handleSave = async () => {
+        if (!outcomeUq) { toast.warning("Select a Payment Authorization first."); return; }
+        if (amountErr)  { toast.warning(amountErr); return; }
+        if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; }
+        setSaving(true);
+        try {
+            const r = await fetch("/api/payment-authorizations/outcome-details", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ outcome_uq: outcomeUq, out_ammount: amountNum, acc_payd_uq: t(row.UNICO) }),
+            }).then(r => r.json());
+            if (!r.success) throw new Error(r.error || "Failed to apply payment");
+            logAction("Insert", outcomeUq, `Pay Invoice ${t(row.INVOICE_NO)} — $${amountNum.toFixed(2)}`);
+            toast.success(`Payment of $${amountNum.toFixed(2)} applied to Invoice ${t(row.INVOICE_NO)}.`);
+            onSaved();
+        } catch (e: any) { toast.error(e.message); }
+        finally { setSaving(false); }
+    };
+
+    return (
+        <Modal title={`Pay Invoice — ${t(row.INVOICE_NO)}`} icon={DollarSign} onClose={onClose} size="sm"
+            footer={
+                <>
+                    <button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Cancel</button>
+                    <button onClick={handleSave} disabled={saving || !!amountErr || !outcomeUq}
+                        className="flex items-center gap-1.5 px-4 py-2 rounded bg-[#FB7506] text-white text-sm font-bold hover:bg-orange-600 disabled:opacity-50">
+                        {saving && <Loader2 size={12} className="animate-spin" />}Apply Payment
+                    </button>
+                </>
+            }>
+            <div className="flex flex-col gap-4">
+                {/* Invoice info strip */}
+                <div className="grid grid-cols-3 gap-2 bg-gray-50 rounded p-3 text-[12px]">
+                    <div><span className="text-gray-400 block text-[10px] uppercase font-bold">Invoice</span><span className="font-bold text-[#FB7506]">{t(row.INVOICE_NO)}</span></div>
+                    <div><span className="text-gray-400 block text-[10px] uppercase font-bold">Inv. Amount</span><span className="font-semibold">{fmt(row.AMMOUNT)}</span></div>
+                    <div><span className="text-gray-400 block text-[10px] uppercase font-bold">Balance</span><span className="font-bold text-orange-600">{fmt(row.BALANCE)}</span></div>
+                </div>
+
+                {/* Payment Auth selector */}
+                <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase">Payment Authorization <span className="text-red-500">*</span></label>
+                    <select value={outcomeUq} onChange={e => setOutcomeUq(e.target.value)}
+                        className="border rounded px-2 py-1.5 text-sm outline-none focus:border-[#FB7506]">
+                        <option value="">— Select Payment Authorization —</option>
+                        {openOutcomes.map((o: any) => (
+                            <option key={t(o.UNICO)} value={t(o.UNICO)}>
+                                {t(o.DATO ?? o.OUT_DOCUMENT ?? o.UNICO)}
+                                {o.OUT_AMMOUNT ? ` — $${parseFloat(o.OUT_AMMOUNT).toFixed(2)}` : ""}
+                            </option>
+                        ))}
+                    </select>
+                    {openOutcomes.length === 0 && (
+                        <span className="text-[11px] text-amber-600">No open payment authorizations for this vendor.</span>
+                    )}
+                </div>
+
+                {/* Amount */}
+                <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase">Payment Amount <span className="text-red-500">*</span></label>
+                    <input type="number" step="0.01" min="0.01" max={balance}
+                        value={amount} onChange={e => setAmount(e.target.value)}
+                        className={cn("border rounded px-2 py-1.5 text-sm text-right outline-none focus:border-[#FB7506]", amountErr && "border-red-400")} />
+                    {amountErr
+                        ? <span className="text-[11px] text-red-500">{amountErr}</span>
+                        : amountNum < balance
+                        ? <span className="text-[11px] text-amber-600">Partial payment — remaining balance: {(balance - amountNum).toFixed(2)}</span>
+                        : <span className="text-[11px] text-green-600">Full balance will be paid.</span>
+                    }
+                </div>
+            </div>
+        </Modal>
+    );
+}
+
 // ─── ModalCreateBank ──────────────────────────────────────────────────────────
 function ModalCreateBank({ onClose, onSaved }: { onClose: () => void; onSaved: (unico: string, bankName: string) => void }) {
     const [bank,    setBank]    = useState("");
@@ -769,6 +861,7 @@ export default function PaymentAuthorizationsPage() {
     const [checkedInvoices,  setCheckedInvoices]  = useState<Set<string>>(new Set());
     const [selOutcomeForPay, setSelOutcomeForPay] = useState("");
     const [payingSelected,   setPayingSelected]   = useState(false);
+    const [payInvoiceRow,    setPayInvoiceRow]    = useState<any>(null);
 
     // Modals
     const [reportsModal,        setReportsModal]        = useState(false);
@@ -1324,7 +1417,18 @@ export default function PaymentAuthorizationsPage() {
                                                                 <PanelGridTd align="right" className="text-red-500">{fmt(row.DEB_AMMOUNT)}</PanelGridTd>
                                                                 <PanelGridTd align="right" className={cn("font-bold", bal > 0 ? "text-orange-600" : "text-green-600")}>{fmt(row.BALANCE)}</PanelGridTd>
                                                                 <PanelGridTd align="center" className={cn("font-bold", approved === "Yes" ? "text-green-600" : "text-gray-400")}>{approved}</PanelGridTd>
-                                                                <PanelGridTd align="center">{row.PAY ? <Check size={12} className="text-green-500 inline" /> : ""}</PanelGridTd>
+                                                                <PanelGridTd align="center">
+                                                                    {bal > 0 ? (
+                                                                        <button
+                                                                            onClick={e => { e.stopPropagation(); setPayInvoiceRow(row); }}
+                                                                            title="Apply payment to this invoice"
+                                                                            className="flex items-center gap-0.5 mx-auto px-1.5 py-0.5 rounded text-[11px] font-bold bg-[#FB7506]/10 text-[#FB7506] hover:bg-[#FB7506] hover:text-white transition-colors">
+                                                                            <DollarSign size={10} />Pay
+                                                                        </button>
+                                                                    ) : (
+                                                                        <Check size={12} className="text-green-500 inline" />
+                                                                    )}
+                                                                </PanelGridTd>
                                                                 <PanelGridTd align="right" className="font-semibold text-gray-600">{fmt(row.ACCUMULATED)}</PanelGridTd>
                                                             </PanelGridTr>
                                                         );
@@ -1581,6 +1685,22 @@ export default function PaymentAuthorizationsPage() {
                     growerName={store.lcgrower}
                     onClose={() => setCrdbModal(false)}
                     onOpen={url => setReportModalUrl(url)}
+                    logAction={logAction}
+                    perms={perms}
+                />
+            )}
+            {payInvoiceRow && (
+                <ModalPayInvoice
+                    row={payInvoiceRow}
+                    openOutcomes={openOutcomes}
+                    growerUq={store.lcgrower_uq}
+                    onClose={() => setPayInvoiceRow(null)}
+                    onSaved={() => {
+                        setPayInvoiceRow(null);
+                        qc.invalidateQueries({ queryKey: ["pa-invoices", store.lcgrower_uq, invoiceBalFilter] });
+                        qc.invalidateQueries({ queryKey: ["pa-outcome-details", store.lcapd_uq] });
+                        qc.invalidateQueries({ queryKey: ["pa-open-outcomes", store.lcgrower_uq] });
+                    }}
                     logAction={logAction}
                     perms={perms}
                 />
