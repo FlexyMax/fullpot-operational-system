@@ -1,6 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { RefreshCcw, Save, Search, Trash2, CheckCircle, Users, FileText, Banknote, RotateCcw, Printer, Check, X, ChevronRight, DollarSign, CreditCard } from "lucide-react";
+import { RefreshCcw, Save, Search, Trash2, CheckCircle, Users, FileText, Banknote, RotateCcw, Printer, Check, X, ChevronRight, DollarSign, CreditCard, Plus, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Modal, Btn, t, fmt, fmtDate, today, cpFetch, EMPTY_ARR } from "./Shared";
 
@@ -8,16 +8,39 @@ import { Modal, Btn, t, fmt, fmtDate, today, cpFetch, EMPTY_ARR } from "./Shared
 function NewPaymentModal({ mode, income, customerUq, customerName, onClose, onSaved }: any) {
     const isDelete = mode === "delete";
     const isAdd    = mode === "add";
+    const qc = useQueryClient();
     const [form,   setForm]   = useState<any>( income ? { ...income, in_date: income.in_date?.split("T")[0] ?? today() } : { in_date: today(), customer_uq: customerUq, type_uq: "", bank_uq: "", in_ammount: 0, bank_doc: "", deposit: 0, card: "", approval: "", details: "" });
     const [saving, setSaving] = useState(false);
     const [error,  setError]  = useState<string|null>(null);
+    const [newBankMode, setNewBankMode] = useState(false);
+    const [newBankName, setNewBankName] = useState("");
+    const [savingBank,  setSavingBank]  = useState(false);
+    const [localBanks,  setLocalBanks]  = useState<{unico:string;bank:string}[]>([]);
 
     const { data: banks = EMPTY_ARR }     = useQuery({ queryKey: ["cp-banks", mode], queryFn: () => cpFetch(`/api/customer-payments/lookups/banks?mode=${isAdd?"last":"list"}`), staleTime: 60000 });
     const { data: types = EMPTY_ARR }     = useQuery({ queryKey: ["cp-inc-types"], queryFn: () => cpFetch("/api/customer-payments/lookups/income-types"), staleTime: 60000 });
 
+    const allBanks = [...(banks as any[]), ...localBanks];
+
     useEffect(() => {
-        if (isAdd && banks.length > 0 && !form.bank_uq) setForm((p: any) => ({ ...p, bank_uq: banks[0].unico }));
+        if (isAdd && (banks as any[]).length > 0 && !form.bank_uq) setForm((p: any) => ({ ...p, bank_uq: (banks as any[])[0].unico }));
     }, [banks]);
+
+    const handleCreateBank = async () => {
+        if (!newBankName.trim()) return;
+        setSavingBank(true);
+        try {
+            const res = await fetch("/api/payment-authorizations/banks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bank: newBankName.trim() }) });
+            const d = await res.json();
+            if (!d.success) throw new Error(d.error);
+            const entry = { unico: d.unico, bank: newBankName.trim() };
+            setLocalBanks(prev => [...prev, entry]);
+            setForm((p: any) => ({ ...p, bank_uq: d.unico }));
+            qc.invalidateQueries({ queryKey: ["cp-banks"] });
+            setNewBankName(""); setNewBankMode(false);
+        } catch (e: any) { setError(e.message); }
+        finally { setSavingBank(false); }
+    };
 
     const save = async () => {
         setSaving(true); setError(null);
@@ -71,10 +94,19 @@ function NewPaymentModal({ mode, income, customerUq, customerName, onClose, onSa
                     </div>
                     <div className="flex flex-col gap-0.5">
                         <label className="text-[9px] font-black text-gray-400 uppercase">Bank *</label>
-                        <select value={form.bank_uq||""} onChange={e=>setForm((p:any)=>({...p,bank_uq:e.target.value}))} className="fos-input py-1">
-                            <option value="">— Select —</option>
-                            {(banks as any[]).map((b:any)=><option key={b.unico} value={b.unico}>{t(b.bank)}</option>)}
-                        </select>
+                        {newBankMode ? (
+                            <div className="flex gap-1">
+                                <input autoFocus value={newBankName} onChange={e=>setNewBankName(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")handleCreateBank();if(e.key==="Escape"){setNewBankMode(false);setNewBankName("");}}} placeholder="Bank name…" className="fos-input py-1 flex-1 text-xs"/>
+                                <button onClick={handleCreateBank} disabled={savingBank||!newBankName.trim()} className="px-2 h-7 bg-[#FB7506] text-white rounded text-[10px] font-black disabled:opacity-40 shrink-0">{savingBank?<RefreshCcw size={10} className="animate-spin"/>:"Save"}</button>
+                                <button onClick={()=>{setNewBankMode(false);setNewBankName("");}} className="px-2 h-7 border border-gray-200 rounded text-[10px] font-bold text-gray-500 hover:bg-gray-50 shrink-0">✕</button>
+                            </div>
+                        ) : (
+                            <select value={form.bank_uq||""} onChange={e=>{if(e.target.value==="__new_bank__"){setNewBankMode(true);setForm((p:any)=>({...p,bank_uq:""}));}else setForm((p:any)=>({...p,bank_uq:e.target.value}));}} className="fos-input py-1">
+                                <option value="">— Select —</option>
+                                {allBanks.map((b:any)=><option key={b.unico} value={b.unico}>{t(b.bank)}</option>)}
+                                <option value="__new_bank__">+ New Bank…</option>
+                            </select>
+                        )}
                     </div>
                     <div className="flex flex-col gap-0.5">
                         <label className="text-[9px] font-black text-gray-400 uppercase">Date *</label>

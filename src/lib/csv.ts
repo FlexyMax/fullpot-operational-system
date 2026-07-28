@@ -1,3 +1,5 @@
+import * as XLSX from "xlsx";
+
 /** De-duplicate keys produced by the API normalizer (which emits both original-case
  *  and UPPERCASE aliases).  Keep the UPPERCASE version; drop the lowercase twin. */
 function dedupeHeaders(data: any[]): string[] {
@@ -9,23 +11,33 @@ function dedupeHeaders(data: any[]): string[] {
     });
 }
 
+/** Return a numeric value if v is a pure number string, otherwise the string. */
+function coerce(v: any): any {
+    if (v === null || v === undefined || v === "") return "";
+    if (typeof v === "number") return v;
+    if (typeof v === "string") {
+        const stripped = v.replace(/[$,\s]/g, "");
+        if (stripped !== "" && !isNaN(Number(stripped)) && !/[^0-9.\-]/.test(stripped)) {
+            return Number(stripped);
+        }
+    }
+    return v;
+}
+
 /**
- * Download an array of objects as an Excel (.xls) file using HTML table encoding.
+ * Download an array of objects as a proper Excel (.xlsx) file using SheetJS.
+ * Numeric strings are coerced to numbers so Excel treats them as amounts.
  */
 export function downloadXLS(data: any[], filename: string): void {
     if (!data.length) return;
     const headers = dedupeHeaders(data);
-    const html = [
-        '<table border="1">',
-        `<tr>${headers.map(h => `<th><b>${h}</b></th>`).join("")}</tr>`,
-        ...data.map(r => `<tr>${headers.map(k => `<td>${r[k] ?? ""}</td>`).join("")}</tr>`),
-        "</table>",
-    ].join("");
-    const blob = new Blob(["﻿" + html], { type: "application/vnd.ms-excel;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = Object.assign(document.createElement("a"), { href: url, download: `${filename}.xls` });
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const ws = XLSX.utils.aoa_to_sheet([
+        headers,
+        ...data.map(r => headers.map(k => coerce(r[k]))),
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    XLSX.writeFile(wb, `${filename}.xlsx`);
 }
 
 /**
