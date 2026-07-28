@@ -1237,16 +1237,16 @@ export default function InventoryEntryPage() {
                                         const dly  = Number(row.DELAYED ?? 0);
                                         return (
                                             <div key={i} onClick={() => handleSelectBox(row)}
-                                                className={cn("bg-white border rounded-xl flex overflow-hidden shadow-sm cursor-pointer transition-colors",
+                                                className={cn("bg-white border rounded-xl flex overflow-hidden shadow-sm cursor-pointer transition-colors min-h-[80px]",
                                                     sel ? "border-[#FB7506] bg-[#FB7506]/5" : "border-gray-200 hover:border-gray-300")}
                                                 style={!sel ? subtleColorFromInt(row.BACKCOLOR) : undefined}>
                                                 <img src={imgKey ? (productImages[imgKey] || DEFAULT_THUMB) : DEFAULT_THUMB} alt=""
-                                                    className="w-24 self-stretch object-cover shrink-0"
+                                                    className="w-24 h-full object-cover shrink-0"
                                                     onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }} />
-                                                <div className="flex-1 min-w-0 p-2">
+                                                <div className="flex-1 min-w-0 flex flex-col gap-1 p-2">
                                                     <p className="font-black text-[13px] text-gray-800 truncate">{desc || "—"}</p>
                                                     <p className="text-[11px] text-gray-500">{t(row.CASE_SH ?? row.CASE_NAME ?? "")} · Lot {t(row.LOTE ?? "")}</p>
-                                                    <div className="flex flex-wrap gap-1.5 mt-1">
+                                                    <div className="flex flex-wrap gap-1.5 mt-auto pt-1">
                                                         <span className="text-[10px] font-bold px-1.5 py-0.5 bg-gray-100 rounded">{t(row.TOTAL_PIECES ?? "")} pcs</span>
                                                         <span className="text-[10px] font-bold px-1.5 py-0.5 bg-gray-100 rounded">{fmt4(row.PRICE_X_U ?? 0)}/u</span>
                                                         {stk !== 0 && <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded", stk < 0 ? "bg-red-100 text-red-600" : "bg-green-100 text-green-700")}>Stk {stk}</span>}
@@ -1433,15 +1433,15 @@ export default function InventoryEntryPage() {
                                         const desc  = t(row.DESCRIPTION ?? row.DESC ?? row.PRODUCT_DESC ?? row.PRODUCT ?? "");
                                         return (
                                             <div key={i} onClick={() => setSelectedProduct(row)}
-                                                className={cn("bg-white border rounded-xl flex overflow-hidden shadow-sm cursor-pointer transition-colors",
+                                                className={cn("bg-white border rounded-xl flex overflow-hidden shadow-sm cursor-pointer transition-colors min-h-[80px]",
                                                     isSel ? "border-[#FB7506] bg-[#FB7506]/5" : "border-gray-200 hover:border-gray-300")}>
                                                 <img src={productImages[unico] || DEFAULT_THUMB} alt=""
-                                                    className="w-24 self-stretch object-cover shrink-0"
+                                                    className="w-24 h-full object-cover shrink-0"
                                                     onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }} />
-                                                <div className="flex-1 min-w-0 p-2">
+                                                <div className="flex-1 min-w-0 flex flex-col gap-1 p-2">
                                                     <p className="font-black text-[13px] text-gray-800 truncate">{desc || "—"}</p>
                                                     <p className="text-[11px] text-gray-500">{t(row.CLASS ?? "")} · {t(row.CASE_NAME ?? row.CASE ?? "")}</p>
-                                                    <div className="flex flex-wrap gap-1.5 mt-1">
+                                                    <div className="flex flex-wrap gap-1.5 mt-auto pt-1">
                                                         <span className="text-[10px] font-bold px-1.5 py-0.5 bg-gray-100 rounded">{t(row.UP_X_PACK ?? "")} stm/bch</span>
                                                         <span className="text-[10px] font-bold px-1.5 py-0.5 bg-gray-100 rounded">{t(row.UP_X_CASE ?? "")} bch/cs</span>
                                                         <span className="text-[10px] font-bold px-1.5 py-0.5 bg-orange-50 text-[#FB7506] rounded">${fmt2(row.SALES_PRICE ?? row.PRICE ?? 0)}</span>
