@@ -525,12 +525,15 @@ export default function AccountsPayablePage() {
                                         <div className="flex flex-col h-full">
                                             <div className="flex items-center justify-between px-3 py-1.5 bg-white border-b border-gray-200 shrink-0">
                                                 <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{tabPobs.length} PO records</span>
-                                                <button
-                                                    onClick={() => setPobModal({ open: true })}
-                                                    className="flex items-center gap-1.5 bg-[#FB7506] hover:bg-orange-600 text-white px-3 py-1 rounded text-[9px] font-black uppercase tracking-widest transition-all"
-                                                >
-                                                    <Pencil size={10} /> Update POs
-                                                </button>
+                                                <div className="flex items-center gap-2">
+                                                    <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} bareButton />
+                                                    <button
+                                                        onClick={() => setPobModal({ open: true })}
+                                                        className="flex items-center gap-1.5 bg-[#FB7506] hover:bg-orange-600 text-white px-3 py-1 rounded text-[9px] font-black uppercase tracking-widest transition-all"
+                                                    >
+                                                        <Pencil size={10} /> Update POs
+                                                    </button>
+                                                </div>
                                             </div>
                                             <div className="overflow-auto flex-1">
                                                 <PanelGridTable>
@@ -565,6 +568,12 @@ export default function AccountsPayablePage() {
 
                                     {/* PREBOOKS TAB */}
                                     {activeTab === "prebooks" && (
+                                        <div className="flex flex-col h-full">
+                                        <div className="flex items-center justify-between px-3 py-1.5 bg-white border-b border-gray-200 shrink-0">
+                                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{tabPrebooks.length} prebook records</span>
+                                            <AuditLogModal recordId={selectedUnico} disabled={!selectedUnico} bareButton />
+                                        </div>
+                                        <div className="overflow-auto flex-1">
                                         <PanelGridTable>
                                             <PanelGridThead>
                                                 <PanelGridTh>Vendor</PanelGridTh>
@@ -599,6 +608,8 @@ export default function AccountsPayablePage() {
                                                 ))}
                                             </PanelGridTbody>
                                         </PanelGridTable>
+                                        </div>
+                                        </div>
                                     )}
 
                                     {/* CREDITS & DEBITS TAB */}
@@ -606,7 +617,8 @@ export default function AccountsPayablePage() {
                                         <div className="flex flex-col h-full">
                                             <div className="flex items-center justify-between px-3 py-1.5 bg-white border-b border-gray-200 shrink-0">
                                                 <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{tabCredits.length} records</span>
-                                                <div className="flex gap-2">
+                                                <div className="flex items-center gap-2">
+                                                    <AuditLogModal recordId={tabCredits[selectedCrdbIdx]?.unico ?? selectedUnico} disabled={!selectedUnico} bareButton />
                                                     <button onClick={() => { if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; } setCrdbModal({ open: true, mode: "Add", type: "C" }); }} disabled={!perms.canCreate} className="flex items-center gap-1 bg-green-50 hover:bg-green-100 border border-green-200 text-green-700 px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest transition-all disabled:opacity-50">
                                                         <Plus size={9} /> Credit
                                                     </button>

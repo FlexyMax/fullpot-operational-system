@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { RotateCcw, XCircle } from "lucide-react";
+import { History, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fetchRecordAudit } from "@/lib/audit";
 import PanelGrid from "@/components/ui/PanelGrid";
@@ -61,7 +61,7 @@ export function AuditLogModal({ recordId, disabled, size = "sm", bareButton = fa
                     disabled && "opacity-40 cursor-not-allowed"
                 )}
             >
-                <RotateCcw size={iconSize} />
+                <History size={iconSize} />
             </button>
 
             {/* ── Modal (portal to document.body to escape stacking contexts) ── */}
@@ -72,7 +72,7 @@ export function AuditLogModal({ recordId, disabled, size = "sm", bareButton = fa
                         {/* Dark modal header */}
                         <div className="h-10 bg-[#333030] rounded-t-xl flex items-center justify-between px-4 shrink-0">
                             <div className="flex items-center gap-2">
-                                <RotateCcw size={14} className="text-[#FB7506]" />
+                                <History size={14} className="text-[#FB7506]" />
                                 <span className="font-black text-[11px] uppercase tracking-widest text-white">
                                     Log Record — {recordId}
                                 </span>
@@ -85,7 +85,7 @@ export function AuditLogModal({ recordId, disabled, size = "sm", bareButton = fa
                         {/* PanelGrid — app-standard grid inside modal */}
                         <PanelGrid
                             title="Audit Log"
-                            icon={RotateCcw}
+                            icon={History}
                             recordCount={!loading && rows.length > 0 ? rows.length : undefined}
                             onRefresh={loadLog}
                             refreshing={loading}
