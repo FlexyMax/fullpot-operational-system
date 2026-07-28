@@ -1472,9 +1472,9 @@ export default function InventoryEntryPage() {
                                                 return (
                                                 <tr key={i} onClick={() => setSelectedProduct(row)}
                                                     className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", t(selectedProduct?.UNICO) === unico ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
-                                                    <td className="p-1">
-                                                        <img src={productImages[unico] || DEFAULT_THUMB} alt="" width={28} height={28}
-                                                            className="w-7 h-7 object-cover rounded border border-[#DBD9D9]"
+                                                    <td className="p-0 w-12">
+                                                        <img src={productImages[unico] || DEFAULT_THUMB} alt=""
+                                                            className="w-12 h-12 object-cover block"
                                                             onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }} />
                                                     </td>
                                                     <td className="p-2 max-w-[280px] truncate">{t(row.DESCRIPTION ?? row.DESC ?? row.PRODUCT_DESC ?? row.PRODUCT ?? "")}</td>
