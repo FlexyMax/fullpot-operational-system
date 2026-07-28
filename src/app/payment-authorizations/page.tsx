@@ -16,6 +16,7 @@ import { ReportModal } from "@/components/reports/ReportModal";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAuditLog } from "@/lib/audit";
+import { AuditLogModal } from "@/components/AuditLogModal";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
 import { usePaymentAuthorizationsStore } from "@/store/usePaymentAuthorizationsStore";
 import AppHeader from "@/components/layout/AppHeader";
@@ -1310,6 +1311,7 @@ export default function PaymentAuthorizationsPage() {
                                     <BalBtn active={invoiceBalFilter === "pos"}  onClick={() => { setInvoiceBalFilter("pos");  setSelInvoiceRow(null); store.setApUq(""); store.setApdUq(""); setCheckedInvoices(new Set()); }} label="Bal +" />
                                     <BalBtn active={invoiceBalFilter === "zero"} onClick={() => { setInvoiceBalFilter("zero"); setSelInvoiceRow(null); store.setApUq(""); store.setApdUq(""); setCheckedInvoices(new Set()); }} label="Bal=0" />
                                     <BalBtn active={invoiceBalFilter === "all"}  onClick={() => { setInvoiceBalFilter("all");  setSelInvoiceRow(null); store.setApUq(""); store.setApdUq(""); setCheckedInvoices(new Set()); }} label="All" />
+                                    <AuditLogModal recordId={store.lcap_uq} disabled={!selInvoiceRow} bareButton />
                                 </div>
                             }
                             menuItems={[
@@ -1545,6 +1547,7 @@ export default function PaymentAuthorizationsPage() {
                                                 label={lbl} />
                                         ))}
                                     </div>
+                                    <AuditLogModal recordId={store.lcoutcome_uq} disabled={!selOutcomeRow} bareButton />
                                 </div>
                             }
                             menuItems={[

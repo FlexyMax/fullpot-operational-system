@@ -311,13 +311,6 @@ export default function PanelGrid({
         <div className="shrink-0 border-b border-[#DBD9D9]">{subheader}</div>
       )}
 
-      {/* Record count bar */}
-      {recordCount !== undefined && (
-        <div className="bg-white border-b border-[#DBD9D9] p-1 text-right text-[10px] text-gray-400 font-bold italic pr-4">
-          {recordCount} Records
-        </div>
-      )}
-
       {/* Content (table) */}
       <div className="flex-1 overflow-auto min-h-0 flex flex-col" onScroll={onScroll}>{children}</div>
     </div>
