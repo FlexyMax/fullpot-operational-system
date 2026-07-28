@@ -1285,9 +1285,9 @@ export default function InventoryEntryPage() {
                                                         <tr key={i} onClick={() => handleSelectBox(row)} onDoubleClick={() => handleOpenEditBox(t(row.UNICO))}
                                                             className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}
                                                             style={!sel ? subtleColorFromInt(row.BACKCOLOR) : undefined}>
-                                                            <td className="p-1">
-                                                                <img src={imgKey ? (productImages[imgKey] || DEFAULT_THUMB) : DEFAULT_THUMB} alt="" width={28} height={28}
-                                                                    className="w-7 h-7 object-cover rounded border border-[#DBD9D9]"
+                                                            <td className="p-0 w-12">
+                                                                <img src={imgKey ? (productImages[imgKey] || DEFAULT_THUMB) : DEFAULT_THUMB} alt=""
+                                                                    className="w-12 h-12 object-cover block"
                                                                     onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }} />
                                                             </td>
                                                             <td className={cn("p-2 text-center", dly > 0 ? "text-red-600" : "text-gray-300")}>{dly || ""}</td>
