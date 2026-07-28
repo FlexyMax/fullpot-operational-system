@@ -754,6 +754,9 @@ export default function AwbsPage() {
         setSelAwb, setSelVendor, setSelCharge, setSelByDate, setSelBox, setSelVariety, setActiveTab,
     } = useAwbStore();
 
+    // ── AWB# active filter (set on Go, cleared on date Search) ──────────────
+    const [activeAwbFilter, setActiveAwbFilter] = useState("");
+
     // ── Modal state ──────────────────────────────────────────────────────────
     const [chargesModal,        setChargesModal]        = useState<{ mode: "add" | "edit" } | null>(null);
     const [freightsModal,       setFreightsModal]       = useState<{ mode: "add" | "edit" } | null>(null);
@@ -795,10 +798,15 @@ export default function AwbsPage() {
         staleTime: 0,
     });
 
+    // ── Filter grid to matched AWB when an AWB# search is active ────────────
+    const displayedAwbs = activeAwbFilter
+        ? (awbs as any[]).filter(r => t(r.AWBCODE).toUpperCase().includes(activeAwbFilter))
+        : (awbs as any[]);
+
     // ── Auto-select first record after grid loads ─────────────────────────────
     useEffect(() => {
-        if ((awbs as any[]).length > 0 && !selAwb) {
-            const first = (awbs as any[])[0];
+        if (displayedAwbs.length > 0 && !selAwb) {
+            const first = displayedAwbs[0];
             setSelAwb(first);
             ["awb-packing", "awb-charges", "awb-boxes", "awb-varieties"].forEach(key =>
                 qc.invalidateQueries({ queryKey: [key, first.AWBCODE] })
@@ -890,6 +898,8 @@ export default function AwbsPage() {
     // ── Handlers ─────────────────────────────────────────────────────────────
     const handleSearch = () => {
         if (!perms.canQuery) { toast.error(PERMISSION_MSGS.access); return; }
+        setActiveAwbFilter("");
+        setAwbSearch("");
         triggerSearch();
     };
 
@@ -905,6 +915,7 @@ export default function AwbsPage() {
             const maxDate = toDate(records[0].AWBDATE_MAX);
             setDateFrom(minDate);
             setDateTo(maxDate);
+            setActiveAwbFilter(awbCode);
             setSelAwb({ ...records[0], AWBCODE: awbCode });
             pendingScrollRef.current = awbCode;
             triggerSearch();
@@ -1088,7 +1099,7 @@ export default function AwbsPage() {
                     <PanelGrid
                         title={selAwb ? `AWBs — ${t(selAwb.AWBCODE)} · ${t(selAwb.AIRLINE)} · ${fmtDate(selAwb.BOX_DATE)}` : "AWBs"}
                         icon={Plane}
-                        recordCount={(awbs as any[]).length || undefined}
+                        recordCount={displayedAwbs.length || undefined}
                         refreshing={loadingAwbs}
                         onRefresh={() => refetchAwbs()}
                         headerRight={<AuditLogModal recordId={selAwb?.AWBCODE} disabled={!selAwb} />}
@@ -1131,7 +1142,7 @@ export default function AwbsPage() {
                                 <PanelGridTh align="right">Profit/U</PanelGridTh>
                             </PanelGridThead>
                             <PanelGridTbody>
-                                {(awbs as any[]).map((row: any) => (
+                                {displayedAwbs.map((row: any) => (
                                     <PanelGridTr key={row.AWBCODE} id={`awb-row-${row.AWBCODE}`} selected={selAwb?.AWBCODE === row.AWBCODE} onClick={() => handleSelectAwb(row)}>
                                         <PanelGridTd className="font-bold text-[#FB7506]">{t(row.AWBCODE)}</PanelGridTd>
                                         <PanelGridTd>{t(row.AIRLINE)}</PanelGridTd>
@@ -1161,8 +1172,8 @@ export default function AwbsPage() {
                                         <PanelGridTd align="right" className="font-semibold">{fmt(row.PROFIT_X_UNIT)}</PanelGridTd>
                                     </PanelGridTr>
                                 ))}
-                                {!(awbs as any[]).length && searchKey === 0 && emptyMsg("Set filters and click Search to load AWBs.")}
-                                {!(awbs as any[]).length && searchKey > 0 && !loadingAwbs && emptyMsg("No AWBs found for the selected filters.")}
+                                {!displayedAwbs.length && searchKey === 0 && emptyMsg("Set filters and click Search to load AWBs.")}
+                                {!displayedAwbs.length && searchKey > 0 && !loadingAwbs && emptyMsg(activeAwbFilter ? `AWB "${activeAwbFilter}" not found in results.` : "No AWBs found for the selected filters.")}
                             </PanelGridTbody>
                         </PanelGridTable>
                     </PanelGrid>
