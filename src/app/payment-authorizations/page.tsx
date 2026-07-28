@@ -746,6 +746,7 @@ function ModalEditPayment({ uq, banks, onClose, onSaved }: { uq: string; banks: 
     const [loading,         setLoading]         = useState(true);
     const [saving,          setSaving]          = useState(false);
     const [bankUq,          setBankUq]          = useState("");
+    const [supplierUq,      setSupplierUq]      = useState("");
     const [localBanks,      setLocalBanks]      = useState<any[]>(banks);
     const [createBankModal, setCreateBankModal] = useState(false);
     const [outDate,   setOutDate]   = useState("");
@@ -760,6 +761,7 @@ function ModalEditPayment({ uq, banks, onClose, onSaved }: { uq: string; banks: 
             .then((d: any) => {
                 if (d) {
                     setBankUq(t(d.BANK_UQ ?? d.bank_uq ?? ""));
+                    setSupplierUq(t(d.SUPPLIER_UQ ?? d.supplier_uq ?? ""));
                     const raw = d.OUT_DATE ?? d.out_date ?? "";
                     const parsed = raw ? new Date(raw) : null;
                     setOutDate(parsed && !isNaN(parsed.getTime()) ? parsed.toLocaleDateString("en-CA") : "");
@@ -780,7 +782,7 @@ function ModalEditPayment({ uq, banks, onClose, onSaved }: { uq: string; banks: 
         try {
             const r = await fetch(`/api/payment-authorizations/outcomes/${encodeURIComponent(uq)}`, {
                 method: "PUT", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ bank_uq: bankUq, out_date: outDate, out_ammount: parseFloat(amount) || 0, out_total: parseFloat(total) || 0, details, pay_doc: parseInt(payDoc) || 0 }),
+                body: JSON.stringify({ bank_uq: bankUq, supplier_uq: supplierUq, out_date: outDate, out_ammount: parseFloat(amount) || 0, out_total: parseFloat(total) || 0, details, pay_doc: parseInt(payDoc) || 0 }),
             }).then(r => r.json());
             if (!r.success) throw new Error(r.error || "Failed to update payment");
             toast.success("Payment updated.");
