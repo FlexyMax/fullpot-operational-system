@@ -54,7 +54,7 @@ export function AuditLogModal({ recordId, disabled, size = "sm", bareButton = fa
                 className={cn(
                     "flex items-center justify-center transition-all",
                     bareButton
-                        ? "p-1 text-white hover:text-[#FB7506]"
+                        ? "p-1 text-gray-400 hover:text-[#FB7506]"
                         : size === "sm"
                             ? "p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-700 rounded"
                             : "p-1.5 text-gray-300 hover:text-white hover:bg-white/10 rounded",
