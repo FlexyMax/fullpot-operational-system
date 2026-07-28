@@ -1237,13 +1237,13 @@ export default function InventoryEntryPage() {
                                         const dly  = Number(row.DELAYED ?? 0);
                                         return (
                                             <div key={i} onClick={() => handleSelectBox(row)}
-                                                className={cn("bg-white border rounded-xl flex gap-3 p-3 shadow-sm cursor-pointer transition-colors",
+                                                className={cn("bg-white border rounded-xl flex overflow-hidden shadow-sm cursor-pointer transition-colors",
                                                     sel ? "border-[#FB7506] bg-[#FB7506]/5" : "border-gray-200 hover:border-gray-300")}
                                                 style={!sel ? subtleColorFromInt(row.BACKCOLOR) : undefined}>
                                                 <img src={imgKey ? (productImages[imgKey] || DEFAULT_THUMB) : DEFAULT_THUMB} alt=""
-                                                    className="w-16 h-16 object-cover rounded-lg border border-gray-200 shrink-0"
+                                                    className="w-24 self-stretch object-cover shrink-0"
                                                     onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }} />
-                                                <div className="flex-1 min-w-0">
+                                                <div className="flex-1 min-w-0 p-2">
                                                     <p className="font-black text-[13px] text-gray-800 truncate">{desc || "—"}</p>
                                                     <p className="text-[11px] text-gray-500">{t(row.CASE_SH ?? row.CASE_NAME ?? "")} · Lot {t(row.LOTE ?? "")}</p>
                                                     <div className="flex flex-wrap gap-1.5 mt-1">
@@ -1433,12 +1433,12 @@ export default function InventoryEntryPage() {
                                         const desc  = t(row.DESCRIPTION ?? row.DESC ?? row.PRODUCT_DESC ?? row.PRODUCT ?? "");
                                         return (
                                             <div key={i} onClick={() => setSelectedProduct(row)}
-                                                className={cn("bg-white border rounded-xl flex gap-3 p-3 shadow-sm cursor-pointer transition-colors",
+                                                className={cn("bg-white border rounded-xl flex overflow-hidden shadow-sm cursor-pointer transition-colors",
                                                     isSel ? "border-[#FB7506] bg-[#FB7506]/5" : "border-gray-200 hover:border-gray-300")}>
                                                 <img src={productImages[unico] || DEFAULT_THUMB} alt=""
-                                                    className="w-16 h-16 object-cover rounded-lg border border-gray-200 shrink-0"
+                                                    className="w-24 self-stretch object-cover shrink-0"
                                                     onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }} />
-                                                <div className="flex-1 min-w-0">
+                                                <div className="flex-1 min-w-0 p-2">
                                                     <p className="font-black text-[13px] text-gray-800 truncate">{desc || "—"}</p>
                                                     <p className="text-[11px] text-gray-500">{t(row.CLASS ?? "")} · {t(row.CASE_NAME ?? row.CASE ?? "")}</p>
                                                     <div className="flex flex-wrap gap-1.5 mt-1">
