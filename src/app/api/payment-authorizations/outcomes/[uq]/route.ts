@@ -21,7 +21,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ uq: 
         await executeProcedure("SP_flower_accounts_outcome_Update", {
             unico:        uq,
             timestamp:    new Date(),
-            out_date:     new Date(out_date),
+            out_date:     new Date(`${out_date}T12:00:00Z`),
             bank_uq:      bank_uq,
             supplier_uq:  supplier_uq,
             out_ammount:  parseFloat(out_ammount) || 0,

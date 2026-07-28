@@ -40,8 +40,8 @@ export const usePaymentAuthorizationsStore = create<PaymentAuthorizationsState>(
         lcoutcome_uq: "",
         lcapd_uq: "",
         lcap_uq: "",
-        ldPaymentsFrom: new Date().toISOString().split("T")[0],
-        lnclose: 0
+        ldPaymentsFrom: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+        lnclose: -1
     }),
     setOutcomeUq:      (uq)            => set({ lcoutcome_uq: uq }),
     setApdUq:          (uq)            => set({ lcapd_uq: uq }),

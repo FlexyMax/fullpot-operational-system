@@ -765,7 +765,7 @@ function ModalEditPayment({ uq, banks, onClose, onSaved }: { uq: string; banks: 
                     setSupplierUq(t(d.SUPPLIER_UQ ?? d.supplier_uq ?? ""));
                     const raw = d.OUT_DATE ?? d.out_date ?? "";
                     const parsed = raw ? new Date(raw) : null;
-                    setOutDate(parsed && !isNaN(parsed.getTime()) ? parsed.toLocaleDateString("en-CA") : "");
+                    setOutDate(parsed && !isNaN(parsed.getTime()) ? parsed.toISOString().split("T")[0] : "");
                     setAmount(String(parseFloat(d.OUT_AMMOUNT ?? d.out_ammount ?? "0") || 0));
                     setTotal(String(parseFloat(d.OUT_TOTAL ?? d.out_total ?? "0") || 0));
                     setDetails(t(d.DETAILS ?? d.details ?? ""));
