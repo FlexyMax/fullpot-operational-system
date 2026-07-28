@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     Package, RefreshCcw, Plus, Pencil, Trash2,
-    Search, X, Save, ChevronDown, Calendar, FileText,
+    Search, X, Save, ChevronDown, ChevronLeft, ChevronRight, Calendar, FileText,
     Check, Copy, ArrowRight, Warehouse,
     ClipboardList, Boxes, BarChart2, Plane,
     ShoppingCart, Flower2, Layers, Tag, ScanLine, MapPin, History,
@@ -145,6 +145,88 @@ const AUDIT_MAP: Record<string, { table: string; ext: string }> = {
     "add-po":          { table: "flower_packing_box",          ext: "Add P.O. to Inventory FlexyMaxApp" },
 };
 
+const DEFAULT_THUMB = "https://flexymax.nyc3.digitaloceanspaces.com/FlexyMaxApp/FlexyMaxImages/NoImageAvailable2.png";
+
+const IE_MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const IE_DAYS   = ["Su","Mo","Tu","We","Th","Fr","Sa"];
+
+function IECalendar({ awbDates, selectedDate, onSelect, calYear, calMonth, onMonthChange }: {
+    awbDates: any[];
+    selectedDate: string;
+    onSelect: (d: string) => void;
+    calYear: number;
+    calMonth: number;
+    onMonthChange: (delta: number) => void;
+}) {
+    const dateMap = useMemo(() => {
+        const map = new Map<string, number>();
+        for (const row of awbDates) {
+            const d = String(row.DATE_INVO ?? row.AWBDATE ?? "").substring(0, 10);
+            if (d) map.set(d, (map.get(d) ?? 0) + Number(row.RECORDS ?? row.AWBS ?? row.AWB_COUNT ?? 1));
+        }
+        return map;
+    }, [awbDates]);
+
+    const firstDay    = new Date(calYear, calMonth - 1, 1).getDay();
+    const daysInMonth = new Date(calYear, calMonth, 0).getDate();
+    const todayStr    = today();
+
+    return (
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+            <div className="h-10 bg-[#374151] flex items-center justify-between px-4 shrink-0">
+                <button onClick={() => onMonthChange(-1)} className="text-white hover:text-[#FB7506] p-1 rounded transition-colors">
+                    <ChevronLeft size={16} />
+                </button>
+                <span className="font-bold text-sm text-white">{IE_MONTHS[calMonth - 1]} {calYear}</span>
+                <button onClick={() => onMonthChange(1)} className="text-white hover:text-[#FB7506] p-1 rounded transition-colors">
+                    <ChevronRight size={16} />
+                </button>
+            </div>
+            <div className="p-2">
+                <div className="grid grid-cols-7 mb-1">
+                    {IE_DAYS.map(d => (
+                        <div key={d} className="text-center text-[11px] font-bold text-gray-400 py-1">{d}</div>
+                    ))}
+                </div>
+                <div className="grid grid-cols-7 gap-0.5">
+                    {Array.from({ length: firstDay }, (_, i) => <div key={`e${i}`} />)}
+                    {Array.from({ length: daysInMonth }, (_, i) => {
+                        const day     = i + 1;
+                        const dateStr = `${calYear}-${String(calMonth).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+                        const count   = dateMap.get(dateStr);
+                        const hasData = count !== undefined;
+                        const isSel   = selectedDate === dateStr;
+                        const isToday = dateStr === todayStr;
+                        return (
+                            <div key={day} onClick={() => hasData && onSelect(dateStr)}
+                                className={cn(
+                                    "flex flex-col items-center justify-start p-1 rounded min-h-[44px] transition-colors",
+                                    hasData ? "cursor-pointer" : "cursor-default",
+                                    isSel   ? "bg-[#FB7506]" : hasData ? "bg-orange-50 hover:bg-orange-100" : "",
+                                    isToday && !isSel ? "ring-2 ring-inset ring-[#FB7506]" : ""
+                                )}
+                            >
+                                <span className={cn(
+                                    "text-xs leading-none mb-0.5",
+                                    isSel   ? "text-white font-bold" :
+                                    isToday ? "text-[#FB7506] font-bold" :
+                                    hasData ? "text-gray-700 font-semibold" : "text-gray-300"
+                                )}>{day}</span>
+                                {hasData && (
+                                    <div className={cn(
+                                        "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold",
+                                        isSel ? "bg-white text-[#FB7506]" : "bg-[#FB7506] text-white"
+                                    )}>{count}</div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function InventoryEntryPage() {
     const { data: session, status } = useSession();
@@ -241,6 +323,13 @@ export default function InventoryEntryPage() {
     // ── Filter state ──────────────────────────────────────────────────────────
     const [filterGrowerUq,  setFilterGrowerUq]  = useState("");
     const [filterCustomer,  setFilterCustomer]  = useState("");
+
+    // ── Product images cache ──────────────────────────────────────────────────
+    const [productImages,   setProductImages]   = useState<Record<string, string>>({});
+
+    // ── Mobile calendar state (AWB date picker) ───────────────────────────────
+    const [calMonth, setCalMonth] = useState(() => new Date().getMonth() + 1);
+    const [calYear,  setCalYear]  = useState(() => new Date().getFullYear());
 
     // ── Queries ───────────────────────────────────────────────────────────────
     const { data: lookups } = useQuery({
@@ -461,6 +550,22 @@ export default function InventoryEntryPage() {
     useEffect(() => {
         if (packingDetails.length > 0 && !lcpk_box_uq) handleSelectBox(packingDetails[0]);
     }, [packingDetails]);
+
+    // ── Fetch product images for Products List and Boxes Detail ───────────────
+    useEffect(() => {
+        const prodUqs  = (prodAccRows as any[]).map((r: any) => t(r.UNICO)).filter(Boolean);
+        const boxUqs   = (packingDetails as any[]).map((r: any) => t(r.PRODUCT_UQ ?? r.BOX_PACK_UQ ?? "")).filter(Boolean);
+        const all      = [...new Set([...prodUqs, ...boxUqs])];
+        const missing  = all.filter(u => !productImages[u]);
+        if (!missing.length) return;
+        fetch("/api/products/images", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ uqs: missing }),
+        })
+            .then(r => r.json())
+            .then((map: Record<string, string>) => setProductImages(p => ({ ...p, ...map })))
+            .catch(() => {});
+    }, [prodAccRows, packingDetails]);
 
     // "Locate" (AWB Search tab) — jump to AWB's Packings with this exact date/AWB/packing/box pre-selected
     const handleLocateBox = (row: any) => {
@@ -860,7 +965,24 @@ export default function InventoryEntryPage() {
                                             ]} />
                                         </div>
                                     </div>
-                                    <div ref={dateScrollRef} className="flex-1 overflow-y-auto">
+                                    {/* Mobile: month calendar */}
+                                    <div className="lg:hidden flex-1 overflow-y-auto p-2">
+                                        <IECalendar
+                                            awbDates={awbDates as any[]}
+                                            selectedDate={lddate}
+                                            onSelect={d => { setLddate(d); setLcawb("%"); setLcawbcode(""); setLcpack_uq(""); setLcpk_box_uq(""); }}
+                                            calYear={calYear}
+                                            calMonth={calMonth}
+                                            onMonthChange={delta => {
+                                                let m = calMonth + delta, y = calYear;
+                                                if (m > 12) { m = 1; y++; }
+                                                if (m < 1)  { m = 12; y--; }
+                                                setCalMonth(m); setCalYear(y);
+                                            }}
+                                        />
+                                    </div>
+                                    {/* Desktop: date list */}
+                                    <div ref={dateScrollRef} className="hidden lg:block flex-1 overflow-y-auto">
                                         <table className="w-full text-xs">
                                             <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                                                 <tr className="divide-x divide-[#DBD9D9]/30">
@@ -1098,31 +1220,74 @@ export default function InventoryEntryPage() {
                                         ]} />
                                     </div>
                                 </div>
-                                <div ref={boxesScrollRef} className="flex-1 overflow-auto">
+                                {/* Mobile card view */}
+                                <div className="lg:hidden flex-1 overflow-auto min-h-0 p-2 flex flex-col gap-2">
+                                    {!lcpack_uq ? (
+                                        <div className="p-4 text-center text-gray-400 italic text-xs">Select a vendor to view boxes</div>
+                                    ) : (packingDetails as any[]).length === 0 && !loadingPackingDetails ? (
+                                        <div className="p-4 text-center text-gray-400 italic text-xs">No boxes</div>
+                                    ) : (packingDetails as any[]).map((row: any, i: number) => {
+                                        const uq   = t(row.UNICO);
+                                        const sel  = lcpk_box_uq === uq;
+                                        const desc = t(row.DESCRIPTION ?? row.PRODUCT ?? row.VARIETY ?? "");
+                                        const imgKey = t(row.PRODUCT_UQ ?? row.BOX_PACK_UQ ?? "");
+                                        const stk  = Number(row.STOCK ?? row.WH_STOCK ?? 0);
+                                        const dly  = Number(row.DELAYED ?? 0);
+                                        return (
+                                            <div key={i} onClick={() => handleSelectBox(row)}
+                                                className={cn("bg-white border rounded-xl flex gap-3 p-3 shadow-sm cursor-pointer transition-colors",
+                                                    sel ? "border-[#FB7506] bg-[#FB7506]/5" : "border-gray-200 hover:border-gray-300")}
+                                                style={!sel ? subtleColorFromInt(row.BACKCOLOR) : undefined}>
+                                                <img src={imgKey ? (productImages[imgKey] || DEFAULT_THUMB) : DEFAULT_THUMB} alt=""
+                                                    className="w-16 h-16 object-cover rounded-lg border border-gray-200 shrink-0"
+                                                    onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }} />
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-black text-[13px] text-gray-800 truncate">{desc || "—"}</p>
+                                                    <p className="text-[11px] text-gray-500">{t(row.CASE_SH ?? row.CASE_NAME ?? "")} · Lot {t(row.LOTE ?? "")}</p>
+                                                    <div className="flex flex-wrap gap-1.5 mt-1">
+                                                        <span className="text-[10px] font-bold px-1.5 py-0.5 bg-gray-100 rounded">{t(row.TOTAL_PIECES ?? "")} pcs</span>
+                                                        <span className="text-[10px] font-bold px-1.5 py-0.5 bg-gray-100 rounded">{fmt4(row.PRICE_X_U ?? 0)}/u</span>
+                                                        {stk !== 0 && <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded", stk < 0 ? "bg-red-100 text-red-600" : "bg-green-100 text-green-700")}>Stk {stk}</span>}
+                                                        {dly > 0 && <span className="text-[10px] font-bold px-1.5 py-0.5 bg-red-100 text-red-600 rounded">Dly {dly}</span>}
+                                                        {t(row.CUSTOMER ?? "") && <span className="text-[10px] font-bold px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded truncate max-w-[100px]">{t(row.CUSTOMER ?? "")}</span>}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                {/* Desktop table */}
+                                <div ref={boxesScrollRef} className="hidden lg:block flex-1 overflow-auto">
                                     <table className="min-w-full text-xs text-left whitespace-nowrap">
                                         <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                                             <tr className="divide-x divide-[#DBD9D9]/30">
-                                                {["Dly","Rdy","Lot","Pcs","Stock","BxCase","UxBunch","T.Units","U.Price","Case","Description","Customer","BoxId","PB","Std.","C.POrder","C.Cost","T.Cost","S.U.Price","Days","FCost","CCost","TCost"].map(h => (
+                                                {["Img","Dly","Rdy","Lot","Pcs","Stock","BxCase","UxBunch","T.Units","U.Price","Case","Description","Customer","BoxId","PB","Std.","C.POrder","C.Cost","T.Cost","S.U.Price","Days","FCost","CCost","TCost"].map(h => (
                                                     <th key={h} className="p-2 whitespace-nowrap">{h}</th>
                                                 ))}
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-[#DBD9D9]">
                                             {!lcpack_uq ? (
-                                                <tr><td colSpan={23} className="p-4 text-center text-gray-400 italic">Select a vendor to view boxes</td></tr>
+                                                <tr><td colSpan={24} className="p-4 text-center text-gray-400 italic">Select a vendor to view boxes</td></tr>
                                             ) : (packingDetails as any[]).length === 0 && !loadingPackingDetails ? (
-                                                <tr><td colSpan={23} className="p-4 text-center text-gray-400 italic">No boxes</td></tr>
+                                                <tr><td colSpan={24} className="p-4 text-center text-gray-400 italic">No boxes</td></tr>
                                             ) : (packingDetails as any[]).map((row: any, i: number) => {
-                                                    const uq   = t(row.UNICO);
-                                                    const sel  = lcpk_box_uq === uq;
-                                                    const desc = t(row.DESCRIPTION ?? row.PRODUCT ?? row.VARIETY ?? "");
-                                                    const dly  = Number(row.DELAYED ?? 0);
-                                                    const rdy  = Boolean(row.READY_TRAN) ? "OK" : "";
-                                                    const stk  = Number(row.STOCK ?? row.WH_STOCK ?? 0);
+                                                    const uq     = t(row.UNICO);
+                                                    const sel    = lcpk_box_uq === uq;
+                                                    const desc   = t(row.DESCRIPTION ?? row.PRODUCT ?? row.VARIETY ?? "");
+                                                    const imgKey = t(row.PRODUCT_UQ ?? row.BOX_PACK_UQ ?? "");
+                                                    const dly    = Number(row.DELAYED ?? 0);
+                                                    const rdy    = Boolean(row.READY_TRAN) ? "OK" : "";
+                                                    const stk    = Number(row.STOCK ?? row.WH_STOCK ?? 0);
                                                     return (
                                                         <tr key={i} onClick={() => handleSelectBox(row)} onDoubleClick={() => handleOpenEditBox(t(row.UNICO))}
                                                             className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}
                                                             style={!sel ? subtleColorFromInt(row.BACKCOLOR) : undefined}>
+                                                            <td className="p-1">
+                                                                <img src={imgKey ? (productImages[imgKey] || DEFAULT_THUMB) : DEFAULT_THUMB} alt="" width={28} height={28}
+                                                                    className="w-7 h-7 object-cover rounded border border-[#DBD9D9]"
+                                                                    onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }} />
+                                                            </td>
                                                             <td className={cn("p-2 text-center", dly > 0 ? "text-red-600" : "text-gray-300")}>{dly || ""}</td>
                                                             <td className={cn("p-2", rdy ? "text-green-600" : "text-gray-300")}>{rdy}</td>
                                                             <td className="p-2">{t(row.LOTE ?? row.BOXNUM ?? "")}</td>
@@ -1170,8 +1335,8 @@ export default function InventoryEntryPage() {
                         <div className="flex flex-col h-full min-h-0">
                             <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1 min-h-0">
 
-                                {/* Header */}
-                                <div className="h-16 lg:h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 gap-2 overflow-x-auto">
+                                {/* Header — title + search only */}
+                                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 gap-2 overflow-x-auto">
                                     <div className="flex items-center gap-2 shrink-0">
                                         <Flower2 size={14} className="text-[#FB7506]" />
                                         <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">Products List</span>
@@ -1204,73 +1369,111 @@ export default function InventoryEntryPage() {
                                             className="flex items-center gap-1.5 h-7 px-3 bg-[#FB7506] hover:bg-orange-500 text-white rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
                                             <Search size={14} /> Search
                                         </button>
-                                        <div className="w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
-                                        <button
-                                            onClick={() => setProdEditMode(m => m === "structure" ? null : "structure")}
-                                            disabled={prodEditMode === "prices"}
-                                            className="flex items-center gap-1.5 h-7 px-3 bg-green-600 hover:bg-green-500 disabled:opacity-40 text-white rounded-md text-[12px] font-bold uppercase tracking-wide transition-colors shrink-0">
-                                            {prodEditMode === "structure" ? "Done — Structure" : "Change Structure"}
-                                        </button>
-                                        <button
-                                            onClick={() => setProdEditMode(m => m === "prices" ? null : "prices")}
-                                            disabled={prodEditMode === "structure"}
-                                            className="flex items-center gap-1.5 h-7 px-3 bg-[#FB7506]/10 hover:bg-[#FB7506]/20 border border-[#FB7506]/30 disabled:opacity-40 text-[#FB7506] rounded-md text-[12px] font-bold uppercase tracking-wide transition-colors shrink-0">
-                                            {prodEditMode === "prices" ? "Done — Prices" : "Change to Prices Mode"}
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                if (!lcpack_uq) { toast.error("Select a packing in AWB's Packings first."); return; }
-                                                if (!isPackingOpen) { toast.error("This packing is closed."); return; }
-                                                if (!selectedProduct) { toast.error("Select a product first."); return; }
-                                                setModalAddProdPack(true);
-                                            }}
-                                            disabled={!!lcpack_uq && !isPackingOpen}
-                                            className="flex items-center gap-1.5 h-7 px-3 bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
-                                            <Plus size={14} /> Add to Packing
-                                        </button>
                                     </div>
                                 </div>
 
-                                {/* Selected Packing Info */}
-                                <div className="h-10 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-center gap-4 px-3 shrink-0 overflow-x-auto whitespace-nowrap">
+                                {/* Packing Info — orange attenuated container */}
+                                <div className="bg-[#FB7506]/10 border-b border-[#FB7506]/25 flex items-center gap-4 px-3 py-2 shrink-0 overflow-x-auto whitespace-nowrap">
                                     {selPacking ? (
                                         <>
-                                            <span className="text-[11px] shrink-0"><span className="font-bold text-gray-400 uppercase">Vendor:</span> <span className="font-bold text-[#4F4F4F]">{t(selPacking.GROWER)}</span></span>
-                                            <span className="text-[11px] shrink-0"><span className="font-bold text-gray-400 uppercase">AWB:</span> <span className="font-bold text-[#4F4F4F]">{t(selPacking.AWBCODE)}</span></span>
-                                            <span className="text-[11px] shrink-0"><span className="font-bold text-gray-400 uppercase">Packing No:</span> <span className="font-bold text-[#4F4F4F]">{t(selPacking.PACKING_NO)}</span></span>
-                                            <span className="text-[11px] shrink-0"><span className="font-bold text-gray-400 uppercase">Invoice No:</span> <span className="font-bold text-[#4F4F4F]">{t(selPacking.INVOICE_NO)}</span></span>
-                                            <span className="text-[11px] shrink-0"><span className="font-bold text-gray-400 uppercase">Date:</span> <span className="font-bold text-[#4F4F4F]">{t(selPacking.BOX_DATE ?? selPacking.DATE_INVO ?? "").substring(0, 12)}</span></span>
-                                            <span className="text-[11px] shrink-0"><span className="font-bold text-gray-400 uppercase">Total Boxes:</span> <span className="font-bold text-[#4F4F4F]">{t(selPacking.TOTAL_BOXES)}</span></span>
-                                            <span className="text-[11px] shrink-0"><span className="font-bold text-gray-400 uppercase">Total $ Warehouse:</span> <span className="font-bold text-[#4F4F4F]">{fmt2(selPacking.TOTAL_COST ?? selPacking.FLOWER_COST ?? 0)}</span></span>
+                                            <span className="text-[11px] shrink-0"><span className="font-bold text-[#FB7506]/70 uppercase">Vendor:</span> <span className="font-bold text-[#4F4F4F]">{t(selPacking.GROWER)}</span></span>
+                                            <span className="text-[11px] shrink-0"><span className="font-bold text-[#FB7506]/70 uppercase">AWB:</span> <span className="font-bold text-[#4F4F4F]">{t(selPacking.AWBCODE)}</span></span>
+                                            <span className="text-[11px] shrink-0"><span className="font-bold text-[#FB7506]/70 uppercase">Packing No:</span> <span className="font-bold text-[#4F4F4F]">{t(selPacking.PACKING_NO)}</span></span>
+                                            <span className="text-[11px] shrink-0"><span className="font-bold text-[#FB7506]/70 uppercase">Invoice No:</span> <span className="font-bold text-[#4F4F4F]">{t(selPacking.INVOICE_NO)}</span></span>
+                                            <span className="text-[11px] shrink-0"><span className="font-bold text-[#FB7506]/70 uppercase">Date:</span> <span className="font-bold text-[#4F4F4F]">{t(selPacking.BOX_DATE ?? selPacking.DATE_INVO ?? "").substring(0, 12)}</span></span>
+                                            <span className="text-[11px] shrink-0"><span className="font-bold text-[#FB7506]/70 uppercase">Total Boxes:</span> <span className="font-bold text-[#4F4F4F]">{t(selPacking.TOTAL_BOXES)}</span></span>
+                                            <span className="text-[11px] shrink-0"><span className="font-bold text-[#FB7506]/70 uppercase">Total $ Warehouse:</span> <span className="font-bold text-[#4F4F4F]">{fmt2(selPacking.TOTAL_COST ?? selPacking.FLOWER_COST ?? 0)}</span></span>
                                             <span className={cn("text-[11px] font-black uppercase tracking-wide px-2 py-0.5 rounded ml-auto shrink-0",
                                                 isPackingOpen ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600")}>
                                                 {isPackingOpen ? "Open" : "Closed"}
                                             </span>
                                         </>
                                     ) : (
-                                        <span className="text-[11px] text-gray-400 italic">No packing selected — pick one on the AWB&apos;s Packings tab</span>
+                                        <span className="text-[11px] text-[#FB7506]/60 italic">No packing selected — pick one on the AWB&apos;s Packings tab</span>
                                     )}
                                 </div>
 
-                                {/* Grid */}
-                                <div className="flex-1 overflow-auto">
+                                {/* Action buttons — gray container */}
+                                <div className="bg-gray-50 border-b border-[#DBD9D9] flex items-center gap-2 px-3 py-1.5 shrink-0 overflow-x-auto no-scrollbar">
+                                    <button
+                                        onClick={() => setProdEditMode(m => m === "structure" ? null : "structure")}
+                                        disabled={prodEditMode === "prices"}
+                                        className="flex items-center gap-1.5 h-7 px-3 bg-green-600 hover:bg-green-500 disabled:opacity-40 text-white rounded-md text-[12px] font-bold uppercase tracking-wide transition-colors shrink-0">
+                                        {prodEditMode === "structure" ? "Done — Structure" : "Change Structure"}
+                                    </button>
+                                    <button
+                                        onClick={() => setProdEditMode(m => m === "prices" ? null : "prices")}
+                                        disabled={prodEditMode === "structure"}
+                                        className="flex items-center gap-1.5 h-7 px-3 bg-[#FB7506]/10 hover:bg-[#FB7506]/20 border border-[#FB7506]/30 disabled:opacity-40 text-[#FB7506] rounded-md text-[12px] font-bold uppercase tracking-wide transition-colors shrink-0">
+                                        {prodEditMode === "prices" ? "Done — Prices" : "Change to Prices Mode"}
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            if (!lcpack_uq) { toast.error("Select a packing in AWB's Packings first."); return; }
+                                            if (!isPackingOpen) { toast.error("This packing is closed."); return; }
+                                            if (!selectedProduct) { toast.error("Select a product first."); return; }
+                                            setModalAddProdPack(true);
+                                        }}
+                                        disabled={!!lcpack_uq && !isPackingOpen}
+                                        className="flex items-center gap-1.5 h-7 px-3 bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
+                                        <Plus size={14} /> Add to Packing
+                                    </button>
+                                </div>
+
+                                {/* Mobile card view */}
+                                <div className="lg:hidden flex-1 overflow-auto min-h-0 p-2 flex flex-col gap-2">
+                                    {prodAccRows.length === 0 && !loadingProds ? (
+                                        <div className="p-4 text-center text-gray-400 italic text-xs">No products found</div>
+                                    ) : (prodAccRows as any[]).map((row: any, i: number) => {
+                                        const unico = t(row.UNICO);
+                                        const isSel = t(selectedProduct?.UNICO) === unico;
+                                        const desc  = t(row.DESCRIPTION ?? row.DESC ?? row.PRODUCT_DESC ?? row.PRODUCT ?? "");
+                                        return (
+                                            <div key={i} onClick={() => setSelectedProduct(row)}
+                                                className={cn("bg-white border rounded-xl flex gap-3 p-3 shadow-sm cursor-pointer transition-colors",
+                                                    isSel ? "border-[#FB7506] bg-[#FB7506]/5" : "border-gray-200 hover:border-gray-300")}>
+                                                <img src={productImages[unico] || DEFAULT_THUMB} alt=""
+                                                    className="w-16 h-16 object-cover rounded-lg border border-gray-200 shrink-0"
+                                                    onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }} />
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-black text-[13px] text-gray-800 truncate">{desc || "—"}</p>
+                                                    <p className="text-[11px] text-gray-500">{t(row.CLASS ?? "")} · {t(row.CASE_NAME ?? row.CASE ?? "")}</p>
+                                                    <div className="flex flex-wrap gap-1.5 mt-1">
+                                                        <span className="text-[10px] font-bold px-1.5 py-0.5 bg-gray-100 rounded">{t(row.UP_X_PACK ?? "")} stm/bch</span>
+                                                        <span className="text-[10px] font-bold px-1.5 py-0.5 bg-gray-100 rounded">{t(row.UP_X_CASE ?? "")} bch/cs</span>
+                                                        <span className="text-[10px] font-bold px-1.5 py-0.5 bg-orange-50 text-[#FB7506] rounded">${fmt2(row.SALES_PRICE ?? row.PRICE ?? 0)}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                    {loadingProds && <div className="flex justify-center py-2"><RefreshCcw size={14} className="animate-spin text-gray-400" /></div>}
+                                </div>
+
+                                {/* Desktop table */}
+                                <div className="hidden lg:block flex-1 overflow-auto">
                                     <table className="min-w-full text-xs text-left whitespace-nowrap">
                                         <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                                             <tr className="divide-x divide-[#DBD9D9]/30">
-                                                {["Description","Class","Stems/Bunch","Bunches/Case","Units","Sales Price","PriceByS","Case"].map(h => (
+                                                {["Img","Description","Class","Stems/Bunch","Bunches/Case","Units","Sales Price","PriceByS","Case"].map(h => (
                                                     <th key={h} className="p-2 whitespace-nowrap">{h}</th>
                                                 ))}
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-[#DBD9D9]">
                                             {prodAccRows.length === 0 && !loadingProds ? (
-                                                <tr><td colSpan={8} className="p-4 text-center text-gray-400 italic">No products found</td></tr>
+                                                <tr><td colSpan={9} className="p-4 text-center text-gray-400 italic">No products found</td></tr>
                                             ) : (prodAccRows as any[]).map((row: any, i: number) => {
                                                 const unico = t(row.UNICO);
                                                 const editCellInput = "w-16 h-6 text-right text-xs border border-[#FB7506]/40 rounded px-1 bg-white focus:outline-none focus:ring-1 focus:ring-[#FB7506]";
                                                 return (
                                                 <tr key={i} onClick={() => setSelectedProduct(row)}
                                                     className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", t(selectedProduct?.UNICO) === unico ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
+                                                    <td className="p-1">
+                                                        <img src={productImages[unico] || DEFAULT_THUMB} alt="" width={28} height={28}
+                                                            className="w-7 h-7 object-cover rounded border border-[#DBD9D9]"
+                                                            onError={e => { (e.target as HTMLImageElement).src = DEFAULT_THUMB; }} />
+                                                    </td>
                                                     <td className="p-2 max-w-[280px] truncate">{t(row.DESCRIPTION ?? row.DESC ?? row.PRODUCT_DESC ?? row.PRODUCT ?? "")}</td>
                                                     <td className="p-2">{t(row.CLASS ?? row.CLASE ?? "")}</td>
                                                     <td className="p-2 text-right" onClick={e => e.stopPropagation()}>

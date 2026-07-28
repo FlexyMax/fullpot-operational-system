@@ -24,7 +24,7 @@ import { useAPStore } from "@/store/useAPStore";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import PanelGrid from "@/components/ui/PanelGrid";
-import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
+import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd, PanelGridTfoot } from "@/components/ui/PanelGridTable";
 import { formatDateEST, formatMoney, parseMoney, todayEST, currentYearEST, normalizeToISODate } from "@/lib/dates";
 const EMPTY_ARR: any[] = [];
 
@@ -435,7 +435,11 @@ export default function AccountsPayablePage() {
                                             <PanelGridTd className="hidden lg:table-cell text-gray-400">{String(inv.phone_1 || "").trim()}</PanelGridTd>
                                         </PanelGridTr>
                                     ))}
-                                    <tr className="border-t-2 border-gray-300 bg-gray-50">
+                                </>)}
+                            </PanelGridTbody>
+                            {invoices.length > 0 && (
+                                <PanelGridTfoot>
+                                    <tr>
                                         <td className="px-2 py-1.5 text-[10px] font-black text-gray-600 uppercase tracking-wider whitespace-nowrap" colSpan={2}>
                                             TOTALS ({invoices.length} invoices)
                                         </td>
@@ -446,8 +450,8 @@ export default function AccountsPayablePage() {
                                         <td className="px-2 py-1.5 text-[11px] font-black text-right text-orange-600">{formatMoney(invoices.reduce((s: number, inv: any) => s + parseMoney(inv.total_balance), 0))}</td>
                                         <td colSpan={3} />
                                     </tr>
-                                </>)}
-                            </PanelGridTbody>
+                                </PanelGridTfoot>
+                            )}
                         </PanelGridTable>
                     </PanelGrid>
 
