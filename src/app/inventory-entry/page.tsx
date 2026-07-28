@@ -118,6 +118,46 @@ const EMPTY_PACKING: any = {
 
 type LeftTab = "awbpackings" | "products" | "plcontrol" | "awbsearch" | "polist";
 
+// ─── Vertical tab strip (desktop) + horizontal chips (mobile) ─────────────────
+const IE_TABS: { key: LeftTab; label: string; shortLabel: string; color: string }[] = [
+    { key: "awbpackings", label: "AWB's Packings", shortLabel: "AWBs",     color: "#FB7506" },
+    { key: "products",    label: "Products List",  shortLabel: "Products", color: "#16A34A" },
+    { key: "plcontrol",   label: "PL Control",     shortLabel: "PL Ctrl",  color: "#2563EB" },
+    { key: "awbsearch",   label: "AWB Search",     shortLabel: "Search",   color: "#4F4F4F" },
+    { key: "polist",      label: "PO List",        shortLabel: "PO List",  color: "#7C3AED" },
+];
+
+function IEVerticalTabs({ activeTab, onTabClick }: { activeTab: LeftTab; onTabClick: (t: LeftTab) => void }) {
+    return (
+        <div className="hidden md:flex flex-col w-9 shrink-0 bg-white border-l border-[#DBD9D9] rounded-r-lg">
+            {IE_TABS.map(tb => (
+                <button key={tb.key} onClick={() => onTabClick(tb.key)}
+                    className={cn("flex-1 flex items-center justify-center border-b border-[#DBD9D9] transition-all last:border-b-0", activeTab === tb.key ? "bg-[#F5F3F3]" : "hover:bg-gray-50")}>
+                    <span className="whitespace-nowrap font-black text-[11px] uppercase tracking-widest"
+                        style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", color: activeTab === tb.key ? tb.color : "#9CA3AF" }}>
+                        {tb.label}
+                    </span>
+                </button>
+            ))}
+        </div>
+    );
+}
+
+function IEMobileTabs({ activeTab, onTabClick }: { activeTab: LeftTab; onTabClick: (t: LeftTab) => void }) {
+    return (
+        <div className="md:hidden bg-[#F5F3F3] border border-[#DBD9D9] h-10 px-1.5 flex items-center gap-1 shrink-0 rounded-md overflow-x-auto no-scrollbar">
+            {IE_TABS.map(tb => (
+                <button key={tb.key} onClick={() => onTabClick(tb.key)}
+                    className={cn("flex-1 h-7 rounded text-[10px] font-black uppercase tracking-wide whitespace-nowrap transition-all px-2",
+                        activeTab === tb.key ? "bg-white shadow-sm" : "text-gray-500")}
+                    style={activeTab === tb.key ? { color: tb.color } : undefined}>
+                    {tb.shortLabel}
+                </button>
+            ))}
+        </div>
+    );
+}
+
 // ─── Audit helper ─────────────────────────────────────────────────────────────
 const AUDIT_MAP: Record<string, { table: string; ext: string }> = {
     "insert-packing":  { table: "flower_packing",             ext: "Insert Packing List FlexyMaxApp" },
@@ -910,31 +950,12 @@ export default function InventoryEntryPage() {
             {/* ── Main Layout ── */}
             <div className="flex flex-col flex-1 gap-2 p-2 overflow-hidden">
 
-                {/* ── Tab Container ── */}
-                <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1">
+                <IEMobileTabs activeTab={activeTab} onTabClick={handleTabClick} />
 
-                    {/* ── Tab bar ── */}
-                    <div className="h-14 lg:h-10 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-end px-2 shrink-0 gap-0.5 overflow-x-auto">
-                        {([
-                            { key: "awbpackings", label: "AWB's Packings" },
-                            { key: "products",    label: "Products List" },
-                            { key: "plcontrol",   label: "PL Control" },
-                            { key: "awbsearch",   label: "AWB Search" },
-                            { key: "polist",      label: "PO List" },
-                        ] as const).map(tab => (
-                            <button key={tab.key}
-                                onClick={() => { setActiveTab(tab.key as LeftTab); setTabLoaded(prev => ({ ...prev, [tab.key]: true })); }}
-                                className={cn(
-                                    "flex items-center gap-1.5 px-4 h-8 text-[12px] font-bold uppercase tracking-wide rounded-t transition-all whitespace-nowrap shrink-0",
-                                    activeTab === tab.key ? "bg-white text-[#FB7506] border-b-2 border-[#FB7506]" : "text-gray-500 hover:text-[#FB7506] hover:bg-white/60"
-                                )}>
-                                {tab.label}
-                            </button>
-                        ))}
-                    </div>
+                <div className="flex flex-1 min-h-0 min-w-0 gap-2">
 
                     {/* ── Tab Content ── */}
-                    <div className="flex-1 overflow-auto bg-[#FBF9F8] p-2 relative">
+                    <div className="flex-1 overflow-auto bg-[#FBF9F8] min-h-0 min-w-0 p-2 relative">
 
                     {/* ══ Tab 1: AWB's Packings ══ */}
                     {activeTab === "awbpackings" && (
@@ -1916,6 +1937,7 @@ export default function InventoryEntryPage() {
                     )}
 
                 </div>
+                <IEVerticalTabs activeTab={activeTab} onTabClick={handleTabClick} />
             </div>
         </div>
 
