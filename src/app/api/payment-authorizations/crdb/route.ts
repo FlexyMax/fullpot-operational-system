@@ -22,39 +22,40 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
     const { type, cd_date, acc_pay_uq, reason_uq, amount, details } = await req.json();
     try {
-        const r = await executeProcedure("sp_flower_accounts_pay_cr_insert", {
-            lctype:       type,
-            ldcd_date:    new Date(cd_date),
-            lcacc_pay_uq: acc_pay_uq,
-            lcreason_uq:  reason_uq,
-            lnamount:     parseFloat(amount) || 0,
-            lcdetails:    details ?? "",
+        const r = await executeProcedure("sp_NC_accounts_pay_crdb_insert", {
+            acc_pay_uq:   acc_pay_uq   || "",
+            type:         type         || "C",
+            cd_date:      cd_date,
+            reason_uq:    reason_uq    || "",
+            cd_ammount:   parseFloat(amount) || 0,
+            retention_no: "",
+            details:      (details ?? "").substring(0, 250),
         });
-        const result = r.recordset?.[0];
-        if (result?.error === 1) return NextResponse.json({ success: false, error: result.message }, { status: 422 });
-        serverAuditLog(PANTA, "Insert", "flower_accounts_pay_cr", result?.unico ?? acc_pay_uq).catch(() => {});
-        return NextResponse.json({ success: true, data: result });
+        const row = r.recordset?.[0];
+        if (row?.Error) return NextResponse.json({ success: false, error: row.Message || "Insert failed" }, { status: 400 });
+        serverAuditLog(PANTA, "Insert", "flower_accounts_pay_crdb", row?.unico ?? acc_pay_uq).catch(() => {});
+        return NextResponse.json({ success: true, data: { unico: row?.unico } });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }
 }
 
 export async function PUT(req: NextRequest) {
-    const { unico, type, cd_date, acc_pay_uq, reason_uq, amount, details } = await req.json();
+    const { unico, type, cd_date, reason_uq, amount, details } = await req.json();
     try {
-        const r = await executeProcedure("sp_flower_accounts_pay_cr_update", {
-            lcunico:      unico,
-            lctype:       type,
-            ldcd_date:    new Date(cd_date),
-            lcacc_pay_uq: acc_pay_uq,
-            lcreason_uq:  reason_uq,
-            lnamount:     parseFloat(amount) || 0,
-            lcdetails:    details ?? "",
+        const r = await executeProcedure("sp_NC_accounts_pay_crdb_update", {
+            unico:        unico,
+            type:         type         || "C",
+            cd_date:      cd_date,
+            reason_uq:    reason_uq    || "",
+            cd_ammount:   parseFloat(amount) || 0,
+            retention_no: "",
+            details:      (details ?? "").substring(0, 250),
         });
-        const result = r.recordset?.[0];
-        if (result?.error === 1) return NextResponse.json({ success: false, error: result.message }, { status: 422 });
-        serverAuditLog(PANTA, "Edit", "flower_accounts_pay_cr", unico).catch(() => {});
-        return NextResponse.json({ success: true, data: result });
+        const row = r.recordset?.[0];
+        if (row?.Error) return NextResponse.json({ success: false, error: row.Message || "Update failed" }, { status: 400 });
+        serverAuditLog(PANTA, "Edit", "flower_accounts_pay_crdb", unico).catch(() => {});
+        return NextResponse.json({ success: true, data: { unico: row?.unico ?? unico } });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }
@@ -63,10 +64,10 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
     const { crdb_uq } = await req.json();
     try {
-        const r = await executeProcedure("sp_flower_accounts_pay_cr_delete", { lccrdb_uq: crdb_uq });
-        const result = r.recordset?.[0];
-        if (result?.error === 1) return NextResponse.json({ success: false, error: result.message }, { status: 422 });
-        serverAuditLog(PANTA, "Delete", "flower_accounts_pay_cr", crdb_uq).catch(() => {});
+        const r = await executeProcedure("sp_NC_accounts_pay_crdb_delete", { unico: crdb_uq });
+        const row = r.recordset?.[0];
+        if (row?.Error) return NextResponse.json({ success: false, error: row.Message || "Delete failed" }, { status: 400 });
+        serverAuditLog(PANTA, "Delete", "flower_accounts_pay_crdb", crdb_uq).catch(() => {});
         return NextResponse.json({ success: true });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
