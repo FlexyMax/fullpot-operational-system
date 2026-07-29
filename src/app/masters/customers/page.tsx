@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 import { GridMenu } from "@/components/GridMenu";
 import { useCustomersStore } from "@/store/useCustomersStore";
 import PanelGrid from "@/components/ui/PanelGrid";
-import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd } from "@/components/ui/PanelGridTable";
+import { PanelGridTable, PanelGridThead, PanelGridTh, PanelGridTbody, PanelGridTr, PanelGridTd, PanelGridTfoot } from "@/components/ui/PanelGridTable";
 import { todayEST, formatDateEST, formatMoney, parseMoney, normalizeToISODate } from "@/lib/dates";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -937,9 +937,24 @@ export default function CustomersSetupPage() {
                                             </PanelGridTr>
                                         ))}
                                     </PanelGridTbody>
+                                    <PanelGridTfoot>
+                                        <tr>
+                                            <td colSpan={4} className="px-2 py-1.5 text-[10px] font-black text-gray-500 uppercase tracking-wider">
+                                                Totals ({(statement as any[]).length} records)
+                                            </td>
+                                            <td className="px-2 py-1.5 text-[11px] font-black text-right text-blue-700">{formatMoney((statement as any[]).reduce((s: number, r: any) => s + parseMoney(r.ammount), 0))}</td>
+                                            <td className="px-2 py-1.5 text-[11px] font-black text-right text-green-600">{formatMoney((statement as any[]).reduce((s: number, r: any) => s + parseMoney(r.payments), 0))}</td>
+                                            <td className="px-2 py-1.5 text-[11px] font-black text-right text-red-500">{formatMoney((statement as any[]).reduce((s: number, r: any) => s + parseMoney(r.debits), 0))}</td>
+                                            <td className="px-2 py-1.5 text-[11px] font-black text-right text-blue-600">{formatMoney((statement as any[]).reduce((s: number, r: any) => s + parseMoney(r.credits), 0))}</td>
+                                            <td className="px-2 py-1.5 text-[11px] font-black text-right text-[#FB7506]">{formatMoney((statement as any[]).reduce((s: number, r: any) => s + parseMoney(r.balance), 0))}</td>
+                                        </tr>
+                                    </PanelGridTfoot>
                                 </PanelGridTable>
                             )}
                         </PanelGrid>
+                        <div className="flex justify-end gap-3 px-4 py-3 bg-gray-50 border-t shrink-0">
+                            <button onClick={() => setStmtModal(false)} className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-100">Close</button>
+                        </div>
                     </div>
                 </div>
             )}
