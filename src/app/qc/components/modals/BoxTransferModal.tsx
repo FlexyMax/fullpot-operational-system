@@ -48,10 +48,9 @@ export default function BoxTransferModal({ mode, lot, onClose, onSaved }: BoxTra
                 });
             } else {
                 d = await qcPost("/api/qc/stock/insert-transfer", {
-                    pkboxUq:    lot.unico,
+                    pkboxUq:     lot.unico,
                     warehouseUq: form.warehouseUq,
-                    priceXU:    form.priceXU,
-                    boxUnits:   form.boxUnits,
+                    qtyIn:       lot.stock ?? lot.qty_transit ?? 0,
                 });
             }
             if (!d.success) throw new Error(d.error ?? "Error saving transfer.");
@@ -105,11 +104,6 @@ export default function BoxTransferModal({ mode, lot, onClose, onSaved }: BoxTra
                         <input type="number" value={form.boxUnits} onChange={e => setForm(p => ({ ...p, boxUnits: parseInt(e.target.value) || 0 }))} className="fos-input py-1"/>
                     </div>
 
-                    {!isEdit && (
-                        <div className="text-[10px] text-amber-600 bg-amber-50 rounded p-2 border border-amber-200">
-                            ⚠ sp_flower_packing_stock_insert is not available in the current database. Transfer insert will fail until this SP is added.
-                        </div>
-                    )}
                 </div>
 
                 <div className="flex justify-end gap-2 px-4 py-3 bg-gray-50 border-t rounded-b-xl shrink-0">

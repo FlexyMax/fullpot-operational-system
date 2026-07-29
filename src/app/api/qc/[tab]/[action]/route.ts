@@ -6,9 +6,7 @@ import { serverAuditLog } from "@/lib/serverAudit";
 
 const PANTA = "52961702";
 
-// ── SPs confirmed NOT in DB (2026-05-21) ─────────────────────────────────────
-// sp_flower_packing_stock_insert  → Tab 2: Send to Warehouse (insert new transfer)
-// sp_NC_inventory_lot_history     → Stock List: Lot History modal
+// sp_NC_inventory_lot_history — not yet in DB (2026-05-21)
 
 export async function POST(
     req: NextRequest,
@@ -91,9 +89,16 @@ export async function POST(
                     };
                     auditAction = "Edit"; auditTabla = "flower_packing_stock"; auditReg = body.pkstockUq;
                 } else if (action === "insert-transfer") {
-                    // sp_flower_packing_stock_insert does not exist in the database
-                    return NextResponse.json({ success: false, missing: true,
-                        error: "sp_flower_packing_stock_insert is not available in the current database." });
+                    if (!body.pkboxUq)     return NextResponse.json({ success: false, error: "pkboxUq required." }, { status: 400 });
+                    if (!body.warehouseUq) return NextResponse.json({ success: false, error: "Warehouse is required." }, { status: 400 });
+                    procName = "sp_flower_packing_box_to_whouse";
+                    spParams = {
+                        lcpacking_box_uq: body.pkboxUq,
+                        lnqty_in:         parseInt(body.qtyIn) || 0,
+                        lcwhouse_uq:      body.warehouseUq,
+                    };
+                    auditAction = "Insert"; auditTabla = "flower_packing_stock"; auditReg = "";
+                    auditExt   = "Send Packing to Warehouse";
                 }
                 break;
 
