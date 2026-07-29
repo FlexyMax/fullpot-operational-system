@@ -4,13 +4,15 @@ import { executeProcedure } from "@/lib/db";
 const PAGE_SIZE = 50;
 
 export async function GET(req: NextRequest) {
-    const search = req.nextUrl.searchParams.get("search") || "%";
-    const page   = parseInt(req.nextUrl.searchParams.get("page") || "1");
-    const param  = search === "%" ? "%" : (search.includes("%") ? search : `%${search}%`);
+    const search  = req.nextUrl.searchParams.get("search") || "%";
+    const page    = parseInt(req.nextUrl.searchParams.get("page") || "1");
+    const all     = req.nextUrl.searchParams.get("all") === "1";
+    const param   = search === "%" ? "%" : (search.includes("%") ? search : `%${search}%`);
+    const rowSize = all ? 99999 : PAGE_SIZE;
     try {
         const result = await executeProcedure("sp_NC_customers_list_for_salesmen", {
-            lnPageNumber: page,
-            lnRowsOfPage: PAGE_SIZE,
+            lnPageNumber: 1,
+            lnRowsOfPage: rowSize,
             lccustomer:   param,
         });
         const totalRecords = result.recordset[0]?.QueryTotalRecords ?? 0;

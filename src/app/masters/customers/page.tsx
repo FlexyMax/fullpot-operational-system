@@ -201,13 +201,22 @@ export default function CustomersSetupPage() {
         }
     };
 
-    // ── Export CSV ────────────────────────────────────────────────────────────
-    const exportCSV = () => {
-        const headers = ["Code","Customer","Active","Hold","Salesman","Address","City","State","Country","Phone","Fax","Email","Contact","Group","Since","Terms"];
-        const rows = custList.map((c: any) => [t(c.old_code),t(c.customer),(c.active==="Yes"||c.active===true)?"Yes":"No",(c.credithold==="Yes"||c.credithold===true)?"Yes":"No",t(c.salesman_name),t(c.address1),t(c.city),t(c.state),t(c.country),t(c.phone_1),t(c.fax_1),t(c.email),t(c.contact),t(c.groupname),t(c.custsince),t(c.terms)]);
-        const csv = [headers,...rows].map(r=>r.map((v:any)=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
-        const a = Object.assign(document.createElement("a"),{href:URL.createObjectURL(new Blob([csv],{type:"text/csv"})),download:`customers-${todayEST()}.csv`});
-        document.body.appendChild(a);a.click();document.body.removeChild(a);
+    // ── Export CSV (full list) ────────────────────────────────────────────────
+    const [exportingCSV, setExportingCSV] = useState(false);
+    const exportCSV = async () => {
+        if (exportingCSV) return;
+        setExportingCSV(true);
+        try {
+            const param = search.trim() ? search.trim() : "%";
+            const data = await apiFetch(`/api/masters/customers?search=${encodeURIComponent(param)}&all=1`);
+            const all: any[] = data.customers ?? [];
+            const headers = ["Code","Customer","Active","Hold","Salesman","Address","City","State","Country","Phone","Fax","Email","Contact","Group","Since","Terms"];
+            const rows = all.map((c: any) => [t(c.old_code),t(c.customer),(c.active==="Yes"||c.active===true)?"Yes":"No",(c.credithold==="Yes"||c.credithold===true)?"Yes":"No",t(c.salesman_name),t(c.address1),t(c.city),t(c.state),t(c.country),t(c.phone_1),t(c.fax_1),t(c.email),t(c.contact),t(c.groupname),t(c.custsince),t(c.terms)]);
+            const csv = [headers,...rows].map(r=>r.map((v:any)=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+            const a = Object.assign(document.createElement("a"),{href:URL.createObjectURL(new Blob([csv],{type:"text/csv"})),download:`customers-${todayEST()}.csv`});
+            document.body.appendChild(a);a.click();document.body.removeChild(a);
+        } catch(e: any) { toast.error(e.message); }
+        finally { setExportingCSV(false); }
     };
 
     // ── Customer CRUD ─────────────────────────────────────────────────────────
