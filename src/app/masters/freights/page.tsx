@@ -245,6 +245,9 @@ function SetupModal({ title, icon: Icon, onClose, listUrl, detailUrl, emptyForm,
                                 </PanelGridTbody>
                             </PanelGridTable>
                         </PanelGrid>
+                        <div className="flex justify-end px-4 py-3 bg-gray-50 border-t shrink-0">
+                            <button onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-100">Close</button>
+                        </div>
                     </>
                 ) : (
                     <div className="flex flex-col h-full">
@@ -327,6 +330,7 @@ export default function FreightsSetupPage() {
     const [frForm, setFrForm] = useState<any>(EMPTY_FR);
     const [haForm, setHaForm] = useState<any>(EMPTY_HA);
     const [atForm, setAtForm] = useState<any>(EMPTY_AT);
+    const [selSeason, setSelSeason] = useState<any>(null);
     const [saving, setSaving] = useState(false);
 
     useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
@@ -349,6 +353,21 @@ export default function FreightsSetupPage() {
     const seasons = (lookups?.seasons || []) as any[];
     const cities  = (lookups?.cities  || []) as any[];
     const growers = (lookups?.growers || []) as any[];
+
+    // Auto-select last season (by enddate)
+    useEffect(() => {
+        if (seasons.length > 0 && !selSeason) {
+            const sorted = [...seasons].sort((a: any, b: any) =>
+                new Date(b.enddate || 0).getTime() - new Date(a.enddate || 0).getTime()
+            );
+            setSelSeason(sorted[0]);
+        }
+    }, [seasons]);
+
+    // Client-side season filter
+    const frFiltered = selSeason ? (freights as any[]).filter((r: any) => r.season === selSeason.season) : (freights as any[]);
+    const haFiltered = selSeason ? (handling as any[]).filter((r: any) => r.season === selSeason.season) : (handling as any[]);
+    const atFiltered = selSeason ? (atpda   as any[]).filter((r: any) => r.season === selSeason.season) : (atpda   as any[]);
 
     // ── Freight CRUD
     const saveFr = async () => {
@@ -498,6 +517,24 @@ export default function FreightsSetupPage() {
                     </select>
                 </div>
                 
+                <div className="flex items-center gap-2 border-l border-gray-200 pl-4">
+                    <label className="text-xs font-bold text-gray-600 uppercase tracking-wider whitespace-nowrap"><Zap size={14} className="inline mr-1 text-[#FB7506]" /> Season:</label>
+                    <select
+                        value={selSeason?.unico || ""}
+                        onChange={(e) => {
+                            const s = seasons.find((s: any) => s.unico === e.target.value);
+                            setSelSeason(s || null);
+                            store.setSelFr(null); store.setSelHa(null); store.setSelAt(null);
+                        }}
+                        className="border border-gray-300 rounded px-3 py-1.5 text-sm font-semibold outline-none focus:ring-1 focus:ring-[#FB7506] shadow-sm bg-gray-50 min-w-[140px]"
+                    >
+                        <option value="">— All —</option>
+                        {seasons.map((s: any) => (
+                            <option key={s.unico} value={s.unico}>{t(s.season)}</option>
+                        ))}
+                    </select>
+                </div>
+
                 <div className="flex items-center gap-2 border-l border-gray-200 pl-6">
                     <button onClick={() => store.setWarehousesModal(true)} className="px-4 py-1.5 bg-white hover:bg-gray-50 border border-gray-300 rounded text-xs font-bold text-gray-700 transition-colors shadow-sm flex items-center gap-1.5"><Building2 size={13} className="text-gray-400" /> Warehouses</button>
                     <button onClick={() => store.setCitiesModal(true)} className="px-4 py-1.5 bg-white hover:bg-gray-50 border border-gray-300 rounded text-xs font-bold text-gray-700 transition-colors shadow-sm flex items-center gap-1.5"><MapPin size={13} className="text-gray-400" /> Cities</button>
@@ -513,7 +550,7 @@ export default function FreightsSetupPage() {
                 <PanelGrid
                     title={`Freights${store.selWh ? ` — ${t(store.selWh.wp_name)}` : ""}`}
                     icon={Cloud}
-                    recordCount={freights.length}
+                    recordCount={frFiltered.length}
                     onRefresh={() => refetchFr()}
                     refreshing={loadingFr}
                     menuItems={[
@@ -534,9 +571,9 @@ export default function FreightsSetupPage() {
                                 <PanelGridTh className="text-right">FreightKG</PanelGridTh>
                             </PanelGridThead>
                             <PanelGridTbody>
-                                {freights.length === 0 ? (
+                                {frFiltered.length === 0 ? (
                                     <PanelGridTr><PanelGridTd colSpan={4} className="p-4 text-center text-gray-300 italic text-xs">{store.selWh ? "No freight rates" : "Select a warehouse"}</PanelGridTd></PanelGridTr>
-                                ) : freights.map((r: any) => (
+                                ) : frFiltered.map((r: any) => (
                                     <PanelGridTr key={r.unico} selected={store.selFr?.unico === r.unico} onClick={() => { if(store.selFr?.unico === r.unico) store.setSelFr(null); else { store.setSelFr(r); store.setSelHa(null); store.setSelAt(null); } }}>
                                         <PanelGridTd>{t(r.season)}</PanelGridTd>
                                         <PanelGridTd>{t(r.city)}</PanelGridTd>
@@ -553,7 +590,7 @@ export default function FreightsSetupPage() {
                 <PanelGrid
                     title="Handling"
                     icon={Building2}
-                    recordCount={handling.length}
+                    recordCount={haFiltered.length}
                     onRefresh={() => refetchHa()}
                     refreshing={loadingHa}
                     menuItems={[
@@ -570,9 +607,9 @@ export default function FreightsSetupPage() {
                                 <PanelGridTh className="text-right">HandlingFB</PanelGridTh>
                             </PanelGridThead>
                             <PanelGridTbody>
-                                {handling.length === 0 ? (
+                                {haFiltered.length === 0 ? (
                                     <PanelGridTr><PanelGridTd colSpan={2} className="p-4 text-center text-gray-300 italic text-xs">{store.selWh ? "No handling rates" : "Select a warehouse"}</PanelGridTd></PanelGridTr>
-                                ) : handling.map((r: any) => (
+                                ) : haFiltered.map((r: any) => (
                                     <PanelGridTr key={r.unico} selected={store.selHa?.unico === r.unico} onClick={() => { if(store.selHa?.unico === r.unico) store.setSelHa(null); else { store.setSelHa(r); store.setSelFr(null); store.setSelAt(null); } }}>
                                         <PanelGridTd>{t(r.season)}</PanelGridTd>
                                         <PanelGridTd className="text-right">{parseFloat(r.handling||0).toFixed(4)}</PanelGridTd>
@@ -587,7 +624,7 @@ export default function FreightsSetupPage() {
                 <PanelGrid
                     title="ATPDA"
                     icon={MapPin}
-                    recordCount={atpda.length}
+                    recordCount={atFiltered.length}
                     onRefresh={() => refetchAt()}
                     refreshing={loadingAt}
                     menuItems={[
@@ -605,9 +642,9 @@ export default function FreightsSetupPage() {
                                 <PanelGridTh className="text-right">Tariff%</PanelGridTh>
                             </PanelGridThead>
                             <PanelGridTbody>
-                                {atpda.length === 0 ? (
+                                {atFiltered.length === 0 ? (
                                     <PanelGridTr><PanelGridTd colSpan={3} className="p-4 text-center text-gray-300 italic text-xs">{store.selWh ? "No ATPDA tariffs" : "Select a warehouse"}</PanelGridTd></PanelGridTr>
-                                ) : atpda.map((r: any) => (
+                                ) : atFiltered.map((r: any) => (
                                     <PanelGridTr key={r.unico} selected={store.selAt?.unico === r.unico} onClick={() => { if(store.selAt?.unico === r.unico) store.setSelAt(null); else { store.setSelAt(r); store.setSelFr(null); store.setSelHa(null); } }}>
                                         <PanelGridTd>{t(r.season)}</PanelGridTd>
                                         <PanelGridTd>{t(r.city)}</PanelGridTd>
