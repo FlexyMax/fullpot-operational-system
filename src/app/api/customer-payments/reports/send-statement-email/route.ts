@@ -3,7 +3,7 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import React from "react";
 import { executeProcedure } from "@/lib/db";
 import { getCompanyInfo } from "@/lib/reports/companyInfo";
-import { StatementPDF } from "@/components/reports/StatementPDF";
+import { StatementPDFv2 } from "@/components/reports/StatementPDFv2";
 import { sendStatementEmail } from "@/lib/mailer";
 
 export async function POST(req: NextRequest) {
@@ -24,12 +24,13 @@ export async function POST(req: NextRequest) {
         : "sp_flower_accounts_rec_statment";
 
     try {
+        // Balance SP: ldStart_date drives month labels — pass toDate so labels match the period end
+        const spParams = mode === "balance"
+            ? { Customer: customer_uq, ldStart_date: toDate, ldEnd_date: toDate }
+            : { Customer: customer_uq, ldStart_date: fromDate, ldEnd_date: toDate };
+
         const [stmtResult, company] = await Promise.all([
-            executeProcedure(spName, {
-                Customer:     customer_uq,
-                ldStart_date: fromDate,
-                ldEnd_date:   toDate,
-            }),
+            executeProcedure(spName, spParams),
             getCompanyInfo(),
         ]);
 
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
 
         const pdfBuffer = await renderToBuffer(
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            React.createElement(StatementPDF, { company, rows, fromDate, toDate, mode: mode ?? "statement" }) as any
+            React.createElement(StatementPDFv2, { company, rows, fromDate, toDate, mode: mode ?? "statement" }) as any
         );
 
         const name = customer_name || (rows[0] ? String(rows[0].customer ?? "").trim() : customer_uq);

@@ -3,7 +3,7 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import React from "react";
 import { executeProcedure } from "@/lib/db";
 import { getCompanyInfo } from "@/lib/reports/companyInfo";
-import { StatementPDF } from "@/components/reports/StatementPDF";
+import { StatementPDFv2 } from "@/components/reports/StatementPDFv2";
 
 export async function GET(req: NextRequest) {
     const sp         = req.nextUrl.searchParams;
@@ -19,22 +19,30 @@ export async function GET(req: NextRequest) {
         ? "sp_flower_accounts_rec_statment_balance"
         : "sp_flower_accounts_rec_statment";
 
+    // Balance SP: ldStart_date drives month labels (July/June/May/April) — pass toDate so labels match the period end
+    const spParams = mode === "balance"
+        ? { Customer: customerUq, ldStart_date: toDate, ldEnd_date: toDate }
+        : { Customer: customerUq, ldStart_date: fromDate, ldEnd_date: toDate };
+
     const [stmtResult, company] = await Promise.all([
-        executeProcedure(spName, { Customer: customerUq, ldStart_date: fromDate, ldEnd_date: toDate }),
+        executeProcedure(spName, spParams),
         getCompanyInfo(),
     ]);
 
     const rows = stmtResult.recordset ?? [];
 
+    console.log(`[statement-pdf] customer=${customerUq} mode=${mode} rows=${rows.length} t0_30=${rows[0]?.t0_30} month1=${rows[0]?.month_1}`);
+
     const pdfBuffer = await renderToBuffer(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        React.createElement(StatementPDF, { company, rows, fromDate, toDate, mode }) as any
+        React.createElement(StatementPDFv2, { company, rows, fromDate, toDate, mode }) as any
     );
 
     return new Response(new Uint8Array(pdfBuffer), {
         headers: {
             "Content-Type":        "application/pdf",
             "Content-Disposition": `inline; filename="statement_${customerUq}.pdf"`,
+            "Cache-Control":       "no-store",
         },
     });
 }
