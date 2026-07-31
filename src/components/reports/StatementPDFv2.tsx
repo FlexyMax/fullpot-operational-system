@@ -18,7 +18,7 @@ const s = StyleSheet.create({
     page:     { paddingBottom: 44, fontSize: 8, fontFamily: "Helvetica", color: "#1F2937", backgroundColor: "#FFFFFF" },
     header:   { backgroundColor: "#FFFFFF", paddingHorizontal: 28, paddingTop: 14, paddingBottom: 10,
                 flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-                borderBottomWidth: 3, borderBottomColor: ACCENT, marginBottom: 12 },
+                borderBottomWidth: 1, borderBottomColor: LGRAY, marginBottom: 12 },
     logoRow:  { flexDirection: "row", alignItems: "center" },
     logo:     { width: 60, height: 60 },
     coWrap:   { marginLeft: 10 },
