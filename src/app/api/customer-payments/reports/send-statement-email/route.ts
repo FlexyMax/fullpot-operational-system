@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 
         const pdfBuffer = await renderToBuffer(
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            React.createElement(StatementPDF, { company, rows, fromDate, toDate }) as any
+            React.createElement(StatementPDF, { company, rows, fromDate, toDate, mode: mode ?? "statement" }) as any
         );
 
         const name = customer_name || (rows[0] ? String(rows[0].customer ?? "").trim() : customer_uq);
