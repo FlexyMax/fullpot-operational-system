@@ -135,7 +135,7 @@ function SendAllModal({ onClose }: { onClose: () => void }) {
             try {
                 const res = await fetch("/api/customer-payments/reports/send-statement-email", {
                     method: "POST", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ customer_uq: t(c.unico), customer_name: t(c.customer), email }),
+                    body: JSON.stringify({ customer_uq: t(c.unico), customer_name: t(c.customer), email, mode: "balance" }),
                 });
                 const d = await res.json();
                 d.success ? ok++ : fail++;
@@ -224,8 +224,13 @@ function SendAllModal({ onClose }: { onClose: () => void }) {
 }
 
 // ─── StatementPreviewModal ────────────────────────────────────────────────────
-function StatementPreviewModal({ html, onClose, customer, fromDate, toDate, mode }: any) {
+function StatementPreviewModal({ onClose, customer, fromDate, toDate, mode }: any) {
     const [sending, setSending] = useState(false);
+
+    const pdfSrc = customer?.unico
+        ? `/api/customer-payments/reports/statement-pdf?customer_uq=${t(customer.unico)}&from=${fromDate ?? ""}&to=${toDate ?? ""}&mode=${mode ?? "statement"}`
+        : "";
+
     const sendEmail = async () => {
         const email = String(customer?.ap_email ?? customer?.email ?? "").trim();
         if (!email) { toast.error("Customer has no email address."); return; }
@@ -247,6 +252,7 @@ function StatementPreviewModal({ html, onClose, customer, fromDate, toDate, mode
         } catch (e: any) { toast.error(e.message); }
         finally { setSending(false); }
     };
+
     return (
         <Modal title="Statement Preview" icon={Printer} onClose={onClose} size="xl"
             footer={<div className="flex items-center gap-2">
@@ -258,8 +264,11 @@ function StatementPreviewModal({ html, onClose, customer, fromDate, toDate, mode
                     <Printer size={13}/>Fax
                 </button>
             </div>}>
-            <div className="w-full overflow-auto" style={{height:"65vh"}}>
-                <iframe srcDoc={html} className="border rounded" style={{minWidth:"700px",width:"100%",height:"65vh"}} title="Statement Preview"/>
+            <div className="w-full" style={{height:"65vh"}}>
+                {pdfSrc
+                    ? <iframe src={pdfSrc} className="w-full h-full border-0 rounded" title="Statement PDF Preview"/>
+                    : <div className="flex items-center justify-center h-full text-gray-400 text-sm">No customer selected</div>
+                }
             </div>
         </Modal>
     );
@@ -388,8 +397,6 @@ export default function CustomerPaymentsPage() {
     const [cutDateModal,     setCutDateModal]       = useState(false);
     const [printAllProgress, setPrintAllProgress]  = useState<string|null>(null);
     const [stmtPreviewModal, setStmtPreviewModal]  = useState(false);
-    const [stmtPreviewHtml,  setStmtPreviewHtml]   = useState("");
-    const [stmtPreviewLoading, setStmtPreviewLoading] = useState(false);
     const [stmtPreviewMode,  setStmtPreviewMode]   = useState<"statement"|"balance">("statement");
     // ── Tab 6 state ───────────────────────────────────────────────────────────
     const [corpDate,         setCorpDate]           = useState(today());
@@ -1284,15 +1291,10 @@ export default function CustomerPaymentsPage() {
                         onRefresh={refetchStmt}
                         refreshing={loadingStmt}
                         menuItems={[
-                                { label: "Print", icon: Printer, color: "gray", onClick: async()=>{
+                                { label: "Print", icon: Printer, color: "gray", onClick: ()=>{
                                     if(!selCustomer) return;
                                     setStmtPreviewMode("statement");
-                                    setStmtPreviewLoading(true); setStmtPreviewModal(true);
-                                    try{
-                                        const d = await cpFetch(`/api/customer-payments/reports/html-statement-balance/${selCustomer.unico}?from=${stmtFrom}&to=${stmtTo}`);
-                                        setStmtPreviewHtml(d.html || "<p>No statement available.</p>");
-                                    }catch(e:any){ toast.error(e.message); setStmtPreviewModal(false); }
-                                    finally{ setStmtPreviewLoading(false); }
+                                    setStmtPreviewModal(true);
                                 }, disabled: !selCustomer||!perms.canReport },
                                 { label: "Print Cut", icon: Calendar, color: "gray", onClick: ()=>setCutDateModal(true), disabled: !selCustomer||!perms.canReport },
                             ]}
@@ -1329,15 +1331,10 @@ export default function CustomerPaymentsPage() {
                         onRefresh={refetchStmtBal}
                         refreshing={loadingStmtBal}
                         menuItems={[
-                            { label: "Print", icon: Printer, color: "gray", onClick: async()=>{
+                            { label: "Print", icon: Printer, color: "gray", onClick: ()=>{
                                 if(!selCustomer) return;
                                 setStmtPreviewMode("balance");
-                                setStmtPreviewLoading(true); setStmtPreviewModal(true);
-                                try{
-                                    const d = await cpFetch(`/api/customer-payments/reports/html-statement-balance/${selCustomer.unico}?from=${stmtFrom}&to=${stmtTo}`);
-                                    setStmtPreviewHtml(d.html || "<p>No statement available.</p>");
-                                }catch(e:any){ toast.error(e.message); setStmtPreviewModal(false); }
-                                finally{ setStmtPreviewLoading(false); }
+                                setStmtPreviewModal(true);
                             }, disabled: !selCustomer||!perms.canReport },
                         ]}
                         className="flex-[0.6] flex flex-col min-h-0"
@@ -1566,7 +1563,7 @@ export default function CustomerPaymentsPage() {
                 <CutDateModal customerUq={selCustomer.unico} onClose={()=>setCutDateModal(false)}/>
             )}
             {stmtPreviewModal && (
-                <StatementPreviewModal html={stmtPreviewHtml} onClose={()=>setStmtPreviewModal(false)}
+                <StatementPreviewModal onClose={()=>setStmtPreviewModal(false)}
                     customer={selCustomer} fromDate={stmtFrom} toDate={stmtTo} mode={stmtPreviewMode}/>
             )}
             {corpPayModal && selCustomer && (
