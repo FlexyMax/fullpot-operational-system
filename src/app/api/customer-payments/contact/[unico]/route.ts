@@ -6,7 +6,6 @@ export async function GET(
     context: { params: Promise<{ unico: string }> }
 ) {
     const { unico } = await context.params;
-    // unico is a char(8) internal key — allow only alphanumeric to prevent injection
     const safe = String(unico).replace(/[^a-zA-Z0-9]/g, "").substring(0, 8);
     if (!safe) return NextResponse.json({}, { status: 400 });
     try {
@@ -17,5 +16,23 @@ export async function GET(
         return NextResponse.json(r.recordset[0] ?? {});
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });
+    }
+}
+
+export async function PUT(
+    req: NextRequest,
+    context: { params: Promise<{ unico: string }> }
+) {
+    const { unico } = await context.params;
+    const safe = String(unico).replace(/[^a-zA-Z0-9]/g, "").substring(0, 8);
+    if (!safe) return NextResponse.json({ success: false, error: "Invalid unico" }, { status: 400 });
+    const { ap_email } = await req.json();
+    // Standard SQL escaping for inline string — email validated client-side
+    const safeEmail = String(ap_email ?? "").replace(/'/g, "''").substring(0, 200);
+    try {
+        await executeQuery(`UPDATE flower_customers SET ap_email = '${safeEmail}' WHERE unico = '${safe}'`);
+        return NextResponse.json({ success: true });
+    } catch (err: any) {
+        return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }
 }

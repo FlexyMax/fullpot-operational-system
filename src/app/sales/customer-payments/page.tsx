@@ -64,9 +64,13 @@ function CutDateModal({ customerUq, onClose }: any) {
 
 // ─── SendAllModal ─────────────────────────────────────────────────────────────
 function SendAllModal({ onClose }: { onClose: () => void }) {
-    const [search,    setSearch]    = useState("");
-    const [checked,   setChecked]   = useState<Set<string>>(new Set());
-    const [sending,   setSending]   = useState(false);
+    const [search,         setSearch]         = useState("");
+    const [checked,        setChecked]        = useState<Set<string>>(new Set());
+    const [sending,        setSending]        = useState(false);
+    const [selRow,         setSelRow]         = useState<any>(null);
+    const [emailOverrides, setEmailOverrides] = useState<Record<string, string>>({});
+    const [saving,         setSaving]         = useState(false);
+    const queryClient = useQueryClient();
 
     const { data: customers = [], isLoading } = useQuery<any[]>({
         queryKey: ["cp-send-all-list"],
@@ -78,9 +82,14 @@ function SendAllModal({ onClose }: { onClose: () => void }) {
         t(c.customer).toUpperCase().includes(search.toUpperCase())
     );
 
-    const hasEmail = (c: any) => String(c.ap_email ?? "").trim().length > 0;
+    const getEmail = (c: any) => {
+        const ov = emailOverrides[t(c.unico)];
+        return ov !== undefined ? ov : String(c.ap_email ?? "").trim();
+    };
+    const hasEmail = (c: any) => getEmail(c).length > 0;
 
     const toggle = (unico: string, c: any) => {
+        setSelRow(c);
         if (!hasEmail(c)) return;
         setChecked(prev => {
             const next = new Set(prev);
@@ -95,13 +104,33 @@ function SendAllModal({ onClose }: { onClose: () => void }) {
         else setChecked(new Set(withEmail.map((c: any) => t(c.unico))));
     };
 
+    const handleSaveEmail = async () => {
+        if (!selRow) return;
+        const email = emailOverrides[t(selRow.unico)] ?? "";
+        setSaving(true);
+        try {
+            const res = await fetch(`/api/customer-payments/contact/${t(selRow.unico)}`, {
+                method: "PUT", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ap_email: email }),
+            });
+            const d = await res.json();
+            if (d.success) {
+                toast.success("Email saved.");
+                queryClient.invalidateQueries({ queryKey: ["cp-send-all-list"] });
+            } else {
+                toast.error(d.error || "Failed to save email.");
+            }
+        } catch (e: any) { toast.error(e.message); }
+        finally { setSaving(false); }
+    };
+
     const handleSend = async () => {
         if (checked.size === 0) { toast.warning("Select at least one customer."); return; }
         setSending(true);
         let ok = 0, fail = 0;
         const toSend = (customers as any[]).filter((c: any) => checked.has(t(c.unico)));
         for (const c of toSend) {
-            const email = String(c.ap_email ?? "").trim();
+            const email = getEmail(c);
             if (!email) { fail++; continue; }
             try {
                 const htmlRes = await fetch(`/api/customer-payments/reports/statement?customer_uq=${t(c.unico)}`);
@@ -120,6 +149,8 @@ function SendAllModal({ onClose }: { onClose: () => void }) {
         if (fail > 0) toast.error(`${fail} customer${fail > 1 ? "s" : ""} failed to send.`);
         if (ok > 0) setChecked(new Set());
     };
+
+    const selEmail = selRow ? (emailOverrides[t(selRow.unico)] ?? String(selRow.ap_email ?? "").trim()) : "";
 
     return (
         <Modal title="Send All Statements" icon={Mail} onClose={onClose} size="lg"
@@ -153,15 +184,16 @@ function SendAllModal({ onClose }: { onClose: () => void }) {
                                     <PanelGridTr><PanelGridTd colSpan={4} className="p-4 text-center text-xs text-gray-300 italic">No customers with balance</PanelGridTd></PanelGridTr>
                                 ) : filtered.map((c: any) => {
                                     const canSend = hasEmail(c);
+                                    const isSelected = t(c.unico) === t(selRow?.unico);
                                     return (
-                                    <PanelGridTr key={t(c.unico)} selected={checked.has(t(c.unico))} onClick={() => toggle(t(c.unico), c)}
-                                        className={!canSend ? "opacity-40 cursor-not-allowed" : undefined}>
+                                    <PanelGridTr key={t(c.unico)} selected={isSelected} onClick={() => toggle(t(c.unico), c)}
+                                        className={!canSend && !isSelected ? "opacity-40" : undefined}>
                                         <PanelGridTd><input type="checkbox" checked={checked.has(t(c.unico))} disabled={!canSend}
                                             onChange={() => toggle(t(c.unico), c)} onClick={e => e.stopPropagation()}
                                             className="accent-[#FB7506] disabled:cursor-not-allowed"/></PanelGridTd>
                                         <PanelGridTd className="font-semibold">{t(c.customer)}</PanelGridTd>
                                         <PanelGridTd>{t(c.statement_by)}</PanelGridTd>
-                                        <PanelGridTd className="text-[10px] text-blue-600">{t(c.ap_email)}</PanelGridTd>
+                                        <PanelGridTd className="text-[10px] text-blue-600">{getEmail(c)}</PanelGridTd>
                                     </PanelGridTr>
                                     );
                                 })}
@@ -169,6 +201,26 @@ function SendAllModal({ onClose }: { onClose: () => void }) {
                         </PanelGridTable>
                     </div>
                 </PanelGrid>
+                {/* ── Email edit panel ── */}
+                <div className="border border-gray-200 rounded-md px-3 py-2 flex items-center gap-2 min-h-[42px]">
+                    {selRow ? (
+                        <>
+                            <span className="text-[11px] font-bold text-gray-600 whitespace-nowrap truncate max-w-[160px]" title={t(selRow.customer)}>{t(selRow.customer)}</span>
+                            <input
+                                value={selEmail}
+                                onChange={e => setEmailOverrides(prev => ({ ...prev, [t(selRow.unico)]: e.target.value }))}
+                                placeholder="Enter email address..."
+                                className="flex-1 px-2.5 py-1 text-xs border border-gray-200 rounded outline-none focus:ring-1 focus:ring-[#FB7506]"
+                            />
+                            <button onClick={handleSaveEmail} disabled={saving}
+                                className="flex items-center gap-1.5 px-3 py-1 rounded bg-[#FB7506] hover:bg-[#e06905] text-white text-xs font-bold disabled:opacity-50 whitespace-nowrap">
+                                {saving ? <RefreshCcw size={11} className="animate-spin"/> : <Save size={11}/>}Save
+                            </button>
+                        </>
+                    ) : (
+                        <span className="text-[10px] text-gray-400 italic">Select a customer to edit their email</span>
+                    )}
+                </div>
             </div>
         </Modal>
     );
