@@ -147,18 +147,13 @@ function SendAllModal({ onClose }: { onClose: () => void }) {
 function StatementPreviewModal({ html, onClose, customer }: any) {
     const [sending, setSending] = useState(false);
     const sendEmail = async () => {
+        const email = String(customer?.ap_email ?? customer?.email ?? "").trim();
+        if (!email) { toast.error("Customer has no email address."); return; }
         setSending(true);
         try {
-            // Fetch live contact info — the customers list SP doesn't return email fields
-            let email = String(customer?.ap_email ?? customer?.email ?? "").trim();
-            if (!email && customer?.unico) {
-                const contact = await fetch(`/api/customer-payments/contact/${customer.unico}`).then(r => r.json());
-                email = String(contact?.ap_email ?? contact?.email ?? "").trim();
-            }
-            if (!email) { toast.error("Customer has no email address."); setSending(false); return; }
             const res = await fetch("/api/customer-payments/reports/send-statement-email", {
                 method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ customer_uq: customer.unico, email, html }),
+                body: JSON.stringify({ customer_uq: customer.unico, customer_name: customer.customer, email, html }),
             });
             const d = await res.json();
             d.success ? toast.success("Statement sent by email.") : toast.error(d.error || "Failed to send email.");

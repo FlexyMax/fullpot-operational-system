@@ -27,6 +27,17 @@ function createTransporter() {
     });
 }
 
+export async function sendStatementEmail(to: string, html: string, customerName: string) {
+    const transporter = createTransporter();
+    await transporter.sendMail({
+        from:    `"FullPot AR" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
+        to,
+        subject: `Account Statement — ${customerName}`,
+        html,
+    });
+    console.log(`[mailer] Statement sent to ${to} (${customerName})`);
+}
+
 export async function sendVerificationCode(to: string, code: string, name: string) {
     console.log(`[mailer] Sending verification code to ${to} — code: ${code}`);
     const transporter = createTransporter();
