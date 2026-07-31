@@ -29,6 +29,34 @@ ORDER BY salesman_name
 GO
 
 -- ────────────────────────────────────────────────────────────────────────────
+IF OBJECT_ID('dbo.sp_NC_customer_email_update') IS NOT NULL
+    DROP PROCEDURE dbo.sp_NC_customer_email_update
+GO
+CREATE PROCEDURE [dbo].[sp_NC_customer_email_update]
+    @lcunico    char(8),
+    @lcap_email varchar(200)
+AS BEGIN
+-- ================================================================
+-- SP:    sp_NC_customer_email_update
+-- DB:    fullpot | Tabla: flower_customers
+-- Desc:  Actualiza ap_email de un cliente (usado desde Send All Statements)
+-- Retorna: unico, Message, Error (NC_ uppercase pattern)
+-- Historia: 2026-07-31  NC: Creado para reemplazar UPDATE raw en contact route
+-- ================================================================
+    SET NOCOUNT ON;
+    DECLARE @llerror   bit           = 0;
+    DECLARE @lcmessage varchar(1000) = '';
+
+    UPDATE flower_customers SET ap_email = @lcap_email WHERE unico = @lcunico;
+
+    IF @@ROWCOUNT >= 1 SET @lcmessage = 'Transaction OK';
+    ELSE BEGIN SET @llerror = 1; SET @lcmessage = 'Customer not found'; END
+
+    SELECT @lcunico AS unico, @lcmessage AS Message, @llerror AS Error;
+END
+GO
+
+-- ────────────────────────────────────────────────────────────────────────────
 IF OBJECT_ID('dbo.sp_NC_flower_payment_history') IS NOT NULL
     DROP PROCEDURE dbo.sp_NC_flower_payment_history
 GO

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { executeQuery } from "@/lib/db";
+import { executeQuery, executeProcedure } from "@/lib/db";
 
 export async function GET(
     _req: NextRequest,
@@ -27,10 +27,13 @@ export async function PUT(
     const safe = String(unico).replace(/[^a-zA-Z0-9]/g, "").substring(0, 8);
     if (!safe) return NextResponse.json({ success: false, error: "Invalid unico" }, { status: 400 });
     const { ap_email } = await req.json();
-    // Standard SQL escaping for inline string — email validated client-side
-    const safeEmail = String(ap_email ?? "").replace(/'/g, "''").substring(0, 200);
     try {
-        await executeQuery(`UPDATE flower_customers SET ap_email = '${safeEmail}' WHERE unico = '${safe}'`);
+        const r = await executeProcedure("sp_NC_customer_email_update", {
+            lcunico:    safe,
+            lcap_email: String(ap_email ?? "").substring(0, 200),
+        });
+        const row = r.recordset?.[0];
+        if (row?.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
         return NextResponse.json({ success: true });
     } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
