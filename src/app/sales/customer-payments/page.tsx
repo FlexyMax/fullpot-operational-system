@@ -224,7 +224,7 @@ function SendAllModal({ onClose }: { onClose: () => void }) {
 }
 
 // ─── StatementPreviewModal ────────────────────────────────────────────────────
-function StatementPreviewModal({ html, onClose, customer }: any) {
+function StatementPreviewModal({ html, onClose, customer, fromDate, toDate, mode }: any) {
     const [sending, setSending] = useState(false);
     const sendEmail = async () => {
         const email = String(customer?.ap_email ?? customer?.email ?? "").trim();
@@ -233,7 +233,14 @@ function StatementPreviewModal({ html, onClose, customer }: any) {
         try {
             const res = await fetch("/api/customer-payments/reports/send-statement-email", {
                 method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ customer_uq: customer.unico, customer_name: customer.customer, email }),
+                body: JSON.stringify({
+                    customer_uq:   customer.unico,
+                    customer_name: customer.customer,
+                    email,
+                    from_date: fromDate,
+                    to_date:   toDate,
+                    mode:      mode ?? "statement",
+                }),
             });
             const d = await res.json();
             d.success ? toast.success("Statement sent by email as PDF.") : toast.error(d.error || "Failed to send email.");
@@ -383,6 +390,7 @@ export default function CustomerPaymentsPage() {
     const [stmtPreviewModal, setStmtPreviewModal]  = useState(false);
     const [stmtPreviewHtml,  setStmtPreviewHtml]   = useState("");
     const [stmtPreviewLoading, setStmtPreviewLoading] = useState(false);
+    const [stmtPreviewMode,  setStmtPreviewMode]   = useState<"statement"|"balance">("statement");
     // ── Tab 6 state ───────────────────────────────────────────────────────────
     const [corpDate,         setCorpDate]           = useState(today());
     const [selCorpIncome,    setSelCorpIncome]      = useState<any>(null);
@@ -1278,6 +1286,7 @@ export default function CustomerPaymentsPage() {
                         menuItems={[
                                 { label: "Print", icon: Printer, color: "gray", onClick: async()=>{
                                     if(!selCustomer) return;
+                                    setStmtPreviewMode("statement");
                                     setStmtPreviewLoading(true); setStmtPreviewModal(true);
                                     try{
                                         const d = await cpFetch(`/api/customer-payments/reports/html-statement-balance/${selCustomer.unico}?from=${stmtFrom}&to=${stmtTo}`);
@@ -1322,6 +1331,7 @@ export default function CustomerPaymentsPage() {
                         menuItems={[
                             { label: "Print", icon: Printer, color: "gray", onClick: async()=>{
                                 if(!selCustomer) return;
+                                setStmtPreviewMode("balance");
                                 setStmtPreviewLoading(true); setStmtPreviewModal(true);
                                 try{
                                     const d = await cpFetch(`/api/customer-payments/reports/html-statement-balance/${selCustomer.unico}?from=${stmtFrom}&to=${stmtTo}`);
@@ -1556,7 +1566,8 @@ export default function CustomerPaymentsPage() {
                 <CutDateModal customerUq={selCustomer.unico} onClose={()=>setCutDateModal(false)}/>
             )}
             {stmtPreviewModal && (
-                <StatementPreviewModal html={stmtPreviewHtml} onClose={()=>setStmtPreviewModal(false)} customer={selCustomer}/>
+                <StatementPreviewModal html={stmtPreviewHtml} onClose={()=>setStmtPreviewModal(false)}
+                    customer={selCustomer} fromDate={stmtFrom} toDate={stmtTo} mode={stmtPreviewMode}/>
             )}
             {corpPayModal && selCustomer && (
                 <CorpPaymentModal mode={corpPayModal.mode} income={selCorpIncome}

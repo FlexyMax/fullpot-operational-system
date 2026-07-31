@@ -7,7 +7,7 @@ import { StatementPDF } from "@/components/reports/StatementPDF";
 import { sendStatementEmail } from "@/lib/mailer";
 
 export async function POST(req: NextRequest) {
-    const { customer_uq, customer_name, email, from_date, to_date } = await req.json();
+    const { customer_uq, customer_name, email, from_date, to_date, mode } = await req.json();
     if (!customer_uq || !email) {
         return NextResponse.json(
             { success: false, error: "Missing customer_uq or email." },
@@ -15,12 +15,17 @@ export async function POST(req: NextRequest) {
         );
     }
 
-    const fromDate = from_date || new Date(new Date().getFullYear(), 0, 1).toISOString().split("T")[0];
-    const toDate   = to_date   || new Date().toISOString().split("T")[0];
+    const fromDate  = from_date || new Date(new Date().getFullYear(), 0, 1).toISOString().split("T")[0];
+    const toDate    = to_date   || new Date().toISOString().split("T")[0];
+    // "balance" mode → only open-balance transactions (sp_flower_accounts_rec_statment_balance)
+    // "statement" mode → all transactions in date range (sp_flower_accounts_rec_statment)
+    const spName    = mode === "balance"
+        ? "sp_flower_accounts_rec_statment_balance"
+        : "sp_flower_accounts_rec_statment";
 
     try {
         const [stmtResult, company] = await Promise.all([
-            executeProcedure("sp_flower_accounts_rec_statment", {
+            executeProcedure(spName, {
                 Customer:     customer_uq,
                 ldStart_date: fromDate,
                 ldEnd_date:   toDate,
