@@ -3,10 +3,12 @@ import { executeProcedure } from "@/lib/db";
 
 export async function GET() {
     try {
-        // Returns customers with balance that have email/fax statement preference
-        // lcsalesman_uq = '%' gets all salesmen
-        const r = await executeProcedure("sp_flower_customers_by_salesman_to_statement", {
-            lcsalesman_uq: "%",
+        // Uses the same SP as the main customer list, balance > 0, all customers in one page
+        const r = await executeProcedure("sp_NC_customers_list_for_statement", {
+            lnPageNumber:     1,
+            lnRowsOfPage:     9999,
+            lccustomer_name:  "",
+            lnBalance:        "B",
         });
         return NextResponse.json(r.recordset ?? []);
     } catch (err: any) {

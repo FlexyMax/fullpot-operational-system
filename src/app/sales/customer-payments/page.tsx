@@ -78,22 +78,47 @@ function SendAllModal({ onClose }: { onClose: () => void }) {
         t(c.customer).toUpperCase().includes(search.toUpperCase())
     );
 
-    const toggle = (unico: string) => setChecked(prev => {
-        const next = new Set(prev);
-        next.has(unico) ? next.delete(unico) : next.add(unico);
-        return next;
-    });
+    const hasEmail = (c: any) => String(c.ap_email ?? "").trim().length > 0;
 
+    const toggle = (unico: string, c: any) => {
+        if (!hasEmail(c)) return;
+        setChecked(prev => {
+            const next = new Set(prev);
+            next.has(unico) ? next.delete(unico) : next.add(unico);
+            return next;
+        });
+    };
+
+    const withEmail = filtered.filter(hasEmail);
     const toggleAll = () => {
-        if (checked.size === filtered.length) setChecked(new Set());
-        else setChecked(new Set(filtered.map((c: any) => t(c.unico))));
+        if (checked.size === withEmail.length) setChecked(new Set());
+        else setChecked(new Set(withEmail.map((c: any) => t(c.unico))));
     };
 
     const handleSend = async () => {
         if (checked.size === 0) { toast.warning("Select at least one customer."); return; }
         setSending(true);
-        toast.info(`Email service — sending to ${checked.size} customers is coming soon. Infrastructure (SMTP/SendGrid) needs to be configured.`);
+        let ok = 0, fail = 0;
+        const toSend = (customers as any[]).filter((c: any) => checked.has(t(c.unico)));
+        for (const c of toSend) {
+            const email = String(c.ap_email ?? "").trim();
+            if (!email) { fail++; continue; }
+            try {
+                const htmlRes = await fetch(`/api/customer-payments/reports/statement?customer_uq=${t(c.unico)}`);
+                if (!htmlRes.ok) { fail++; continue; }
+                const { html } = await htmlRes.json();
+                const res = await fetch("/api/customer-payments/reports/send-statement-email", {
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ customer_uq: t(c.unico), customer_name: t(c.customer), email, html }),
+                });
+                const d = await res.json();
+                d.success ? ok++ : fail++;
+            } catch { fail++; }
+        }
         setSending(false);
+        if (ok > 0)   toast.success(`${ok} statement${ok > 1 ? "s" : ""} sent successfully.`);
+        if (fail > 0) toast.error(`${fail} customer${fail > 1 ? "s" : ""} failed to send.`);
+        if (ok > 0) setChecked(new Set());
     };
 
     return (
@@ -111,12 +136,12 @@ function SendAllModal({ onClose }: { onClose: () => void }) {
                     <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"/>
                     <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search..." className="pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded w-full outline-none focus:ring-1 focus:ring-[#FB7506]"/>
                 </div>
-                <div className="text-[10px] text-gray-500 font-semibold">Customers with balance {filtered.length > 0 && `(${filtered.length})`}</div>
+                <div className="text-[10px] text-gray-500 font-semibold">Customers with balance ({filtered.length}) — {withEmail.length} with email</div>
                 <PanelGrid title="Customers to Notify" icon={Users} recordCount={filtered.length} className="flex-1 min-h-0">
                     <div className="h-full overflow-auto">
                         <PanelGridTable>
                             <PanelGridThead>
-                                <PanelGridTh><input type="checkbox" checked={checked.size > 0 && checked.size === filtered.length} onChange={toggleAll} className="accent-[#FB7506]"/></PanelGridTh>
+                                <PanelGridTh><input type="checkbox" checked={withEmail.length > 0 && checked.size === withEmail.length} onChange={toggleAll} className="accent-[#FB7506]"/></PanelGridTh>
                                 <PanelGridTh>Customer</PanelGridTh>
                                 <PanelGridTh>Statement By</PanelGridTh>
                                 <PanelGridTh>Email</PanelGridTh>
@@ -126,14 +151,20 @@ function SendAllModal({ onClose }: { onClose: () => void }) {
                                     <PanelGridTr><PanelGridTd colSpan={4} className="p-4 text-center text-xs text-gray-400 italic">Loading...</PanelGridTd></PanelGridTr>
                                 ) : filtered.length === 0 ? (
                                     <PanelGridTr><PanelGridTd colSpan={4} className="p-4 text-center text-xs text-gray-300 italic">No customers with balance</PanelGridTd></PanelGridTr>
-                                ) : filtered.map((c: any) => (
-                                    <PanelGridTr key={t(c.unico)} selected={checked.has(t(c.unico))} onClick={() => toggle(t(c.unico))}>
-                                        <PanelGridTd><input type="checkbox" checked={checked.has(t(c.unico))} onChange={() => toggle(t(c.unico))} onClick={e => e.stopPropagation()} className="accent-[#FB7506]"/></PanelGridTd>
+                                ) : filtered.map((c: any) => {
+                                    const canSend = hasEmail(c);
+                                    return (
+                                    <PanelGridTr key={t(c.unico)} selected={checked.has(t(c.unico))} onClick={() => toggle(t(c.unico), c)}
+                                        className={!canSend ? "opacity-40 cursor-not-allowed" : undefined}>
+                                        <PanelGridTd><input type="checkbox" checked={checked.has(t(c.unico))} disabled={!canSend}
+                                            onChange={() => toggle(t(c.unico), c)} onClick={e => e.stopPropagation()}
+                                            className="accent-[#FB7506] disabled:cursor-not-allowed"/></PanelGridTd>
                                         <PanelGridTd className="font-semibold">{t(c.customer)}</PanelGridTd>
                                         <PanelGridTd>{t(c.statement_by)}</PanelGridTd>
                                         <PanelGridTd className="text-[10px] text-blue-600">{t(c.ap_email)}</PanelGridTd>
                                     </PanelGridTr>
-                                ))}
+                                    );
+                                })}
                             </PanelGridTbody>
                         </PanelGridTable>
                     </div>
