@@ -62,16 +62,103 @@ function CutDateModal({ customerUq, onClose }: any) {
     );
 }
 
+// ─── SendAllModal ─────────────────────────────────────────────────────────────
+function SendAllModal({ onClose }: { onClose: () => void }) {
+    const [search,    setSearch]    = useState("");
+    const [checked,   setChecked]   = useState<Set<string>>(new Set());
+    const [sending,   setSending]   = useState(false);
+
+    const { data: customers = [], isLoading } = useQuery<any[]>({
+        queryKey: ["cp-send-all-list"],
+        queryFn:  () => cpFetch("/api/customer-payments/send-all-customers"),
+        staleTime: 60000,
+    });
+
+    const filtered = (customers as any[]).filter((c: any) =>
+        t(c.customer).toUpperCase().includes(search.toUpperCase())
+    );
+
+    const toggle = (unico: string) => setChecked(prev => {
+        const next = new Set(prev);
+        next.has(unico) ? next.delete(unico) : next.add(unico);
+        return next;
+    });
+
+    const toggleAll = () => {
+        if (checked.size === filtered.length) setChecked(new Set());
+        else setChecked(new Set(filtered.map((c: any) => t(c.unico))));
+    };
+
+    const handleSend = async () => {
+        if (checked.size === 0) { toast.warning("Select at least one customer."); return; }
+        setSending(true);
+        toast.info(`Email service — sending to ${checked.size} customers is coming soon. Infrastructure (SMTP/SendGrid) needs to be configured.`);
+        setSending(false);
+    };
+
+    return (
+        <Modal title="Send All Statements" icon={Mail} onClose={onClose} size="lg"
+            footer={<div className="flex items-center gap-2">
+                <button onClick={onClose} className="px-4 py-2 rounded border text-sm font-bold text-gray-600 hover:bg-gray-100">Close</button>
+                <button onClick={handleSend} disabled={sending || checked.size === 0}
+                    className="flex items-center gap-2 px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white text-sm font-black disabled:opacity-50">
+                    {sending ? <RefreshCcw size={13} className="animate-spin"/> : <Mail size={13}/>}
+                    Send ({checked.size})
+                </button>
+            </div>}>
+            <div className="flex flex-col gap-3 h-[60vh]">
+                <div className="relative">
+                    <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"/>
+                    <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search..." className="pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded w-full outline-none focus:ring-1 focus:ring-[#FB7506]"/>
+                </div>
+                <div className="text-[10px] text-gray-500 font-semibold">Customers with balance {filtered.length > 0 && `(${filtered.length})`}</div>
+                <PanelGrid title="Customers to Notify" icon={Users} recordCount={filtered.length} className="flex-1 min-h-0">
+                    <div className="h-full overflow-auto">
+                        <PanelGridTable>
+                            <PanelGridThead>
+                                <PanelGridTh><input type="checkbox" checked={checked.size > 0 && checked.size === filtered.length} onChange={toggleAll} className="accent-[#FB7506]"/></PanelGridTh>
+                                <PanelGridTh>Customer</PanelGridTh>
+                                <PanelGridTh>Statement By</PanelGridTh>
+                                <PanelGridTh>Email</PanelGridTh>
+                            </PanelGridThead>
+                            <PanelGridTbody>
+                                {isLoading ? (
+                                    <PanelGridTr><PanelGridTd colSpan={4} className="p-4 text-center text-xs text-gray-400 italic">Loading...</PanelGridTd></PanelGridTr>
+                                ) : filtered.length === 0 ? (
+                                    <PanelGridTr><PanelGridTd colSpan={4} className="p-4 text-center text-xs text-gray-300 italic">No customers with balance</PanelGridTd></PanelGridTr>
+                                ) : filtered.map((c: any) => (
+                                    <PanelGridTr key={t(c.unico)} selected={checked.has(t(c.unico))} onClick={() => toggle(t(c.unico))}>
+                                        <PanelGridTd><input type="checkbox" checked={checked.has(t(c.unico))} onChange={() => toggle(t(c.unico))} onClick={e => e.stopPropagation()} className="accent-[#FB7506]"/></PanelGridTd>
+                                        <PanelGridTd className="font-semibold">{t(c.customer)}</PanelGridTd>
+                                        <PanelGridTd>{t(c.statement_by)}</PanelGridTd>
+                                        <PanelGridTd className="text-[10px] text-blue-600">{t(c.ap_email)}</PanelGridTd>
+                                    </PanelGridTr>
+                                ))}
+                            </PanelGridTbody>
+                        </PanelGridTable>
+                    </div>
+                </PanelGrid>
+            </div>
+        </Modal>
+    );
+}
+
 // ─── StatementPreviewModal ────────────────────────────────────────────────────
 function StatementPreviewModal({ html, onClose, customer }: any) {
     const [sending, setSending] = useState(false);
     const sendEmail = async () => {
-        if (!customer?.email && !customer?.ap_email) { toast.error("Customer has no email address."); return; }
         setSending(true);
         try {
+            // Fetch live contact info — the customers list SP doesn't return email fields
+            let email = String(customer?.ap_email ?? customer?.email ?? "").trim();
+            if (!email && customer?.unico) {
+                const contact = await fetch(`/api/customer-payments/contact/${customer.unico}`).then(r => r.json());
+                email = String(contact?.ap_email ?? contact?.email ?? "").trim();
+            }
+            if (!email) { toast.error("Customer has no email address."); setSending(false); return; }
             const res = await fetch("/api/customer-payments/reports/send-statement-email", {
                 method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ customer_uq: customer.unico, email: customer.ap_email || customer.email, html }),
+                body: JSON.stringify({ customer_uq: customer.unico, email, html }),
             });
             const d = await res.json();
             d.success ? toast.success("Statement sent by email.") : toast.error(d.error || "Failed to send email.");
@@ -215,6 +302,7 @@ export default function CustomerPaymentsPage() {
     const [stmtTo,           setStmtTo]            = useState(today());
     const [stmtDestination,  setStmtDestination]   = useState(2);
     const [salesmanModal,    setSalesmanModal]      = useState(false);
+    const [sendAllModal,     setSendAllModal]       = useState(false);
     const [cutDateModal,     setCutDateModal]       = useState(false);
     const [printAllProgress, setPrintAllProgress]  = useState<string|null>(null);
     const [stmtPreviewModal, setStmtPreviewModal]  = useState(false);
@@ -549,6 +637,10 @@ export default function CustomerPaymentsPage() {
                                 <option value={1}>PRN</option><option value={2}>EMAIL</option><option value={3}>FAX</option>
                             </select>
                         </div>
+                        <button onClick={()=>setSendAllModal(true)} disabled={!perms.canReport}
+                            className="flex items-center gap-1 px-2.5 py-1.5 text-[14px] font-semibold uppercase rounded border border-gray-200 text-blue-600 hover:bg-blue-50 whitespace-nowrap transition-colors shrink-0 disabled:opacity-40">
+                            <Mail size={10}/>Send All
+                        </button>
                         <button onClick={()=>setSalesmanModal(true)} disabled={!perms.canReport}
                             className="flex items-center gap-1 px-2.5 py-1.5 text-[14px] font-semibold uppercase rounded border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors shrink-0 disabled:opacity-40">
                             <Users size={10}/>By Salesman
@@ -591,6 +683,10 @@ export default function CustomerPaymentsPage() {
                                     <option value={1}>PRN</option><option value={2}>EMAIL</option><option value={3}>FAX</option>
                                 </select>
                             </div>
+                            <button onClick={()=>setSendAllModal(true)} disabled={!perms.canReport}
+                                className="flex items-center gap-1.5 px-3 h-7 text-[14px] font-semibold uppercase rounded border border-gray-200 text-blue-600 hover:bg-blue-50 whitespace-nowrap transition-colors disabled:opacity-40 bg-white">
+                                <Mail size={10}/>Send All
+                            </button>
                             <button onClick={()=>setSalesmanModal(true)} disabled={!perms.canReport}
                                 className="flex items-center gap-1.5 px-3 h-7 text-[14px] font-semibold uppercase rounded border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors disabled:opacity-40 bg-white">
                                 <Users size={10}/>By Salesman
@@ -1377,6 +1473,9 @@ export default function CustomerPaymentsPage() {
             {salesmanModal && (
                 <SalesmanSelectorModal destination={stmtDestination} onClose={()=>setSalesmanModal(false)}
                     onConfirm={async (salesmanUq: string)=>{ toast.info("Print by salesman — coming soon"); }}/>
+            )}
+            {sendAllModal && (
+                <SendAllModal onClose={() => setSendAllModal(false)} />
             )}
             {cutDateModal && selCustomer && (
                 <CutDateModal customerUq={selCustomer.unico} onClose={()=>setCutDateModal(false)}/>

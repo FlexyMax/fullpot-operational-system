@@ -1707,7 +1707,7 @@ export default function PaymentAuthorizationsPage() {
             )}
             {crdbModal && selInvoiceRow && (
                 <ModalCRDB
-                    invoiceUq={store.lcap_uq}
+                    invoiceUq={t(selInvoiceRow.ACC_PAY_UQ)}
                     invoiceNo={t(selInvoiceRow.INVOICE_NO)}
                     growerName={store.lcgrower}
                     onClose={() => setCrdbModal(false)}
