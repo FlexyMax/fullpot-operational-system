@@ -133,12 +133,9 @@ function SendAllModal({ onClose }: { onClose: () => void }) {
             const email = getEmail(c);
             if (!email) { fail++; continue; }
             try {
-                const htmlRes = await fetch(`/api/customer-payments/reports/statement?customer_uq=${t(c.unico)}`);
-                if (!htmlRes.ok) { fail++; continue; }
-                const { html } = await htmlRes.json();
                 const res = await fetch("/api/customer-payments/reports/send-statement-email", {
                     method: "POST", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ customer_uq: t(c.unico), customer_name: t(c.customer), email, html }),
+                    body: JSON.stringify({ customer_uq: t(c.unico), customer_name: t(c.customer), email }),
                 });
                 const d = await res.json();
                 d.success ? ok++ : fail++;
@@ -236,10 +233,10 @@ function StatementPreviewModal({ html, onClose, customer }: any) {
         try {
             const res = await fetch("/api/customer-payments/reports/send-statement-email", {
                 method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ customer_uq: customer.unico, customer_name: customer.customer, email, html }),
+                body: JSON.stringify({ customer_uq: customer.unico, customer_name: customer.customer, email }),
             });
             const d = await res.json();
-            d.success ? toast.success("Statement sent by email.") : toast.error(d.error || "Failed to send email.");
+            d.success ? toast.success("Statement sent by email as PDF.") : toast.error(d.error || "Failed to send email.");
         } catch (e: any) { toast.error(e.message); }
         finally { setSending(false); }
     };

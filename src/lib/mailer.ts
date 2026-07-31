@@ -27,15 +27,21 @@ function createTransporter() {
     });
 }
 
-export async function sendStatementEmail(to: string, html: string, customerName: string) {
+export async function sendStatementEmail(to: string, pdfBuffer: Buffer, customerName: string) {
     const transporter = createTransporter();
+    const filename = `Statement_${customerName.replace(/[^a-zA-Z0-9]/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`;
     await transporter.sendMail({
         from:    `"FullPot AR" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
         to,
         subject: `Account Statement — ${customerName}`,
-        html,
+        html: `<p>Dear ${customerName},</p><p>Please find attached your account statement from Full Pot of Flowers.</p><p>If you have any questions, please contact us at <a href="mailto:account@fullpot.com">account@fullpot.com</a> or call (954) 568-4467.</p><br/><p>Thank you for your business.</p>`,
+        attachments: [{
+            filename,
+            content:     pdfBuffer,
+            contentType: "application/pdf",
+        }],
     });
-    console.log(`[mailer] Statement sent to ${to} (${customerName})`);
+    console.log(`[mailer] Statement PDF sent to ${to} (${customerName})`);
 }
 
 export async function sendVerificationCode(to: string, code: string, name: string) {
