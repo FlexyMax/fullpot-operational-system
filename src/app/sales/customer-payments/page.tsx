@@ -871,21 +871,21 @@ export default function CustomerPaymentsPage() {
                                 {/* Totals row */}
                                 {(customers as any[]).length > 0 && (
                                     <PanelGridTfoot>
-                                        <tr className="text-[11px]">
-                                            <td className="px-2 py-1 font-black">TOTALS ({custTotal} customers)</td>
-                                            <td className="px-2 py-1"/>
-                                            <td className="px-2 py-1"/>
-                                            <td className="px-2 py-1 text-right font-black">{"$"+fmt(totalRow.total_invoice)}</td>
-                                            <td className="px-2 py-1 text-right font-black text-green-600">{"$"+fmt(totalRow.total_credits)}</td>
-                                            <td className="px-2 py-1 text-right font-black text-red-500">{"$"+fmt(totalRow.total_debits)}</td>
-                                            <td className="px-2 py-1 text-right font-black">{"$"+fmt(totalRow.total_in_cr_db)}</td>
-                                            <td className="px-2 py-1 text-right font-black text-blue-700">{"$"+fmt(totalRow.total_incomes)}</td>
-                                            <td className="px-2 py-1 text-right font-black">{"$"+fmt(totalRow.total_payments)}</td>
-                                            <td className="px-2 py-1 text-right font-black text-orange-600">{"$"+fmt(totalRow.total_inv_bal)}</td>
-                                            <td className="px-2 py-1 text-right font-black">{"$"+fmt(totalRow.total_unapply)}</td>
-                                            <td className="px-2 py-1 text-right font-black">{"$"+fmt(totalRow.balance)}</td>
-                                            <td className="px-2 py-1"/>
-                                            <td className="px-2 py-1"/>
+                                        <tr className="text-[13px]">
+                                            <td className="px-2 py-2.5 font-black">TOTALS ({custTotal} customers)</td>
+                                            <td className="px-2 py-2.5"/>
+                                            <td className="px-2 py-2.5"/>
+                                            <td className="px-2 py-2.5 text-right font-black">{"$"+fmt(totalRow.total_invoice)}</td>
+                                            <td className="px-2 py-2.5 text-right font-black text-green-600">{"$"+fmt(totalRow.total_credits)}</td>
+                                            <td className="px-2 py-2.5 text-right font-black text-red-500">{"$"+fmt(totalRow.total_debits)}</td>
+                                            <td className="px-2 py-2.5 text-right font-black">{"$"+fmt(totalRow.total_in_cr_db)}</td>
+                                            <td className="px-2 py-2.5 text-right font-black text-blue-700">{"$"+fmt(totalRow.total_incomes)}</td>
+                                            <td className="px-2 py-2.5 text-right font-black">{"$"+fmt(totalRow.total_payments)}</td>
+                                            <td className="px-2 py-2.5 text-right font-black text-orange-600">{"$"+fmt(totalRow.total_inv_bal)}</td>
+                                            <td className="px-2 py-2.5 text-right font-black">{"$"+fmt(totalRow.total_unapply)}</td>
+                                            <td className="px-2 py-2.5 text-right font-black">{"$"+fmt(totalRow.balance)}</td>
+                                            <td className="px-2 py-2.5"/>
+                                            <td className="px-2 py-2.5"/>
                                         </tr>
                                     </PanelGridTfoot>
                                 )}
