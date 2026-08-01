@@ -7,7 +7,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ invoic
     if (!safe) return NextResponse.json({ error: "invoice_uq required" }, { status: 400 });
 
     try {
-        const r = await executeProcedure("sp_NC_HTML_Invoice_Report_New", { lcInvoice_uq: safe });
+        const r = await executeProcedure("sp_NC_HTML_Invoice_Report_New", { lcInvoice_uq: safe, llPrint: 1 });
         const row = r.recordset?.[0];
         const html = row?.InvoiceHTML ?? row?.HTMLCode ?? row?.html ?? row?.HtmlCode ?? "";
         if (!html) return new Response("<p>Invoice not found or no HTML output.</p>", { headers: { "Content-Type": "text/html" } });

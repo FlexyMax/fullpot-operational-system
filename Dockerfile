@@ -5,6 +5,8 @@ RUN npm install -g npm@11.18.0
 WORKDIR /app
 COPY package*.json ./
 COPY scripts ./scripts
+# Skip puppeteer's own Chromium download — runner stage uses Alpine's chromium package
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 RUN npm ci
 
 # Stage 2: Build the Next.js app
@@ -22,6 +24,10 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+
+# Chromium for puppeteer (invoice PDF generation) — Alpine's package
+RUN apk add --no-cache chromium nss freetype freetype-dev harfbuzz ca-certificates ttf-freefont
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs

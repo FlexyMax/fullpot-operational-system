@@ -33,6 +33,7 @@ import PendingInvoicesReportModal from "./components/PendingInvoicesReportModal"
 import ApproveCreditModal from "./components/ApproveCreditModal";
 import CashBackModal from "./components/CashBackModal";
 import CrDbModal from "./components/CrDbModal";
+import { HtmlReportModal } from "@/components/reports/HtmlReportModal";
 import CrDbReportModal from "./components/CrDbReportModal";
 import SalesmanSelectorModal from "./components/SalesmanSelectorModal";
 import CorpPaymentModal from "./components/CorpPaymentModal";
@@ -375,6 +376,7 @@ export default function CustomerPaymentsPage() {
     const [balanceFilter, setBalanceFilter] = useState(true);    // true=Bal>0
     const pendingInvCustomerRef = useRef<string | null>(null);  // customer_uq to select after list refreshes
     const [selInvoice,    setSelInvoice]    = useState<any>(null);
+    const [invoiceReportUrl, setInvoiceReportUrl] = useState<string | null>(null);
     const [selApply,      setSelApply]      = useState<any>(null);
     const [selIncome,     setSelIncome]     = useState<any>(null);
     const [payingAll,     setPayingAll]     = useState(false);
@@ -929,8 +931,8 @@ export default function CustomerPaymentsPage() {
                         menuItems={[
                             { label: "Refresh", icon: RefreshCcw, color: "gray", onClick: refreshAll },
                             { label: "Inv. Search", icon: Search, color: "gray", onClick: ()=>setInvSearchModal(true) },
-                            { label: "Email", icon: Mail, color: "gray", onClick: async ()=>{ if(!selInvoice||!selCustomer) return; const email = t(selCustomer.ap_email||selCustomer.email); if(!email){ toast.error("Customer has no email on file."); return; } toast.info("Sending invoice..."); try{ const r=await fetch("/api/customer-payments/invoice-email",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({invoice_uq:selInvoice.unico,email,customer_name:t(selCustomer.customer)})}); const d=await r.json(); d.success?toast.success("Invoice emailed."):toast.error(d.error); }catch(e:any){toast.error(e.message);} }, disabled: !selInvoice||!perms.canReport },
-                            { label: "Invoice", icon: Printer, color: "gray", onClick: ()=>{ if(!selInvoice) return; window.open(`/api/customer-payments/invoice-print/${selInvoice.unico}`,"_blank"); }, disabled: !selInvoice||!perms.canReport },
+                            { label: "Email", icon: Mail, color: "gray", onClick: async ()=>{ if(!selInvoice||!selCustomer) return; const email = t(selCustomer.ap_email||selCustomer.email); if(!email){ toast.error("Customer has no email on file."); return; } toast.info("Sending invoice..."); try{ const r=await fetch("/api/customer-payments/invoice-email",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({invoice_uq:selInvoice.unico,email,customer_name:t(selCustomer.customer),invoice_no:t(selInvoice.invoice_no)})}); const d=await r.json(); d.success?toast.success("Invoice emailed."):toast.error(d.error||"Failed to send."); }catch(e:any){toast.error(e.message);} }, disabled: !selInvoice||!perms.canReport },
+                            { label: "Invoice", icon: Printer, color: "gray", onClick: ()=>{ if(!selInvoice) return; setInvoiceReportUrl(`/api/customer-payments/invoice-print/${selInvoice.unico}`); }, disabled: !selInvoice||!perms.canReport },
                             { label: "Reports", icon: BarChart2, color: "gray", onClick: ()=>setPendingRptModal(true), disabled: !selCustomer||!perms.canReport },
                             { label: "New Payment", icon: Plus, color: "green", onClick: ()=>{ if(!perms.canCreate){toast.error(PERMISSION_MSGS.create);return;} setNewPayModal({mode:"add"}); }, disabled: !selCustomer||!perms.canCreate },
                             { label: "Insert Cr/Db", icon: CreditCard, color: "blue", onClick: ()=>{ if(!perms.canCreate){toast.error(PERMISSION_MSGS.create);return;} if(!selInvoice){toast.error("Select an invoice first.");return;} setCrdbModal({mode:"add"}); }, disabled: !selCustomer||!selInvoice||!perms.canCreate },
@@ -1594,6 +1596,7 @@ export default function CustomerPaymentsPage() {
                     onClose={()=>setCorpInvModal(false)}
                     onSaved={(unico:string)=>{ logAction("Insert", unico); refetchCorpInv(); refetchCorpInc(); }}/>
             )}
+            <HtmlReportModal url={invoiceReportUrl} onClose={() => setInvoiceReportUrl(null)} />
             <AppFooter areaLabel="Accounts Receivable" />
 
             {/* ── Mobile Action Bar ────────────────────────────────────────── */}
