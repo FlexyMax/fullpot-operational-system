@@ -356,9 +356,12 @@ export default function InventoryEntryPage() {
     const [prodEditMode, setProdEditMode] = useState<"structure" | "prices" | null>(null);
 
     // ── AWB Search tab's bottom detail panel + scan history modal ──────────────
-    const [awbDetailTab,    setAwbDetailTab]    = useState<"warehouse" | "invoice" | "adjusts">("warehouse");
-    const [modalScanHistory, setModalScanHistory] = useState(false);
-    const [reportModalUrl, setReportModalUrl] = useState<string | null>(null);
+    const [awbDetailTab,      setAwbDetailTab]      = useState<"warehouse" | "invoice" | "adjusts">("warehouse");
+    const [modalScanHistory,  setModalScanHistory]  = useState(false);
+    const [reportModalUrl,    setReportModalUrl]    = useState<string | null>(null);
+    const [awbExpandedCard,   setAwbExpandedCard]   = useState<string | null>(null);
+    const [prodMobileSearchOpen, setProdMobileSearchOpen] = useState(false);
+    const [poExpandedCard,    setPoExpandedCard]    = useState<string | null>(null);
 
     // ── Filter state ──────────────────────────────────────────────────────────
     const [filterGrowerUq,  setFilterGrowerUq]  = useState("");
@@ -488,8 +491,10 @@ export default function InventoryEntryPage() {
     const prodHasMore = prodAccRows.length < prodTotal;
 
     // Infinite scroll sentinels
-    const prodSentinelRef = useRef<HTMLDivElement>(null);
-    const awbSentinelRef  = useRef<HTMLDivElement>(null);
+    const prodSentinelRef       = useRef<HTMLDivElement>(null);
+    const prodMobileSentinelRef = useRef<HTMLDivElement>(null);
+    const awbSentinelRef        = useRef<HTMLDivElement>(null);
+    const awbMobileSentinelRef  = useRef<HTMLDivElement>(null);
 
     // Horizontal scroll containers for Tab 1's grids — reset to the left on every
     // selection change so the newly-selected row is always fully visible from column 1.
@@ -500,24 +505,24 @@ export default function InventoryEntryPage() {
     const resetScroll = (ref: React.RefObject<HTMLDivElement | null>) => { if (ref.current) ref.current.scrollLeft = 0; };
 
     useEffect(() => {
-        if (!prodSentinelRef.current) return;
         const obs = new IntersectionObserver(([entry]) => {
             if (entry.isIntersecting && prodHasMore && !loadingProds) {
                 setProdPage(p => p + 1);
             }
         }, { threshold: 0.1 });
-        obs.observe(prodSentinelRef.current);
+        if (prodSentinelRef.current)       obs.observe(prodSentinelRef.current);
+        if (prodMobileSentinelRef.current) obs.observe(prodMobileSentinelRef.current);
         return () => obs.disconnect();
     }, [prodHasMore, loadingProds]);
 
     useEffect(() => {
-        if (!awbSentinelRef.current) return;
         const obs = new IntersectionObserver(([entry]) => {
             if (entry.isIntersecting && awbSearchHasMore && !loadingSearch) {
                 setAwbSearchPage(p => p + 1);
             }
         }, { threshold: 0.1 });
-        obs.observe(awbSentinelRef.current);
+        if (awbSentinelRef.current)       obs.observe(awbSentinelRef.current);
+        if (awbMobileSentinelRef.current) obs.observe(awbMobileSentinelRef.current);
         return () => obs.disconnect();
     }, [awbSearchHasMore, loadingSearch]);
 
@@ -1132,10 +1137,9 @@ export default function InventoryEntryPage() {
                                         { label: "COff", icon: FileText, color: "gray", onClick: () => openReportModal(`/api/inventory-entry/reports/cut-off?date=${lddate}&awb=${encodeURIComponent(lcawbcode || "%")}&pack_uq=${encodeURIComponent(lcpack_uq)}`), disabled: !lcpack_uq, separator: true },
                                         { label: "Label Laser", icon: Tag, color: "gray", onClick: () => openReportModal(`/api/inventory-entry/reports/label-laser?pack_uq=${encodeURIComponent(lcpack_uq)}`), disabled: !lcpack_uq },
                                         { label: "PDF Label", icon: Tag, color: "gray", onClick: () => handleSendLabel(), disabled: !lcpack_uq },
-                                        { label: "Z300", icon: Tag, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/label-zebra?pack_uq=${encodeURIComponent(lcpack_uq)}&box_uq=%25`), disabled: !lcpack_uq },
-                                        { label: "Z 4M", icon: Tag, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/label-zebra4m?pack_uq=${encodeURIComponent(lcpack_uq)}&box_uq=%25`), disabled: !lcpack_uq },
-                                        { label: "RPK", icon: Tag, color: "gray", onClick: () => openReport(`/api/inventory-entry/reports/label-zebra-repacking?date=${lddate}&awbcode=${encodeURIComponent(lcawbcode || "%")}&pack_uq=${encodeURIComponent(lcpack_uq)}&box_uq=%25`), disabled: !lcpack_uq, separator: true },
-                                        { label: "Header 2", icon: Pencil, color: "gray", onClick: () => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalHeader2(true); } },
+                                        { label: "Z300", icon: Tag, color: "gray", onClick: () => openReportModal(`/api/inventory-entry/reports/label-zebra?pack_uq=${encodeURIComponent(lcpack_uq)}&box_uq=%25`), disabled: !lcpack_uq },
+                                        { label: "Z 4M", icon: Tag, color: "gray", onClick: () => openReportModal(`/api/inventory-entry/reports/label-zebra4m?pack_uq=${encodeURIComponent(lcpack_uq)}&box_uq=%25`), disabled: !lcpack_uq },
+                                        { label: "RPK", icon: Tag, color: "gray", onClick: () => openReportModal(`/api/inventory-entry/reports/label-zebra-repacking?date=${lddate}&awbcode=${encodeURIComponent(lcawbcode || "%")}&pack_uq=${encodeURIComponent(lcpack_uq)}&box_uq=%25`), disabled: !lcpack_uq, separator: true },
                                         { label: "AWB Setup", icon: Plane, color: "purple", onClick: () => setModalAWBSetup(true) },
                                     ]} />
                                 </div>
@@ -1471,6 +1475,7 @@ export default function InventoryEntryPage() {
                                             </div>
                                         );
                                     })}
+                                    <div ref={prodMobileSentinelRef} className="h-1" />
                                     {loadingProds && <div className="flex justify-center py-2"><RefreshCcw size={14} className="animate-spin text-gray-400" /></div>}
                                 </div>
 
@@ -1539,42 +1544,123 @@ export default function InventoryEntryPage() {
                                     )}
                                 </div>
                             </div>
+
+                            {/* Mobile search FAB — fixed, doesn't affect flex layout */}
+                            <button onClick={() => setProdMobileSearchOpen(true)}
+                                className="lg:hidden fixed bottom-20 right-4 z-30 w-12 h-12 bg-[#FB7506] hover:bg-orange-600 rounded-full flex items-center justify-center shadow-xl transition-colors">
+                                <Search size={20} className="text-white" />
+                            </button>
+
+                            {/* Mobile search bottom sheet */}
+                            {prodMobileSearchOpen && (
+                                <div className="lg:hidden fixed inset-0 bg-black/50 z-40 flex items-end" onClick={() => setProdMobileSearchOpen(false)}>
+                                    <div className="bg-white rounded-t-2xl w-full p-4 pb-10" onClick={e => e.stopPropagation()}>
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <Search size={14} className="text-[#FB7506]" />
+                                            <span className="font-black text-[12px] uppercase tracking-widest text-[#4F4F4F]">Search Products</span>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <input type="text" value={prodSearchInput}
+                                                onChange={e => setProdSearchInput(e.target.value)}
+                                                onKeyDown={e => { if (e.key === "Enter") { setProdAccRows([]); setProdSearch(prodSearchInput); setProdPage(1); setProdMobileSearchOpen(false); } }}
+                                                placeholder="Type to search..." autoFocus
+                                                className="flex-1 h-10 border border-[#DBD9D9] rounded-lg px-3 text-sm outline-none focus:border-[#FB7506]" />
+                                            <button onClick={() => { setProdAccRows([]); setProdSearch(prodSearchInput); setProdPage(1); setProdMobileSearchOpen(false); }}
+                                                className="h-10 px-5 bg-[#FB7506] hover:bg-orange-600 text-white rounded-lg font-bold text-sm transition-colors">
+                                                Go
+                                            </button>
+                                        </div>
+                                        {prodSearch && (
+                                            <button onClick={() => { setProdAccRows([]); setProdSearch(""); setProdSearchInput(""); setProdPage(1); setProdMobileSearchOpen(false); }}
+                                                className="mt-2 flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600">
+                                                <X size={11} /> Clear search
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 
                     {/* ══ Tab 3: PL Control ══ */}
                     {activeTab === "plcontrol" && (
-                        <div className="flex flex-col gap-2 h-full">
+                        <div className="flex flex-col gap-2 h-full min-h-0">
+
+                            {/* Button bar — gray container above grid, both mobile and desktop */}
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#F5F3F3] border border-[#DBD9D9] rounded-lg shrink-0 overflow-x-auto no-scrollbar">
+                                <input type="date" value={lddate} onChange={e => setLddate(e.target.value)}
+                                    className="h-7 text-[12px] border border-[#DBD9D9] rounded-md px-1.5 bg-white shrink-0" />
+                                <button onClick={handleRefresh}
+                                    className="flex items-center gap-1.5 h-7 px-3 bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] rounded-md text-[12px] font-semibold uppercase tracking-wide transition-colors shrink-0">
+                                    <RefreshCcw size={13} className={loadingPLC ? "animate-spin" : ""} /> Refresh
+                                </button>
+                                <div className="w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
+                                <button onClick={() => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalAvailDate(true); }} disabled={!lcpack_uq || !perms.canEdit}
+                                    className="flex items-center gap-1.5 h-7 px-3 bg-[#FB7506] hover:bg-orange-500 disabled:opacity-40 text-white rounded-md text-[12px] font-semibold uppercase tracking-wide transition-colors shrink-0">
+                                    Avail. Date
+                                </button>
+                                <button onClick={() => packAction("open", "Open")} disabled={!lcpack_uq || !perms.canEdit}
+                                    className="flex items-center gap-1.5 h-7 px-3 bg-green-600 hover:bg-green-500 disabled:opacity-40 text-white rounded-md text-[12px] font-semibold uppercase tracking-wide transition-colors shrink-0">
+                                    <Check size={13} /> Open
+                                </button>
+                                <button onClick={() => packAction("close", "Close")} disabled={!lcpack_uq || !perms.canEdit}
+                                    className="flex items-center gap-1.5 h-7 px-3 bg-[#FB7506]/10 hover:bg-[#FB7506]/20 border border-[#FB7506]/30 disabled:opacity-40 text-[#FB7506] rounded-md text-[12px] font-semibold uppercase tracking-wide transition-colors shrink-0">
+                                    <X size={13} /> Close
+                                </button>
+                                <span className="text-[10px] font-bold text-gray-400 ml-auto shrink-0">{(plControlAll as any[]).length} pkgs</span>
+                            </div>
+
+                            {/* Grid card */}
                             <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1 min-h-0">
-                                <div className="h-16 lg:h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 gap-2 overflow-x-auto">
-                                    <div className="flex items-center gap-2 shrink-0">
-                                        <ClipboardList size={14} className="text-[#FB7506]" />
-                                        <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">Packing List Control</span>
-                                    </div>
-                                    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-                                        <input type="date" value={lddate} onChange={e => setLddate(e.target.value)}
-                                            className="h-7 text-[12px] border border-[#DBD9D9] rounded-md px-1.5 bg-white shrink-0" />
-                                        <button onClick={handleRefresh}
-                                            className="flex items-center gap-1.5 h-7 px-3 bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
-                                            <RefreshCcw size={14} className={loadingPLC ? "animate-spin" : ""} /> Refresh
-                                        </button>
-                                        <div className="w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
-                                        <button onClick={() => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalAvailDate(true); }} disabled={!lcpack_uq || !perms.canEdit}
-                                            className="flex items-center gap-1.5 h-7 px-3 bg-[#FB7506] hover:bg-orange-500 disabled:opacity-40 text-white rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
-                                            Update Available
-                                        </button>
-                                        <button onClick={() => packAction("open", "Open")} disabled={!lcpack_uq || !perms.canEdit}
-                                            className="flex items-center gap-1.5 h-7 px-3 bg-green-600 hover:bg-green-500 disabled:opacity-40 text-white rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
-                                            <Check size={14} /> Open
-                                        </button>
-                                        <button onClick={() => packAction("close", "Close")} disabled={!lcpack_uq || !perms.canEdit}
-                                            className="flex items-center gap-1.5 h-7 px-3 bg-[#FB7506]/10 hover:bg-[#FB7506]/20 border border-[#FB7506]/30 disabled:opacity-40 text-[#FB7506] rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
-                                            <X size={14} /> Close
-                                        </button>
-                                        <span className="text-[10px] font-bold text-gray-400 ml-2 shrink-0">{(plControlAll as any[]).length} pkgs</span>
-                                    </div>
+                                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center px-3 shrink-0 gap-2">
+                                    <ClipboardList size={14} className="text-[#FB7506]" />
+                                    <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">Packing List Control</span>
+                                    {loadingPLC && <RefreshCcw size={10} className="animate-spin text-gray-400" />}
                                 </div>
-                                <div className="flex-1 overflow-auto">
+
+                                {/* Mobile card view */}
+                                <div className="lg:hidden flex-1 overflow-auto min-h-0 p-2 flex flex-col gap-2">
+                                    {(plControlAll as any[]).length === 0 ? (
+                                        <div className="p-4 text-center text-gray-400 italic text-xs">No packings for this date</div>
+                                    ) : (plControlAll as any[]).map((row: any, i: number) => {
+                                        const uq  = packingId(row);
+                                        const sel = lcpack_uq === uq;
+                                        const st  = t(row.STATUS ?? row.PSTATUS ?? "");
+                                        return (
+                                            <div key={i} onClick={() => handleSelectPacking(row)}
+                                                className={cn("border rounded-xl p-3 cursor-pointer transition-colors",
+                                                    sel ? "border-[#FB7506] bg-[#FB7506]/5" : "border-gray-200 hover:border-gray-300")}
+                                                style={!sel ? subtleColorFromInt(row.COLOR) : undefined}>
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center gap-2 mb-0.5">
+                                                            <span className="font-bold text-[11px] text-[#FB7506]">{t(row.GROWER_CONTROL ?? row.CTRL ?? "")}</span>
+                                                            <span className="font-bold text-[12px] text-gray-800 truncate">{t(row.GROWER)}</span>
+                                                        </div>
+                                                        <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] mt-0.5">
+                                                            <span><span className="text-gray-400">AWB:</span> <b>{t(row.AWBCODE)}</b></span>
+                                                            <span><span className="text-gray-400">Inv:</span> <b>{t(row.INVOICE_NO)}</b></span>
+                                                            <span><span className="text-gray-400">Packing:</span> <b>{t(row.PACKING_NO)}</b></span>
+                                                            <span><span className="text-gray-400">Date:</span> <b>{t(row.BOX_DATE ?? row.DATE_INVO ?? "").substring(0,10)}</b></span>
+                                                        </div>
+                                                        <div className="flex gap-3 mt-1.5 text-[11px]">
+                                                            <span><span className="text-gray-400">Pcs:</span> <b>{t(row.TOTAL_PIECES)}</b></span>
+                                                            <span><span className="text-gray-400">Total$:</span> <b>{fmt2(row.TOTAL_INVOICE ?? row.TOTAL_COST ?? 0)}</b></span>
+                                                            <span><span className="text-gray-400">WH:</span> <b>{t(row.WHOUSE ?? row.WPHYSICAL ?? row.PWHOUSE ?? "")}</b></span>
+                                                        </div>
+                                                    </div>
+                                                    <span className={cn("text-[10px] font-black uppercase px-2 py-0.5 rounded shrink-0",
+                                                        st === "CLOSED" ? "bg-red-100 text-red-500" : st === "OPEN" ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-400")}>
+                                                        {st || "—"}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Desktop table */}
+                                <div className="hidden lg:block flex-1 overflow-auto">
                                     <table className="min-w-full text-xs text-left whitespace-nowrap">
                                         <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                                             <tr className="divide-x divide-[#DBD9D9]/30">
@@ -1675,8 +1761,104 @@ export default function InventoryEntryPage() {
                                     </div>
                                 </div>
 
-                                {/* Grid */}
-                                <div className="flex-1 overflow-auto">
+                                {/* Mobile card view */}
+                                <div className="lg:hidden flex-1 overflow-auto min-h-0 p-2 flex flex-col gap-2">
+                                    {awbAccRows.length === 0 && !loadingSearch ? (
+                                        <div className="p-4 text-center text-gray-400 italic text-xs">No boxes found — type a search above</div>
+                                    ) : (awbAccRows as any[]).map((row: any, i: number) => {
+                                        const unico = t(row.UNICO);
+                                        const isSel = lcpk_box_uq === unico;
+                                        const isExp = awbExpandedCard === unico;
+                                        const stk   = Number(row.STOCK ?? 0);
+                                        return (
+                                            <div key={i} className={cn("border rounded-xl overflow-hidden shadow-sm transition-colors",
+                                                isSel ? "border-[#FB7506]" : "border-gray-200")}>
+                                                <div className="flex items-start gap-2 p-3 cursor-pointer" onClick={() => setLcpk_box_uq(unico)}>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center gap-2 mb-0.5">
+                                                            <span className="font-bold text-[11px] text-[#FB7506]">{t(row.AWBCODE)}</span>
+                                                            <span className="text-[10px] text-gray-500">Lot {t(row.LOTE ?? "")}</span>
+                                                            <span className="text-[10px] text-gray-400 ml-auto">{fmtDate(row.BOX_DATE ?? row.AVAILABLE_DATE ?? "")}</span>
+                                                        </div>
+                                                        <p className="font-bold text-[12px] text-gray-800 truncate">{t(row.DESCRIPTION ?? "")}</p>
+                                                        <p className="text-[11px] text-gray-500 mt-0.5">{t(row.GROWER ?? "")} · {t(row.CASE_SH ?? row.CASE_NAME ?? "")}</p>
+                                                        <div className="flex gap-3 mt-1.5 text-[10px]">
+                                                            <span><span className="text-gray-400">Qty:</span> <b>{t(row.BOX_QTY ?? "")}</b></span>
+                                                            <span><span className="text-gray-400">Units:</span> <b>{t(row.TOTAL_UNITS ?? "")}</b></span>
+                                                            <span><span className="text-gray-400">Price:</span> <b>{fmt4(row.PRICE_X_U ?? 0)}</b></span>
+                                                            <span className={cn("ml-auto font-bold", stk < 0 ? "text-red-500" : stk > 0 ? "text-green-600" : "text-gray-300")}>{stk || ""}</span>
+                                                        </div>
+                                                    </div>
+                                                    <button onClick={e => { e.stopPropagation(); setLcpk_box_uq(unico); setAwbExpandedCard(isExp ? null : unico); }}
+                                                        className={cn("shrink-0 mt-0.5 w-8 h-8 flex items-center justify-center rounded-full border transition-all",
+                                                            isExp ? "bg-[#FB7506] border-[#FB7506] text-white" : "border-gray-200 text-gray-500 hover:border-[#FB7506] hover:text-[#FB7506]")}>
+                                                        <ChevronDown size={14} className={cn("transition-transform", isExp ? "rotate-180" : "")} />
+                                                    </button>
+                                                </div>
+                                                {isExp && (
+                                                    <div className="border-t border-gray-100">
+                                                        <div className="flex gap-1 px-2 pt-2">
+                                                            {(["warehouse","invoice","adjusts"] as const).map(tab => (
+                                                                <button key={tab} onClick={() => setAwbDetailTab(tab)}
+                                                                    className={cn("px-3 py-1 rounded-md text-[10px] font-bold uppercase transition-colors",
+                                                                        awbDetailTab === tab ? "bg-[#FB7506] text-white" : "text-gray-500 hover:bg-gray-100")}>
+                                                                    {tab}
+                                                                </button>
+                                                            ))}
+                                                            {loadingWH && <RefreshCcw size={10} className="animate-spin text-gray-400 ml-1 self-center" />}
+                                                        </div>
+                                                        <div className="p-2 pt-1 max-h-48 overflow-auto">
+                                                            {awbDetailTab === "warehouse" && (
+                                                                whStock.length === 0 ? (
+                                                                    <p className="text-xs text-gray-400 italic text-center py-2">No warehouse stock</p>
+                                                                ) : (whStock as any[]).map((ws: any, wi: number) => (
+                                                                    <div key={wi} className="text-[11px] flex flex-wrap gap-x-3 gap-y-0.5 py-1.5 border-b border-gray-100 last:border-0">
+                                                                        <span className="font-bold text-[#4F4F4F] w-full truncate">{t(ws.WAREHOUSE ?? "")}</span>
+                                                                        <span className="text-gray-500">Stock: <b>{t(ws.WH_STOCK ?? "")}</b></span>
+                                                                        <span className="text-gray-500">Hold: <b>{t(ws.QTY_HOLD ?? "")}</b></span>
+                                                                        <span className="text-gray-500">Days: <b>{t(ws.DAYS ?? "")}</b></span>
+                                                                        <span className="text-gray-500">${fmt4(ws.PRICE_X_UNIT ?? 0)}</span>
+                                                                    </div>
+                                                                ))
+                                                            )}
+                                                            {awbDetailTab === "invoice" && (
+                                                                whInvoices.length === 0 ? (
+                                                                    <p className="text-xs text-gray-400 italic text-center py-2">No invoices</p>
+                                                                ) : (whInvoices as any[]).map((inv: any, ii: number) => (
+                                                                    <div key={ii} className="text-[11px] py-1.5 border-b border-gray-100 last:border-0">
+                                                                        <div className="flex gap-2">
+                                                                            <span className="font-bold text-[#FB7506]">{t(inv.INVOICE_NO ?? "")}</span>
+                                                                            <span className="text-gray-500">{t(inv.INVOICE_DATE ?? "").substring(0,10)}</span>
+                                                                            <span className={cn("ml-auto font-bold text-[10px]", inv.STATUS === "Closed" ? "text-red-500" : "text-green-600")}>{t(inv.STATUS ?? "")}</span>
+                                                                        </div>
+                                                                        <p className="text-gray-500 truncate">{t(inv.CUSTOMER ?? "")}</p>
+                                                                    </div>
+                                                                ))
+                                                            )}
+                                                            {awbDetailTab === "adjusts" && (
+                                                                whAdjusts.length === 0 ? (
+                                                                    <p className="text-xs text-gray-400 italic text-center py-2">No adjustments</p>
+                                                                ) : (whAdjusts as any[]).map((adj: any, ai: number) => (
+                                                                    <div key={ai} className="text-[11px] flex flex-wrap gap-x-3 py-1.5 border-b border-gray-100 last:border-0">
+                                                                        <span className="text-gray-500">{t(adj.ADJ_DATE ?? "")}</span>
+                                                                        <span className="font-bold">{t(adj.QTYBOXES ?? "")} boxes</span>
+                                                                        <span className="text-[#FB7506] font-bold">${fmt2(adj.AMOUNT ?? 0)}</span>
+                                                                        <span className="text-gray-500 w-full truncate">{t(adj.REASON ?? "")}</span>
+                                                                    </div>
+                                                                ))
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                    <div ref={awbMobileSentinelRef} className="h-1" />
+                                    {loadingSearch && <div className="flex justify-center py-2"><RefreshCcw size={14} className="animate-spin text-gray-400" /></div>}
+                                </div>
+
+                                {/* Desktop table */}
+                                <div className="hidden lg:block flex-1 overflow-auto">
                                     <table className="min-w-full text-xs text-left whitespace-nowrap">
                                         <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
                                             <tr className="divide-x divide-[#DBD9D9]/30">
@@ -1718,8 +1900,8 @@ export default function InventoryEntryPage() {
                                 </div>
                             </div>
 
-                            {/* Bottom detail panel: Warehouse / Invoice / Adjusts for the selected box */}
-                            <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0 h-[240px]">
+                            {/* Bottom detail panel: desktop only — mobile shows inline in cards */}
+                            <div className="hidden lg:flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0 h-[240px]">
                                 <div className="h-9 bg-[#F5F3F3] border-b border-[#DBD9D9] flex items-center gap-1 px-2 shrink-0">
                                     {([
                                         { key: "warehouse", label: "Warehouse" },
@@ -1825,112 +2007,188 @@ export default function InventoryEntryPage() {
 
                     {/* ══ Tab 5: PO List ══ */}
                     {activeTab === "polist" && (
-                        <div className="flex flex-col gap-2 h-full">
-                            <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0 max-h-[300px]">
-                                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 gap-2">
-                                    <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex flex-col gap-2 h-full min-h-0">
+
+                            {/* Toolbar */}
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#F5F3F3] border border-[#DBD9D9] rounded-lg shrink-0 overflow-x-auto no-scrollbar">
+                                <ShoppingCart size={13} className="text-[#FB7506] shrink-0" />
+                                <span className="font-bold text-[12px] uppercase tracking-tight text-[#4F4F4F] shrink-0">Purchase Orders</span>
+                                <span className="text-[10px] font-bold text-gray-400 shrink-0">({poRows.length})</span>
+                                <div className="w-px h-4 bg-[#DBD9D9] mx-1 shrink-0" />
+                                <input type="date" value={ldship_date} onChange={e => { setLdship_date(e.target.value); setPoGrower(""); setPoExpandedCard(null); }}
+                                    className="h-7 text-[12px] border border-[#DBD9D9] rounded-md px-1.5 bg-white shrink-0" />
+                                <button onClick={() => { qc.invalidateQueries({ queryKey: ["ie-po-summary", ldship_date] }); if (poGrower) qc.invalidateQueries({ queryKey: ["ie-po-grower", poGrower, ldship_date] }); }}
+                                    className="flex items-center gap-1.5 h-7 px-3 bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] rounded-md text-[12px] font-semibold uppercase tracking-wide transition-colors shrink-0">
+                                    <RefreshCcw size={13} className={loadingPO ? "animate-spin" : ""} /> Refresh
+                                </button>
+                            </div>
+
+                            {/* Mobile: expandable grower cards with PO lines */}
+                            <div className="lg:hidden flex-1 overflow-auto min-h-0 p-2 flex flex-col gap-2">
+                                {poRows.length === 0 ? (
+                                    <div className="p-4 text-center text-gray-400 italic text-xs">No purchase orders for this date</div>
+                                ) : (poRows as any[]).map((row: any, i: number) => {
+                                    const uq  = t(row.GROWER_UQ ?? row.GRO_UQ ?? row.VENDOR_UQ ?? row.GROW_UQ ?? "") || String(i);
+                                    const isSel = poGrower === uq;
+                                    const isExp = poExpandedCard === uq;
+                                    return (
+                                        <div key={i} className={cn("border rounded-xl overflow-hidden shadow-sm transition-colors",
+                                            isSel ? "border-[#7C3AED]" : "border-gray-200")}>
+                                            <div className="flex items-center gap-2 p-3 cursor-pointer" onClick={() => { setPoGrower(uq); setSelPOLine(null); }}>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-bold text-[13px] text-gray-800 truncate">{t(row.GROWER)}</p>
+                                                    <div className="flex flex-wrap gap-x-3 text-[10px] mt-1">
+                                                        <span><span className="text-gray-400">Ship:</span> <b>{t(row.SHIP_DATE ?? "").substring(0,10)}</b></span>
+                                                        <span><span className="text-gray-400">POs:</span> <b>{t(row.QTY_PORDER)}</b></span>
+                                                        <span><span className="text-gray-400">Shipped:</span> <b>{t(row.QTY_SHIP)}</b></span>
+                                                        <span><span className="text-gray-400">Arrived:</span> <b>{t(row.QTY_ARRIVED)}</b></span>
+                                                        <span className="text-[#7C3AED] font-bold ml-auto">{fmt2(row.EXT_PRICE)}</span>
+                                                    </div>
+                                                </div>
+                                                <button onClick={e => { e.stopPropagation(); setPoGrower(uq); setSelPOLine(null); setPoExpandedCard(isExp ? null : uq); }}
+                                                    className={cn("shrink-0 w-8 h-8 flex items-center justify-center rounded-full border transition-all",
+                                                        isExp ? "bg-[#7C3AED] border-[#7C3AED] text-white" : "border-gray-200 text-gray-500 hover:border-[#7C3AED] hover:text-[#7C3AED]")}>
+                                                    <ChevronDown size={14} className={cn("transition-transform", isExp ? "rotate-180" : "")} />
+                                                </button>
+                                            </div>
+                                            {isExp && (
+                                                <div className="border-t border-gray-100">
+                                                    {loadingPOG ? (
+                                                        <div className="flex justify-center py-3"><RefreshCcw size={14} className="animate-spin text-gray-400" /></div>
+                                                    ) : (poByGrower as any[]).length === 0 ? (
+                                                        <p className="text-xs text-gray-400 italic text-center py-3">No P.O. lines</p>
+                                                    ) : (poByGrower as any[]).map((pl: any, pi: number) => {
+                                                        const pSel = selPOLine && t(selPOLine.PORDER_UQ) === t(pl.PORDER_UQ) && t(selPOLine.SORDER_NO) === t(pl.SORDER_NO);
+                                                        return (
+                                                            <div key={pi} onClick={() => setSelPOLine(pl)}
+                                                                className={cn("flex flex-col gap-0.5 px-3 py-2 border-b border-gray-100 last:border-0 cursor-pointer transition-colors",
+                                                                    pSel ? "bg-[#FB7506]/5" : "hover:bg-gray-50")}>
+                                                                <div className="flex gap-2 items-center">
+                                                                    <span className="font-bold text-[11px] text-[#FB7506]">{t(pl.PORDER ?? pl.PORDER_NO ?? "")}</span>
+                                                                    <span className="text-[10px] text-gray-500 truncate flex-1">{t(pl.CUSTOMER ?? "")}</span>
+                                                                </div>
+                                                                <p className="text-[11px] font-medium text-gray-800 truncate">{t(pl.DESCRIPTION ?? pl.VARIETY ?? "")}</p>
+                                                                <div className="flex flex-wrap gap-x-3 text-[10px]">
+                                                                    <span><span className="text-gray-400">Case:</span> <b>{t(pl.CASE_NAME ?? "")}</b></span>
+                                                                    <span><span className="text-gray-400">Ordered:</span> <b>{t(pl.QTY_PORDER ?? "")}</b></span>
+                                                                    <span className="text-green-600"><span className="text-gray-400">Conf:</span> <b>{t(pl.QTY_CONFIRM ?? "")}</b></span>
+                                                                    <span className="text-[#FB7506]"><span className="text-gray-400">Diff:</span> <b>{t(pl.QTY_DIFF ?? "")}</b></span>
+                                                                    <span className="text-blue-600"><span className="text-gray-400">Ship:</span> <b>{t(pl.QTY_SHIP ?? "")}</b></span>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                    <div className="p-2">
+                                                        <button onClick={() => { if (!selPOLine) { toast.error("Select a P.O. line first."); return; } setModalAddPO(true); }}
+                                                            className="w-full flex items-center justify-center gap-1.5 h-8 bg-green-600 hover:bg-green-500 text-white rounded-md text-[12px] font-bold uppercase transition-colors">
+                                                            <Plus size={13} /> Add P.O.
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Desktop: two stacked panels */}
+                            <div className="hidden lg:flex flex-col gap-2 flex-1 min-h-0">
+                                <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0 max-h-[300px]">
+                                    <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center px-3 shrink-0 gap-2">
                                         <ShoppingCart size={14} className="text-[#FB7506]" />
                                         <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">
                                             Purchase Orders <span className="text-gray-400">({poRows.length})</span>
                                         </span>
                                     </div>
-                                    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-                                        <input type="date" value={ldship_date} onChange={e => { setLdship_date(e.target.value); setPoGrower(""); }}
-                                            className="h-7 text-[12px] border border-[#DBD9D9] rounded-md px-1.5 bg-white shrink-0" />
-                                        <button onClick={() => { qc.invalidateQueries({ queryKey: ["ie-po-summary", ldship_date] }); if (poGrower) qc.invalidateQueries({ queryKey: ["ie-po-grower", poGrower, ldship_date] }); }}
-                                            className="flex items-center gap-1.5 h-7 px-3 bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
-                                            <RefreshCcw size={14} className={loadingPO ? "animate-spin" : ""} /> Refresh
+                                    <div className="flex-1 overflow-auto">
+                                        <table className="min-w-full text-xs text-left">
+                                            <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
+                                                <tr className="divide-x divide-[#DBD9D9]/30">
+                                                    {["Grower","Ship Date","POrders","Shipped","Arrived","Amount"].map(h => (
+                                                        <th key={h} className="p-2 whitespace-nowrap">{h}</th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-[#DBD9D9]">
+                                                {poRows.length === 0 ? (
+                                                    <tr><td colSpan={6} className="p-4 text-center text-gray-400 italic">No purchase orders for this date</td></tr>
+                                                ) : (poRows as any[]).map((row: any, i: number) => {
+                                                    const uq = t(row.GROWER_UQ ?? row.GRO_UQ ?? row.VENDOR_UQ ?? row.GROW_UQ ?? "") || String(i);
+                                                    const sel = poGrower === uq;
+                                                    return (
+                                                    <tr key={i} onClick={() => { setPoGrower(uq); setSelPOLine(null); }}
+                                                        className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
+                                                        <td className="p-2 max-w-[120px] truncate font-medium">{t(row.GROWER)}</td>
+                                                        <td className="p-2">{t(row.SHIP_DATE ?? "").substring(0, 10)}</td>
+                                                        <td className="p-2 text-right">{t(row.QTY_PORDER)}</td>
+                                                        <td className="p-2 text-right">{t(row.QTY_SHIP)}</td>
+                                                        <td className="p-2 text-right">{t(row.QTY_ARRIVED)}</td>
+                                                        <td className="p-2 text-right">{fmt2(row.EXT_PRICE)}</td>
+                                                    </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                {/* Detail: P.O. lines for the selected grower */}
+                                <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1 min-h-0">
+                                    <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 gap-2 overflow-x-auto">
+                                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                                            <ClipboardList size={14} className="text-[#FB7506] shrink-0" />
+                                            <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] truncate">
+                                                P.O. Lines{poGrower ? ` — ${t(poRows.find((r: any) => t(r.GROWER_UQ ?? r.GRO_UQ ?? r.VENDOR_UQ ?? r.GROW_UQ ?? "") === poGrower)?.GROWER)}` : ""} <span className="text-gray-400">({(poByGrower as any[]).length})</span>
+                                            </span>
+                                            {poGrower && (
+                                                <button onClick={() => { setPoGrower(""); setSelPOLine(null); }} className="text-gray-400 hover:text-gray-700 shrink-0">
+                                                    <X size={13} />
+                                                </button>
+                                            )}
+                                        </div>
+                                        <button onClick={() => { if (!selPOLine) { toast.error("Select a P.O. line first."); return; } setModalAddPO(true); }}
+                                            className="flex items-center gap-1.5 h-7 px-3 bg-green-600 hover:bg-green-500 text-white rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
+                                            <Plus size={14} /> Add P.O
                                         </button>
                                     </div>
-                                </div>
-                                <div className="flex-1 overflow-auto">
-                                    <table className="min-w-full text-xs text-left">
-                                        <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
-                                            <tr className="divide-x divide-[#DBD9D9]/30">
-                                                {["Grower","Ship Date","POrders","Shipped","Arrived","Amount"].map(h => (
-                                                    <th key={h} className="p-2 whitespace-nowrap">{h}</th>
-                                                ))}
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-[#DBD9D9]">
-                                            {poRows.length === 0 ? (
-                                                <tr><td colSpan={6} className="p-4 text-center text-gray-400 italic">No purchase orders for this date</td></tr>
-                                            ) : (poRows as any[]).map((row: any, i: number) => {
-                                                const uq = t(row.GROWER_UQ ?? row.GRO_UQ ?? row.VENDOR_UQ ?? row.GROW_UQ ?? "") || String(i);
-                                                const sel = poGrower === uq;
-                                                return (
-                                                <tr key={i} onClick={() => { setPoGrower(uq); setSelPOLine(null); }}
-                                                    className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
-                                                    <td className="p-2 max-w-[120px] truncate font-medium">{t(row.GROWER)}</td>
-                                                    <td className="p-2">{t(row.SHIP_DATE ?? "").substring(0, 10)}</td>
-                                                    <td className="p-2 text-right">{t(row.QTY_PORDER)}</td>
-                                                    <td className="p-2 text-right">{t(row.QTY_SHIP)}</td>
-                                                    <td className="p-2 text-right">{t(row.QTY_ARRIVED)}</td>
-                                                    <td className="p-2 text-right">{fmt2(row.EXT_PRICE)}</td>
+                                    <div className="flex-1 overflow-auto">
+                                        <table className="min-w-full text-xs text-left whitespace-nowrap">
+                                            <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
+                                                <tr className="divide-x divide-[#DBD9D9]/30">
+                                                    {["Farm","P.Order","S.Order","Customer","Case","Description","T.Units","Ordered","Confirm","Diff","Ship"].map((h, hi) => (
+                                                        <th key={h} className={cn("p-2 whitespace-nowrap", hi >= 6 ? "text-center w-16" : "")}>{h}</th>
+                                                    ))}
                                                 </tr>
-                                                );
-                                            })}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-
-                            {/* Detail: P.O. lines for the selected grower */}
-                            <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1 min-h-0">
-                                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 gap-2 overflow-x-auto">
-                                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                                        <ClipboardList size={14} className="text-[#FB7506] shrink-0" />
-                                        <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F] truncate">
-                                            P.O. Lines{poGrower ? ` — ${t(poRows.find((r: any) => t(r.GROWER_UQ ?? r.GRO_UQ ?? r.VENDOR_UQ ?? r.GROW_UQ ?? "") === poGrower)?.GROWER)}` : ""} <span className="text-gray-400">({(poByGrower as any[]).length})</span>
-                                        </span>
-                                        {poGrower && (
-                                            <button onClick={() => { setPoGrower(""); setSelPOLine(null); }} className="text-gray-400 hover:text-gray-700 shrink-0">
-                                                <X size={13} />
-                                            </button>
-                                        )}
+                                            </thead>
+                                            <tbody className="divide-y divide-[#DBD9D9]">
+                                                {!poGrower ? (
+                                                    <tr><td colSpan={11} className="p-4 text-center text-gray-400 italic">Select a vendor above to see its P.O. lines</td></tr>
+                                                ) : loadingPOG ? (
+                                                    <tr><td colSpan={11} className="p-4 text-center"><RefreshCcw size={14} className="animate-spin mx-auto text-gray-400" /></td></tr>
+                                                ) : (poByGrower as any[]).length === 0 ? (
+                                                    <tr><td colSpan={11} className="p-4 text-center text-gray-400 italic">No orders</td></tr>
+                                                ) : (poByGrower as any[]).map((row: any, i: number) => {
+                                                    const sel = selPOLine && t(selPOLine.PORDER_UQ) === t(row.PORDER_UQ) && t(selPOLine.SORDER_NO) === t(row.SORDER_NO);
+                                                    return (
+                                                    <tr key={i} onClick={() => setSelPOLine(row)}
+                                                        className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
+                                                        <td className="p-2 text-gray-500 w-12">{t(row.FARM ?? "")}</td>
+                                                        <td className="p-2">{t(row.PORDER ?? row.PORDER_NO ?? "")}</td>
+                                                        <td className="p-2 text-gray-500">{t(row.SORDER_NO ?? "")}</td>
+                                                        <td className="p-2 max-w-[130px] truncate">{t(row.CUSTOMER ?? "")}</td>
+                                                        <td className="p-2">{t(row.CASE_NAME ?? row.PACK ?? "")}</td>
+                                                        <td className="p-2 max-w-[180px] truncate">{t(row.DESCRIPTION ?? row.VARIETY ?? "")}</td>
+                                                        <td className="p-2 text-center w-16">{t(row.TOTAL_UNITS ?? "")}</td>
+                                                        <td className="p-2 text-center w-16">{t(row.QTY_PORDER ?? "")}</td>
+                                                        <td className="p-2 text-center w-16 text-green-600">{t(row.QTY_CONFIRM ?? "")}</td>
+                                                        <td className="p-2 text-center w-16 text-[#FB7506]">{t(row.QTY_DIFF ?? "")}</td>
+                                                        <td className="p-2 text-center w-16 text-blue-600">{t(row.QTY_SHIP ?? "")}</td>
+                                                    </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
                                     </div>
-                                    <button onClick={() => { if (!selPOLine) { toast.error("Select a P.O. line first."); return; } setModalAddPO(true); }}
-                                        className="flex items-center gap-1.5 h-7 px-3 bg-green-600 hover:bg-green-500 text-white rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
-                                        <Plus size={14} /> Add P.O
-                                    </button>
-                                </div>
-                                <div className="flex-1 overflow-auto">
-                                    <table className="min-w-full text-xs text-left whitespace-nowrap">
-                                        <thead className="bg-[#4F4F4F] text-white text-[11px] font-bold uppercase sticky top-0 z-10">
-                                            <tr className="divide-x divide-[#DBD9D9]/30">
-                                                {["Farm","P.Order","S.Order","Customer","Case","Description","T.Units","Ordered","Confirm","Diff","Ship"].map((h, hi) => (
-                                                    <th key={h} className={cn("p-2 whitespace-nowrap", hi >= 6 ? "text-center w-16" : "")}>{h}</th>
-                                                ))}
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-[#DBD9D9]">
-                                            {!poGrower ? (
-                                                <tr><td colSpan={11} className="p-4 text-center text-gray-400 italic">Select a vendor above to see its P.O. lines</td></tr>
-                                            ) : loadingPOG ? (
-                                                <tr><td colSpan={11} className="p-4 text-center"><RefreshCcw size={14} className="animate-spin mx-auto text-gray-400" /></td></tr>
-                                            ) : (poByGrower as any[]).length === 0 ? (
-                                                <tr><td colSpan={11} className="p-4 text-center text-gray-400 italic">No orders</td></tr>
-                                            ) : (poByGrower as any[]).map((row: any, i: number) => {
-                                                const sel = selPOLine && t(selPOLine.PORDER_UQ) === t(row.PORDER_UQ) && t(selPOLine.SORDER_NO) === t(row.SORDER_NO);
-                                                return (
-                                                <tr key={i} onClick={() => setSelPOLine(row)}
-                                                    className={cn("cursor-pointer transition-colors divide-x divide-[#DBD9D9]", sel ? "!bg-[#FB7506]/10" : "hover:bg-gray-50")}>
-                                                    <td className="p-2 text-gray-500 w-12">{t(row.FARM ?? "")}</td>
-                                                    <td className="p-2">{t(row.PORDER ?? row.PORDER_NO ?? "")}</td>
-                                                    <td className="p-2 text-gray-500">{t(row.SORDER_NO ?? "")}</td>
-                                                    <td className="p-2 max-w-[130px] truncate">{t(row.CUSTOMER ?? "")}</td>
-                                                    <td className="p-2">{t(row.CASE_NAME ?? row.PACK ?? "")}</td>
-                                                    <td className="p-2 max-w-[180px] truncate">{t(row.DESCRIPTION ?? row.VARIETY ?? "")}</td>
-                                                    <td className="p-2 text-center w-16">{t(row.TOTAL_UNITS ?? "")}</td>
-                                                    <td className="p-2 text-center w-16">{t(row.QTY_PORDER ?? "")}</td>
-                                                    <td className="p-2 text-center w-16 text-green-600">{t(row.QTY_CONFIRM ?? "")}</td>
-                                                    <td className="p-2 text-center w-16 text-[#FB7506]">{t(row.QTY_DIFF ?? "")}</td>
-                                                    <td className="p-2 text-center w-16 text-blue-600">{t(row.QTY_SHIP ?? "")}</td>
-                                                </tr>
-                                                );
-                                            })}
-                                        </tbody>
-                                    </table>
                                 </div>
                             </div>
                         </div>
