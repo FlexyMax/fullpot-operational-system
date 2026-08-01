@@ -373,6 +373,7 @@ export default function CustomerPaymentsPage() {
     const custBalance = store.customerFilterMode;
     const setCustBalance = store.setCustomerFilterMode;
     const [balanceFilter, setBalanceFilter] = useState(true);    // true=Bal>0
+    const pendingInvCustomerRef = useRef<string | null>(null);  // customer_uq to select after list refreshes
     const [selInvoice,    setSelInvoice]    = useState<any>(null);
     const [selApply,      setSelApply]      = useState<any>(null);
     const [selIncome,     setSelIncome]     = useState<any>(null);
@@ -598,10 +599,26 @@ export default function CustomerPaymentsPage() {
 
     const handleInvoiceFound = (inv: any) => {
         const custMatch = (customers as any[]).find((c: any) => c.unico === inv.customer_uq);
-        if (custMatch) selectCustomer(custMatch);
-        if (parseFloat(inv.total_balance ?? 0) <= 0) setBalanceFilter(false);
-        setActiveTab("invoices");
+        if (custMatch) {
+            selectCustomer(custMatch);
+            setActiveTab("invoices");
+        } else {
+            // Customer not in current filtered list — load all customers then select
+            pendingInvCustomerRef.current = inv.customer_uq;
+            setBalanceFilter(false);
+            setActiveTab("invoices");
+        }
     };
+
+    // Pick up pending invoice-search customer selection after customers list refreshes
+    useEffect(() => {
+        if (!pendingInvCustomerRef.current) return;
+        const custMatch = (customers as any[]).find((c: any) => c.unico === pendingInvCustomerRef.current);
+        if (custMatch) {
+            selectCustomer(custMatch);
+            pendingInvCustomerRef.current = null;
+        }
+    }, [customers]);
 
     const handleHoldNoSales = () => toastConfirm("Put on hold customers with no sales?", async () => {
         const r = await fetch("/api/customer-payments/hold-no-sales", { method: "POST" });
@@ -912,8 +929,8 @@ export default function CustomerPaymentsPage() {
                         menuItems={[
                             { label: "Refresh", icon: RefreshCcw, color: "gray", onClick: refreshAll },
                             { label: "Inv. Search", icon: Search, color: "gray", onClick: ()=>setInvSearchModal(true) },
-                            { label: "Email", icon: Mail, color: "gray", onClick: ()=>toast.info("Email invoice — Coming soon"), disabled: !selInvoice||!perms.canReport },
-                            { label: "Invoice", icon: Printer, color: "gray", onClick: ()=>toast.info("Print invoice — Coming soon"), disabled: !selInvoice||!perms.canReport },
+                            { label: "Email", icon: Mail, color: "gray", onClick: async ()=>{ if(!selInvoice||!selCustomer) return; const email = t(selCustomer.ap_email||selCustomer.email); if(!email){ toast.error("Customer has no email on file."); return; } toast.info("Sending invoice..."); try{ const r=await fetch("/api/customer-payments/invoice-email",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({invoice_uq:selInvoice.unico,email,customer_name:t(selCustomer.customer)})}); const d=await r.json(); d.success?toast.success("Invoice emailed."):toast.error(d.error); }catch(e:any){toast.error(e.message);} }, disabled: !selInvoice||!perms.canReport },
+                            { label: "Invoice", icon: Printer, color: "gray", onClick: ()=>{ if(!selInvoice) return; window.open(`/api/customer-payments/invoice-print/${selInvoice.unico}`,"_blank"); }, disabled: !selInvoice||!perms.canReport },
                             { label: "Reports", icon: BarChart2, color: "gray", onClick: ()=>setPendingRptModal(true), disabled: !selCustomer||!perms.canReport },
                             { label: "New Payment", icon: Plus, color: "green", onClick: ()=>{ if(!perms.canCreate){toast.error(PERMISSION_MSGS.create);return;} setNewPayModal({mode:"add"}); }, disabled: !selCustomer||!perms.canCreate },
                             { label: "Insert Cr/Db", icon: CreditCard, color: "blue", onClick: ()=>{ if(!perms.canCreate){toast.error(PERMISSION_MSGS.create);return;} if(!selInvoice){toast.error("Select an invoice first.");return;} setCrdbModal({mode:"add"}); }, disabled: !selCustomer||!selInvoice||!perms.canCreate },
