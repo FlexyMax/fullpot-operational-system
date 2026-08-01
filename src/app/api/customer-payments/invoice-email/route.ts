@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     try {
         const r = await executeProcedure("sp_NC_HTML_Invoice_Report_New", { lcInvoice_uq: safe });
         const row = r.recordset?.[0];
-        const html = row?.HTMLCode ?? row?.html ?? row?.HtmlCode ?? String(Object.values(row ?? {})[0] ?? "");
+        const html = row?.InvoiceHTML ?? row?.HTMLCode ?? row?.html ?? row?.HtmlCode ?? "";
         if (!html) return NextResponse.json({ success: false, error: "Invoice not found." }, { status: 404 });
 
         const name = customer_name || "Customer";
