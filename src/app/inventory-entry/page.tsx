@@ -359,9 +359,10 @@ export default function InventoryEntryPage() {
     const [awbDetailTab,      setAwbDetailTab]      = useState<"warehouse" | "invoice" | "adjusts">("warehouse");
     const [modalScanHistory,  setModalScanHistory]  = useState(false);
     const [reportModalUrl,    setReportModalUrl]    = useState<string | null>(null);
-    const [awbExpandedCard,   setAwbExpandedCard]   = useState<string | null>(null);
+    const [awbExpandedCard,      setAwbExpandedCard]      = useState<string | null>(null);
     const [prodMobileSearchOpen, setProdMobileSearchOpen] = useState(false);
-    const [poExpandedCard,    setPoExpandedCard]    = useState<string | null>(null);
+    const [awbMobileSearchOpen,  setAwbMobileSearchOpen]  = useState(false);
+    const [poExpandedCard,       setPoExpandedCard]       = useState<string | null>(null);
 
     // ── Filter state ──────────────────────────────────────────────────────────
     const [filterGrowerUq,  setFilterGrowerUq]  = useState("");
@@ -969,7 +970,7 @@ export default function InventoryEntryPage() {
                             {/* Row 1: Date Picker + AWB List — side by side on large screens, stacked below that */}
                             <div className="flex flex-col lg:flex-row gap-2 shrink-0 lg:max-h-[280px]">
                                 {/* Date Picker */}
-                                <div className="w-full lg:w-[30%] flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0 max-h-[380px] lg:max-h-none">
+                                <div className="w-full lg:w-[30%] flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden shrink-0 max-h-[520px] lg:max-h-none">
                                     <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between pl-3 pr-0 shrink-0">
                                         <div className="flex items-center gap-2 min-w-0">
                                             <Calendar size={14} className="text-[#FB7506] shrink-0" />
@@ -1423,7 +1424,7 @@ export default function InventoryEntryPage() {
                                             </span>
                                         )}
                                     </div>
-                                    <div className="flex items-center gap-2 shrink-0">
+                                    <div className="hidden lg:flex items-center gap-2 shrink-0">
                                         <div className="flex items-center bg-[#F5F3F3] border border-[#DBD9D9] rounded px-2 py-1 gap-1 w-48">
                                             <Search size={11} className="text-gray-400 shrink-0" />
                                             <input
@@ -1590,10 +1591,6 @@ export default function InventoryEntryPage() {
                             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#F5F3F3] border border-[#DBD9D9] rounded-lg shrink-0 overflow-x-auto no-scrollbar">
                                 <input type="date" value={lddate} onChange={e => setLddate(e.target.value)}
                                     className="h-7 text-[12px] border border-[#DBD9D9] rounded-md px-1.5 bg-white shrink-0" />
-                                <button onClick={handleRefresh}
-                                    className="flex items-center gap-1.5 h-7 px-3 bg-white hover:bg-gray-50 border border-[#DBD9D9] text-[#4F4F4F] rounded-md text-[12px] font-semibold uppercase tracking-wide transition-colors shrink-0">
-                                    <RefreshCcw size={13} className={loadingPLC ? "animate-spin" : ""} /> Refresh
-                                </button>
                                 <div className="w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
                                 <button onClick={() => { if (!lcpack_uq) { toast.error("Select a packing first."); return; } setModalAvailDate(true); }} disabled={!lcpack_uq || !perms.canEdit}
                                     className="flex items-center gap-1.5 h-7 px-3 bg-[#FB7506] hover:bg-orange-500 disabled:opacity-40 text-white rounded-md text-[12px] font-semibold uppercase tracking-wide transition-colors shrink-0">
@@ -1616,6 +1613,13 @@ export default function InventoryEntryPage() {
                                     <ClipboardList size={14} className="text-[#FB7506]" />
                                     <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">Packing List Control</span>
                                     {loadingPLC && <RefreshCcw size={10} className="animate-spin text-gray-400" />}
+                                    <div className="ml-auto flex items-center gap-1">
+                                        <button onClick={handleRefresh}
+                                            className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-500 transition-colors">
+                                            <RefreshCcw size={13} className={loadingPLC ? "animate-spin" : ""} />
+                                        </button>
+                                        <AuditLogModal recordId={lcpack_uq} disabled={!lcpack_uq} size="sm" />
+                                    </div>
                                 </div>
 
                                 {/* Mobile card view */}
@@ -1705,60 +1709,66 @@ export default function InventoryEntryPage() {
                     {/* ══ Tab 4: AWB Search ══ */}
                     {activeTab === "awbsearch" && (
                         <div className="flex flex-col gap-2 h-full min-h-0">
+
+                            {/* Gray button bar — both mobile and desktop */}
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#F5F3F3] border border-[#DBD9D9] rounded-lg shrink-0 overflow-x-auto no-scrollbar">
+                                <Search size={13} className="text-[#FB7506] shrink-0" />
+                                <span className="font-bold text-[12px] uppercase tracking-tight text-[#4F4F4F] shrink-0">Box Search</span>
+                                {awbTotal > 0 && <span className="text-[10px] font-bold text-gray-400 shrink-0">{awbAccRows.length}/{awbTotal}</span>}
+                                {loadingSearch && <RefreshCcw size={10} className="animate-spin text-gray-400 shrink-0" />}
+                                {/* Desktop inline search */}
+                                <div className="hidden lg:flex items-center bg-white border border-[#DBD9D9] rounded px-2 py-1 gap-1 w-48 ml-1 shrink-0">
+                                    <Search size={11} className="text-gray-400 shrink-0" />
+                                    <input type="text" value={awbSearchInput}
+                                        onChange={e => setAwbSearchInput(e.target.value)}
+                                        onKeyDown={e => { if (e.key === "Enter") { setAwbAccRows([]); setAwbSearchQ(awbSearchInput); setAwbSearchPage(1); } }}
+                                        placeholder="AWB code, PO#, product..."
+                                        className="text-[11px] text-gray-700 placeholder-gray-400 outline-none flex-1 min-w-0 bg-transparent" />
+                                    {awbSearchQ && (
+                                        <button onClick={() => { setAwbAccRows([]); setAwbTotal(0); setAwbSearchQ(""); setAwbSearchInput(""); setAwbSearchPage(1); }}>
+                                            <X size={11} className="text-gray-400 hover:text-gray-700" />
+                                        </button>
+                                    )}
+                                </div>
+                                <button onClick={() => { setAwbAccRows([]); setAwbSearchQ(awbSearchInput); setAwbSearchPage(1); }}
+                                    className="hidden lg:flex items-center gap-1.5 h-7 px-3 bg-[#FB7506] hover:bg-orange-500 text-white rounded-md text-[12px] font-semibold uppercase tracking-wide transition-colors shrink-0">
+                                    <Search size={12} /> Search
+                                </button>
+                                <div className="hidden lg:block w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
+                                <button onClick={() => {
+                                    const sel = (awbAccRows as any[]).find(r => t(r.UNICO) === lcpk_box_uq);
+                                    if (!sel) { toast.error("Select a box first."); return; }
+                                    openReportModal(`/api/inventory-entry/reports/packing-invoices?pack_uq=${encodeURIComponent(t(sel.PACK_UQ))}`);
+                                }}
+                                    className="flex items-center gap-1.5 h-7 px-3 bg-white hover:bg-gray-50 text-[#4F4F4F] border border-[#DBD9D9] rounded-md text-[12px] font-semibold uppercase tracking-wide transition-colors shrink-0">
+                                    <FileText size={13} /> Invoices
+                                </button>
+                                <button onClick={() => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } openReportModal(`/api/inventory-entry/reports/box-history?box_uq=${encodeURIComponent(lcpk_box_uq)}`); }}
+                                    className="flex items-center gap-1.5 h-7 px-3 bg-white hover:bg-gray-50 text-[#4F4F4F] border border-[#DBD9D9] rounded-md text-[12px] font-semibold uppercase tracking-wide transition-colors shrink-0">
+                                    <History size={13} /> History
+                                </button>
+                                <button onClick={() => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalScanHistory(true); }}
+                                    className="flex items-center gap-1.5 h-7 px-3 bg-white hover:bg-gray-50 text-[#4F4F4F] border border-[#DBD9D9] rounded-md text-[12px] font-semibold uppercase tracking-wide transition-colors shrink-0">
+                                    <ScanLine size={13} /> Scan
+                                </button>
+                                <button onClick={() => { const sel = (awbAccRows as any[]).find(r => t(r.UNICO) === lcpk_box_uq); if (!sel) { toast.error("Select a box first."); return; } handleLocateBox(sel); }}
+                                    className="flex items-center gap-1.5 h-7 px-3 bg-[#FB7506]/10 hover:bg-[#FB7506]/20 border border-[#FB7506]/30 text-[#FB7506] rounded-md text-[12px] font-semibold uppercase tracking-wide transition-colors shrink-0">
+                                    <MapPin size={13} /> Locate
+                                </button>
+                            </div>
+
                             <div className="flex flex-col bg-white rounded-lg border border-[#DBD9D9] shadow-sm overflow-hidden flex-1 min-h-0">
 
-                                {/* Header */}
-                                <div className="h-16 lg:h-10 bg-white border-b border-[#DBD9D9] flex items-center justify-between px-3 shrink-0 gap-2 overflow-x-auto">
-                                    <div className="flex items-center gap-2 shrink-0">
-                                        <Search size={14} className="text-[#FB7506]" />
-                                        <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">Packing Box Search</span>
-                                        {loadingSearch && <RefreshCcw size={10} className="animate-spin text-gray-400" />}
-                                        {awbTotal > 0 && (
-                                            <span className="text-[10px] font-bold text-gray-400 ml-2">
-                                                {awbAccRows.length} / {awbTotal} records
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div className="flex items-center gap-2 shrink-0">
-                                        <div className="flex items-center bg-[#F5F3F3] border border-[#DBD9D9] rounded px-2 py-1 gap-1 w-48">
-                                            <Search size={11} className="text-gray-400 shrink-0" />
-                                            <input type="text" value={awbSearchInput}
-                                                onChange={e => setAwbSearchInput(e.target.value)}
-                                                onKeyDown={e => { if (e.key === "Enter") { setAwbAccRows([]); setAwbSearchQ(awbSearchInput); setAwbSearchPage(1); } }}
-                                                placeholder="AWB code, PO#, product..."
-                                                className="text-[11px] text-gray-700 placeholder-gray-400 outline-none flex-1 min-w-0 bg-transparent" />
-                                            {awbSearchQ && (
-                                                <button onClick={() => { setAwbAccRows([]); setAwbTotal(0); setAwbSearchQ(""); setAwbSearchInput(""); setAwbSearchPage(1); }}>
-                                                    <X size={11} className="text-gray-400 hover:text-gray-700" />
-                                                </button>
-                                            )}
-                                        </div>
-                                        <button onClick={() => { setAwbAccRows([]); setAwbSearchQ(awbSearchInput); setAwbSearchPage(1); }}
-                                            className="flex items-center gap-1.5 h-7 px-3 bg-[#FB7506] hover:bg-orange-500 text-white rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
-                                            <Search size={14} /> Search
-                                        </button>
-                                        <div className="w-px h-5 bg-[#DBD9D9] mx-0.5 shrink-0" />
-                                        <button onClick={() => {
-                                            const sel = (awbAccRows as any[]).find(r => t(r.UNICO) === lcpk_box_uq);
-                                            if (!sel) { toast.error("Select a box first."); return; }
-                                            openReportModal(`/api/inventory-entry/reports/packing-invoices?pack_uq=${encodeURIComponent(t(sel.PACK_UQ))}`);
-                                        }}
-                                            className="flex items-center gap-1.5 h-7 px-3 bg-white hover:bg-gray-50 text-[#4F4F4F] border border-[#DBD9D9] rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
-                                            <FileText size={14} /> Invoices
-                                        </button>
-                                        <button onClick={() => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } openReportModal(`/api/inventory-entry/reports/box-history?box_uq=${encodeURIComponent(lcpk_box_uq)}`); }}
-                                            className="flex items-center gap-1.5 h-7 px-3 bg-white hover:bg-gray-50 text-[#4F4F4F] border border-[#DBD9D9] rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
-                                            <History size={14} /> History
-                                        </button>
-                                        <button onClick={() => { if (!lcpk_box_uq) { toast.error("Select a box first."); return; } setModalScanHistory(true); }}
-                                            className="flex items-center gap-1.5 h-7 px-3 bg-white hover:bg-gray-50 text-[#4F4F4F] border border-[#DBD9D9] rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
-                                            <ScanLine size={14} /> Scan History
-                                        </button>
-                                        <button onClick={() => { const sel = (awbAccRows as any[]).find(r => t(r.UNICO) === lcpk_box_uq); if (!sel) { toast.error("Select a box first."); return; } handleLocateBox(sel); }}
-                                            className="flex items-center gap-1.5 h-7 px-3 bg-[#FB7506]/10 hover:bg-[#FB7506]/20 border border-[#FB7506]/30 text-[#FB7506] rounded-md text-[14px] font-semibold uppercase tracking-wide transition-colors shrink-0">
-                                            <MapPin size={14} /> Locate
-                                        </button>
-                                    </div>
+                                {/* Header — title only */}
+                                <div className="h-10 bg-white border-b border-[#DBD9D9] flex items-center px-3 shrink-0 gap-2">
+                                    <Search size={14} className="text-[#FB7506]" />
+                                    <span className="text-[14px] font-bold uppercase tracking-tight text-[#4F4F4F]">Packing Box Search</span>
+                                    {loadingSearch && <RefreshCcw size={10} className="animate-spin text-gray-400" />}
+                                    {awbTotal > 0 && (
+                                        <span className="text-[10px] font-bold text-gray-400 ml-2">
+                                            {awbAccRows.length} / {awbTotal} records
+                                        </span>
+                                    )}
                                 </div>
 
                                 {/* Mobile card view */}
@@ -1771,7 +1781,7 @@ export default function InventoryEntryPage() {
                                         const isExp = awbExpandedCard === unico;
                                         const stk   = Number(row.STOCK ?? 0);
                                         return (
-                                            <div key={i} className={cn("border rounded-xl overflow-hidden shadow-sm transition-colors",
+                                            <div key={i} className={cn("border rounded-xl overflow-hidden shadow-sm transition-colors min-h-[88px]",
                                                 isSel ? "border-[#FB7506]" : "border-gray-200")}>
                                                 <div className="flex items-start gap-2 p-3 cursor-pointer" onClick={() => setLcpk_box_uq(unico)}>
                                                     <div className="flex-1 min-w-0">
@@ -2002,6 +2012,45 @@ export default function InventoryEntryPage() {
                                     )}
                                 </div>
                             </div>
+
+                            {/* Mobile search FAB */}
+                            <button className="lg:hidden fixed bottom-20 right-4 z-30 w-12 h-12 bg-[#FB7506] text-white rounded-full shadow-lg flex items-center justify-center hover:bg-orange-600 transition-colors"
+                                onClick={() => setAwbMobileSearchOpen(true)}>
+                                <Search size={20} />
+                            </button>
+
+                            {/* Mobile search bottom sheet */}
+                            {awbMobileSearchOpen && (
+                                <div className="lg:hidden fixed inset-0 z-40 flex flex-col justify-end">
+                                    <div className="absolute inset-0 bg-black/40" onClick={() => setAwbMobileSearchOpen(false)} />
+                                    <div className="relative bg-white rounded-t-2xl p-4 shadow-2xl">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <Search size={14} className="text-[#FB7506]" />
+                                            <span className="font-bold text-sm text-[#4F4F4F] uppercase tracking-wide">Search Boxes</span>
+                                            <button className="ml-auto" onClick={() => setAwbMobileSearchOpen(false)}>
+                                                <X size={18} className="text-gray-400" />
+                                            </button>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <input type="text" value={awbSearchInput}
+                                                onChange={e => setAwbSearchInput(e.target.value)}
+                                                onKeyDown={e => { if (e.key === "Enter") { setAwbAccRows([]); setAwbSearchQ(awbSearchInput); setAwbSearchPage(1); setAwbMobileSearchOpen(false); } }}
+                                                placeholder="AWB code, PO#, product..." autoFocus
+                                                className="flex-1 h-10 border border-[#DBD9D9] rounded-lg px-3 text-sm outline-none focus:border-[#FB7506]" />
+                                            <button onClick={() => { setAwbAccRows([]); setAwbSearchQ(awbSearchInput); setAwbSearchPage(1); setAwbMobileSearchOpen(false); }}
+                                                className="h-10 px-5 bg-[#FB7506] hover:bg-orange-600 text-white rounded-lg font-bold text-sm transition-colors">
+                                                Go
+                                            </button>
+                                        </div>
+                                        {awbSearchQ && (
+                                            <button onClick={() => { setAwbAccRows([]); setAwbTotal(0); setAwbSearchQ(""); setAwbSearchInput(""); setAwbSearchPage(1); setAwbMobileSearchOpen(false); }}
+                                                className="mt-2 flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600">
+                                                <X size={11} /> Clear search
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -2028,16 +2077,18 @@ export default function InventoryEntryPage() {
                                 {poRows.length === 0 ? (
                                     <div className="p-4 text-center text-gray-400 italic text-xs">No purchase orders for this date</div>
                                 ) : (poRows as any[]).map((row: any, i: number) => {
-                                    const uq  = t(row.GROWER_UQ ?? row.GRO_UQ ?? row.VENDOR_UQ ?? row.GROW_UQ ?? "") || String(i);
-                                    const isSel = poGrower === uq;
-                                    const isExp = poExpandedCard === uq;
+                                    const realUq   = t(row.GROWER_UQ ?? row.GRO_UQ ?? row.VENDOR_UQ ?? row.GROW_UQ ?? "");
+                                    const isAllRow = !realUq;
+                                    const uq       = isAllRow ? "ALL" : realUq;
+                                    const isSel    = poGrower === uq;
+                                    const isExp    = poExpandedCard === uq;
                                     return (
                                         <div key={i} className={cn("border rounded-xl overflow-hidden shadow-sm transition-colors",
                                             isSel ? "border-[#7C3AED]" : "border-gray-200")}>
                                             <div className="flex items-center gap-2 p-3 cursor-pointer" onClick={() => { setPoGrower(uq); setSelPOLine(null); }}>
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="font-bold text-[13px] text-gray-800 truncate">{t(row.GROWER)}</p>
-                                                    <div className="flex flex-wrap gap-x-3 text-[10px] mt-1">
+                                                    <p className="font-bold text-[14px] text-gray-800 truncate">{t(row.GROWER)}</p>
+                                                    <div className="flex flex-wrap gap-x-3 text-[11px] mt-1">
                                                         <span><span className="text-gray-400">Ship:</span> <b>{t(row.SHIP_DATE ?? "").substring(0,10)}</b></span>
                                                         <span><span className="text-gray-400">POs:</span> <b>{t(row.QTY_PORDER)}</b></span>
                                                         <span><span className="text-gray-400">Shipped:</span> <b>{t(row.QTY_SHIP)}</b></span>
@@ -2064,11 +2115,11 @@ export default function InventoryEntryPage() {
                                                                 className={cn("flex flex-col gap-0.5 px-3 py-2 border-b border-gray-100 last:border-0 cursor-pointer transition-colors",
                                                                     pSel ? "bg-[#FB7506]/5" : "hover:bg-gray-50")}>
                                                                 <div className="flex gap-2 items-center">
-                                                                    <span className="font-bold text-[11px] text-[#FB7506]">{t(pl.PORDER ?? pl.PORDER_NO ?? "")}</span>
-                                                                    <span className="text-[10px] text-gray-500 truncate flex-1">{t(pl.CUSTOMER ?? "")}</span>
+                                                                    <span className="font-bold text-[12px] text-[#FB7506]">{t(pl.PORDER ?? pl.PORDER_NO ?? "")}</span>
+                                                                    <span className="text-[11px] text-gray-500 truncate flex-1">{t(pl.CUSTOMER ?? "")}</span>
                                                                 </div>
-                                                                <p className="text-[11px] font-medium text-gray-800 truncate">{t(pl.DESCRIPTION ?? pl.VARIETY ?? "")}</p>
-                                                                <div className="flex flex-wrap gap-x-3 text-[10px]">
+                                                                <p className="text-[12px] font-medium text-gray-800 truncate">{t(pl.DESCRIPTION ?? pl.VARIETY ?? "")}</p>
+                                                                <div className="flex flex-wrap gap-x-3 text-[11px]">
                                                                     <span><span className="text-gray-400">Case:</span> <b>{t(pl.CASE_NAME ?? "")}</b></span>
                                                                     <span><span className="text-gray-400">Ordered:</span> <b>{t(pl.QTY_PORDER ?? "")}</b></span>
                                                                     <span className="text-green-600"><span className="text-gray-400">Conf:</span> <b>{t(pl.QTY_CONFIRM ?? "")}</b></span>
@@ -2081,7 +2132,7 @@ export default function InventoryEntryPage() {
                                                     <div className="p-2">
                                                         <button onClick={() => { if (!selPOLine) { toast.error("Select a P.O. line first."); return; } setModalAddPO(true); }}
                                                             className="w-full flex items-center justify-center gap-1.5 h-8 bg-green-600 hover:bg-green-500 text-white rounded-md text-[12px] font-bold uppercase transition-colors">
-                                                            <Plus size={13} /> Add P.O.
+                                                            <Plus size={13} /> {isAllRow ? "Add All" : "Add P.O."}
                                                         </button>
                                                     </div>
                                                 </div>
