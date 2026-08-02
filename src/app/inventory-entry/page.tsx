@@ -1790,20 +1790,25 @@ export default function InventoryEntryPage() {
                                                             <span className="text-[10px] text-gray-500">Lot {t(row.LOTE ?? "")}</span>
                                                             <span className="text-[10px] text-gray-400 ml-auto">{fmtDate(row.BOX_DATE ?? row.AVAILABLE_DATE ?? "")}</span>
                                                         </div>
-                                                        <p className="font-bold text-[12px] text-gray-800 truncate">{t(row.DESCRIPTION ?? "")}</p>
-                                                        <p className="text-[11px] text-gray-500 mt-0.5">{t(row.GROWER ?? "")} · {t(row.CASE_SH ?? row.CASE_NAME ?? "")}</p>
-                                                        <div className="flex gap-3 mt-1.5 text-[10px]">
+                                                        <p className="font-bold text-[13px] text-gray-800 truncate">{t(row.DESCRIPTION ?? "")}</p>
+                                                        <p className="text-[12px] text-gray-500 mt-0.5">{t(row.GROWER ?? "")} · {t(row.CASE_SH ?? row.CASE_NAME ?? "")}</p>
+                                                        <div className="flex flex-wrap gap-x-3 mt-1.5 text-[12px]">
                                                             <span><span className="text-gray-400">Qty:</span> <b>{t(row.BOX_QTY ?? "")}</b></span>
                                                             <span><span className="text-gray-400">Units:</span> <b>{t(row.TOTAL_UNITS ?? "")}</b></span>
                                                             <span><span className="text-gray-400">Price:</span> <b>{fmt4(row.PRICE_X_U ?? 0)}</b></span>
-                                                            <span className={cn("ml-auto font-bold", stk < 0 ? "text-red-500" : stk > 0 ? "text-green-600" : "text-gray-300")}>{stk || ""}</span>
+                                                            <span><span className="text-gray-400">Cost:</span> <b>{fmt4(row.TCOST_X_U ?? row.COST_X_U ?? row.COST ?? 0)}</b></span>
+                                                            <span className={cn("font-bold", stk < 0 ? "text-red-500" : stk > 0 ? "text-green-600" : "text-gray-300")}>
+                                                                <span className="text-gray-400">Stock:</span> <b>{stk}</b>
+                                                            </span>
                                                         </div>
                                                     </div>
-                                                    <button onClick={e => { e.stopPropagation(); setLcpk_box_uq(unico); setAwbExpandedCard(isExp ? null : unico); }}
-                                                        className={cn("shrink-0 mt-0.5 w-8 h-8 flex items-center justify-center rounded-full border transition-all",
-                                                            isExp ? "bg-[#FB7506] border-[#FB7506] text-white" : "border-gray-200 text-gray-500 hover:border-[#FB7506] hover:text-[#FB7506]")}>
-                                                        <ChevronDown size={14} className={cn("transition-transform", isExp ? "rotate-180" : "")} />
-                                                    </button>
+                                                    {stk < 0 && (
+                                                        <button onClick={e => { e.stopPropagation(); setLcpk_box_uq(unico); setAwbExpandedCard(isExp ? null : unico); }}
+                                                            className={cn("shrink-0 mt-0.5 w-8 h-8 flex items-center justify-center rounded-full border transition-all",
+                                                                isExp ? "bg-red-500 border-red-500 text-white" : "border-red-300 text-red-400 hover:border-red-500 hover:text-red-500")}>
+                                                            <ChevronDown size={14} className={cn("transition-transform", isExp ? "rotate-180" : "")} />
+                                                        </button>
+                                                    )}
                                                 </div>
                                                 {isExp && (
                                                     <div className="border-t border-gray-100">
@@ -2083,7 +2088,7 @@ export default function InventoryEntryPage() {
                                     const isSel    = poGrower === uq;
                                     const isExp    = poExpandedCard === uq;
                                     return (
-                                        <div key={i} className={cn("border rounded-xl overflow-hidden shadow-sm transition-colors",
+                                        <div key={i} className={cn("border rounded-xl overflow-hidden shadow-sm transition-colors min-h-[80px]",
                                             isSel ? "border-[#7C3AED]" : "border-gray-200")}>
                                             <div className="flex items-center gap-2 p-3 cursor-pointer" onClick={() => { setPoGrower(uq); setSelPOLine(null); }}>
                                                 <div className="flex-1 min-w-0">
