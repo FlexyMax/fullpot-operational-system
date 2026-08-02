@@ -1631,8 +1631,8 @@ export default function InventoryEntryPage() {
                                         const sel = lcpack_uq === uq;
                                         const st  = t(row.STATUS ?? row.PSTATUS ?? "").toUpperCase();
                                         const statusStyle = !sel
-                                            ? st === "OPEN"   ? { borderLeftColor: "rgb(22,163,74)",  borderLeftWidth: "3px", borderLeftStyle: "solid" as const, backgroundColor: "rgba(22,163,74,0.05)"  }
-                                            : st === "CLOSED" ? { borderLeftColor: "rgb(239,68,68)",  borderLeftWidth: "3px", borderLeftStyle: "solid" as const, backgroundColor: "rgba(239,68,68,0.05)" }
+                                            ? st === "OPEN"   ? { borderLeftColor: "rgb(251,117,6)",  borderLeftWidth: "3px", borderLeftStyle: "solid" as const, backgroundColor: "rgba(251,117,6,0.05)"  }
+                                            : st === "CLOSED" ? { borderLeftColor: "rgb(22,163,74)",   borderLeftWidth: "3px", borderLeftStyle: "solid" as const, backgroundColor: "rgba(22,163,74,0.05)" }
                                             : undefined
                                             : undefined;
                                         return (
@@ -1659,7 +1659,7 @@ export default function InventoryEntryPage() {
                                                         </div>
                                                     </div>
                                                     <span className={cn("text-[10px] font-black uppercase px-2 py-0.5 rounded shrink-0",
-                                                        st === "CLOSED" ? "bg-red-100 text-red-500" : st === "OPEN" ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-400")}>
+                                                        st === "CLOSED" ? "bg-green-100 text-green-600" : st === "OPEN" ? "bg-orange-100 text-[#FB7506]" : "bg-gray-100 text-gray-400")}>
                                                         {st || "—"}
                                                     </span>
                                                 </div>
