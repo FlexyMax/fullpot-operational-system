@@ -363,6 +363,7 @@ export default function InventoryEntryPage() {
     const [prodMobileSearchOpen, setProdMobileSearchOpen] = useState(false);
     const [awbMobileSearchOpen,  setAwbMobileSearchOpen]  = useState(false);
     const [poExpandedCard,       setPoExpandedCard]       = useState<string | null>(null);
+    const [poMobGrower,          setPoMobGrower]          = useState<string>("");
 
     // ── Filter state ──────────────────────────────────────────────────────────
     const [filterGrowerUq,  setFilterGrowerUq]  = useState("");
@@ -467,6 +468,15 @@ export default function InventoryEntryPage() {
         queryKey: ["ie-po-grower", poGrower, ldship_date],
         queryFn:  () => fetch(`/api/inventory-entry/purchase-orders?ship_date=${ldship_date}&grower_uq=${poGrower}`).then(r => r.json()).then(d => norm(d.byGrower ?? [])),
         enabled:  !!poGrower,
+        staleTime: 0,
+    });
+
+    // Separate query for mobile expanded cards — isolated from poGrower so clicking
+    // another card body doesn't corrupt the expanded card's data.
+    const { data: poMobLines = EMPTY_ARR, isFetching: loadingPOMob } = useQuery({
+        queryKey: ["ie-po-mob", poMobGrower, ldship_date],
+        queryFn:  () => fetch(`/api/inventory-entry/purchase-orders?ship_date=${ldship_date}&grower_uq=${poMobGrower}`).then(r => r.json()).then(d => norm(d.byGrower ?? [])),
+        enabled:  !!poMobGrower,
         staleTime: 0,
     });
 
@@ -2106,19 +2116,19 @@ export default function InventoryEntryPage() {
                                                         <span className="text-[#7C3AED] font-bold ml-auto">{fmt2(row.EXT_PRICE)}</span>
                                                     </div>
                                                 </div>
-                                                <button onClick={e => { e.stopPropagation(); setPoGrower(uq); setSelPOLine(null); setPoExpandedCard(isExp ? null : uq); }}
+                                                <button onClick={e => { e.stopPropagation(); setPoGrower(uq); setSelPOLine(null); const next = isExp ? null : uq; setPoExpandedCard(next); if (next) setPoMobGrower(next); }}
                                                     className={cn("shrink-0 w-8 h-8 flex items-center justify-center rounded-full border transition-all",
                                                         isExp ? "bg-[#7C3AED] border-[#7C3AED] text-white" : "border-gray-200 text-gray-500 hover:border-[#7C3AED] hover:text-[#7C3AED]")}>
                                                     <ChevronDown size={14} className={cn("transition-transform", isExp ? "rotate-180" : "")} />
                                                 </button>
                                             </div>
                                             {isExp && (
-                                                <div className="border-t border-gray-100">
-                                                    {loadingPOG ? (
+                                                <div className="border-t border-gray-100 overflow-auto max-h-[600px]">
+                                                    {loadingPOMob ? (
                                                         <div className="flex justify-center py-3"><RefreshCcw size={14} className="animate-spin text-gray-400" /></div>
-                                                    ) : (poByGrower as any[]).length === 0 ? (
+                                                    ) : (poMobLines as any[]).length === 0 ? (
                                                         <p className="text-xs text-gray-400 italic text-center py-3">No P.O. lines</p>
-                                                    ) : (poByGrower as any[]).map((pl: any, pi: number) => {
+                                                    ) : (poMobLines as any[]).map((pl: any, pi: number) => {
                                                         const pSel = selPOLine && t(selPOLine.PORDER_UQ) === t(pl.PORDER_UQ) && t(selPOLine.SORDER_NO) === t(pl.SORDER_NO);
                                                         return (
                                                             <div key={pi} onClick={() => setSelPOLine(pl)}
