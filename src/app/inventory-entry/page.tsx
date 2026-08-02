@@ -1629,12 +1629,17 @@ export default function InventoryEntryPage() {
                                     ) : (plControlAll as any[]).map((row: any, i: number) => {
                                         const uq  = packingId(row);
                                         const sel = lcpack_uq === uq;
-                                        const st  = t(row.STATUS ?? row.PSTATUS ?? "");
+                                        const st  = t(row.STATUS ?? row.PSTATUS ?? "").toUpperCase();
+                                        const statusStyle = !sel
+                                            ? st === "OPEN"   ? { borderLeftColor: "rgb(22,163,74)",  borderLeftWidth: "3px", borderLeftStyle: "solid" as const, backgroundColor: "rgba(22,163,74,0.05)"  }
+                                            : st === "CLOSED" ? { borderLeftColor: "rgb(239,68,68)",  borderLeftWidth: "3px", borderLeftStyle: "solid" as const, backgroundColor: "rgba(239,68,68,0.05)" }
+                                            : undefined
+                                            : undefined;
                                         return (
                                             <div key={i} onClick={() => handleSelectPacking(row)}
                                                 className={cn("border rounded-xl p-3 cursor-pointer transition-colors",
                                                     sel ? "border-[#FB7506] bg-[#FB7506]/5" : "border-gray-200 hover:border-gray-300")}
-                                                style={!sel ? subtleColorFromInt(row.COLOR) : undefined}>
+                                                style={statusStyle}>
                                                 <div className="flex items-start justify-between gap-2">
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex items-center gap-2 mb-0.5">
@@ -1781,9 +1786,9 @@ export default function InventoryEntryPage() {
                                         const isExp = awbExpandedCard === unico;
                                         const stk   = Number(row.STOCK ?? 0);
                                         return (
-                                            <div key={i} className={cn("border rounded-xl overflow-hidden shadow-sm transition-colors min-h-[88px]",
+                                            <div key={i} className={cn("border rounded-xl overflow-hidden shadow-sm transition-colors min-h-[130px]",
                                                 isSel ? "border-[#FB7506]" : "border-gray-200")}>
-                                                <div className="flex items-start gap-2 p-3 cursor-pointer" onClick={() => setLcpk_box_uq(unico)}>
+                                                <div className="flex items-start gap-2 p-4 cursor-pointer" onClick={() => setLcpk_box_uq(unico)}>
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex items-center gap-2 mb-0.5">
                                                             <span className="font-bold text-[11px] text-[#FB7506]">{t(row.AWBCODE)}</span>
@@ -2122,6 +2127,9 @@ export default function InventoryEntryPage() {
                                                                 <div className="flex gap-2 items-center">
                                                                     <span className="font-bold text-[12px] text-[#FB7506]">{t(pl.PORDER ?? pl.PORDER_NO ?? "")}</span>
                                                                     <span className="text-[11px] text-gray-500 truncate flex-1">{t(pl.CUSTOMER ?? "")}</span>
+                                                                    {pl.DISPATCHED === 1 || pl.dispatched === 1 ? (
+                                                                        <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-green-100 text-green-600 shrink-0">dispatched</span>
+                                                                    ) : null}
                                                                 </div>
                                                                 <p className="text-[12px] font-medium text-gray-800 truncate">{t(pl.DESCRIPTION ?? pl.VARIETY ?? "")}</p>
                                                                 <div className="flex flex-wrap gap-x-3 text-[11px]">

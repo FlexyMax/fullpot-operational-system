@@ -8,25 +8,12 @@ export async function GET(req: NextRequest) {
     const dateVal = new Date(ship_date || new Date().toISOString().split("T")[0]);
     try {
         if (grower_uq === "ALL") {
-            const summaryR = await executeProcedure("sp_flower_prebook_box_porder_dates_growers", { ldship_date: dateVal });
-            const growers  = (summaryR.recordset ?? []).filter((g: any) => {
-                const uq = g.GROWER_UQ ?? g.GRO_UQ ?? g.VENDOR_UQ ?? g.GROW_UQ ?? "";
-                return uq && String(uq).trim();
-            });
-            const chunks = await Promise.all(
-                growers.map((g: any) => {
-                    const uq = g.GROWER_UQ ?? g.GRO_UQ ?? g.VENDOR_UQ ?? g.GROW_UQ ?? "";
-                    return executeProcedure("sp_flower_porders_by_grower", { grower_uq: uq, date: dateVal })
-                        .then((r: any) => r.recordset ?? []);
-                })
-            );
-            return NextResponse.json({ byGrower: chunks.flat(), summary: [] });
+            // Pass "%" — sp_NC_porders_by_grower uses LIKE so % returns all growers in one call
+            const r = await executeProcedure("sp_NC_porders_by_grower", { grower_uq: "%", date: dateVal });
+            return NextResponse.json({ byGrower: r.recordset ?? [], summary: [] });
         }
         if (grower_uq) {
-            const r = await executeProcedure("sp_flower_porders_by_grower", {
-                grower_uq: grower_uq,
-                date:      dateVal,
-            });
+            const r = await executeProcedure("sp_NC_porders_by_grower", { grower_uq, date: dateVal });
             return NextResponse.json({ byGrower: r.recordset ?? [], summary: [] });
         }
         const r = await executeProcedure("sp_flower_prebook_box_porder_dates_growers", {
