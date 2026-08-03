@@ -6,7 +6,7 @@ AS BEGIN
         cwp.unico,
         cwp.customer_uq,
         cwp.pw_uq,
-        wp.warehouse,
+        wp.wp_name,
         wp.description
     FROM   flower_customers_wphysical cwp
     JOIN   flower_warehouses_physical  wp  ON wp.unico = cwp.pw_uq
