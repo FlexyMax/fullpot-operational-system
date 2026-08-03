@@ -9,7 +9,7 @@ AS BEGIN
         wp.warehouse,
         wp.description
     FROM   flower_customers_wphysical cwp
-    JOIN   flower_warehouse_physical  wp  ON wp.unico = cwp.pw_uq
+    JOIN   flower_warehouses_physical  wp  ON wp.unico = cwp.pw_uq
     WHERE  cwp.customer_uq = @customer_uq
     ORDER  BY wp.warehouse;
 END
