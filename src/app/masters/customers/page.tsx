@@ -7,7 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     Search, Plus, Minus, Pencil, Trash2, Save, X, RefreshCcw,
     Download, Users, Truck, FileText, MessageSquare, Check,
-    AlertCircle, Copy, Star, XCircle
+    AlertCircle, Copy, Star, XCircle, Building2, ArrowRight, ArrowLeft
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { AppFooter } from "@/components/layout/AppFooter";
@@ -65,6 +65,7 @@ export default function CustomersSetupPage() {
     const [shiptoForm,     setShiptoForm]     = useState<any>(EMPTY_SHIPTO);
     const [carrierForm,    setCarrierForm]    = useState<any>(EMPTY_CARRIER);
     const [webUserForm,    setWebUserForm]    = useState<any>(EMPTY_WEBUSER);
+    const [storesModal,    setStoresModal]    = useState(false);
     const [msgForm,        setMsgForm]        = useState({ comments:"", deadline:"", user_to:"" });
     const [formError,      setFormError]      = useState<string | null>(null);
     const [saving,         setSaving]         = useState(false);
@@ -685,7 +686,8 @@ export default function CustomersSetupPage() {
                                                                     menuItems={[
                                                                         { label: "Add User", icon: Plus, color: "green", onClick: () => { setWebUserForm({...EMPTY_WEBUSER}); setFormError(null); setWebUserModal({ mode:"add" }); }, disabled: !selCust || !perms.canCreate },
                                                                         { label: "Edit User", icon: Pencil, color: "orange", onClick: () => { if(!selWebUser) return; setWebUserForm({fname:t(selWebUser.fname),lname:t(selWebUser.lname),username:t(selWebUser.username),password:t(selWebUser.password),active:!!selWebUser.active,makeinvoice:!!selWebUser.makeinvoice,makeprebook:!!selWebUser.makeprebook,makecredit:!!selWebUser.makecredit,viewaccount:!!selWebUser.viewaccount,viewproducts:!!selWebUser.viewproducts,viewhistory:!!selWebUser.viewhistory,email:t(selWebUser.email),phone:t(selWebUser.phone)}); setFormError(null); setWebUserModal({ mode:"edit" }); }, disabled: !selWebUser || !perms.canEdit },
-                                                                        { label: "Delete User", icon: Trash2, color: "orange", onClick: () => { if(selWebUser) { setFormError(null); setWebUserModal({ mode:"delete" }); } }, disabled: !selWebUser || !perms.canDelete },
+                                                                        { label: "Delete User", icon: Trash2, color: "orange", onClick: () => { if(selWebUser) { setFormError(null); setWebUserModal({ mode:"delete" }); } }, disabled: !selWebUser || !perms.canDelete, separator: true },
+                                                                        { label: "Manage Stores", icon: Building2, color: "blue", onClick: () => setStoresModal(true), disabled: !selCust },
                                                                     ]}
                                                                 >
                                                                     {(webUsers as any[]).length === 0 ? <div className="h-32 flex items-center justify-center text-gray-400 text-xs italic">{loadingWebUsers ? "Loading..." : "No web users"}</div> : (
@@ -885,6 +887,15 @@ export default function CustomersSetupPage() {
             {msgModal && (
                 <MsgModal form={msgForm} setForm={setMsgForm} error={formError} saving={saving}
                     onSave={saveMsg} onClose={() => { setMsgModal(false); setFormError(null); }} />
+            )}
+
+            {/* ── MANAGE STORES MODAL ───────────────────────────────────── */}
+            {storesModal && selCust && (
+                <ModalCustomerStores
+                    custUnico={t(selCust.unico)}
+                    custName={t(selCust.customer)}
+                    onClose={() => setStoresModal(false)}
+                />
             )}
             {/* ── STATEMENT MODAL ───────────────────────────────────────── */}
             {stmtModal && (
@@ -1357,6 +1368,178 @@ function ConfirmDlg({ title, msg, onConfirm, onCancel, saving, error }: any) {
                 <div className="flex border-t border-gray-100">
                     <button onClick={onCancel} className="flex-1 py-3 text-sm font-bold text-gray-600 hover:bg-gray-50 border-r border-gray-100">Cancel</button>
                     <button onClick={onConfirm} disabled={saving} className="flex-1 py-3 text-sm font-black text-red-600 hover:bg-red-50 disabled:opacity-50">{saving ? "..." : "Delete"}</button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ─── Manage Stores Modal ──────────────────────────────────────────────────────
+function ModalCustomerStores({ custUnico, custName, onClose }: { custUnico: string; custName: string; onClose: () => void }) {
+    const qc = useQueryClient();
+
+    // All warehouses
+    const { data: allWh = [] } = useQuery<any[]>({
+        queryKey: ["freights-warehouses"],
+        queryFn: () => fetch("/api/freights/warehouses").then(r => r.json()),
+        staleTime: 60_000,
+    });
+
+    // Assigned warehouses for this customer
+    const { data: assigned = [], refetch: refetchAssigned, isFetching } = useQuery<any[]>({
+        queryKey: ["customer-wphysical", custUnico],
+        queryFn: () => fetch(`/api/masters/customers/${custUnico}/wphysical`).then(r => r.json()),
+        staleTime: 0,
+    });
+
+    const assignedUqs = new Set((assigned as any[]).map((a: any) => t(a.pw_uq)));
+    const available   = (allWh as any[]).filter((w: any) => !assignedUqs.has(t(w.unico)));
+
+    const [selAvail,  setSelAvail]  = useState<any>(null);
+    const [selAssign, setSelAssign] = useState<any>(null);
+    const [saving, setSaving] = useState(false);
+    const [error,  setError]  = useState<string | null>(null);
+
+    const add = async () => {
+        if (!selAvail) return;
+        setSaving(true); setError(null);
+        try {
+            const res = await fetch(`/api/masters/customers/${custUnico}/wphysical`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ pw_uq: t(selAvail.unico) }),
+            });
+            const d = await res.json();
+            if (!d.success) { setError(d.error || "Error adding store"); return; }
+            setSelAvail(null);
+            qc.invalidateQueries({ queryKey: ["customer-wphysical", custUnico] });
+            refetchAssigned();
+        } catch (e: any) {
+            setError(e.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const remove = async () => {
+        if (!selAssign) return;
+        setSaving(true); setError(null);
+        try {
+            const res = await fetch(`/api/masters/customers/${custUnico}/wphysical/${t(selAssign.unico)}`, {
+                method: "DELETE",
+            });
+            const d = await res.json();
+            if (!d.success) { setError(d.error || "Error removing store"); return; }
+            setSelAssign(null);
+            qc.invalidateQueries({ queryKey: ["customer-wphysical", custUnico] });
+            refetchAssigned();
+        } catch (e: any) {
+            setError(e.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const wName = (w: any) => t(w.warehouse ?? w.wp_name ?? w.description ?? "");
+
+    return (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+                {/* Header */}
+                <div className="h-12 bg-[#374151] flex items-center justify-between pl-4 pr-3 shrink-0 rounded-t-xl">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <Building2 size={16} className="text-[#FB7506] shrink-0" />
+                        <span className="font-black text-xs uppercase tracking-widest text-white truncate">
+                            Manage Stores — {custName}
+                        </span>
+                    </div>
+                    <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+                        <X size={18} />
+                    </button>
+                </div>
+
+                {/* Body */}
+                <div className="flex-1 min-h-0 flex gap-0 overflow-hidden">
+                    {/* Available */}
+                    <div className="flex-1 flex flex-col border-r border-gray-200 min-h-0">
+                        <div className="h-8 bg-gray-100 flex items-center px-3 shrink-0 border-b border-gray-200">
+                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Available Stores ({available.length})</span>
+                        </div>
+                        <div className="flex-1 overflow-y-auto">
+                            {available.length === 0 ? (
+                                <div className="h-20 flex items-center justify-center text-gray-400 text-xs italic">All stores assigned</div>
+                            ) : available.map((w: any) => (
+                                <button
+                                    key={t(w.unico)}
+                                    onClick={() => setSelAvail(selAvail?.unico === w.unico ? null : w)}
+                                    className={cn(
+                                        "w-full text-left px-3 py-2 text-xs border-b border-gray-100 transition-colors",
+                                        selAvail?.unico === w.unico
+                                            ? "bg-[#FB7506]/10 font-bold text-[#FB7506]"
+                                            : "hover:bg-gray-50 text-gray-700"
+                                    )}
+                                >
+                                    {wName(w)}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="w-16 flex flex-col items-center justify-center gap-3 shrink-0 px-2">
+                        <button
+                            onClick={add}
+                            disabled={!selAvail || saving}
+                            title="Add store"
+                            className="w-9 h-9 rounded-full bg-green-500 hover:bg-green-600 disabled:opacity-30 text-white flex items-center justify-center transition-colors shadow"
+                        >
+                            <ArrowRight size={16} />
+                        </button>
+                        <button
+                            onClick={remove}
+                            disabled={!selAssign || saving}
+                            title="Remove store"
+                            className="w-9 h-9 rounded-full bg-red-500 hover:bg-red-600 disabled:opacity-30 text-white flex items-center justify-center transition-colors shadow"
+                        >
+                            <ArrowLeft size={16} />
+                        </button>
+                    </div>
+
+                    {/* Assigned */}
+                    <div className="flex-1 flex flex-col min-h-0">
+                        <div className="h-8 bg-gray-100 flex items-center px-3 shrink-0 border-b border-gray-200">
+                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Assigned Stores ({(assigned as any[]).length})</span>
+                            {isFetching && <RefreshCcw size={10} className="animate-spin text-gray-400 ml-2" />}
+                        </div>
+                        <div className="flex-1 overflow-y-auto">
+                            {(assigned as any[]).length === 0 ? (
+                                <div className="h-20 flex items-center justify-center text-gray-400 text-xs italic">No stores assigned</div>
+                            ) : (assigned as any[]).map((a: any) => (
+                                <button
+                                    key={t(a.unico)}
+                                    onClick={() => setSelAssign(selAssign?.unico === a.unico ? null : a)}
+                                    className={cn(
+                                        "w-full text-left px-3 py-2 text-xs border-b border-gray-100 transition-colors",
+                                        selAssign?.unico === a.unico
+                                            ? "bg-[#FB7506]/10 font-bold text-[#FB7506]"
+                                            : "hover:bg-gray-50 text-gray-700"
+                                    )}
+                                >
+                                    {wName(a)}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Footer */}
+                {error && (
+                    <div className="px-4 py-2 bg-red-50 border-t border-red-100 text-xs text-red-600 font-bold shrink-0">
+                        {error}
+                    </div>
+                )}
+                <div className="flex justify-end px-4 py-3 bg-gray-50 border-t shrink-0 rounded-b-xl">
+                    <button onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-100">Close</button>
                 </div>
             </div>
         </div>
