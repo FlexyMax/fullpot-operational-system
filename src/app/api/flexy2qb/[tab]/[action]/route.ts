@@ -234,11 +234,11 @@ export async function POST(req: NextRequest, context: { params: Promise<{ tab: s
                     procName = "sp_flower_accounts_income_dates_qb_sent";
                     spParams = { ldin_date: body.ldin_date };
                 } else if (action === "update-ready") {
-                    procName = "sp_flower_accounts_income_update_ready_to_qbooks";
-                    spParams = { lcincome_uq: body.lcincome_uq, llready: body.llready, llByReadyByDate: body.llByReadyByDate };
+                    procName = "sp_NC_accounts_income_update_ready_to_qbooks";
+                    spParams = { lcincome_uq: body.lcincome_uq, llready: body.llready, llByReadyByDate: body.llByReadyByDate, ldin_date: body.ldin_date ?? null };
                 } else if (action === "send") {
-                    procName = "sp_flower_accounts_income_update_sent_to_qbooks";
-                    spParams = { lcincome_uq: body.lcincome_uq, llready: body.llready, llByReadyByDate: body.llByReadyByDate };
+                    procName = "sp_NC_accounts_income_update_sent_to_qbooks";
+                    spParams = { lcincome_uq: body.lcincome_uq, llready: body.llready, llByReadyByDate: body.llByReadyByDate, ldin_date: body.ldin_date ?? null };
                 }
                 break;
         }
