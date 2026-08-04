@@ -229,7 +229,6 @@ export default function CustomersSetupPage() {
         if (!custForm.zip.trim())      return "Zip code is required.";
         if (!custForm.country.trim())  return "Country is required.";
         if (!custForm.phone_1.trim())  return "Phone number is required.";
-        if (!custForm.fax_1.trim())    return "Fax number is required.";
         if (!custForm.terms_uq?.trim() && !custForm.terms?.trim()) return "Terms is required.";
         if (!custForm.salesman_uq?.trim()) return "Salesman is required.";
         if (!custForm.group_uq?.trim())    return "Group is required.";
@@ -1089,7 +1088,7 @@ function CustomerModal({ mode, form, setForm, error, saving, activeTab, setActiv
                                 {F("City *","city")} {F("State *","state",{placeholder:"FL"})} {F("Zip *","zip")} {F("Country *","country")}
                             </div>
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                {F("Phone 1 *","phone_1")} {F("Phone 2","phone_2")} {F("Fax 1 *","fax_1")} {F("Fax 2","fax_2")}
+                                {F("Phone 1 *","phone_1")} {F("Phone 2","phone_2")} {F("Fax 1","fax_1")} {F("Fax 2","fax_2")}
                             </div>
                             <div className="grid grid-cols-1 gap-3">
                                 {F("Email","email")} {F("Website","website")}
