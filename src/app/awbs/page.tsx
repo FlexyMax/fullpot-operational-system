@@ -7,7 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     RefreshCcw, Search, XCircle, Save, Trash2,
     Plus, Pencil, Printer, BarChart2, Calendar, Plane, FileText,
-    Package, DollarSign, Loader2, X,
+    Package, DollarSign, Loader2, X, Upload,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -168,8 +168,11 @@ function AwbsChargesModal({ mode, charge, awbcode, airline, onClose, onSaved }: 
         full_boxes:   charge?.FULL_BOXES   ?? 0,
         weight:       charge?.TOTAL_WEIGHT ?? charge?.WEIGHT   ?? 0,
     } : blank);
-    const [saving, setSaving] = useState(false);
-    const [error,  setError]  = useState<string | null>(null);
+    const [saving,    setSaving]    = useState(false);
+    const [error,     setError]     = useState<string | null>(null);
+    const [scanning,  setScanning]  = useState(false);
+    const [scanError, setScanError] = useState<string | null>(null);
+    const fileRef = useRef<HTMLInputElement>(null);
 
     const { data: suppliers   = EMPTY_ARR } = useQuery({ queryKey: ["awb-suppliers"],    queryFn: () => awbFetch("/api/awbs/lookups/suppliers"),    staleTime: 60000, select: (d: any) => d.records ?? [] });
     const { data: chargeTypes = EMPTY_ARR } = useQuery({ queryKey: ["awb-chargetypes"],  queryFn: () => awbFetch("/api/awbs/lookups/charge-types"), staleTime: 60000, select: (d: any) => d.records ?? [] });
@@ -196,6 +199,54 @@ function AwbsChargesModal({ mode, charge, awbcode, airline, onClose, onSaved }: 
     const F = (key: string, num = false) => num
         ? { type: "number" as const, step: "0.01", value: form[key] ?? 0, onChange: (e: any) => setForm((p: any) => ({ ...p, [key]: parseFloat(e.target.value) || 0 })) }
         : { value: form[key] ?? "", onChange: (e: any) => setForm((p: any) => ({ ...p, [key]: e.target.value })) };
+
+    const fuzzySupplier = (name: string): string => {
+        if (!name) return "";
+        const n = name.toLowerCase().trim();
+        for (const s of suppliers as any[]) {
+            const g = t(s.GROWER ?? s.grower ?? "").toLowerCase();
+            if (g === n) return t(s.UNICO ?? s.unico);
+        }
+        const words = n.split(/\s+/).filter((w: string) => w.length > 2);
+        let best = "", bestScore = 0;
+        for (const s of suppliers as any[]) {
+            const g     = t(s.GROWER ?? s.grower ?? "").toLowerCase();
+            const score = words.filter((w: string) => g.includes(w)).length;
+            if (score > bestScore) { bestScore = score; best = t(s.UNICO ?? s.unico); }
+        }
+        return bestScore >= 1 ? best : "";
+    };
+
+    const handleScan = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (fileRef.current) fileRef.current.value = "";
+        if (!file) return;
+        setScanning(true);
+        setScanError(null);
+        try {
+            const fd = new FormData();
+            fd.append("file", file);
+            fd.append("awbcode", awbcode);
+            const res  = await fetch("/api/awbs/charges/scan-invoice", { method: "POST", body: fd });
+            const json = await res.json();
+            if (!json.success) throw new Error(json.error ?? "Scan failed");
+            const d = json.data;
+            const supplierMatch = fuzzySupplier(d.vendor_name ?? "");
+            setForm((p: any) => ({
+                ...p,
+                ...(d.amount       != null  ? { freight:      d.amount }       : {}),
+                ...(d.invoice_no            ? { invoice_no:   d.invoice_no }   : {}),
+                ...(d.invoice_date          ? { invoice_date: d.invoice_date } : {}),
+                ...(d.description           ? { description:  d.description }  : {}),
+                ...(supplierMatch           ? { supplier_uq:  supplierMatch }  : {}),
+            }));
+            toast.success("Invoice scanned — review and confirm the fields.");
+        } catch (err: any) {
+            setScanError(err.message);
+        } finally {
+            setScanning(false);
+        }
+    };
 
     const save = async () => {
         if (!form.supplier_uq) { setError("Supplier is required."); return; }
@@ -224,6 +275,15 @@ function AwbsChargesModal({ mode, charge, awbcode, airline, onClose, onSaved }: 
     return (
         <FosModal title={`${isEdit ? "Edit" : "Add"} AWB Charge — ${awbcode}`} icon={DollarSign} onClose={onClose} size="sm"
             footer={<><CancelBtn onClick={onClose} /><SaveBtn saving={saving} onClick={save} /></>}>
+            {/* ── PDF Invoice Scanner ── */}
+            <input ref={fileRef} type="file" accept=".pdf" className="hidden" onChange={handleScan} />
+            <button type="button" onClick={() => fileRef.current?.click()} disabled={scanning}
+                className="flex items-center justify-center gap-2 w-full mb-3 rounded-md border-2 border-dashed border-orange-300 bg-orange-50 hover:bg-orange-100 text-orange-600 text-xs font-bold h-9 transition-colors disabled:opacity-60">
+                {scanning
+                    ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Scanning Invoice...</>
+                    : <><Upload className="w-3.5 h-3.5" /> Read Invoice PDF</>}
+            </button>
+            {scanError && <p className="mb-3 text-xs text-red-600 bg-red-50 border border-red-200 rounded px-3 py-1.5">{scanError}</p>}
             {error && <p className="mb-3 text-xs text-red-600 font-semibold bg-red-50 border border-red-200 rounded px-3 py-2">{error}</p>}
             <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="flex flex-col gap-0.5">
