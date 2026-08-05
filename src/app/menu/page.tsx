@@ -51,6 +51,7 @@ function getRoute(appPage: string): string | null {
     if (p.includes('PBOOK2INV') || p.includes('PBOOK 2 INV') || p.includes('PREBOOK TO INV') || p.includes('PREBOOK2INV') || p.includes('PREBOOK_TO_INV') || p === 'PBOOK2INVOICE') return '/pbook2invoice';
     if (p.includes('STANDING ORDER') || p.includes('STANDING_ORDER') || p.includes('VENTAS_ORDENES') || p.includes('S.O.') || p === 'SO' || p.includes('SORDER')) return '/standing-orders';
     if (p.includes('BUSINESS INTELLIGENCE') || p.includes('BUSINESS-INTELLIGENCE') || p.includes('INTELIGENCIA DE NEGOCIO') || p === 'BI') return '/business-intelligence';
+    if (p.includes('AUTOMATIC CHARGE') || p.includes('AUTO CHARGE') || p.includes('CARGO AUTOMATICO') || p.includes('VENTAS_INVOICE_AUTOMATIC')) return '/masters/automatic-charges';
     return null;
 }
 
