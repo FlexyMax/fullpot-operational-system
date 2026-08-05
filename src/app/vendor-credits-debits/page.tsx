@@ -319,27 +319,15 @@ export default function VendorCreditDebitsPage() {
                                     <PanelGridTh align="right">Amount</PanelGridTh>
                                 </PanelGridThead>
                                 <PanelGridTbody>
-                                    {selectedDate && (
-                                        <PanelGridTr selected={selectedGrowerUq === ""} onClick={() => setSelectedGrowerUq("")}>
-                                            <PanelGridTd className="font-bold text-[#FB7506]">ALL</PanelGridTd>
-                                            <PanelGridTd align="right" className="text-[#FB7506] font-bold">—</PanelGridTd>
-                                        </PanelGridTr>
-                                    )}
-                                    {vendors.filter((v: any) => {
-                                        // SP returns an "ALL" row — skip it, we render our own
-                                        const name = (v.grower ?? v.lcfarm ?? v.farm ?? "").toString().trim().toUpperCase();
-                                        return name !== "ALL";
-                                    }).length === 0 ? (
+                                    {vendors.length === 0 ? (
                                         selectedDate ? <PanelGridTr><PanelGridTd colSpan={2} className="py-6 text-center text-gray-400 italic">No vendors</PanelGridTd></PanelGridTr> : null
-                                    ) : vendors.filter((v: any) => {
-                                        const name = (v.grower ?? v.lcfarm ?? v.farm ?? "").toString().trim().toUpperCase();
-                                        return name !== "ALL";
-                                    }).map((v: any, i: number) => {
+                                    ) : vendors.map((v: any, i: number) => {
                                         const uq = v.grower_uq ?? v.lcgrower_uq ?? v.unico;
+                                        const name = v.grower ?? v.lcfarm ?? v.farm ?? "";
                                         return (
                                             <PanelGridTr key={i} selected={selectedGrowerUq === uq} onClick={() => setSelectedGrowerUq(uq)}
                                                 className={selectedGrowerUq === uq ? "!bg-[#FB7506]/10" : undefined}>
-                                                <PanelGridTd className="font-medium truncate max-w-[120px]">{v.grower ?? v.lcfarm ?? v.farm}</PanelGridTd>
+                                                <PanelGridTd className="font-medium truncate max-w-[120px]">{name}</PanelGridTd>
                                                 <PanelGridTd align="right">{formatMoney(v.total_amount ?? v.lntotal_amount)}</PanelGridTd>
                                             </PanelGridTr>
                                         );
