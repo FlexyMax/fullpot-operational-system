@@ -72,6 +72,21 @@ const formatHeaderName = (col: string) => col.replace(/_/g, " ").replace(/\b\w/g
 
 const MONEY_RE = /sale|cost|price|charge|freight|handling|credit|debit|profit|return|commi|balance|amount|ammount|discount|fee|total|net|gross/i;
 
+// SQL Server datetime columns come back from the API as ISO strings (via JSON), e.g.
+// "2026-04-01T00:00:00.000Z" — shown raw, that's unreadable noise for a date-only value.
+// Show date-only when the time part is midnight UTC (normal for a `date`/midnight `datetime`
+// column), date+time otherwise (a real timestamp column).
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
+const isDateString = (v: unknown): v is string => typeof v === "string" && ISO_DATE_RE.test(v);
+const formatDateValue = (v: string) => {
+    const d = new Date(v);
+    if (isNaN(d.getTime())) return v;
+    const isMidnightUtc = d.getUTCHours() === 0 && d.getUTCMinutes() === 0 && d.getUTCSeconds() === 0 && d.getUTCMilliseconds() === 0;
+    const datePart = d.toLocaleDateString("en-US", { timeZone: "UTC" });
+    if (isMidnightUtc) return datePart;
+    return `${datePart} ${d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}`;
+};
+
 function defaultRange() {
     const end   = new Date();
     const start = new Date();
@@ -167,8 +182,9 @@ export default function BusinessIntelligencePage() {
     const [search, setSearch]               = useState("");
     const [range, setRange]                 = useState(defaultRange());
     const [reportData, setReportData]       = useState<BIReportData | null>(null);
-    const [configName, setConfigName]       = useState("");
+    const [configName, setConfigName]           = useState("");
     const [selectedConfigUnico, setSelectedConfigUnico] = useState<string | null>(null);
+    const [loadedConfigName, setLoadedConfigName]       = useState<string | null>(null);
     const gridApiRef = useRef<GridApi | null>(null);
     const pendingConfigRef = useRef<BIConfigJson | null>(null);
 
@@ -251,18 +267,21 @@ export default function BusinessIntelligencePage() {
                 columnState:  api ? cleanColumnState(api.getColumnState()) : [],
                 filterModel:  api ? api.getFilterModel() : null,
             };
-            const body = { report_uq: selectedUnico, name: configName.trim(), config_json: JSON.stringify(payload) };
-            if (selectedConfigUnico) {
+            const trimmedName = configName.trim();
+            const body = { report_uq: selectedUnico, name: trimmedName, config_json: JSON.stringify(payload) };
+            // Update only when a config is loaded AND the name hasn't changed —
+            // renaming means "save as new config", not "rename and overwrite".
+            const isUpdate = !!selectedConfigUnico && trimmedName === loadedConfigName;
+            if (isUpdate) {
                 return apiPut(`/api/bi/saved-configs/${selectedConfigUnico}`, body);
             }
             return apiPost("/api/bi/saved-configs", body);
         },
         onSuccess: (data: { unico?: string; message?: string }) => {
-            // Mark saved-configs queries as stale without an immediate refetch so the
-            // grid state is not disturbed right after the user saves.
             queryClient.invalidateQueries({ queryKey: ["bi-saved-configs", selectedUnico], refetchType: "none" });
             queryClient.invalidateQueries({ queryKey: ["bi-saved-configs-all"], refetchType: "none" });
             if (data.unico && !selectedConfigUnico) setSelectedConfigUnico(data.unico);
+            setLoadedConfigName(configName.trim());
             toast.success(data.message || "Configuration saved.");
         },
         onError: (e: Error) => toast.error(e.message),
@@ -278,6 +297,7 @@ export default function BusinessIntelligencePage() {
             queryClient.invalidateQueries({ queryKey: ["bi-saved-configs-all"], refetchType: "none" });
             setSelectedConfigUnico(null);
             setConfigName("");
+            setLoadedConfigName(null);
             toast.success(data.message || "Configuration deleted.");
         },
         onError: (e: Error) => toast.error(e.message),
@@ -293,6 +313,7 @@ export default function BusinessIntelligencePage() {
         }
         setSelectedConfigUnico(config.unico);
         setConfigName(config.name);
+        setLoadedConfigName(config.name);
         if (parsed.range?.fechaInicio && parsed.range?.fechaFin) {
             setRange(parsed.range);
         }
@@ -309,6 +330,7 @@ export default function BusinessIntelligencePage() {
         setReportData(null);
         setSelectedConfigUnico(null);
         setConfigName("");
+        setLoadedConfigName(null);
         pendingConfigRef.current = null;
     };
 
@@ -331,8 +353,9 @@ export default function BusinessIntelligencePage() {
     const columnDefs: ColDef[] = useMemo(() => {
         if (!reportData) return [];
         return reportData.columns.map((col) => {
-            const sample    = reportData.rows[0]?.[col];
+            const sample    = reportData.rows.find((r) => r[col] != null)?.[col];
             const isNumeric = typeof sample === "number";
+            const isDate    = isDateString(sample);
             return {
                 field:          col,
                 headerName:     formatHeaderName(col),
@@ -342,6 +365,8 @@ export default function BusinessIntelligencePage() {
                 aggFunc:        isNumeric ? "sum" : undefined,
                 valueFormatter: isNumeric
                     ? (p: ValueFormatterParams) => (p.value == null ? "" : MONEY_RE.test(col) ? `$${Number(p.value).toFixed(2)}` : Number(p.value).toLocaleString())
+                    : isDate
+                    ? (p: ValueFormatterParams) => (p.value == null ? "" : isDateString(p.value) ? formatDateValue(p.value) : String(p.value))
                     : undefined,
             };
         });
@@ -396,7 +421,7 @@ export default function BusinessIntelligencePage() {
                     >
                         {filteredReports.map((r) => (
                             <option key={r.unico} value={r.unico}>
-                                {r.title}{reportsWithConfigs.has(r.unico) ? "  ✓ saved" : ""}
+                                {reportsWithConfigs.has(r.unico) ? "✓ " : ""}{r.title}
                             </option>
                         ))}
                     </select>
@@ -465,13 +490,14 @@ export default function BusinessIntelligencePage() {
                     className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[#FB7506] hover:bg-orange-600 text-white text-[11px] font-black uppercase tracking-wide rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
                 >
                     {saveConfig.isPending ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
-                    {selectedConfigUnico ? "Update" : "Save"}
+                    Save
                 </button>
 
                 <button
                     onClick={() => {
                         setSelectedConfigUnico(null);
                         setConfigName("");
+                        setLoadedConfigName(null);
                     }}
                     className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-gray-200 hover:bg-gray-100 text-gray-700 text-[11px] font-black uppercase tracking-wide rounded transition-colors shrink-0"
                 >
