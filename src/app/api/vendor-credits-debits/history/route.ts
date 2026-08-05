@@ -5,7 +5,7 @@ export async function GET(req: NextRequest) {
     const growerUq = req.nextUrl.searchParams.get("grower_uq") ?? "";
     const from     = req.nextUrl.searchParams.get("from")      ?? "";
     const to       = req.nextUrl.searchParams.get("to")        ?? "";
-    if (!growerUq) return NextResponse.json({ error: "grower_uq required" }, { status: 400 });
+    // empty growerUq = ALL vendors (SP handles it)
     try {
         const r = await executeProcedure("sp_flower_accounts_pay_cr_history", {
             lcgrower_uq: growerUq,  // verified: @lcgrower_uq(varchar)

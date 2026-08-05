@@ -32,7 +32,7 @@ export const useVendorCrDbStore = create<VendorCrDbState>((set) => ({
     selectedDate:     null,
     selectedGrowerUq: null,
     selectedUnico:    null,
-    historyGrowerUq:  null,
+    historyGrowerUq:  "",   // "" = ALL vendors
     historyFrom:      iso30DaysAgo(),
     historyTo:        isoToday(),
 

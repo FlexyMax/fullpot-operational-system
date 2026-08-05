@@ -325,14 +325,25 @@ export default function VendorCreditDebitsPage() {
                                             <PanelGridTd align="right" className="text-[#FB7506] font-bold">—</PanelGridTd>
                                         </PanelGridTr>
                                     )}
-                                    {vendors.length === 0 ? (
+                                    {vendors.filter((v: any) => {
+                                        // SP returns an "ALL" row — skip it, we render our own
+                                        const name = (v.grower ?? v.lcfarm ?? v.farm ?? "").toString().trim().toUpperCase();
+                                        return name !== "ALL";
+                                    }).length === 0 ? (
                                         selectedDate ? <PanelGridTr><PanelGridTd colSpan={2} className="py-6 text-center text-gray-400 italic">No vendors</PanelGridTd></PanelGridTr> : null
-                                    ) : vendors.map((v: any, i: number) => (
-                                        <PanelGridTr key={i} selected={selectedGrowerUq === (v.grower_uq ?? v.lcgrower_uq)} onClick={() => setSelectedGrowerUq(v.grower_uq ?? v.lcgrower_uq)}>
-                                            <PanelGridTd className="font-medium truncate max-w-[120px]">{v.grower ?? v.lcfarm ?? v.farm}</PanelGridTd>
-                                            <PanelGridTd align="right">{formatMoney(v.total_amount ?? v.lntotal_amount)}</PanelGridTd>
-                                        </PanelGridTr>
-                                    ))}
+                                    ) : vendors.filter((v: any) => {
+                                        const name = (v.grower ?? v.lcfarm ?? v.farm ?? "").toString().trim().toUpperCase();
+                                        return name !== "ALL";
+                                    }).map((v: any, i: number) => {
+                                        const uq = v.grower_uq ?? v.lcgrower_uq ?? v.unico;
+                                        return (
+                                            <PanelGridTr key={i} selected={selectedGrowerUq === uq} onClick={() => setSelectedGrowerUq(uq)}
+                                                className={selectedGrowerUq === uq ? "!bg-[#FB7506]/10" : undefined}>
+                                                <PanelGridTd className="font-medium truncate max-w-[120px]">{v.grower ?? v.lcfarm ?? v.farm}</PanelGridTd>
+                                                <PanelGridTd align="right">{formatMoney(v.total_amount ?? v.lntotal_amount)}</PanelGridTd>
+                                            </PanelGridTr>
+                                        );
+                                    })}
                                 </PanelGridTbody>
                             </PanelGridTable>
                         </PanelGrid>
@@ -548,11 +559,12 @@ function HistoryVendorSearch({ value, onChange }: { value: string | null; onChan
                     <PanelGridTh>Vendor</PanelGridTh>
                 </PanelGridThead>
                 <PanelGridTbody>
-                    <PanelGridTr selected={value === ""} onClick={() => onChange("")}>
+                    <PanelGridTr selected={value === "" || value === null} onClick={() => onChange("")}
+                        className={value === "" || value === null ? "!bg-[#FB7506]/10" : undefined}>
                         <PanelGridTd className="font-bold text-[#FB7506]">ALL Vendors</PanelGridTd>
                     </PanelGridTr>
                     {growers.map((g: any, i: number) => {
-                        const uq = g.grower_uq ?? g.lcgrower_uq;
+                        const uq = g.grower_uq ?? g.lcgrower_uq ?? g.unico ?? g.lcunico;
                         return (
                             <PanelGridTr key={i} selected={value === uq} onClick={() => onChange(uq)}
                                 className={value === uq ? "!bg-[#FB7506]/10" : undefined}>
