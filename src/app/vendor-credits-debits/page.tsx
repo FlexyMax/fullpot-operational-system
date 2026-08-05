@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -70,13 +70,14 @@ export default function VendorCreditDebitsPage() {
         historyTo, setHistoryTo,
     } = useVendorCrDbStore();
 
-    const [crdbModal,   setCrdbModal]   = useState<{ open: boolean; mode: "Add" | "Edit" | "Delete"; type: "C" | "D" } | null>(null);
-    const [editRow,     setEditRow]     = useState<any>(null);
-    const [searchModal, setSearchModal] = useState(false);
-    const [splitModal,  setSplitModal]  = useState(false);
-    const [auditOpen,   setAuditOpen]   = useState(false);
-    const [selRow,      setSelRow]      = useState<any>(null);
-    const [selHistRow,  setSelHistRow]  = useState<any>(null);
+    const [crdbModal,          setCrdbModal]          = useState<{ open: boolean; mode: "Add" | "Edit" | "Delete"; type: "C" | "D" } | null>(null);
+    const [editRow,            setEditRow]            = useState<any>(null);
+    const [searchModal,        setSearchModal]        = useState(false);
+    const [splitModal,         setSplitModal]         = useState(false);
+    const [auditOpen,          setAuditOpen]          = useState(false);
+    const [selRow,             setSelRow]             = useState<any>(null);
+    const [selHistRow,         setSelHistRow]         = useState<any>(null);
+    const [historyVendorFilter, setHistoryVendorFilter] = useState<string>("");
 
     useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
 
@@ -103,11 +104,29 @@ export default function VendorCreditDebitsPage() {
         queryFn:  () => apiFetch("/api/vendor-credits-debits/reasons"),
     });
 
+    // Always fetch ALL vendors for history — vendor filtering is done client-side from the results
     const { data: history = EMPTY_ARR, isFetching: loadingHistory, refetch: refetchHistory } = useQuery({
-        queryKey: ["vcrdb-history", historyGrowerUq, historyFrom, historyTo],
-        queryFn:  () => apiFetch(`/api/vendor-credits-debits/history?grower_uq=${historyGrowerUq ?? ""}&from=${historyFrom}&to=${historyTo}`),
+        queryKey: ["vcrdb-history", historyFrom, historyTo],
+        queryFn:  () => apiFetch(`/api/vendor-credits-debits/history?grower_uq=&from=${historyFrom}&to=${historyTo}`),
         enabled:  activeTab === "history",
     });
+
+    // Unique vendors from history results (for the filter panel)
+    const historyVendors = useMemo(() => {
+        const seen = new Map<string, string>();
+        for (const row of history) {
+            const uq   = String(row.grower_uq ?? row.lcgrower_uq ?? "");
+            const name = String(row.grower ?? row.farm ?? row.lcfarm ?? "");
+            if (uq && !seen.has(uq)) seen.set(uq, name);
+        }
+        return Array.from(seen.entries())
+            .map(([uq, name]) => ({ uq, name }))
+            .sort((a, b) => a.name.localeCompare(b.name));
+    }, [history]);
+
+    const filteredHistory = historyVendorFilter
+        ? history.filter((row: any) => String(row.grower_uq ?? row.lcgrower_uq ?? "") === historyVendorFilter)
+        : history;
 
     // ── Auto-selections ──────────────────────────────────────────────────────
     useEffect(() => { if (dates.length > 0 && !selectedDate) { const d = normalizeToISODate(dates[0].cd_date ?? dates[0].ldcd_date ?? Object.values(dates[0])[0]); setSelectedDate(d); } }, [dates]);
@@ -419,10 +438,26 @@ export default function VendorCreditDebitsPage() {
 
                     {/* History filters sidebar */}
                     <div className="w-[280px] shrink-0 flex flex-col gap-2">
-                        <HistoryVendorSearch
-                            value={historyGrowerUq}
-                            onChange={setHistoryGrowerUq}
-                        />
+                        {/* Vendors derived from history results for selected date range */}
+                        <PanelGrid title="Vendors" icon={Building2} recordCount={historyVendors.length}
+                            refreshing={loadingHistory} className="flex-1 min-h-0">
+                            <PanelGridTable>
+                                <PanelGridThead><PanelGridTh>Vendor</PanelGridTh></PanelGridThead>
+                                <PanelGridTbody>
+                                    <PanelGridTr selected={historyVendorFilter === ""} onClick={() => { setHistoryVendorFilter(""); setSelHistRow(null); }}
+                                        className={historyVendorFilter === "" ? "!bg-[#FB7506]/10" : undefined}>
+                                        <PanelGridTd className="font-bold text-[#FB7506]">ALL Vendors</PanelGridTd>
+                                    </PanelGridTr>
+                                    {historyVendors.map((v, i) => (
+                                        <PanelGridTr key={i} selected={historyVendorFilter === v.uq}
+                                            onClick={() => { setHistoryVendorFilter(v.uq); setSelHistRow(null); }}
+                                            className={historyVendorFilter === v.uq ? "!bg-[#FB7506]/10" : undefined}>
+                                            <PanelGridTd className="font-medium">{v.name}</PanelGridTd>
+                                        </PanelGridTr>
+                                    ))}
+                                </PanelGridTbody>
+                            </PanelGridTable>
+                        </PanelGrid>
                         <div className="bg-white border border-[#DBD9D9] rounded-lg p-3 flex flex-col gap-2 shrink-0">
                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Date Range</p>
                             <label className="flex flex-col gap-0.5">
@@ -435,7 +470,7 @@ export default function VendorCreditDebitsPage() {
                                 <input type="date" value={historyTo} onChange={e => setHistoryTo(e.target.value)}
                                     className="border border-gray-200 rounded px-2 py-1 text-[13px] outline-none focus:ring-1 focus:ring-[#FB7506]" />
                             </label>
-                            <button onClick={() => refetchHistory()}
+                            <button onClick={() => { setHistoryVendorFilter(""); setSelHistRow(null); refetchHistory(); }}
                                 className="bg-[#FB7506] hover:bg-orange-600 text-white text-[12px] font-bold uppercase rounded px-3 py-1.5 transition-all">
                                 Search
                             </button>
@@ -447,9 +482,9 @@ export default function VendorCreditDebitsPage() {
                         <PanelGrid
                             title="History"
                             icon={History}
-                            recordCount={history.length}
+                            recordCount={filteredHistory.length}
                             refreshing={loadingHistory}
-                            headerRight={<AuditLogModal recordId={selHistRow !== null ? (history[selHistRow]?.unico ?? null) : null} bareButton />}
+                            headerRight={<AuditLogModal recordId={selHistRow !== null ? (filteredHistory[selHistRow]?.unico ?? null) : null} bareButton />}
                             className="flex-1"
                         >
                             <PanelGridTable>
@@ -463,9 +498,9 @@ export default function VendorCreditDebitsPage() {
                                     <PanelGridTh>Details</PanelGridTh>
                                 </PanelGridThead>
                                 <PanelGridTbody>
-                                    {history.length === 0 ? (
+                                    {filteredHistory.length === 0 ? (
                                         <PanelGridTr><PanelGridTd colSpan={7} className="py-8 text-center text-gray-400 italic">No history records found.</PanelGridTd></PanelGridTr>
-                                    ) : history.map((row: any, i: number) => {
+                                    ) : filteredHistory.map((row: any, i: number) => {
                                         const isCredit = (row.type ?? row.lctype) === "C";
                                         const isSelected = selHistRow === i;
                                         return (
@@ -527,42 +562,6 @@ export default function VendorCreditDebitsPage() {
                 />
             )}
         </div>
-    );
-}
-
-// ─── History Vendor Search ────────────────────────────────────────────────────
-function HistoryVendorSearch({ value, onChange }: { value: string | null; onChange: (uq: string | null) => void }) {
-    const [q, setQ] = useState("");
-    const { data: growers = EMPTY_ARR, isFetching } = useQuery({
-        queryKey: ["vcrdb-growers", q],
-        queryFn:  () => apiFetch(`/api/vendor-credits-debits/growers?q=${encodeURIComponent(q)}`),
-    });
-
-    return (
-        <PanelGrid title="Vendors" icon={Building2} recordCount={growers.length} refreshing={isFetching}
-            searchPlaceholder="Search vendor…" searchValue={q} onSearchChange={setQ}
-            className="flex-1 min-h-0">
-            <PanelGridTable>
-                <PanelGridThead>
-                    <PanelGridTh>Vendor</PanelGridTh>
-                </PanelGridThead>
-                <PanelGridTbody>
-                    <PanelGridTr selected={value === "" || value === null} onClick={() => onChange("")}
-                        className={value === "" || value === null ? "!bg-[#FB7506]/10" : undefined}>
-                        <PanelGridTd className="font-bold text-[#FB7506]">ALL Vendors</PanelGridTd>
-                    </PanelGridTr>
-                    {growers.map((g: any, i: number) => {
-                        const uq = g.grower_uq ?? g.lcgrower_uq ?? g.unico ?? g.lcunico;
-                        return (
-                            <PanelGridTr key={i} selected={value === uq} onClick={() => onChange(uq)}
-                                className={value === uq ? "!bg-[#FB7506]/10" : undefined}>
-                                <PanelGridTd className="font-medium">{g.grower ?? g.farm ?? g.lcfarm}</PanelGridTd>
-                            </PanelGridTr>
-                        );
-                    })}
-                </PanelGridTbody>
-            </PanelGridTable>
-        </PanelGrid>
     );
 }
 
