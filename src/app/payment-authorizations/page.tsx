@@ -854,19 +854,20 @@ function ModalEditPayment({ uq, banks, onClose, onSaved }: { uq: string; banks: 
 }
 
 // ─── New Invoice Modal ────────────────────────────────────────────────────────
-function NewInvoiceModal({ supplierUq, supplierName, termsList, onClose, onSaved }: {
-    supplierUq:   string;
-    supplierName: string;
-    termsList:    any[];
-    onClose:      () => void;
-    onSaved:      () => void;
+function NewInvoiceModal({ supplierUq, supplierName, termsList, defaultTermsUq, onClose, onSaved }: {
+    supplierUq:      string;
+    supplierName:    string;
+    termsList:       any[];
+    defaultTermsUq:  string;
+    onClose:         () => void;
+    onSaved:         () => void;
 }) {
     const todayStr = () => new Date().toISOString().split("T")[0];
     const [form, setForm] = useState({
         ldap_date:        todayStr(),
         lcinvoice_no:     "",
         lcap_type_uq:     "",
-        lcterms_uq:       "",
+        lcterms_uq:       defaultTermsUq,
         lnestimated:      "",
         lntaxes:          "",
         lnamount:         "",
@@ -2074,6 +2075,7 @@ export default function PaymentAuthorizationsPage() {
                     supplierUq={store.lcgrower_uq}
                     supplierName={store.lcgrower}
                     termsList={termsList}
+                    defaultTermsUq={t(growersList.find((g: any) => t(g.UNICO) === store.lcgrower_uq)?.CONDI_UQ ?? "")}
                     onClose={() => setNewInvoiceModal(false)}
                     onSaved={() => { refetchInvoices(); setNewInvoiceModal(false); }}
                 />

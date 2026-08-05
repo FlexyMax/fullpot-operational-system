@@ -1590,7 +1590,7 @@ function InvoiceModal({ mode, invoice, growers, termsList, apTypes, selectedDate
     onSave: (data: InvoiceForm) => void;
     saving: boolean;
 }) {
-    const { register, handleSubmit, formState: { errors } } = useForm<InvoiceForm>({
+    const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<InvoiceForm>({
         resolver: zodResolver(invoiceSchema),
         defaultValues: {
             ldap_date:        invoice ? normalizeToISODate(invoice.ap_date) : (selectedDate || todayEST()),
@@ -1601,13 +1601,21 @@ function InvoiceModal({ mode, invoice, growers, termsList, apTypes, selectedDate
             lnestimated:      parseMoney(invoice?.estimated) || undefined,
             lntaxes:          parseMoney(invoice?.taxes)     || undefined,
             lnamount:         parseMoney(invoice?.amount)    || undefined,
-            lnporder_no:      invoice?.porder_no    ?? undefined,
+            lnporder_no:      invoice?.porder_no    ?? 0,
             lcdescription:    String(invoice?.description || invoice?.detail || "").trim(),
             llautomatic:      invoice?.automatic === "Yes" || invoice?.llautomatic || false,
             llindirect:       invoice?.llindirect   || false,
             llautomatic_cost: invoice?.llautomatic_cost || false,
         },
     });
+
+    // Auto-fill terms when vendor changes (Add mode only)
+    const selectedSupplierUq = watch("lcsupplier_uq");
+    useEffect(() => {
+        if (mode !== "Add" || !selectedSupplierUq) return;
+        const grower = growers.find((g: any) => g.unico === selectedSupplierUq);
+        if (grower?.condi_uq) setValue("lcterms_uq", grower.condi_uq);
+    }, [selectedSupplierUq]);
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -1669,7 +1677,7 @@ function InvoiceModal({ mode, invoice, growers, termsList, apTypes, selectedDate
                             </select>
                         </FormField>
                         <FormField label="PO No." error={null}>
-                            <input type="number" min="0" {...register("lnporder_no", { valueAsNumber: true })} className="fos-input" placeholder="0" />
+                            <input type="text" inputMode="numeric" {...register("lnporder_no", { setValueAs: v => parseInt(String(v)) || 0 })} className="fos-input" placeholder="0" />
                         </FormField>
                     </div>
 
