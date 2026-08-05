@@ -7,8 +7,8 @@ export async function GET(req: NextRequest) {
     if (!date) return NextResponse.json({ error: "date required" }, { status: 400 });
     try {
         const r = await executeProcedure("sp_flower_accounts_pay_cr_dates_growers_credits", {
-            ldcddate:    date,
-            lcgrower_uq: growerUq,
+            ldcr_date:   date,        // verified: @ldcr_date(datetime)
+            lcgrower_uq: growerUq,    // verified: @lcgrower_uq(varchar)
         });
         const rows = (r.recordset ?? []).map((row: any) =>
             Object.fromEntries(Object.entries(row).map(([k, v]) => [k.toLowerCase(), v]))

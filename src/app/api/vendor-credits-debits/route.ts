@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
             ldcd_date:    body.ldcd_date,
             lcacc_pay_uq: body.lcacc_pay_uq,
             lcreason_uq:  body.lcreason_uq,
-            lncd_ammount: body.lncd_ammount,
+            lnamount:     body.lncd_ammount,  // verified: @lnamount(numeric)
             lcdetails:    body.lcdetails ?? "",
         });
         const row   = r.recordset?.[0];

@@ -8,7 +8,7 @@ const TABLA = "flower_accounts_pay_crdb";
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ unico: string }> }) {
     const { unico } = await params;
     try {
-        const r   = await executeProcedure("sp_flower_accounts_pay_cr", { lcunico: unico });
+        const r   = await executeProcedure("sp_flower_accounts_pay_crdb", { lcunico: unico }); // verified: @lcunico(varchar)
         const row = r.recordset?.[0] ?? null;
         if (!row) return NextResponse.json(null);
         const normalized = Object.fromEntries(Object.entries(row).map(([k, v]) => [k.toLowerCase(), v]));
@@ -28,7 +28,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ unic
             ldcd_date:    body.ldcd_date,
             lcacc_pay_uq: body.lcacc_pay_uq,
             lcreason_uq:  body.lcreason_uq,
-            lncd_ammount: body.lncd_ammount,
+            lnamount:     body.lncd_ammount,  // verified: @lnamount(numeric)
             lcdetails:    body.lcdetails ?? "",
         });
         const row = r.recordset?.[0];
@@ -43,7 +43,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ unic
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ unico: string }> }) {
     const { unico } = await params;
     try {
-        const r = await executeProcedure("sp_flower_accounts_pay_cr_delete", { lcunico: unico });
+        const r = await executeProcedure("sp_flower_accounts_pay_cr_delete", { lccrdb_uq: unico }); // verified: @lccrdb_uq(varchar)
         const row = r.recordset?.[0];
         if (row?.Error) return NextResponse.json({ success: false, error: row.Message || "Error deleting record" }, { status: 400 });
         serverAuditLog(PANTA, "Delete", TABLA, unico).catch(() => {});

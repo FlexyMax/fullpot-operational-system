@@ -7,9 +7,9 @@ export async function GET(req: NextRequest) {
     const po      = req.nextUrl.searchParams.get("po")      ?? "";
     try {
         const r = await executeProcedure("sp_flower_accounts_pay_cr_search", {
-            lcfarm:       farm    ? `%${farm}%`    : "%",
-            lcinvoice_no: invoice ? `%${invoice}%` : "%",
-            lcpo_no:      po      ? `%${po}%`      : "%",
+            lcfarm:       farm    ? `%${farm}%`    : "%",  // verified: @lcfarm(varchar)
+            lcinvoice_no: invoice ? `%${invoice}%` : "%",  // verified: @lcinvoice_no(varchar)
+            lcpo:         po      ? `%${po}%`      : "%",  // verified: @lcpo(varchar) — NOT lcpo_no
         });
         const rows = (r.recordset ?? []).map((row: any) =>
             Object.fromEntries(Object.entries(row).map(([k, v]) => [k.toLowerCase(), v]))

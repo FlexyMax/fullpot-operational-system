@@ -27,7 +27,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ unic
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ unico: string; dUnico: string }> }) {
     const { dUnico } = await params;
     try {
-        const r = await executeProcedure("sp_flower_accounts_pay_crdb_pob_delete", { lcunico: dUnico });
+        const r = await executeProcedure("sp_flower_accounts_pay_crdb_pob_delete", { lcapcrdb_pob_uq: dUnico }); // verified: @lcapcrdb_pob_uq(varchar) — NOT lcunico
         const row = r.recordset?.[0];
         if (row?.Error) return NextResponse.json({ success: false, error: row.Message }, { status: 400 });
         serverAuditLog(PANTA, "Delete", TABLA, dUnico).catch(() => {});

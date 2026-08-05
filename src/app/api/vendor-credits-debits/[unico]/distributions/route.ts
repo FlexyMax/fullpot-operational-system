@@ -9,8 +9,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ uni
     const { unico } = await params;
     try {
         const [header, dists] = await Promise.all([
-            executeProcedure("sp_flower_accounts_pay_crdb",     { lcap_uq: unico }),
-            executeProcedure("sp_flower_accounts_pay_crdb_pob", { lcap_uq: unico }),
+            executeProcedure("sp_flower_accounts_pay_crdb",     { lcunico:   unico }),  // verified: @lcunico(varchar)
+            executeProcedure("sp_flower_accounts_pay_crdb_pob", { lccrdb_uq: unico }),  // verified: @lccrdb_uq(varchar) — NOT lcap_uq
         ]);
         const norm = (rows: any[]) =>
             rows.map((row: any) => Object.fromEntries(Object.entries(row).map(([k, v]) => [k.toLowerCase(), v])));

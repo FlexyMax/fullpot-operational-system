@@ -8,9 +8,9 @@ export async function GET(req: NextRequest) {
     if (!growerUq) return NextResponse.json({ error: "grower_uq required" }, { status: 400 });
     try {
         const r = await executeProcedure("sp_flower_invoices_to_crdb", {
-            lcgrower_uq:  growerUq,
-            lctype:       type,
-            lcacc_pay_uq: accPayUq,
+            lcSupplier_uq: growerUq,  // verified: @lcSupplier_uq(char) — NOT lcgrower_uq
+            lctype:        type,       // verified: @lctype(char)
+            lcinvoice_uq:  accPayUq,   // verified: @lcinvoice_uq(varchar) — NOT lcacc_pay_uq
         });
         const rows = (r.recordset ?? []).map((row: any) =>
             Object.fromEntries(Object.entries(row).map(([k, v]) => [k.toLowerCase(), v]))
