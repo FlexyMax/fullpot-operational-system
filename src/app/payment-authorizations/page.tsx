@@ -853,6 +853,156 @@ function ModalEditPayment({ uq, banks, onClose, onSaved }: { uq: string; banks: 
     );
 }
 
+// ─── New Invoice Modal ────────────────────────────────────────────────────────
+function NewInvoiceModal({ supplierUq, supplierName, termsList, onClose, onSaved }: {
+    supplierUq:   string;
+    supplierName: string;
+    termsList:    any[];
+    onClose:      () => void;
+    onSaved:      () => void;
+}) {
+    const todayStr = () => new Date().toISOString().split("T")[0];
+    const [form, setForm] = useState({
+        ldap_date:        todayStr(),
+        lcinvoice_no:     "",
+        lcterms_uq:       "",
+        lnestimated:      "",
+        lntaxes:          "",
+        lnamount:         "",
+        lnporder_no:      "",
+        lcdescription:    "",
+        llautomatic:      false,
+        llindirect:       false,
+        llautomatic_cost: false,
+    });
+    const [saving, setSaving] = useState(false);
+    const [error,  setError]  = useState<string | null>(null);
+
+    const set = (k: string, v: any) => setForm(p => ({ ...p, [k]: v }));
+
+    const save = async () => {
+        if (!form.lcinvoice_no.trim()) { setError("Invoice # is required."); return; }
+        setSaving(true); setError(null);
+        try {
+            const res = await fetch("/api/accounts-payable/invoice", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    ldap_date:        form.ldap_date,
+                    lcsupplier_uq:    supplierUq,
+                    lcinvoice_no:     form.lcinvoice_no.trim(),
+                    lcterms_uq:       form.lcterms_uq,
+                    lnestimated:      parseFloat(form.lnestimated)  || 0,
+                    lntaxes:          parseFloat(form.lntaxes)      || 0,
+                    lnamount:         parseFloat(form.lnamount)      || 0,
+                    lnporder_no:      parseInt(form.lnporder_no, 10) || 0,
+                    lcdescription:    form.lcdescription,
+                    llautomatic:      form.llautomatic,
+                    llindirect:       form.llindirect,
+                    llautomatic_cost: form.llautomatic_cost,
+                }),
+            });
+            const d = await res.json();
+            if (!d.success) throw new Error(d.error ?? "Failed to create invoice");
+            toast.success("Invoice created.");
+            onSaved();
+        } catch (e: any) { setError(e.message); setSaving(false); }
+    };
+
+    const lbl = "block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1";
+    const inp = "fos-input w-full";
+
+    return (
+        <Modal
+            title={`New Invoice — ${supplierName}`}
+            icon={FileText}
+            onClose={onClose}
+            size="sm"
+            footer={
+                <>
+                    <button onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors">
+                        Cancel
+                    </button>
+                    <button onClick={save} disabled={saving} className="px-6 py-2 rounded-lg bg-[#FB7506] hover:bg-orange-600 text-white text-sm font-black uppercase tracking-wider transition-all disabled:opacity-50 flex items-center gap-2">
+                        {saving ? <><Loader2 size={14} className="animate-spin" /> Saving…</> : <><Check size={14} /> Save Changes</>}
+                    </button>
+                </>
+            }
+        >
+            {error && <p className="mb-3 text-xs text-red-600 font-semibold bg-red-50 border border-red-200 rounded px-3 py-2">{error}</p>}
+            <div className="space-y-3">
+                {/* Row 1: AP Date + Invoice # */}
+                <div className="grid grid-cols-2 gap-3">
+                    <div>
+                        <label className={lbl}>AP Date</label>
+                        <input type="date" value={form.ldap_date} onChange={e => set("ldap_date", e.target.value)} className={inp} />
+                    </div>
+                    <div>
+                        <label className={lbl}>Invoice #</label>
+                        <input value={form.lcinvoice_no} onChange={e => set("lcinvoice_no", e.target.value)} placeholder="Invoice number" className={inp} />
+                    </div>
+                </div>
+
+                {/* Row 2: Terms + PO No. */}
+                <div className="grid grid-cols-2 gap-3">
+                    <div>
+                        <label className={lbl}>Terms</label>
+                        <select value={form.lcterms_uq} onChange={e => set("lcterms_uq", e.target.value)} className={inp}>
+                            <option value="">— Select terms —</option>
+                            {(termsList as any[]).map((t: any) => (
+                                <option key={t.UNICO ?? t.unico} value={t.UNICO ?? t.unico}>
+                                    {String(t.CONDITION ?? t.condition ?? "").trim()}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label className={lbl}>PO No.</label>
+                        <input type="text" inputMode="numeric" value={form.lnporder_no} onChange={e => set("lnporder_no", e.target.value)} placeholder="0" className={inp} />
+                    </div>
+                </div>
+
+                {/* Row 3: Estimated + Taxes + Amount */}
+                <div className="grid grid-cols-3 gap-3">
+                    <div>
+                        <label className={lbl}>Estimated</label>
+                        <input type="text" inputMode="decimal" value={form.lnestimated} onChange={e => set("lnestimated", e.target.value)} placeholder="0.00" className={`${inp} text-right`} />
+                    </div>
+                    <div>
+                        <label className={lbl}>Taxes</label>
+                        <input type="text" inputMode="decimal" value={form.lntaxes} onChange={e => set("lntaxes", e.target.value)} placeholder="0.00" className={`${inp} text-right`} />
+                    </div>
+                    <div>
+                        <label className={lbl}>Amount</label>
+                        <input type="text" inputMode="decimal" value={form.lnamount} onChange={e => set("lnamount", e.target.value)} placeholder="0.00" className={`${inp} text-right font-semibold`} />
+                    </div>
+                </div>
+
+                {/* Row 4: Description */}
+                <div>
+                    <label className={lbl}>Description / Detail</label>
+                    <textarea value={form.lcdescription} onChange={e => set("lcdescription", e.target.value)} rows={2} placeholder="Notes or details…" className={`${inp} resize-none`} />
+                </div>
+
+                {/* Row 5: Flags */}
+                <div className="flex gap-6 pt-1">
+                    {([
+                        { key: "llautomatic"     as const, label: "Automatic"  },
+                        { key: "llindirect"      as const, label: "Indirect"   },
+                        { key: "llautomatic_cost"as const, label: "Auto Cost"  },
+                    ]).map(f => (
+                        <label key={f.key} className="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" checked={Boolean(form[f.key])} onChange={e => set(f.key, e.target.checked)}
+                                className="w-4 h-4 accent-[#FB7506] cursor-pointer" />
+                            <span className="text-xs font-bold text-gray-600">{f.label}</span>
+                        </label>
+                    ))}
+                </div>
+            </div>
+        </Modal>
+    );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function PaymentAuthorizationsPage() {
     const { status }  = useSession();
@@ -895,6 +1045,7 @@ export default function PaymentAuthorizationsPage() {
     const [addPaymentModal,     setAddPaymentModal]     = useState(false);
     const [editPaymentModal,    setEditPaymentModal]    = useState(false);
     const [crdbModal,           setCrdbModal]           = useState(false);
+    const [newInvoiceModal,     setNewInvoiceModal]     = useState(false);
     const [reportModalUrl,      setReportModalUrl]      = useState<string | null>(null);
 
     // ── Auth guard ────────────────────────────────────────────────────────────
@@ -914,6 +1065,11 @@ export default function PaymentAuthorizationsPage() {
         queryKey: ["pa-banks"],
         queryFn:  () => paFetch("/api/payment-authorizations/banks").then(d => norm(Array.isArray(d) ? d : [])),
         staleTime: 5 * 60 * 1000,
+    });
+    const { data: termsList = EMPTY_ARR } = useQuery({
+        queryKey: ["pa-terms-list"],
+        queryFn:  () => paFetch("/api/accounts-payable/terms"),
+        staleTime: 10 * 60 * 1000,
     });
 
     const { data: vendorsList = EMPTY_ARR, isFetching: loadingVendors, refetch: refetchVendors } = useQuery({
@@ -1315,6 +1471,12 @@ export default function PaymentAuthorizationsPage() {
                                 </div>
                             }
                             menuItems={[
+                                { label: "New Invoice",     icon: Plus,       color: "green", onClick: () => {
+                                    if (!store.lcgrower_uq) { toast.warning("Select a vendor first."); return; }
+                                    if (!perms.canCreate) { toast.error(PERMISSION_MSGS.create); return; }
+                                    setNewInvoiceModal(true);
+                                }, disabled: !store.lcgrower_uq || !perms.canCreate },
+                                { separator: true },
                                 { label: "Approve",         icon: Check,      color: "green", onClick: () => handleApprove(true),  disabled: !selInvoiceRow || !perms.canEdit },
                                 { label: "Un-Approve",      icon: XCircle,    color: "gray",  onClick: () => handleApprove(false), disabled: !selInvoiceRow || !perms.canEdit },
                                 { separator: true },
@@ -1884,6 +2046,17 @@ export default function PaymentAuthorizationsPage() {
                         </PanelGrid>
                     )}
                 </Modal>
+            )}
+
+            {/* New Invoice modal */}
+            {newInvoiceModal && (
+                <NewInvoiceModal
+                    supplierUq={store.lcgrower_uq}
+                    supplierName={store.lcgrower}
+                    termsList={termsList}
+                    onClose={() => setNewInvoiceModal(false)}
+                    onSaved={() => { refetchInvoices(); setNewInvoiceModal(false); }}
+                />
             )}
 
             {/* PDF Report viewer */}
