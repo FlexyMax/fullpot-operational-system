@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect, useLayoutEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import {
     Plus, Pencil, Trash2, Users, Leaf, RefreshCcw,
     Tag, X, Save, ChevronRight, ChevronLeft, Loader2,
@@ -71,37 +71,38 @@ function useDebounce<T>(value: T, ms: number): T {
     return dv;
 }
 
-// ─── Infinite-scroll list (IntersectionObserver, no library) ──────────────────
-const PAGE = 60;
-function InfiniteList({ items, renderItem, emptyMsg }: { items: any[]; renderItem: (r: any) => React.ReactNode; emptyMsg?: string }) {
-    const [limit, setLimit] = useState(PAGE);
+// ─── Infinite-scroll list — triggers server fetch on scroll ───────────────────
+function InfiniteList({ items, renderItem, emptyMsg, fetchMore, hasMore, isFetchingMore }: {
+    items:           any[];
+    renderItem:      (r: any) => React.ReactNode;
+    emptyMsg?:       string;
+    fetchMore?:      () => void;
+    hasMore?:        boolean;
+    isFetchingMore?: boolean;
+}) {
     const sentinelRef = useRef<HTMLDivElement>(null);
-
-    // reset when items change (new search result)
-    useEffect(() => setLimit(PAGE), [items]);
 
     useEffect(() => {
         const el = sentinelRef.current;
-        if (!el) return;
+        if (!el || !fetchMore || !hasMore) return;
         const obs = new IntersectionObserver(
-            ([entry]) => { if (entry.isIntersecting) setLimit(l => Math.min(l + PAGE, items.length)); },
+            ([entry]) => { if (entry.isIntersecting && !isFetchingMore) fetchMore(); },
             { threshold: 0.1 }
         );
         obs.observe(el);
         return () => obs.disconnect();
-    }, [items.length]);
+    }, [fetchMore, hasMore, isFetchingMore]);
 
-    const visible = items.slice(0, limit);
     return (
         <div className="flex-1 overflow-y-auto">
-            {visible.length === 0 && emptyMsg
+            {items.length === 0 && emptyMsg
                 ? <p className="px-3 py-4 text-[11px] text-gray-400 text-center">{emptyMsg}</p>
-                : visible.map(renderItem)
+                : items.map(renderItem)
             }
-            {limit < items.length && (
+            {hasMore && (
                 <div ref={sentinelRef} className="py-2 text-center text-[10px] text-gray-400">
                     <Loader2 className="w-3 h-3 animate-spin inline-block mr-1" />
-                    {limit} / {items.length}
+                    Loading more…
                 </div>
             )}
         </div>
@@ -109,7 +110,7 @@ function InfiniteList({ items, renderItem, emptyMsg }: { items: any[]; renderIte
 }
 
 // ─── Dual-list modal (shared by customers and growers) ─────────────────────────
-const MIN_SEARCH = 2; // chars required to trigger available-list fetch
+const LIMIT = 50;
 
 interface DualListProps {
     chargeUnico: string;
@@ -132,27 +133,51 @@ function DualListModal({ chargeUnico, chargeDesc, title, icon: Icon, baseUrl, la
     const dqAvail  = useDebounce(qAvail,  350);
     const dqAssign = useDebounce(qAssign, 350);
 
-    // Available: only fetch when user has typed MIN_SEARCH chars
-    const enableAvail = dqAvail.length >= MIN_SEARCH;
-    const { data: available = EMPTY_ARR, refetch: refetchAvail, isFetching: fetchingAvail } = useQuery<any[]>({
-        queryKey: [baseUrl, "not-in", dqAvail],
-        queryFn:  () => fetch(`${baseUrl}?type=not-in&q=${encodeURIComponent(dqAvail)}`).then(r => r.json()),
-        enabled:  enableAvail,
+    // Available: infinite query — 50 rows at a time from the server
+    const {
+        data:              availPages,
+        fetchNextPage:     fetchMoreAvail,
+        hasNextPage:       hasMoreAvail,
+        isFetchingNextPage: fetchingMoreAvail,
+        isFetching:        fetchingAvail,
+        refetch:           refetchAvail,
+    } = useInfiniteQuery<any[]>({
+        queryKey:       [baseUrl, "not-in", dqAvail],
+        initialPageParam: 0,
+        queryFn: ({ pageParam }) =>
+            fetch(`${baseUrl}?type=not-in&q=${encodeURIComponent(dqAvail)}&offset=${pageParam}&limit=${LIMIT}`)
+                .then(r => r.json()),
+        getNextPageParam: (lastPage, _all, lastParam) =>
+            lastPage.length < LIMIT ? undefined : (lastParam as number) + LIMIT,
         staleTime: 30_000,
     });
+    const available = availPages?.pages.flat() ?? EMPTY_ARR;
 
-    // Assigned: always fetch (usually small set)
-    const { data: assigned = EMPTY_ARR, refetch: refetchAssign, isFetching: fetchingAssign } = useQuery<any[]>({
-        queryKey: [baseUrl, "in", dqAssign],
-        queryFn:  () => fetch(`${baseUrl}?type=in&q=${encodeURIComponent(dqAssign)}`).then(r => r.json()),
+    // Assigned: infinite query — same pagination, but typically a smaller set
+    const {
+        data:              assignPages,
+        fetchNextPage:     fetchMoreAssign,
+        hasNextPage:       hasMoreAssign,
+        isFetchingNextPage: fetchingMoreAssign,
+        isFetching:        fetchingAssign,
+        refetch:           refetchAssign,
+    } = useInfiniteQuery<any[]>({
+        queryKey:       [baseUrl, "in", dqAssign],
+        initialPageParam: 0,
+        queryFn: ({ pageParam }) =>
+            fetch(`${baseUrl}?type=in&q=${encodeURIComponent(dqAssign)}&offset=${pageParam}&limit=${LIMIT}`)
+                .then(r => r.json()),
+        getNextPageParam: (lastPage, _all, lastParam) =>
+            lastPage.length < LIMIT ? undefined : (lastParam as number) + LIMIT,
         staleTime: 0,
     });
+    const assigned = assignPages?.pages.flat() ?? EMPTY_ARR;
 
     const refetchBoth = useCallback(() => {
-        if (enableAvail) refetchAvail();
+        refetchAvail();
         refetchAssign();
         setSelAvail(null); setSelAssign(null);
-    }, [enableAvail]);
+    }, []);
 
     const add = async () => {
         if (!selAvail || saving) return;
@@ -206,6 +231,10 @@ function DualListModal({ chargeUnico, chargeDesc, title, icon: Icon, baseUrl, la
         </div>
     );
 
+    const availCount = availPages?.pages[0] !== undefined
+        ? `(${available.length}${hasMoreAvail ? "+" : ""})`
+        : "";
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2">
             <div className="flex flex-col bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90dvh]">
@@ -222,19 +251,22 @@ function DualListModal({ chargeUnico, chargeDesc, title, icon: Icon, baseUrl, la
                     <div className="flex flex-col flex-1 border-r min-h-0">
                         <div className="flex items-center justify-between px-3 h-8 bg-gray-100 border-b shrink-0">
                             <span className="text-[10px] font-black uppercase text-gray-500 tracking-wider">
-                                Available {enableAvail ? `(${available.length})` : ""}
+                                Available {availCount}
                             </span>
-                            {fetchingAvail && <Loader2 className="w-3 h-3 animate-spin text-gray-400" />}
+                            {(fetchingAvail || fetchingMoreAvail) && <Loader2 className="w-3 h-3 animate-spin text-gray-400" />}
                         </div>
                         <div className="px-2 py-1.5 border-b shrink-0">
                             <input value={qAvail} onChange={e => setQAvail(e.target.value)}
-                                placeholder={`Type ${MIN_SEARCH}+ chars to search…`}
+                                placeholder="Search available…"
                                 className="w-full text-xs border rounded px-2 h-7 outline-none focus:border-orange-400" />
                         </div>
                         <InfiniteList
-                            items={enableAvail ? available : EMPTY_ARR}
+                            items={available}
                             renderItem={mkRow(selAvail, setSelAvail)}
-                            emptyMsg={enableAvail ? "No results." : `Type ${MIN_SEARCH}+ characters to search.`}
+                            emptyMsg={fetchingAvail ? "" : "No results."}
+                            fetchMore={fetchMoreAvail}
+                            hasMore={hasMoreAvail}
+                            isFetchingMore={fetchingMoreAvail}
                         />
                     </div>
 
@@ -258,9 +290,9 @@ function DualListModal({ chargeUnico, chargeDesc, title, icon: Icon, baseUrl, la
                     <div className="flex flex-col flex-1 min-h-0">
                         <div className="flex items-center justify-between px-3 h-8 bg-gray-100 border-b shrink-0">
                             <span className="text-[10px] font-black uppercase text-gray-500 tracking-wider">
-                                Assigned ({assigned.length})
+                                Assigned ({assigned.length}{hasMoreAssign ? "+" : ""})
                             </span>
-                            {fetchingAssign && <Loader2 className="w-3 h-3 animate-spin text-gray-400" />}
+                            {(fetchingAssign || fetchingMoreAssign) && <Loader2 className="w-3 h-3 animate-spin text-gray-400" />}
                         </div>
                         <div className="px-2 py-1.5 border-b shrink-0">
                             <input value={qAssign} onChange={e => setQAssign(e.target.value)} placeholder="Filter assigned…"
@@ -269,7 +301,10 @@ function DualListModal({ chargeUnico, chargeDesc, title, icon: Icon, baseUrl, la
                         <InfiniteList
                             items={assigned}
                             renderItem={mkRow(selAssign, setSelAssign)}
-                            emptyMsg="None assigned."
+                            emptyMsg={fetchingAssign ? "" : "None assigned."}
+                            fetchMore={fetchMoreAssign}
+                            hasMore={hasMoreAssign}
+                            isFetchingMore={fetchingMoreAssign}
                         />
                     </div>
                 </div>

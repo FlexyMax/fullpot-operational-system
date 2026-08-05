@@ -11,15 +11,19 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ unic
     const { unico } = await params;
     const { searchParams } = new URL(req.url);
     const type   = searchParams.get("type") ?? "not-in";
-    const search = "%" + (searchParams.get("q") ?? "") + "%";
+    const q      = searchParams.get("q") ?? "";
+    const offset = parseInt(searchParams.get("offset") ?? "0", 10);
+    const limit  = parseInt(searchParams.get("limit")  ?? "50", 10);
 
     const spName = type === "in"
-        ? "sp_flower_invoice_automatic_charges_growers_in"
-        : "sp_flower_invoice_automatic_charges_growers_not_in";
+        ? "sp_NC_invoice_automatic_charges_growers_in"
+        : "sp_NC_invoice_automatic_charges_growers_not_in";
 
     const r = await executeProcedure(spName, {
         lccharge_uq: txt(unico),
-        lcgrower:    search,
+        lcgrower:    txt(q),
+        lnoffset:    offset,
+        lnlimit:     limit,
     });
     return NextResponse.json(r.recordset ?? []);
 }
