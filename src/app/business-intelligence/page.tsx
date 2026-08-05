@@ -322,8 +322,7 @@ export default function BusinessIntelligencePage() {
             setReportData(null);
         }
         pendingConfigRef.current = parsed;
-        runReport.mutate(config.report_uq);
-    }, [selectedUnico, runReport]);
+    }, [selectedUnico]);
 
     const onSelectReportChange = (unico: string) => {
         setSelectedUnico(unico);
