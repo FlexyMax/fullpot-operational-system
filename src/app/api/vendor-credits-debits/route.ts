@@ -1,9 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
 import { serverAuditLog } from "@/lib/serverAudit";
 
-// TODO: replace VCRD0001 with the actual PANTA for this screen from the sistema DB
-const PANTA = "VCRD0001";
+const PANTA = "2495F7A8";
 const TABLA = "flower_accounts_pay_crdb";
 
 export async function POST(req: NextRequest) {
@@ -26,3 +25,4 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }
 }
+

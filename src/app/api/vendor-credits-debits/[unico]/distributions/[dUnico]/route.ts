@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
 import { serverAuditLog } from "@/lib/serverAudit";
 
-const PANTA = "VCRD0001";
+const PANTA = "2495F7A8";
 const TABLA = "flower_accounts_pay_crdb_pob";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ unico: string; dUnico: string }> }) {
