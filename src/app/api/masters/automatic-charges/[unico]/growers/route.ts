@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { serverAuditLog } from "@/lib/serverAudit";
 
-const PANTA = "C7150155";
+const PANTA = "1E2123EC";
 const txt   = (v: any) => String(v ?? "").trim();
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ unico: string }> }) {

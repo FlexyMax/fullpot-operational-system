@@ -80,7 +80,7 @@ export const SCREEN_PANTA: Record<string, string> = {
     "scan-out":               "XD6Z7058",  // APP Scan Out
     "scan-in":                "CC10436A",  // APP Scan IN AWB
 
-    "automatic-charges":    "C7150155",  // INVOICE AUTOMATIC CHARGES (APP Sales)
+    "automatic-charges":    "1E2123EC",  // INVOICE AUTOMATIC CHARGES (APP Sales)
 
     // Add new pages here after registering in Module & Screen Setup
 };

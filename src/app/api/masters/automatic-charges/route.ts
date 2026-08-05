@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { serverAuditLog } from "@/lib/serverAudit";
 
-const PANTA = "C7150155";
+const PANTA = "1E2123EC";
 const txt   = (v: any) => String(v ?? "").trim();
 const num   = (v: any) => parseFloat(v ?? 0) || 0;
 const bit   = (v: any) => Boolean(v);

@@ -28,7 +28,7 @@ const t       = (v: any) => String(v ?? "").trim();
 const fmt     = (v: any) => parseFloat(v ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = (v: any) => { if (!v) return "—"; const d = new Date(v); return isNaN(d.getTime()) ? t(v).slice(0,10) : d.toLocaleDateString("en-US", { month:"short", day:"2-digit", year:"numeric" }); };
 const today   = () => new Date().toISOString().split("T")[0];
-const PANTA   = "C7150155";
+const PANTA   = "1E2123EC";
 
 // ─── Shared modal shell ────────────────────────────────────────────────────────
 function FosModal({ title, icon: Icon, onClose, children, footer, size = "md" }: any) {

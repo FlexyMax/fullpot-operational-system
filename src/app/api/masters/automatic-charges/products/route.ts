@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { executeProcedure } from "@/lib/db";
 
 export async function GET() {

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "branchName": "master",
+  "worktreePath": "C:\\EIS-Data\\AppSmith\\Antigravity\\fullpot-operational-system",
+  "upstream": "origin/master",
+  "mergeBase": "f035be93ae76f1d2b169847b86849de344e87594",
+  "firstSeenHead": "f035be93ae76f1d2b169847b86849de344e87594",
+  "lastSeenHead": "f035be93ae76f1d2b169847b86849de344e87594",
+  "lastAnalyzedHead": "f035be93ae76f1d2b169847b86849de344e87594",
+  "stale": false,
+  "staleReason": null,
+  "staleSince": null,
+  "lifecycleEvent": null,
+  "createdAt": "2026-08-01T06:20:40.079Z",
+  "updatedAt": "2026-08-01T06:20:40.079Z"
+}
