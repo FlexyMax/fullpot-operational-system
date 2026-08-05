@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -234,8 +234,8 @@ function ChargeFormModal({ mode, charge, onClose, onSaved }: any) {
         end_date:   t(charge?.enddate    ?? charge?.ENDDATE    ?? "").slice(0, 10) || today(),
         unit_price: String(parseFloat(charge?.unit_price ?? charge?.UNIT_PRICE ?? 0)),
         porcentage: String(parseFloat(charge?.porcentage ?? charge?.PORCENTAGE ?? 0)),
-        fbox:       t(charge?.fbox    ?? charge?.FBOX    ?? "").toUpperCase() === "YES" || Boolean(charge?.fbox),
-        active:     t(charge?.active_charge ?? charge?.ACTIVE_CHARGE ?? "").toUpperCase() === "YES" || true,
+        fbox:       t(charge?.fbox    ?? charge?.FBOX    ?? "NO").toUpperCase() === "YES",
+        active:     t(charge?.active_charge ?? charge?.ACTIVE_CHARGE ?? "NO").toUpperCase() === "YES",
     } : blank);
     const [saving, setSaving] = useState(false);
     const [error,  setError]  = useState<string | null>(null);
@@ -245,6 +245,18 @@ function ChargeFormModal({ mode, charge, onClose, onSaved }: any) {
         queryFn:  () => fetch("/api/masters/automatic-charges/products").then(r => r.json()),
         staleTime: 60_000,
     });
+
+    // SP list doesn't return product_uq — match by description or old_code once products load
+    useEffect(() => {
+        if (!isEdit || form.product_uq || !(products as any[]).length) return;
+        const desc    = t(charge?.description ?? charge?.DESCRIPTION ?? "").toLowerCase();
+        const oldCode = t(charge?.old_code    ?? charge?.OLD_CODE    ?? "");
+        const match   = (products as any[]).find((p: any) =>
+            (oldCode && t(p.old_code) === oldCode) ||
+            t(p.description).toLowerCase() === desc
+        );
+        if (match) setForm((prev: any) => ({ ...prev, product_uq: t(match.unico) }));
+    }, [products]);
 
     const set = (k: string, v: any) => setForm((p: any) => ({ ...p, [k]: v }));
 
@@ -476,17 +488,15 @@ export default function AutomaticChargesPage() {
                 >
                     <PanelGridTable>
                         <PanelGridThead>
-                            <tr>
-                                <PanelGridTh>Active</PanelGridTh>
-                                <PanelGridTh>Product</PanelGridTh>
-                                <PanelGridTh>Code</PanelGridTh>
-                                <PanelGridTh>Start</PanelGridTh>
-                                <PanelGridTh>End</PanelGridTh>
-                                <PanelGridTh className="text-right">U.Price</PanelGridTh>
-                                <PanelGridTh className="text-right">Invoice%</PanelGridTh>
-                                <PanelGridTh>Per FB</PanelGridTh>
-                                <PanelGridTh>Prod.Active</PanelGridTh>
-                            </tr>
+                            <PanelGridTh>Active</PanelGridTh>
+                            <PanelGridTh>Product</PanelGridTh>
+                            <PanelGridTh>Code</PanelGridTh>
+                            <PanelGridTh>Start</PanelGridTh>
+                            <PanelGridTh>End</PanelGridTh>
+                            <PanelGridTh className="text-right">U.Price</PanelGridTh>
+                            <PanelGridTh className="text-right">Invoice%</PanelGridTh>
+                            <PanelGridTh>Per FB</PanelGridTh>
+                            <PanelGridTh>Prod.Active</PanelGridTh>
                         </PanelGridThead>
                         <PanelGridTbody>
                             {isFetching && charges.length === 0 ? (
@@ -502,7 +512,7 @@ export default function AutomaticChargesPage() {
                                         onClick={() => store.setSelRow(isSelected ? null : row)}
                                         className={isSelected ? "!bg-[#FB7506]/10" : ""}>
                                         <PanelGridTd><YesNoBadge value={row.active_charge} /></PanelGridTd>
-                                        <PanelGridTd className="font-medium max-w-[200px] truncate">{t(row.description)}</PanelGridTd>
+                                        <PanelGridTd className="font-medium">{t(row.description)}</PanelGridTd>
                                         <PanelGridTd className="text-[#FB7506] font-mono font-bold">{t(row.old_code)}</PanelGridTd>
                                         <PanelGridTd>{fmtDate(row.startdate)}</PanelGridTd>
                                         <PanelGridTd>{fmtDate(row.enddate)}</PanelGridTd>

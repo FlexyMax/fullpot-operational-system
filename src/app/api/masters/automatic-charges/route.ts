@@ -10,8 +10,11 @@ const num   = (v: any) => parseFloat(v ?? 0) || 0;
 const bit   = (v: any) => Boolean(v);
 
 export async function GET() {
-    const r = await executeProcedure("sp_flower_invoice_automatic_charges_template", {});
-    return NextResponse.json(r.recordset ?? []);
+    const r    = await executeProcedure("sp_flower_invoice_automatic_charges_template", {});
+    const rows = (r.recordset ?? []).map((row: any) =>
+        Object.fromEntries(Object.entries(row).map(([k, v]) => [k.toLowerCase(), v]))
+    );
+    return NextResponse.json(rows);
 }
 
 export async function POST(req: NextRequest) {
