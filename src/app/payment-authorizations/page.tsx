@@ -865,6 +865,7 @@ function NewInvoiceModal({ supplierUq, supplierName, termsList, onClose, onSaved
     const [form, setForm] = useState({
         ldap_date:        todayStr(),
         lcinvoice_no:     "",
+        lcap_type_uq:     "",
         lcterms_uq:       "",
         lnestimated:      "",
         lntaxes:          "",
@@ -878,10 +879,17 @@ function NewInvoiceModal({ supplierUq, supplierName, termsList, onClose, onSaved
     const [saving, setSaving] = useState(false);
     const [error,  setError]  = useState<string | null>(null);
 
+    const { data: apTypes = [] } = useQuery({
+        queryKey: ["ap-types"],
+        queryFn:  () => fetch("/api/accounts-payable/ap-types").then(r => r.json()),
+        staleTime: 1000 * 60 * 10,
+    });
+
     const set = (k: string, v: any) => setForm(p => ({ ...p, [k]: v }));
 
     const save = async () => {
         if (!form.lcinvoice_no.trim()) { setError("Invoice # is required."); return; }
+        if (!form.lcap_type_uq)       { setError("Category is required."); return; }
         setSaving(true); setError(null);
         try {
             const res = await fetch("/api/accounts-payable/invoice", {
@@ -891,10 +899,11 @@ function NewInvoiceModal({ supplierUq, supplierName, termsList, onClose, onSaved
                     ldap_date:        form.ldap_date,
                     lcsupplier_uq:    supplierUq,
                     lcinvoice_no:     form.lcinvoice_no.trim(),
+                    lcap_type_uq:     form.lcap_type_uq,
                     lcterms_uq:       form.lcterms_uq,
-                    lnestimated:      parseFloat(form.lnestimated)  || 0,
-                    lntaxes:          parseFloat(form.lntaxes)      || 0,
-                    lnamount:         parseFloat(form.lnamount)      || 0,
+                    lnestimated:      parseFloat(form.lnestimated)   || 0,
+                    lntaxes:          parseFloat(form.lntaxes)       || 0,
+                    lnamount:         parseFloat(form.lnamount)       || 0,
                     lnporder_no:      parseInt(form.lnporder_no, 10) || 0,
                     lcdescription:    form.lcdescription,
                     llautomatic:      form.llautomatic,
@@ -941,6 +950,17 @@ function NewInvoiceModal({ supplierUq, supplierName, termsList, onClose, onSaved
                         <label className={lbl}>Invoice #</label>
                         <input value={form.lcinvoice_no} onChange={e => set("lcinvoice_no", e.target.value)} placeholder="Invoice number" className={inp} />
                     </div>
+                </div>
+
+                {/* Row 1b: Category */}
+                <div>
+                    <label className={lbl}>Category <span className="text-red-500">*</span></label>
+                    <select value={form.lcap_type_uq} onChange={e => set("lcap_type_uq", e.target.value)} className={inp}>
+                        <option value="">— Select category —</option>
+                        {(apTypes as any[]).map((t: any) => (
+                            <option key={t.unico} value={t.unico}>{t.ap_type}</option>
+                        ))}
+                    </select>
                 </div>
 
                 {/* Row 2: Terms + PO No. */}

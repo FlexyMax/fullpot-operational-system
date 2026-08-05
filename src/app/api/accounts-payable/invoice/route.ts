@@ -19,19 +19,20 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
     const body = await req.json();
     try {
-        const result = await executeProcedure("sp_flower_accounts_pay_insert", {
+        const result = await executeProcedure("sp_NC_accounts_pay_insert", {
             ldap_date:        body.ldap_date,
             lcsupplier_uq:    body.lcsupplier_uq,
             lcinvoice_no:     body.lcinvoice_no,
-            lcterms_uq:       body.lcterms_uq    || "",
-            lnestimated:      body.lnestimated   ?? 0,
-            lntaxes:          body.lntaxes        ?? 0,
-            lnamount:         body.lnamount       ?? 0,
-            lnporder_no:      body.lnporder_no    ?? 0,
-            lcdescription:    body.lcdescription  || "",
-            llautomatic:      body.llautomatic    ? 1 : 0,
-            llindirect:       body.llindirect     ? 1 : 0,
-            llautomatic_cost: body.llautomatic_cost ? 1 : 0,
+            lcterms_uq:       body.lcterms_uq       || "",
+            lnestimated:      body.lnestimated       ?? 0,
+            lntaxes:          body.lntaxes           ?? 0,
+            lnamount:         body.lnamount          ?? 0,
+            lnporder_no:      body.lnporder_no       ?? 0,
+            lcdescription:    body.lcdescription     || "",
+            llautomatic:      body.llautomatic       ? 1 : 0,
+            llindirect:       body.llindirect        ? 1 : 0,
+            llautomatic_cost: body.llautomatic_cost  ? 1 : 0,
+            lcap_type_uq:     body.lcap_type_uq      || "",
         });
         const row = result.recordset?.[0];
         if (row?.Error) return NextResponse.json({ success: false, error: row.Message || "Business rule violation" }, { status: 400 });

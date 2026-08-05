@@ -58,6 +58,7 @@ const invoiceSchema = z.object({
     ldap_date:        z.string().min(1, "Date required"),
     lcsupplier_uq:    z.string().min(1, "Vendor required"),
     lcinvoice_no:     z.string().min(1, "Invoice # required"),
+    lcap_type_uq:     z.string().min(1, "Category required"),
     lcterms_uq:       z.string().optional(),
     lnestimated:      z.number().min(0).optional(),
     lntaxes:          z.number().min(0).optional(),
@@ -771,6 +772,7 @@ export default function AccountsPayablePage() {
                         invoice={invoiceModal.mode === "Edit" ? invoice : null}
                         growers={growers}
                         termsList={termsList}
+                        apTypes={apTypes}
                         selectedDate={selectedDate}
                         onClose={() => setInvoiceModal(null)}
                         onSave={(data: InvoiceForm) =>
@@ -1577,11 +1579,12 @@ function DeleteDialog({ title, message, onCancel, onConfirm, saving }: {
 }
 
 // ─── Invoice Add / Edit Modal ─────────────────────────────────────────────────
-function InvoiceModal({ mode, invoice, growers, termsList, selectedDate, onClose, onSave, saving }: {
+function InvoiceModal({ mode, invoice, growers, termsList, apTypes, selectedDate, onClose, onSave, saving }: {
     mode: "Add" | "Edit";
     invoice: any;
     growers: any[];
     termsList: any[];
+    apTypes: any[];
     selectedDate: string | null;
     onClose: () => void;
     onSave: (data: InvoiceForm) => void;
@@ -1591,16 +1594,17 @@ function InvoiceModal({ mode, invoice, growers, termsList, selectedDate, onClose
         resolver: zodResolver(invoiceSchema),
         defaultValues: {
             ldap_date:        invoice ? normalizeToISODate(invoice.ap_date) : (selectedDate || todayEST()),
-            lcsupplier_uq:    invoice?.supplier_uq || "",
+            lcsupplier_uq:    invoice?.supplier_uq  || "",
             lcinvoice_no:     invoice ? String(invoice.invoice_no || "").trim() : "",
-            lcterms_uq:       invoice?.terms_uq    || "",
+            lcap_type_uq:     invoice?.ap_type_uq   || "",
+            lcterms_uq:       invoice?.terms_uq     || "",
             lnestimated:      parseMoney(invoice?.estimated) || undefined,
             lntaxes:          parseMoney(invoice?.taxes)     || undefined,
             lnamount:         parseMoney(invoice?.amount)    || undefined,
-            lnporder_no:      invoice?.porder_no   ?? undefined,
+            lnporder_no:      invoice?.porder_no    ?? undefined,
             lcdescription:    String(invoice?.description || invoice?.detail || "").trim(),
             llautomatic:      invoice?.automatic === "Yes" || invoice?.llautomatic || false,
-            llindirect:       invoice?.llindirect  || false,
+            llindirect:       invoice?.llindirect   || false,
             llautomatic_cost: invoice?.llautomatic_cost || false,
         },
     });
@@ -1638,6 +1642,16 @@ function InvoiceModal({ mode, invoice, growers, termsList, selectedDate, onClose
                                 <option key={g.unico} value={g.unico}>
                                     {String(g.grower || "").trim()}
                                 </option>
+                            ))}
+                        </select>
+                    </FormField>
+
+                    {/* Row 2b: Category */}
+                    <FormField label="Category" error={errors.lcap_type_uq?.message}>
+                        <select {...register("lcap_type_uq")} className="fos-input">
+                            <option value="">— Select category —</option>
+                            {apTypes.map((t: any) => (
+                                <option key={t.unico} value={t.unico}>{t.ap_type}</option>
                             ))}
                         </select>
                     </FormField>
