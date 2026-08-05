@@ -27,6 +27,8 @@ function getRoute(appPage: string): string | null {
     if (p.includes('PAYMENT AUTH') || p.includes('AUTHORIZ') || p.includes('VENDOR PAY') || p.includes('AP PAY') || p.includes('GROWERS PAY') || p.includes('VENTAS_GROWERS_PAY')) return '/payment-authorizations';
     // SALESMEN / SALESMAN / BUYER must be checked BEFORE the generic SALES catch
     if (p.includes('SALESM') || p.includes('SALES REP') || p.includes('SALES REPS') || p.includes('VENDEDOR') || p.includes('VENTAS_SALES') || p.includes('REPRESENTANT') || p.includes('SALES MEN') || p.includes('BUYER SETUP') || p.includes('BUYERS') || p.includes('VENTAS_SALESM')) return '/sales-reps';
+    // AP Credits-Debits must be checked BEFORE the generic GROWER/VENDOR catch
+    if (p.includes('CREDITS-DEBITS') || p.includes('CREDIT-DEBIT') || p.includes('AP CREDITS') || p.includes('AP DEBITS') || p.includes('VENTAS_GROWER_CREDIT')) return '/vendor-credits-debits';
     // VENDORS / GROWERS must be checked BEFORE the generic SALES catch
     if (p.includes('GROWER') || p.includes('VENDOR') || p.includes('PRODUCTOR') || p.includes('PRODUCCION_GROWER') || p.includes('PROVEEDOR') || p.includes('PRODUCCION GROWER') || p.includes('GROWERS SETUP') || p.includes('VENTAS_GROWER')) return '/vendors';
     // Only P.O.S. and BILLING map to /sales — SALES ORDERS / SALES CREDITS are not yet implemented
