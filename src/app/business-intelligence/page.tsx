@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { LineChart, Search, Loader2, XCircle, Play, Database, Save, Trash2, Plus } from "lucide-react";
+import { LineChart, Search, Loader2, XCircle, Play, Database, Save, Trash2, Plus, Download } from "lucide-react";
 import { toast } from "sonner";
 import { useAuditLog } from "@/lib/audit";
 import { usePagePermissions, PERMISSION_MSGS } from "@/lib/permissions";
@@ -503,8 +503,28 @@ export default function BusinessIntelligencePage() {
                     </div>
                 ) : (
                     <div className="h-full flex flex-col gap-1.5">
-                        <div className="text-[11px] font-bold text-gray-500 shrink-0">
-                            {reportData.rowCount.toLocaleString()} rows — drag fields into Row Groups / Pivot Columns / Values from the Columns panel
+                        <div className="flex items-center justify-between shrink-0">
+                            <span className="text-[11px] font-bold text-gray-500">
+                                {reportData.rowCount.toLocaleString()} rows — drag fields into Row Groups / Pivot Columns / Values from the Columns panel
+                            </span>
+                            <div className="flex items-center gap-1.5">
+                                <button
+                                    onClick={() => gridApiRef.current?.exportDataAsCsv({
+                                        fileName: `${selectedReport?.title || "report"}.csv`,
+                                    })}
+                                    className="flex items-center gap-1 px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-wide bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 transition-colors"
+                                >
+                                    <Download size={11} /> CSV
+                                </button>
+                                <button
+                                    onClick={() => gridApiRef.current?.exportDataAsExcel({
+                                        fileName: `${selectedReport?.title || "report"}.xlsx`,
+                                    })}
+                                    className="flex items-center gap-1 px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-wide bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition-colors"
+                                >
+                                    <Download size={11} /> XLSX
+                                </button>
+                            </div>
                         </div>
                         <div className="ag-theme-quartz flex-1 min-h-[80vh]" style={{ width: "100%" }}>
                             <AgGridReact
