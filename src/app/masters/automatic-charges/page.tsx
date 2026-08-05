@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useLayoutEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -64,19 +64,64 @@ function CancelBtn({ onClick }: any) {
     );
 }
 
+// ─── Debounce hook ────────────────────────────────────────────────────────────
+function useDebounce<T>(value: T, ms: number): T {
+    const [dv, setDv] = useState(value);
+    useEffect(() => { const id = setTimeout(() => setDv(value), ms); return () => clearTimeout(id); }, [value, ms]);
+    return dv;
+}
+
+// ─── Infinite-scroll list (IntersectionObserver, no library) ──────────────────
+const PAGE = 60;
+function InfiniteList({ items, renderItem, emptyMsg }: { items: any[]; renderItem: (r: any) => React.ReactNode; emptyMsg?: string }) {
+    const [limit, setLimit] = useState(PAGE);
+    const sentinelRef = useRef<HTMLDivElement>(null);
+
+    // reset when items change (new search result)
+    useEffect(() => setLimit(PAGE), [items]);
+
+    useEffect(() => {
+        const el = sentinelRef.current;
+        if (!el) return;
+        const obs = new IntersectionObserver(
+            ([entry]) => { if (entry.isIntersecting) setLimit(l => Math.min(l + PAGE, items.length)); },
+            { threshold: 0.1 }
+        );
+        obs.observe(el);
+        return () => obs.disconnect();
+    }, [items.length]);
+
+    const visible = items.slice(0, limit);
+    return (
+        <div className="flex-1 overflow-y-auto">
+            {visible.length === 0 && emptyMsg
+                ? <p className="px-3 py-4 text-[11px] text-gray-400 text-center">{emptyMsg}</p>
+                : visible.map(renderItem)
+            }
+            {limit < items.length && (
+                <div ref={sentinelRef} className="py-2 text-center text-[10px] text-gray-400">
+                    <Loader2 className="w-3 h-3 animate-spin inline-block mr-1" />
+                    {limit} / {items.length}
+                </div>
+            )}
+        </div>
+    );
+}
+
 // ─── Dual-list modal (shared by customers and growers) ─────────────────────────
+const MIN_SEARCH = 2; // chars required to trigger available-list fetch
+
 interface DualListProps {
     chargeUnico: string;
     chargeDesc:  string;
     title:       string;
     icon:        any;
-    baseUrl:     string;            // e.g. /api/masters/automatic-charges/UNICO/customers
-    labelKey:    string;            // field to display in each row (e.g. "customer" or "grower")
+    baseUrl:     string;
+    labelKey:    string;
     addAllLabel?: string;
     onClose:     () => void;
 }
 function DualListModal({ chargeUnico, chargeDesc, title, icon: Icon, baseUrl, labelKey, addAllLabel = "Add All", onClose }: DualListProps) {
-    const qc = useQueryClient();
     const [selAvail,  setSelAvail]  = useState<any | null>(null);
     const [selAssign, setSelAssign] = useState<any | null>(null);
     const [qAvail,    setQAvail]    = useState("");
@@ -84,18 +129,30 @@ function DualListModal({ chargeUnico, chargeDesc, title, icon: Icon, baseUrl, la
     const [saving,    setSaving]    = useState(false);
     const [error,     setError]     = useState<string | null>(null);
 
+    const dqAvail  = useDebounce(qAvail,  350);
+    const dqAssign = useDebounce(qAssign, 350);
+
+    // Available: only fetch when user has typed MIN_SEARCH chars
+    const enableAvail = dqAvail.length >= MIN_SEARCH;
     const { data: available = EMPTY_ARR, refetch: refetchAvail, isFetching: fetchingAvail } = useQuery<any[]>({
-        queryKey: [baseUrl, "not-in", qAvail],
-        queryFn:  () => fetch(`${baseUrl}?type=not-in&q=${encodeURIComponent(qAvail)}`).then(r => r.json()),
-        staleTime: 0,
+        queryKey: [baseUrl, "not-in", dqAvail],
+        queryFn:  () => fetch(`${baseUrl}?type=not-in&q=${encodeURIComponent(dqAvail)}`).then(r => r.json()),
+        enabled:  enableAvail,
+        staleTime: 30_000,
     });
+
+    // Assigned: always fetch (usually small set)
     const { data: assigned = EMPTY_ARR, refetch: refetchAssign, isFetching: fetchingAssign } = useQuery<any[]>({
-        queryKey: [baseUrl, "in", qAssign],
-        queryFn:  () => fetch(`${baseUrl}?type=in&q=${encodeURIComponent(qAssign)}`).then(r => r.json()),
+        queryKey: [baseUrl, "in", dqAssign],
+        queryFn:  () => fetch(`${baseUrl}?type=in&q=${encodeURIComponent(dqAssign)}`).then(r => r.json()),
         staleTime: 0,
     });
 
-    const refetchBoth = useCallback(() => { refetchAvail(); refetchAssign(); setSelAvail(null); setSelAssign(null); }, []);
+    const refetchBoth = useCallback(() => {
+        if (enableAvail) refetchAvail();
+        refetchAssign();
+        setSelAvail(null); setSelAssign(null);
+    }, [enableAvail]);
 
     const add = async () => {
         if (!selAvail || saving) return;
@@ -125,7 +182,7 @@ function DualListModal({ chargeUnico, chargeDesc, title, icon: Icon, baseUrl, la
     const addAll = async () => {
         if (saving) return;
         toast(`Add ALL to "${chargeDesc}"?`, {
-            action:  { label: "Confirm", onClick: async () => {
+            action: { label: "Confirm", onClick: async () => {
                 setSaving(true); setError(null);
                 try {
                     const res = await fetch(baseUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ insertAll: true }) });
@@ -136,13 +193,13 @@ function DualListModal({ chargeUnico, chargeDesc, title, icon: Icon, baseUrl, la
                 } catch (e: any) { setError(e.message); }
                 finally { setSaving(false); }
             }},
-            cancel:  { label: "Cancel", onClick: () => {} },
+            cancel:   { label: "Cancel", onClick: () => {} },
             duration: 8000,
         });
     };
 
-    const Row = ({ row, sel, onSel }: any) => (
-        <div onClick={() => onSel(sel?.unico === row.unico ? null : row)}
+    const mkRow = (sel: any, onSel: (r: any) => void) => (row: any) => (
+        <div key={t(row.unico)} onClick={() => onSel(sel?.unico === row.unico ? null : row)}
             className={cn("px-3 py-1.5 text-xs cursor-pointer select-none border-b border-gray-100 hover:bg-orange-50 transition-colors",
                 sel?.unico === row.unico && "!bg-[#FB7506]/10 font-semibold text-[#FB7506]")}>
             {t(row[labelKey])}
@@ -160,22 +217,25 @@ function DualListModal({ chargeUnico, chargeDesc, title, icon: Icon, baseUrl, la
                 </div>
 
                 {/* Body */}
-                <div className="flex flex-1 min-h-0 overflow-hidden">
+                <div className="flex flex-1 min-h-0 overflow-hidden" style={{ minHeight: 320 }}>
                     {/* Available */}
                     <div className="flex flex-col flex-1 border-r min-h-0">
                         <div className="flex items-center justify-between px-3 h-8 bg-gray-100 border-b shrink-0">
                             <span className="text-[10px] font-black uppercase text-gray-500 tracking-wider">
-                                Available ({available.length})
+                                Available {enableAvail ? `(${available.length})` : ""}
                             </span>
                             {fetchingAvail && <Loader2 className="w-3 h-3 animate-spin text-gray-400" />}
                         </div>
                         <div className="px-2 py-1.5 border-b shrink-0">
-                            <input value={qAvail} onChange={e => setQAvail(e.target.value)} placeholder="Search…"
+                            <input value={qAvail} onChange={e => setQAvail(e.target.value)}
+                                placeholder={`Type ${MIN_SEARCH}+ chars to search…`}
                                 className="w-full text-xs border rounded px-2 h-7 outline-none focus:border-orange-400" />
                         </div>
-                        <div className="flex-1 overflow-y-auto">
-                            {available.map((r: any) => <Row key={r.unico} row={r} sel={selAvail} onSel={setSelAvail} />)}
-                        </div>
+                        <InfiniteList
+                            items={enableAvail ? available : EMPTY_ARR}
+                            renderItem={mkRow(selAvail, setSelAvail)}
+                            emptyMsg={enableAvail ? "No results." : `Type ${MIN_SEARCH}+ characters to search.`}
+                        />
                     </div>
 
                     {/* Buttons */}
@@ -203,12 +263,14 @@ function DualListModal({ chargeUnico, chargeDesc, title, icon: Icon, baseUrl, la
                             {fetchingAssign && <Loader2 className="w-3 h-3 animate-spin text-gray-400" />}
                         </div>
                         <div className="px-2 py-1.5 border-b shrink-0">
-                            <input value={qAssign} onChange={e => setQAssign(e.target.value)} placeholder="Search…"
+                            <input value={qAssign} onChange={e => setQAssign(e.target.value)} placeholder="Filter assigned…"
                                 className="w-full text-xs border rounded px-2 h-7 outline-none focus:border-orange-400" />
                         </div>
-                        <div className="flex-1 overflow-y-auto">
-                            {assigned.map((r: any) => <Row key={r.unico} row={r} sel={selAssign} onSel={setSelAssign} />)}
-                        </div>
+                        <InfiniteList
+                            items={assigned}
+                            renderItem={mkRow(selAssign, setSelAssign)}
+                            emptyMsg="None assigned."
+                        />
                     </div>
                 </div>
 
