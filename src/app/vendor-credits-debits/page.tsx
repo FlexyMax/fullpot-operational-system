@@ -111,21 +111,18 @@ export default function VendorCreditDebitsPage() {
         enabled:  activeTab === "history",
     });
 
-    // Unique vendors from history results (for the filter panel)
+    // Unique vendors from history results (SP returns grower name, not grower_uq — use name as key)
     const historyVendors = useMemo(() => {
-        const seen = new Map<string, string>();
+        const seen = new Set<string>();
         for (const row of history) {
-            const uq   = String(row.grower_uq ?? row.lcgrower_uq ?? "");
-            const name = String(row.grower ?? row.farm ?? row.lcfarm ?? "");
-            if (uq && !seen.has(uq)) seen.set(uq, name);
+            const name = String(row.grower ?? row.farm ?? row.lcfarm ?? "").trim();
+            if (name) seen.add(name);
         }
-        return Array.from(seen.entries())
-            .map(([uq, name]) => ({ uq, name }))
-            .sort((a, b) => a.name.localeCompare(b.name));
+        return Array.from(seen).sort((a, b) => a.localeCompare(b));
     }, [history]);
 
     const filteredHistory = historyVendorFilter
-        ? history.filter((row: any) => String(row.grower_uq ?? row.lcgrower_uq ?? "") === historyVendorFilter)
+        ? history.filter((row: any) => String(row.grower ?? row.farm ?? row.lcfarm ?? "").trim() === historyVendorFilter)
         : history;
 
     // ── Auto-selections ──────────────────────────────────────────────────────
@@ -448,11 +445,11 @@ export default function VendorCreditDebitsPage() {
                                         className={historyVendorFilter === "" ? "!bg-[#FB7506]/10" : undefined}>
                                         <PanelGridTd className="font-bold text-[#FB7506]">ALL Vendors</PanelGridTd>
                                     </PanelGridTr>
-                                    {historyVendors.map((v, i) => (
-                                        <PanelGridTr key={i} selected={historyVendorFilter === v.uq}
-                                            onClick={() => { setHistoryVendorFilter(v.uq); setSelHistRow(null); }}
-                                            className={historyVendorFilter === v.uq ? "!bg-[#FB7506]/10" : undefined}>
-                                            <PanelGridTd className="font-medium">{v.name}</PanelGridTd>
+                                    {historyVendors.map((name, i) => (
+                                        <PanelGridTr key={i} selected={historyVendorFilter === name}
+                                            onClick={() => { setHistoryVendorFilter(name); setSelHistRow(null); }}
+                                            className={historyVendorFilter === name ? "!bg-[#FB7506]/10" : undefined}>
+                                            <PanelGridTd className="font-medium">{name}</PanelGridTd>
                                         </PanelGridTr>
                                     ))}
                                 </PanelGridTbody>
@@ -517,7 +514,7 @@ export default function VendorCreditDebitsPage() {
                                                 <PanelGridTd className="text-[#FB7506] font-semibold">{row.invoice_no ?? row.lcinvoice_no}</PanelGridTd>
                                                 <PanelGridTd className="max-w-[140px] truncate">{row.reason ?? row.lcreason}</PanelGridTd>
                                                 <PanelGridTd align="right" className={cn("font-semibold", isCredit ? "text-green-600" : "text-red-500")}>
-                                                    {formatMoney(row.cd_amount ?? row.lncd_ammount)}
+                                                    {formatMoney(row.cd_amount ?? row.cd_ammount ?? row.lncd_ammount)}
                                                 </PanelGridTd>
                                                 <PanelGridTd className="max-w-[180px] truncate text-gray-500">{row.cd_details ?? row.lcdetails}</PanelGridTd>
                                             </PanelGridTr>

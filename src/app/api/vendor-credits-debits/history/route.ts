@@ -7,8 +7,10 @@ export async function GET(req: NextRequest) {
     const to       = req.nextUrl.searchParams.get("to")        ?? "";
     // empty growerUq = ALL vendors (SP handles it)
     try {
+        // SP uses: WHERE supplier_uq LIKE @lcgrower_uq
+        // Pass '%' for ALL vendors (LIKE '%' matches everything); specific uq for filtered
         const r = await executeProcedure("sp_flower_accounts_pay_cr_history", {
-            lcgrower_uq: growerUq || null,  // null = ALL vendors; '' = WHERE grower_uq='' (0 results)
+            lcgrower_uq: growerUq || '%',
             ldcr_from:   from,
             ldcr_to:     to,
         });
